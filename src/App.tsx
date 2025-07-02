@@ -1,7 +1,8 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
+import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
 
 function App() {
   const [greetMsg, setGreetMsg] = useState("");
@@ -17,10 +18,13 @@ function App() {
       <h1 className="text-4xl font-bold">Hakawati</h1>
       <p className="text-lg text-gray-500">Test</p>
       <div className="flex flex-col gap-4">
-        <input id="greet-input" placeholder="Enter a name..." />
-        <button type="button" onClick={() => greet()}>
-          Greet
-        </button>
+        <Input
+          id="greet-input"
+          placeholder="Enter a name..."
+          value={name}
+          onChange={(e) => setName(e.currentTarget.value)}
+        />
+        <Button onClick={() => greet()}>Greet</Button>
         <p>{greetMsg}</p>
       </div>
     </main>
