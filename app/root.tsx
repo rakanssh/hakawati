@@ -9,6 +9,7 @@ import {
 import type { Route } from "./+types/root";
 
 import "./app.css";
+import { ThemeProvider } from "./components/theme-provider";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -20,7 +21,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
+        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+          {children}
+        </ThemeProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
