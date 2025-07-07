@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.11",
+    "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-slot": "^1.2.3",
     "@react-router/node": "^7.6.3",
     "@react-router/serve": "^7.6.3",
