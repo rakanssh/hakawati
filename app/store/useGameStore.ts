@@ -3,13 +3,14 @@ import { Stat } from "@/types/stats.type";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-//TODO: Make this dynamic and changeable
 interface GameStoreType {
   stats: Stat[];
   inventory: string[];
   log: LogEntry[];
   addLog: (log: LogEntry) => void;
-  modifyHp: (value: number) => void;
+  modifyStat: (name: string, value: number) => void;
+  addToStats: (stat: Stat) => void;
+  removeFromStats: (name: string) => void;
   addToInventory: (item: string) => void;
   removeFromInventory: (item: string) => void;
   clearInventory: () => void;
@@ -20,7 +21,7 @@ export const useGameStore = create<GameStoreType>()(
     (set) => ({
       stats: [
         {
-          name: "hp",
+          name: "HP",
           value: 100,
           range: [0, 100],
         },
@@ -28,11 +29,17 @@ export const useGameStore = create<GameStoreType>()(
       inventory: [],
       log: [],
       addLog: (log: LogEntry) => set((state) => ({ log: [...state.log, log] })),
-      modifyHp: (value: number) =>
+      modifyStat: (name: string, value: number) =>
         set((state) => ({
           stats: state.stats.map((stat) =>
-            stat.name === "hp" ? { ...stat, value: stat.value + value } : stat
+            stat.name === name ? { ...stat, value: stat.value + value } : stat
           ),
+        })),
+      addToStats: (stat: Stat) =>
+        set((state) => ({ stats: [...state.stats, stat] })),
+      removeFromStats: (name: string) =>
+        set((state) => ({
+          stats: state.stats.filter((stat) => stat.name !== name),
         })),
       addToInventory: (item: string) =>
         set((state) => ({ inventory: [...state.inventory, item] })),
