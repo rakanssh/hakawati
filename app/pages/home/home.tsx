@@ -16,7 +16,7 @@ export default function Home() {
     <main className="flex flex-col items-center justify-center h-screen">
       {/* Title header */}
       <header className="flex flex-col items-center justify-center">
-        <h1 className="text-4xl font-bold">Hakawati</h1>
+        <h1 className="text-4xl font-bold">TingTing</h1>
       </header>
 
       <Card className="w-full max-w-md mt-8">
