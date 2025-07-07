@@ -11,7 +11,7 @@ export default defineConfig(async () => ({
 
   resolve: {
     alias: {
-      "@": path.resolve(process.cwd(), "./src"),
+      "@": path.resolve(process.cwd(), "./app"),
     },
   },
 
