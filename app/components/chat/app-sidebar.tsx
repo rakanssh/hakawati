@@ -1,33 +1,34 @@
 import * as React from "react";
 
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
-import { Button } from "./ui/button";
+import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon } from "lucide-react";
-import { Badge } from "./ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { useSettingsStore } from "@/store";
 import { useNavigate } from "react-router";
 import { useGameStore } from "@/store/useGameStore";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { Separator } from "./ui/separator";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const apiType = useSettingsStore((state) => state.apiType);
   const navigate = useNavigate();
   const { inventory, stats } = useGameStore();
   return (
-    <Sidebar variant="inset" className="dark" {...props}>
-      <SidebarContent className="flex flex-col gap-4">
+    <Sidebar variant="inset" className="bg-background" {...props}>
+      <SidebarContent className="flex flex-col gap-4 bg-background">
         <div className="flex flex-row items-center gap-2">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ArrowLeftIcon className="w-4 h-4" />
           </Button>
-          <h1 className="text-2xl font-bold">Hakawati</h1>
+          <h1 className="text-2xl font-bold">TingTing</h1>
           <Badge variant="outline">{apiType}</Badge>
         </div>
         <Separator />
         <Card>
-          <CardHeader>
-            <CardTitle>Inventory</CardTitle>
+          <CardHeader className="text-center">
+            <CardTitle className="text-sm">Inventory</CardTitle>
+            <Separator />
           </CardHeader>
           <CardContent>
             {inventory.length > 0 ? (
@@ -42,8 +43,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle>Stats</CardTitle>
+          <CardHeader className="text-center">
+            <CardTitle className="text-sm">Stats</CardTitle>
+            <Separator />
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-4">
