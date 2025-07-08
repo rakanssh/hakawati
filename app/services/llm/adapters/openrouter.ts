@@ -18,6 +18,10 @@ export function OpenRouterClient(apiKey: string): LLMClient {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     };
+    console.debug("OpenRouterClient");
+    console.debug(base);
+    console.debug(body);
+    console.debug(headers);
 
     const doFetch = () =>
       fetch(base, { method: "POST", headers, body, signal }).then(async (r) => {

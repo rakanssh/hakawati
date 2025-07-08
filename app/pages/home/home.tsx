@@ -8,9 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 export default function Home() {
   const navigate = useNavigate();
+  const { apiKey, setApiKey } = useSettingsStore();
 
   return (
     <main className="flex flex-col items-center justify-center h-screen">
@@ -25,7 +27,11 @@ export default function Home() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-2">
-            <Input placeholder="Enter your key here" />
+            <Input
+              placeholder="Enter your key here"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+            />
             <Button
               onClick={() => {
                 navigate("/demo");
