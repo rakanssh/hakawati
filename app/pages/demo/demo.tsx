@@ -9,18 +9,32 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useLLM } from "@/hooks/useLLM";
 
 export default function Demo() {
   const { log, addLog } = useGameStore();
   const [input, setInput] = useState("");
-
-  const handleSubmit = () => {
+  const { send, loading, cancel } = useLLM();
+  const handleSubmit = async () => {
     addLog({
       id: crypto.randomUUID(),
       role: "player",
       text: input,
       mode: "do",
     });
+    setInput("");
+    const res = await send({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: input }],
+    });
+    console.log(res);
+    addLog({
+      id: crypto.randomUUID(),
+      role: "gm",
+      text: res,
+      mode: "do",
+    });
+
     setInput("");
   };
 
