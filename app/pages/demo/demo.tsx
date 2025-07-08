@@ -7,7 +7,8 @@ import {
 import { AppSidebar } from "@/components/chat";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Demo() {
   const { log, addLog } = useGameStore();
@@ -23,29 +24,39 @@ export default function Demo() {
     setInput("");
   };
 
+  // Prevent body and html from scrolling
+  //TODO: Find the proper way to do this
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, []);
+
   return (
     <SidebarProvider defaultOpen={true}>
       <AppSidebar />
-      <SidebarInset>
-        <main className="flex flex-col h-screen p-4">
-          <div className="flex-1 overflow-y-auto">
-            <p>{log.map((l) => l.text).join("\n") || "No log"}</p>
-          </div>
+      <SidebarInset className="flex flex-col h-screen overflow-hidden">
+        <ScrollArea className="flex-1 p-4 min-h-0">
+          <p>{log.map((l) => l.text).join("\n") || "No log"}</p>
+        </ScrollArea>
+        <div className="border-t p-4">
           <div className="flex w-full items-center space-x-2">
             <SidebarTrigger />
-            <div className="bg-background flex w-full items-center space-x-2">
-              <Input
-                type="text"
-                placeholder="What do you do?"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-              />
-              <Button type="submit" onClick={handleSubmit}>
-                Send
-              </Button>
-            </div>
+            <Input
+              type="text"
+              placeholder="What do you do?"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+            />
+            <Button type="submit" onClick={handleSubmit}>
+              Send
+            </Button>
           </div>
-        </main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );
