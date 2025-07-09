@@ -1,5 +1,5 @@
 import { sendChat } from "@/services/llm";
-import { ChatRequest, ChatMessage } from "@/services/llm/schema";
+import { ChatRequest, ChatMessage, LLMModel } from "@/services/llm/schema";
 import { useGameStore } from "@/store/useGameStore";
 import { LogEntry } from "@/types";
 import { Stat } from "@/types/stats.type";
@@ -10,13 +10,13 @@ export function useLLM() {
   const { log, stats, inventory } = useGameStore();
   const abortRef = useRef<AbortController | null>(null);
 
-  const send = async (lastMessage: string) => {
+  const send = async (lastMessage: string, model: LLMModel) => {
     abortRef.current?.abort();
     abortRef.current = new AbortController();
     setLoading(true);
 
     try {
-      const req = buildMessage({ log, stats, inventory, lastMessage });
+      const req = buildMessage({ log, stats, inventory, lastMessage, model });
       const res = await sendChat(req, abortRef.current?.signal);
 
       if (res.iterator) {
@@ -41,6 +41,7 @@ interface BuildMessageParams {
   stats: Stat[];
   inventory: string[];
   lastMessage: string;
+  model: LLMModel;
 }
 
 function buildMessage({
@@ -48,6 +49,7 @@ function buildMessage({
   stats,
   inventory,
   lastMessage,
+  model,
 }: BuildMessageParams): ChatRequest {
   const systemPrompt = `You are a creative and engaging storyteller acting as a Game Master (GM) for a text-based RPG.
 Your goal is to guide the player through a rich narrative, responding to their actions and describing the world.
@@ -96,7 +98,7 @@ Now, continue the story based on the player's input.`;
   messages.push({ role: "user", content: lastMessage });
 
   return {
-    model: "deepseek/deepseek-chat-v3-0324",
+    model: model.id,
     messages: messages,
   };
 }
