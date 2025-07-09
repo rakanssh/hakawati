@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLLM } from "@/hooks/useLLM";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 interface LLMAction {
   type:
@@ -36,6 +37,7 @@ export default function Demo() {
   } = useGameStore();
   const [input, setInput] = useState("");
   const { send, loading } = useLLM();
+  const { model } = useSettingsStore();
 
   const handleSubmit = async () => {
     if (!input.trim()) return;
@@ -51,7 +53,7 @@ export default function Demo() {
 
     let jsonResponse = "";
     try {
-      jsonResponse = await send(playerInput);
+      jsonResponse = await send(playerInput, model);
       console.debug(jsonResponse);
 
       // Handle potential markdown formatting
