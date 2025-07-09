@@ -12,7 +12,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLLM } from "@/hooks/useLLM";
 
 interface LLMAction {
-  type: "MODIFY_STAT" | "ADD_TO_INVENTORY" | "REMOVE_FROM_INVENTORY";
+  type:
+    | "MODIFY_STAT"
+    | "ADD_TO_INVENTORY"
+    | "REMOVE_FROM_INVENTORY"
+    | "ADD_TO_STATS";
   payload: { name?: string; value?: number; item?: string };
 }
 
@@ -22,8 +26,14 @@ interface LLMResponse {
 }
 
 export default function Demo() {
-  const { log, addLog, modifyStat, addToInventory, removeFromInventory } =
-    useGameStore();
+  const {
+    log,
+    addLog,
+    modifyStat,
+    addToInventory,
+    removeFromInventory,
+    addToStats,
+  } = useGameStore();
   const [input, setInput] = useState("");
   const { send, loading } = useLLM();
 
@@ -80,6 +90,15 @@ export default function Demo() {
             case "REMOVE_FROM_INVENTORY":
               if (action.payload.item) {
                 removeFromInventory(action.payload.item);
+              }
+              break;
+            case "ADD_TO_STATS":
+              if (action.payload.name && action.payload.value) {
+                addToStats({
+                  name: action.payload.name,
+                  value: action.payload.value,
+                  range: [0, 100],
+                });
               }
               break;
             default:

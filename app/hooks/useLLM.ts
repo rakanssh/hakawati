@@ -63,6 +63,7 @@ You must keep track of the player's stats and inventory. Here is the current sta
 3.  You MUST format your response as a single JSON object. Do not include any text outside of this JSON object.
 4.  The JSON object must have a \`story\` key with a string value describing the events.
 5.  Optionally, the JSON object can have an \`actions\` key with an array of action objects.
+6.  Ensure that player actions properly conform to the game state.
 
 **Available Actions:**
 You can use the following actions to change the game state. Only use these actions when it makes sense in the story.
@@ -73,6 +74,8 @@ You can use the following actions to change the game state. Only use these actio
   - \`payload\`: { "item": "ItemName" }
 - \`REMOVE_FROM_INVENTORY\`: Remove an item from the player's inventory.
   - \`payload\`: { "item": "ItemName" }
+- \`ADD_TO_STATS\`: Add a stat to the player's stats.
+  - \`payload\`: { "name": "StatName", "value": number } (value can be positive or negative)
 
 **Example Response:**
 {
