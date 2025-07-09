@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const apiType = useSettingsStore((state) => state.apiType);
   const navigate = useNavigate();
-  const { inventory, stats } = useGameStore();
+  const { inventory, stats, resetAllState } = useGameStore();
   return (
     <Sidebar variant="inset" className="bg-background" {...props}>
       <SidebarContent className="flex flex-col gap-4 bg-background">
@@ -74,6 +74,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </div>
           </CardContent>
         </Card>
+        <Button variant="outline" onClick={resetAllState}>
+          Reset
+        </Button>
       </SidebarContent>
     </Sidebar>
   );
