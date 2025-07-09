@@ -25,3 +25,8 @@ export async function sendChat(req: ChatRequest, signal?: AbortSignal) {
   const client = getLLMClient();
   return client.chat(req, signal);
 }
+
+export async function getModels() {
+  const client = getLLMClient();
+  return client.models();
+}

@@ -22,4 +22,11 @@ export interface ChatResponse {
 
 export interface LLMClient {
   chat(request: ChatRequest, signal?: AbortSignal): Promise<ChatResponse>;
+  models(): Promise<LLMModel[]>;
+}
+
+export interface LLMModel {
+  id: string;
+  name: string;
+  contextLength: number;
 }

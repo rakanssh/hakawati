@@ -1,9 +1,9 @@
-import { LLMClient, ChatRequest, ChatResponse } from "../schema";
+import { LLMClient, ChatRequest, ChatResponse, LLMModel } from "../schema";
 import { parseOpenAIStream } from "../streaming";
 import { withRetry } from "../retry";
 
 export function OpenRouterClient(apiKey: string): LLMClient {
-  const base = "https://openrouter.ai/api/v1/chat/completions";
+  const base = "https://openrouter.ai/api/v1";
 
   async function chat(
     req: ChatRequest,
@@ -18,13 +18,14 @@ export function OpenRouterClient(apiKey: string): LLMClient {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     };
-    console.debug("OpenRouterClient");
-    console.debug(base);
-    console.debug(body);
-    console.debug(headers);
 
     const doFetch = () =>
-      fetch(base, { method: "POST", headers, body, signal }).then(async (r) => {
+      fetch(`${base}/chat/completions`, {
+        method: "POST",
+        headers,
+        body,
+        signal,
+      }).then(async (r) => {
         if (!r.ok) throw new Error(await r.text());
         if (req.stream) {
           return {
@@ -51,5 +52,18 @@ export function OpenRouterClient(apiKey: string): LLMClient {
     return withRetry(doFetch); // 429 / 502 back-off handling
   }
 
-  return { chat };
+  async function models(): Promise<LLMModel[]> {
+    const r = await fetch(`${base}/models`, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+    });
+    const json = await r.json();
+    return json.data.map((model: any) => ({
+      id: model.id,
+      name: model.name,
+      contextLength: model.context_length,
+    }));
+  }
+  return { chat, models };
 }
