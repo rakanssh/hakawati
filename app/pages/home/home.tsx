@@ -9,11 +9,36 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useLLMProviders } from "@/hooks/useLLMProviders";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandItem,
+  CommandEmpty,
+  CommandGroup,
+} from "@/components/ui/command";
+import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 export default function Home() {
   const navigate = useNavigate();
-  const { apiKey, setApiKey } = useSettingsStore();
-
+  const { apiKey, setApiKey, model, setModel } = useSettingsStore();
+  const { models, loading } = useLLMProviders();
+  const [open, setOpen] = useState(false);
   return (
     <main className="flex flex-col items-center justify-center h-screen">
       {/* Title header */}
@@ -25,14 +50,61 @@ export default function Home() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>OpenRouter API Key</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-2">
+        <CardContent className="flex flex-col gap-2">
+          <div className="flex flex-row gap-2">
             <Input
               placeholder="Enter your key here"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
             />
+            <Button>Fetch</Button>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className="w-full justify-between"
+                >
+                  {loading ? "Loading..." : model?.name ?? "Select a model"}
+                  <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0">
+                <Command>
+                  <CommandInput placeholder="Search model..." />
+                  <CommandList>
+                    <CommandEmpty>No model found.</CommandEmpty>
+                    <CommandGroup>
+                      {models.map((m) => (
+                        <CommandItem
+                          key={m.id}
+                          value={m.name}
+                          onSelect={(_) => {
+                            setModel(m);
+                            setOpen(false);
+                          }}
+                        >
+                          <CheckIcon
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              model?.name === m.name
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {m.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
             <Button
+              disabled={!apiKey || !model}
               onClick={() => {
                 navigate("/demo");
               }}
