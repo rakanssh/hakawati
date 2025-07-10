@@ -8,6 +8,7 @@ interface GameStoreType {
   inventory: string[];
   log: LogEntry[];
   addLog: (log: LogEntry) => void;
+  updateLogEntry: (id: string, updates: Partial<LogEntry>) => void;
   modifyStat: (name: string, value: number) => void;
   addToStats: (stat: Stat) => void;
   removeFromStats: (name: string) => void;
@@ -30,6 +31,12 @@ export const useGameStore = create<GameStoreType>()(
       inventory: [],
       log: [],
       addLog: (log: LogEntry) => set((state) => ({ log: [...state.log, log] })),
+      updateLogEntry: (id, updates) =>
+        set((state) => ({
+          log: state.log.map((entry) =>
+            entry.id === id ? { ...entry, ...updates } : entry
+          ),
+        })),
       modifyStat: (name: string, value: number) =>
         set((state) => ({
           stats: state.stats.map((stat) =>
