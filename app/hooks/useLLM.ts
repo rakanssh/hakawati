@@ -100,5 +100,6 @@ Now, continue the story based on the player's input.`;
   return {
     model: model.id,
     messages: messages,
+    stream: true,
   };
 }

@@ -1,6 +1,5 @@
 import { LLMClient, ChatRequest, ChatResponse, LLMModel } from "../schema";
 import { parseOpenAIStream } from "../streaming";
-import { withRetry } from "../retry";
 
 export function OpenRouterClient(apiKey: string): LLMClient {
   const base = "https://openrouter.ai/api/v1";
@@ -49,7 +48,7 @@ export function OpenRouterClient(apiKey: string): LLMClient {
         }
       });
 
-    return withRetry(doFetch); // 429 / 502 back-off handling
+    return doFetch();
   }
 
   async function models(): Promise<LLMModel[]> {
