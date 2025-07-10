@@ -93,9 +93,10 @@ You must keep track of the player's stats and inventory. Here is the current sta
 4.  The JSON object must have a \`story\` key with a string value describing the events.
 5.  Optionally, the JSON object can have an \`actions\` key with an array of action objects.
 6.  Ensure that player actions properly conform to the game state.
+7.  Prefer that modifications to the game state are a result of player action where possible.
 
 **Available Actions:**
-You can use the following actions to change the game state. Only use these actions when it makes sense in the story.
+You can use the following actions to change the game state. Only use these actions when it makes sense in the story, preferring to react to player actions. 
 
 - \`MODIFY_STAT\`: Change a player's stat.
   - \`payload\`: { "name": "StatName", "value": number } (value can be positive or negative)
@@ -108,7 +109,7 @@ You can use the following actions to change the game state. Only use these actio
 
 **Example Response:**
 {
-  "story": "You swing your sword at the goblin. It connects with a satisfying thud, but the goblin is still standing. It snarls and swipes back at you with its rusty dagger, catching your arm.",
+  "story": "...Story",
   "actions": [
     { "type": "MODIFY_STAT", "payload": { "name": "HP", "value": -5 } }
   ]
