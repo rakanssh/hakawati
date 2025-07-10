@@ -100,7 +100,7 @@ You can use the following actions to change the game state. Only use these actio
 
 - \`MODIFY_STAT\`: Change a player's stat.
   - \`payload\`: { "name": "StatName", "value": number } (value can be positive or negative)
-- \`ADD_TO_INVENTORY\`: Add an item to the player's inventory.
+- \`ADD_TO_INVENTORY\`: Add an item to the player's inventory. Do not add items that are already in the inventory. Do not force items into the inventory without player action.
   - \`payload\`: { "item": "ItemName" }
 - \`REMOVE_FROM_INVENTORY\`: Remove an item from the player's inventory.
   - \`payload\`: { "item": "ItemName" }
@@ -124,6 +124,7 @@ Now, continue the story based on the player's input.`;
 
   messages.unshift({ role: "system", content: systemPrompt });
   messages.push({ role: "user", content: lastMessage });
+  console.log(messages);
 
   return {
     model: model.id,
