@@ -41,6 +41,7 @@ export default function Demo() {
 
   const handleSubmit = async () => {
     if (!input.trim()) return;
+    if (!model) return;
 
     const playerInput = input;
     addLog({
