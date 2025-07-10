@@ -11,20 +11,7 @@ import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLLM } from "@/hooks/useLLM";
 import { useSettingsStore } from "@/store/useSettingsStore";
-
-interface LLMAction {
-  type:
-    | "MODIFY_STAT"
-    | "ADD_TO_INVENTORY"
-    | "REMOVE_FROM_INVENTORY"
-    | "ADD_TO_STATS";
-  payload: { name?: string; value?: number; item?: string };
-}
-
-interface LLMResponse {
-  story: string;
-  actions?: LLMAction[];
-}
+import { LLMAction } from "@/services/llm/schema";
 
 export default function Demo() {
   const {
@@ -34,14 +21,14 @@ export default function Demo() {
     addToInventory,
     removeFromInventory,
     addToStats,
+    updateLogEntry,
   } = useGameStore();
   const [input, setInput] = useState("");
   const { send, loading } = useLLM();
   const { model } = useSettingsStore();
 
   const handleSubmit = async () => {
-    if (!input.trim()) return;
-    if (!model) return;
+    if (!input.trim() || !model) return;
 
     const playerInput = input;
     addLog({
@@ -52,77 +39,62 @@ export default function Demo() {
     });
     setInput("");
 
-    let jsonResponse = "";
-    try {
-      jsonResponse = await send(playerInput, model);
-      console.debug(jsonResponse);
+    const gmResponseId = crypto.randomUUID();
+    addLog({
+      id: gmResponseId,
+      role: "gm",
+      text: "...",
+      mode: "story",
+    });
 
-      // Handle potential markdown formatting
-      const startIndex = jsonResponse.indexOf("{");
-      const endIndex = jsonResponse.lastIndexOf("}");
+    let storyContent = "";
 
-      if (startIndex === -1 || endIndex === -1) {
-        throw new Error("Could not find a JSON object in the LLM response.");
-      }
-
-      const jsonString = jsonResponse.substring(startIndex, endIndex + 1);
-      const response: LLMResponse = JSON.parse(jsonString);
-
-      if (response.story) {
-        addLog({
-          id: crypto.randomUUID(),
-          role: "gm",
-          text: response.story,
-          mode: "story",
-        });
-      }
-
-      if (response.actions && Array.isArray(response.actions)) {
-        for (const action of response.actions) {
-          switch (action.type) {
-            case "MODIFY_STAT":
-              if (action.payload.name && action.payload.value) {
-                modifyStat(action.payload.name, action.payload.value);
-              }
-              break;
-            case "ADD_TO_INVENTORY":
-              if (action.payload.item) {
-                addToInventory(action.payload.item);
-              }
-              break;
-            case "REMOVE_FROM_INVENTORY":
-              if (action.payload.item) {
-                removeFromInventory(action.payload.item);
-              }
-              break;
-            case "ADD_TO_STATS":
-              if (action.payload.name && action.payload.value) {
-                addToStats({
-                  name: action.payload.name,
-                  value: action.payload.value,
-                  range: [0, 100],
-                });
-              }
-              break;
-            default:
-              console.warn("Unknown action type:", action.type);
+    send(playerInput, model, {
+      onStoryStream: (storyChunk) => {
+        storyContent += storyChunk;
+        updateLogEntry(gmResponseId, { text: storyContent });
+      },
+      onActionsReady: (actions) => {
+        if (Array.isArray(actions)) {
+          for (const action of actions) {
+            switch (action.type) {
+              case "MODIFY_STAT":
+                if (action.payload.name && action.payload.value) {
+                  modifyStat(action.payload.name, action.payload.value);
+                }
+                break;
+              case "ADD_TO_INVENTORY":
+                if (action.payload.item) {
+                  addToInventory(action.payload.item);
+                }
+                break;
+              case "REMOVE_FROM_INVENTORY":
+                if (action.payload.item) {
+                  removeFromInventory(action.payload.item);
+                }
+                break;
+              case "ADD_TO_STATS":
+                if (action.payload.name && action.payload.value) {
+                  addToStats({
+                    name: action.payload.name,
+                    value: action.payload.value,
+                    range: [0, 100],
+                  });
+                }
+                break;
+              default:
+                console.warn("Unknown action type:", action.type);
+            }
           }
         }
-      }
-    } catch (error) {
-      console.error(
-        "Failed to parse LLM response:",
-        error,
-        "Raw response:",
-        jsonResponse
-      );
-      addLog({
-        id: crypto.randomUUID(),
-        role: "gm",
-        text: "A strange force seems to have scrambled my thoughts. Please repeat that.",
-        mode: "story",
-      });
-    }
+      },
+      onError: (error) => {
+        console.error("LLM Error:", error);
+        updateLogEntry(gmResponseId, {
+          text: "A strange force seems to have scrambled my thoughts. Please repeat that.",
+        });
+      },
+    });
   };
 
   // Prevent body and html from scrolling

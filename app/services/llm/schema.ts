@@ -30,3 +30,17 @@ export interface LLMModel {
   name: string;
   contextLength: number;
 }
+
+export interface LLMAction {
+  type:
+    | "MODIFY_STAT"
+    | "ADD_TO_INVENTORY"
+    | "REMOVE_FROM_INVENTORY"
+    | "ADD_TO_STATS";
+  payload: { name?: string; value?: number; item?: string };
+}
+
+export interface LLMResponse {
+  story: string;
+  actions?: LLMAction[];
+}
