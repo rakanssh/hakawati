@@ -56,6 +56,7 @@ export default function Demo() {
       },
       onActionsReady: (actions) => {
         if (Array.isArray(actions)) {
+          updateLogEntry(gmResponseId, { actions });
           for (const action of actions) {
             switch (action.type) {
               case "MODIFY_STAT":
