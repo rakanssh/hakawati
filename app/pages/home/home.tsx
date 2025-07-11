@@ -9,13 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { useLLMProviders } from "@/hooks/useLLMProviders";
 import {
   Popover,
@@ -33,6 +27,7 @@ import {
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { Header } from "@/components/layout";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -41,6 +36,7 @@ export default function Home() {
   const [open, setOpen] = useState(false);
   return (
     <main className="flex flex-col items-center justify-center h-screen">
+      <Header />
       {/* Title header */}
       <header className="flex flex-col items-center justify-center">
         <h1 className="text-4xl font-bold">TingTing</h1>
