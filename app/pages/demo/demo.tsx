@@ -55,6 +55,9 @@ export default function Demo() {
         updateLogEntry(gmResponseId, { text: storyContent });
       },
       onActionsReady: (actions) => {
+        console.debug(
+          `Processing received actions: ${JSON.stringify(actions)}`
+        );
         if (Array.isArray(actions)) {
           updateLogEntry(gmResponseId, { actions });
           for (const action of actions) {
