@@ -14,6 +14,7 @@ interface GameStoreType {
   removeFromStats: (name: string) => void;
   addToInventory: (item: string) => void;
   removeFromInventory: (item: string) => void;
+  updateItem: (item: string, updates: string) => void;
   clearInventory: () => void;
   resetAllState: () => void;
 }
@@ -54,6 +55,10 @@ export const useGameStore = create<GameStoreType>()(
       removeFromInventory: (item: string) =>
         set((state) => ({
           inventory: state.inventory.filter((i) => i !== item),
+        })),
+      updateItem: (item: string, updates: string) =>
+        set((state) => ({
+          inventory: state.inventory.map((i) => (i === item ? updates : i)),
         })),
       clearInventory: () => set({ inventory: [] }),
       resetAllState: () =>
