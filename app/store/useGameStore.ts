@@ -41,7 +41,15 @@ export const useGameStore = create<GameStoreType>()(
       modifyStat: (name: string, value: number) =>
         set((state) => ({
           stats: state.stats.map((stat) =>
-            stat.name === name ? { ...stat, value: stat.value + value } : stat
+            stat.name === name
+              ? {
+                  ...stat,
+                  value: Math.min(
+                    Math.max(stat.value + value, stat.range[0]),
+                    stat.range[1]
+                  ),
+                }
+              : stat
           ),
         })),
       addToStats: (stat: Stat) =>
