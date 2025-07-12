@@ -80,7 +80,7 @@ export default function Demo() {
 
     let storyContent = "";
 
-    send(playerInput, model, {
+    send(finalMessage, model, {
       onStoryStream: (storyChunk) => {
         storyContent += storyChunk;
         updateLogEntry(gmResponseId, { text: storyContent });
