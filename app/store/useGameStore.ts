@@ -7,6 +7,7 @@ interface GameStoreType {
   stats: Stat[];
   inventory: string[];
   log: LogEntry[];
+  undoStack: LogEntry[];
   addLog: (log: LogEntry) => void;
   updateLogEntry: (id: string, updates: Partial<LogEntry>) => void;
   modifyStat: (name: string, value: number) => void;
@@ -17,6 +18,8 @@ interface GameStoreType {
   updateItem: (item: string, updates: string) => void;
   clearInventory: () => void;
   resetAllState: () => void;
+  undo: () => void;
+  redo: () => void;
 }
 
 export const useGameStore = create<GameStoreType>()(
@@ -31,6 +34,7 @@ export const useGameStore = create<GameStoreType>()(
       ],
       inventory: [],
       log: [],
+      undoStack: [],
       addLog: (log: LogEntry) => set((state) => ({ log: [...state.log, log] })),
       updateLogEntry: (id, updates) =>
         set((state) => ({
@@ -81,6 +85,30 @@ export const useGameStore = create<GameStoreType>()(
           inventory: [],
           log: [],
         }),
+      undo: () => {
+        set((state) => {
+          const lastLog = state.log[state.log.length - 1];
+          if (lastLog) {
+            return {
+              log: state.log.slice(0, -1),
+              undoStack: [...state.undoStack, lastLog],
+            };
+          }
+          return { log: state.log, undoStack: state.undoStack };
+        });
+      },
+      redo: () => {
+        set((state) => {
+          const lastLog = state.undoStack[state.undoStack.length - 1];
+          if (lastLog) {
+            return {
+              log: [...state.log, lastLog],
+              undoStack: state.undoStack.slice(0, -1),
+            };
+          }
+          return { log: state.log, undoStack: state.undoStack };
+        });
+      },
     }),
     {
       name: "game-store",
