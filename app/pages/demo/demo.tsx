@@ -20,6 +20,26 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { DicesIcon } from "lucide-react";
+
+function getPlaceholder(action: "say" | "do" | "story", isRolling: boolean) {
+  let placeholder = "";
+  switch (action) {
+    case "do":
+      placeholder = "You...";
+      break;
+    case "say":
+      placeholder = "You say...";
+      break;
+    case "story":
+      placeholder = "...";
+      break;
+  }
+  if (isRolling) {
+    placeholder += ` [With Roll]`;
+  }
+  return placeholder;
+}
 
 export default function Demo() {
   const {
@@ -167,21 +187,22 @@ export default function Demo() {
         </ScrollArea>
         <div className="border-t p-4">
           <div className="flex w-full items-center space-x-2">
-            <Checkbox
-              checked={isRolling}
-              onCheckedChange={(checked) =>
-                setIsRolling(checked === "indeterminate" ? false : checked)
-              }
+            <Button
+              variant={isRolling ? "default" : "outline"}
+              size="icon"
+              onClick={() => setIsRolling(!isRolling)}
               disabled={loading}
-            />
-            <Label>🎲</Label>
+            >
+              <DicesIcon strokeWidth={1.5} />
+            </Button>
+
             <Select
               value={action}
               onValueChange={(value) =>
                 setAction(value as "say" | "do" | "story")
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-28">
                 <SelectValue placeholder="Action" />
               </SelectTrigger>
               <SelectContent>
@@ -192,7 +213,7 @@ export default function Demo() {
             </Select>
             <Input
               type="text"
-              placeholder="What do you do?"
+              placeholder={getPlaceholder(action, isRolling)}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
