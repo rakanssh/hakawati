@@ -52,6 +52,7 @@ export function OpenRouterClient(apiKey: string): LLMClient {
   }
 
   async function models(): Promise<LLMModel[]> {
+    console.debug(`Fetching models from OpenRouter`);
     const r = await fetch(`${base}/models`, {
       headers: {
         Authorization: `Bearer ${apiKey}`,
