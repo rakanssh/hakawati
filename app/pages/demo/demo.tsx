@@ -11,6 +11,15 @@ import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLLM } from "@/hooks/useLLM";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function Demo() {
   const {
@@ -25,16 +34,39 @@ export default function Demo() {
   const [input, setInput] = useState("");
   const { send, loading } = useLLM();
   const { model } = useSettingsStore();
+  const [action, setAction] = useState<"say" | "do" | "story">("do");
+  const [isRolling, setIsRolling] = useState(false);
 
   const handleSubmit = async () => {
     if (!input.trim() || !model) return;
 
-    const playerInput = input;
+    const playerInput = isRolling
+      ? input + ` [Roll: ${Math.floor(Math.random() * 100) + 1}/100]`
+      : input;
+
+    let finalMessage;
+    switch (action) {
+      case "do":
+        finalMessage = `You ${
+          playerInput.charAt(0).toLowerCase() + playerInput.slice(1)
+        }`;
+        break;
+      case "say":
+        finalMessage = `You say: "${
+          playerInput.charAt(0).toLowerCase() + playerInput.slice(1)
+        }"`;
+        break;
+      case "story":
+        finalMessage =
+          playerInput.charAt(0).toUpperCase() + playerInput.slice(1);
+        break;
+    }
+
     addLog({
       id: crypto.randomUUID(),
       role: "player",
-      text: playerInput,
-      mode: "do",
+      text: finalMessage,
+      mode: action,
     });
     setInput("");
 
@@ -116,14 +148,15 @@ export default function Demo() {
     <SidebarProvider defaultOpen={true}>
       <AppSidebar />
       <SidebarInset className="flex flex-col h-screen overflow-hidden">
+        <SidebarTrigger />
         <ScrollArea className="flex-1 p-4 min-h-0">
           {log.length > 0 ? (
             log.map((entry) => (
               <div key={entry.id} className="mb-4 whitespace-pre-wrap">
-                <span className="font-bold text-lg">
+                {/* <span className="font-bold text-lg">
                   {entry.role === "player" ? "You" : "GM"}:
-                </span>
-                <p className="inline ml-2">{entry.text}</p>
+                </span> */}
+                <p className="inline ">{entry.text}</p>
               </div>
             ))
           ) : (
@@ -134,7 +167,29 @@ export default function Demo() {
         </ScrollArea>
         <div className="border-t p-4">
           <div className="flex w-full items-center space-x-2">
-            <SidebarTrigger />
+            <Checkbox
+              checked={isRolling}
+              onCheckedChange={(checked) =>
+                setIsRolling(checked === "indeterminate" ? false : checked)
+              }
+              disabled={loading}
+            />
+            <Label>🎲</Label>
+            <Select
+              value={action}
+              onValueChange={(value) =>
+                setAction(value as "say" | "do" | "story")
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Action" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="do">Do</SelectItem>
+                <SelectItem value="say">Say</SelectItem>
+                <SelectItem value="story">Story</SelectItem>
+              </SelectContent>
+            </Select>
             <Input
               type="text"
               placeholder="What do you do?"
