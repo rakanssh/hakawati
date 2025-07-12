@@ -3,12 +3,12 @@ import * as React from "react";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon, BookOpenIcon, RedoIcon, UndoIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { useSettingsStore } from "@/store";
 import { useNavigate } from "react-router";
 import { useGameStore } from "@/store/useGameStore";
 import { Separator } from "@/components/ui/separator";
 import { InventoryCard, StatsCard } from "@/components/game";
+import { SettingsModal } from "@/components/layout";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const apiType = useSettingsStore((state) => state.apiType);
@@ -27,16 +27,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <Separator />
         <InventoryCard />
         <StatsCard />
-        <div className="flex flex-row gap-2">
-          <Button variant="outline" size="icon" onClick={undo}>
-            <UndoIcon className="w-4 h-4" />
-          </Button>
-          <Button className="flex-1" variant="outline" onClick={resetAllState}>
-            Reset
-          </Button>
-          <Button variant="outline" size="icon" onClick={redo}>
-            <RedoIcon className="w-4 h-4" />
-          </Button>
+        <div className="flex flex-col gap-2">
+          <SettingsModal />
+
+          <div className="flex flex-row gap-2">
+            <Button variant="outline" size="icon" onClick={undo}>
+              <UndoIcon className="w-4 h-4" />
+            </Button>
+            <Button
+              className="flex-1"
+              variant="outline"
+              onClick={resetAllState}
+            >
+              Reset
+            </Button>
+            <Button variant="outline" size="icon" onClick={redo}>
+              <RedoIcon className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </SidebarContent>
     </Sidebar>
