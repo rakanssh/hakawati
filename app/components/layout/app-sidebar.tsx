@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeftIcon, RedoIcon, UndoIcon } from "lucide-react";
+import { ArrowLeftIcon, BookOpenIcon, RedoIcon, UndoIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useSettingsStore } from "@/store";
 import { useNavigate } from "react-router";
@@ -17,12 +17,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="inset" className="bg-background" {...props}>
       <SidebarContent className="flex flex-col gap-4 bg-background">
-        <div className="flex flex-row items-center gap-2">
+        <div className="flex flex-row items-center gap-2 mt-2">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ArrowLeftIcon className="w-4 h-4" />
           </Button>
-          <h1 className="text-2xl font-bold">TingTing</h1>
-          <Badge variant="outline">{apiType}</Badge>
+          <BookOpenIcon className="w-5 h-5 mt-1" />
+          <h1 className="text-2xl font-bold">Hakawati</h1>
         </div>
         <Separator />
         <InventoryCard />

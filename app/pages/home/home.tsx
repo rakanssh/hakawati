@@ -24,7 +24,7 @@ import {
   CommandEmpty,
   CommandGroup,
 } from "@/components/ui/command";
-import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
+import { BookOpenIcon, CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Header } from "@/components/layout";
@@ -35,11 +35,12 @@ export default function Home() {
   const { models, loading } = useLLMProviders();
   const [open, setOpen] = useState(false);
   return (
-    <main className="flex flex-col items-center justify-center h-screen">
+    <main className="flex flex-col items-center justify-center h-screen ">
       <Header />
       {/* Title header */}
-      <header className="flex flex-col items-center justify-center">
-        <h1 className="text-4xl font-bold">TingTing</h1>
+      <header className="flex flex-col items-center justify-center ">
+        <BookOpenIcon className="w-10 h-10 mr-2" />
+        <h1 className="text-4xl font-bold ">Hakawati</h1>
       </header>
 
       <Card className="w-full max-w-md mt-8">
