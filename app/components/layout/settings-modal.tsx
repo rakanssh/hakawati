@@ -20,14 +20,15 @@ export function SettingsModal() {
       <DialogTrigger asChild>
         <Button variant="outline">Settings</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
         </DialogHeader>
-        <Tabs>
-          <TabsList>
+        <Tabs defaultValue="api">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="api">API</TabsTrigger>
-            {/* <TabsTrigger value="scenario">Scenario</TabsTrigger> */}
+            <TabsTrigger value="scenario">Scenario</TabsTrigger>
+            <TabsTrigger value="model">Model</TabsTrigger>
           </TabsList>
           <TabsContent value="api">
             <div className="flex flex-col gap-2">
@@ -43,6 +44,11 @@ export function SettingsModal() {
           <TabsContent value="scenario">
             <div className="flex flex-col gap-2">
               <Label>Scenario</Label>
+            </div>
+          </TabsContent>
+          <TabsContent value="model">
+            <div className="flex flex-col gap-2">
+              <Label>Model settings</Label>
             </div>
           </TabsContent>
         </Tabs>
