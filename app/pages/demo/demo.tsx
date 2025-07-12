@@ -73,7 +73,7 @@ export default function Demo() {
         break;
       case "say":
         finalMessage = `You say: "${
-          playerInput.charAt(0).toLowerCase() + playerInput.slice(1)
+          playerInput.charAt(0).toUpperCase() + playerInput.slice(1)
         }"`;
         break;
       case "story":

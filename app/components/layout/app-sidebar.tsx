@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, RedoIcon, UndoIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useSettingsStore } from "@/store";
 import { useNavigate } from "react-router";
@@ -13,7 +13,7 @@ import { InventoryCard, StatsCard } from "@/components/game";
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const apiType = useSettingsStore((state) => state.apiType);
   const navigate = useNavigate();
-  const { resetAllState } = useGameStore();
+  const { resetAllState, undo, redo } = useGameStore();
   return (
     <Sidebar variant="inset" className="bg-background" {...props}>
       <SidebarContent className="flex flex-col gap-4 bg-background">
@@ -27,9 +27,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <Separator />
         <InventoryCard />
         <StatsCard />
-        <Button variant="outline" onClick={resetAllState}>
-          Reset
-        </Button>
+        <div className="flex flex-row gap-2">
+          <Button variant="outline" size="icon" onClick={undo}>
+            <UndoIcon className="w-4 h-4" />
+          </Button>
+          <Button className="flex-1" variant="outline" onClick={resetAllState}>
+            Reset
+          </Button>
+          <Button variant="outline" size="icon" onClick={redo}>
+            <RedoIcon className="w-4 h-4" />
+          </Button>
+        </div>
       </SidebarContent>
     </Sidebar>
   );
