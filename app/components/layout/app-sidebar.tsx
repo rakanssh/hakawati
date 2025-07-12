@@ -9,11 +9,25 @@ import { useGameStore } from "@/store/useGameStore";
 import { Separator } from "@/components/ui/separator";
 import { InventoryCard, StatsCard } from "@/components/game";
 import { SettingsModal } from "@/components/layout";
+import { useState } from "react";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const apiType = useSettingsStore((state) => state.apiType);
   const navigate = useNavigate();
   const { resetAllState, undo, redo } = useGameStore();
+  const [confirmingReset, setConfirmingReset] = useState(false);
+
+  const handleReset = () => {
+    if (confirmingReset) {
+      resetAllState();
+      setConfirmingReset(false);
+    } else {
+      setConfirmingReset(true);
+      setTimeout(() => {
+        setConfirmingReset(false);
+      }, 3000);
+    }
+  };
   return (
     <Sidebar variant="inset" className="bg-background" {...props}>
       <SidebarContent className="flex flex-col gap-4 bg-background">
@@ -36,10 +50,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </Button>
             <Button
               className="flex-1"
-              variant="outline"
-              onClick={resetAllState}
+              variant={confirmingReset ? "destructive" : "outline"}
+              onClick={handleReset}
             >
-              Reset
+              {confirmingReset ? "Are you sure?" : "Reset"}
             </Button>
             <Button variant="outline" size="icon" onClick={redo}>
               <RedoIcon className="w-4 h-4" />
