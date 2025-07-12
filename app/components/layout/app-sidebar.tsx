@@ -3,7 +3,6 @@ import * as React from "react";
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon, BookOpenIcon, RedoIcon, UndoIcon } from "lucide-react";
-import { useSettingsStore } from "@/store";
 import { useNavigate } from "react-router";
 import { useGameStore } from "@/store/useGameStore";
 import { Separator } from "@/components/ui/separator";
@@ -12,7 +11,6 @@ import { SettingsModal } from "@/components/layout";
 import { useState } from "react";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const apiType = useSettingsStore((state) => state.apiType);
   const navigate = useNavigate();
   const { resetAllState, undo, redo } = useGameStore();
   const [confirmingReset, setConfirmingReset] = useState(false);

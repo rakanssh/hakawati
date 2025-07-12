@@ -1,14 +1,6 @@
 import { sendChat } from "@/services/llm";
-import {
-  ChatRequest,
-  ChatMessage,
-  LLMAction,
-  LLMModel,
-  LLMResponse,
-} from "@/services/llm/schema";
+import { LLMAction, LLMModel, LLMResponse } from "@/services/llm/schema";
 import { useGameStore } from "@/store/useGameStore";
-import { LogEntry } from "@/types/log.type";
-import { Stat } from "@/types/stats.type";
 import { useRef, useState } from "react";
 import { parseJsonStream } from "@/services/llm/streaming";
 import { buildMessage } from "@/services/llm/promptBuilder";
