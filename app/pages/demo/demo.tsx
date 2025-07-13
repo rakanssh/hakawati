@@ -55,7 +55,6 @@ export default function Demo() {
   const { model } = useSettingsStore();
   const [action, setAction] = useState<"say" | "do" | "story">("do");
   const [isRolling, setIsRolling] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
 
   const executeLlmSend = (message: string) => {
     if (!model) {
@@ -246,9 +245,7 @@ export default function Demo() {
               type="submit"
               onClick={handleRetry}
               disabled={loading}
-              variant={isHovering ? "outline" : "ghost"}
-              onMouseEnter={() => setIsHovering(true)}
-              onMouseLeave={() => setIsHovering(false)}
+              variant="interactive-ghost"
             >
               <RefreshCwIcon strokeWidth={1.5} />
             </Button>

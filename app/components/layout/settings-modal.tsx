@@ -12,13 +12,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { ModelSelect } from "@/components/layout";
+import { SettingsIcon } from "lucide-react";
+import { useState } from "react";
 
 export function SettingsModal() {
   const { apiKey, setApiKey } = useSettingsStore();
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline">Settings</Button>
+        <Button variant="interactive-ghost" size="icon">
+          <SettingsIcon className="w-4 h-4" />
+        </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
