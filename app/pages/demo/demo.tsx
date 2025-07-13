@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DicesIcon } from "lucide-react";
+import { DicesIcon, RefreshCwIcon } from "lucide-react";
 
 function getPlaceholder(action: "say" | "do" | "story", isRolling: boolean) {
   let placeholder = "";
@@ -48,46 +48,20 @@ export default function Demo() {
     removeFromInventory,
     addToStats,
     updateLogEntry,
+    removeLastLogEntry,
   } = useGameStore();
   const [input, setInput] = useState("");
   const { send, loading } = useLLM();
   const { model } = useSettingsStore();
   const [action, setAction] = useState<"say" | "do" | "story">("do");
   const [isRolling, setIsRolling] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
 
-  const handleSubmit = async () => {
-    if (!input.trim() || !model) return;
-
-    const playerInput = isRolling
-      ? input + ` [Roll: ${Math.floor(Math.random() * 100) + 1}/100]`
-      : input;
-
-    let finalMessage;
-    switch (action) {
-      case "do":
-        finalMessage = `You ${
-          playerInput.charAt(0).toLowerCase() + playerInput.slice(1)
-        }`;
-        break;
-      case "say":
-        finalMessage = `You say: "${
-          playerInput.charAt(0).toUpperCase() + playerInput.slice(1)
-        }"`;
-        break;
-      case "story":
-        finalMessage =
-          playerInput.charAt(0).toUpperCase() + playerInput.slice(1);
-        break;
+  const executeLlmSend = (message: string) => {
+    if (!model) {
+      console.error("LLM model not configured.");
+      return;
     }
-
-    addLog({
-      id: crypto.randomUUID(),
-      role: "player",
-      text: finalMessage,
-      mode: action,
-    });
-    setInput("");
-
     const gmResponseId = crypto.randomUUID();
     addLog({
       id: gmResponseId,
@@ -98,7 +72,7 @@ export default function Demo() {
 
     let storyContent = "";
 
-    send(finalMessage, model, {
+    send(message, model, {
       onStoryStream: (storyChunk) => {
         storyContent += storyChunk;
         updateLogEntry(gmResponseId, { text: storyContent });
@@ -150,6 +124,41 @@ export default function Demo() {
     });
   };
 
+  const handleSubmit = async () => {
+    if (!input.trim() || !model) return;
+
+    const playerInput = isRolling
+      ? input + ` [Roll: ${Math.floor(Math.random() * 100) + 1}/100]`
+      : input;
+
+    let finalMessage;
+    switch (action) {
+      case "do":
+        finalMessage = `You ${
+          playerInput.charAt(0).toLowerCase() + playerInput.slice(1)
+        }`;
+        break;
+      case "say":
+        finalMessage = `You say: "${
+          playerInput.charAt(0).toUpperCase() + playerInput.slice(1)
+        }"`;
+        break;
+      case "story":
+        finalMessage =
+          playerInput.charAt(0).toUpperCase() + playerInput.slice(1);
+        break;
+    }
+
+    addLog({
+      id: crypto.randomUUID(),
+      role: "player",
+      text: finalMessage,
+      mode: action,
+    });
+    setInput("");
+    executeLlmSend(finalMessage);
+  };
+
   // Prevent body and html from scrolling
   //TODO: Find the proper way to do this
   useEffect(() => {
@@ -161,6 +170,20 @@ export default function Demo() {
       document.documentElement.style.overflow = "";
     };
   }, []);
+
+  const handleRetry = () => {
+    if (loading) return;
+
+    const lastEntry = log.at(-1);
+    const secondLastEntry = log.at(-2);
+
+    if (lastEntry?.role === "gm" && secondLastEntry?.role === "player") {
+      removeLastLogEntry();
+      executeLlmSend(secondLastEntry.text);
+    } else {
+      console.warn("Cannot retry, log state is not as expected.");
+    }
+  };
 
   return (
     <SidebarProvider defaultOpen={true}>
@@ -218,6 +241,16 @@ export default function Demo() {
             />
             <Button type="submit" onClick={handleSubmit} disabled={loading}>
               {loading ? "Thinking..." : "Send"}
+            </Button>
+            <Button
+              type="submit"
+              onClick={handleRetry}
+              disabled={loading}
+              variant={isHovering ? "outline" : "ghost"}
+              onMouseEnter={() => setIsHovering(true)}
+              onMouseLeave={() => setIsHovering(false)}
+            >
+              <RefreshCwIcon strokeWidth={1.5} />
             </Button>
           </div>
         </div>
