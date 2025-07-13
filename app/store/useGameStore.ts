@@ -23,6 +23,115 @@ interface GameStoreType {
   redo: () => void;
 }
 
+//TODO: Find a better way to execute/undo actions
+const undoEntryActions = (
+  state: GameStoreType,
+  entry: LogEntry
+): Partial<GameStoreType> => {
+  if (!entry.actions) {
+    return {};
+  }
+
+  let newStats = [...state.stats];
+  let newInventory = [...state.inventory];
+
+  for (const action of [...entry.actions].reverse()) {
+    switch (action.type) {
+      case "MODIFY_STAT":
+        const statValue = action.payload.value;
+        if (action.payload.name && statValue !== undefined) {
+          newStats = newStats.map((stat) =>
+            stat.name === action.payload.name
+              ? {
+                  ...stat,
+                  value: Math.min(
+                    Math.max(stat.value - statValue, stat.range[0]),
+                    stat.range[1]
+                  ),
+                }
+              : stat
+          );
+        }
+        break;
+      case "ADD_TO_INVENTORY":
+        if (action.payload.item) {
+          newInventory = newInventory.filter((i) => i !== action.payload.item);
+        }
+        break;
+      case "REMOVE_FROM_INVENTORY":
+        if (action.payload.item) {
+          newInventory = [...newInventory, action.payload.item];
+        }
+        break;
+      case "ADD_TO_STATS":
+        if (action.payload.name) {
+          newStats = newStats.filter(
+            (stat) => stat.name !== action.payload.name
+          );
+        }
+        break;
+    }
+  }
+  return { stats: newStats, inventory: newInventory };
+};
+
+const redoEntryActions = (
+  state: GameStoreType,
+  entry: LogEntry
+): Partial<GameStoreType> => {
+  if (!entry.actions) {
+    return {};
+  }
+
+  let newStats = [...state.stats];
+  let newInventory = [...state.inventory];
+
+  for (const action of entry.actions) {
+    switch (action.type) {
+      case "MODIFY_STAT":
+        const modifyValue = action.payload.value;
+        if (action.payload.name && modifyValue !== undefined) {
+          newStats = newStats.map((stat) =>
+            stat.name === action.payload.name
+              ? {
+                  ...stat,
+                  value: Math.min(
+                    Math.max(stat.value + modifyValue, stat.range[0]),
+                    stat.range[1]
+                  ),
+                }
+              : stat
+          );
+        }
+        break;
+      case "ADD_TO_INVENTORY":
+        if (action.payload.item) {
+          newInventory = [...newInventory, action.payload.item];
+        }
+        break;
+      case "REMOVE_FROM_INVENTORY":
+        if (action.payload.item) {
+          newInventory = newInventory.filter((i) => i !== action.payload.item);
+        }
+        break;
+      case "ADD_TO_STATS":
+        const addValue = action.payload.value;
+        if (action.payload.name && addValue !== undefined) {
+          newStats = [
+            ...newStats,
+            {
+              name: action.payload.name,
+              value: addValue,
+              range: [0, 100],
+            },
+          ];
+        }
+        break;
+    }
+  }
+  return { stats: newStats, inventory: newInventory };
+};
+
 export const useGameStore = create<GameStoreType>()(
   persist(
     (set) => ({
@@ -38,7 +147,14 @@ export const useGameStore = create<GameStoreType>()(
       undoStack: [],
       addLog: (log: LogEntry) => set((state) => ({ log: [...state.log, log] })),
       removeLastLogEntry: () =>
-        set((state) => ({ log: state.log.slice(0, -1) })),
+        set((state) => {
+          const lastEntry = state.log.at(-1);
+          if (!lastEntry) {
+            return {};
+          }
+          const stateChanges = undoEntryActions(state, lastEntry);
+          return { ...stateChanges, log: state.log.slice(0, -1) };
+        }),
       updateLogEntry: (id, updates) =>
         set((state) => ({
           log: state.log.map((entry) =>
@@ -92,24 +208,28 @@ export const useGameStore = create<GameStoreType>()(
         set((state) => {
           const lastLog = state.log[state.log.length - 1];
           if (lastLog) {
+            const stateChanges = undoEntryActions(state, lastLog);
             return {
+              ...stateChanges,
               log: state.log.slice(0, -1),
               undoStack: [...state.undoStack, lastLog],
             };
           }
-          return { log: state.log, undoStack: state.undoStack };
+          return {};
         });
       },
       redo: () => {
         set((state) => {
           const lastLog = state.undoStack[state.undoStack.length - 1];
           if (lastLog) {
+            const stateChanges = redoEntryActions(state, lastLog);
             return {
+              ...stateChanges,
               log: [...state.log, lastLog],
               undoStack: state.undoStack.slice(0, -1),
             };
           }
-          return { log: state.log, undoStack: state.undoStack };
+          return {};
         });
       },
     }),
