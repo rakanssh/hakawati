@@ -40,8 +40,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <Separator />
         <InventoryCard />
         <StatsCard />
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-row gap-2">
+        <div className="flex flex-col gap-2 mt-auto ">
+          <Separator />
+          <div className="flex flex-row gap-2 justify-between mt-2">
             <Button variant="interactive-ghost" size="icon" onClick={undo}>
               <UndoIcon className="w-4 h-4" />
             </Button>
