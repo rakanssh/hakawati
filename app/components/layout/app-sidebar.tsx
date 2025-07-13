@@ -29,31 +29,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="inset" className="bg-background" {...props}>
       <SidebarContent className="flex flex-col gap-4 bg-background">
-        <div className="flex flex-row items-center gap-2 mt-2">
+        <div className="flex flex-row items-center justify-between gap-2 mt-2">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ArrowLeftIcon className="w-4 h-4" />
           </Button>
           <BookOpenIcon className="w-5 h-5 mt-1" />
           <h1 className="text-2xl font-bold">Hakawati</h1>
+          <SettingsModal />
         </div>
         <Separator />
         <InventoryCard />
         <StatsCard />
         <div className="flex flex-col gap-2">
-          <SettingsModal />
-
           <div className="flex flex-row gap-2">
-            <Button variant="outline" size="icon" onClick={undo}>
+            <Button variant="interactive-ghost" size="icon" onClick={undo}>
               <UndoIcon className="w-4 h-4" />
             </Button>
             <Button
               className="flex-1"
-              variant={confirmingReset ? "destructive" : "outline"}
+              variant={confirmingReset ? "destructive" : "interactive-ghost"}
               onClick={handleReset}
             >
               {confirmingReset ? "Are you sure?" : "Reset"}
             </Button>
-            <Button variant="outline" size="icon" onClick={redo}>
+            <Button variant="interactive-ghost" size="icon" onClick={redo}>
               <RedoIcon className="w-4 h-4" />
             </Button>
           </div>

@@ -11,14 +11,17 @@ export function InventoryCard() {
   const { inventory } = useGameStore();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
   return (
     <div ref={containerRef} className="relative overflow-hidden">
       <Card>
         <CardHeader className="text-center">
           <div className="flex flex-row items-center justify-between">
             <CardTitle className="text-sm">Inventory</CardTitle>
-            <Button variant="outline" size="icon" onClick={() => setOpen(true)}>
+            <Button
+              variant="interactive-ghost"
+              size="icon"
+              onClick={() => setOpen(true)}
+            >
               <PlusIcon className="w-4 h-4" />
             </Button>
           </div>
