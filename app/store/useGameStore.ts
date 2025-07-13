@@ -9,6 +9,7 @@ interface GameStoreType {
   log: LogEntry[];
   undoStack: LogEntry[];
   addLog: (log: LogEntry) => void;
+  removeLastLogEntry: () => void;
   updateLogEntry: (id: string, updates: Partial<LogEntry>) => void;
   modifyStat: (name: string, value: number) => void;
   addToStats: (stat: Stat) => void;
@@ -36,6 +37,8 @@ export const useGameStore = create<GameStoreType>()(
       log: [],
       undoStack: [],
       addLog: (log: LogEntry) => set((state) => ({ log: [...state.log, log] })),
+      removeLastLogEntry: () =>
+        set((state) => ({ log: state.log.slice(0, -1) })),
       updateLogEntry: (id, updates) =>
         set((state) => ({
           log: state.log.map((entry) =>
