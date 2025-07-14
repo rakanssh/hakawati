@@ -5,7 +5,6 @@ import {
   SidebarInset,
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -19,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DicesIcon, RefreshCwIcon } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 function getPlaceholder(action: "say" | "do" | "story", isRolling: boolean) {
   let placeholder = "";
@@ -192,7 +192,10 @@ export default function Demo() {
         <ScrollArea className="flex-1 p-4 min-h-0">
           {log.length > 0 ? (
             log.map((entry) => (
-              <div key={entry.id} className="mb-4 whitespace-pre-wrap">
+              <div
+                key={entry.id}
+                className=" whitespace-pre-wrap hover:bg-accent/50 rounded-md p-1 cursor-pointer"
+              >
                 {/* <span className="font-bold text-lg">
                   {entry.role === "player" ? "You" : "GM"}:
                 </span> */}
@@ -231,12 +234,18 @@ export default function Demo() {
                 <SelectItem value="story">Story</SelectItem>
               </SelectContent>
             </Select>
-            <Input
-              type="text"
+            <Textarea
               placeholder={getPlaceholder(action, isRolling)}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
+              rows={1}
+              className="resize-none"
             />
             <Button type="submit" onClick={handleSubmit} disabled={loading}>
               {loading ? "Thinking..." : "Send"}
