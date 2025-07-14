@@ -33,7 +33,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ArrowLeftIcon className="w-4 h-4" />
           </Button>
-          <BookOpenIcon className="w-5 h-5 mt-1" />
           <h1 className="text-2xl font-bold">Hakawati</h1>
           <SettingsModal />
         </div>
