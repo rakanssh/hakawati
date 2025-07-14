@@ -7,8 +7,8 @@ export function StatsCard() {
   return (
     <div>
       {" "}
-      <Card>
-        <CardHeader className="text-center">
+      <Card className="py-2">
+        <CardHeader>
           <CardTitle className="text-sm">Stats</CardTitle>
           <Separator />
         </CardHeader>

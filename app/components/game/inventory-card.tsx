@@ -13,8 +13,8 @@ export function InventoryCard() {
   const containerRef = useRef<HTMLDivElement>(null);
   return (
     <div ref={containerRef} className="relative overflow-hidden">
-      <Card>
-        <CardHeader className="text-center">
+      <Card className="py-2 ">
+        <CardHeader>
           <div className="flex flex-row items-center justify-between">
             <CardTitle className="text-sm">Inventory</CardTitle>
             <Button
