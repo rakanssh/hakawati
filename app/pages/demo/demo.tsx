@@ -209,9 +209,9 @@ export default function Demo() {
           )}
         </ScrollArea>
         <div className="border-t p-4">
-          <div className="flex w-full items-center space-x-2">
+          <div className="flex w-full items-end space-x-2">
             <Button
-              variant={isRolling ? "default" : "outline"}
+              variant={isRolling ? "default" : "interactive-ghost"}
               size="icon"
               onClick={() => setIsRolling(!isRolling)}
               disabled={loading}
