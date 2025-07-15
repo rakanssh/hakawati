@@ -6,9 +6,7 @@ const ENCODING = "cl100k_base";
 
 let tokenizer: Tiktoken | null = null;
 function getTokenizer() {
-  if (!tokenizer) {
-    tokenizer = get_encoding(ENCODING);
-  }
+  tokenizer ??= get_encoding(ENCODING);
   return tokenizer;
 }
 
