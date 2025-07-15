@@ -11,6 +11,9 @@ function getTokenizer() {
 }
 
 export function countTokens(text: string): number {
+  if (!text || text.length === 0) {
+    return 0;
+  }
   const tokenizer = getTokenizer();
   return tokenizer.encode(text).length;
 }
