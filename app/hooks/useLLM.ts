@@ -4,10 +4,12 @@ import { useGameStore } from "@/store/useGameStore";
 import { useRef, useState } from "react";
 import { parseJsonStream } from "@/services/llm/streaming";
 import { buildMessage } from "@/services/llm/promptBuilder";
+import { useScenarioStore } from "@/store/useScenarioStore";
 
 export function useLLM() {
   const [loading, setLoading] = useState(false);
   const { log, stats, inventory } = useGameStore();
+  const { scenario, storyCards } = useScenarioStore();
   const abortRef = useRef<AbortController | null>(null);
 
   const send = async (
@@ -24,7 +26,16 @@ export function useLLM() {
     setLoading(true);
 
     try {
-      const req = buildMessage({ log, stats, inventory, lastMessage, model });
+      const req = buildMessage({
+        log,
+        stats,
+        inventory,
+        lastMessage,
+        model,
+        scenario,
+        storyCards,
+      });
+      console.debug(`Sending request to ${model.id}:`, req);
       const res = await sendChat(req, abortRef.current?.signal);
 
       if (res.iterator) {
