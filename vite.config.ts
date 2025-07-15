@@ -2,12 +2,14 @@ import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 import { reactRouter } from "@react-router/dev/vite";
+import wasm from "vite-plugin-wasm";
+import topLevelAwait from "vite-plugin-top-level-await";
 
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-  plugins: [reactRouter(), tailwindcss()],
+  plugins: [reactRouter(), tailwindcss(), wasm(), topLevelAwait()],
 
   resolve: {
     alias: {
