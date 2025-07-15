@@ -20,7 +20,7 @@ export const useScenarioStore = create<ScenarioStoreType>()(
       scenario: {
         name: "Default",
         description: "",
-        authorNotes: "",
+        authorNote: "",
         initialStats: [],
         initialInventory: [],
         initialStoryCards: [],
