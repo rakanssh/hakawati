@@ -18,6 +18,7 @@ export function useLLM() {
     callbacks: {
       onStoryStream: (storyChunk: string) => void;
       onActionsReady: (actions: LLMAction[]) => void;
+      onActionParseError: () => void;
       onError: (error: any) => void;
     }
   ) => {
@@ -40,12 +41,17 @@ export function useLLM() {
 
       if (res.iterator) {
         const stream = parseJsonStream<LLMResponse>(res.iterator);
-        for await (const { story, actions } of stream) {
-          if (story) {
-            callbacks.onStoryStream(story);
-          }
-          if (actions) {
-            callbacks.onActionsReady(actions);
+        for await (const chunk of stream) {
+          if ("actionParseError" in chunk && chunk.actionParseError) {
+            callbacks.onActionParseError();
+          } else {
+            const { story, actions } = chunk as Partial<LLMResponse>;
+            if (story) {
+              callbacks.onStoryStream(story);
+            }
+            if (actions) {
+              callbacks.onActionsReady(actions);
+            }
           }
         }
       } else {

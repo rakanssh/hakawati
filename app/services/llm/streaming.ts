@@ -18,7 +18,7 @@ export async function* parseOpenAIStream(body: ReadableStream<Uint8Array>) {
 
 export async function* parseJsonStream<T>(
   iterator: AsyncIterable<string>
-): AsyncGenerator<Partial<T>> {
+): AsyncGenerator<Partial<T> | { actionParseError: boolean }> {
   let buffer = "";
   let storyBuffer = "";
   let inStory = false;
@@ -80,7 +80,10 @@ export async function* parseJsonStream<T>(
         }
       } catch (e2) {
         console.warn("Could not parse extracted JSON object:", jsonString, e2);
+        yield { actionParseError: true };
       }
+    } else {
+      yield { actionParseError: true };
     }
   }
 }
