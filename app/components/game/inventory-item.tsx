@@ -9,17 +9,18 @@ import {
 } from "../ui/dropdown-menu";
 import { useState, KeyboardEvent } from "react";
 import { Input } from "../ui/input";
+import { Item } from "@/types";
 
-export function InventoryItem({ item }: { item: string }) {
-  const { removeFromInventory, updateItem } = useGameStore();
+export function InventoryItem({ item }: { item: Item }) {
+  const { updateItem, removeFromInventory } = useGameStore();
   const [isEditing, setIsEditing] = useState(false);
-  const [editedValue, setEditedValue] = useState(item);
+  const [editedValue, setEditedValue] = useState(item.name);
 
   const handleFinishEditing = () => {
-    if (editedValue.trim() && editedValue !== item) {
-      updateItem(item, editedValue);
+    if (editedValue.trim() && editedValue !== item.name) {
+      updateItem(item.id, { name: editedValue });
     } else {
-      setEditedValue(item);
+      setEditedValue(item.name);
     }
     setIsEditing(false);
   };
@@ -28,7 +29,7 @@ export function InventoryItem({ item }: { item: string }) {
     if (e.key === "Enter") {
       handleFinishEditing();
     } else if (e.key === "Escape") {
-      setEditedValue(item);
+      setEditedValue(item.name);
       setIsEditing(false);
     }
   };
@@ -47,10 +48,10 @@ export function InventoryItem({ item }: { item: string }) {
       ) : (
         <DropdownMenu>
           <DropdownMenuTrigger>
-            <Badge variant="outline">{item}</Badge>
+            <Badge variant="outline">{item.name}</Badge>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => removeFromInventory(item)}>
+            <DropdownMenuItem onClick={() => removeFromInventory(item.id)}>
               <TrashIcon className="w-4 h-4" />
               Remove
             </DropdownMenuItem>

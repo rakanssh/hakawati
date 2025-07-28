@@ -56,7 +56,7 @@ export default function Demo() {
     addLog,
     modifyStat,
     addToInventory,
-    removeFromInventory,
+    removeFromInventoryByName,
     addToStats,
     updateLogEntry,
     removeLastLogEntry,
@@ -109,7 +109,7 @@ export default function Demo() {
                 break;
               case "REMOVE_FROM_INVENTORY":
                 if (action.payload.item) {
-                  removeFromInventory(action.payload.item);
+                  removeFromInventoryByName(action.payload.item);
                 }
                 break;
               case "ADD_TO_STATS":
@@ -216,26 +216,23 @@ export default function Demo() {
                 {/* <span className="font-bold text-lg">
                   {entry.role === "player" ? "You" : "GM"}:
                 </span> */}
+
+                <p className="inline ">{entry.text}</p>
                 {entry.isActionError && (
-                  <>
-                    <p className="inline ">{entry.text}</p>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="mr-1 ml-1 text-muted-foreground hover:text-foreground"
-                        >
-                          <MessageCircleWarning />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="text-xs">
-                        <p>
-                          Failed to parse actions returned with this message.
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="mr-1 ml-1 text-muted-foreground hover:text-foreground"
+                      >
+                        <MessageCircleWarning />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      <p>Failed to parse actions returned with this message.</p>
+                    </TooltipContent>
+                  </Tooltip>
                 )}
               </div>
             ))
