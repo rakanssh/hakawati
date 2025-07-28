@@ -17,8 +17,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DicesIcon, RefreshCwIcon } from "lucide-react";
+import {
+  DicesIcon,
+  FileWarningIcon,
+  InfoIcon,
+  MessageCircleWarning,
+  RefreshCwIcon,
+} from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 function getPlaceholder(action: "say" | "do" | "story", isRolling: boolean) {
   let placeholder = "";
@@ -74,7 +85,9 @@ export default function Demo() {
     send(message, model, {
       onStoryStream: (storyChunk) => {
         storyContent += storyChunk;
-        updateLogEntry(gmResponseId, { text: storyContent });
+        updateLogEntry(gmResponseId, {
+          text: storyContent,
+        });
       },
       onActionsReady: (actions) => {
         console.debug(
@@ -113,6 +126,10 @@ export default function Demo() {
             }
           }
         }
+      },
+      onActionParseError: () => {
+        console.warn("Failed to parse actions from LLM response");
+        updateLogEntry(gmResponseId, { isActionError: true });
       },
       onError: (error) => {
         console.error("LLM Error:", error);
@@ -199,7 +216,27 @@ export default function Demo() {
                 {/* <span className="font-bold text-lg">
                   {entry.role === "player" ? "You" : "GM"}:
                 </span> */}
-                <p className="inline ">{entry.text}</p>
+                {entry.isActionError && (
+                  <>
+                    <p className="inline ">{entry.text}</p>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="mr-1 ml-1 text-muted-foreground hover:text-foreground"
+                        >
+                          <MessageCircleWarning />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        <p>
+                          Failed to parse actions returned with this message.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </>
+                )}
               </div>
             ))
           ) : (

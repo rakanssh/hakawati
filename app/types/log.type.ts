@@ -5,5 +5,6 @@ export type LogEntry = {
   role: "player" | "gm";
   mode?: "say" | "do" | "story";
   text: string;
+  isActionError?: boolean;
   actions?: LLMAction[];
 };
