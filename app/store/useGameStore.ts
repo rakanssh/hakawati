@@ -1,11 +1,12 @@
-import { LogEntry } from "@/types";
+import { Item, LogEntry } from "@/types";
 import { Stat } from "@/types/stats.type";
+import { nanoid } from "nanoid";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 interface GameStoreType {
   stats: Stat[];
-  inventory: string[];
+  inventory: Item[];
   log: LogEntry[];
   undoStack: LogEntry[];
   addLog: (log: LogEntry) => void;
@@ -14,9 +15,10 @@ interface GameStoreType {
   modifyStat: (name: string, value: number) => void;
   addToStats: (stat: Stat) => void;
   removeFromStats: (name: string) => void;
-  addToInventory: (item: string) => void;
-  removeFromInventory: (item: string) => void;
-  updateItem: (item: string, updates: string) => void;
+  addToInventory: (itemName: string) => void;
+  removeFromInventory: (id: string) => void;
+  removeFromInventoryByName: (itemName: string) => void;
+  updateItem: (id: string, updates: Partial<Item>) => void;
   clearInventory: () => void;
   resetAllState: () => void;
   undo: () => void;
@@ -36,16 +38,18 @@ const undoEntryActions = (
   let newInventory = [...state.inventory];
 
   for (const action of [...entry.actions].reverse()) {
+    let statValue: number | undefined;
+    let item: Item | undefined;
     switch (action.type) {
       case "MODIFY_STAT":
-        const statValue = action.payload.value;
+        statValue = action.payload.value;
         if (action.payload.name && statValue !== undefined) {
           newStats = newStats.map((stat) =>
             stat.name === action.payload.name
               ? {
                   ...stat,
                   value: Math.min(
-                    Math.max(stat.value - statValue, stat.range[0]),
+                    Math.max(stat.value - statValue!, stat.range[0]),
                     stat.range[1]
                   ),
                 }
@@ -55,12 +59,21 @@ const undoEntryActions = (
         break;
       case "ADD_TO_INVENTORY":
         if (action.payload.item) {
-          newInventory = newInventory.filter((i) => i !== action.payload.item);
+          const item = newInventory.find((i) => i.name === action.payload.item);
+          if (item) {
+            newInventory = newInventory.filter((i) => i.id !== item.id);
+          }
         }
         break;
       case "REMOVE_FROM_INVENTORY":
         if (action.payload.item) {
-          newInventory = [...newInventory, action.payload.item];
+          newInventory = [
+            ...newInventory,
+            {
+              id: nanoid(),
+              name: action.payload.item,
+            },
+          ];
         }
         break;
       case "ADD_TO_STATS":
@@ -87,16 +100,18 @@ const redoEntryActions = (
   let newInventory = [...state.inventory];
 
   for (const action of entry.actions) {
+    let modifyValue: number | undefined;
+    let addValue: number | undefined;
     switch (action.type) {
       case "MODIFY_STAT":
-        const modifyValue = action.payload.value;
+        modifyValue = action.payload.value;
         if (action.payload.name && modifyValue !== undefined) {
           newStats = newStats.map((stat) =>
             stat.name === action.payload.name
               ? {
                   ...stat,
                   value: Math.min(
-                    Math.max(stat.value + modifyValue, stat.range[0]),
+                    Math.max(stat.value + modifyValue!, stat.range[0]),
                     stat.range[1]
                   ),
                 }
@@ -106,16 +121,25 @@ const redoEntryActions = (
         break;
       case "ADD_TO_INVENTORY":
         if (action.payload.item) {
-          newInventory = [...newInventory, action.payload.item];
+          newInventory = [
+            ...newInventory,
+            {
+              id: nanoid(),
+              name: action.payload.item,
+            },
+          ];
         }
         break;
       case "REMOVE_FROM_INVENTORY":
         if (action.payload.item) {
-          newInventory = newInventory.filter((i) => i !== action.payload.item);
+          const item = newInventory.find((i) => i.name === action.payload.item);
+          if (item) {
+            newInventory = newInventory.filter((i) => i.id !== item.id);
+          }
         }
         break;
       case "ADD_TO_STATS":
-        const addValue = action.payload.value;
+        addValue = action.payload.value;
         if (action.payload.name && addValue !== undefined) {
           newStats = [
             ...newStats,
@@ -181,15 +205,29 @@ export const useGameStore = create<GameStoreType>()(
         set((state) => ({
           stats: state.stats.filter((stat) => stat.name !== name),
         })),
-      addToInventory: (item: string) =>
-        set((state) => ({ inventory: [...state.inventory, item] })),
-      removeFromInventory: (item: string) =>
+      addToInventory: (itemName: string) =>
         set((state) => ({
-          inventory: state.inventory.filter((i) => i !== item),
+          inventory: [
+            ...state.inventory,
+            {
+              id: nanoid(),
+              name: itemName,
+            },
+          ],
         })),
-      updateItem: (item: string, updates: string) =>
+      removeFromInventoryByName: (itemName: string) =>
         set((state) => ({
-          inventory: state.inventory.map((i) => (i === item ? updates : i)),
+          inventory: state.inventory.filter((i) => i.name !== itemName),
+        })),
+      removeFromInventory: (id: string) =>
+        set((state) => ({
+          inventory: state.inventory.filter((i) => i.id !== id),
+        })),
+      updateItem: (id: string, updates: Partial<Item>) =>
+        set((state) => ({
+          inventory: state.inventory.map((i) =>
+            i.id === id ? { ...i, ...updates } : i
+          ),
         })),
       clearInventory: () => set({ inventory: [] }),
       resetAllState: () =>
