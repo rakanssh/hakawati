@@ -17,13 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DicesIcon,
-  FileWarningIcon,
-  InfoIcon,
-  MessageCircleWarning,
-  RefreshCwIcon,
-} from "lucide-react";
+import { DicesIcon, MessageCircleWarning, RefreshCwIcon } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,

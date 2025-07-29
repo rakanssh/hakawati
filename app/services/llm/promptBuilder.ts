@@ -5,6 +5,7 @@ import { GM_SYSTEM_PROMPT } from "@/prompts/system";
 import { countMessageTokens, countTokens } from "./tokenCounter";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { Scenario, StoryCard } from "@/types/context.type";
+import { Item } from "@/types";
 
 function injectStoryCards(text: string, storyCards: StoryCard[]): string {
   let storyCardInjections = "";
@@ -29,7 +30,7 @@ function injectStoryCards(text: string, storyCards: StoryCard[]): string {
 interface BuildMessageParams {
   log: LogEntry[];
   stats: Stat[];
-  inventory: string[];
+  inventory: Item[];
   lastMessage: string;
   scenario: Scenario;
   storyCards: StoryCard[];
@@ -48,7 +49,7 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
   const gameState = `
 **Game State:**
 - Stats: ${JSON.stringify(stats)}
-- Inventory: ${JSON.stringify(inventory)}
+- Inventory: ${JSON.stringify(inventory.map((item) => item.name))}
 `;
   const userMessageContent = injectStoryCards(lastMessage, storyCards);
   const userMessage = `${gameState}\n\n${userMessageContent}`;

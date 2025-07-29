@@ -39,7 +39,6 @@ const undoEntryActions = (
 
   for (const action of [...entry.actions].reverse()) {
     let statValue: number | undefined;
-    let item: Item | undefined;
     switch (action.type) {
       case "MODIFY_STAT":
         statValue = action.payload.value;

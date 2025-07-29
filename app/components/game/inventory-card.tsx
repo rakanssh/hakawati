@@ -31,7 +31,7 @@ export function InventoryCard() {
           {inventory.length > 0 ? (
             <ul className="flex flex-col gap-2">
               {inventory.map((item) => (
-                <li key={item}>
+                <li key={item.id}>
                   <InventoryItem item={item} />
                 </li>
               ))}

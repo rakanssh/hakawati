@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { ArrowLeftIcon, BookOpenIcon, RedoIcon, UndoIcon } from "lucide-react";
+import { ArrowLeftIcon, RedoIcon, UndoIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useGameStore } from "@/store/useGameStore";
 import { Separator } from "@/components/ui/separator";
