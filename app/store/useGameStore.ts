@@ -15,6 +15,7 @@ interface GameStoreType {
   modifyStat: (name: string, value: number) => void;
   addToStats: (stat: Stat) => void;
   removeFromStats: (name: string) => void;
+  updateStat: (name: string, updates: Partial<Stat>) => void;
   addToInventory: (itemName: string) => void;
   removeFromInventory: (id: string) => void;
   removeFromInventoryByName: (itemName: string) => void;
@@ -203,6 +204,12 @@ export const useGameStore = create<GameStoreType>()(
       removeFromStats: (name: string) =>
         set((state) => ({
           stats: state.stats.filter((stat) => stat.name !== name),
+        })),
+      updateStat: (name: string, updates: Partial<Stat>) =>
+        set((state) => ({
+          stats: state.stats.map((stat) =>
+            stat.name === name ? { ...stat, ...updates } : stat
+          ),
         })),
       addToInventory: (itemName: string) =>
         set((state) => ({

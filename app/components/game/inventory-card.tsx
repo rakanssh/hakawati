@@ -3,26 +3,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Separator } from "../ui/separator";
 import { InventoryItem } from "./inventory-item";
 import { PlusIcon } from "lucide-react";
-import { Button } from "../ui/button";
+// Button is no longer used here after AddIconButton extraction
 import { useRef, useState } from "react";
-import { AddItem } from "./add-item";
+import { AddDrawer } from "./add-drawer";
+import { Input } from "../ui/input";
+import { AddIconButton } from "./add-icon-button";
 
-const InventoryButton = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
-  return (
-    <Button
-      className="p-0 w-6 h-5"
-      variant="ghost"
-      size="icon"
-      onClick={() => setOpen(true)}
-    >
-      <PlusIcon className="w-4 h-4" />
-    </Button>
-  );
-};
+const InventoryButton = ({ setOpen }: { setOpen: (open: boolean) => void }) => (
+  <AddIconButton onClick={() => setOpen(true)} ariaLabel="Add item" />
+);
 
 export function InventoryCard() {
-  const { inventory } = useGameStore();
+  const { inventory, addToInventory } = useGameStore();
   const [open, setOpen] = useState(false);
+  const [itemName, setItemName] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   return (
     <div ref={containerRef} className="relative overflow-hidden">
@@ -47,7 +41,29 @@ export function InventoryCard() {
             <p className="text-muted-foreground">Your inventory is empty.</p>
           )}
         </CardContent>
-        <AddItem open={open} setOpen={setOpen} containerRef={containerRef} />
+        <AddDrawer
+          open={open}
+          setOpen={(o) => {
+            setOpen(o);
+            if (!o) setItemName("");
+          }}
+          containerRef={containerRef}
+          onSubmit={() => {
+            if (itemName.trim()) {
+              addToInventory(itemName.trim());
+              setItemName("");
+            }
+          }}
+          submitDisabled={!itemName.trim()}
+          submitIcon={<PlusIcon className="w-4 h-4" />}
+          submitAriaLabel="Add item"
+        >
+          <Input
+            placeholder="Item name"
+            value={itemName}
+            onChange={(e) => setItemName(e.target.value)}
+          />
+        </AddDrawer>
       </Card>
     </div>
   );

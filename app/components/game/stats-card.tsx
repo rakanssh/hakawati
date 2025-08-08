@@ -1,17 +1,41 @@
 import { useGameStore } from "@/store/useGameStore";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Separator } from "../ui/separator";
-import { Badge } from "../ui/badge";
 import { Progress } from "../ui/progress";
+// Button not used directly after AddIconButton extraction
+import { PlusIcon } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { AddDrawer } from "./add-drawer";
+import { Input } from "../ui/input";
+import { InlineEditableBadge } from "./inline-editable-badge";
+import { InlineEditableNumber } from "./inline-editable-number";
+import { Stat } from "@/types/stats.type";
+import { AddIconButton } from "./add-icon-button";
 
 export function StatsCard() {
-  const { stats } = useGameStore();
+  const { stats, addToStats, updateStat, removeFromStats } = useGameStore();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const nameExists = (candidate: string) =>
+    stats.some((s) => s.name.toLowerCase() === candidate.trim().toLowerCase());
+  const canSubmit = name.trim() && !nameExists(name);
+
+  const ProgressBar = useMemo(() => {
+    return (stat: Stat) => {
+      const progress = (stat.value / stat.range[1]) * 100;
+      return <Progress value={progress} max={100} className="h-2" />;
+    };
+  }, [stats]);
   return (
-    <div>
-      {" "}
+    <div ref={containerRef} className="relative overflow-hidden">
       <Card className="py-2 flex flex-col gap-2">
         <CardHeader>
-          <CardTitle className="text-sm">Stats</CardTitle>
+          <div className="flex flex-row justify-between">
+            <CardTitle className="text-sm">Stats</CardTitle>
+            <AddIconButton onClick={() => setOpen(true)} ariaLabel="Add stat" />
+          </div>
           <Separator />
         </CardHeader>
         <CardContent>
@@ -19,30 +43,74 @@ export function StatsCard() {
             {stats.map((stat) => (
               <div key={stat.name} className="flex flex-col gap-1">
                 <div className="flex flex-row justify-between items-baseline">
-                  <Badge variant="outline" className="text-xs">
-                    {stat.name}
-                  </Badge>
-                  <span className="text-sm font-mono text-muted-foreground">
-                    {stat.value} / {stat.range[1]}
-                  </span>
-                </div>
-                <Progress value={stat.value} max={stat.range[1]} />
-                {/* <div className="w-full bg-muted rounded-full h-2.5">
-                  <div
-                    className="bg-primary h-2.5 rounded-full"
-                    style={{
-                      width: `${
-                        ((stat.value - stat.range[0]) /
-                          (stat.range[1] - stat.range[0])) *
-                        100
-                      }%`,
+                  <InlineEditableBadge
+                    label={stat.name}
+                    onRename={(newName) => {
+                      if (
+                        nameExists(newName) &&
+                        newName.trim().toLowerCase() !== stat.name.toLowerCase()
+                      ) {
+                        return;
+                      }
+                      updateStat(stat.name, { name: newName.trim() });
                     }}
+                    onRemove={() => removeFromStats(stat.name)}
+                    className="text-xs cursor-pointer"
                   />
-                </div> */}
+                  <div className="flex items-baseline gap-1">
+                    <InlineEditableNumber
+                      value={stat.value}
+                      min={stat.range[0]}
+                      max={stat.range[1]}
+                      step={1}
+                      onChange={(newValue) =>
+                        updateStat(stat.name, { value: newValue })
+                      }
+                    />
+                    /
+                    <InlineEditableNumber
+                      value={stat.range[1]}
+                      min={stat.value}
+                      step={1}
+                      onChange={(newValue) =>
+                        updateStat(stat.name, {
+                          range: [stat.range[0], newValue],
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                {ProgressBar(stat)}
               </div>
             ))}
           </div>
         </CardContent>
+        <AddDrawer
+          open={open}
+          setOpen={(o) => {
+            setOpen(o);
+            if (!o) {
+              setName("");
+            }
+          }}
+          containerRef={containerRef}
+          onSubmit={() => {
+            if (!canSubmit) return;
+            addToStats({ name: name.trim(), value: 0, range: [0, 100] });
+            setName("");
+          }}
+          submitDisabled={!canSubmit}
+          submitIcon={<PlusIcon className="w-4 h-4" />}
+          submitAriaLabel="Add stat"
+        >
+          <div className="flex gap-2 w-full">
+            <Input
+              placeholder="Stat name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+        </AddDrawer>
       </Card>
     </div>
   );
