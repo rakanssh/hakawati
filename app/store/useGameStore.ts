@@ -247,6 +247,7 @@ export const useGameStore = create<GameStoreType>()(
           ],
           inventory: [],
           log: [],
+          undoStack: [],
         }),
       undo: () => {
         set((state) => {
