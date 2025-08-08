@@ -6,22 +6,22 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../ui/dialog";
-import { Button } from "../ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Label } from "../ui/label";
-import { Input } from "../ui/input";
+} from "../../ui/dialog";
+import { Button } from "../../ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
+import { Label } from "../../ui/label";
+import { Input } from "../../ui/input";
 import { ModelSelect } from "@/components/layout";
 import { HelpCircle, InfoIcon, SettingsIcon, TrashIcon } from "lucide-react";
 import { useScenarioStore } from "@/store/useScenarioStore";
-import { Textarea } from "../ui/textarea";
-import { ScrollArea } from "../ui/scroll-area";
+import { Textarea } from "../../ui/textarea";
+import { ScrollArea } from "../../ui/scroll-area";
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
 } from "@radix-ui/react-tooltip";
-import { Badge } from "../ui/badge";
+import { Badge } from "../../ui/badge";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
 
@@ -40,7 +40,7 @@ type ExportedScenarioV1 = {
   storyCards: { title: string; triggers: string[]; content: string }[];
 };
 
-export function SettingsModal() {
+export default function SettingsModal() {
   const { apiKey, setApiKey } = useSettingsStore();
   const {
     scenario,
