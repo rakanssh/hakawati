@@ -7,7 +7,7 @@ import { useNavigate } from "react-router";
 import { useGameStore } from "@/store/useGameStore";
 import { Separator } from "@/components/ui/separator";
 import { InventoryCard, StatsCard } from "@/components/game";
-import { SettingsModal } from "@/components/layout/settings-modal";
+import { SettingsButton } from "@/components/layout/settings-button";
 import { useState } from "react";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -34,7 +34,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <ArrowLeftIcon className="w-4 h-4" />
           </Button>
           <h1 className="text-2xl font-bold">Hakawati</h1>
-          <SettingsModal />
+          <SettingsButton />
         </div>
         <Separator />
         <InventoryCard />
