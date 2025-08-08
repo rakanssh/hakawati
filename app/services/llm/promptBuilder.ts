@@ -2,7 +2,7 @@ import { LogEntry } from "@/types/log.type";
 import { Stat } from "@/types/stats.type";
 import { ChatMessage, ChatRequest, LLMModel } from "./schema";
 import { GM_SYSTEM_PROMPT } from "@/prompts/system";
-import { countMessageTokens, countTokens } from "./tokenCounter";
+import { countMessageTokens } from "./tokenCounter";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { Scenario, StoryCard } from "@/types/context.type";
 import { Item } from "@/types";
@@ -40,12 +40,12 @@ interface BuildMessageParams {
 export function buildMessage(params: BuildMessageParams): ChatRequest {
   const { log, stats, inventory, lastMessage, scenario, storyCards, model } =
     params;
-  let contextWindowBudget = useSettingsStore.getState().contextWindow;
-  console.debug(`Context window budget: ${contextWindowBudget}`);
+
+  const configuredBudget = useSettingsStore.getState().contextWindow;
+  const maxTokens = Math.min(model.contextLength, configuredBudget);
   const messages: ChatMessage[] = [];
 
-  // precalc system and user message from context budget
-  contextWindowBudget -= countTokens(GM_SYSTEM_PROMPT);
+  // Build user message
   const gameState = `
 **Game State:**
 - Stats: ${JSON.stringify(stats)}
@@ -53,48 +53,52 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
 `;
   const userMessageContent = injectStoryCards(lastMessage, storyCards);
   const userMessage = `${gameState}\n\n${userMessageContent}`;
-  contextWindowBudget -= countTokens(userMessage);
-  contextWindowBudget -= countTokens(scenario.description);
-  contextWindowBudget -= countTokens(scenario.authorNote);
+  const userMsg: ChatMessage = { role: "user", content: userMessage };
+  const userTokens = countMessageTokens([userMsg]);
 
-  //Add history
-  while (contextWindowBudget > 0 && log.length > 0) {
-    const entry = log.pop();
-    if (!entry) break;
+  const tokenCountFor = (msgs: ChatMessage[]) => countMessageTokens(msgs);
+  const canAddWithUser = (candidate: ChatMessage, current: ChatMessage[]) =>
+    tokenCountFor([...current, candidate]) + userTokens <= maxTokens;
 
-    const entryText = injectStoryCards(entry.text, storyCards);
-    const entryTokens = countTokens(entryText);
-
-    if (entryTokens > contextWindowBudget) {
-      break;
-    }
-    contextWindowBudget -= entryTokens;
-    messages.unshift({
-      role: entry.role === "player" ? "user" : "assistant",
-      content: entryText,
-    });
+  if (canAddWithUser({ role: "system", content: GM_SYSTEM_PROMPT }, messages)) {
+    messages.push({ role: "system", content: GM_SYSTEM_PROMPT });
   }
-
-  // Add scenario description, author note, and system prompt
-  if (scenario.description) {
-    messages.unshift({ role: "system", content: scenario.description });
+  if (
+    scenario.description &&
+    canAddWithUser({ role: "system", content: scenario.description }, messages)
+  ) {
+    messages.push({ role: "system", content: scenario.description });
   }
-  messages.unshift({ role: "system", content: GM_SYSTEM_PROMPT });
-
-  if (scenario.authorNote) {
+  if (
+    scenario.authorNote &&
+    canAddWithUser({ role: "system", content: scenario.authorNote }, messages)
+  ) {
     messages.push({ role: "system", content: scenario.authorNote });
   }
-  // Add user Message
-  messages.push({ role: "user", content: userMessage });
 
-  const tokenCount = countMessageTokens(messages);
-  console.debug(
-    `Token count for the request: ${tokenCount} (unused budget: ${contextWindowBudget})`
-  );
+  const history: ChatMessage[] = [];
+  for (let i = log.length - 1; i >= 0; i--) {
+    const entry = log[i];
+    const entryText = injectStoryCards(entry.text, storyCards);
+    const msg: ChatMessage = {
+      role: entry.role === "player" ? "user" : "assistant",
+      content: entryText,
+    };
+    if (canAddWithUser(msg, [...messages, ...history])) {
+      // unshift to keep chronological order
+      history.unshift(msg);
+    } else {
+      break;
+    }
+  }
+
+  messages.push(...history);
+
+  messages.push(userMsg);
 
   return {
     model: model.id,
-    messages: messages,
+    messages,
     stream: true,
   };
 }
