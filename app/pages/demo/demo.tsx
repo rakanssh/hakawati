@@ -7,6 +7,7 @@ import {
 import { AppSidebar } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import { decodeEscapedText } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLLM } from "@/hooks/useLLM";
 import { useSettingsStore } from "@/store/useSettingsStore";
@@ -211,7 +212,7 @@ export default function Demo() {
                   {entry.role === "player" ? "You" : "GM"}:
                 </span> */}
 
-                <p className="inline ">{entry.text}</p>
+                <p className="inline ">{decodeEscapedText(entry.text)}</p>
                 {entry.isActionError && (
                   <Tooltip>
                     <TooltipTrigger asChild>
