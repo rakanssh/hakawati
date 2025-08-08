@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 
 const tabs = [
   { to: "api", label: "API" },
@@ -20,8 +21,11 @@ export default function SettingsLayout() {
 
   return (
     <Dialog open onOpenChange={handleOpenChange}>
-      <DialogContent className="p-0 sm:max-w-[900px] w-[min(95vw,900px)] h-[min(85vh,700px)] flex flex-col">
-        <div className="grid grid-cols-[220px_1fr] gap-0 h-[calc(100%-4rem)]">
+      <DialogContent
+        showCloseButton={true}
+        className="p-0 sm:max-w-[900px] w-[min(95vw,900px)] h-[min(85vh,700px)] flex flex-col"
+      >
+        <div className="grid grid-cols-[160px_1fr] gap-0 h-full ">
           <nav className="border-r px-3 py-4 overflow-auto">
             <ul className="flex flex-col gap-1">
               {tabs.map((tab) => (
@@ -44,7 +48,7 @@ export default function SettingsLayout() {
               ))}
             </ul>
           </nav>
-          <section className="p-6 overflow-auto bg-card">
+          <section className="p-4 pt-10 overflow-auto bg-card h-full">
             <Outlet />
           </section>
         </div>
