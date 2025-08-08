@@ -7,6 +7,19 @@ import { Button } from "../ui/button";
 import { useRef, useState } from "react";
 import { AddItem } from "./add-item";
 
+const InventoryButton = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
+  return (
+    <Button
+      className="p-0 w-6 h-5"
+      variant="interactive-ghost"
+      size="icon"
+      onClick={() => setOpen(true)}
+    >
+      <PlusIcon className="w-4 h-4" />
+    </Button>
+  );
+};
+
 export function InventoryCard() {
   const { inventory } = useGameStore();
   const [open, setOpen] = useState(false);
@@ -15,15 +28,9 @@ export function InventoryCard() {
     <div ref={containerRef} className="relative overflow-hidden">
       <Card className="py-2 ">
         <CardHeader>
-          <div className="flex flex-row items-center justify-between">
+          <div className="flex flex-row justify-between">
             <CardTitle className="text-sm">Inventory</CardTitle>
-            <Button
-              variant="interactive-ghost"
-              size="icon"
-              onClick={() => setOpen(true)}
-            >
-              <PlusIcon className="w-4 h-4" />
-            </Button>
+            <InventoryButton setOpen={setOpen} />
           </div>
           <Separator />
         </CardHeader>
