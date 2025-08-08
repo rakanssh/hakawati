@@ -11,16 +11,29 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
 export default function SettingsStoryCards() {
   const { storyCards, addStoryCard, removeStoryCard, updateStoryCard } =
     useScenarioStore();
   const navigate = useNavigate();
+  const [currentlyDeleting, setCurrentlyDeleting] = useState<string | null>(
+    null
+  );
   useEffect(() => {
     navigate(".", { replace: true });
   }, [navigate]);
+
+  const handleClickDelete = (id: string) => {
+    if (currentlyDeleting === id) {
+      removeStoryCard(id);
+    }
+    setCurrentlyDeleting(id);
+    setTimeout(() => {
+      setCurrentlyDeleting(null);
+    }, 1500);
+  };
 
   return (
     <div className="flex flex-col gap-4 max-w-3xl h-full">
@@ -34,11 +47,18 @@ export default function SettingsStoryCards() {
               <div className="flex justify-between items-center">
                 <Label className="text-xs">Name</Label>
                 <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => removeStoryCard(card.id)}
+                  variant={
+                    currentlyDeleting === card.id ? "destructive" : "ghost"
+                  }
+                  size="sm"
+                  className="h-6 "
+                  onClick={() => handleClickDelete(card.id)}
                 >
-                  <TrashIcon className="w-4 h-4" />
+                  {currentlyDeleting === card.id ? (
+                    <Label className="text-xs">Are you sure?</Label>
+                  ) : (
+                    <Label className="text-xs">Delete Card &nbsp;</Label>
+                  )}
                 </Button>
               </div>
               <Input

@@ -8,6 +8,7 @@ import { useRef, useState } from "react";
 import { AddDrawer } from "./add-drawer";
 import { Input } from "../ui/input";
 import { AddIconButton } from "./add-icon-button";
+import { Label } from "../ui/label";
 
 const InventoryButton = ({ setOpen }: { setOpen: (open: boolean) => void }) => (
   <AddIconButton onClick={() => setOpen(true)} ariaLabel="Add item" />
@@ -38,7 +39,7 @@ export function InventoryCard() {
               ))}
             </ul>
           ) : (
-            <p className="text-muted-foreground">Your inventory is empty.</p>
+            <Label className="text-muted-foreground text-xs">Nothing...</Label>
           )}
         </CardContent>
         <AddDrawer
