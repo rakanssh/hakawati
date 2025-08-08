@@ -159,7 +159,7 @@ export function SettingsModal() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="interactive-ghost" size="icon">
+        <Button variant="ghost" size="icon">
           <SettingsIcon className="w-4 h-4" />
         </Button>
       </DialogTrigger>

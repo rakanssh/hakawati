@@ -200,7 +200,7 @@ export default function Demo() {
     <SidebarProvider defaultOpen={true}>
       <AppSidebar />
       <SidebarInset className="flex flex-col h-screen overflow-hidden">
-        <SidebarTrigger />
+        {/* <SidebarTrigger /> */}
         <ScrollArea className="flex-1 p-4 min-h-0">
           {log.length > 0 ? (
             log.map((entry) => (
@@ -240,7 +240,7 @@ export default function Demo() {
         <div className="border-t p-4">
           <div className="flex w-full items-end space-x-2">
             <Button
-              variant={isRolling ? "default" : "interactive-ghost"}
+              variant={isRolling ? "default" : "ghost"}
               size="icon"
               onClick={() => setIsRolling(!isRolling)}
               disabled={loading}
@@ -283,7 +283,7 @@ export default function Demo() {
               type="submit"
               onClick={handleRetry}
               disabled={loading}
-              variant="interactive-ghost"
+              variant="ghost"
             >
               <RefreshCwIcon strokeWidth={1.5} />
             </Button>

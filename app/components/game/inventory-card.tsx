@@ -11,7 +11,7 @@ const InventoryButton = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
   return (
     <Button
       className="p-0 w-6 h-5"
-      variant="interactive-ghost"
+      variant="ghost"
       size="icon"
       onClick={() => setOpen(true)}
     >
