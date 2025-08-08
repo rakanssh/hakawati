@@ -19,12 +19,27 @@ type Pages = {
   "/demo": {
     params: {};
   };
+  "/demo/settings": {
+    params: {};
+  };
+  "/demo/settings/api": {
+    params: {};
+  };
+  "/demo/settings/scenario": {
+    params: {};
+  };
+  "/demo/settings/story-cards": {
+    params: {};
+  };
+  "/demo/settings/model": {
+    params: {};
+  };
 };
 
 type RouteFiles = {
   "root.tsx": {
     id: "root";
-    page: "/" | "/about" | "/demo";
+    page: "/" | "/about" | "/demo" | "/demo/settings" | "/demo/settings/api" | "/demo/settings/scenario" | "/demo/settings/story-cards" | "/demo/settings/model";
   };
   "./pages/home/home.tsx": {
     id: "pages/home/home";
@@ -36,6 +51,30 @@ type RouteFiles = {
   };
   "./pages/demo/demo.tsx": {
     id: "pages/demo/demo";
-    page: "/demo";
+    page: "/demo" | "/demo/settings" | "/demo/settings/api" | "/demo/settings/scenario" | "/demo/settings/story-cards" | "/demo/settings/model";
+  };
+  "./pages/settings/layout.tsx": {
+    id: "pages/settings/layout";
+    page: "/demo/settings" | "/demo/settings/api" | "/demo/settings/scenario" | "/demo/settings/story-cards" | "/demo/settings/model";
+  };
+  "./pages/settings/index.tsx": {
+    id: "pages/settings/index";
+    page: "/demo/settings";
+  };
+  "./pages/settings/api.tsx": {
+    id: "pages/settings/api";
+    page: "/demo/settings/api";
+  };
+  "./pages/settings/scenario.tsx": {
+    id: "pages/settings/scenario";
+    page: "/demo/settings/scenario";
+  };
+  "./pages/settings/story-cards.tsx": {
+    id: "pages/settings/story-cards";
+    page: "/demo/settings/story-cards";
+  };
+  "./pages/settings/model.tsx": {
+    id: "pages/settings/model";
+    page: "/demo/settings/model";
   };
 };

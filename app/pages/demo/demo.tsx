@@ -171,15 +171,16 @@ export default function Demo() {
     executeLlmSend(finalMessage);
   };
 
-  // Prevent body and html from scrolling
-  //TODO: Find the proper way to do this
+  // Prevent body and html from scrolling while in the demo view
   useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
 
     return () => {
-      document.body.style.overflow = "";
-      document.documentElement.style.overflow = "";
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
     };
   }, []);
 
@@ -200,7 +201,7 @@ export default function Demo() {
   return (
     <SidebarProvider defaultOpen={true}>
       <AppSidebar />
-      <SidebarInset className="flex flex-col h-screen overflow-hidden">
+      <SidebarInset className="relative flex flex-col h-screen overflow-hidden">
         {/* <SidebarTrigger /> */}
         <ScrollArea className="flex-1 p-4 min-h-0">
           {log.length > 0 ? (
@@ -298,7 +299,20 @@ export default function Demo() {
             </Button>
           </div>
         </div>
+        {/* Render nested routes (settings modal) on top of demo content */}
+        <div className="pointer-events-none absolute inset-0">
+          {/* The modal content uses fixed positioning and pointer events, so just mount outlet */}
+          {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+          {/* @ts-ignore - Outlet is injected at route level, react-router handles it */}
+          <OutletWrapper />
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );
+}
+
+// Lightweight wrapper that renders nested outlet without affecting layout; defined here to avoid imports
+import { Outlet } from "react-router";
+function OutletWrapper() {
+  return <Outlet />;
 }
