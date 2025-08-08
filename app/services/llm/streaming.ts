@@ -1,16 +1,40 @@
 export async function* parseOpenAIStream(body: ReadableStream<Uint8Array>) {
   const reader = body.getReader();
   const decoder = new TextDecoder("utf-8");
-  let done: boolean, value: Uint8Array | undefined;
-  while ((({ done, value } = await reader.read()), !done)) {
-    const chunk = decoder.decode(value);
-    for (const line of chunk.split("\n")) {
-      if (line.startsWith("data: ")) {
-        const payload = line.replace("data: ", "");
-        if (payload === "[DONE]") return;
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split(/\r?\n/);
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const payload = line.slice(6).trim();
+      if (payload === "[DONE]") return;
+      try {
         const json = JSON.parse(payload);
-        const token = json.choices[0].delta?.content;
-        if (token) yield token;
+        const token = json?.choices?.[0]?.delta?.content;
+        if (token) yield token as string;
+      } catch {
+        // ignore malformed partials; remaining bytes will arrive in subsequent chunks
+      }
+    }
+  }
+
+  // Flush any remaining buffered single line
+  if (buffer.startsWith("data: ")) {
+    const payload = buffer.slice(6).trim();
+    if (payload !== "[DONE]") {
+      try {
+        const json = JSON.parse(payload);
+        const token = json?.choices?.[0]?.delta?.content;
+        if (token) yield token as string;
+      } catch {
+        // ignore
       }
     }
   }
