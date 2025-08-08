@@ -28,7 +28,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   };
   return (
     <Sidebar variant="inset" className="bg-background" {...props}>
-      <SidebarContent className="flex flex-col gap-4 bg-background">
+      <SidebarContent className="flex flex-col gap-2 bg-background">
         <div className="flex flex-row items-center justify-between gap-2 mt-2">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ArrowLeftIcon className="w-4 h-4" />
@@ -42,17 +42,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <div className="flex flex-col gap-2 mt-auto ">
           <Separator />
           <div className="flex flex-row gap-2 justify-between mt-2">
-            <Button variant="interactive-ghost" size="icon" onClick={undo}>
+            <Button variant="ghost" size="icon" onClick={undo}>
               <UndoIcon className="w-4 h-4" />
             </Button>
             <Button
               className="flex-1"
-              variant={confirmingReset ? "destructive" : "interactive-ghost"}
+              variant={confirmingReset ? "destructive" : "ghost"}
               onClick={handleReset}
             >
               {confirmingReset ? "Are you sure?" : "Reset"}
             </Button>
-            <Button variant="interactive-ghost" size="icon" onClick={redo}>
+            <Button variant="ghost" size="icon" onClick={redo}>
               <RedoIcon className="w-4 h-4" />
             </Button>
           </div>
