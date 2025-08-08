@@ -7,7 +7,7 @@ import { useNavigate } from "react-router";
 import { useGameStore } from "@/store/useGameStore";
 import { Separator } from "@/components/ui/separator";
 import { InventoryCard, StatsCard } from "@/components/game";
-import { SettingsModal } from "@/components/layout";
+import { SettingsModal } from "@/components/layout/settings-modal";
 import { useState } from "react";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
