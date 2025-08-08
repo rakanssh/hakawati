@@ -26,17 +26,17 @@ export function InventoryCard() {
   const containerRef = useRef<HTMLDivElement>(null);
   return (
     <div ref={containerRef} className="relative overflow-hidden">
-      <Card className="py-2 ">
+      <Card className="py-2 flex flex-col gap-2">
         <CardHeader>
           <div className="flex flex-row justify-between">
-            <CardTitle className="text-sm">Inventory</CardTitle>
+            <CardTitle className="text-sm">Items</CardTitle>
             <InventoryButton setOpen={setOpen} />
           </div>
           <Separator />
         </CardHeader>
         <CardContent>
           {inventory.length > 0 ? (
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-row flex-wrap gap-1">
               {inventory.map((item) => (
                 <li key={item.id}>
                   <InventoryItem item={item} />

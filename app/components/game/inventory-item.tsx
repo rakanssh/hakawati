@@ -14,6 +14,7 @@ import { Item } from "@/types";
 export function InventoryItem({ item }: { item: Item }) {
   const { updateItem, removeFromInventory } = useGameStore();
   const [isEditing, setIsEditing] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [editedValue, setEditedValue] = useState(item.name);
 
   const handleFinishEditing = () => {
@@ -46,9 +47,15 @@ export function InventoryItem({ item }: { item: Item }) {
           autoFocus
         />
       ) : (
-        <DropdownMenu>
+        <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
           <DropdownMenuTrigger>
-            <Badge variant="outline">{item.name}</Badge>
+            <Badge
+              variant={isDropdownOpen ? "highlight" : "outline"}
+              className="cursor-pointer"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            >
+              {item.name}
+            </Badge>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => removeFromInventory(item.id)}>
