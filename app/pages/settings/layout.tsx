@@ -1,13 +1,6 @@
 import { useCallback } from "react";
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
-import { Label } from "@radix-ui/react-dropdown-menu";
+import { NavLink, Outlet, useNavigate } from "react-router";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const tabs = [
   { to: "api", label: "API" },
