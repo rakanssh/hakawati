@@ -100,5 +100,7 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     model: model.id,
     messages,
     stream: true,
+    //TODO: Make this an options
+    max_tokens: 8192, //Max tokens
   };
 }

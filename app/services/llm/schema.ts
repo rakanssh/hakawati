@@ -7,6 +7,8 @@ export interface ChatRequest {
   model: string;
   messages: ChatMessage[];
   stream?: boolean;
+  // Maximum number of completion tokens to generate (provider-specific name: max_tokens)
+  max_tokens?: number;
 }
 
 export interface ChatResponse {
