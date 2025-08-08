@@ -1,9 +1,5 @@
 import { useGameStore } from "@/store/useGameStore";
-import {
-  SidebarProvider,
-  SidebarTrigger,
-  SidebarInset,
-} from "@/components/ui/sidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -25,10 +21,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-function getPlaceholder(action: "say" | "do" | "story", isRolling: boolean) {
+interface Action {
+  type: "say" | "do" | "story";
+  isRolling: boolean;
+}
+function getPlaceholder(action: Action) {
   let placeholder = "";
-  switch (action) {
+  switch (action.type) {
     case "do":
       placeholder = "You...";
       break;
@@ -39,7 +38,7 @@ function getPlaceholder(action: "say" | "do" | "story", isRolling: boolean) {
       placeholder = "...";
       break;
   }
-  if (isRolling) {
+  if (action.isRolling) {
     placeholder += ` [With Roll]`;
   }
   return placeholder;
@@ -59,8 +58,10 @@ export default function Demo() {
   const [input, setInput] = useState("");
   const { send, loading } = useLLM();
   const { model } = useSettingsStore();
-  const [action, setAction] = useState<"say" | "do" | "story">("do");
-  const [isRolling, setIsRolling] = useState(false);
+  const [action, setAction] = useState<Action>({
+    type: "do",
+    isRolling: false,
+  });
 
   const executeLlmSend = (message: string) => {
     if (!model) {
@@ -138,12 +139,12 @@ export default function Demo() {
   const handleSubmit = async () => {
     if (!input.trim() || !model) return;
 
-    const playerInput = isRolling
+    const playerInput = action.isRolling
       ? input + ` [Roll: ${Math.floor(Math.random() * 100) + 1}/100]`
       : input;
 
     let finalMessage;
-    switch (action) {
+    switch (action.type) {
       case "do":
         finalMessage = `You ${
           playerInput.charAt(0).toLowerCase() + playerInput.slice(1)
@@ -164,7 +165,7 @@ export default function Demo() {
       id: crypto.randomUUID(),
       role: "player",
       text: finalMessage,
-      mode: action,
+      mode: action.type,
     });
     setInput("");
     executeLlmSend(finalMessage);
@@ -240,18 +241,26 @@ export default function Demo() {
         <div className="border-t p-4">
           <div className="flex w-full items-end space-x-2">
             <Button
-              variant={isRolling ? "default" : "ghost"}
+              variant={action.isRolling ? "default" : "ghost"}
               size="icon"
-              onClick={() => setIsRolling(!isRolling)}
+              onClick={() =>
+                setAction({
+                  type: action.type,
+                  isRolling: !action.isRolling,
+                })
+              }
               disabled={loading}
             >
               <DicesIcon strokeWidth={1.5} />
             </Button>
 
             <Select
-              value={action}
+              value={action.type}
               onValueChange={(value) =>
-                setAction(value as "say" | "do" | "story")
+                setAction({
+                  type: value as Action["type"],
+                  isRolling: action.isRolling,
+                })
               }
             >
               <SelectTrigger className="w-28">
@@ -264,7 +273,7 @@ export default function Demo() {
               </SelectContent>
             </Select>
             <Textarea
-              placeholder={getPlaceholder(action, isRolling)}
+              placeholder={getPlaceholder(action)}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
