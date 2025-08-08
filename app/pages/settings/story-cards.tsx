@@ -23,8 +23,8 @@ export default function SettingsStoryCards() {
   }, [navigate]);
 
   return (
-    <div className="flex flex-col gap-4 max-w-3xl">
-      <ScrollArea className="h-[60vh]">
+    <div className="flex flex-col gap-4 max-w-3xl h-full">
+      <ScrollArea className="h-full">
         <div className="flex flex-col gap-4 p-1">
           {storyCards.map((card) => (
             <div
