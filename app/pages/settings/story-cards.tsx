@@ -74,10 +74,7 @@ export default function SettingsStoryCards() {
                     <HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs">
-                    <Badge
-                      variant="outline"
-                      className="flex items-center gap-1 bg-muted"
-                    >
+                    <div className="flex items-center gap-1 ">
                       <InfoIcon className="w-3.5 h-3.5" />
                       <span>
                         These are words that will trigger adding this card
@@ -85,7 +82,7 @@ export default function SettingsStoryCards() {
                         <br />
                         Separate them with commas like: pup,puppy,dog,canine
                       </span>
-                    </Badge>
+                    </div>
                   </TooltipContent>
                 </Tooltip>
               </div>
