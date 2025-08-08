@@ -20,12 +20,11 @@ export function getLLMClient(): LLMClient {
 
   if (!unsubscribeApiKey) {
     type SettingsState = ReturnType<typeof useSettingsStore.getState>;
-    unsubscribeApiKey = useSettingsStore.subscribe<string | undefined>(
-      (s: SettingsState) => s.apiKey?.trim(),
-      (next: string | undefined, prev: string | undefined) => {
-        if (next && next !== prev) {
-          cachedClient = OpenRouterClient(next);
-          lastApiKey = next;
+    unsubscribeApiKey = useSettingsStore.subscribe(
+      (state: SettingsState, prevState: SettingsState) => {
+        if (state.apiKey?.trim() !== prevState.apiKey?.trim()) {
+          lastApiKey = state.apiKey?.trim();
+          cachedClient = OpenRouterClient(lastApiKey);
           console.debug("LLM client API key updated");
         }
       }
