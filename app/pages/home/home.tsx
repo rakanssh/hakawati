@@ -11,14 +11,13 @@ import { useNavigate } from "react-router";
 import { useSettingsStore } from "@/store/useSettingsStore";
 
 import { BookOpenIcon } from "lucide-react";
-import { Header, ModelSelect } from "@/components/layout";
+import { ModelSelect } from "@/components/layout";
 
 export default function Home() {
   const navigate = useNavigate();
   const { apiKey, setApiKey, model } = useSettingsStore();
   return (
-    <main className="flex flex-col items-center justify-center h-screen ">
-      <Header />
+    <main className="flex flex-col items-center justify-center h-[calc(100vh-2.5rem)] ">
       {/* Title header */}
       <header className="flex flex-col items-center justify-center ">
         <BookOpenIcon className="w-10 h-10 mr-2" />
