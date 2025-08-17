@@ -14,7 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DicesIcon, MessageCircleWarning, RefreshCwIcon } from "lucide-react";
+import {
+  DicesIcon,
+  HandIcon,
+  MessageCircleIcon,
+  MessageCircleWarning,
+  RefreshCwIcon,
+  SwordIcon,
+} from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
@@ -233,10 +240,25 @@ export default function Demo() {
                   {/* <span className="font-bold text-lg">
                   {entry.role === "player" ? "You" : "GM"}:
                 </span> */}
-
-                  <p className="inline whitespace-pre-wrap break-words">
-                    {decodeEscapedText(entry.text)}
-                  </p>
+                  {entry.mode === "say" ? (
+                    <div className="flex items-center rounded-sm border-accent-foreground/50 py-1">
+                      <MessageCircleIcon className="inline w-4 h-4 mr-1 text-muted-foreground ml-1" />
+                      <p className="inline whitespace-pre-wrap break-words mr-1">
+                        {decodeEscapedText(entry.text)}
+                      </p>
+                    </div>
+                  ) : entry.mode === "do" ? (
+                    <div className="flex items-center  rounded-sm border-accent-foreground/50 py-1">
+                      <HandIcon className="inline w-4 h-4 mr-1 text-muted-foreground ml-1" />
+                      <p className="inline whitespace-pre-wrap break-words mr-1">
+                        {decodeEscapedText(entry.text)}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="inline whitespace-pre-wrap break-words">
+                      {decodeEscapedText(entry.text)}
+                    </p>
+                  )}
                   {entry.isActionError && (
                     <Tooltip>
                       <TooltipTrigger asChild>
