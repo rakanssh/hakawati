@@ -240,7 +240,7 @@ export default function Demo() {
   return (
     <SidebarProvider defaultOpen={true}>
       <AppSidebar />
-      <SidebarInset className="relative flex flex-col h-screen overflow-hidden">
+      <SidebarInset className="relative flex flex-col h-[calc(100vh-2.5rem)] overflow-hidden">
         {/* <SidebarTrigger /> */}
         <ScrollArea
           className="flex-1 px-2 py-0 min-h-0"
@@ -250,7 +250,7 @@ export default function Demo() {
           {log.length > 0 ? (
             log.map((entry) =>
               currentlyEditingLogId === entry.id ? (
-                <div key={entry.id} className="bg-accent/50 rounded-md p-1">
+                <div key={entry.id} className="bg-accent/50 rounded-md p-0">
                   <InlineEditableContent
                     initialValue={entry.text}
                     onCommit={(next) => {
@@ -325,7 +325,7 @@ export default function Demo() {
           )}
           <div ref={bottomRef} className="mt-2" />
         </ScrollArea>
-        <div className="border-t p-3">
+        <div className="border-t p-2 pb-0">
           <div className="flex w-full items-end space-x-2">
             <Button
               variant={action.isRolling ? "default" : "ghost"}

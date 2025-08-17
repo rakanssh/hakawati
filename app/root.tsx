@@ -11,6 +11,7 @@ import type { Route } from "./+types/root";
 import "./App.css";
 import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "./components/ui";
+import { Titlebar } from "./components/layout";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -23,7 +24,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-          {children}
+          <Titlebar />
+          <div className="pt-8">{children}</div>
         </ThemeProvider>
         <Toaster richColors expand />
         <ScrollRestoration />
