@@ -45,7 +45,7 @@ export function InlineEditableContent(props: InlineEditableContentProps) {
       suppressContentEditableWarning
       onBlur={finish}
       onKeyDown={onKeyDown}
-      className="md:text-base whitespace-pre-wrap break-words outline-none"
+      className="md:text-base whitespace-pre-wrap break-words outline-none ml-2"
       style={{ minHeight: 0 }}
       role="textbox"
       aria-multiline="true"

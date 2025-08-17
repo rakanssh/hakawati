@@ -291,9 +291,11 @@ export default function Demo() {
                       </p>
                     </div>
                   ) : (
-                    <p className="inline whitespace-pre-wrap break-words">
-                      {decodeEscapedText(entry.text)}
-                    </p>
+                    <div className="flex items-center ml-2">
+                      <p className="inline whitespace-pre-wrap break-words">
+                        {decodeEscapedText(entry.text)}
+                      </p>
+                    </div>
                   )}
                   {entry.isActionError && (
                     <Tooltip>
