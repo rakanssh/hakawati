@@ -155,23 +155,26 @@ export default function Demo() {
       ? input + ` [Roll: ${Math.floor(Math.random() * 100) + 1}/100]`
       : input;
 
-    let finalMessage;
-    switch (action.type) {
-      case "do":
-        finalMessage = `You ${
-          playerInput.charAt(0).toLowerCase() + playerInput.slice(1)
-        }`;
-        break;
-      case "say":
-        finalMessage = `You say: "${
-          playerInput.charAt(0).toUpperCase() + playerInput.slice(1)
-        }"`;
-        break;
-      case "story":
-        finalMessage =
-          playerInput.charAt(0).toUpperCase() + playerInput.slice(1);
-        break;
-    }
+    const finalMessage = playerInput;
+
+    // ! I don't like how this looks, disabling for now
+    // let finalMessage;
+    // switch (action.type) {
+    //   case "do":
+    //     finalMessage = `You ${
+    //       playerInput.charAt(0).toLowerCase() + playerInput.slice(1)
+    //     }`;
+    //     break;
+    //   case "say":
+    //     finalMessage = `You say: "${
+    //       playerInput.charAt(0).toUpperCase() + playerInput.slice(1)
+    //     }"`;
+    //     break;
+    //   case "story":
+    //     finalMessage =
+    //       playerInput.charAt(0).toUpperCase() + playerInput.slice(1);
+    //     break;
+    // }
 
     addLog({
       id: nanoid(),
@@ -236,20 +239,25 @@ export default function Demo() {
                     currentlyEditingLogId === entry.id ? "bg-accent" : ""
                   }`}
                   onClick={() => setCurrentlyEditingLogId(entry.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      setCurrentlyEditingLogId(entry.id);
+                    }
+                  }}
                 >
                   {/* <span className="font-bold text-lg">
                   {entry.role === "player" ? "You" : "GM"}:
                 </span> */}
                   {entry.mode === "say" ? (
-                    <div className="flex items-center rounded-sm border-accent-foreground/50 py-1">
-                      <MessageCircleIcon className="inline w-4 h-4 mr-1 text-muted-foreground ml-1" />
+                    <div className="flex items-center rounded-sm border-accent-foreground/50 py-1 bg-blue-300/15">
+                      <MessageCircleIcon className="inline w-4 h-4 mr-2 text-muted-foreground ml-2 shrink-0" />
                       <p className="inline whitespace-pre-wrap break-words mr-1">
                         {decodeEscapedText(entry.text)}
                       </p>
                     </div>
                   ) : entry.mode === "do" ? (
-                    <div className="flex items-center  rounded-sm border-accent-foreground/50 py-1">
-                      <HandIcon className="inline w-4 h-4 mr-1 text-muted-foreground ml-1" />
+                    <div className="flex items-center rounded-sm border-accent-foreground/50 py-1 bg-amber-300/15">
+                      <HandIcon className="inline w-4 h-4 mr-2 text-muted-foreground ml-2 shrink-0" />
                       <p className="inline whitespace-pre-wrap break-words mr-1">
                         {decodeEscapedText(entry.text)}
                       </p>
