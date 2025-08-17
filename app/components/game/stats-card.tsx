@@ -1,5 +1,5 @@
 import { useGameStore } from "@/store/useGameStore";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { CardContent, CardHeader, CardTitle, SquareCard } from "../ui/card";
 import { Separator } from "../ui/separator";
 import { Progress } from "../ui/progress";
 // Button not used directly after AddIconButton extraction
@@ -30,15 +30,20 @@ export function StatsCard() {
   }, [stats]);
   return (
     <div ref={containerRef} className="relative overflow-hidden">
-      <Card className="py-2 flex flex-col gap-2">
-        <CardHeader>
-          <div className="flex flex-row justify-between">
+      <SquareCard className="py-1 flex flex-col gap-1 mt-1">
+        <CardHeader className="px-4">
+          <div className="relative flex flex-row justify-between">
+            <div className="absolute right-0">
+              <AddIconButton
+                onClick={() => setOpen(true)}
+                ariaLabel="Add stat"
+              />
+            </div>
             <CardTitle className="text-sm">Stats</CardTitle>
-            <AddIconButton onClick={() => setOpen(true)} ariaLabel="Add stat" />
           </div>
           <Separator />
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4">
           <div className="flex flex-col gap-4">
             {stats.map((stat) => (
               <div key={stat.name} className="flex flex-col gap-1">
@@ -111,7 +116,7 @@ export function StatsCard() {
             />
           </div>
         </AddDrawer>
-      </Card>
+      </SquareCard>
     </div>
   );
 }
