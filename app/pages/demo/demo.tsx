@@ -2,7 +2,7 @@ import { useGameStore } from "@/store/useGameStore";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { decodeEscapedText } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLLM } from "@/hooks/useLLM";
@@ -20,7 +20,6 @@ import {
   MessageCircleIcon,
   MessageCircleWarning,
   RefreshCwIcon,
-  SwordIcon,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -74,6 +73,31 @@ export default function Demo() {
     type: "do",
     isRolling: false,
   });
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const [stickToBottom, setStickToBottom] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (loading) setStickToBottom(true);
+  }, [loading]);
+
+  // Auto-scroll on log updates if sticking to bottom
+  useEffect(() => {
+    if (!stickToBottom) return;
+    bottomRef.current?.scrollIntoView({
+      behavior: loading ? "auto" : "smooth",
+      block: "end",
+    });
+  }, [log]);
+
+  const handleViewportScroll = () => {
+    if (!loading) return;
+    const el = viewportRef.current;
+    if (!el) return;
+    const thresholdPx = 64;
+    const distanceFromBottom = el.scrollHeight - el.clientHeight - el.scrollTop;
+    setStickToBottom(distanceFromBottom <= thresholdPx);
+  };
 
   const executeLlmSend = (message: string) => {
     if (!model) {
@@ -218,7 +242,11 @@ export default function Demo() {
       <AppSidebar />
       <SidebarInset className="relative flex flex-col h-screen overflow-hidden">
         {/* <SidebarTrigger /> */}
-        <ScrollArea className="flex-1 p-4 min-h-0">
+        <ScrollArea
+          className="flex-1 p-4 min-h-0"
+          viewportRef={viewportRef}
+          onViewportScroll={handleViewportScroll}
+        >
           {log.length > 0 ? (
             log.map((entry) =>
               currentlyEditingLogId === entry.id ? (
@@ -293,6 +321,7 @@ export default function Demo() {
               The story begins...
             </p>
           )}
+          <div ref={bottomRef} />
         </ScrollArea>
         <div className="border-t p-4">
           <div className="flex w-full items-end space-x-2">
