@@ -21,6 +21,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { nanoid } from "nanoid";
+import { InlineEditableContent } from "@/components/game";
 interface Action {
   type: "say" | "do" | "story";
   isRolling: boolean;
@@ -58,6 +60,9 @@ export default function Demo() {
   const [input, setInput] = useState("");
   const { send, loading } = useLLM();
   const { model } = useSettingsStore();
+  const [currentlyEditingLogId, setCurrentlyEditingLogId] = useState<
+    string | null
+  >(null);
   const [action, setAction] = useState<Action>({
     type: "do",
     isRolling: false,
@@ -68,7 +73,7 @@ export default function Demo() {
       console.error("LLM model not configured.");
       return;
     }
-    const gmResponseId = crypto.randomUUID();
+    const gmResponseId = nanoid();
     addLog({
       id: gmResponseId,
       role: "gm",
@@ -162,7 +167,7 @@ export default function Demo() {
     }
 
     addLog({
-      id: crypto.randomUUID(),
+      id: nanoid(),
       role: "player",
       text: finalMessage,
       mode: action.type,
@@ -205,34 +210,54 @@ export default function Demo() {
         {/* <SidebarTrigger /> */}
         <ScrollArea className="flex-1 p-4 min-h-0">
           {log.length > 0 ? (
-            log.map((entry) => (
-              <div
-                key={entry.id}
-                className=" whitespace-pre-wrap hover:bg-accent/50 rounded-md p-1 cursor-pointer"
-              >
-                {/* <span className="font-bold text-lg">
+            log.map((entry) =>
+              currentlyEditingLogId === entry.id ? (
+                <div key={entry.id} className="bg-accent/50 rounded-md p-1">
+                  <InlineEditableContent
+                    initialValue={entry.text}
+                    onCommit={(next) => {
+                      updateLogEntry(entry.id, { text: next });
+                      setCurrentlyEditingLogId(null);
+                    }}
+                    onCancel={() => setCurrentlyEditingLogId(null)}
+                  />
+                </div>
+              ) : (
+                <div
+                  key={entry.id}
+                  className={`whitespace-pre-wrap hover:bg-accent/50 rounded-md p-1 cursor-pointer ${
+                    currentlyEditingLogId === entry.id ? "bg-accent" : ""
+                  }`}
+                  onClick={() => setCurrentlyEditingLogId(entry.id)}
+                >
+                  {/* <span className="font-bold text-lg">
                   {entry.role === "player" ? "You" : "GM"}:
                 </span> */}
 
-                <p className="inline ">{decodeEscapedText(entry.text)}</p>
-                {entry.isActionError && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="mr-1 ml-1 text-muted-foreground hover:text-foreground"
-                      >
-                        <MessageCircleWarning />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-xs">
-                      <p>Failed to parse actions returned with this message.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-            ))
+                  <p className="inline whitespace-pre-wrap break-words">
+                    {decodeEscapedText(entry.text)}
+                  </p>
+                  {entry.isActionError && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="mr-1 ml-1 text-muted-foreground hover:text-foreground"
+                        >
+                          <MessageCircleWarning />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        <p>
+                          Failed to parse actions returned with this message.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+              )
+            )
           ) : (
             <p className="text-center text-muted-foreground">
               The story begins...
