@@ -243,7 +243,7 @@ export default function Demo() {
       <SidebarInset className="relative flex flex-col h-screen overflow-hidden">
         {/* <SidebarTrigger /> */}
         <ScrollArea
-          className="flex-1 p-4 min-h-0"
+          className="flex-1 px-2 py-0 min-h-0"
           viewportRef={viewportRef}
           onViewportScroll={handleViewportScroll}
         >
@@ -263,7 +263,7 @@ export default function Demo() {
               ) : (
                 <div
                   key={entry.id}
-                  className={`whitespace-pre-wrap hover:bg-accent/50 rounded-md p-1 cursor-pointer ${
+                  className={`whitespace-pre-wrap hover:bg-accent/50 rounded-md mt-2 cursor-pointer ${
                     currentlyEditingLogId === entry.id ? "bg-accent" : ""
                   }`}
                   onClick={() => setCurrentlyEditingLogId(entry.id)}
@@ -323,9 +323,9 @@ export default function Demo() {
               The story begins...
             </p>
           )}
-          <div ref={bottomRef} />
+          <div ref={bottomRef} className="mt-2" />
         </ScrollArea>
-        <div className="border-t p-4">
+        <div className="border-t p-3">
           <div className="flex w-full items-end space-x-2">
             <Button
               variant={action.isRolling ? "default" : "ghost"}
