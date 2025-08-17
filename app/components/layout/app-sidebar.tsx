@@ -2,25 +2,15 @@ import * as React from "react";
 
 import { Sidebar, SidebarContent } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import {
-  ArrowLeftIcon,
-  ArrowRightToLine,
-  Loader2,
-  RedoIcon,
-  Trash2,
-  UndoIcon,
-} from "lucide-react";
-import { useNavigate } from "react-router";
+import { BrushCleaningIcon, RedoIcon, UndoIcon } from "lucide-react";
 import { useGameStore } from "@/store/useGameStore";
 import { Separator } from "@/components/ui/separator";
 import { InventoryCard, StatsCard } from "@/components/game";
-import { SettingsButton } from "@/components/layout/settings-button";
 import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { CardContent, SquareCard } from "../ui/card";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const navigate = useNavigate();
   const { resetAllState, undo, redo } = useGameStore();
   const [confirmingReset, setConfirmingReset] = useState(false);
 
@@ -47,31 +37,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <div className="py-0 px-0 ">
             <div className="flex flex-row items-center justify-between gap-1 ">
               <SquareCard className="p-0 m-0 flex-1">
-                <CardContent className="flex flex-row gap-0 p-0 m-0 ">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => navigate("/")}
-                        className="flex-1"
-                      >
-                        <ArrowLeftIcon className="w-4 h-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">Home</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <SettingsButton className="flex-1" />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">Settings</TooltipContent>
-                  </Tooltip>
-                </CardContent>
-              </SquareCard>
-              <SquareCard className="p-0 m-0 flex-1">
                 <CardContent className="flex flex-row gap-0 p-0 m-0">
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -89,7 +54,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                         variant={confirmingReset ? "destructive" : "ghost"}
                         onClick={handleReset}
                       >
-                        <Trash2 className="w-4 h-4 " />
+                        <BrushCleaningIcon className="w-4 h-4 " />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top">Reset</TooltipContent>
