@@ -218,6 +218,7 @@ export default function Demo() {
           className="flex-1 px-2 py-0 min-h-0"
           viewportRef={viewportRef}
           onViewportScroll={handleViewportScroll}
+          viewportClassName="flex flex-col justify-end"
         >
           {log.length > 0 ? (
             log.map((entry) =>
