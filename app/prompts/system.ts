@@ -89,7 +89,7 @@ Include no other text or formatting. this should be your only response.
 Each Action is one of:
 
 - { "type": "MODIFY_STAT", "payload": { "name": string, "value": number } } //Use this only when the player's stats are relevant to the story.
-- { "type": "ADD_TO_INVENTORY", "payload": { "item": string } } //Use this only when the player picks up an item.
+- { "type": "ADD_TO_INVENTORY", "payload": { "item": string } } //Use this only when the player picks up an item. Keep item names short and concise.
 - { "type": "REMOVE_FROM_INVENTORY", "payload": { "item": string } } //Use this only when it makes sense for the story.
 
 If no game state changes are needed, omit the \`actions\` key or return an empty array.
