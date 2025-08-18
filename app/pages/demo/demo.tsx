@@ -291,9 +291,10 @@ export default function Demo() {
               )
             )
           ) : (
-            <p className="text-center text-muted-foreground">
-              The story begins...
-            </p>
+            // <p className="text-center text-muted-foreground">
+            //   The story begins...
+            // </p>
+            <></>
           )}
           <div ref={bottomRef} className="mt-2" />
         </ScrollArea>
