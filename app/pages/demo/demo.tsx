@@ -296,7 +296,7 @@ export default function Demo() {
           )}
           <div ref={bottomRef} className="mt-2" />
         </ScrollArea>
-        <div className="border-t pt-2 px-1">
+        <div className="border-t p-2 px-">
           <div className="flex w-full items-end space-x-1">
             <Button
               variant={action.isRolling ? "default" : "ghost"}
