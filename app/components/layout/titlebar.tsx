@@ -1,38 +1,39 @@
-import { MinusIcon, SquareIcon, XIcon, ArrowLeftIcon } from "lucide-react";
+import { MinusIcon, SquareIcon, XIcon } from "lucide-react";
 import { SettingsButton } from "./settings-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { Button } from "../ui/button";
+import { useNavigate } from "react-router";
+import fez from "@/assets/fez-offwh.svg";
 
 export function Titlebar() {
+  const navigate = useNavigate();
+  const isClient = typeof window !== "undefined";
+  const isDemo = isClient && window.location.pathname.split("/")[1] === "demo";
   return (
     <div
       data-tauri-drag-region
       className="titlebar-drag fixed top-0 left-0 right-0 z-50 h-8 bg-background border-b"
     >
       <div className="grid grid-cols-3 items-center h-full px-2 select-none">
-        <div />
-        <div className="p-0 m-0 absolute left-0 ">
+        <div className="flex items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {}}
-                className="flex-1 w-10 h-10"
-              >
-                <ArrowLeftIcon className="w-4 h-4" />
+              <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+                <img src={fez} alt="Hakawati" className="w-6 h-6 " />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">Home</TooltipContent>
           </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span>
-                <SettingsButton className="flex-1 w-10 h-10" />
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top">Settings</TooltipContent>
-          </Tooltip>
+          {isDemo && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="titlebar-no-drag">
+                  <SettingsButton className="" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top">Settings</TooltipContent>
+            </Tooltip>
+          )}
         </div>
         <div className="flex justify-center">
           <span className="text-sm font-medium tracking-wide text-foreground">
