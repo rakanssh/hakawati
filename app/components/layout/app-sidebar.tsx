@@ -40,7 +40,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <CardContent className="flex flex-row gap-0 p-0 m-0">
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" onClick={undo}>
+                      <Button
+                        className="flex-1"
+                        variant="ghost"
+                        size="icon"
+                        onClick={undo}
+                      >
                         <UndoIcon className="w-4 h-4" />
                       </Button>
                     </TooltipTrigger>
@@ -51,6 +56,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <TooltipTrigger asChild>
                       <Button
                         className="flex-1"
+                        size="icon"
                         variant={confirmingReset ? "destructive" : "ghost"}
                         onClick={handleReset}
                       >
@@ -62,7 +68,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" onClick={redo}>
+                      <Button
+                        className="flex-1"
+                        variant="ghost"
+                        size="icon"
+                        onClick={redo}
+                      >
                         <RedoIcon className="w-4 h-4" />
                       </Button>
                     </TooltipTrigger>
