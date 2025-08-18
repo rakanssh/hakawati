@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const tabs = [
   { to: "api", label: "API" },
@@ -47,8 +48,10 @@ export default function SettingsLayout() {
               ))}
             </ul>
           </nav>
-          <section className="p-4 pt-10 overflow-auto bg-card h-full">
-            <Outlet />
+          <section className="py-3 px-4 overflow-auto bg-card h-full">
+            <ScrollArea className="flex-1 px-2 py-0 min-h-0 h-full">
+              <Outlet />
+            </ScrollArea>
           </section>
         </div>
       </DialogContent>

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { nanoid } from "nanoid";
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type ExportedScenarioV1 = {
   format: "hakawati-scenario";

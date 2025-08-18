@@ -13,12 +13,12 @@ export default function SettingsApi() {
     navigate(".", { replace: true });
   }, [navigate]);
   return (
-    <div className="flex flex-col gap-3 max-w-xl">
-      <div>
+    <div className="flex flex-col gap-4 max-w-2xl">
+      <div className="flex flex-col gap-2">
         <Label>API Key</Label>
         <Input value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
       </div>
-      <div>
+      <div className="flex flex-col gap-2">
         <Label>Model</Label>
         <ModelSelect />
       </div>
