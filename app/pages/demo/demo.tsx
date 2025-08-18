@@ -181,25 +181,6 @@ export default function Demo() {
 
     const finalMessage = playerInput;
 
-    // ! I don't like how this looks, disabling for now
-    // let finalMessage;
-    // switch (action.type) {
-    //   case "do":
-    //     finalMessage = `You ${
-    //       playerInput.charAt(0).toLowerCase() + playerInput.slice(1)
-    //     }`;
-    //     break;
-    //   case "say":
-    //     finalMessage = `You say: "${
-    //       playerInput.charAt(0).toUpperCase() + playerInput.slice(1)
-    //     }"`;
-    //     break;
-    //   case "story":
-    //     finalMessage =
-    //       playerInput.charAt(0).toUpperCase() + playerInput.slice(1);
-    //     break;
-    // }
-
     addLog({
       id: nanoid(),
       role: "player",
@@ -209,19 +190,6 @@ export default function Demo() {
     setInput("");
     executeLlmSend(finalMessage);
   };
-
-  // Prevent body and html from scrolling while in the demo view
-  useEffect(() => {
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousHtmlOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousBodyOverflow;
-      document.documentElement.style.overflow = previousHtmlOverflow;
-    };
-  }, []);
 
   const handleRetry = () => {
     if (loading) return;
@@ -238,9 +206,12 @@ export default function Demo() {
   };
 
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider
+      defaultOpen={true}
+      className="min-h-0 h-[calc(100svh-2rem)]"
+    >
       <AppSidebar />
-      <SidebarInset className="relative flex flex-col h-[calc(100vh-2.5rem)] overflow-hidden">
+      <SidebarInset className="relative flex h-full flex-col overflow-hidden">
         {/* <SidebarTrigger /> */}
         <ScrollArea
           className="flex-1 px-2 py-0 min-h-0"
@@ -325,8 +296,8 @@ export default function Demo() {
           )}
           <div ref={bottomRef} className="mt-2" />
         </ScrollArea>
-        <div className="border-t p-2 pb-0">
-          <div className="flex w-full items-end space-x-2">
+        <div className="border-t pt-2 px-1">
+          <div className="flex w-full items-end space-x-1">
             <Button
               variant={action.isRolling ? "default" : "ghost"}
               size="icon"
