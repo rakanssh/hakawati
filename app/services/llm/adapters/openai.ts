@@ -1,8 +1,9 @@
 import { LLMClient, ChatRequest, ChatResponse, LLMModel } from "../schema";
 import { parseOpenAIStream } from "../streaming";
-
-export function OpenRouterClient(apiKey: string): LLMClient {
-  const base = "https://openrouter.ai/api/v1";
+import { useSettingsStore } from "@/store/useSettingsStore";
+export function OpenAiClient(apiKey: string): LLMClient {
+  const { openAiBaseUrl } = useSettingsStore.getState();
+  const base = openAiBaseUrl;
 
   async function chat(
     req: ChatRequest,
@@ -52,7 +53,7 @@ export function OpenRouterClient(apiKey: string): LLMClient {
   }
 
   async function models(): Promise<LLMModel[]> {
-    console.debug(`Fetching models from OpenRouter`);
+    console.debug(`Fetching models from OpenAI`);
     const r = await fetch(`${base}/models`, {
       headers: {
         Authorization: `Bearer ${apiKey}`,

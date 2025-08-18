@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 const enum ApiType {
-  OPENROUTER = "openrouter",
+  OPENAI = "openai",
 }
 
 interface SettingsStoreType {

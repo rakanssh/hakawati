@@ -12,6 +12,12 @@ import { useSettingsStore } from "@/store/useSettingsStore";
 
 import { BookOpenIcon } from "lucide-react";
 import { ModelSelect } from "@/components/layout";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Label } from "@/components/ui/label";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -25,19 +31,22 @@ export default function Home() {
       </header>
 
       <Card className="w-full max-w-md mt-8">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>OpenRouter API Key</CardTitle>
-        </CardHeader>
         <CardContent className="flex flex-col gap-2">
-          <div className="flex flex-row gap-2">
-            <Input
-              placeholder="Enter your key here"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-            />
-            <Button>Fetch</Button>
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2">
+              <Label>API Key</Label>
+              <div className="flex flex-row gap-2">
+                <Input
+                  placeholder="Enter your key here"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                />
+                <Button>Fetch</Button>
+              </div>
+            </div>
           </div>
           <div className="flex flex-col gap-2">
+            <Label>Model</Label>
             <ModelSelect />
             <Button
               disabled={!apiKey || !model}
@@ -67,7 +76,18 @@ export default function Home() {
           <AccordionTrigger>Supported Providers</AccordionTrigger>
           <AccordionContent>
             <ul className="list-disc pl-4 space-y-1 text-sm">
-              <li>OpenRouter</li>
+              <li>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="font-bold underline">
+                      OpenAI-Compatible
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Any OpenAI-compatible provider. OpenAi, OpenRouter, etc.
+                  </TooltipContent>
+                </Tooltip>
+              </li>
             </ul>
           </AccordionContent>
         </AccordionItem>

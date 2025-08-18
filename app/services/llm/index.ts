@@ -1,5 +1,5 @@
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { OpenRouterClient } from "./adapters/openrouter";
+import { OpenAiClient } from "./adapters/openai";
 import { ChatRequest, LLMClient } from "./schema";
 
 let cachedClient: LLMClient | null = null;
@@ -14,7 +14,7 @@ export function getLLMClient(): LLMClient {
   }
 
   if (!cachedClient || nextApiKey !== lastApiKey) {
-    cachedClient = OpenRouterClient(nextApiKey);
+    cachedClient = OpenAiClient(nextApiKey);
     lastApiKey = nextApiKey;
   }
 
@@ -24,7 +24,7 @@ export function getLLMClient(): LLMClient {
       (state: SettingsState, prevState: SettingsState) => {
         if (state.apiKey?.trim() !== prevState.apiKey?.trim()) {
           lastApiKey = state.apiKey?.trim();
-          cachedClient = OpenRouterClient(lastApiKey);
+          cachedClient = OpenAiClient(lastApiKey);
           console.debug("LLM client API key updated");
         }
       }
