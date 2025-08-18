@@ -75,13 +75,13 @@ export function InlineEditableBadge({
         </Badge>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        <DropdownMenuItem onClick={onRemove}>
-          <TrashIcon className="w-4 h-4" />
-          Remove
-        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setIsEditing(true)}>
           <PencilIcon className="w-4 h-4" />
           Rename
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onRemove} variant="destructive">
+          <TrashIcon className="w-4 h-4" />
+          Remove
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

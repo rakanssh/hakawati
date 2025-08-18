@@ -11,7 +11,7 @@ export function InventoryItem({ item }: { item: Item }) {
         label={item.name}
         onRename={(newName) => updateItem(item.id, { name: newName })}
         onRemove={() => removeFromInventory(item.id)}
-        className="cursor-pointer"
+        className="cursor-pointer border-white/50 text-wrap whitespace-normal text-left"
       />
     </div>
   );
