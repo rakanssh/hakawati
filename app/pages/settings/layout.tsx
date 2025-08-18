@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 const tabs = [
   { to: "api", label: "API" },

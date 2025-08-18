@@ -3,8 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { HelpCircle, InfoIcon, TrashIcon } from "lucide-react";
+import { HelpCircle, InfoIcon } from "lucide-react";
 import { useScenarioStore } from "@/store/useScenarioStore";
 import {
   Tooltip,
