@@ -11,6 +11,7 @@ interface SettingsStoreType {
   apiType: ApiType;
   model: LLMModel | undefined;
   contextWindow: number;
+  modelContextLength: number;
   openAiBaseUrl: string;
   temperature?: number; //range [0,2]
   topP?: number; //range [0,1]
@@ -39,32 +40,38 @@ interface SettingsStoreType {
 }
 
 export const useSettingsStore = create<SettingsStoreType>()(
-  persist(
-    (set) => ({
+  persist<SettingsStoreType>(
+    (set, get) => ({
       apiKey: "",
       apiType: ApiType.OPENAI,
       model: undefined,
       contextWindow: 10000,
+      modelContextLength: 0,
       openAiBaseUrl: "https://openrouter.ai/api/v1",
       seed: Math.floor(Math.random() * 1000000),
       setApiKey: (apiKey: string) => set({ apiKey }),
       setApiType: (apiType: ApiType) => set({ apiType }),
       setModel: (model: LLMModel) => {
         console.debug(
-          `Setting model: ${model.name} with context window: ${model.contextLength}`
+          `Setting model: ${model.name} with context window: ${model.contextLength}.`
         );
         set({
           contextWindow: Math.min(
-            useSettingsStore.getState().contextWindow ?? 2048,
+            get().contextWindow ?? 2048,
             model.contextLength
           ),
+          modelContextLength: model.contextLength,
         });
-        console.debug(
-          `Setting context window: ${useSettingsStore.getState().contextWindow}`
-        );
+        console.debug(`Setting context window: ${get().contextWindow}`);
         set({ model });
       },
-      setContextWindow: (contextWindow: number) => set({ contextWindow }),
+      setContextWindow: (contextWindow: number) =>
+        set({
+          contextWindow: Math.min(
+            contextWindow,
+            get().modelContextLength ?? 2048
+          ),
+        }),
       setOpenAiBaseUrl: (openAiBaseUrl: string) => set({ openAiBaseUrl }),
       setTemperature: (temperature: number) =>
         set({ temperature: Math.max(0, Math.min(2, temperature)) }),
