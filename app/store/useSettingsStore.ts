@@ -1,10 +1,7 @@
 import { LLMModel } from "@/services/llm/schema";
+import { ApiType } from "@/types";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-
-const enum ApiType {
-  OPENAI = "openai",
-}
 
 interface SettingsStoreType {
   apiKey: string;
@@ -13,6 +10,7 @@ interface SettingsStoreType {
   contextWindow: number;
   modelContextLength: number;
   openAiBaseUrl: string;
+  maxTokens: number; //range [1, contextWindow]
   temperature?: number; //range [0,2]
   topP?: number; //range [0,1]
   topK?: number; //range [1, inf]
@@ -20,13 +18,14 @@ interface SettingsStoreType {
   presencePenalty?: number; //range [-2,2]
   repetitionPenalty?: number; //range [0,10]
   minP?: number; //range [0,1]
-  topA?: number; //range [0,1]
   seed: number;
+  topA?: number; //range [0,1]
   setApiKey: (apiKey: string) => void;
   setApiType: (apiType: ApiType) => void;
   setModel: (model: LLMModel) => void;
   setContextWindow: (contextWindow: number) => void;
   setOpenAiBaseUrl: (openAiBaseUrl: string) => void;
+  setMaxTokens: (maxTokens: number) => void;
   setTemperature: (temperature: number) => void;
   setTopP: (topP: number) => void;
   setTopK: (topK: number) => void;
@@ -47,6 +46,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
       model: undefined,
       contextWindow: 10000,
       modelContextLength: 0,
+      maxTokens: 2048,
       openAiBaseUrl: "https://openrouter.ai/api/v1",
       seed: Math.floor(Math.random() * 1000000),
       setApiKey: (apiKey: string) => set({ apiKey }),
@@ -73,6 +73,10 @@ export const useSettingsStore = create<SettingsStoreType>()(
           ),
         }),
       setOpenAiBaseUrl: (openAiBaseUrl: string) => set({ openAiBaseUrl }),
+      setMaxTokens: (maxTokens: number) =>
+        set({
+          maxTokens: Math.max(1, Math.min(get().modelContextLength, maxTokens)),
+        }),
       setTemperature: (temperature: number) =>
         set({ temperature: Math.max(0, Math.min(2, temperature)) }),
       setTopP: (topP: number) => set({ topP: Math.max(0, Math.min(1, topP)) }),
