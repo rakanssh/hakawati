@@ -65,7 +65,7 @@ export default function Demo() {
   } = useGameStore();
   const [input, setInput] = useState("");
   const { send, loading } = useLLM();
-  const { model } = useSettingsStore();
+  const { model, randomSeed } = useSettingsStore();
   const [currentlyEditingLogId, setCurrentlyEditingLogId] = useState<
     string | null
   >(null);
@@ -193,6 +193,7 @@ export default function Demo() {
 
   const handleRetry = () => {
     if (loading) return;
+    randomSeed();
 
     const lastEntry = log.at(-1);
     const secondLastEntry = log.at(-2);

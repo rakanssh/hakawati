@@ -9,6 +9,7 @@ export function OpenAiClient(apiKey: string): LLMClient {
     req: ChatRequest,
     signal?: AbortSignal
   ): Promise<ChatResponse> {
+    const { options } = req;
     const body = JSON.stringify({
       ...req,
       messages: req.messages,
@@ -38,6 +39,21 @@ export function OpenAiClient(apiKey: string): LLMClient {
               completion_tokens: 0,
               total_tokens: 0,
             },
+            ...(options?.temperature && { temperature: options.temperature }),
+            ...(options?.topP && { top_p: options.topP }),
+            ...(options?.topK && { top_k: options.topK }),
+            ...(options?.frequencyPenalty && {
+              frequency_penalty: options.frequencyPenalty,
+            }),
+            ...(options?.presencePenalty && {
+              presence_penalty: options.presencePenalty,
+            }),
+            ...(options?.repetitionPenalty && {
+              repetition_penalty: options.repetitionPenalty,
+            }),
+            ...(options?.minP && { min_p: options.minP }),
+            ...(options?.topA && { top_a: options.topA }),
+            ...(options?.seed && { seed: options.seed }),
           };
         } else {
           const json = await r.json();

@@ -1,6 +1,11 @@
 import { LogEntry } from "@/types/log.type";
 import { Stat } from "@/types/stats.type";
-import { ChatMessage, ChatRequest, LLMModel } from "./schema";
+import {
+  ChatMessage,
+  ChatRequest,
+  ChatRequestOptions,
+  LLMModel,
+} from "./schema";
 import { GM_SYSTEM_PROMPT } from "@/prompts/system";
 import { countMessageTokens } from "./tokenCounter";
 import { useSettingsStore } from "@/store/useSettingsStore";
@@ -35,6 +40,7 @@ interface BuildMessageParams {
   scenario: Scenario;
   storyCards: StoryCard[];
   model: LLMModel;
+  options?: ChatRequestOptions;
 }
 
 export function buildMessage(params: BuildMessageParams): ChatRequest {
@@ -102,5 +108,6 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     stream: true,
     //TODO: Make this an options
     max_tokens: 8192, //Max tokens
+    options: params.options,
   };
 }
