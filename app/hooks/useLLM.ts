@@ -5,11 +5,23 @@ import { useRef, useState } from "react";
 import { parseJsonStream } from "@/services/llm/streaming";
 import { buildMessage } from "@/services/llm/promptBuilder";
 import { useScenarioStore } from "@/store/useScenarioStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 export function useLLM() {
   const [loading, setLoading] = useState(false);
   const { log, stats, inventory } = useGameStore();
   const { scenario, storyCards } = useScenarioStore();
+  const {
+    temperature,
+    topP,
+    topK,
+    frequencyPenalty,
+    presencePenalty,
+    repetitionPenalty,
+    minP,
+    topA,
+    seed,
+  } = useSettingsStore.getState();
   const abortRef = useRef<AbortController | null>(null);
 
   const send = async (
@@ -35,6 +47,17 @@ export function useLLM() {
         model,
         scenario,
         storyCards,
+        options: {
+          temperature,
+          topP,
+          topK,
+          frequencyPenalty,
+          presencePenalty,
+          repetitionPenalty,
+          minP,
+          topA,
+          seed,
+        },
       });
       console.debug(`Sending request to ${model.id}:`, req);
       const res = await sendChat(req, abortRef.current?.signal);

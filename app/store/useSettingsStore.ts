@@ -11,19 +11,42 @@ interface SettingsStoreType {
   apiType: ApiType;
   model: LLMModel | undefined;
   contextWindow: number;
+  openAiBaseUrl: string;
+  temperature?: number; //range [0,2]
+  topP?: number; //range [0,1]
+  topK?: number; //range [1, inf]
+  frequencyPenalty?: number; //range [-2,2]
+  presencePenalty?: number; //range [-2,2]
+  repetitionPenalty?: number; //range [0,10]
+  minP?: number; //range [0,1]
+  topA?: number; //range [0,1]
+  seed: number;
   setApiKey: (apiKey: string) => void;
   setApiType: (apiType: ApiType) => void;
   setModel: (model: LLMModel) => void;
   setContextWindow: (contextWindow: number) => void;
+  setOpenAiBaseUrl: (openAiBaseUrl: string) => void;
+  setTemperature: (temperature: number) => void;
+  setTopP: (topP: number) => void;
+  setTopK: (topK: number) => void;
+  setFrequencyPenalty: (frequencyPenalty: number) => void;
+  setPresencePenalty: (presencePenalty: number) => void;
+  setRepetitionPenalty: (repetitionPenalty: number) => void;
+  setMinP: (minP: number) => void;
+  setTopA: (topA: number) => void;
+  setSeed: (seed: number) => void;
+  randomSeed: () => void;
 }
 
 export const useSettingsStore = create<SettingsStoreType>()(
   persist(
     (set) => ({
       apiKey: "",
-      apiType: ApiType.OPENROUTER,
+      apiType: ApiType.OPENAI,
       model: undefined,
       contextWindow: 10000,
+      openAiBaseUrl: "https://openrouter.ai/api/v1",
+      seed: Math.floor(Math.random() * 1000000),
       setApiKey: (apiKey: string) => set({ apiKey }),
       setApiType: (apiType: ApiType) => set({ apiType }),
       setModel: (model: LLMModel) => {
@@ -42,6 +65,23 @@ export const useSettingsStore = create<SettingsStoreType>()(
         set({ model });
       },
       setContextWindow: (contextWindow: number) => set({ contextWindow }),
+      setOpenAiBaseUrl: (openAiBaseUrl: string) => set({ openAiBaseUrl }),
+      setTemperature: (temperature: number) =>
+        set({ temperature: Math.max(0, Math.min(2, temperature)) }),
+      setTopP: (topP: number) => set({ topP: Math.max(0, Math.min(1, topP)) }),
+      setTopK: (topK: number) => set({ topK: Math.max(1, topK) }),
+      setFrequencyPenalty: (frequencyPenalty: number) =>
+        set({ frequencyPenalty: Math.max(-2, Math.min(2, frequencyPenalty)) }),
+      setPresencePenalty: (presencePenalty: number) =>
+        set({ presencePenalty: Math.max(-2, Math.min(2, presencePenalty)) }),
+      setRepetitionPenalty: (repetitionPenalty: number) =>
+        set({
+          repetitionPenalty: Math.max(0, Math.min(10, repetitionPenalty)),
+        }),
+      setMinP: (minP: number) => set({ minP: Math.max(0, Math.min(1, minP)) }),
+      setTopA: (topA: number) => set({ topA: Math.max(0, Math.min(1, topA)) }),
+      setSeed: (seed: number) => set({ seed }),
+      randomSeed: () => set({ seed: Math.floor(Math.random() * 1000000) }),
     }),
     {
       name: "settings",
