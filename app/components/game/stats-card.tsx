@@ -60,7 +60,7 @@ export function StatsCard() {
                       updateStat(stat.name, { name: newName.trim() });
                     }}
                     onRemove={() => removeFromStats(stat.name)}
-                    className="cursor-pointer border-white/35 text-wrap whitespace-normal text-left"
+                    className="cursor-pointer border-white/35 text-wrap whitespace-normal text-left rounded-xs"
                   />
                   <div className="flex items-baseline gap-1">
                     <InlineEditableNumber
