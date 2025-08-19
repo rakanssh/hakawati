@@ -40,7 +40,7 @@ export function ModelSelect() {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
       currency: "USD",
-      maximumFractionDigits: 8,
+      maximumFractionDigits: 6,
       ...opts,
     }).format(value);
   }
@@ -48,7 +48,7 @@ export function ModelSelect() {
   function formatPerMillionUSDFromPerToken(value: unknown) {
     const v = toNumber(value);
     return formatUSD(v !== undefined ? v * 1000000 : undefined, {
-      maximumFractionDigits: 2,
+      maximumFractionDigits: 3,
     });
   }
 
