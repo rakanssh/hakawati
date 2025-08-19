@@ -3,7 +3,6 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef } from "react";
-import { decodeEscapedText } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLLM } from "@/hooks/useLLM";
 import { useSettingsStore } from "@/store/useSettingsStore";
@@ -23,6 +22,7 @@ import {
   SpeechIcon,
   BookIcon,
   SquareIcon,
+  MegaphoneIcon,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -31,22 +31,26 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { nanoid } from "nanoid";
-import { InlineEditableContent } from "@/components/game";
+import { InlineEditableContent, LogEntryBubble } from "@/components/game";
+import { LogEntryMode } from "@/types/log.type";
 interface Action {
-  type: "say" | "do" | "story";
+  type: LogEntryMode;
   isRolling: boolean;
 }
 function getPlaceholder(action: Action) {
   let placeholder = "";
   switch (action.type) {
-    case "do":
+    case LogEntryMode.DO:
       placeholder = "You...";
       break;
-    case "say":
+    case LogEntryMode.SAY:
       placeholder = "You say...";
       break;
-    case "story":
+    case LogEntryMode.STORY:
       placeholder = "...";
+      break;
+    case LogEntryMode.DIRECT:
+      placeholder = "Director's message...";
       break;
   }
   if (action.isRolling) {
@@ -73,18 +77,19 @@ export default function Demo() {
     string | null
   >(null);
   const [action, setAction] = useState<Action>({
-    type: "do",
+    type: LogEntryMode.DO,
     isRolling: false,
   });
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [stickToBottom, setStickToBottom] = useState<boolean>(true);
+  const bottomBarRef = useRef<HTMLDivElement | null>(null);
+  const [bottomBarHeight, setBottomBarHeight] = useState<number>(80);
 
   useEffect(() => {
     if (loading) setStickToBottom(true);
   }, [loading]);
 
-  // Auto-scroll on log updates if sticking to bottom
   useEffect(() => {
     if (!stickToBottom) return;
     bottomRef.current?.scrollIntoView({
@@ -93,8 +98,22 @@ export default function Demo() {
     });
   }, [log]);
 
+  //fix bottom bar height
+  useEffect(() => {
+    const el = bottomBarRef.current;
+    if (!el) return;
+    const update = () => setBottomBarHeight(el.getBoundingClientRect().height);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    window.addEventListener("resize", update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, []);
+
   const handleViewportScroll = () => {
-    if (!loading) return;
     const el = viewportRef.current;
     if (!el) return;
     const thresholdPx = 64;
@@ -112,7 +131,7 @@ export default function Demo() {
       id: gmResponseId,
       role: "gm",
       text: "...",
-      mode: "story",
+      mode: LogEntryMode.STORY,
     });
 
     let storyContent = "";
@@ -182,7 +201,10 @@ export default function Demo() {
       ? input + ` [Roll: ${Math.floor(Math.random() * 100) + 1}/100]`
       : input;
 
-    const finalMessage = playerInput;
+    const finalMessage =
+      action.type !== "direct"
+        ? playerInput
+        : `Director's Note: "${playerInput}"`;
 
     addLog({
       id: nanoid(),
@@ -221,7 +243,6 @@ export default function Demo() {
           className="flex-1 px-2 py-0 min-h-0"
           viewportRef={viewportRef}
           onViewportScroll={handleViewportScroll}
-          viewportClassName="flex flex-col justify-end pb-16"
         >
           {log.length > 0 ? (
             log.map((entry) =>
@@ -252,27 +273,7 @@ export default function Demo() {
                   {/* <span className="font-bold text-lg">
                   {entry.role === "player" ? "You" : "GM"}:
                 </span> */}
-                  {entry.mode === "say" ? (
-                    <div className="flex items-center rounded-xs border-accent-foreground/50 py-1 bg-blue-300/15">
-                      <SpeechIcon className="inline w-4 h-4 mr-2 text-muted-foreground ml-2 shrink-0" />
-                      <p className="inline whitespace-pre-wrap break-words mr-1">
-                        {decodeEscapedText(entry.text)}
-                      </p>
-                    </div>
-                  ) : entry.mode === "do" ? (
-                    <div className="flex items-center rounded-xs border-accent-foreground/50 py-1 bg-amber-300/15">
-                      <HandIcon className="inline w-4 h-4 mr-2 text-muted-foreground ml-2 shrink-0" />
-                      <p className="inline whitespace-pre-wrap break-words mr-1">
-                        {decodeEscapedText(entry.text)}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="flex items-center ml-2">
-                      <p className="inline whitespace-pre-wrap break-words">
-                        {decodeEscapedText(entry.text)}
-                      </p>
-                    </div>
-                  )}
+                  <LogEntryBubble text={entry.text} mode={entry.mode} />
                   {entry.isActionError && (
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -295,14 +296,18 @@ export default function Demo() {
               )
             )
           ) : (
-            // <p className="text-center text-muted-foreground">
-            //   The story begins...
-            // </p>
             <></>
           )}
-          <div ref={bottomRef} className="mt-2" />
+          <div
+            ref={bottomRef}
+            className="mt-2"
+            style={{ height: bottomBarHeight + 8 }}
+          />
         </ScrollArea>
-        <div className="pointer-events-auto absolute inset-x-0 bottom-0 z-20 border-t bg-accent p-2">
+        <div
+          ref={bottomBarRef}
+          className="pointer-events-auto absolute inset-x-0 bottom-0 z-20 border-t bg-accent p-2"
+        >
           <div className="flex w-full items-end space-x-1">
             <Button
               variant={action.isRolling ? "default" : "outline"}
@@ -332,14 +337,17 @@ export default function Demo() {
                 <SelectValue placeholder="Action" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="do">
+                <SelectItem value={LogEntryMode.DO}>
                   <HandIcon className="w-4 h-4 mr-2" /> Act
                 </SelectItem>
-                <SelectItem value="say">
+                <SelectItem value={LogEntryMode.SAY}>
                   <SpeechIcon className="w-4 h-4 mr-2" /> Say
                 </SelectItem>
-                <SelectItem value="story">
+                <SelectItem value={LogEntryMode.STORY}>
                   <BookIcon className="w-4 h-4 mr-2" /> Story
+                </SelectItem>
+                <SelectItem value={LogEntryMode.DIRECT}>
+                  <MegaphoneIcon className="w-4 h-4 mr-2" /> Direct
                 </SelectItem>
               </SelectContent>
             </Select>
