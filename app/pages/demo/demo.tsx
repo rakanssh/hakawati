@@ -19,7 +19,6 @@ import {
   HandIcon,
   MessageCircleWarning,
   RefreshCwIcon,
-  Loader2Icon,
   SendIcon,
   SpeechIcon,
   BookIcon,
@@ -222,7 +221,7 @@ export default function Demo() {
           className="flex-1 px-2 py-0 min-h-0"
           viewportRef={viewportRef}
           onViewportScroll={handleViewportScroll}
-          viewportClassName="flex flex-col justify-end"
+          viewportClassName="flex flex-col justify-end pb-16"
         >
           {log.length > 0 ? (
             log.map((entry) =>
@@ -303,7 +302,7 @@ export default function Demo() {
           )}
           <div ref={bottomRef} className="mt-2" />
         </ScrollArea>
-        <div className="border-t p-2 px-">
+        <div className="pointer-events-auto absolute inset-x-0 bottom-0 z-20 border-t bg-accent p-2">
           <div className="flex w-full items-end space-x-1">
             <Button
               variant={action.isRolling ? "default" : "outline"}
@@ -344,19 +343,22 @@ export default function Demo() {
                 </SelectItem>
               </SelectContent>
             </Select>
-            <Textarea
-              placeholder={getPlaceholder(action)}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit();
-                }
-              }}
-              rows={1}
-              className="resize-none rounded-xs"
-            />
+            <div className="relative flex-1 min-w-0">
+              <div className="h-9" aria-hidden="true" />
+              <Textarea
+                placeholder={getPlaceholder(action)}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit();
+                  }
+                }}
+                rows={1}
+                className="absolute inset-x-0 bottom-0 resize-none rounded-xs !bg-accent"
+              />
+            </div>
             <Button
               type="submit"
               onClick={handleSubmit}
