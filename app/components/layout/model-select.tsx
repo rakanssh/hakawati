@@ -9,7 +9,7 @@ import {
   CommandGroup,
   CommandItem,
 } from "../ui/command";
-import { CheckIcon, ChevronsUpDownIcon, TextIcon } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useLLMProviders } from "@/hooks/useLLMProviders";
