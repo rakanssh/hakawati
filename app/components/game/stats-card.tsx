@@ -31,7 +31,7 @@ export function StatsCard() {
   return (
     <div ref={containerRef} className="relative overflow-hidden">
       <div className="py-1 flex flex-col gap-1 mt-1">
-        <div className="px-4">
+        <div className="px-1">
           <div className="relative flex flex-row justify-between">
             <div className="absolute right-0">
               <AddIconButton
@@ -43,7 +43,7 @@ export function StatsCard() {
           </div>
           <Separator className="mb-1" />
         </div>
-        <div className="px-4">
+        <div className="px-1">
           <div className="flex flex-col gap-4">
             {stats.map((stat) => (
               <div key={stat.name} className="flex flex-col gap-1">
