@@ -40,10 +40,19 @@ export interface LLMClient {
   models(): Promise<LLMModel[]>;
 }
 
+export interface ModelPricing {
+  prompt: number;
+  completion: number;
+  request: number;
+  image: number;
+  audio: number;
+}
+
 export interface LLMModel {
   id: string;
   name: string;
   contextLength: number;
+  pricing?: ModelPricing;
 }
 
 export interface LLMAction {

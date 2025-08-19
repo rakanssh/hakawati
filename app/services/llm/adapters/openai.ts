@@ -76,10 +76,12 @@ export function OpenAiClient(apiKey: string): LLMClient {
       },
     });
     const json = await r.json();
+    console.log(json);
     return json.data.map((model: any) => ({
       id: model.id,
       name: model.name,
       contextLength: model.context_length,
+      pricing: model.pricing,
     }));
   }
   return { chat, models };
