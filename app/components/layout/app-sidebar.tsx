@@ -8,7 +8,6 @@ import { Separator } from "@/components/ui/separator";
 import { InventoryCard, StatsCard } from "@/components/game";
 import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { CardContent, SquareCard } from "../ui/card";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { resetAllState, undo, redo } = useGameStore();
