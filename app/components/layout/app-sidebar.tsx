@@ -35,11 +35,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <Separator className="mb-2" />
           <div className="py-0 px-0 ">
             <div className="flex flex-row items-center justify-between gap-1 ">
-              <div className="grid grid-cols-3 gap-1 w-full">
+              <div className="flex flex-row w-full">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      className="w-full"
+                      className="flex-1 rounded-none"
                       variant="ghost"
                       size="icon"
                       onClick={undo}
@@ -49,11 +49,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   </TooltipTrigger>
                   <TooltipContent side="top">Undo (Ctrl+Z)</TooltipContent>
                 </Tooltip>
-
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      className="w-full"
+                      className="flex-1/6 border-x-1 border-white/25 rounded-none"
                       size="icon"
                       variant={confirmingReset ? "destructive" : "ghost"}
                       onClick={handleReset}
@@ -67,7 +66,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      className="w-full"
+                      className="flex-1 rounded-none"
                       variant="ghost"
                       size="icon"
                       onClick={redo}
