@@ -41,6 +41,7 @@ export default function SettingsModel() {
     setTopA,
     setSeed,
     randomSeed,
+    setToDefault,
   } = useSettingsStore();
 
   useEffect(() => {
@@ -200,6 +201,10 @@ export default function SettingsModel() {
           </Button>
         </div>
       </div>
+
+      <Button variant="destructive" onClick={setToDefault}>
+        Reset to default
+      </Button>
     </div>
   );
 }
