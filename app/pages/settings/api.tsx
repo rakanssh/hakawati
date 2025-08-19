@@ -6,10 +6,23 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Separator } from "@/components/ui/separator";
 import { ApiType } from "@/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function SettingsApi() {
-  const { apiKey, setApiKey, apiType, openAiBaseUrl, setOpenAiBaseUrl } =
-    useSettingsStore();
+  const {
+    apiKey,
+    setApiKey,
+    apiType,
+    openAiBaseUrl,
+    setApiType,
+    setOpenAiBaseUrl,
+  } = useSettingsStore();
   const navigate = useNavigate();
   useEffect(() => {
     // Replace the history entry so switching tabs doesn't build up history
@@ -20,16 +33,45 @@ export default function SettingsApi() {
     if (apiType === ApiType.OPENAI) return "OpenAI";
     return "Borked";
   }
+
+  function getApiTypeOptions() {
+    return Object.values(ApiType).map((type) => ({
+      label: resolveApiTypeLabel(type),
+      value: type,
+    }));
+  }
+
   return (
     <div className="flex flex-col gap-4 max-w-2xl">
       <Label>API Settings</Label>
       <Separator />
-      <div className="flex flex-col gap-2">
-        <Label>{resolveApiTypeLabel(apiType)} base URL</Label>
-        <Input
-          value={openAiBaseUrl}
-          onChange={(e) => setOpenAiBaseUrl(e.target.value)}
-        />
+
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <div className="flex flex-col gap-2 sm:col-span-1">
+          <Label>API Type</Label>
+          <Select
+            value={apiType}
+            onValueChange={(value) => setApiType(value as ApiType)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select an API type" />
+              <SelectContent>
+                {getApiTypeOptions().map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </SelectTrigger>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-2 sm:col-span-3">
+          <Label>{resolveApiTypeLabel(apiType)} base URL</Label>
+          <Input
+            value={openAiBaseUrl}
+            onChange={(e) => setOpenAiBaseUrl(e.target.value)}
+          />
+        </div>
       </div>
       <div className="flex flex-col gap-2">
         <Label>API Key</Label>
