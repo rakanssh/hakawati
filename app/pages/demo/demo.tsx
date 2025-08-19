@@ -23,6 +23,7 @@ import {
   SendIcon,
   SpeechIcon,
   BookIcon,
+  SquareIcon,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -253,14 +254,14 @@ export default function Demo() {
                   {entry.role === "player" ? "You" : "GM"}:
                 </span> */}
                   {entry.mode === "say" ? (
-                    <div className="flex items-center rounded-sm border-accent-foreground/50 py-1 bg-blue-300/15">
+                    <div className="flex items-center rounded-xs border-accent-foreground/50 py-1 bg-blue-300/15">
                       <SpeechIcon className="inline w-4 h-4 mr-2 text-muted-foreground ml-2 shrink-0" />
                       <p className="inline whitespace-pre-wrap break-words mr-1">
                         {decodeEscapedText(entry.text)}
                       </p>
                     </div>
                   ) : entry.mode === "do" ? (
-                    <div className="flex items-center rounded-sm border-accent-foreground/50 py-1 bg-amber-300/15">
+                    <div className="flex items-center rounded-xs border-accent-foreground/50 py-1 bg-amber-300/15">
                       <HandIcon className="inline w-4 h-4 mr-2 text-muted-foreground ml-2 shrink-0" />
                       <p className="inline whitespace-pre-wrap break-words mr-1">
                         {decodeEscapedText(entry.text)}
@@ -305,7 +306,8 @@ export default function Demo() {
         <div className="border-t p-2 px-">
           <div className="flex w-full items-end space-x-1">
             <Button
-              variant={action.isRolling ? "outline" : "ghost"}
+              variant={action.isRolling ? "default" : "outline"}
+              className="rounded-xs"
               size="icon"
               onClick={() =>
                 setAction({
@@ -327,7 +329,7 @@ export default function Demo() {
                 })
               }
             >
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40 rounded-xs">
                 <SelectValue placeholder="Action" />
               </SelectTrigger>
               <SelectContent>
@@ -353,16 +355,17 @@ export default function Demo() {
                 }
               }}
               rows={1}
-              className="resize-none rounded-sm"
+              className="resize-none rounded-xs"
             />
             <Button
               type="submit"
               onClick={handleSubmit}
-              disabled={loading}
-              className="rounded-sm"
+              // disabled={loading}
+              className="rounded-xs"
             >
               {loading ? (
-                <Loader2Icon className="animate-spin" />
+                // <Loader2Icon className="animate-spin" />
+                <SquareIcon className="w-4 h-4 animate-pulse" />
               ) : (
                 <SendIcon className="w-4 h-4" />
               )}
@@ -371,8 +374,8 @@ export default function Demo() {
               type="submit"
               onClick={handleRetry}
               disabled={loading}
-              variant="ghost"
-              className="rounded-sm"
+              variant="default"
+              className="rounded-xs"
             >
               <RefreshCwIcon strokeWidth={1.5} />
             </Button>

@@ -27,7 +27,7 @@ export default function Home() {
         <CardContent className="flex flex-col gap-2">
           <div className="flex flex-col gap-2">
             <div className="flex flex-col gap-2">
-              <Label>API Key</Label>
+              <Label className="text-sm">API Key</Label>
               <div className="flex flex-row gap-2">
                 <Input
                   placeholder="Enter your key here"
