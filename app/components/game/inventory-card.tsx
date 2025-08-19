@@ -1,5 +1,4 @@
 import { useGameStore } from "@/store/useGameStore";
-import { CardContent, CardHeader, CardTitle, SquareCard } from "../ui/card";
 import { Separator } from "../ui/separator";
 import { InventoryItem } from "./inventory-item";
 import { PlusIcon } from "lucide-react";
@@ -21,17 +20,17 @@ export function InventoryCard() {
   const containerRef = useRef<HTMLDivElement>(null);
   return (
     <div ref={containerRef} className="relative overflow-hidden">
-      <SquareCard className="py-1 flex flex-col gap-1 mt-2">
-        <CardHeader className="px-4">
+      <div className="py-1 flex flex-col gap-1 mt-2">
+        <div className="px-4">
           <div className="relative flex flex-row justify-between">
             <div className="absolute right-0">
               <InventoryButton setOpen={setOpen} />
             </div>
-            <CardTitle className="text-sm">Inventory</CardTitle>
+            <Label className="text-sm pb-1">Inventory</Label>
           </div>
-          <Separator />
-        </CardHeader>
-        <CardContent className="px-4">
+          <Separator className="mb-1" />
+        </div>
+        <div className="px-4">
           {inventory.length > 0 ? (
             <ul className="flex flex-row flex-wrap gap-1">
               {inventory.map((item) => (
@@ -43,7 +42,7 @@ export function InventoryCard() {
           ) : (
             <Label className="text-muted-foreground text-xs">Nothing...</Label>
           )}
-        </CardContent>
+        </div>
         <AddDrawer
           open={open}
           setOpen={(o) => {
@@ -67,7 +66,7 @@ export function InventoryCard() {
             onChange={(e) => setItemName(e.target.value)}
           />
         </AddDrawer>
-      </SquareCard>
+      </div>
     </div>
   );
 }

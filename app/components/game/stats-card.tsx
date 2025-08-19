@@ -1,5 +1,4 @@
 import { useGameStore } from "@/store/useGameStore";
-import { CardContent, CardHeader, CardTitle, SquareCard } from "../ui/card";
 import { Separator } from "../ui/separator";
 import { Progress } from "../ui/progress";
 // Button not used directly after AddIconButton extraction
@@ -11,6 +10,7 @@ import { InlineEditableBadge } from "./inline-editable-badge";
 import { InlineEditableNumber } from "./inline-editable-number";
 import { Stat } from "@/types/stats.type";
 import { AddIconButton } from "./add-icon-button";
+import { Label } from "../ui/label";
 
 export function StatsCard() {
   const { stats, addToStats, updateStat, removeFromStats } = useGameStore();
@@ -25,13 +25,13 @@ export function StatsCard() {
   const ProgressBar = useMemo(() => {
     return (stat: Stat) => {
       const progress = (stat.value / stat.range[1]) * 100;
-      return <Progress value={progress} max={100} className="h-2" />;
+      return <Progress value={progress} max={100} className="h-2 mt-1" />;
     };
   }, [stats]);
   return (
     <div ref={containerRef} className="relative overflow-hidden">
-      <SquareCard className="py-1 flex flex-col gap-1 mt-1">
-        <CardHeader className="px-4">
+      <div className="py-1 flex flex-col gap-1 mt-1">
+        <div className="px-4">
           <div className="relative flex flex-row justify-between">
             <div className="absolute right-0">
               <AddIconButton
@@ -39,11 +39,11 @@ export function StatsCard() {
                 ariaLabel="Add stat"
               />
             </div>
-            <CardTitle className="text-sm">Stats</CardTitle>
+            <Label className="text-sm pb-1">Stats</Label>
           </div>
-          <Separator />
-        </CardHeader>
-        <CardContent className="px-4">
+          <Separator className="mb-1" />
+        </div>
+        <div className="px-4">
           <div className="flex flex-col gap-4">
             {stats.map((stat) => (
               <div key={stat.name} className="flex flex-col gap-1">
@@ -60,7 +60,7 @@ export function StatsCard() {
                       updateStat(stat.name, { name: newName.trim() });
                     }}
                     onRemove={() => removeFromStats(stat.name)}
-                    className="text-xs cursor-pointer"
+                    className="cursor-pointer border-white/35 text-wrap whitespace-normal text-left"
                   />
                   <div className="flex items-baseline gap-1">
                     <InlineEditableNumber
@@ -89,7 +89,7 @@ export function StatsCard() {
               </div>
             ))}
           </div>
-        </CardContent>
+        </div>
         <AddDrawer
           open={open}
           setOpen={(o) => {
@@ -116,7 +116,7 @@ export function StatsCard() {
             />
           </div>
         </AddDrawer>
-      </SquareCard>
+      </div>
     </div>
   );
 }
