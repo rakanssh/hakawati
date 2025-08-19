@@ -305,7 +305,7 @@ export default function Demo() {
         <div className="border-t p-2 px-">
           <div className="flex w-full items-end space-x-1">
             <Button
-              variant={action.isRolling ? "default" : "ghost"}
+              variant={action.isRolling ? "outline" : "ghost"}
               size="icon"
               onClick={() =>
                 setAction({
