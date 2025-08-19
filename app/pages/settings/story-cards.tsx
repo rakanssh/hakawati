@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { HelpCircle, InfoIcon } from "lucide-react";
 import { useScenarioStore } from "@/store/useScenarioStore";
 import {
@@ -12,6 +11,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { Separator } from "@/components/ui/separator";
 
 export default function SettingsStoryCards() {
   const { storyCards, addStoryCard, removeStoryCard, updateStoryCard } =
@@ -36,6 +36,8 @@ export default function SettingsStoryCards() {
 
   return (
     <div className="flex flex-col max-w-2xl h-full gap-4">
+      <Label>Story Cards</Label>
+      <Separator />
       <div className="flex flex-col gap-3">
         {storyCards.map((card) => (
           <div

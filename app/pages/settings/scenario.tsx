@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { nanoid } from "nanoid";
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 
 type ExportedScenarioV1 = {
   format: "hakawati-scenario";
@@ -139,8 +139,10 @@ export default function SettingsScenario() {
 
   return (
     <div className="flex flex-col gap-4 max-w-2xl">
+      <Label>Scenario</Label>
+      <Separator />
       <div className="flex flex-col gap-2">
-        <Label>Scenario</Label>
+        <Label>Name</Label>
         <Input
           value={scenario.name}
           onChange={(e) => setScenario({ ...scenario, name: e.target.value })}
