@@ -126,3 +126,20 @@
 .titlebar-no-drag {
   -webkit-app-region: no-drag;
 }
+
+/* Match native textarea scrollbar to ScrollArea styling */
+[data-slot="textarea"] {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--border) transparent; /* Firefox */
+}
+[data-slot="textarea"]::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+[data-slot="textarea"]::-webkit-scrollbar-track {
+  background: transparent;
+}
+[data-slot="textarea"]::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 9999px; /* rounded-full */
+}
