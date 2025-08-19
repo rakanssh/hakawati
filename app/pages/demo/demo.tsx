@@ -20,6 +20,8 @@ import {
   MessageCircleIcon,
   MessageCircleWarning,
   RefreshCwIcon,
+  Loader2Icon,
+  SendIcon,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -324,7 +326,7 @@ export default function Demo() {
                 })
               }
             >
-              <SelectTrigger className="w-28">
+              <SelectTrigger className="w-32">
                 <SelectValue placeholder="Action" />
               </SelectTrigger>
               <SelectContent>
@@ -344,16 +346,26 @@ export default function Demo() {
                 }
               }}
               rows={1}
-              className="resize-none"
+              className="resize-none rounded-sm"
             />
-            <Button type="submit" onClick={handleSubmit} disabled={loading}>
-              {loading ? "Thinking..." : "Send"}
+            <Button
+              type="submit"
+              onClick={handleSubmit}
+              disabled={loading}
+              className="rounded-sm"
+            >
+              {loading ? (
+                <Loader2Icon className="animate-spin" />
+              ) : (
+                <SendIcon className="w-4 h-4" />
+              )}
             </Button>
             <Button
               type="submit"
               onClick={handleRetry}
               disabled={loading}
               variant="ghost"
+              className="rounded-sm"
             >
               <RefreshCwIcon strokeWidth={1.5} />
             </Button>
