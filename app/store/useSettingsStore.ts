@@ -36,6 +36,7 @@ interface SettingsStoreType {
   setTopA: (topA: number) => void;
   setSeed: (seed: number) => void;
   randomSeed: () => void;
+  setToDefault: () => void;
 }
 
 export const useSettingsStore = create<SettingsStoreType>()(
@@ -93,6 +94,19 @@ export const useSettingsStore = create<SettingsStoreType>()(
       setTopA: (topA: number) => set({ topA: Math.max(0, Math.min(1, topA)) }),
       setSeed: (seed: number) => set({ seed }),
       randomSeed: () => set({ seed: Math.floor(Math.random() * 1000000) }),
+      setToDefault: () =>
+        set({
+          contextWindow: 10000,
+          maxTokens: 2048,
+          temperature: undefined,
+          topP: undefined,
+          topK: undefined,
+          frequencyPenalty: undefined,
+          presencePenalty: undefined,
+          repetitionPenalty: undefined,
+          minP: undefined,
+          topA: undefined,
+        }),
     }),
     {
       name: "settings",
