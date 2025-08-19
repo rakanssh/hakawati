@@ -17,11 +17,12 @@ import {
 import {
   DicesIcon,
   HandIcon,
-  MessageCircleIcon,
   MessageCircleWarning,
   RefreshCwIcon,
   Loader2Icon,
   SendIcon,
+  SpeechIcon,
+  BookIcon,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -253,7 +254,7 @@ export default function Demo() {
                 </span> */}
                   {entry.mode === "say" ? (
                     <div className="flex items-center rounded-sm border-accent-foreground/50 py-1 bg-blue-300/15">
-                      <MessageCircleIcon className="inline w-4 h-4 mr-2 text-muted-foreground ml-2 shrink-0" />
+                      <SpeechIcon className="inline w-4 h-4 mr-2 text-muted-foreground ml-2 shrink-0" />
                       <p className="inline whitespace-pre-wrap break-words mr-1">
                         {decodeEscapedText(entry.text)}
                       </p>
@@ -326,13 +327,19 @@ export default function Demo() {
                 })
               }
             >
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-40">
                 <SelectValue placeholder="Action" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="do">Do</SelectItem>
-                <SelectItem value="say">Say</SelectItem>
-                <SelectItem value="story">Story</SelectItem>
+                <SelectItem value="do">
+                  <HandIcon className="w-4 h-4 mr-2" /> Act
+                </SelectItem>
+                <SelectItem value="say">
+                  <SpeechIcon className="w-4 h-4 mr-2" /> Say
+                </SelectItem>
+                <SelectItem value="story">
+                  <BookIcon className="w-4 h-4 mr-2" /> Story
+                </SelectItem>
               </SelectContent>
             </Select>
             <Textarea
