@@ -40,7 +40,7 @@ export function ModelSelect() {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
       currency: "USD",
-      maximumFractionDigits: 4,
+      maximumFractionDigits: 8,
       ...opts,
     }).format(value);
   }
