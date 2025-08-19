@@ -14,20 +14,26 @@ export function Titlebar() {
       data-tauri-drag-region
       className="titlebar-drag fixed top-0 left-0 right-0 z-50 h-8 bg-background border-b"
     >
-      <div className="grid grid-cols-3 items-center h-full px-2 select-none">
+      <div className="grid grid-cols-3 items-center h-full px-2 select-none pointer-events-none">
         <div className="flex items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-                <img src={fez} alt="Hakawati" className="w-6 h-6 " />
-              </Button>
+              <span className="titlebar-no-drag pointer-events-auto">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate("/")}
+                >
+                  <img src={fez} alt="Hakawati" className="w-6 h-6 " />
+                </Button>
+              </span>
             </TooltipTrigger>
             <TooltipContent side="top">Home</TooltipContent>
           </Tooltip>
           {isDemo && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="titlebar-no-drag">
+                <span className="titlebar-no-drag pointer-events-auto">
                   <SettingsButton className="" />
                 </span>
               </TooltipTrigger>
@@ -40,7 +46,7 @@ export function Titlebar() {
             Hakawati
           </span>
         </div>
-        <div className="titlebar-no-drag flex justify-end gap-0">
+        <div className="titlebar-no-drag pointer-events-auto flex justify-end gap-0">
           <button
             aria-label="Minimize"
             className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-foreground/10 text-foreground/80 hover:text-foreground"
