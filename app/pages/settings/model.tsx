@@ -49,7 +49,6 @@ export default function SettingsModel() {
   }, [navigate]);
 
   function resolveApiTypeLabel(apiType: ApiType) {
-    console.log(apiType);
     if (apiType === ApiType.OPENAI) return "OpenAI";
     return "Borked";
   }
