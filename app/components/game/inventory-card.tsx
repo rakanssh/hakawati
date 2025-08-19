@@ -19,9 +19,9 @@ export function InventoryCard() {
   const [itemName, setItemName] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   return (
-    <div ref={containerRef} className="relative overflow-hidden">
+    <div ref={containerRef} className="relative overflow-hidden ">
       <div className="py-1 flex flex-col gap-1 mt-2">
-        <div className="px-4">
+        <div className="px-1">
           <div className="relative flex flex-row justify-between">
             <div className="absolute right-0">
               <InventoryButton setOpen={setOpen} />
@@ -30,7 +30,7 @@ export function InventoryCard() {
           </div>
           <Separator className="mb-1" />
         </div>
-        <div className="px-4">
+        <div className="px-1">
           {inventory.length > 0 ? (
             <ul className="flex flex-row flex-wrap gap-1">
               {inventory.map((item) => (
