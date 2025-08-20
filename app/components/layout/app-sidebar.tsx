@@ -36,7 +36,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <div className="flex flex-col pb-2 border-r-1 bg-accent">
         <Separator className="mb-2" />
         <div className="py-0 px-2 ">
-          <Card className="flex flex-row items-center justify-between gap-1 rounded-none border-none shadow-none p-0 m-0">
+          <Card className="flex flex-row items-center justify-between gap-1 rounded-none border-none bg-accent p-0 m-0">
             <CardContent className="flex flex-row w-full p-0 m-0 gap-2">
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -54,7 +54,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
-                    className="flex-1/6  rounded-xs"
+                    className="flex-1/6 rounded-xs"
                     size="icon"
                     variant={confirmingReset ? "destructive" : "outline"}
                     onClick={handleReset}
