@@ -270,7 +270,7 @@ export default function Demo() {
                   {/* <span className="font-bold text-lg">
                   {entry.role === "player" ? "You" : "GM"}:
                 </span> */}
-                  <LogEntryBubble text={entry.text} mode={entry.mode} />
+                  <LogEntryBubble entry={entry} />
                   {entry.isActionError && (
                     <Tooltip>
                       <TooltipTrigger asChild>
