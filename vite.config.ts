@@ -1,7 +1,7 @@
 import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
-import { reactRouter } from "@react-router/dev/vite";
+import react from "@vitejs/plugin-react";
 import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
 
@@ -9,12 +9,17 @@ const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-  plugins: [reactRouter(), tailwindcss(), wasm(), topLevelAwait()],
+  plugins: [react(), tailwindcss(), wasm(), topLevelAwait()],
 
   resolve: {
     alias: {
       "@": path.resolve(process.cwd(), "./app"),
     },
+  },
+
+  base: "./",
+  build: {
+    outDir: "dist",
   },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`

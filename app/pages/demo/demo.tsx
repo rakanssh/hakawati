@@ -394,8 +394,6 @@ export default function Demo() {
         {/* Render nested routes (settings modal) on top of demo content */}
         <div className="pointer-events-none absolute inset-0">
           {/* The modal content uses fixed positioning and pointer events, so just mount outlet */}
-          {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
-          {/* @ts-ignore - Outlet is injected at route level, react-router handles it */}
           <OutletWrapper />
         </div>
       </SidebarInset>
@@ -404,7 +402,7 @@ export default function Demo() {
 }
 
 // Lightweight wrapper that renders nested outlet without affecting layout; defined here to avoid imports
-import { Outlet } from "react-router";
+import { Outlet } from "@tanstack/react-router";
 function OutletWrapper() {
   return <Outlet />;
 }
