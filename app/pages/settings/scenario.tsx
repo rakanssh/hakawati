@@ -8,19 +8,13 @@ import { nanoid } from "nanoid";
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Separator } from "@/components/ui/separator";
+import { Scenario } from "@/types/context.type";
 
 type ExportedScenarioV1 = {
   format: "hakawati-scenario";
   version: 1;
   exportedAt: string;
-  scenario: {
-    name: string;
-    description: string;
-    authorNote: string;
-    initialStats: { name: string; value: number; range: [number, number] }[];
-    initialInventory: string[];
-    initialStoryCards: { title: string; triggers: string[]; content: string }[];
-  };
+  scenario: Scenario;
   storyCards: { title: string; triggers: string[]; content: string }[];
 };
 
@@ -50,7 +44,8 @@ export default function SettingsScenario() {
             : [],
           initialStoryCards: Array.isArray(scenario.initialStoryCards)
             ? scenario.initialStoryCards.map(
-                ({ title, triggers, content }) => ({
+                ({ title, triggers, content, id }) => ({
+                  id: id ?? nanoid(12),
                   title,
                   triggers,
                   content,
@@ -58,7 +53,8 @@ export default function SettingsScenario() {
               )
             : [],
         },
-        storyCards: storyCards.map(({ title, triggers, content }) => ({
+        storyCards: storyCards.map(({ title, triggers, content, id }) => ({
+          id: id ?? nanoid(12),
           title,
           triggers,
           content,
