@@ -89,6 +89,9 @@ function ActionBadge({ action }: { action: LLMAction }) {
       </Badge>
     );
   }
+  if (action.type === "MODIFY_STAT" && action.payload.value == 0) {
+    return;
+  }
   if (action.type === "ADD_TO_INVENTORY") {
     return (
       <Badge variant="outline" className="ml-2 border-green-300/15 rounded-xs ">
