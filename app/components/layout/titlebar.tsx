@@ -1,4 +1,4 @@
-import { MinusIcon, SquareIcon, XIcon } from "lucide-react";
+import { HomeIcon, MinusIcon, SquareIcon, XIcon } from "lucide-react";
 import { SettingsButton } from "./settings-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { Button } from "../ui/button";
@@ -16,29 +16,35 @@ export function Titlebar() {
     >
       <div className="grid grid-cols-3 items-center h-full px-2 select-none pointer-events-none">
         <div className="flex items-center gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="titlebar-no-drag pointer-events-auto">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate("/")}
-                >
-                  <img src={fez} alt="Hakawati" className="w-6 h-6 " />
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="top">Home</TooltipContent>
-          </Tooltip>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+            <img src={fez} alt="Hakawati" className="w-6 h-6 " />
+          </Button>
+
           {isDemo && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="titlebar-no-drag pointer-events-auto">
-                  <SettingsButton className="" />
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="top">Settings</TooltipContent>
-            </Tooltip>
+            <>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="titlebar-no-drag pointer-events-auto">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => navigate("/")}
+                    >
+                      <HomeIcon className="" />
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top">Home</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="titlebar-no-drag pointer-events-auto">
+                    <SettingsButton className="" />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top">Settings</TooltipContent>
+              </Tooltip>
+            </>
           )}
         </div>
         <div className="flex justify-center">
@@ -46,7 +52,7 @@ export function Titlebar() {
             Hakawati
           </span>
         </div>
-        <div className="titlebar-no-drag pointer-events-auto flex justify-end gap-0">
+        <div className="titlebar-no-drag pointer-events-auto flex justify-end gap-1 w-fit absolute right-0">
           <button
             aria-label="Minimize"
             className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-foreground/10 text-foreground/80 hover:text-foreground"
