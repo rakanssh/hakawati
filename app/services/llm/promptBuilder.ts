@@ -113,8 +113,8 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
 
 function injectMode(text: string, mode?: LogEntryMode): string {
   if (mode === LogEntryMode.DIRECT) return `[Director's Note: ${text}]`;
-  if (mode === LogEntryMode.STORY) return `[Story: ${text}]`;
-  if (mode === LogEntryMode.DO) return `[Action: ${text}]`;
-  if (mode === LogEntryMode.SAY) return `[Say: ${text}]`;
+  if (mode === LogEntryMode.STORY) return `${text}`;
+  if (mode === LogEntryMode.DO) return `Action ${text}`;
+  if (mode === LogEntryMode.SAY) return `You Say:"${text}"`;
   return text;
 }
