@@ -74,7 +74,11 @@ export default function SettingsApi() {
       </div>
       <div className="flex flex-col gap-2">
         <Label>API Key</Label>
-        <Input value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
+        <Input
+          type="password"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+        />
       </div>
       <div className="flex flex-col gap-2">
         <Label>Model</Label>
