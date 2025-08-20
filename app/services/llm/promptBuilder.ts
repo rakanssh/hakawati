@@ -1,4 +1,4 @@
-import { LogEntry, LogEntryMode } from "@/types/log.type";
+import { LogEntry, LogEntryMode, LogEntryRole } from "@/types/log.type";
 import { Stat } from "@/types/stats.type";
 import {
   ChatMessage,
@@ -87,7 +87,7 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     const entry = log[i];
     const entryText = injectStoryCards(entry.text, storyCards);
     const msg: ChatMessage = {
-      role: entry.role === "player" ? "user" : "assistant",
+      role: entry.role === LogEntryRole.PLAYER ? "user" : "assistant",
       content: injectMode(entryText, entry.mode),
     };
     if (canAddWithUser(msg, [...messages, ...history])) {
