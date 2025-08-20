@@ -8,7 +8,7 @@ import {
 
 import AppShell from "./root";
 import Home from "./pages/home/home";
-import About from "./pages/about/about";
+// import About from "./pages/about/about";
 import Demo from "./pages/demo/demo";
 import SettingsLayout from "./pages/settings/layout";
 import SettingsIndex from "./pages/settings/index";
@@ -25,11 +25,11 @@ const IndexRoute = createRoute({
   component: Home,
 });
 
-const AboutRoute = createRoute({
-  getParentRoute: () => RootRoute,
-  path: "about",
-  component: About,
-});
+// const AboutRoute = createRoute({
+//   getParentRoute: () => RootRoute,
+//   path: "about",
+//   component: About,
+// });
 
 const DemoRoute = createRoute({
   getParentRoute: () => RootRoute,
@@ -75,7 +75,7 @@ const SettingsModelRoute = createRoute({
 
 const routeTree = RootRoute.addChildren([
   IndexRoute,
-  AboutRoute,
+  // AboutRoute,
   DemoRoute.addChildren([
     SettingsRoute.addChildren([
       SettingsIndexRoute,
