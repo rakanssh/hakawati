@@ -2,14 +2,13 @@ import { HomeIcon, MinusIcon, SquareIcon, XIcon } from "lucide-react";
 import { SettingsButton } from "./settings-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { Button } from "../ui/button";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useLocation } from "@tanstack/react-router";
 import fez from "@/assets/fez-offwh.svg";
 
 export function Titlebar() {
   const navigate = useNavigate();
-  const isClient = typeof window !== "undefined";
-  console.log(window.location.pathname);
-  const isDemo = isClient && window.location.pathname.split("/")[1] === "demo";
+  const location = useLocation();
+  const isDemo = location.pathname.split("/")[1] === "demo";
   return (
     <div
       data-tauri-drag-region
