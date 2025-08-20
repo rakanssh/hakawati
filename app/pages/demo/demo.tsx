@@ -50,7 +50,7 @@ function getPlaceholder(action: Action) {
       placeholder = "...";
       break;
     case LogEntryMode.DIRECT:
-      placeholder = "Director's message...";
+      placeholder = "Director's Note...";
       break;
   }
   if (action.isRolling) {
