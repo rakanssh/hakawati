@@ -201,10 +201,7 @@ export default function Demo() {
       ? input + ` [Roll: ${Math.floor(Math.random() * 100) + 1}/100]`
       : input;
 
-    const finalMessage =
-      action.type !== "direct"
-        ? playerInput
-        : `Director's Note: "${playerInput}"`;
+    const finalMessage = playerInput;
 
     addLog({
       id: nanoid(),
