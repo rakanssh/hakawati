@@ -1,4 +1,4 @@
-import { LogEntry } from "@/types/log.type";
+import { LogEntry, LogEntryMode } from "@/types/log.type";
 import { Stat } from "@/types/stats.type";
 import {
   ChatMessage,
@@ -88,7 +88,7 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     const entryText = injectStoryCards(entry.text, storyCards);
     const msg: ChatMessage = {
       role: entry.role === "player" ? "user" : "assistant",
-      content: entryText,
+      content: injectMode(entryText, entry.mode),
     };
     if (canAddWithUser(msg, [...messages, ...history])) {
       // unshift to keep chronological order
@@ -109,4 +109,12 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     max_tokens: useSettingsStore.getState().maxTokens,
     options: params.options,
   };
+}
+
+function injectMode(text: string, mode?: LogEntryMode): string {
+  if (mode === LogEntryMode.DIRECT) return `[Director's Note: ${text}]`;
+  if (mode === LogEntryMode.STORY) return `[Story: ${text}]`;
+  if (mode === LogEntryMode.DO) return `[Action: ${text}]`;
+  if (mode === LogEntryMode.SAY) return `[Say: ${text}]`;
+  return text;
 }
