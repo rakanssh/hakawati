@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { ModelSelect } from "@/components/layout";
 import { useSettingsStore } from "@/store";
 import { useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { Separator } from "@/components/ui/separator";
 import { ApiType } from "@/types";
 import {
@@ -25,8 +25,7 @@ export default function SettingsApi() {
   } = useSettingsStore();
   const navigate = useNavigate();
   useEffect(() => {
-    // Replace the history entry so switching tabs doesn't build up history
-    navigate(".", { replace: true });
+    navigate({ to: "." });
   }, [navigate]);
 
   function resolveApiTypeLabel(apiType: ApiType) {

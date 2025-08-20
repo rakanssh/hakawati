@@ -3,7 +3,7 @@ import { NumberInput } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { useSettingsStore } from "@/store";
 import { useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { ApiType } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -45,8 +45,7 @@ export default function SettingsModel() {
   } = useSettingsStore();
 
   useEffect(() => {
-    // Replace the history entry so switching tabs doesn't build up history
-    navigate(".", { replace: true });
+    navigate({ to: "." });
   }, [navigate]);
 
   function resolveApiTypeLabel(apiType: ApiType) {

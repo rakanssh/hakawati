@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router";
+import { Outlet, Link, useNavigate } from "@tanstack/react-router";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -14,7 +14,7 @@ export default function SettingsLayout() {
   const navigate = useNavigate();
   const handleOpenChange = useCallback(
     (open: boolean) => {
-      if (!open) navigate("..", { replace: true });
+      if (!open) navigate({ to: "/demo", replace: true });
     },
     [navigate]
   );
@@ -30,20 +30,13 @@ export default function SettingsLayout() {
             <ul className="flex flex-col gap-1">
               {tabs.map((tab) => (
                 <li key={tab.to}>
-                  <NavLink
-                    to={tab.to}
-                    replace
-                    className={({ isActive }) =>
-                      [
-                        "block w-full rounded-md px-3 py-2 text-sm",
-                        isActive
-                          ? "bg-accent text-accent-foreground"
-                          : "hover:bg-muted text-foreground",
-                      ].join(" ")
-                    }
+                  <Link
+                    to={"/demo/settings/" + tab.to}
+                    search
+                    className="block w-full rounded-md px-3 py-2 text-sm hover:bg-muted text-foreground [&.active]:bg-accent [&.active]:text-accent-foreground"
                   >
                     {tab.label}
-                  </NavLink>
+                  </Link>
                 </li>
               ))}
             </ul>

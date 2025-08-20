@@ -10,7 +10,7 @@ import {
   TooltipContent,
 } from "@/components/ui/tooltip";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { Separator } from "@/components/ui/separator";
 
 export default function SettingsStoryCards() {
@@ -21,7 +21,7 @@ export default function SettingsStoryCards() {
     null
   );
   useEffect(() => {
-    navigate(".", { replace: true });
+    navigate({ to: "." });
   }, [navigate]);
 
   const handleClickDelete = (id: string) => {

@@ -7,7 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { useSettingsStore } from "@/store/useSettingsStore";
 
 import { ModelSelect } from "@/components/layout";
@@ -43,9 +43,7 @@ export default function Home() {
             <ModelSelect />
             <Button
               disabled={!apiKey || !model}
-              onClick={() => {
-                navigate("/demo");
-              }}
+              onClick={() => navigate({ to: "/demo" })}
             >
               Play
             </Button>

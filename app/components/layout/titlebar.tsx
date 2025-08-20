@@ -2,12 +2,13 @@ import { HomeIcon, MinusIcon, SquareIcon, XIcon } from "lucide-react";
 import { SettingsButton } from "./settings-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { Button } from "../ui/button";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import fez from "@/assets/fez-offwh.svg";
 
 export function Titlebar() {
   const navigate = useNavigate();
   const isClient = typeof window !== "undefined";
+  console.log(window.location.pathname);
   const isDemo = isClient && window.location.pathname.split("/")[1] === "demo";
   return (
     <div
@@ -16,7 +17,11 @@ export function Titlebar() {
     >
       <div className="grid grid-cols-3 items-center h-full px-2 select-none pointer-events-none">
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate({ to: "/" })}
+          >
             <img src={fez} alt="Hakawati" className="w-6 h-6 " />
           </Button>
 
@@ -28,7 +33,7 @@ export function Titlebar() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => navigate("/")}
+                      onClick={() => navigate({ to: "/" })}
                     >
                       <HomeIcon className="" />
                     </Button>

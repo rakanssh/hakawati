@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { nanoid } from "nanoid";
 import { useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { Separator } from "@/components/ui/separator";
 
 type ExportedScenarioV1 = {
@@ -29,7 +29,7 @@ export default function SettingsScenario() {
     useScenarioStore();
   const navigate = useNavigate();
   useEffect(() => {
-    navigate(".", { replace: true });
+    navigate({ to: "." });
   }, [navigate]);
 
   async function handleExportScenario() {

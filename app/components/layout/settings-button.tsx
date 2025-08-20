@@ -1,6 +1,6 @@
 import { Button } from "../ui/button";
 import { SettingsIcon } from "lucide-react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 
 export function SettingsButton({
   ...props
@@ -10,7 +10,7 @@ export function SettingsButton({
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => navigate("/demo/settings/api", { replace: false })}
+      onClick={() => navigate({ to: "/demo/settings/api" })}
       {...props}
     >
       <SettingsIcon className="w-4 h-4" />
