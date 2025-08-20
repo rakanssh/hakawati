@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/tooltip";
 import { nanoid } from "nanoid";
 import { InlineEditableContent, LogEntryBubble } from "@/components/game";
-import { LogEntryMode } from "@/types/log.type";
+import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 interface Action {
   type: LogEntryMode;
   isRolling: boolean;
@@ -129,7 +129,7 @@ export default function Demo() {
     const gmResponseId = nanoid();
     addLog({
       id: gmResponseId,
-      role: "gm",
+      role: LogEntryRole.GM,
       text: "...",
       mode: LogEntryMode.STORY,
     });
@@ -205,7 +205,7 @@ export default function Demo() {
 
     addLog({
       id: nanoid(),
-      role: "player",
+      role: LogEntryRole.PLAYER,
       text: finalMessage,
       mode: action.type,
     });
@@ -220,7 +220,10 @@ export default function Demo() {
     const lastEntry = log.at(-1);
     const secondLastEntry = log.at(-2);
 
-    if (lastEntry?.role === "gm" && secondLastEntry?.role === "player") {
+    if (
+      lastEntry?.role === LogEntryRole.GM &&
+      secondLastEntry?.role === LogEntryRole.PLAYER
+    ) {
       removeLastLogEntry();
       executeLlmSend(secondLastEntry.text);
     } else {
@@ -268,7 +271,7 @@ export default function Demo() {
                   }}
                 >
                   {/* <span className="font-bold text-lg">
-                  {entry.role === "player" ? "You" : "GM"}:
+                  {entry.role === LogEntryRole.PLAYER ? "You" : "GM"}:
                 </span> */}
                   <LogEntryBubble entry={entry} />
                   {entry.isActionError && (

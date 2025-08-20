@@ -7,9 +7,14 @@ export enum LogEntryMode {
   DIRECT = "direct",
 }
 
+export enum LogEntryRole {
+  PLAYER = "player",
+  GM = "gm",
+}
+
 export type LogEntry = {
   id: string;
-  role: "player" | "gm";
+  role: LogEntryRole;
   mode?: LogEntryMode;
   text: string;
   isActionError?: boolean;
