@@ -30,6 +30,7 @@ export default function Home() {
               <Label className="text-sm">API Key</Label>
               <div className="flex flex-row gap-2">
                 <Input
+                  type="password"
                   placeholder="Enter your key here"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
