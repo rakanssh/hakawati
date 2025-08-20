@@ -3,7 +3,7 @@ import { SettingsButton } from "./settings-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { Button } from "../ui/button";
 import { useNavigate, useLocation } from "@tanstack/react-router";
-import fez from "@/assets/fez-offwh.svg";
+import fez from "@/assets/fez-offwh-bg-sqc.svg";
 
 export function Titlebar() {
   const navigate = useNavigate();
