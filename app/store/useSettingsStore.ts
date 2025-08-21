@@ -54,12 +54,12 @@ export const useSettingsStore = create<SettingsStoreType>()(
       setApiType: (apiType: ApiType) => set({ apiType }),
       setModel: (model: LLMModel) => {
         console.debug(
-          `Setting model: ${model.name} with context window: ${model.contextLength}.`
+          `Setting model: ${model.name} with context window: ${model.contextLength}.`,
         );
         set({
           contextWindow: Math.min(
             get().contextWindow ?? 2048,
-            model.contextLength
+            model.contextLength,
           ),
           modelContextLength: model.contextLength,
         });
@@ -70,7 +70,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
         set({
           contextWindow: Math.min(
             contextWindow,
-            get().modelContextLength ?? 2048
+            get().modelContextLength ?? 2048,
           ),
         }),
       setOpenAiBaseUrl: (openAiBaseUrl: string) => set({ openAiBaseUrl }),
@@ -110,6 +110,6 @@ export const useSettingsStore = create<SettingsStoreType>()(
     }),
     {
       name: "settings",
-    }
-  )
+    },
+  ),
 );

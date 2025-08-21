@@ -29,7 +29,7 @@ interface GameStoreType {
 //TODO: Find a better way to execute/undo actions
 const undoEntryActions = (
   state: GameStoreType,
-  entry: LogEntry
+  entry: LogEntry,
 ): Partial<GameStoreType> => {
   if (!entry.actions) {
     return {};
@@ -50,10 +50,10 @@ const undoEntryActions = (
                   ...stat,
                   value: Math.min(
                     Math.max(stat.value - statValue!, stat.range[0]),
-                    stat.range[1]
+                    stat.range[1],
                   ),
                 }
-              : stat
+              : stat,
           );
         }
         break;
@@ -79,7 +79,7 @@ const undoEntryActions = (
       case "ADD_TO_STATS":
         if (action.payload.name) {
           newStats = newStats.filter(
-            (stat) => stat.name !== action.payload.name
+            (stat) => stat.name !== action.payload.name,
           );
         }
         break;
@@ -90,7 +90,7 @@ const undoEntryActions = (
 
 const redoEntryActions = (
   state: GameStoreType,
-  entry: LogEntry
+  entry: LogEntry,
 ): Partial<GameStoreType> => {
   if (!entry.actions) {
     return {};
@@ -112,10 +112,10 @@ const redoEntryActions = (
                   ...stat,
                   value: Math.min(
                     Math.max(stat.value + modifyValue!, stat.range[0]),
-                    stat.range[1]
+                    stat.range[1],
                   ),
                 }
-              : stat
+              : stat,
           );
         }
         break;
@@ -182,7 +182,7 @@ export const useGameStore = create<GameStoreType>()(
       updateLogEntry: (id, updates) =>
         set((state) => ({
           log: state.log.map((entry) =>
-            entry.id === id ? { ...entry, ...updates } : entry
+            entry.id === id ? { ...entry, ...updates } : entry,
           ),
         })),
       modifyStat: (name: string, value: number) =>
@@ -193,10 +193,10 @@ export const useGameStore = create<GameStoreType>()(
                   ...stat,
                   value: Math.min(
                     Math.max(stat.value + value, stat.range[0]),
-                    stat.range[1]
+                    stat.range[1],
                   ),
                 }
-              : stat
+              : stat,
           ),
         })),
       addToStats: (stat: Stat) =>
@@ -208,7 +208,7 @@ export const useGameStore = create<GameStoreType>()(
       updateStat: (name: string, updates: Partial<Stat>) =>
         set((state) => ({
           stats: state.stats.map((stat) =>
-            stat.name === name ? { ...stat, ...updates } : stat
+            stat.name === name ? { ...stat, ...updates } : stat,
           ),
         })),
       addToInventory: (itemName: string) =>
@@ -232,7 +232,7 @@ export const useGameStore = create<GameStoreType>()(
       updateItem: (id: string, updates: Partial<Item>) =>
         set((state) => ({
           inventory: state.inventory.map((i) =>
-            i.id === id ? { ...i, ...updates } : i
+            i.id === id ? { ...i, ...updates } : i,
           ),
         })),
       clearInventory: () => set({ inventory: [] }),
@@ -280,6 +280,6 @@ export const useGameStore = create<GameStoreType>()(
     }),
     {
       name: "game-store",
-    }
-  )
+    },
+  ),
 );

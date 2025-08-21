@@ -19,7 +19,7 @@ function injectStoryCards(text: string, storyCards: StoryCard[]): string {
     if (
       card.triggers.some(
         (trigger) =>
-          trigger && text.toLowerCase().includes(trigger.toLowerCase())
+          trigger && text.toLowerCase().includes(trigger.toLowerCase()),
       )
     ) {
       storyCardInjections += `\n${card.content}`;

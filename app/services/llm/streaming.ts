@@ -41,7 +41,7 @@ export async function* parseOpenAIStream(body: ReadableStream<Uint8Array>) {
 }
 
 export async function* parseJsonStream<T>(
-  iterator: AsyncIterable<string>
+  iterator: AsyncIterable<string>,
 ): AsyncGenerator<Partial<T> | { actionParseError: boolean }> {
   let buffer = "";
   let decodedStoryBuffer = "";
@@ -52,7 +52,7 @@ export async function* parseJsonStream<T>(
   // Helper: attempt to decode a JSON escape sequence starting at index i (where buffer[i] === '\\')
   function decodeEscapeAt(
     src: string,
-    i: number
+    i: number,
   ): { char?: string; advance?: number; incomplete?: boolean } {
     if (i + 1 >= src.length) return { incomplete: true };
     const code = src[i + 1];
@@ -154,7 +154,7 @@ export async function* parseJsonStream<T>(
 
       if (decodedStoryBuffer.length > lastYieldedStoryLength) {
         const newStoryChunk = decodedStoryBuffer.substring(
-          lastYieldedStoryLength
+          lastYieldedStoryLength,
         );
         yield { story: newStoryChunk } as unknown as Partial<T>;
         lastYieldedStoryLength = decodedStoryBuffer.length;

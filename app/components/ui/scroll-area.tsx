@@ -27,7 +27,7 @@ function ScrollArea({
         data-slot="scroll-area-viewport"
         className={cn(
           "focus-visible:ring-ring/50 size-full rounded-[inherit] transition-[color,box-shadow] outline-none focus-visible:ring-[3px] focus-visible:outline-1",
-          viewportClassName
+          viewportClassName,
         )}
         ref={viewportRef}
         onScroll={onViewportScroll}
@@ -55,7 +55,7 @@ function ScrollBar({
           "h-full w-2.5 border-l border-l-transparent",
         orientation === "horizontal" &&
           "h-2.5 flex-col border-t border-t-transparent",
-        className
+        className,
       )}
       {...props}
     >

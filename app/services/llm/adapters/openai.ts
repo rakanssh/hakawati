@@ -7,7 +7,7 @@ export function OpenAiClient(apiKey: string): LLMClient {
 
   async function chat(
     req: ChatRequest,
-    signal?: AbortSignal
+    signal?: AbortSignal,
   ): Promise<ChatResponse> {
     const { options } = req;
     const body = JSON.stringify({
@@ -77,6 +77,8 @@ export function OpenAiClient(apiKey: string): LLMClient {
     });
     const json = await r.json();
     console.log(json);
+    // TODO: fix later
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return json.data.map((model: any) => ({
       id: model.id,
       name: model.name,

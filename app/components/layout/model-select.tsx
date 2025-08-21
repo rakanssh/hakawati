@@ -89,7 +89,7 @@ export function ModelSelect() {
             aria-expanded={open}
             className="w-full justify-between"
           >
-            {loading ? "Loading..." : model?.name ?? "Select a model"}
+            {loading ? "Loading..." : (model?.name ?? "Select a model")}
             <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
@@ -111,7 +111,7 @@ export function ModelSelect() {
                     <CheckIcon
                       className={cn(
                         "mr-2 h-4 w-4",
-                        model?.name === m.name ? "opacity-100" : "opacity-0"
+                        model?.name === m.name ? "opacity-100" : "opacity-0",
                       )}
                     />
                     <div className="flex w-full items-center justify-between">
@@ -129,7 +129,7 @@ export function ModelSelect() {
                           <span>
                             Out:{" "}
                             {formatPerMillionUSDFromPerToken(
-                              m.pricing?.completion
+                              m.pricing?.completion,
                             )}
                             /M
                           </span>

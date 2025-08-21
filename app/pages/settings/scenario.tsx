@@ -49,7 +49,7 @@ export default function SettingsScenario() {
                   title,
                   triggers,
                   content,
-                })
+                }),
               )
             : [],
         },
