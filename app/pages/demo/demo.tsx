@@ -237,7 +237,7 @@ export default function Demo() {
       className="min-h-0 h-[calc(100svh-2rem)]"
     >
       <AppSidebar />
-      <SidebarInset className="relative flex h-full flex-col overflow-hidden">
+      <SidebarInset className="relative flex h-full flex-col overflow-hidden !rounded-none border-x">
         {/* <SidebarTrigger /> */}
         <ScrollArea
           className="flex-1 px-2 py-0 min-h-0"
