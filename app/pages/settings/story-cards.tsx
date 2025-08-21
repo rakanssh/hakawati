@@ -18,7 +18,7 @@ export default function SettingsStoryCards() {
     useScenarioStore();
   const navigate = useNavigate();
   const [currentlyDeleting, setCurrentlyDeleting] = useState<string | null>(
-    null
+    null,
   );
   useEffect(() => {
     navigate({ to: "." });

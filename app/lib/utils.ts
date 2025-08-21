@@ -50,6 +50,6 @@ export function decodeEscapedText(input: string): string {
         default:
           return _match;
       }
-    }
+    },
   );
 }

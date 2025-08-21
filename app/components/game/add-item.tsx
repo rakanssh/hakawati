@@ -24,7 +24,7 @@ export function AddItem({
         <DrawerPrimitive.Overlay className="absolute inset-0 bg-black/30" />
         <DrawerPrimitive.Content
           className={cn(
-            "bg-background absolute inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border-t"
+            "bg-background absolute inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col rounded-t-[10px] border-t",
           )}
         >
           <div className="mx-auto mt-4 h-2 w-[100px] rounded-full bg-muted" />

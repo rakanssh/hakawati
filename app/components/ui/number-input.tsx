@@ -28,7 +28,7 @@ export function NumberInput({
   ...aria
 }: NumberInputProps) {
   const [draft, setDraft] = useState<string>(
-    value === undefined || value === null ? "" : String(value)
+    value === undefined || value === null ? "" : String(value),
   );
   const [hasFocus, setHasFocus] = useState<boolean>(false);
 
@@ -103,7 +103,7 @@ export function NumberInput({
       className={cn(
         align === "right" ? "text-right" : "text-left",
         "font-mono",
-        className
+        className,
       )}
       aria-label={aria["aria-label"]}
     />

@@ -69,7 +69,7 @@ export function InlineEditableNumber({
     <button
       className={cn(
         "text-sm font-mono text-muted-foreground hover:text-foreground transition-colors",
-        className
+        className,
       )}
       onClick={() => setIsEditing(true)}
       type="button"

@@ -145,7 +145,7 @@ export default function Demo() {
       },
       onActionsReady: (actions) => {
         console.debug(
-          `Processing received actions: ${JSON.stringify(actions)}`
+          `Processing received actions: ${JSON.stringify(actions)}`,
         );
         if (Array.isArray(actions)) {
           updateLogEntry(gmResponseId, { actions });
@@ -293,7 +293,7 @@ export default function Demo() {
                     </Tooltip>
                   )}
                 </div>
-              )
+              ),
             )
           ) : (
             <></>

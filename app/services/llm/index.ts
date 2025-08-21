@@ -27,7 +27,7 @@ export function getLLMClient(): LLMClient {
           cachedClient = OpenAiClient(lastApiKey);
           console.debug("LLM client API key updated");
         }
-      }
+      },
     );
   }
 

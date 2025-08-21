@@ -35,19 +35,19 @@ export const useScenarioStore = create<ScenarioStoreType>()(
       removeStoryCard: (id: string) =>
         set((state) => ({
           storyCards: state.storyCards.filter(
-            (storyCard) => storyCard.id !== id
+            (storyCard) => storyCard.id !== id,
           ),
         })),
       updateStoryCard: (id: string, updates: Partial<StoryCardInput>) =>
         set((state) => ({
           storyCards: state.storyCards.map((storyCard) =>
-            storyCard.id === id ? { ...storyCard, ...updates } : storyCard
+            storyCard.id === id ? { ...storyCard, ...updates } : storyCard,
           ),
         })),
       clearStoryCards: () => set({ storyCards: [] }),
     }),
     {
       name: "scenario",
-    }
-  )
+    },
+  ),
 );

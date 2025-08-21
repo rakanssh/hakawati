@@ -16,7 +16,7 @@ export default function SettingsLayout() {
     (open: boolean) => {
       if (!open) navigate({ to: "/demo", replace: true });
     },
-    [navigate]
+    [navigate],
   );
 
   return (

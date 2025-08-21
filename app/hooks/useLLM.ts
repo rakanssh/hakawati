@@ -31,8 +31,8 @@ export function useLLM() {
       onStoryStream: (storyChunk: string) => void;
       onActionsReady: (actions: LLMAction[]) => void;
       onActionParseError: () => void;
-      onError: (error: any) => void;
-    }
+      onError: (error: unknown) => void;
+    },
   ) => {
     abortRef.current?.abort();
     abortRef.current = new AbortController();
