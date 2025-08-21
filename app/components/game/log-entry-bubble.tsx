@@ -5,11 +5,10 @@ import {
   SpeechIcon,
   ShoppingBagIcon,
   Trash2Icon,
-} from "lucide-react";
-import { LogEntry, LogEntryMode } from "@/types/log.type";
-import { Badge } from "../ui/badge";
-import { Label } from "../ui/label";
-import { LLMAction } from "@/services/llm/schema";
+} from 'lucide-react';
+import { LogEntry, LogEntryMode } from '@/types/log.type';
+import { Badge } from '../ui/badge';
+import { LLMAction } from '@/services/llm/schema';
 
 export interface LogEntryBubbleProps {
   entry: LogEntry;
@@ -69,7 +68,7 @@ export function LogEntryBubble({ entry }: LogEntryBubbleProps) {
  * @param action
  */
 function ActionBadge({ action }: { action: LLMAction }) {
-  if (action.type === "MODIFY_STAT" && action.payload.value! > 0) {
+  if (action.type === 'MODIFY_STAT' && action.payload.value! > 0) {
     return (
       <Badge variant="outline" className="ml-2 border-green-300/15 rounded-xs">
         <ChartBarIcon className="w-4 h-4 mr-2 text-green-300" />
@@ -79,7 +78,7 @@ function ActionBadge({ action }: { action: LLMAction }) {
       </Badge>
     );
   }
-  if (action.type === "MODIFY_STAT" && action.payload.value! < 0) {
+  if (action.type === 'MODIFY_STAT' && action.payload.value! < 0) {
     return (
       <Badge variant="outline" className="ml-2 border-red-300/15 rounded-xs">
         <ChartBarIcon className="w-4 h-4 mr-2 text-red-300  " />
@@ -89,10 +88,10 @@ function ActionBadge({ action }: { action: LLMAction }) {
       </Badge>
     );
   }
-  if (action.type === "MODIFY_STAT" && action.payload.value == 0) {
+  if (action.type === 'MODIFY_STAT' && action.payload.value == 0) {
     return;
   }
-  if (action.type === "ADD_TO_INVENTORY") {
+  if (action.type === 'ADD_TO_INVENTORY') {
     return (
       <Badge variant="outline" className="ml-2 border-green-300/15 rounded-xs ">
         <ShoppingBagIcon className="w-4 h-4 mr-2 text-green-300" />
@@ -100,7 +99,7 @@ function ActionBadge({ action }: { action: LLMAction }) {
       </Badge>
     );
   }
-  if (action.type === "REMOVE_FROM_INVENTORY") {
+  if (action.type === 'REMOVE_FROM_INVENTORY') {
     return (
       <Badge variant="outline" className="ml-2 border-red-300/15 rounded-xs">
         <Trash2Icon className="w-4 h-4 mr-2 text-red-300" />
