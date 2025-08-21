@@ -33,7 +33,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <InventoryCard />
         <StatsCard />
       </SidebarContent>
-      <div className="flex flex-col pb-2 border-r-1 bg-accent">
+      <div className="flex flex-col pb-2 bg-accent">
         <Separator className="mb-2" />
         <div className="py-0 px-2 ">
           <Card className="flex flex-row items-center justify-between gap-1 rounded-none border-none bg-accent p-0 m-0">
