@@ -1,16 +1,26 @@
 import { Button } from "../ui/button";
 import { SettingsIcon } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 
 export function SettingsButton({
   ...props
 }: React.ComponentProps<typeof Button>) {
   const navigate = useNavigate();
+  const location = useLocation();
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => navigate({ to: "/demo/settings/game" })}
+      onClick={() =>
+        navigate({
+          to: "/settings/game",
+          // Preserve existing search and carry a redirect back target
+          search: (old: unknown) => ({
+            ...(old as Record<string, unknown>),
+            redirect: location.href,
+          }),
+        })
+      }
       {...props}
     >
       <SettingsIcon className="w-4 h-4" />

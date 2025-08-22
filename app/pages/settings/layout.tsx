@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Outlet, Link, useNavigate } from "@tanstack/react-router";
+import { Outlet, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -13,11 +13,21 @@ const tabs = [
 
 export default function SettingsLayout() {
   const navigate = useNavigate();
+  const search = useSearch({ from: "/settings" });
   const handleOpenChange = useCallback(
     (open: boolean) => {
-      if (!open) navigate({ to: "/demo", replace: true });
+      if (!open) {
+        const redirect = (search as Record<string, unknown>)?.redirect as
+          | string
+          | undefined;
+        if (redirect) {
+          navigate({ to: redirect, replace: true });
+        } else {
+          navigate({ to: "..", replace: true });
+        }
+      }
     },
-    [navigate],
+    [navigate, search],
   );
 
   return (
@@ -32,8 +42,8 @@ export default function SettingsLayout() {
               {tabs.map((tab) => (
                 <li key={tab.to}>
                   <Link
-                    to={"/demo/settings/" + tab.to}
-                    search
+                    to={"/settings/" + tab.to}
+                    search={(old: unknown) => old as Record<string, unknown>}
                     className="block w-full rounded-md px-3 py-2 text-sm hover:bg-muted text-foreground [&.active]:bg-accent [&.active]:text-accent-foreground"
                   >
                     {tab.label}
