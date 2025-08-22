@@ -3,7 +3,7 @@ import { Separator } from "../ui/separator";
 import { Progress } from "../ui/progress";
 // Button not used directly after AddIconButton extraction
 import { PlusIcon } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { AddDrawer } from "./add-drawer";
 import { Input } from "../ui/input";
 import { InlineEditableBadge } from "./inline-editable-badge";
@@ -12,6 +12,10 @@ import { Stat } from "@/types/stats.type";
 import { AddIconButton } from "./add-icon-button";
 import { Label } from "../ui/label";
 
+function ProgressBar({ stat }: { stat: Stat }) {
+  const progress = (stat.value / stat.range[1]) * 100;
+  return <Progress value={progress} max={100} className="h-2 mt-1" />;
+}
 export function StatsCard() {
   const { stats, addToStats, updateStat, removeFromStats } = useGameStore();
   const [open, setOpen] = useState(false);
@@ -22,12 +26,6 @@ export function StatsCard() {
     stats.some((s) => s.name.toLowerCase() === candidate.trim().toLowerCase());
   const canSubmit = name.trim() && !nameExists(name);
 
-  const ProgressBar = useMemo(() => {
-    return (stat: Stat) => {
-      const progress = (stat.value / stat.range[1]) * 100;
-      return <Progress value={progress} max={100} className="h-2 mt-1" />;
-    };
-  }, [stats]);
   return (
     <div ref={containerRef} className="relative overflow-hidden">
       <div className="py-1 flex flex-col gap-1 mt-1">
@@ -85,7 +83,7 @@ export function StatsCard() {
                     />
                   </div>
                 </div>
-                {ProgressBar(stat)}
+                <ProgressBar stat={stat} />
               </div>
             ))}
           </div>
