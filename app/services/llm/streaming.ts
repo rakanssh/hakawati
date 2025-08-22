@@ -1,3 +1,5 @@
+import { OutputDecoder, DecodedResponse } from "./decoders";
+
 export async function* parseOpenAIStream(body: ReadableStream<Uint8Array>) {
   const reader = body.getReader();
   const decoder = new TextDecoder("utf-8");
@@ -186,4 +188,15 @@ export async function* parseJsonStream<T>(
       yield { actionParseError: true };
     }
   }
+}
+
+/**
+ * Parse streaming response using the provided decoder
+ * This replaces parseJsonStream for mode-aware parsing
+ */
+export async function* parseStreamWithDecoder(
+  iterator: AsyncIterable<string>,
+  decoder: OutputDecoder,
+): AsyncGenerator<Partial<DecodedResponse>> {
+  yield* decoder.decode(iterator);
 }

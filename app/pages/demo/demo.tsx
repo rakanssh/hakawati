@@ -2,10 +2,11 @@ import { useGameStore } from "@/store/useGameStore";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLLM } from "@/hooks/useLLM";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { GameMode } from "@/types";
 import {
   Select,
   SelectContent,
@@ -17,7 +18,6 @@ import {
   DicesIcon,
   HandIcon,
   MessageCircleWarning,
-  RefreshCwIcon,
   SendIcon,
   SpeechIcon,
   BookIcon,
@@ -33,11 +33,12 @@ import {
 import { nanoid } from "nanoid";
 import { InlineEditableContent, LogEntryBubble } from "@/components/game";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
-interface Action {
+    interface Action {
   type: LogEntryMode;
   isRolling: boolean;
 }
 function getPlaceholder(action: Action) {
+  
   let placeholder = "";
   switch (action.type) {
     case LogEntryMode.DO:
@@ -73,6 +74,7 @@ export default function Demo() {
   const [input, setInput] = useState("");
   const { send, loading } = useLLM();
   const { model, randomSeed } = useSettingsStore();
+  const { gameMode } = useGameStore();
   const [currentlyEditingLogId, setCurrentlyEditingLogId] = useState<
     string | null
   >(null);
@@ -121,7 +123,7 @@ export default function Demo() {
     setStickToBottom(distanceFromBottom <= thresholdPx);
   };
 
-  const executeLlmSend = (message: string) => {
+  const executeLlmSend = (message: string, mode: LogEntryMode) => {
     if (!model) {
       console.error("LLM model not configured.");
       return;
@@ -136,7 +138,7 @@ export default function Demo() {
 
     let storyContent = "";
 
-    send(message, model, {
+    send({text: message, mode}, model, {
       onStoryStream: (storyChunk) => {
         storyContent += storyChunk;
         updateLogEntry(gmResponseId, {
@@ -147,7 +149,8 @@ export default function Demo() {
         console.debug(
           `Processing received actions: ${JSON.stringify(actions)}`,
         );
-        if (Array.isArray(actions)) {
+        // Only process actions that affect game state in GM mode
+        if (gameMode === GameMode.GM && Array.isArray(actions)) {
           updateLogEntry(gmResponseId, { actions });
           for (const action of actions) {
             switch (action.type) {
@@ -194,24 +197,28 @@ export default function Demo() {
     });
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!input.trim() || !model) return;
 
-    const playerInput = action.isRolling
-      ? input + ` [Roll: ${Math.floor(Math.random() * 100) + 1}/100]`
-      : input;
+    let finalMessage: string;
+    let logMode: LogEntryMode;
 
-    const finalMessage = playerInput;
+      const playerInput = action.isRolling
+        ? input + ` [Roll: ${Math.floor(Math.random() * 100) + 1}/100]`
+        : input;
+      finalMessage = playerInput;
+      logMode = action.type;
+
 
     addLog({
       id: nanoid(),
       role: LogEntryRole.PLAYER,
       text: finalMessage,
-      mode: action.type,
+      mode: logMode,
     });
     setInput("");
-    executeLlmSend(finalMessage);
-  };
+    executeLlmSend(finalMessage, logMode);
+  }, [input, model, action, addLog, updateLogEntry, executeLlmSend]);
 
   const handleRetry = () => {
     if (loading) return;
@@ -225,184 +232,186 @@ export default function Demo() {
       secondLastEntry?.role === LogEntryRole.PLAYER
     ) {
       removeLastLogEntry();
-      executeLlmSend(secondLastEntry.text);
+      executeLlmSend(secondLastEntry.text, secondLastEntry.mode ?? LogEntryMode.STORY);
     } else {
       console.warn("Cannot retry, log state is not as expected.");
     }
   };
 
-  return (
-    <SidebarProvider
-      defaultOpen={true}
-      className="min-h-0 h-[calc(100svh-2rem)]"
-    >
-      <AppSidebar />
-      <SidebarInset className="relative flex h-full flex-col overflow-hidden !rounded-none border-x">
-        {/* <SidebarTrigger /> */}
-        <ScrollArea
-          className="flex-1 px-2 py-0 min-h-0"
-          viewportRef={viewportRef}
-          onViewportScroll={handleViewportScroll}
-        >
-          {log.length > 0 ? (
-            log.map((entry) =>
-              currentlyEditingLogId === entry.id ? (
-                <div key={entry.id} className="bg-accent/50 rounded-md p-0">
-                  <InlineEditableContent
-                    initialValue={entry.text}
-                    onCommit={(next) => {
-                      updateLogEntry(entry.id, { text: next });
-                      setCurrentlyEditingLogId(null);
-                    }}
-                    onCancel={() => setCurrentlyEditingLogId(null)}
-                  />
-                </div>
-              ) : (
-                <div
-                  key={entry.id}
-                  className={`whitespace-pre-wrap hover:bg-accent/50 rounded-md mt-2 cursor-pointer ${
-                    currentlyEditingLogId === entry.id ? "bg-accent" : ""
-                  }`}
-                  onClick={() => setCurrentlyEditingLogId(entry.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      setCurrentlyEditingLogId(entry.id);
-                    }
+    // Shared content component for both modes
+  const renderMainContent = () => (
+    <>
+      <ScrollArea
+        className="flex-1 px-2 py-0 min-h-0"
+        viewportRef={viewportRef}
+        onViewportScroll={handleViewportScroll}
+      >
+        {log.length > 0 ? (
+          log.map((entry) =>
+            currentlyEditingLogId === entry.id ? (
+              <div key={entry.id} className="bg-accent/50 rounded-md p-0">
+                <InlineEditableContent
+                  initialValue={entry.text}
+                  onCommit={(next) => {
+                    updateLogEntry(entry.id, { text: next });
+                    setCurrentlyEditingLogId(null);
                   }}
-                >
-                  {/* <span className="font-bold text-lg">
-                  {entry.role === LogEntryRole.PLAYER ? "You" : "GM"}:
-                </span> */}
-                  <LogEntryBubble entry={entry} />
-                  {entry.isActionError && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="mr-1 ml-1 text-muted-foreground hover:text-foreground"
-                        >
-                          <MessageCircleWarning />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="text-xs">
-                        <p>
-                          Failed to parse actions returned with this message.
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                </div>
-              ),
-            )
-          ) : (
-            <></>
-          )}
-          <div
-            ref={bottomRef}
-            className="mt-2"
-            style={{ height: bottomBarHeight + 8 }}
-          />
-        </ScrollArea>
-        <div
-          ref={bottomBarRef}
-          className="pointer-events-auto absolute inset-x-0 bottom-0 z-20 border-t bg-accent p-2"
-        >
-          <div className="flex w-full items-end space-x-1">
-            <Button
-              variant={action.isRolling ? "default" : "outline"}
-              className="rounded-xs"
-              size="icon"
-              onClick={() =>
-                setAction({
-                  type: action.type,
-                  isRolling: !action.isRolling,
-                })
-              }
-              disabled={loading}
-            >
-              <DicesIcon strokeWidth={1.5} />
-            </Button>
-
-            <Select
-              value={action.type}
-              onValueChange={(value) =>
-                setAction({
-                  type: value as Action["type"],
-                  isRolling: action.isRolling,
-                })
-              }
-            >
-              <SelectTrigger className="w-40 rounded-xs">
-                <SelectValue placeholder="Action" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={LogEntryMode.DO}>
-                  <HandIcon className="w-4 h-4 mr-2" /> Act
-                </SelectItem>
-                <SelectItem value={LogEntryMode.SAY}>
-                  <SpeechIcon className="w-4 h-4 mr-2" /> Say
-                </SelectItem>
-                <SelectItem value={LogEntryMode.STORY}>
-                  <BookIcon className="w-4 h-4 mr-2" /> Story
-                </SelectItem>
-                <SelectItem value={LogEntryMode.DIRECT}>
-                  <MegaphoneIcon className="w-4 h-4 mr-2" /> Direct
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="relative flex-1 min-w-0">
-              <div className="h-9" aria-hidden="true" />
-              <Textarea
-                placeholder={getPlaceholder(action)}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
+                  onCancel={() => setCurrentlyEditingLogId(null)}
+                />
+              </div>
+            ) : (
+              <div
+                key={entry.id}
+                className={`whitespace-pre-wrap hover:bg-accent/50 rounded-md mt-2 cursor-pointer ${
+                  currentlyEditingLogId === entry.id ? "bg-accent" : ""
+                }`}
+                onClick={() => setCurrentlyEditingLogId(entry.id)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSubmit();
+                  if (e.key === "Enter") {
+                    setCurrentlyEditingLogId(entry.id);
                   }
                 }}
-                rows={1}
-                className="absolute inset-x-0 bottom-0 resize-none rounded-xs !bg-accent"
-              />
-            </div>
-            <Button
-              type="submit"
-              onClick={handleSubmit}
-              // disabled={loading}
-              className="rounded-xs"
-            >
-              {loading ? (
-                // <Loader2Icon className="animate-spin" />
-                <SquareIcon className="w-4 h-4 animate-pulse" />
-              ) : (
-                <SendIcon className="w-4 h-4" />
-              )}
-            </Button>
-            <Button
-              type="submit"
-              onClick={handleRetry}
-              disabled={loading}
-              variant="default"
-              className="rounded-xs"
-            >
-              <RefreshCwIcon strokeWidth={1.5} />
-            </Button>
+              >
+                <LogEntryBubble entry={entry} />
+                {entry.isActionError && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="mr-1 ml-1 text-muted-foreground hover:text-foreground"
+                      >
+                        <MessageCircleWarning />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="text-xs">
+                      <p>
+                        Failed to parse actions returned with this message.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            ),
+          )
+        ) : (
+          <></>
+        )}
+        <div
+          ref={bottomRef}
+          className="mt-2"
+          style={{ height: bottomBarHeight + 8 }}
+        />
+      </ScrollArea>
+      <div
+        ref={bottomBarRef}
+        className="pointer-events-auto absolute inset-x-0 bottom-0 z-20 border-t bg-accent p-2"
+      >
+        <div className="flex w-full items-end space-x-1">
+          <Button
+            variant={action.isRolling ? "default" : "outline"}
+            className="rounded-xs"
+            size="icon"
+            onClick={() =>
+              setAction({
+                type: action.type,
+                isRolling: !action.isRolling,
+              })
+            }
+            disabled={loading}
+          >
+            <DicesIcon strokeWidth={1.5} />
+          </Button>
+
+          <Select
+            value={action.type}
+            onValueChange={(value) =>
+              setAction({
+                type: value as Action["type"],
+                isRolling: action.isRolling,
+              })
+            }
+          >
+            <SelectTrigger className="w-40 rounded-xs">
+              <SelectValue placeholder="Action" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={LogEntryMode.DO}>
+                <HandIcon className="w-4 h-4 mr-2" /> Act
+              </SelectItem>
+              <SelectItem value={LogEntryMode.SAY}>
+                <SpeechIcon className="w-4 h-4 mr-2" /> Say
+              </SelectItem>
+              <SelectItem value={LogEntryMode.STORY}>
+                <BookIcon className="w-4 h-4 mr-2" /> Story
+              </SelectItem>
+              <SelectItem value={LogEntryMode.DIRECT}>
+                <MegaphoneIcon className="w-4 h-4 mr-2" /> Direct
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="relative flex-1 min-w-0">
+            <div className="h-9" aria-hidden="true" />
+            <Textarea
+              placeholder={getPlaceholder(action)}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSubmit();
+                }
+              }}
+              rows={1}
+              className="absolute inset-x-0 bottom-0 resize-none rounded-xs !bg-accent"
+            />
           </div>
+          <Button
+            type="submit"
+            onClick={handleSubmit}
+            className="rounded-xs"
+          >
+            {loading ? (
+              <SquareIcon className="w-4 h-4 animate-pulse" />
+            ) : (
+              <SendIcon className="w-4 h-4" />
+            )}
+          </Button>
+          <LogControl handleRetry={handleRetry} loading={loading} />
+
         </div>
-        {/* Render nested routes (settings modal) on top of demo content */}
-        <div className="pointer-events-none absolute inset-0">
-          {/* The modal content uses fixed positioning and pointer events, so just mount outlet */}
-          <OutletWrapper />
+      </div>
+      <div className="pointer-events-none absolute inset-0">
+        <OutletWrapper />
+      </div>
+    </>
+  );
+
+  return (
+    <>
+      {gameMode === GameMode.GM ? (
+        <SidebarProvider
+          defaultOpen={true}
+          className="min-h-0 h-[calc(100svh-2rem)]"
+        >
+          <AppSidebar />
+          <SidebarInset className="relative flex h-full flex-col overflow-hidden !rounded-none border-x">
+            {renderMainContent()}
+          </SidebarInset>
+        </SidebarProvider>
+      ) : (
+        // Story Teller Mode - No sidebar, full width
+        <div className="relative flex h-[calc(100svh-2rem)] flex-col overflow-hidden">
+          {renderMainContent()}
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      )}
+    </>
   );
 }
 
 // Lightweight wrapper that renders nested outlet without affecting layout; defined here to avoid imports
 import { Outlet } from "@tanstack/react-router";
+import { LogControl } from "@/components/game/log-control";
 function OutletWrapper() {
   return <Outlet />;
 }

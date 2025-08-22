@@ -2,14 +2,16 @@ import { sendChat } from "@/services/llm";
 import { LLMAction, LLMModel, LLMResponse } from "@/services/llm/schema";
 import { useGameStore } from "@/store/useGameStore";
 import { useRef, useState } from "react";
-import { parseJsonStream } from "@/services/llm/streaming";
+import { parseStreamWithDecoder } from "@/services/llm/streaming";
+import { createDecoder } from "@/services/llm/decoders";
 import { buildMessage } from "@/services/llm/promptBuilder";
 import { useScenarioStore } from "@/store/useScenarioStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { LogEntryMode } from "@/types";
 
 export function useLLM() {
   const [loading, setLoading] = useState(false);
-  const { log, stats, inventory } = useGameStore();
+  const { log, stats, inventory, gameMode } = useGameStore();
   const { scenario, storyCards } = useScenarioStore();
   const {
     temperature,
@@ -25,7 +27,10 @@ export function useLLM() {
   const abortRef = useRef<AbortController | null>(null);
 
   const send = async (
-    lastMessage: string,
+    lastMessage: {
+      text: string;
+      mode: LogEntryMode;
+    },
     model: LLMModel,
     callbacks: {
       onStoryStream: (storyChunk: string) => void;
@@ -63,12 +68,13 @@ export function useLLM() {
       const res = await sendChat(req, abortRef.current?.signal);
 
       if (res.iterator) {
-        const stream = parseJsonStream<LLMResponse>(res.iterator);
+        const decoder = createDecoder(gameMode);
+        const stream = parseStreamWithDecoder(res.iterator, decoder);
         for await (const chunk of stream) {
           if ("actionParseError" in chunk && chunk.actionParseError) {
             callbacks.onActionParseError();
           } else {
-            const { story, actions } = chunk as Partial<LLMResponse>;
+            const { story, actions } = chunk;
             if (story) {
               callbacks.onStoryStream(story);
             }

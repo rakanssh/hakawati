@@ -6,12 +6,11 @@ import {
   ChatRequestOptions,
   LLMModel,
 } from "./schema";
-import { GM_SYSTEM_PROMPT } from "@/prompts/system";
+import { GM_SYSTEM_PROMPT, STORY_TELLER_SYSTEM_PROMPT } from "@/prompts/system";
 import { countMessageTokens } from "./tokenCounter";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { Scenario, StoryCard } from "@/types/context.type";
-import { Item } from "@/types";
-
+import { GameMode, Scenario, StoryCard, Item} from "@/types";
+import { useGameStore } from "@/store/useGameStore";
 function injectStoryCards(text: string, storyCards: StoryCard[]): string {
   let storyCardInjections = "";
 
@@ -36,7 +35,10 @@ interface BuildMessageParams {
   log: LogEntry[];
   stats: Stat[];
   inventory: Item[];
-  lastMessage: string;
+  lastMessage: {
+    text: string;
+    mode: LogEntryMode;
+  };
   scenario: Scenario;
   storyCards: StoryCard[];
   model: LLMModel;
@@ -46,6 +48,8 @@ interface BuildMessageParams {
 export function buildMessage(params: BuildMessageParams): ChatRequest {
   const { log, stats, inventory, lastMessage, scenario, storyCards, model } =
     params;
+
+  const gameMode = useGameStore.getState().gameMode;
 
   const configuredBudget = useSettingsStore.getState().contextWindow;
   const maxTokens = Math.min(model.contextLength, configuredBudget);
@@ -57,8 +61,11 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
 - Stats: ${JSON.stringify(stats)}
 - Inventory: ${JSON.stringify(inventory.map((item) => item.name))}
 `;
-  const userMessageContent = injectStoryCards(lastMessage, storyCards);
-  const userMessage = `${gameState}\n\n${userMessageContent}`;
+  const userMessageContent = injectMode(injectStoryCards(lastMessage.text, storyCards), lastMessage.mode);
+  //TODO: Refactor these to a factory function if needed
+  const userMessage = gameMode === GameMode.GM ? `${gameState}\n\n${userMessageContent}` : userMessageContent;
+  const systemPrompt = gameMode === GameMode.GM ? GM_SYSTEM_PROMPT : STORY_TELLER_SYSTEM_PROMPT;
+
   const userMsg: ChatMessage = { role: "user", content: userMessage };
   const userTokens = countMessageTokens([userMsg]);
 
@@ -66,8 +73,8 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
   const canAddWithUser = (candidate: ChatMessage, current: ChatMessage[]) =>
     tokenCountFor([...current, candidate]) + userTokens <= maxTokens;
 
-  if (canAddWithUser({ role: "system", content: GM_SYSTEM_PROMPT }, messages)) {
-    messages.push({ role: "system", content: GM_SYSTEM_PROMPT });
+  if (canAddWithUser({ role: "system", content: systemPrompt }, messages)) {
+    messages.push({ role: "system", content: systemPrompt });
   }
   if (
     scenario.description &&
