@@ -33,12 +33,11 @@ import {
 import { nanoid } from "nanoid";
 import { InlineEditableContent, LogEntryBubble } from "@/components/game";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
-    interface Action {
+interface Action {
   type: LogEntryMode;
   isRolling: boolean;
 }
 function getPlaceholder(action: Action) {
-  
   let placeholder = "";
   switch (action.type) {
     case LogEntryMode.DO:
@@ -138,7 +137,7 @@ export default function Demo() {
 
     let storyContent = "";
 
-    send({text: message, mode}, model, {
+    send({ text: message, mode }, model, {
       onStoryStream: (storyChunk) => {
         storyContent += storyChunk;
         updateLogEntry(gmResponseId, {
@@ -200,15 +199,10 @@ export default function Demo() {
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || !model) return;
 
-    let finalMessage: string;
-    let logMode: LogEntryMode;
-
-      const playerInput = action.isRolling
-        ? input + ` [Roll: ${Math.floor(Math.random() * 100) + 1}/100]`
-        : input;
-      finalMessage = playerInput;
-      logMode = action.type;
-
+    const finalMessage = action.isRolling
+      ? input + ` [Roll: ${Math.floor(Math.random() * 100) + 1}/100]`
+      : input;
+    const logMode: LogEntryMode = action.type;
 
     addLog({
       id: nanoid(),
@@ -232,13 +226,16 @@ export default function Demo() {
       secondLastEntry?.role === LogEntryRole.PLAYER
     ) {
       removeLastLogEntry();
-      executeLlmSend(secondLastEntry.text, secondLastEntry.mode ?? LogEntryMode.STORY);
+      executeLlmSend(
+        secondLastEntry.text,
+        secondLastEntry.mode ?? LogEntryMode.STORY,
+      );
     } else {
       console.warn("Cannot retry, log state is not as expected.");
     }
   };
 
-    // Shared content component for both modes
+  // Shared content component for both modes
   const renderMainContent = () => (
     <>
       <ScrollArea
@@ -285,9 +282,7 @@ export default function Demo() {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="text-xs">
-                      <p>
-                        Failed to parse actions returned with this message.
-                      </p>
+                      <p>Failed to parse actions returned with this message.</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -366,11 +361,7 @@ export default function Demo() {
               className="absolute inset-x-0 bottom-0 resize-none rounded-xs !bg-accent"
             />
           </div>
-          <Button
-            type="submit"
-            onClick={handleSubmit}
-            className="rounded-xs"
-          >
+          <Button type="submit" onClick={handleSubmit} className="rounded-xs">
             {loading ? (
               <SquareIcon className="w-4 h-4 animate-pulse" />
             ) : (
@@ -378,7 +369,6 @@ export default function Demo() {
             )}
           </Button>
           <LogControl handleRetry={handleRetry} loading={loading} />
-
         </div>
       </div>
       <div className="pointer-events-none absolute inset-0">
