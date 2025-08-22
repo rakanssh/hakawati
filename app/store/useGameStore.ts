@@ -1,10 +1,12 @@
 import { GameMode, Item, LogEntry } from "@/types";
 import { Stat } from "@/types/stats.type";
+import { randomUUID } from "crypto";
 import { nanoid } from "nanoid";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 interface GameStoreType {
+  id: string;
   stats: Stat[];
   gameMode: GameMode;
   inventory: Item[];
@@ -162,6 +164,7 @@ const redoEntryActions = (
 export const useGameStore = create<GameStoreType>()(
   persist(
     (set) => ({
+      id: randomUUID(),
       gameMode: GameMode.GM,
       setGameMode: (gameMode: GameMode) =>
         set({
