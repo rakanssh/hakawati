@@ -8,7 +8,9 @@ export interface DecodedResponse {
 }
 
 export interface OutputDecoder {
-  decode(iterator: AsyncIterable<string>): AsyncGenerator<Partial<DecodedResponse>>;
+  decode(
+    iterator: AsyncIterable<string>,
+  ): AsyncGenerator<Partial<DecodedResponse>>;
 }
 
 function decodeEscapeAtShared(
@@ -57,11 +59,7 @@ function decodeEscapeAtShared(
       const isHigh = unit >= 0xd800 && unit <= 0xdbff;
       if (isHigh) {
         // Need another \uNNNN following
-        if (
-          i + 12 <= src.length &&
-          src[i + 6] === "\\" &&
-          src[i + 7] === "u"
-        ) {
+        if (i + 12 <= src.length && src[i + 6] === "\\" && src[i + 7] === "u") {
           const h2 = src.substring(i + 8, i + 12);
           const unit2 = Number.parseInt(h2, 16);
           if (!Number.isNaN(unit2) && unit2 >= 0xdc00 && unit2 <= 0xdfff) {
@@ -86,7 +84,9 @@ function decodeEscapeAtShared(
  * Streams story content and extracts actions at the end
  */
 export class JsonDecoder implements OutputDecoder {
-  async* decode(iterator: AsyncIterable<string>): AsyncGenerator<Partial<DecodedResponse>> {
+  async *decode(
+    iterator: AsyncIterable<string>,
+  ): AsyncGenerator<Partial<DecodedResponse>> {
     let buffer = "";
     let decodedStoryBuffer = "";
     let inStory = false;
@@ -160,7 +160,11 @@ export class JsonDecoder implements OutputDecoder {
             yield { actions: finalJson.actions };
           }
         } catch (e2) {
-          console.warn("Could not parse extracted JSON object:", jsonString, e2);
+          console.warn(
+            "Could not parse extracted JSON object:",
+            jsonString,
+            e2,
+          );
           yield { actionParseError: true };
         }
       } else {
@@ -175,7 +179,9 @@ export class JsonDecoder implements OutputDecoder {
  * Treats all incoming text as story content
  */
 export class PlainTextDecoder implements OutputDecoder {
-  async* decode(iterator: AsyncIterable<string>): AsyncGenerator<Partial<DecodedResponse>> {
+  async *decode(
+    iterator: AsyncIterable<string>,
+  ): AsyncGenerator<Partial<DecodedResponse>> {
     let carry = "";
     for await (const chunk of iterator) {
       const input = carry + (chunk ?? "");

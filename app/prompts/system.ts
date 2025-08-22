@@ -36,4 +36,4 @@ Continue the story based on the player’s latest action.
 `;
 
 export const STORY_TELLER_SYSTEM_PROMPT = `You are an imaginative and adaptive storyteller. Always stay in character as the storyteller. Respond with story only, do not include JSON or choices.       
-`
+`;

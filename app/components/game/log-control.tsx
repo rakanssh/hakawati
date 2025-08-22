@@ -1,6 +1,6 @@
 import { Button } from "../ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { UndoIcon, RedoIcon,  RefreshCwIcon } from "lucide-react";
+import { UndoIcon, RedoIcon, RefreshCwIcon } from "lucide-react";
 import { useGameStore } from "@/store/useGameStore";
 interface LogControlProps {
   className?: string;
@@ -8,9 +8,12 @@ interface LogControlProps {
   loading?: boolean;
 }
 
-export function LogControl({ className, loading = false, handleRetry }: LogControlProps) {
-  const {  undo, redo } = useGameStore();
-
+export function LogControl({
+  className,
+  loading = false,
+  handleRetry,
+}: LogControlProps) {
+  const { undo, redo } = useGameStore();
 
   return (
     <div className={className}>
@@ -30,16 +33,16 @@ export function LogControl({ className, loading = false, handleRetry }: LogContr
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-          <Button
-          type="submit"
-          onClick={handleRetry}
-          disabled={loading}
-          variant="default"
-          size="icon"
-          className="rounded-none"
-        >
-          <RefreshCwIcon strokeWidth={1.5} />
-        </Button>
+            <Button
+              type="submit"
+              onClick={handleRetry}
+              disabled={loading}
+              variant="default"
+              size="icon"
+              className="rounded-none"
+            >
+              <RefreshCwIcon strokeWidth={1.5} />
+            </Button>
           </TooltipTrigger>
           <TooltipContent side="top">Retry</TooltipContent>
         </Tooltip>
