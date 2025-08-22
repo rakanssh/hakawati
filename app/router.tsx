@@ -39,7 +39,7 @@ const DemoRoute = createRoute({
 });
 
 const SettingsRoute = createRoute({
-  getParentRoute: () => DemoRoute,
+  getParentRoute: () => RootRoute,
   path: "settings",
   component: SettingsLayout,
 });
@@ -83,15 +83,14 @@ const SettingsGameRoute = createRoute({
 const routeTree = RootRoute.addChildren([
   IndexRoute,
   // AboutRoute,
-  DemoRoute.addChildren([
-    SettingsRoute.addChildren([
-      SettingsIndexRoute,
-      SettingsApiRoute,
-      SettingsScenarioRoute,
-      SettingsStoryCardsRoute,
-      SettingsModelRoute,
-      SettingsGameRoute,
-    ]),
+  DemoRoute,
+  SettingsRoute.addChildren([
+    SettingsIndexRoute,
+    SettingsApiRoute,
+    SettingsScenarioRoute,
+    SettingsStoryCardsRoute,
+    SettingsModelRoute,
+    SettingsGameRoute,
   ]),
 ]);
 

@@ -2,13 +2,11 @@ import { HomeIcon, MinusIcon, SquareIcon, XIcon } from "lucide-react";
 import { SettingsButton } from "./settings-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { Button } from "../ui/button";
-import { useNavigate, useLocation } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import fez from "@/assets/fez-offwh-bg-sqc.svg";
 
 export function Titlebar() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const isDemo = location.pathname.split("/")[1] === "demo";
   return (
     <div
       data-tauri-drag-region
@@ -24,32 +22,28 @@ export function Titlebar() {
             <img src={fez} alt="Hakawati" className="w-6 h-6 " />
           </Button>
 
-          {isDemo && (
-            <>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="titlebar-no-drag pointer-events-auto">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => navigate({ to: "/" })}
-                    >
-                      <HomeIcon className="" />
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top">Home</TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="titlebar-no-drag pointer-events-auto">
-                    <SettingsButton className="" />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top">Settings</TooltipContent>
-              </Tooltip>
-            </>
-          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="titlebar-no-drag pointer-events-auto">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate({ to: "/" })}
+                >
+                  <HomeIcon className="" />
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top">Home</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="titlebar-no-drag pointer-events-auto">
+                <SettingsButton className="" />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top">Settings</TooltipContent>
+          </Tooltip>
         </div>
         <div className="flex justify-center">
           <span className="text-sm font-medium tracking-wide text-foreground">
