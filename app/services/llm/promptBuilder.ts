@@ -9,7 +9,7 @@ import {
 import { GM_SYSTEM_PROMPT, STORY_TELLER_SYSTEM_PROMPT } from "@/prompts/system";
 import { countMessageTokens } from "./tokenCounter";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { GameMode, Scenario, StoryCard, Item} from "@/types";
+import { GameMode, Scenario, StoryCard, Item } from "@/types";
 import { useGameStore } from "@/store/useGameStore";
 function injectStoryCards(text: string, storyCards: StoryCard[]): string {
   let storyCardInjections = "";
@@ -61,10 +61,17 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
 - Stats: ${JSON.stringify(stats)}
 - Inventory: ${JSON.stringify(inventory.map((item) => item.name))}
 `;
-  const userMessageContent = injectMode(injectStoryCards(lastMessage.text, storyCards), lastMessage.mode);
+  const userMessageContent = injectMode(
+    injectStoryCards(lastMessage.text, storyCards),
+    lastMessage.mode,
+  );
   //TODO: Refactor these to a factory function if needed
-  const userMessage = gameMode === GameMode.GM ? `${gameState}\n\n${userMessageContent}` : userMessageContent;
-  const systemPrompt = gameMode === GameMode.GM ? GM_SYSTEM_PROMPT : STORY_TELLER_SYSTEM_PROMPT;
+  const userMessage =
+    gameMode === GameMode.GM
+      ? `${gameState}\n\n${userMessageContent}`
+      : userMessageContent;
+  const systemPrompt =
+    gameMode === GameMode.GM ? GM_SYSTEM_PROMPT : STORY_TELLER_SYSTEM_PROMPT;
 
   const userMsg: ChatMessage = { role: "user", content: userMessage };
   const userTokens = countMessageTokens([userMsg]);

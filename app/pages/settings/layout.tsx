@@ -9,7 +9,7 @@ const tabs = [
   { to: "scenario", label: "Scenario" },
   { to: "story-cards", label: "Story Cards" },
   { to: "model", label: "Model" },
-  ] as const;
+] as const;
 
 export default function SettingsLayout() {
   const navigate = useNavigate();
