@@ -16,6 +16,7 @@ import SettingsApi from "./pages/settings/api";
 import SettingsScenario from "./pages/settings/scenario";
 import SettingsStoryCards from "./pages/settings/story-cards";
 import SettingsModel from "./pages/settings/model";
+import SettingsGame from "./pages/settings/game";
 
 const RootRoute = createRootRoute({ component: () => <AppShell /> });
 
@@ -73,6 +74,12 @@ const SettingsModelRoute = createRoute({
   component: SettingsModel,
 });
 
+const SettingsGameRoute = createRoute({
+  getParentRoute: () => SettingsRoute,
+  path: "game",
+  component: SettingsGame,
+});
+
 const routeTree = RootRoute.addChildren([
   IndexRoute,
   // AboutRoute,
@@ -83,6 +90,7 @@ const routeTree = RootRoute.addChildren([
       SettingsScenarioRoute,
       SettingsStoryCardsRoute,
       SettingsModelRoute,
+      SettingsGameRoute,
     ]),
   ]),
 ]);

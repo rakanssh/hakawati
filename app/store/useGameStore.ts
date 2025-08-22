@@ -1,4 +1,4 @@
-import { Item, LogEntry } from "@/types";
+import { GameMode, Item, LogEntry } from "@/types";
 import { Stat } from "@/types/stats.type";
 import { nanoid } from "nanoid";
 import { create } from "zustand";
@@ -6,6 +6,7 @@ import { persist } from "zustand/middleware";
 
 interface GameStoreType {
   stats: Stat[];
+  gameMode: GameMode;
   inventory: Item[];
   log: LogEntry[];
   undoStack: LogEntry[];
@@ -21,9 +22,11 @@ interface GameStoreType {
   removeFromInventoryByName: (itemName: string) => void;
   updateItem: (id: string, updates: Partial<Item>) => void;
   clearInventory: () => void;
+  clearStats: () => void;
   resetAllState: () => void;
   undo: () => void;
   redo: () => void;
+  setGameMode: (gameMode: GameMode) => void;
 }
 
 //TODO: Find a better way to execute/undo actions
@@ -159,6 +162,13 @@ const redoEntryActions = (
 export const useGameStore = create<GameStoreType>()(
   persist(
     (set) => ({
+      gameMode: GameMode.GM,
+      setGameMode: (gameMode: GameMode) =>
+        set({
+          gameMode,
+          stats: [],
+          inventory: [],
+        }),
       stats: [
         {
           name: "HP",
@@ -236,6 +246,7 @@ export const useGameStore = create<GameStoreType>()(
           ),
         })),
       clearInventory: () => set({ inventory: [] }),
+      clearStats: () => set({ stats: [] }),
       resetAllState: () =>
         set({
           stats: [

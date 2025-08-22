@@ -10,7 +10,7 @@ export function SettingsButton({
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => navigate({ to: "/demo/settings/api" })}
+      onClick={() => navigate({ to: "/demo/settings/game" })}
       {...props}
     >
       <SettingsIcon className="w-4 h-4" />

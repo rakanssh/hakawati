@@ -17,3 +17,8 @@ export type StoryCard = {
 };
 
 export type StoryCardInput = Omit<StoryCard, "id">;
+
+export enum GameMode {
+  GM = "gm",
+  STORY_TELLER = "story_teller",
+}
