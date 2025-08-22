@@ -110,7 +110,7 @@ export async function getSaves(
     [limit, (page - 1) * limit],
   );
   return {
-    data: rows.map((r) => ({
+    data: rows.map((r: SaveRow) => ({
       id: r.id,
       saveName: r.save_name,
       createdAt: r.created_at,
@@ -140,7 +140,7 @@ export async function getScenarioSaves(
     [scenarioId, limit, (page - 1) * limit],
   );
   return {
-    data: rows.map((r) => ({
+    data: rows.map((r: SaveRow) => ({
       id: r.id,
       saveName: r.save_name,
       createdAt: r.created_at,
