@@ -12,12 +12,14 @@ export type ScenarioRow = {
 
 export type SaveRow = {
   id: string;
-  scenario_id: string;
+  scenario_id: string | null;
   save_name: string;
   stats: string;
   inventory: string;
   log: string;
+  game_mode: string;
   created_at: number;
+  updated_at: number;
 };
 
 export type PaginatedResponse<T> = {
