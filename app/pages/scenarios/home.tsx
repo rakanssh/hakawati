@@ -13,7 +13,7 @@ import { useScenariosList } from "@/hooks/useScenarios";
 import { initTaleFromScenario } from "@/services/scenario.service";
 
 export default function ScenariosHome() {
-  const { items } = useScenariosList();
+  const { items, loading, error } = useScenariosList();
   const navigate = useNavigate();
   return (
     <div className="container mx-auto py-10 flex flex-col gap-6">
@@ -29,6 +29,10 @@ export default function ScenariosHome() {
         </Button>
       </div>
       <Separator />
+      {loading && <div className="text-sm text-muted-foreground">Loading…</div>}
+      {Boolean(error) && (
+        <div className="text-sm text-red-500">Failed to load scenarios.</div>
+      )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map(({ id, scenario }) => (
           <Card key={id} className="flex flex-col pt-4 pb-3">
