@@ -10,6 +10,13 @@ export type Scenario = {
   initialStoryCards: StoryCard[];
 };
 
+export type ScenarioHead = {
+  id: string;
+  name: string;
+  initialDescription: string;
+  updatedAt: number;
+};
+
 export type StoryCard = {
   id: string;
   title: string;

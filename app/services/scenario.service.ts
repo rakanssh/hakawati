@@ -3,11 +3,13 @@ import {
   getScenario,
   listScenarios,
   deleteScenario,
+  getScenarios,
 } from "@/repositories/scenario.repository";
-import { Scenario } from "@/types/context.type";
+import { Scenario, ScenarioHead } from "@/types/context.type";
 import { useTaleStore } from "@/store/useTaleStore";
 import { initTale } from "./tale.service";
 import { nanoid } from "nanoid";
+import { PaginatedResponse } from "@/types/db.type";
 
 export async function saveScenario(
   scenario: Scenario,
@@ -41,6 +43,13 @@ export async function listAllScenarios(): Promise<
 
 export async function removeScenario(id: string): Promise<void> {
   return deleteScenario(id);
+}
+
+export async function getAllScenarios(
+  page: number,
+  limit: number,
+): Promise<PaginatedResponse<ScenarioHead>> {
+  return getScenarios(page, limit);
 }
 
 export async function initTaleFromScenario(

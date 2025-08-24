@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  listAllScenarios,
   removeScenario,
   saveScenario,
   initTaleFromScenario,
   getScenarioById,
+  getAllScenarios,
 } from "@/services/scenario.service";
-import { Scenario } from "@/types/context.type";
+import { Scenario, ScenarioHead } from "@/types/context.type";
+import { PaginatedResponse } from "@/types/db.type";
 
-export function useScenariosList() {
-  const [items, setItems] = useState<
-    Array<{ id: string; scenario: Scenario; updatedAt: number }>
-  >([]);
+export function useScenariosList(initialPage = 1, initialLimit = 12) {
+  const [items, setItems] = useState<ScenarioHead[]>([]);
+  const [page, setPage] = useState(initialPage);
+  const [limit, setLimit] = useState(initialLimit);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
@@ -19,14 +21,18 @@ export function useScenariosList() {
     setLoading(true);
     setError(null);
     try {
-      const list = await listAllScenarios();
-      setItems(list);
+      const resp: PaginatedResponse<ScenarioHead> = await getAllScenarios(
+        page,
+        limit,
+      );
+      setItems(resp.data);
+      setTotal(resp.total);
     } catch (e) {
       setError(e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, limit]);
 
   useEffect(() => {
     void refresh();
@@ -40,7 +46,18 @@ export function useScenariosList() {
     [refresh],
   );
 
-  return { items, loading, error, refresh, remove } as const;
+  return {
+    items,
+    page,
+    limit,
+    total,
+    setPage,
+    setLimit,
+    loading,
+    error,
+    refresh,
+    remove,
+  } as const;
 }
 
 export function useScenarioEditor(initial?: Partial<Scenario>) {

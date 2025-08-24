@@ -13,7 +13,8 @@ import { useTalesList } from "@/hooks/useTales";
 
 export default function TalesHome() {
   const navigate = useNavigate();
-  const { items, loading, error, loadIntoGame } = useTalesList();
+  const { items, loading, error, loadIntoGame, page, limit, total, setPage } =
+    useTalesList();
 
   return (
     <div className="container mx-auto py-10 flex flex-col gap-6">
@@ -55,6 +56,27 @@ export default function TalesHome() {
           </Card>
         ))}
       </div>
+      {total > limit && (
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            variant="secondary"
+            disabled={page <= 1}
+            onClick={() => setPage(Math.max(1, page - 1))}
+          >
+            Prev
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {page} of {Math.max(1, Math.ceil(total / limit) || 1)}
+          </span>
+          <Button
+            variant="secondary"
+            disabled={page * limit >= total}
+            onClick={() => setPage(page + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { getDb } from "@/services/db";
 import { nanoid } from "nanoid";
-import { Scenario } from "@/types/context.type";
-import { ScenarioRow } from "@/types/db.type";
+import { Scenario, ScenarioHead } from "@/types/context.type";
+import { ScenarioRow, PaginatedResponse } from "@/types/db.type";
 
 function toRow(id: string, s: Scenario, ts: number): ScenarioRow {
   return {
@@ -90,4 +90,35 @@ export async function listScenarios(): Promise<
 export async function deleteScenario(id: string): Promise<void> {
   const db = await getDb();
   await db.execute(`DELETE FROM scenarios WHERE id = ?`, [id]);
+}
+
+export async function getScenarios(
+  page: number,
+  limit: number,
+): Promise<PaginatedResponse<ScenarioHead>> {
+  const db = await getDb();
+  const rows = await db.select<
+    Pick<ScenarioRow, "id" | "name" | "initial_description" | "updated_at">[]
+  >(
+    `SELECT id, name, initial_description, updated_at
+     FROM scenarios
+     ORDER BY updated_at DESC
+     LIMIT ? OFFSET ?`,
+    [limit, (page - 1) * limit],
+  );
+  const countRows = await db.select<Array<{ count: number }>>(
+    `SELECT COUNT(*) as count FROM scenarios`,
+  );
+  const total = countRows?.[0]?.count ?? 0;
+  return {
+    data: rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      initialDescription: r.initial_description,
+      updatedAt: r.updated_at,
+    })),
+    total,
+    page,
+    limit,
+  };
 }
