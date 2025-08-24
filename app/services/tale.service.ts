@@ -4,6 +4,7 @@ import {
   getTale,
   getTales,
   getScenarioTales,
+  deleteTale,
 } from "@/repositories/tale.repository";
 import { useTaleStore } from "@/store/useTaleStore";
 import { PaginatedResponse } from "@/types/db.type";
@@ -74,4 +75,8 @@ export async function getTalesForScenario(
   limit: number,
 ): Promise<PaginatedResponse<TaleHead>> {
   return getScenarioTales(scenarioId, page, limit);
+}
+
+export async function deleteTaleById(id: string): Promise<void> {
+  return deleteTale(id);
 }

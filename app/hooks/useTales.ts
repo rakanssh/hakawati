@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { getAllTales, loadTaleIntoGame } from "@/services/tale.service";
+import {
+  getAllTales,
+  loadTaleIntoGame,
+  deleteTaleById,
+} from "@/services/tale.service";
 import { TaleHead } from "@/types/tale.type";
 
 export function useTalesList(initialPage = 1, initialLimit = 12) {
@@ -32,6 +36,14 @@ export function useTalesList(initialPage = 1, initialLimit = 12) {
     await loadTaleIntoGame(id);
   }, []);
 
+  const deleteTale = useCallback(
+    async (id: string) => {
+      await deleteTaleById(id);
+      await refresh();
+    },
+    [refresh],
+  );
+
   return {
     items,
     page,
@@ -43,5 +55,6 @@ export function useTalesList(initialPage = 1, initialLimit = 12) {
     error,
     refresh,
     loadIntoGame,
+    deleteTale,
   } as const;
 }

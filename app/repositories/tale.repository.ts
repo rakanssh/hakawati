@@ -158,11 +158,6 @@ export async function listTalesForScenario(
   return rows.map(fromRow);
 }
 
-export async function deleteTale(id: string): Promise<void> {
-  const db = await getDb();
-  await db.execute(`DELETE FROM tales WHERE id = ?`, [id]);
-}
-
 export async function getTales(
   page: number,
   limit: number,
@@ -246,4 +241,9 @@ export async function getScenarioTales(
     page,
     limit,
   };
+}
+
+export async function deleteTale(id: string): Promise<void> {
+  const db = await getDb();
+  await db.execute(`DELETE FROM tales WHERE id = ?`, [id]);
 }
