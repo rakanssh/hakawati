@@ -9,6 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTheme } from "@/components/theme-provider";
+import { BookIcon, SwordIcon } from "lucide-react";
 
 function resolveGameModeLabel(gameMode: GameMode) {
   if (gameMode === GameMode.GM) return "Game Master";
@@ -17,6 +19,13 @@ function resolveGameModeLabel(gameMode: GameMode) {
 
 export default function SettingsGame() {
   const { gameMode, setGameMode } = useGameStore();
+  const { theme, setTheme } = useTheme();
+
+  const getGamemodeDescription = (gameMode: GameMode) => {
+    if (gameMode === GameMode.GM)
+      return "AI runs the full game: it tells the story, manages inventory, and updates stats. Best with smarter models.";
+    return "AI tells the story only: no inventory or stats are tracked, just narrative. Works with any model.";
+  };
 
   function getGameModeOptions() {
     return Object.values(GameMode).map((mode) => ({
@@ -26,22 +35,56 @@ export default function SettingsGame() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 max-w-2xl">
       <Label>Game Settings</Label>
       <Separator />
 
+      <Label>Game</Label>
+      <Label>Game Mode</Label>
       <div className="flex flex-col gap-2">
-        <Label>Game Mode</Label>
         <Select value={gameMode} onValueChange={setGameMode}>
-          <SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[240px]">
             <SelectValue placeholder="Select a game mode" />
           </SelectTrigger>
           <SelectContent>
             {getGameModeOptions().map((option) => (
               <SelectItem key={option.value} value={option.value}>
-                {option.label}
+                <div className="flex flex-row gap-2">
+                  {option.value === GameMode.GM && (
+                    <SwordIcon className="w-4 h-4" />
+                  )}
+                  {option.value === GameMode.STORY_TELLER && (
+                    <BookIcon className="w-4 h-4" />
+                  )}
+                  <span>{option.label}</span>
+                </div>
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        <span className="text-sm text-muted-foreground">
+          {getGamemodeDescription(gameMode)}
+        </span>
+      </div>
+
+      <Separator />
+
+      <Label>Appearance</Label>
+      <div className="flex flex-col gap-2">
+        <Label>Theme</Label>
+        <Select
+          value={theme}
+          onValueChange={(value) =>
+            setTheme(value as "light" | "dark" | "system")
+          }
+        >
+          <SelectTrigger className="w-full sm:w-[240px]">
+            <SelectValue placeholder="Select a theme" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="system">System</SelectItem>
+            <SelectItem value="light">Light</SelectItem>
+            <SelectItem value="dark">Dark</SelectItem>
           </SelectContent>
         </Select>
       </div>
