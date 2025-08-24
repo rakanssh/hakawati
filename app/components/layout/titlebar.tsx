@@ -11,6 +11,7 @@ export function Titlebar() {
   const isShowButtons =
     pathname.includes("demo") ||
     pathname.includes("scenarios") ||
+    pathname.includes("tales") ||
     pathname.includes("settings");
   return (
     <div

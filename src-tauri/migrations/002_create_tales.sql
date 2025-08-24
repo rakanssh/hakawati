@@ -15,3 +15,7 @@ CREATE TABLE
         updated_at INTEGER NOT NULL DEFAULT (strftime ('%s', 'now') * 1000),
         FOREIGN KEY (scenario_id) REFERENCES scenarios (id) ON DELETE SET NULL
     );
+
+CREATE INDEX IF NOT EXISTS idx_tales_created_at ON tales (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_tales_scenario_id_created_at ON tales (scenario_id, created_at DESC);
+

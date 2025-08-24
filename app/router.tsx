@@ -20,6 +20,7 @@ import SettingsGame from "./pages/settings/game";
 import ScenariosHome from "./pages/scenarios/home";
 import ScenarioCreate from "./pages/scenarios/create.tsx";
 import ScenarioEdit from "./pages/scenarios/edit.tsx";
+import TalesHome from "./pages/tales/home";
 
 const RootRoute = createRootRoute({ component: () => <AppShell /> });
 
@@ -91,6 +92,11 @@ const routeTree = RootRoute.addChildren([
     getParentRoute: () => RootRoute,
     path: "scenarios",
     component: ScenariosHome,
+  }),
+  createRoute({
+    getParentRoute: () => RootRoute,
+    path: "tales",
+    component: TalesHome,
   }),
   createRoute({
     getParentRoute: () => RootRoute,

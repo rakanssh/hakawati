@@ -46,6 +46,12 @@ export default function Home() {
               Continue
             </Button>
             <Button
+              variant="outline"
+              onClick={() => navigate({ to: "/tales" })}
+            >
+              Tales
+            </Button>
+            <Button
               disabled={!apiKey || !model}
               onClick={() => navigate({ to: "/scenarios" })}
             >

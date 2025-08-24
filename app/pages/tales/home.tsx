@@ -8,49 +8,48 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { useScenariosList } from "@/hooks/useScenarios";
-import { initTaleFromScenario } from "@/services/scenario.service";
+import { useNavigate } from "@tanstack/react-router";
+import { useTalesList } from "@/hooks/useTales";
 
-export default function ScenariosHome() {
-  const { items } = useScenariosList();
+export default function TalesHome() {
   const navigate = useNavigate();
+  const { items, loading, error, loadIntoGame } = useTalesList();
+
   return (
     <div className="container mx-auto py-10 flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <div className="flex flex-col">
-          <Label className="text-xl">Scenarios</Label>
+          <Label className="text-xl">Tales</Label>
           <span className="text-sm text-muted-foreground">
-            Browse and manage your scenarios
+            Browse and load saved tales
           </span>
         </div>
-        <Button onClick={() => navigate({ to: "/scenarios/new" })}>
-          Create Scenario
-        </Button>
       </div>
       <Separator />
+      {loading && <div className="text-sm text-muted-foreground">Loading…</div>}
+      {Boolean(error) && (
+        <div className="text-sm text-red-500">Failed to load tales.</div>
+      )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map(({ id, scenario }) => (
+        {items.map(({ id, name, description }) => (
           <Card key={id} className="flex flex-col pt-4 pb-3">
             <CardHeader className="px-4">
-              <CardTitle>{scenario.name}</CardTitle>
+              <CardTitle>{name}</CardTitle>
             </CardHeader>
             <CardContent className="px-4 ">
               <p className="line-clamp-3 text-sm text-muted-foreground">
-                {scenario.initialDescription}
+                {description}
               </p>
             </CardContent>
-            <CardFooter className="mt-auto flex justify-between px-4">
-              <Button variant="secondary" asChild>
-                <Link to={`/scenarios/${id}`}>Edit</Link>
-              </Button>
+            <CardFooter className="mt-auto flex justify-end px-4 gap-2">
               <Button
+                variant="secondary"
                 onClick={async () => {
-                  await initTaleFromScenario(id);
+                  await loadIntoGame(id);
                   navigate({ to: "/demo" });
                 }}
               >
-                Start Tale
+                Load
               </Button>
             </CardFooter>
           </Card>

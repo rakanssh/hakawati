@@ -45,7 +45,7 @@ export async function initTaleFromScenario(
     authorNote: scenario.initialAuthorNote,
     stats: scenario.initialStats,
     inventory: (scenario.initialInventory ?? []).map((name) => ({
-      id: name,
+      id: `${name}-${crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}`,
       name,
     })),
     storyCards: scenario.initialStoryCards,

@@ -180,8 +180,12 @@ export async function getTales(
     ORDER BY created_at DESC LIMIT ? OFFSET ?`,
     [limit, (page - 1) * limit],
   );
+  const countRows = await db.select<Array<{ count: number }>>(
+    `SELECT COUNT(*) as count FROM tales`,
+  );
+  const total = countRows?.[0]?.count ?? 0;
   return {
-    data: rows.map((r: TaleRow) => ({
+    data: rows.map((r) => ({
       id: r.id,
       name: r.name,
       description: r.description,
@@ -189,7 +193,7 @@ export async function getTales(
       scenarioId: r.scenario_id,
       updatedAt: r.updated_at,
     })),
-    total: rows.length,
+    total,
     page,
     limit,
   };
@@ -201,7 +205,17 @@ export async function getScenarioTales(
   limit: number,
 ): Promise<PaginatedResponse<TaleHead>> {
   const db = await getDb();
-  const rows = await db.select<TaleRow[]>(
+  const rows = await db.select<
+    Pick<
+      TaleRow,
+      | "id"
+      | "name"
+      | "description"
+      | "created_at"
+      | "scenario_id"
+      | "updated_at"
+    >[]
+  >(
     `SELECT 
       id,
       name,
@@ -214,8 +228,13 @@ export async function getScenarioTales(
     ORDER BY created_at DESC LIMIT ? OFFSET ?`,
     [scenarioId, limit, (page - 1) * limit],
   );
+  const countRows = await db.select<Array<{ count: number }>>(
+    `SELECT COUNT(*) as count FROM tales WHERE scenario_id = ?`,
+    [scenarioId],
+  );
+  const total = countRows?.[0]?.count ?? 0;
   return {
-    data: rows.map((r: TaleRow) => ({
+    data: rows.map((r) => ({
       id: r.id,
       name: r.name,
       description: r.description,
@@ -223,7 +242,7 @@ export async function getScenarioTales(
       scenarioId: r.scenario_id,
       updatedAt: r.updated_at,
     })),
-    total: rows.length,
+    total,
     page,
     limit,
   };
