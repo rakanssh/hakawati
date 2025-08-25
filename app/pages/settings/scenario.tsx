@@ -33,6 +33,7 @@ export default function SettingsScenario() {
         version: 1,
         exportedAt: new Date().toISOString(),
         scenario: {
+          id: scenario.id,
           name: scenario.name,
           description: scenario.description,
           authorNote: scenario.authorNote,
@@ -95,6 +96,7 @@ export default function SettingsScenario() {
       }
 
       const importedScenario = {
+        id: payload.scenario.id ?? nanoid(12),
         name: payload.scenario.name ?? "Imported",
         description: payload.scenario.description ?? "",
         authorNote: payload.scenario.authorNote ?? "",

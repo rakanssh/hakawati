@@ -1,6 +1,7 @@
 import { Stat } from "./stats.type";
 
 export type Scenario = {
+  id: string;
   name: string;
   description: string;
   authorNote: string;

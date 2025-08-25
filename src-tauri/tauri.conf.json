@@ -2,7 +2,7 @@
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "hakawati",
   "version": "0.1.0",
-  "identifier": "com.hakawati.app",
+  "identifier": "com.rakanssh.hakawati",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -32,5 +32,10 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "sql": {
+      "preload": ["sqlite:hakawati.db"]
+    }
   }
 }

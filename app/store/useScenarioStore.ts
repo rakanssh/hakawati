@@ -18,6 +18,7 @@ export const useScenarioStore = create<ScenarioStoreType>()(
   persist(
     (set) => ({
       scenario: {
+        id: nanoid(12),
         name: "Default",
         description: "",
         authorNote: "",
