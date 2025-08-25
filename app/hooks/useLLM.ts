@@ -1,6 +1,6 @@
 import { sendChat } from "@/services/llm";
 import { LLMAction, LLMModel, LLMResponse } from "@/services/llm/schema";
-import { useGameStore } from "@/store/useGameStore";
+import { useTaleStore } from "@/store/useTaleStore";
 import { useRef, useState } from "react";
 import { parseStreamWithDecoder } from "@/services/llm/streaming";
 import { createDecoder } from "@/services/llm/decoders";
@@ -18,7 +18,7 @@ export function useLLM() {
     description,
     authorNote,
     storyCards,
-  } = useGameStore();
+  } = useTaleStore();
 
   const {
     temperature,

@@ -3,7 +3,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Separator } from "@/components/ui/separator";
-import { useGameStore } from "@/store/useGameStore";
+import { useTaleStore } from "@/store/useTaleStore";
 
 // type ExportedScenarioV1 = {
 //   format: "hakawati-scenario";
@@ -13,11 +13,11 @@ import { useGameStore } from "@/store/useGameStore";
 //   storyCards: { title: string; triggers: string[]; content: string }[];
 // };
 
-export default function SettingsStory() {
+export default function SettingsTale() {
   // const { scenario, storyCards, setScenario, setStoryCards } =
   //   useScenarioStore();
   const { description, authorNote, setDescription, setAuthorNote } =
-    useGameStore();
+    useTaleStore();
   const navigate = useNavigate();
   useEffect(() => {
     navigate({ to: "." });
@@ -136,7 +136,7 @@ export default function SettingsStory() {
 
   return (
     <div className="flex flex-col gap-4 max-w-2xl">
-      <Label>Story</Label>
+      <Label>Tale</Label>
       <Separator />
 
       <div className="flex flex-col gap-2">

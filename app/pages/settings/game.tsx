@@ -1,7 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { GameMode } from "@/types";
-import { useGameStore } from "@/store";
+import { useTaleStore } from "@/store";
 import {
   Select,
   SelectContent,
@@ -16,7 +16,7 @@ function resolveGameModeLabel(gameMode: GameMode) {
 }
 
 export default function SettingsGame() {
-  const { gameMode, setGameMode } = useGameStore();
+  const { gameMode, setGameMode } = useTaleStore();
 
   function getGameModeOptions() {
     return Object.values(GameMode).map((mode) => ({

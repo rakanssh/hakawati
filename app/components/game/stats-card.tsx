@@ -1,4 +1,4 @@
-import { useGameStore } from "@/store/useGameStore";
+import { useTaleStore } from "@/store/useTaleStore";
 import { Separator } from "../ui/separator";
 import { Progress } from "../ui/progress";
 // Button not used directly after AddIconButton extraction
@@ -17,7 +17,7 @@ function ProgressBar({ stat }: { stat: Stat }) {
   return <Progress value={progress} max={100} className="h-2 mt-1" />;
 }
 export function StatsCard() {
-  const { stats, addToStats, updateStat, removeFromStats } = useGameStore();
+  const { stats, addToStats, updateStat, removeFromStats } = useTaleStore();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);

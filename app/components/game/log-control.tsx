@@ -1,7 +1,7 @@
 import { Button } from "../ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { UndoIcon, RedoIcon, RefreshCwIcon } from "lucide-react";
-import { useGameStore } from "@/store/useGameStore";
+import { useTaleStore } from "@/store/useTaleStore";
 interface LogControlProps {
   className?: string;
   handleRetry: () => void;
@@ -13,7 +13,7 @@ export function LogControl({
   loading = false,
   handleRetry,
 }: LogControlProps) {
-  const { undo, redo } = useGameStore();
+  const { undo, redo } = useTaleStore();
 
   return (
     <div className={className}>

@@ -4,11 +4,11 @@ import {
 } from "@/repositories/scenario.repository";
 import { useScenarioStore } from "@/store/useScenarioStore";
 import { Scenario } from "@/types/context.type";
-import { useGameStore } from "@/store/useGameStore";
+import { useTaleStore } from "@/store/useTaleStore";
 
 export async function saveScenarioFromStore(id?: string): Promise<string> {
   const { scenario } = useScenarioStore.getState();
-  const { storyCards } = useGameStore.getState();
+  const { storyCards } = useTaleStore.getState();
   const fullScenario: Scenario = {
     ...scenario,
     initialStoryCards: storyCards,

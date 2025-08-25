@@ -1,4 +1,4 @@
-import { useGameStore } from "@/store/useGameStore";
+import { useTaleStore } from "@/store/useTaleStore";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -69,11 +69,11 @@ export default function Demo() {
     addToStats,
     updateLogEntry,
     removeLastLogEntry,
-  } = useGameStore();
+  } = useTaleStore();
   const [input, setInput] = useState("");
   const { send, loading } = useLLM();
   const { model, randomSeed } = useSettingsStore();
-  const { gameMode } = useGameStore();
+  const { gameMode } = useTaleStore();
   const [currentlyEditingLogId, setCurrentlyEditingLogId] = useState<
     string | null
   >(null);

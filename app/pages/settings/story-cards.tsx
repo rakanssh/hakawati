@@ -11,11 +11,11 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Separator } from "@/components/ui/separator";
-import { useGameStore } from "@/store/useGameStore";
+import { useTaleStore } from "@/store/useTaleStore";
 
 export default function SettingsStoryCards() {
   const { storyCards, addStoryCard, removeStoryCard, updateStoryCard } =
-    useGameStore();
+    useTaleStore();
   const navigate = useNavigate();
   const [currentlyDeleting, setCurrentlyDeleting] = useState<string | null>(
     null,

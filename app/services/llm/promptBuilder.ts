@@ -10,7 +10,7 @@ import { GM_SYSTEM_PROMPT, STORY_TELLER_SYSTEM_PROMPT } from "@/prompts/system";
 import { countMessageTokens } from "./tokenCounter";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { GameMode, StoryCard, Item } from "@/types";
-import { useGameStore } from "@/store/useGameStore";
+import { useTaleStore } from "@/store/useTaleStore";
 function injectStoryCards(text: string, storyCards: StoryCard[]): string {
   let storyCardInjections = "";
 
@@ -58,7 +58,7 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     authorNote,
   } = params;
 
-  const gameMode = useGameStore.getState().gameMode;
+  const gameMode = useTaleStore.getState().gameMode;
 
   const configuredBudget = useSettingsStore.getState().contextWindow;
   const maxTokens = Math.min(model.contextLength, configuredBudget);

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Drawer as DrawerPrimitive } from "vaul";
 import { Input } from "../ui/input";
 import { useState } from "react";
-import { useGameStore } from "@/store/useGameStore";
+import { useTaleStore } from "@/store/useTaleStore";
 
 export function AddItem({
   open,
@@ -17,7 +17,7 @@ export function AddItem({
   containerRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const [itemName, setItemName] = useState("");
-  const { addToInventory } = useGameStore();
+  const { addToInventory } = useTaleStore();
   return (
     <Drawer open={open} onOpenChange={setOpen} container={containerRef.current}>
       <DrawerPrimitive.Portal>

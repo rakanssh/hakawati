@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-interface GameStoreType {
+interface TaleStoreType {
   id: string;
   name: string;
   stats: Stat[];
@@ -46,9 +46,9 @@ interface GameStoreType {
 
 //TODO: Find a better way to execute/undo actions
 const undoEntryActions = (
-  state: GameStoreType,
+  state: TaleStoreType,
   entry: LogEntry,
-): Partial<GameStoreType> => {
+): Partial<TaleStoreType> => {
   if (!entry.actions) {
     return {};
   }
@@ -107,9 +107,9 @@ const undoEntryActions = (
 };
 
 const redoEntryActions = (
-  state: GameStoreType,
+  state: TaleStoreType,
   entry: LogEntry,
-): Partial<GameStoreType> => {
+): Partial<TaleStoreType> => {
   if (!entry.actions) {
     return {};
   }
@@ -174,7 +174,7 @@ const redoEntryActions = (
   return { stats: newStats, inventory: newInventory };
 };
 
-export const useGameStore = create<GameStoreType>()(
+export const useTaleStore = create<TaleStoreType>()(
   persist(
     (set) => ({
       id: uuidv4(),
@@ -331,7 +331,7 @@ export const useGameStore = create<GameStoreType>()(
       },
     }),
     {
-      name: "game-store",
+      name: "tale-store",
     },
   ),
 );

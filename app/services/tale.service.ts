@@ -5,12 +5,12 @@ import {
   getTales,
   getScenarioTales,
 } from "@/repositories/tale.repository";
-import { useGameStore } from "@/store/useGameStore";
+import { useTaleStore } from "@/store/useTaleStore";
 import { PaginatedResponse } from "@/types/db.type";
 import { TaleHead } from "@/types/tale.type";
 
 export async function initTale(scenarioId: string): Promise<string> {
-  const state = useGameStore.getState();
+  const state = useTaleStore.getState();
   const id = await createTale({
     scenarioId,
     name: state.name,
@@ -22,12 +22,12 @@ export async function initTale(scenarioId: string): Promise<string> {
     log: state.log,
     gameMode: state.gameMode,
   });
-  useGameStore.setState({ id });
+  useTaleStore.setState({ id });
   return id;
 }
 
 export async function persistCurrentTale(taleId: string): Promise<void> {
-  const state = useGameStore.getState();
+  const state = useTaleStore.getState();
   await updateTale({
     id: taleId,
     name: state.name,
@@ -46,7 +46,7 @@ export async function loadTaleIntoGame(taleId: string): Promise<void> {
   if (!tale) {
     throw new Error("Tale not found");
   }
-  useGameStore.setState({
+  useTaleStore.setState({
     id: tale.id,
     name: tale.name,
     description: tale.description,

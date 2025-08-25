@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 const tabs = [
   { to: "game", label: "Game" },
   { to: "api", label: "API" },
-  { to: "story", label: "Story" },
+  { to: "tale", label: "Tale" },
   { to: "story-cards", label: "Story Cards" },
   { to: "model", label: "Model" },
 ] as const;
