@@ -1,12 +1,13 @@
 import { getDb } from "@/services/db";
 import { nanoid } from "nanoid";
-import { Scenario, ScenarioHead } from "@/types/context.type";
+import { Scenario, ScenarioHead, GameMode } from "@/types/context.type";
 import { ScenarioRow, PaginatedResponse } from "@/types/db.type";
 
 function toRow(id: string, s: Scenario, ts: number): ScenarioRow {
   return {
     id,
     name: s.name,
+    initial_game_mode: s.initialGameMode,
     initial_description: s.initialDescription,
     initial_author_note: s.initialAuthorNote,
     initial_stats: JSON.stringify(s.initialStats),
@@ -21,6 +22,8 @@ function fromRow(r: ScenarioRow): Scenario {
   return {
     id: r.id,
     name: r.name,
+    initialGameMode:
+      r.initial_game_mode === GameMode.GM ? GameMode.GM : GameMode.STORY_TELLER,
     initialDescription: r.initial_description,
     initialAuthorNote: r.initial_author_note,
     initialStats: JSON.parse(r.initial_stats),
@@ -38,10 +41,11 @@ export async function upsertScenario(
   const scenarioId = id ?? nanoid(12);
   const row = toRow(scenarioId, input, now);
   await db.execute(
-    `INSERT INTO scenarios (id, name, initial_description, initial_author_note, initial_stats, initial_inventory, initial_story_cards, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO scenarios (id, name, initial_game_mode, initial_description, initial_author_note, initial_stats, initial_inventory, initial_story_cards, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        name=excluded.name,
+       initial_game_mode=excluded.initial_game_mode,
        initial_description=excluded.initial_description,
        initial_author_note=excluded.initial_author_note,
        initial_stats=excluded.initial_stats,
@@ -51,6 +55,7 @@ export async function upsertScenario(
     [
       row.id,
       row.name,
+      row.initial_game_mode,
       row.initial_description,
       row.initial_author_note,
       row.initial_stats,
@@ -98,9 +103,12 @@ export async function getScenarios(
 ): Promise<PaginatedResponse<ScenarioHead>> {
   const db = await getDb();
   const rows = await db.select<
-    Pick<ScenarioRow, "id" | "name" | "initial_description" | "updated_at">[]
+    Pick<
+      ScenarioRow,
+      "id" | "name" | "initial_game_mode" | "initial_description" | "updated_at"
+    >[]
   >(
-    `SELECT id, name, initial_description, updated_at
+    `SELECT id, name, initial_game_mode, initial_description, updated_at
      FROM scenarios
      ORDER BY updated_at DESC
      LIMIT ? OFFSET ?`,
@@ -114,6 +122,10 @@ export async function getScenarios(
     data: rows.map((r) => ({
       id: r.id,
       name: r.name,
+      initialGameMode:
+        r.initial_game_mode === GameMode.GM
+          ? GameMode.GM
+          : GameMode.STORY_TELLER,
       initialDescription: r.initial_description,
       updatedAt: r.updated_at,
     })),

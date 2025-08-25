@@ -18,6 +18,7 @@ export async function saveScenario(
   const normalized: Scenario = {
     id: scenario.id,
     name: (scenario.name ?? "").trim() || "Untitled Scenario",
+    initialGameMode: scenario.initialGameMode,
     initialDescription: scenario.initialDescription ?? "",
     initialAuthorNote: scenario.initialAuthorNote ?? "",
     initialStats: scenario.initialStats ?? [],

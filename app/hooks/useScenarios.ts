@@ -6,7 +6,7 @@ import {
   getScenarioById,
   getAllScenarios,
 } from "@/services/scenario.service";
-import { Scenario, ScenarioHead } from "@/types/context.type";
+import { GameMode, Scenario, ScenarioHead } from "@/types/context.type";
 import { PaginatedResponse } from "@/types/db.type";
 
 export function useScenariosList(initialPage = 1, initialLimit = 12) {
@@ -64,6 +64,7 @@ export function useScenarioEditor(initial?: Partial<Scenario>) {
   const [scenario, setScenario] = useState<Scenario>({
     id: initial?.id ?? "",
     name: initial?.name ?? "Untitled Scenario",
+    initialGameMode: initial?.initialGameMode ?? GameMode.STORY_TELLER,
     initialDescription: initial?.initialDescription ?? "",
     initialAuthorNote: initial?.initialAuthorNote ?? "",
     initialStats: initial?.initialStats ?? [],

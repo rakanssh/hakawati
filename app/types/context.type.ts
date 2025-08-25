@@ -3,6 +3,7 @@ import { Stat } from "./stats.type";
 export type Scenario = {
   id: string;
   name: string;
+  initialGameMode: GameMode;
   initialDescription: string;
   initialAuthorNote: string;
   initialStats: Stat[];
@@ -13,6 +14,7 @@ export type Scenario = {
 export type ScenarioHead = {
   id: string;
   name: string;
+  initialGameMode: GameMode;
   initialDescription: string;
   updatedAt: number;
 };
