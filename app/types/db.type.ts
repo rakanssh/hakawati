@@ -19,3 +19,10 @@ export type SaveRow = {
   log: string;
   created_at: number;
 };
+
+export type PaginatedResponse<T> = {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+};

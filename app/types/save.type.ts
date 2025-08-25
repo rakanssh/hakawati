@@ -10,3 +10,10 @@ export type Save = {
   log: LogEntry[];
   createdAt: number;
 };
+
+export type SaveHead = {
+  id: string;
+  saveName: string;
+  createdAt: number;
+  scenarioId: string;
+};

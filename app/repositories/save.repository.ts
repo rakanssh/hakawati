@@ -1,7 +1,7 @@
 import { getDb } from "@/services/db";
 import { nanoid } from "nanoid";
-import { Save } from "@/types/save.type";
-import { SaveRow } from "@/types/db.type";
+import { Save, SaveHead } from "@/types/save.type";
+import { PaginatedResponse, SaveRow } from "@/types/db.type";
 import { getScenario } from "./scenario.repository";
 
 function toRow(s: Save): SaveRow {
@@ -92,4 +92,62 @@ export async function listSavesForScenario(
 export async function deleteSave(id: string): Promise<void> {
   const db = await getDb();
   await db.execute(`DELETE FROM saves WHERE id = ?`, [id]);
+}
+
+export async function getSaves(
+  page: number,
+  limit: number,
+): Promise<PaginatedResponse<SaveHead>> {
+  const db = await getDb();
+  const rows = await db.select<SaveRow[]>(
+    `SELECT 
+      id,
+      save_name,
+      created_at,
+      scenario_id
+    FROM saves 
+    ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    [limit, (page - 1) * limit],
+  );
+  return {
+    data: rows.map((r) => ({
+      id: r.id,
+      saveName: r.save_name,
+      createdAt: r.created_at,
+      scenarioId: r.scenario_id,
+    })),
+    total: rows.length,
+    page,
+    limit,
+  };
+}
+
+export async function getScenarioSaves(
+  scenarioId: string,
+  page: number,
+  limit: number,
+): Promise<PaginatedResponse<SaveHead>> {
+  const db = await getDb();
+  const rows = await db.select<SaveRow[]>(
+    `SELECT 
+      id,
+      save_name,
+      created_at,
+      scenario_id
+    FROM saves 
+    WHERE scenario_id = ? 
+    ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    [scenarioId, limit, (page - 1) * limit],
+  );
+  return {
+    data: rows.map((r) => ({
+      id: r.id,
+      saveName: r.save_name,
+      createdAt: r.created_at,
+      scenarioId: r.scenario_id,
+    })),
+    total: rows.length,
+    page,
+    limit,
+  };
 }
