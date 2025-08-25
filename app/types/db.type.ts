@@ -1,8 +1,8 @@
 export type ScenarioRow = {
   id: string;
   name: string;
-  description: string;
-  author_note: string;
+  initial_description: string;
+  initial_author_note: string;
   initial_stats: string;
   initial_inventory: string;
   initial_story_cards: string;

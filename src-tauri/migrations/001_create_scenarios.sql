@@ -2,8 +2,8 @@ CREATE TABLE
     IF NOT EXISTS scenarios (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
-        description TEXT NOT NULL,
-        author_note TEXT NOT NULL,
+        initial_description TEXT NOT NULL,
+        initial_author_note TEXT NOT NULL,
         initial_stats TEXT NOT NULL,
         initial_inventory TEXT NOT NULL,
         initial_story_cards TEXT NOT NULL,

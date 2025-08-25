@@ -7,8 +7,8 @@ function toRow(id: string, s: Scenario, ts: number): ScenarioRow {
   return {
     id,
     name: s.name,
-    description: s.initialDescription,
-    author_note: s.initialAuthorNote,
+    initial_description: s.initialDescription,
+    initial_author_note: s.initialAuthorNote,
     initial_stats: JSON.stringify(s.initialStats),
     initial_inventory: JSON.stringify(s.initialInventory),
     initial_story_cards: JSON.stringify(s.initialStoryCards),
@@ -21,8 +21,8 @@ function fromRow(r: ScenarioRow): Scenario {
   return {
     id: r.id,
     name: r.name,
-    initialDescription: r.description,
-    initialAuthorNote: r.author_note,
+    initialDescription: r.initial_description,
+    initialAuthorNote: r.initial_author_note,
     initialStats: JSON.parse(r.initial_stats),
     initialInventory: JSON.parse(r.initial_inventory),
     initialStoryCards: JSON.parse(r.initial_story_cards),
@@ -38,12 +38,12 @@ export async function upsertScenario(
   const scenarioId = id ?? nanoid(12);
   const row = toRow(scenarioId, input, now);
   await db.execute(
-    `INSERT INTO scenarios (id, name, description, author_note, initial_stats, initial_inventory, initial_story_cards, created_at, updated_at)
+    `INSERT INTO scenarios (id, name, initial_description, initial_author_note, initial_stats, initial_inventory, initial_story_cards, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        name=excluded.name,
-       description=excluded.description,
-       author_note=excluded.author_note,
+       initial_description=excluded.initial_description,
+       initial_author_note=excluded.initial_author_note,
        initial_stats=excluded.initial_stats,
        initial_inventory=excluded.initial_inventory,
        initial_story_cards=excluded.initial_story_cards,
@@ -51,8 +51,8 @@ export async function upsertScenario(
     [
       row.id,
       row.name,
-      row.description,
-      row.author_note,
+      row.initial_description,
+      row.initial_author_note,
       row.initial_stats,
       row.initial_inventory,
       row.initial_story_cards,
