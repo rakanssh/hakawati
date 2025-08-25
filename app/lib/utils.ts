@@ -53,3 +53,22 @@ export function decodeEscapedText(input: string): string {
     },
   );
 }
+
+/**
+ * Convert bytes to object URL. Chat-GPT method, no clue what this means but it fixed the problem.
+ * @param bytes - The bytes to convert
+ * @param mimeType - The mime type of the bytes
+ * @returns The object URL
+ */
+export function bytesToObjectUrl(
+  bytes?: Uint8Array | null,
+  mimeType = "image/webp",
+): string {
+  if (!bytes || bytes.byteLength === 0) return "";
+  const ab = bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength,
+  );
+  const blob = new Blob([ab as unknown as ArrayBuffer], { type: mimeType });
+  return URL.createObjectURL(blob);
+}

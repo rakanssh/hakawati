@@ -9,6 +9,7 @@ export type Scenario = {
   initialStats: Stat[];
   initialInventory: string[];
   initialStoryCards: StoryCard[];
+  thumbnailWebp?: Uint8Array | null;
 };
 
 export type ScenarioHead = {
@@ -17,6 +18,7 @@ export type ScenarioHead = {
   initialGameMode: GameMode;
   initialDescription: string;
   updatedAt: number;
+  thumbnailWebp?: Uint8Array | null;
 };
 
 export type StoryCard = {

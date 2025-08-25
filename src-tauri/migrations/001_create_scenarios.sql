@@ -2,6 +2,7 @@ CREATE TABLE
     IF NOT EXISTS scenarios (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
+        thumbnail_webp BLOB,
         initial_game_mode TEXT NOT NULL DEFAULT 'story_teller',
         initial_description TEXT NOT NULL,
         initial_author_note TEXT NOT NULL,

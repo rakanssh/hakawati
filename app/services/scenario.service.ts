@@ -24,6 +24,7 @@ export async function saveScenario(
     initialStats: scenario.initialStats ?? [],
     initialInventory: scenario.initialInventory ?? [],
     initialStoryCards: scenario.initialStoryCards ?? [],
+    thumbnailWebp: scenario.thumbnailWebp ?? null,
   };
   return upsertScenario(normalized, id);
 }

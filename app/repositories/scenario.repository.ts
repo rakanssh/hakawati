@@ -3,6 +3,25 @@ import { nanoid } from "nanoid";
 import { Scenario, ScenarioHead, GameMode } from "@/types/context.type";
 import { ScenarioRow, PaginatedResponse } from "@/types/db.type";
 
+function toUint8Array(value: unknown): Uint8Array | null {
+  if (value === null || value === undefined) return null;
+  if (value instanceof Uint8Array) return value;
+  if (value instanceof ArrayBuffer) return new Uint8Array(value);
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      try {
+        const arr = JSON.parse(trimmed);
+        if (Array.isArray(arr)) return new Uint8Array(arr as number[]);
+      } catch (_e) {
+        return null;
+      }
+    }
+    return null;
+  }
+  return null;
+}
+
 function toRow(id: string, s: Scenario, ts: number): ScenarioRow {
   return {
     id,
@@ -13,6 +32,7 @@ function toRow(id: string, s: Scenario, ts: number): ScenarioRow {
     initial_stats: JSON.stringify(s.initialStats),
     initial_inventory: JSON.stringify(s.initialInventory),
     initial_story_cards: JSON.stringify(s.initialStoryCards),
+    thumbnail_webp: s.thumbnailWebp ?? null,
     created_at: ts,
     updated_at: ts,
   };
@@ -29,6 +49,7 @@ function fromRow(r: ScenarioRow): Scenario {
     initialStats: JSON.parse(r.initial_stats),
     initialInventory: JSON.parse(r.initial_inventory),
     initialStoryCards: JSON.parse(r.initial_story_cards),
+    thumbnailWebp: toUint8Array(r.thumbnail_webp ?? null),
   };
 }
 
@@ -41,8 +62,8 @@ export async function upsertScenario(
   const scenarioId = id ?? nanoid(12);
   const row = toRow(scenarioId, input, now);
   await db.execute(
-    `INSERT INTO scenarios (id, name, initial_game_mode, initial_description, initial_author_note, initial_stats, initial_inventory, initial_story_cards, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO scenarios (id, name, initial_game_mode, initial_description, initial_author_note, initial_stats, initial_inventory, initial_story_cards, thumbnail_webp, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET
        name=excluded.name,
        initial_game_mode=excluded.initial_game_mode,
@@ -51,6 +72,7 @@ export async function upsertScenario(
        initial_stats=excluded.initial_stats,
        initial_inventory=excluded.initial_inventory,
        initial_story_cards=excluded.initial_story_cards,
+       thumbnail_webp=excluded.thumbnail_webp,
        updated_at=excluded.updated_at`,
     [
       row.id,
@@ -61,6 +83,7 @@ export async function upsertScenario(
       row.initial_stats,
       row.initial_inventory,
       row.initial_story_cards,
+      row.thumbnail_webp ?? null,
       row.created_at,
       row.updated_at,
     ],
@@ -105,10 +128,15 @@ export async function getScenarios(
   const rows = await db.select<
     Pick<
       ScenarioRow,
-      "id" | "name" | "initial_game_mode" | "initial_description" | "updated_at"
+      | "id"
+      | "name"
+      | "initial_game_mode"
+      | "initial_description"
+      | "updated_at"
+      | "thumbnail_webp"
     >[]
   >(
-    `SELECT id, name, initial_game_mode, initial_description, updated_at
+    `SELECT id, name, initial_game_mode, initial_description, updated_at, thumbnail_webp
      FROM scenarios
      ORDER BY updated_at DESC
      LIMIT ? OFFSET ?`,
@@ -128,6 +156,7 @@ export async function getScenarios(
           : GameMode.STORY_TELLER,
       initialDescription: r.initial_description,
       updatedAt: r.updated_at,
+      thumbnailWebp: toUint8Array(r.thumbnail_webp ?? null),
     })),
     total,
     page,

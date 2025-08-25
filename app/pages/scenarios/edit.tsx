@@ -4,14 +4,20 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useScenarioEditor } from "@/hooks/useScenarios";
+import { bytesToObjectUrl } from "@/lib/utils";
 import { useParams, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 export default function ScenarioEdit() {
   const { id } = useParams({ from: "/scenarios/$id" });
   const navigate = useNavigate();
   const { scenario, setScenario, load, save, startTale, saving } =
     useScenarioEditor();
+
+  const previewUrl = useMemo(
+    () => bytesToObjectUrl(scenario.thumbnailWebp),
+    [scenario.thumbnailWebp],
+  );
 
   useEffect(() => {
     if (id) void load(id);
@@ -26,6 +32,29 @@ export default function ScenarioEdit() {
         <Input
           value={scenario.name}
           onChange={(e) => setScenario({ ...scenario, name: e.target.value })}
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label>Thumbnail (WebP recommended)</Label>
+        {previewUrl && (
+          <img
+            src={previewUrl}
+            alt="thumbnail preview"
+            className="h-28 w-full object-cover rounded border"
+          />
+        )}
+        <Input
+          type="file"
+          accept="image/*"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const arrayBuffer = await file.arrayBuffer();
+            setScenario({
+              ...scenario,
+              thumbnailWebp: new Uint8Array(arrayBuffer),
+            });
+          }}
         />
       </div>
       <div className="flex flex-col gap-2">

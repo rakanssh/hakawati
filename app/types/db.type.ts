@@ -7,6 +7,7 @@ export type ScenarioRow = {
   initial_stats: string;
   initial_inventory: string;
   initial_story_cards: string;
+  thumbnail_webp?: Uint8Array | null;
   created_at: number;
   updated_at: number;
 };

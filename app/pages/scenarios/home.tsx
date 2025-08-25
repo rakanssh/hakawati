@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useScenariosList } from "@/hooks/useScenarios";
 import { initTaleFromScenario } from "@/services/scenario.service";
+import { bytesToObjectUrl } from "@/lib/utils";
 
 export default function ScenariosHome() {
   const { items, loading, error, page, limit, total, setPage } =
@@ -35,31 +36,43 @@ export default function ScenariosHome() {
         <div className="text-sm text-red-500">Failed to load scenarios.</div>
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map(({ id, name, initialDescription }) => (
-          <Card key={id} className="flex flex-col pt-4 pb-3">
-            <CardHeader className="px-4">
-              <CardTitle>{name}</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 ">
-              <p className="line-clamp-3 text-sm text-muted-foreground">
-                {initialDescription}
-              </p>
-            </CardContent>
-            <CardFooter className="mt-auto flex justify-between px-4">
-              <Button variant="secondary" asChild>
-                <Link to={`/scenarios/${id}`}>Edit</Link>
-              </Button>
-              <Button
-                onClick={async () => {
-                  await initTaleFromScenario(id);
-                  navigate({ to: "/demo" });
-                }}
-              >
-                Start Tale
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
+        {items.map(({ id, name, initialDescription, thumbnailWebp }) => {
+          console.log(thumbnailWebp);
+          return (
+            <Card key={id} className="flex flex-col pt-4 pb-3">
+              <CardHeader className="px-4">
+                <CardTitle>{name}</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 ">
+                {thumbnailWebp && (
+                  <img
+                    src={bytesToObjectUrl(
+                      thumbnailWebp as unknown as Uint8Array,
+                    )}
+                    alt={`${name} thumbnail`}
+                    className="h-28 w-full object-cover rounded mb-2 border"
+                  />
+                )}
+                <p className="line-clamp-3 text-sm text-muted-foreground">
+                  {initialDescription}
+                </p>
+              </CardContent>
+              <CardFooter className="mt-auto flex justify-between px-4">
+                <Button variant="secondary" asChild>
+                  <Link to={`/scenarios/${id}`}>Edit</Link>
+                </Button>
+                <Button
+                  onClick={async () => {
+                    await initTaleFromScenario(id);
+                    navigate({ to: "/demo" });
+                  }}
+                >
+                  Start Tale
+                </Button>
+              </CardFooter>
+            </Card>
+          );
+        })}
       </div>
       {total > limit && (
         <div className="flex items-center justify-end gap-2 ">
