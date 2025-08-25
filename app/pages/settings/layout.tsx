@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { Outlet, Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const tabs = [
@@ -17,11 +17,10 @@ export default function SettingsLayout() {
   const handleOpenChange = useCallback(
     (open: boolean) => {
       if (!open) {
-        const redirect = (search as Record<string, unknown>)?.redirect as
-          | string
-          | undefined;
-        if (redirect) {
-          navigate({ to: redirect, replace: true });
+        const redirectPath = (search as Record<string, unknown>)
+          ?.redirectPath as string | undefined;
+        if (redirectPath) {
+          navigate({ to: redirectPath, replace: true });
         } else {
           navigate({ to: "..", replace: true });
         }
@@ -32,7 +31,6 @@ export default function SettingsLayout() {
 
   return (
     <Dialog open onOpenChange={handleOpenChange}>
-      <DialogTitle>Settings</DialogTitle>
       <DialogContent
         showCloseButton={true}
         className="p-0 sm:max-w-[900px] w-[min(95vw,900px)] h-[min(85vh,700px)] flex flex-col"

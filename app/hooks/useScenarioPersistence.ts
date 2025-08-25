@@ -1,25 +1,26 @@
 import { useCallback, useState } from "react";
-import {
-  saveScenarioFromStore,
-  loadScenarioIntoStore,
-} from "@/services/scenario.service";
-//TODO: rework this
-export function useSaveScenario() {
+import { saveScenario, getScenarioById } from "@/services/scenario.service";
+import { Scenario } from "@/types/context.type";
+
+export function useSaveScenario(scenario: Scenario) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
-  const save = useCallback(async (id?: string) => {
-    setSaving(true);
-    setError(null);
-    try {
-      return await saveScenarioFromStore(id);
-    } catch (e) {
-      setError(e);
-      throw e;
-    } finally {
-      setSaving(false);
-    }
-  }, []);
+  const save = useCallback(
+    async (id?: string) => {
+      setSaving(true);
+      setError(null);
+      try {
+        return await saveScenario(scenario, id);
+      } catch (e) {
+        setError(e);
+        throw e;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [scenario],
+  );
 
   return { save, saving, error } as const;
 }
@@ -27,12 +28,14 @@ export function useSaveScenario() {
 export function useLoadScenario() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const [data, setData] = useState<Scenario | null>(null);
 
   const load = useCallback(async (id: string) => {
     setLoading(true);
     setError(null);
     try {
-      await loadScenarioIntoStore(id);
+      const s = await getScenarioById(id);
+      setData(s);
     } catch (e) {
       setError(e);
       throw e;
@@ -41,5 +44,5 @@ export function useLoadScenario() {
     }
   }, []);
 
-  return { load, loading, error } as const;
+  return { load, loading, error, data } as const;
 }

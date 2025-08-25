@@ -8,7 +8,10 @@ import fez from "@/assets/fez-offwh-bg-sqc.svg";
 export function Titlebar() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const isDemoPage = pathname.includes("demo");
+  const isShowButtons =
+    pathname.includes("demo") ||
+    pathname.includes("scenarios") ||
+    pathname.includes("settings");
   return (
     <div
       data-tauri-drag-region
@@ -24,7 +27,7 @@ export function Titlebar() {
             <img src={fez} alt="Hakawati" className="w-6 h-6 " />
           </Button>
 
-          {isDemoPage && (
+          {isShowButtons && (
             <>
               <Tooltip>
                 <TooltipTrigger asChild>

@@ -42,11 +42,14 @@ export default function Home() {
           <div className="flex flex-col gap-2">
             <Label>Model</Label>
             <ModelSelect />
+            <Button variant="outline" onClick={() => navigate({ to: "/demo" })}>
+              Continue
+            </Button>
             <Button
               disabled={!apiKey || !model}
-              onClick={() => navigate({ to: "/demo" })}
+              onClick={() => navigate({ to: "/scenarios" })}
             >
-              Play
+              New Game
             </Button>
           </div>
         </CardContent>

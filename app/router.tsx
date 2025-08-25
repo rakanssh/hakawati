@@ -17,6 +17,9 @@ import SettingsTale from "./pages/settings/tale";
 import SettingsStoryCards from "./pages/settings/story-cards";
 import SettingsModel from "./pages/settings/model";
 import SettingsGame from "./pages/settings/game";
+import ScenariosHome from "./pages/scenarios/home";
+import ScenarioCreate from "./pages/scenarios/create.tsx";
+import ScenarioEdit from "./pages/scenarios/edit.tsx";
 
 const RootRoute = createRootRoute({ component: () => <AppShell /> });
 
@@ -84,6 +87,21 @@ const routeTree = RootRoute.addChildren([
   IndexRoute,
   // AboutRoute,
   DemoRoute,
+  createRoute({
+    getParentRoute: () => RootRoute,
+    path: "scenarios",
+    component: ScenariosHome,
+  }),
+  createRoute({
+    getParentRoute: () => RootRoute,
+    path: "scenarios/new",
+    component: ScenarioCreate,
+  }),
+  createRoute({
+    getParentRoute: () => RootRoute,
+    path: "scenarios/$id",
+    component: ScenarioEdit,
+  }),
   SettingsRoute.addChildren([
     SettingsIndexRoute,
     SettingsApiRoute,
