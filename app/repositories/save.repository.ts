@@ -8,6 +8,10 @@ import { getScenario } from "./scenario.repository";
 function toRow(s: Save): SaveRow {
   return {
     id: s.id,
+    name: s.name,
+    description: s.description,
+    author_note: s.authorNote,
+    story_cards: JSON.stringify(s.storyCards),
     scenario_id: s.scenarioId ?? null,
     save_name: s.saveName,
     stats: JSON.stringify(s.stats),
@@ -22,6 +26,10 @@ function toRow(s: Save): SaveRow {
 function fromRow(r: SaveRow): Save {
   return {
     id: r.id,
+    name: r.name,
+    description: r.description,
+    authorNote: r.author_note,
+    storyCards: JSON.parse(r.story_cards),
     scenarioId: r.scenario_id ?? null,
     saveName: r.save_name,
     stats: JSON.parse(r.stats),
@@ -40,6 +48,10 @@ function fromRow(r: SaveRow): Save {
 export async function createSave(input: {
   scenarioId: string;
   saveName: string;
+  name: Save["name"];
+  description: Save["description"];
+  authorNote: Save["authorNote"];
+  storyCards: Save["storyCards"];
   stats: Save["stats"];
   inventory: Save["inventory"];
   log: Save["log"];
@@ -53,6 +65,10 @@ export async function createSave(input: {
 
   const row = toRow({
     id,
+    name: input.name,
+    description: input.description,
+    authorNote: input.authorNote,
+    storyCards: input.storyCards,
     scenarioId,
     saveName: input.saveName,
     stats: input.stats,
@@ -64,10 +80,14 @@ export async function createSave(input: {
   });
 
   await db.execute(
-    `INSERT INTO saves (id, scenario_id, save_name, stats, inventory, log, game_mode, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO saves (id, name, description, author_note, story_cards, scenario_id, save_name, stats, inventory, log, game_mode, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       row.id,
+      row.name,
+      row.description,
+      row.author_note,
+      row.story_cards,
       row.scenario_id,
       row.save_name,
       row.stats,
@@ -85,6 +105,10 @@ export async function createSave(input: {
 export async function updateSave(input: {
   id: string;
   saveName: string;
+  name: Save["name"];
+  description: Save["description"];
+  authorNote: Save["authorNote"];
+  storyCards: Save["storyCards"];
   stats: Save["stats"];
   inventory: Save["inventory"];
   log: Save["log"];
@@ -94,6 +118,10 @@ export async function updateSave(input: {
 
   await db.execute(
     `UPDATE saves SET
+       name = ?,
+       description = ?,
+       author_note = ?,
+       story_cards = ?,
        save_name = ?,
        stats = ?,
        inventory = ?,
@@ -102,6 +130,10 @@ export async function updateSave(input: {
        updated_at = ?
      WHERE id = ?`,
     [
+      input.name,
+      input.description,
+      input.authorNote,
+      JSON.stringify(input.storyCards),
       input.saveName,
       JSON.stringify(input.stats),
       JSON.stringify(input.inventory),

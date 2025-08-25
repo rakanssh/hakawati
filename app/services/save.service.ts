@@ -17,6 +17,10 @@ export async function createGameSave(
   const id = await createSave({
     scenarioId,
     saveName,
+    name: state.name,
+    description: state.description,
+    authorNote: state.authorNote,
+    storyCards: state.storyCards,
     stats: state.stats,
     inventory: state.inventory,
     log: state.log,
@@ -31,6 +35,10 @@ export async function updateGameSave(saveName: string): Promise<void> {
   await updateSave({
     id: state.id,
     saveName,
+    name: state.name,
+    description: state.description,
+    authorNote: state.authorNote,
+    storyCards: state.storyCards,
     stats: state.stats,
     inventory: state.inventory,
     log: state.log,
@@ -45,6 +53,10 @@ export async function loadSaveIntoGame(saveId: string): Promise<void> {
   }
   useGameStore.setState({
     id: save.id,
+    name: save.name,
+    description: save.description,
+    authorNote: save.authorNote,
+    storyCards: save.storyCards,
     stats: save.stats,
     inventory: save.inventory,
     log: save.log,

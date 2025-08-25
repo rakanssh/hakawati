@@ -12,6 +12,10 @@ export type ScenarioRow = {
 
 export type SaveRow = {
   id: string;
+  name: string;
+  description: string;
+  author_note: string;
+  story_cards: string;
   scenario_id: string | null;
   save_name: string;
   stats: string;
