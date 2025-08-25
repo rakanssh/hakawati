@@ -2,6 +2,7 @@ import { getDb } from "@/services/db";
 import { nanoid } from "nanoid";
 import { Save } from "@/types/save.type";
 import { SaveRow } from "@/types/db.type";
+import { getScenario } from "./scenario.repository";
 
 function toRow(s: Save): SaveRow {
   return {
@@ -33,19 +34,37 @@ export async function createSave(
   const db = await getDb();
   const id = nanoid(12);
   const row = toRow({ ...input, id, createdAt: Date.now() });
-  await db.execute(
-    `INSERT INTO saves (id, scenario_id, save_name, stats, inventory, log, created_at)
+
+  const scenario = await getScenario(input.scenarioId);
+
+  if (!scenario) {
+    await db.execute(
+      `INSERT INTO saves (id, save_name, stats, inventory, log, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        row.id,
+        row.save_name,
+        row.stats,
+        row.inventory,
+        row.log,
+        row.created_at,
+      ],
+    );
+  } else {
+    await db.execute(
+      `INSERT INTO saves (id, scenario_id, save_name, stats, inventory, log, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [
-      row.id,
-      row.scenario_id,
-      row.save_name,
-      row.stats,
-      row.inventory,
-      row.log,
-      row.created_at,
-    ],
-  );
+      [
+        row.id,
+        row.scenario_id,
+        row.save_name,
+        row.stats,
+        row.inventory,
+        row.log,
+        row.created_at,
+      ],
+    );
+  }
   return id;
 }
 
