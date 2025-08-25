@@ -6,7 +6,7 @@ fn greet(name: &str) -> String {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    use tauri_plugin_sql::{ Migration, MigrationKind };
+    use tauri_plugin_sql::{Migration, MigrationKind};
 
     let migrations = vec![
         Migration {
@@ -17,19 +17,17 @@ pub fn run() {
         },
         Migration {
             version: 2,
-            description: "create_saves_table",
-            sql: include_str!("../migrations/002_create_saves.sql"),
+            description: "create_tales_table",
+            sql: include_str!("../migrations/002_create_tales.sql"),
             kind: MigrationKind::Up,
-        }
+        },
     ];
 
-    tauri::Builder
-        ::default()
+    tauri::Builder::default()
         .plugin(
-            tauri_plugin_sql::Builder
-                ::new()
+            tauri_plugin_sql::Builder::new()
                 .add_migrations("sqlite:hakawati.db", migrations)
-                .build()
+                .build(),
         )
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![greet])

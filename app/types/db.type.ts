@@ -10,14 +10,13 @@ export type ScenarioRow = {
   updated_at: number;
 };
 
-export type SaveRow = {
+export type TaleRow = {
   id: string;
   name: string;
   description: string;
   author_note: string;
   story_cards: string;
   scenario_id: string | null;
-  save_name: string;
   stats: string;
   inventory: string;
   log: string;

@@ -1,11 +1,11 @@
 import { getDb } from "@/services/db";
 import { nanoid } from "nanoid";
-import { Save, SaveHead } from "@/types/save.type";
+import { Tale, TaleHead } from "@/types/tale.type";
 import { GameMode } from "@/types/context.type";
-import { PaginatedResponse, SaveRow } from "@/types/db.type";
+import { PaginatedResponse, TaleRow } from "@/types/db.type";
 import { getScenario } from "./scenario.repository";
 
-function toRow(s: Save): SaveRow {
+function toRow(s: Tale): TaleRow {
   return {
     id: s.id,
     name: s.name,
@@ -13,7 +13,6 @@ function toRow(s: Save): SaveRow {
     author_note: s.authorNote,
     story_cards: JSON.stringify(s.storyCards),
     scenario_id: s.scenarioId ?? null,
-    save_name: s.saveName,
     stats: JSON.stringify(s.stats),
     inventory: JSON.stringify(s.inventory),
     log: JSON.stringify(s.log),
@@ -23,7 +22,7 @@ function toRow(s: Save): SaveRow {
   };
 }
 
-function fromRow(r: SaveRow): Save {
+function fromRow(r: TaleRow): Tale {
   return {
     id: r.id,
     name: r.name,
@@ -31,7 +30,6 @@ function fromRow(r: SaveRow): Save {
     authorNote: r.author_note,
     storyCards: JSON.parse(r.story_cards),
     scenarioId: r.scenario_id ?? null,
-    saveName: r.save_name,
     stats: JSON.parse(r.stats),
     inventory: JSON.parse(r.inventory),
     log: JSON.parse(r.log),
@@ -45,17 +43,16 @@ function fromRow(r: SaveRow): Save {
 }
 
 // Create once with scenario; later updates do not require scenarioId.
-export async function createSave(input: {
+export async function createTale(input: {
   scenarioId: string;
-  saveName: string;
-  name: Save["name"];
-  description: Save["description"];
-  authorNote: Save["authorNote"];
-  storyCards: Save["storyCards"];
-  stats: Save["stats"];
-  inventory: Save["inventory"];
-  log: Save["log"];
-  gameMode: Save["gameMode"];
+  name: Tale["name"];
+  description: Tale["description"];
+  authorNote: Tale["authorNote"];
+  storyCards: Tale["storyCards"];
+  stats: Tale["stats"];
+  inventory: Tale["inventory"];
+  log: Tale["log"];
+  gameMode: Tale["gameMode"];
 }): Promise<string> {
   const db = await getDb();
   const id = nanoid(12);
@@ -70,7 +67,6 @@ export async function createSave(input: {
     authorNote: input.authorNote,
     storyCards: input.storyCards,
     scenarioId,
-    saveName: input.saveName,
     stats: input.stats,
     inventory: input.inventory,
     log: input.log,
@@ -80,8 +76,8 @@ export async function createSave(input: {
   });
 
   await db.execute(
-    `INSERT INTO saves (id, name, description, author_note, story_cards, scenario_id, save_name, stats, inventory, log, game_mode, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO tales (id, name, description, author_note, story_cards, scenario_id, stats, inventory, log, game_mode, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       row.id,
       row.name,
@@ -89,7 +85,6 @@ export async function createSave(input: {
       row.author_note,
       row.story_cards,
       row.scenario_id,
-      row.save_name,
       row.stats,
       row.inventory,
       row.log,
@@ -102,27 +97,25 @@ export async function createSave(input: {
   return id;
 }
 
-export async function updateSave(input: {
+export async function updateTale(input: {
   id: string;
-  saveName: string;
-  name: Save["name"];
-  description: Save["description"];
-  authorNote: Save["authorNote"];
-  storyCards: Save["storyCards"];
-  stats: Save["stats"];
-  inventory: Save["inventory"];
-  log: Save["log"];
-  gameMode: Save["gameMode"];
+  name: Tale["name"];
+  description: Tale["description"];
+  authorNote: Tale["authorNote"];
+  storyCards: Tale["storyCards"];
+  stats: Tale["stats"];
+  inventory: Tale["inventory"];
+  log: Tale["log"];
+  gameMode: Tale["gameMode"];
 }): Promise<void> {
   const db = await getDb();
 
   await db.execute(
-    `UPDATE saves SET
+    `UPDATE tales SET
        name = ?,
        description = ?,
        author_note = ?,
        story_cards = ?,
-       save_name = ?,
        stats = ?,
        inventory = ?,
        log = ?,
@@ -134,7 +127,6 @@ export async function updateSave(input: {
       input.description,
       input.authorNote,
       JSON.stringify(input.storyCards),
-      input.saveName,
       JSON.stringify(input.stats),
       JSON.stringify(input.inventory),
       JSON.stringify(input.log),
@@ -145,52 +137,54 @@ export async function updateSave(input: {
   );
 }
 
-export async function getSave(id: string): Promise<Save | null> {
+export async function getTale(id: string): Promise<Tale | null> {
   const db = await getDb();
-  const rows = await db.select<SaveRow[]>(
-    `SELECT * FROM saves WHERE id = ? LIMIT 1`,
+  const rows = await db.select<TaleRow[]>(
+    `SELECT * FROM tales WHERE id = ? LIMIT 1`,
     [id],
   );
   if (!rows || rows.length === 0) return null;
   return fromRow(rows[0]);
 }
 
-export async function listSavesForScenario(
+export async function listTalesForScenario(
   scenarioId: string,
-): Promise<Save[]> {
+): Promise<Tale[]> {
   const db = await getDb();
-  const rows = await db.select<SaveRow[]>(
-    `SELECT * FROM saves WHERE scenario_id = ? ORDER BY created_at DESC`,
+  const rows = await db.select<TaleRow[]>(
+    `SELECT * FROM tales WHERE scenario_id = ? ORDER BY created_at DESC`,
     [scenarioId],
   );
   return rows.map(fromRow);
 }
 
-export async function deleteSave(id: string): Promise<void> {
+export async function deleteTale(id: string): Promise<void> {
   const db = await getDb();
-  await db.execute(`DELETE FROM saves WHERE id = ?`, [id]);
+  await db.execute(`DELETE FROM tales WHERE id = ?`, [id]);
 }
 
-export async function getSaves(
+export async function getTales(
   page: number,
   limit: number,
-): Promise<PaginatedResponse<SaveHead>> {
+): Promise<PaginatedResponse<TaleHead>> {
   const db = await getDb();
-  const rows = await db.select<SaveRow[]>(
+  const rows = await db.select<TaleRow[]>(
     `SELECT 
       id,
-      save_name,
+      name,
+      description,
       created_at,
       scenario_id,
       updated_at
-    FROM saves 
+    FROM tales 
     ORDER BY created_at DESC LIMIT ? OFFSET ?`,
     [limit, (page - 1) * limit],
   );
   return {
-    data: rows.map((r: SaveRow) => ({
+    data: rows.map((r: TaleRow) => ({
       id: r.id,
-      saveName: r.save_name,
+      name: r.name,
+      description: r.description,
       createdAt: r.created_at,
       scenarioId: r.scenario_id,
       updatedAt: r.updated_at,
@@ -201,28 +195,30 @@ export async function getSaves(
   };
 }
 
-export async function getScenarioSaves(
+export async function getScenarioTales(
   scenarioId: string,
   page: number,
   limit: number,
-): Promise<PaginatedResponse<SaveHead>> {
+): Promise<PaginatedResponse<TaleHead>> {
   const db = await getDb();
-  const rows = await db.select<SaveRow[]>(
+  const rows = await db.select<TaleRow[]>(
     `SELECT 
       id,
-      save_name,
+      name,
+      description,
       created_at,
       scenario_id,
       updated_at
-    FROM saves 
+    FROM tales 
     WHERE scenario_id = ? 
     ORDER BY created_at DESC LIMIT ? OFFSET ?`,
     [scenarioId, limit, (page - 1) * limit],
   );
   return {
-    data: rows.map((r: SaveRow) => ({
+    data: rows.map((r: TaleRow) => ({
       id: r.id,
-      saveName: r.save_name,
+      name: r.name,
+      description: r.description,
       createdAt: r.created_at,
       scenarioId: r.scenario_id,
       updatedAt: r.updated_at,

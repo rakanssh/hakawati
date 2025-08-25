@@ -1,12 +1,11 @@
 CREATE TABLE
-    IF NOT EXISTS saves (
+    IF NOT EXISTS tales (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         description TEXT NOT NULL,
         author_note TEXT NOT NULL,
         story_cards TEXT NOT NULL,
         scenario_id TEXT,
-        save_name TEXT NOT NULL,
         stats TEXT NOT NULL,
         inventory TEXT NOT NULL,
         log TEXT NOT NULL,

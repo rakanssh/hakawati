@@ -1,21 +1,21 @@
 import { useCallback, useState } from "react";
 import {
-  createGameSave,
-  updateGameSave,
-  loadSaveIntoGame,
-  getSavesForScenario,
-  getAllSaves,
-} from "@/services/save.service";
+  initTale,
+  persistCurrentTale,
+  loadTaleIntoGame,
+  getTalesForScenario,
+  getAllTales,
+} from "@/services/tale.service";
 
-export function useCreateGameSave() {
+export function useInitTale() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
-  const save = useCallback(async (scenarioId: string, saveName: string) => {
+  const save = useCallback(async (scenarioId: string) => {
     setSaving(true);
     setError(null);
     try {
-      return await createGameSave(scenarioId, saveName);
+      return await initTale(scenarioId);
     } catch (e) {
       setError(e);
       throw e;
@@ -27,15 +27,15 @@ export function useCreateGameSave() {
   return { save, saving, error } as const;
 }
 
-export function useUpdateGameSave() {
+export function usePersistTale() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
-  const save = useCallback(async (saveName: string) => {
+  const save = useCallback(async (taleId: string) => {
     setSaving(true);
     setError(null);
     try {
-      await updateGameSave(saveName);
+      await persistCurrentTale(taleId);
     } catch (e) {
       setError(e);
       throw e;
@@ -47,15 +47,15 @@ export function useUpdateGameSave() {
   return { save, saving, error } as const;
 }
 
-export function useLoadGame() {
+export function useLoadTale() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
-  const load = useCallback(async (saveId: string) => {
+  const load = useCallback(async (taleId: string) => {
     setLoading(true);
     setError(null);
     try {
-      await loadSaveIntoGame(saveId);
+      await loadTaleIntoGame(taleId);
     } catch (e) {
       setError(e);
       throw e;
@@ -67,17 +67,17 @@ export function useLoadGame() {
   return { load, loading, error } as const;
 }
 
-export function useGetSaves(page: number, limit: number, scenarioId?: string) {
+export function useGetTales(page: number, limit: number, scenarioId?: string) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
-  const getSaves = useCallback(async () => {
+  const getTales = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       return scenarioId
-        ? await getSavesForScenario(scenarioId, page, limit)
-        : await getAllSaves(page, limit);
+        ? await getTalesForScenario(scenarioId, page, limit)
+        : await getAllTales(page, limit);
     } catch (e) {
       setError(e);
       throw e;
@@ -86,5 +86,5 @@ export function useGetSaves(page: number, limit: number, scenarioId?: string) {
     }
   }, [page, limit, scenarioId]);
 
-  return { getSaves, loading, error } as const;
+  return { getTales, loading, error } as const;
 }
