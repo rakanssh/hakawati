@@ -3,8 +3,8 @@ import { Stat } from "./stats.type";
 export type Scenario = {
   id: string;
   name: string;
-  description: string;
-  authorNote: string;
+  initialDescription: string;
+  initialAuthorNote: string;
   initialStats: Stat[];
   initialInventory: string[];
   initialStoryCards: StoryCard[];

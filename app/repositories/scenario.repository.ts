@@ -7,8 +7,8 @@ function toRow(id: string, s: Scenario, ts: number): ScenarioRow {
   return {
     id,
     name: s.name,
-    description: s.description,
-    author_note: s.authorNote,
+    description: s.initialDescription,
+    author_note: s.initialAuthorNote,
     initial_stats: JSON.stringify(s.initialStats),
     initial_inventory: JSON.stringify(s.initialInventory),
     initial_story_cards: JSON.stringify(s.initialStoryCards),
@@ -21,8 +21,8 @@ function fromRow(r: ScenarioRow): Scenario {
   return {
     id: r.id,
     name: r.name,
-    description: r.description,
-    authorNote: r.author_note,
+    initialDescription: r.description,
+    initialAuthorNote: r.author_note,
     initialStats: JSON.parse(r.initial_stats),
     initialInventory: JSON.parse(r.initial_inventory),
     initialStoryCards: JSON.parse(r.initial_story_cards),

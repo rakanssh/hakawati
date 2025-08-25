@@ -13,7 +13,7 @@ import Demo from "./pages/demo/demo";
 import SettingsLayout from "./pages/settings/layout";
 import SettingsIndex from "./pages/settings/index";
 import SettingsApi from "./pages/settings/api";
-import SettingsScenario from "./pages/settings/scenario";
+import SettingsStory from "./pages/settings/story";
 import SettingsStoryCards from "./pages/settings/story-cards";
 import SettingsModel from "./pages/settings/model";
 import SettingsGame from "./pages/settings/game";
@@ -56,10 +56,10 @@ const SettingsApiRoute = createRoute({
   component: SettingsApi,
 });
 
-const SettingsScenarioRoute = createRoute({
+const SettingsStoryRoute = createRoute({
   getParentRoute: () => SettingsRoute,
-  path: "scenario",
-  component: SettingsScenario,
+  path: "story",
+  component: SettingsStory,
 });
 
 const SettingsStoryCardsRoute = createRoute({
@@ -87,7 +87,7 @@ const routeTree = RootRoute.addChildren([
   SettingsRoute.addChildren([
     SettingsIndexRoute,
     SettingsApiRoute,
-    SettingsScenarioRoute,
+    SettingsStoryRoute,
     SettingsStoryCardsRoute,
     SettingsModelRoute,
     SettingsGameRoute,

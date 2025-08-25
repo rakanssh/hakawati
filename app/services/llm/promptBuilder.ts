@@ -9,7 +9,7 @@ import {
 import { GM_SYSTEM_PROMPT, STORY_TELLER_SYSTEM_PROMPT } from "@/prompts/system";
 import { countMessageTokens } from "./tokenCounter";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { GameMode, Scenario, StoryCard, Item } from "@/types";
+import { GameMode, StoryCard, Item } from "@/types";
 import { useGameStore } from "@/store/useGameStore";
 function injectStoryCards(text: string, storyCards: StoryCard[]): string {
   let storyCardInjections = "";
@@ -39,15 +39,24 @@ interface BuildMessageParams {
     text: string;
     mode: LogEntryMode;
   };
-  scenario: Scenario;
+  description: string;
+  authorNote: string;
   storyCards: StoryCard[];
   model: LLMModel;
   options?: ChatRequestOptions;
 }
 
 export function buildMessage(params: BuildMessageParams): ChatRequest {
-  const { log, stats, inventory, lastMessage, scenario, storyCards, model } =
-    params;
+  const {
+    log,
+    stats,
+    inventory,
+    lastMessage,
+    storyCards,
+    model,
+    description,
+    authorNote,
+  } = params;
 
   const gameMode = useGameStore.getState().gameMode;
 
@@ -84,16 +93,16 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     messages.push({ role: "system", content: systemPrompt });
   }
   if (
-    scenario.description &&
-    canAddWithUser({ role: "system", content: scenario.description }, messages)
+    description &&
+    canAddWithUser({ role: "system", content: description }, messages)
   ) {
-    messages.push({ role: "system", content: scenario.description });
+    messages.push({ role: "system", content: description });
   }
   if (
-    scenario.authorNote &&
-    canAddWithUser({ role: "system", content: scenario.authorNote }, messages)
+    authorNote &&
+    canAddWithUser({ role: "system", content: authorNote }, messages)
   ) {
-    messages.push({ role: "system", content: scenario.authorNote });
+    messages.push({ role: "system", content: authorNote });
   }
 
   const history: ChatMessage[] = [];

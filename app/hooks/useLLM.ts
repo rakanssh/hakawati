@@ -5,14 +5,21 @@ import { useRef, useState } from "react";
 import { parseStreamWithDecoder } from "@/services/llm/streaming";
 import { createDecoder } from "@/services/llm/decoders";
 import { buildMessage } from "@/services/llm/promptBuilder";
-import { useScenarioStore } from "@/store/useScenarioStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { LogEntryMode } from "@/types";
 
 export function useLLM() {
   const [loading, setLoading] = useState(false);
-  const { log, stats, inventory, gameMode } = useGameStore();
-  const { scenario, storyCards } = useScenarioStore();
+  const {
+    log,
+    stats,
+    inventory,
+    gameMode,
+    description,
+    authorNote,
+    storyCards,
+  } = useGameStore();
+
   const {
     temperature,
     topP,
@@ -50,7 +57,8 @@ export function useLLM() {
         inventory,
         lastMessage,
         model,
-        scenario,
+        description,
+        authorNote,
         storyCards,
         options: {
           temperature,

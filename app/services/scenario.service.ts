@@ -4,9 +4,11 @@ import {
 } from "@/repositories/scenario.repository";
 import { useScenarioStore } from "@/store/useScenarioStore";
 import { Scenario } from "@/types/context.type";
+import { useGameStore } from "@/store/useGameStore";
 
 export async function saveScenarioFromStore(id?: string): Promise<string> {
-  const { scenario, storyCards } = useScenarioStore.getState();
+  const { scenario } = useScenarioStore.getState();
+  const { storyCards } = useGameStore.getState();
   const fullScenario: Scenario = {
     ...scenario,
     initialStoryCards: storyCards,
@@ -23,13 +25,12 @@ export async function loadScenarioIntoStore(id: string): Promise<void> {
     scenario: {
       id: scenario.id,
       name: scenario.name,
-      description: scenario.description,
-      authorNote: scenario.authorNote,
+      initialDescription: scenario.initialDescription,
+      initialAuthorNote: scenario.initialAuthorNote,
       initialStats: scenario.initialStats,
       initialInventory: scenario.initialInventory,
       initialStoryCards: scenario.initialStoryCards,
     },
-    storyCards: scenario.initialStoryCards,
   });
 }
 

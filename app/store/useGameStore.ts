@@ -1,4 +1,4 @@
-import { GameMode, Item, LogEntry } from "@/types";
+import { GameMode, Item, LogEntry, StoryCard, StoryCardInput } from "@/types";
 import { Stat } from "@/types/stats.type";
 import { nanoid } from "nanoid";
 import { v4 as uuidv4 } from "uuid";
@@ -8,11 +8,23 @@ import { persist } from "zustand/middleware";
 
 interface GameStoreType {
   id: string;
+  name: string;
   stats: Stat[];
   gameMode: GameMode;
   inventory: Item[];
   log: LogEntry[];
   undoStack: LogEntry[];
+  storyCards: StoryCard[];
+  description: string;
+  authorNote: string;
+  setName: (name: string) => void;
+  setDescription: (description: string) => void;
+  setAuthorNote: (authorNote: string) => void;
+  setStoryCards: (storyCards: StoryCard[]) => void;
+  addStoryCard: (storyCard: StoryCardInput) => void;
+  removeStoryCard: (id: string) => void;
+  updateStoryCard: (id: string, updates: Partial<StoryCard>) => void;
+  clearStoryCards: () => void;
   addLog: (log: LogEntry) => void;
   removeLastLogEntry: () => void;
   updateLogEntry: (id: string, updates: Partial<LogEntry>) => void;
@@ -167,6 +179,31 @@ export const useGameStore = create<GameStoreType>()(
     (set) => ({
       id: uuidv4(),
       gameMode: GameMode.GM,
+      name: "Default",
+      description: "",
+      authorNote: "",
+      storyCards: [],
+      setName: (name: string) => set({ name }),
+      setDescription: (description: string) => set({ description }),
+      setAuthorNote: (authorNote: string) => set({ authorNote }),
+      setStoryCards: (storyCards: StoryCard[]) => set({ storyCards }),
+      addStoryCard: (storyCard: StoryCardInput) =>
+        set((state) => ({
+          storyCards: [...state.storyCards, { ...storyCard, id: nanoid(12) }],
+        })),
+      removeStoryCard: (id: string) =>
+        set((state) => ({
+          storyCards: state.storyCards.filter(
+            (storyCard) => storyCard.id !== id,
+          ),
+        })),
+      updateStoryCard: (id: string, updates: Partial<StoryCard>) =>
+        set((state) => ({
+          storyCards: state.storyCards.map((storyCard) =>
+            storyCard.id === id ? { ...storyCard, ...updates } : storyCard,
+          ),
+        })),
+      clearStoryCards: () => set({ storyCards: [] }),
       setGameMode: (gameMode: GameMode) =>
         set({
           gameMode,
