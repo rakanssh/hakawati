@@ -3,7 +3,7 @@ import { nanoid } from "nanoid";
 import { Tale, TaleHead } from "@/types/tale.type";
 import { GameMode } from "@/types/context.type";
 import { PaginatedResponse, TaleRow } from "@/types/db.type";
-import { getScenario } from "./scenario.repository";
+import { getScenario, getScenarioHead } from "./scenario.repository";
 
 function toRow(s: Tale): TaleRow {
   return {
@@ -180,14 +180,19 @@ export async function getTales(
   );
   const total = countRows?.[0]?.count ?? 0;
   return {
-    data: rows.map((r) => ({
-      id: r.id,
-      name: r.name,
-      description: r.description,
-      createdAt: r.created_at,
-      scenarioId: r.scenario_id,
-      updatedAt: r.updated_at,
-    })),
+    data: await Promise.all(
+      rows.map(async (r) => ({
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        createdAt: r.created_at,
+        scenarioId: r.scenario_id,
+        updatedAt: r.updated_at,
+        ...(r.scenario_id
+          ? { scenarioHead: await getScenarioHead(r.scenario_id) }
+          : { scenarioHead: undefined }),
+      })),
+    ),
     total,
     page,
     limit,
@@ -229,14 +234,19 @@ export async function getScenarioTales(
   );
   const total = countRows?.[0]?.count ?? 0;
   return {
-    data: rows.map((r) => ({
-      id: r.id,
-      name: r.name,
-      description: r.description,
-      createdAt: r.created_at,
-      scenarioId: r.scenario_id,
-      updatedAt: r.updated_at,
-    })),
+    data: await Promise.all(
+      rows.map(async (r) => ({
+        id: r.id,
+        name: r.name,
+        description: r.description,
+        createdAt: r.created_at,
+        scenarioId: r.scenario_id,
+        updatedAt: r.updated_at,
+        ...(r.scenario_id
+          ? { scenarioHead: await getScenarioHead(r.scenario_id) }
+          : { scenarioHead: undefined }),
+      })),
+    ),
     total,
     page,
     limit,

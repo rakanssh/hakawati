@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "@tanstack/react-router";
 import { useTalesList } from "@/hooks/useTales";
 import { useState } from "react";
+import { bytesToObjectUrl } from "@/lib/utils";
 
 export default function TalesHome() {
   const navigate = useNavigate();
@@ -58,14 +59,22 @@ export default function TalesHome() {
         <div className="text-sm text-red-500">Failed to load tales.</div>
       )}
       <div className="flex flex-col gap-4">
-        {items.map(({ id, name, description }) => (
+        {items.map(({ id, name, description, scenarioHead }) => (
           <Card
             key={id}
             className="flex flex-col py-1 cursor-pointer hover:bg-muted rounded-xs"
             onClick={(e) => handleClickCard(id, e)}
           >
             <CardContent className="flex flex-row">
-              <div>{/* Scenario Image (Or placeholder) */}</div>
+              <img
+                src={
+                  scenarioHead?.thumbnailWebp
+                    ? bytesToObjectUrl(scenarioHead.thumbnailWebp)
+                    : undefined
+                }
+                alt={`${name} thumbnail`}
+                className="h-28 w-full object-cover rounded mb-2 border"
+              />
               <div className="flex flex-col gap-1">
                 <p className="text-sm font-medium">{name}</p>
                 <p className="line-clamp-1 text-sm text-muted-foreground">

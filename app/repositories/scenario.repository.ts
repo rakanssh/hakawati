@@ -163,3 +163,35 @@ export async function getScenarios(
     limit,
   };
 }
+
+export async function getScenarioHead(
+  id: string,
+): Promise<ScenarioHead | null> {
+  const db = await getDb();
+  const rows = await db.select<
+    Pick<
+      ScenarioRow,
+      | "id"
+      | "name"
+      | "initial_game_mode"
+      | "initial_description"
+      | "updated_at"
+      | "thumbnail_webp"
+    >[]
+  >(
+    `SELECT id, name, initial_game_mode, initial_description, updated_at, thumbnail_webp FROM scenarios WHERE id = ? LIMIT 1`,
+    [id],
+  );
+  if (!rows || rows.length === 0) return null;
+  return {
+    id: rows[0].id,
+    name: rows[0].name,
+    initialGameMode:
+      rows[0].initial_game_mode === GameMode.GM
+        ? GameMode.GM
+        : GameMode.STORY_TELLER,
+    initialDescription: rows[0].initial_description,
+    updatedAt: rows[0].updated_at,
+    thumbnailWebp: toUint8Array(rows[0].thumbnail_webp ?? null),
+  };
+}

@@ -1,6 +1,6 @@
 import { Stat } from "./stats.type";
 import { Item, LogEntry } from "./index";
-import { GameMode, StoryCard } from "./context.type";
+import { GameMode, ScenarioHead, StoryCard } from "./context.type";
 
 export type Tale = {
   id: string;
@@ -24,4 +24,5 @@ export type TaleHead = {
   createdAt: number;
   scenarioId: string | null;
   updatedAt: number;
+  scenarioHead?: ScenarioHead | null;
 };
