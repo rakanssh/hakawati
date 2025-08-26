@@ -17,10 +17,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
+import { useTaleStore } from "@/store/useTaleStore";
 
 export default function Home() {
   const navigate = useNavigate();
   const { apiKey, setApiKey, model } = useSettingsStore();
+  const { log } = useTaleStore();
   return (
     <main className="flex flex-col items-center justify-center h-[calc(100vh-2.5rem)] ">
       <Card className="w-full max-w-md mt-8">
@@ -42,20 +44,24 @@ export default function Home() {
           <div className="flex flex-col gap-2">
             <Label>Model</Label>
             <ModelSelect />
-            <Button variant="outline" onClick={() => navigate({ to: "/demo" })}>
+            <Button
+              onClick={() => navigate({ to: "/demo" })}
+              disabled={log.length === 0}
+            >
               Continue
             </Button>
             <Button
               variant="outline"
               onClick={() => navigate({ to: "/tales" })}
             >
-              Tales
+              My Tales
             </Button>
             <Button
+              variant="outline"
               disabled={!apiKey || !model}
               onClick={() => navigate({ to: "/scenarios" })}
             >
-              New Game
+              Scenarios
             </Button>
           </div>
         </CardContent>
