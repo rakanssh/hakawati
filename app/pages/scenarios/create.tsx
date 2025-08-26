@@ -39,7 +39,7 @@ export default function ScenarioCreate() {
           />
         )}
         <Input
-          type="image"
+          type="file"
           accept="image/*"
           onChange={async (e) => {
             const file = e.target.files?.[0];
