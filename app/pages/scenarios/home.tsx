@@ -99,10 +99,10 @@ export default function ScenariosHome() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="px-2 flex flex-col gap-1">
+              <CardContent className="px-2 flex flex-col justify-between  gap-1">
                 <span className="font-bold">{name}</span>
                 <div className="flex items-center gap-2"></div>
-                <p className="line-clamp-3 text-sm text-muted-foreground">
+                <p className="line-clamp-3 text-sm text-muted-foreground h-16">
                   {initialDescription}
                 </p>
                 <Button
@@ -110,6 +110,7 @@ export default function ScenariosHome() {
                     await initTaleFromScenario(id);
                     navigate({ to: "/demo" });
                   }}
+                  className="w-full"
                 >
                   New Tale
                 </Button>
