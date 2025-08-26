@@ -25,12 +25,16 @@ export function GameModeField({ value, onChange }: GameModeFieldProps) {
     <div className="flex flex-col gap-2">
       <Label>Initial Game Mode</Label>
       <Select value={value} onValueChange={(v) => onChange(v as GameMode)}>
-        <SelectTrigger className="w-full sm:w-[240px]">
+        <SelectTrigger className="w-full sm:w-[240px] rounded-xs">
           <SelectValue placeholder="Select a game mode" />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="rounded-xs">
           {getGameModeOptions().map((option) => (
-            <SelectItem key={option.value} value={option.value}>
+            <SelectItem
+              key={option.value}
+              value={option.value}
+              className="rounded-xs"
+            >
               {option.label}
             </SelectItem>
           ))}

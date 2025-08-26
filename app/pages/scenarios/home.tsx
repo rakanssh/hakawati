@@ -38,7 +38,10 @@ export default function ScenariosHome() {
             Browse and manage your scenarios
           </span>
         </div>
-        <Button onClick={() => navigate({ to: "/scenarios/new" })}>
+        <Button
+          onClick={() => navigate({ to: "/scenarios/new" })}
+          className="rounded-xs"
+        >
           Create Scenario
         </Button>
       </div>
@@ -88,10 +91,12 @@ export default function ScenariosHome() {
                           align="end"
                           side="bottom"
                           sideOffset={4}
+                          className="rounded-xs"
                         >
                           <DropdownMenuItem
                             onSelect={(e) => e.preventDefault()}
                             onClick={() => navigate({ to: `/scenarios/${id}` })}
+                            className="rounded-xs text-xs"
                           >
                             <PencilIcon className="w-4 h-4 mr-2" /> Edit
                           </DropdownMenuItem>
@@ -100,6 +105,8 @@ export default function ScenariosHome() {
                             onClick={() => {
                               remove(id);
                             }}
+                            variant="destructive"
+                            className="rounded-xs text-xs"
                           >
                             <TrashIcon className="w-4 h-4 mr-2" /> Delete
                           </DropdownMenuItem>
@@ -122,7 +129,7 @@ export default function ScenariosHome() {
                 <CardContent className="px-2 flex flex-col justify-between  gap-1">
                   <span className="font-bold">{name}</span>
                   <div className="flex items-center gap-2"></div>
-                  <p className="line-clamp-3 text-sm text-muted-foreground h-16">
+                  <p className="line-clamp-3 text-sm text-muted-foreground h-16 rounded-xs">
                     {initialDescription}
                   </p>
                   <Button
@@ -130,7 +137,7 @@ export default function ScenariosHome() {
                       await initTaleFromScenario(id);
                       navigate({ to: "/demo" });
                     }}
-                    className="w-full"
+                    className="w-full rounded-xs"
                   >
                     New Tale
                   </Button>
@@ -146,6 +153,7 @@ export default function ScenariosHome() {
             variant="secondary"
             disabled={page <= 1}
             onClick={() => setPage(Math.max(1, page - 1))}
+            className="rounded-xs"
           >
             Prev
           </Button>
@@ -156,6 +164,7 @@ export default function ScenariosHome() {
             variant="secondary"
             disabled={page * limit >= total}
             onClick={() => setPage(page + 1)}
+            className="rounded-xs"
           >
             Next
           </Button>

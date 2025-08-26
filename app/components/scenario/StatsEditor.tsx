@@ -30,18 +30,19 @@ export function StatsEditor({
         {stats.map((stat) => (
           <div
             key={stat.name}
-            className="p-3 border rounded-md flex flex-col gap-2"
+            className="p-3 border rounded-xs flex flex-col gap-2"
           >
             <div className="flex items-center justify-between gap-2">
               <Input
                 value={stat.name}
                 onChange={(e) => onUpdate(stat.name, { name: e.target.value })}
-                className="w-full"
+                className="w-full rounded-xs"
               />
               <Button
-                variant="ghost"
+                variant="destructive"
                 size="sm"
                 onClick={() => onRemove(stat.name)}
+                className="rounded-xs w-24"
               >
                 Remove
               </Button>
@@ -53,7 +54,7 @@ export function StatsEditor({
                 min={stat.range[0]}
                 max={stat.range[1]}
                 onValueCommit={(v) => onUpdate(stat.name, { value: v })}
-                className="w-24"
+                className="w-24 rounded-xs"
               />
               <span>/</span>
               <Label className="text-xs text-muted-foreground">Max</Label>
@@ -61,7 +62,7 @@ export function StatsEditor({
                 value={stat.range[1]}
                 min={stat.value}
                 onValueCommit={(v) => onUpdate(stat.name, { rangeMax: v })}
-                className="w-24"
+                className="w-24 rounded-xs"
               />
             </div>
           </div>
@@ -77,6 +78,7 @@ export function StatsEditor({
                 setNewName("");
               }
             }}
+            className="rounded-xs"
           />
           <Button
             variant="outline"
@@ -84,6 +86,7 @@ export function StatsEditor({
               onAdd(newName);
               setNewName("");
             }}
+            className="rounded-xs"
           >
             Add Stat
           </Button>

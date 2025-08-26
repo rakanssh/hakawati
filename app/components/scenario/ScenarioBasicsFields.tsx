@@ -34,7 +34,11 @@ export function ScenarioBasicsFields({
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
         <Label>Name</Label>
-        <Input value={name} onChange={(e) => onNameChange(e.target.value)} />
+        <Input
+          value={name}
+          onChange={(e) => onNameChange(e.target.value)}
+          className="rounded-xs"
+        />
       </div>
       <div className="flex flex-col gap-2">
         <Label>Thumbnail (WebP recommended)</Label>
@@ -42,7 +46,7 @@ export function ScenarioBasicsFields({
           <img
             src={previewUrl}
             alt="thumbnail preview"
-            className="h-28 w-full object-cover rounded border"
+            className="h-28 w-full object-cover rounded-xs border"
           />
         )}
         <Input
@@ -54,6 +58,7 @@ export function ScenarioBasicsFields({
             const arrayBuffer = await file.arrayBuffer();
             onThumbnailChange(new Uint8Array(arrayBuffer));
           }}
+          className="rounded-xs"
         />
       </div>
       <div className="flex flex-col gap-2">
@@ -61,6 +66,7 @@ export function ScenarioBasicsFields({
         <Textarea
           value={initialDescription}
           onChange={(e) => onInitialDescriptionChange(e.target.value)}
+          className="rounded-xs"
         />
       </div>
       <div className="flex flex-col gap-2">
@@ -68,6 +74,7 @@ export function ScenarioBasicsFields({
         <Textarea
           value={initialAuthorNote}
           onChange={(e) => onInitialAuthorNoteChange(e.target.value)}
+          className="rounded-xs"
         />
       </div>
     </div>

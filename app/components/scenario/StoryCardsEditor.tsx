@@ -34,7 +34,7 @@ export function StoryCardsEditor({
               <Button
                 variant={confirmDeleteId === card.id ? "destructive" : "ghost"}
                 size="sm"
-                className="h-6"
+                className="h-6 rounded-xs"
                 onClick={() => {
                   if (confirmDeleteId === card.id) {
                     onRemove(card.id);
@@ -49,6 +49,7 @@ export function StoryCardsEditor({
             <Input
               value={card.title}
               onChange={(e) => onUpdate(card.id, { title: e.target.value })}
+              className="rounded-xs"
             />
             <div className="flex items-center gap-1">
               <Label className="text-sm">Triggers</Label>
@@ -60,12 +61,14 @@ export function StoryCardsEditor({
                   triggers: e.target.value.split(",").map((s) => s.trim()),
                 })
               }
+              className="rounded-xs"
             />
             <Label className="text-sm">Content</Label>
             <Textarea
               value={card.content}
               onChange={(e) => onUpdate(card.id, { content: e.target.value })}
               rows={4}
+              className="rounded-xs"
             />
           </div>
         ))}
@@ -73,6 +76,7 @@ export function StoryCardsEditor({
           onClick={() =>
             onAdd({ title: "New Card", content: "", triggers: [] })
           }
+          className="rounded-xs"
         >
           Add Story Card
         </Button>

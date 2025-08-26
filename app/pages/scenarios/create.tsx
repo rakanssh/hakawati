@@ -36,6 +36,7 @@ export default function ScenarioCreate() {
             await save();
             navigate({ to: `/scenarios` });
           }}
+          className="rounded-xs"
         >
           Save Scenario
         </Button>

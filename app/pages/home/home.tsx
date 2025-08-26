@@ -25,7 +25,7 @@ export default function Home() {
   const { log } = useTaleStore();
   return (
     <main className="flex flex-col items-center justify-center h-[calc(100vh-2.5rem)] ">
-      <Card className="w-full max-w-md mt-8">
+      <Card className="w-full max-w-xl rounded-xs">
         <CardContent className="flex flex-col gap-2">
           <div className="flex flex-col gap-2">
             <div className="flex flex-col gap-2">
@@ -36,8 +36,9 @@ export default function Home() {
                   placeholder="Enter your key here"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
+                  className="rounded-xs"
                 />
-                <Button>Fetch</Button>
+                <Button className="rounded-xs">Fetch</Button>
               </div>
             </div>
           </div>
@@ -47,12 +48,14 @@ export default function Home() {
             <Button
               onClick={() => navigate({ to: "/demo" })}
               disabled={log.length === 0}
+              className="rounded-xs"
             >
               Continue
             </Button>
             <Button
               variant="outline"
               onClick={() => navigate({ to: "/tales" })}
+              className="rounded-xs"
             >
               My Tales
             </Button>
@@ -60,6 +63,7 @@ export default function Home() {
               variant="outline"
               disabled={!apiKey || !model}
               onClick={() => navigate({ to: "/scenarios" })}
+              className="rounded-xs"
             >
               Scenarios
             </Button>
@@ -67,7 +71,11 @@ export default function Home() {
         </CardContent>
       </Card>
 
-      <Accordion type="single" collapsible className="w-full max-w-md">
+      <Accordion
+        type="single"
+        collapsible
+        className="w-full max-w-xl rounded-none mt-4"
+      >
         <AccordionItem value="how">
           <AccordionTrigger>How to play</AccordionTrigger>
           <AccordionContent>
