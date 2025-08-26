@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PencilIcon, TrashIcon } from "lucide-react";
+import placeholderImage from "@/assets/scen-ph.png";
 
 export default function ScenariosHome() {
   const { items, loading, error, page, limit, total, setPage, remove } =
@@ -46,7 +47,7 @@ export default function ScenariosHome() {
             >
               <CardHeader className="p-0 m-0">
                 <div className="relative">
-                  {thumbnailWebp && (
+                  {thumbnailWebp ? (
                     <img
                       src={bytesToObjectUrl(
                         thumbnailWebp as unknown as Uint8Array,
@@ -54,7 +55,14 @@ export default function ScenariosHome() {
                       alt={`${name} thumbnail`}
                       className="h-48 w-full object-cover rounded mb-1 border"
                     />
+                  ) : (
+                    <img
+                      src={placeholderImage}
+                      alt={`${name} thumbnail`}
+                      className="h-48 w-full object-cover rounded mb-1 border"
+                    />
                   )}
+
                   <div className="absolute right-1.5 top-0.5 z-10">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
