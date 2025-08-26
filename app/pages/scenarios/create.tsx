@@ -1,76 +1,35 @@
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useScenarioEditor } from "@/hooks/useScenarios";
-import { bytesToObjectUrl } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { ScenarioBasicsFields } from "@/components/scenario/ScenarioBasicsFields";
+import { GameModeField } from "@/components/scenario/GameModeField";
+import { StatsEditor } from "@/components/scenario/StatsEditor";
+import { InventoryEditor } from "@/components/scenario/InventoryEditor";
+import { StoryCardsEditor } from "@/components/scenario/StoryCardsEditor";
+import { useScenarioForm } from "@/hooks/useScenarioForm";
 
 export default function ScenarioCreate() {
   const navigate = useNavigate();
-  const { scenario, setScenario, save, startTale, saving } =
-    useScenarioEditor();
+  const { scenario, setScenario, save, saving } = useScenarioEditor();
 
-  const previewUrl = useMemo(
-    () => bytesToObjectUrl(scenario.thumbnailWebp),
-    [scenario.thumbnailWebp],
-  );
+  const {
+    addStat,
+    updateStat,
+    removeStat,
+    addInventoryItem,
+    updateInventoryItem,
+    removeInventoryItem,
+    addStoryCard,
+    updateStoryCard,
+    removeStoryCard,
+  } = useScenarioForm(scenario, setScenario);
 
   return (
     <div className="container mx-auto py-10 flex flex-col gap-4 max-w-2xl">
-      <Label className="text-xl">Create Scenario</Label>
-      <Separator />
-      <div className="flex flex-col gap-2">
-        <Label>Name</Label>
-        <Input
-          value={scenario.name}
-          onChange={(e) => setScenario({ ...scenario, name: e.target.value })}
-        />
-      </div>
-      <div className="flex flex-col gap-2">
-        <Label>Thumbnail</Label>
-        {previewUrl && (
-          <img
-            src={previewUrl}
-            alt="thumbnail preview"
-            className="h-28 w-full object-cover rounded border"
-          />
-        )}
-        <Input
-          type="file"
-          accept="image/*"
-          onChange={async (e) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-            const arrayBuffer = await file.arrayBuffer();
-            setScenario({
-              ...scenario,
-              thumbnailWebp: new Uint8Array(arrayBuffer),
-            });
-          }}
-        />
-      </div>
-      <div className="flex flex-col gap-2">
-        <Label>Initial Description</Label>
-        <Textarea
-          value={scenario.initialDescription}
-          onChange={(e) =>
-            setScenario({ ...scenario, initialDescription: e.target.value })
-          }
-        />
-      </div>
-      <div className="flex flex-col gap-2">
-        <Label>Initial Author Notes</Label>
-        <Textarea
-          value={scenario.initialAuthorNote}
-          onChange={(e) =>
-            setScenario({ ...scenario, initialAuthorNote: e.target.value })
-          }
-        />
-      </div>
-      <div className="flex gap-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-xl">Create Scenario</Label>
         <Button
           disabled={saving}
           onClick={async () => {
@@ -78,19 +37,51 @@ export default function ScenarioCreate() {
             navigate({ to: `/scenarios` });
           }}
         >
-          Save
-        </Button>
-        <Button
-          variant="secondary"
-          disabled={saving}
-          onClick={async () => {
-            await startTale();
-            navigate({ to: "/demo" });
-          }}
-        >
-          Start Tale
+          Save Scenario
         </Button>
       </div>
+      <Separator />
+      <ScenarioBasicsFields
+        name={scenario.name}
+        thumbnailWebp={scenario.thumbnailWebp}
+        initialDescription={scenario.initialDescription}
+        initialAuthorNote={scenario.initialAuthorNote}
+        onNameChange={(name) => setScenario({ ...scenario, name })}
+        onThumbnailChange={(bytes) =>
+          setScenario({ ...scenario, thumbnailWebp: bytes })
+        }
+        onInitialDescriptionChange={(text) =>
+          setScenario({ ...scenario, initialDescription: text })
+        }
+        onInitialAuthorNoteChange={(text) =>
+          setScenario({ ...scenario, initialAuthorNote: text })
+        }
+      />
+      <GameModeField
+        value={scenario.initialGameMode}
+        onChange={(v) => setScenario({ ...scenario, initialGameMode: v })}
+      />
+      <Separator />
+      <StatsEditor
+        stats={scenario.initialStats}
+        onAdd={addStat}
+        onUpdate={updateStat}
+        onRemove={removeStat}
+      />
+      <Separator />
+      <InventoryEditor
+        items={scenario.initialInventory}
+        onAdd={addInventoryItem}
+        onUpdate={updateInventoryItem}
+        onRemove={removeInventoryItem}
+      />
+      <Separator />
+      <StoryCardsEditor
+        cards={scenario.initialStoryCards}
+        onAdd={addStoryCard}
+        onUpdate={updateStoryCard}
+        onRemove={removeStoryCard}
+      />
     </div>
   );
 }
