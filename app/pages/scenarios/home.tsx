@@ -15,7 +15,7 @@ import {
 import { PencilIcon, TrashIcon } from "lucide-react";
 
 export default function ScenariosHome() {
-  const { items, loading, error, page, limit, total, setPage } =
+  const { items, loading, error, page, limit, total, setPage, remove } =
     useScenariosList();
   const navigate = useNavigate();
   return (
@@ -80,7 +80,9 @@ export default function ScenariosHome() {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onSelect={(e) => e.preventDefault()}
-                          onClick={() => {}}
+                          onClick={() => {
+                            remove(id);
+                          }}
                         >
                           <TrashIcon className="w-4 h-4 mr-2" /> Delete
                         </DropdownMenuItem>
