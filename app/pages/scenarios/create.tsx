@@ -74,8 +74,8 @@ export default function ScenarioCreate() {
         <Button
           disabled={saving}
           onClick={async () => {
-            const id = await save();
-            navigate({ to: `/scenarios/${id}` });
+            await save();
+            navigate({ to: `/scenarios` });
           }}
         >
           Save
