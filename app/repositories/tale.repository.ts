@@ -163,14 +163,25 @@ export async function getTales(
   limit: number,
 ): Promise<PaginatedResponse<TaleHead>> {
   const db = await getDb();
-  const rows = await db.select<TaleRow[]>(
+  const rows = await db.select<
+    Array<{
+      id: string;
+      name: string;
+      description: string;
+      created_at: number;
+      scenario_id: string | null;
+      updated_at: number;
+      log_count: number;
+    }>
+  >(
     `SELECT 
       id,
       name,
       description,
       created_at,
       scenario_id,
-      updated_at
+      updated_at,
+      json_array_length(log) AS log_count
     FROM tales 
     ORDER BY created_at DESC LIMIT ? OFFSET ?`,
     [limit, (page - 1) * limit],
@@ -185,6 +196,7 @@ export async function getTales(
         id: r.id,
         name: r.name,
         description: r.description,
+        logCount: r.log_count,
         createdAt: r.created_at,
         scenarioId: r.scenario_id,
         updatedAt: r.updated_at,
@@ -206,15 +218,15 @@ export async function getScenarioTales(
 ): Promise<PaginatedResponse<TaleHead>> {
   const db = await getDb();
   const rows = await db.select<
-    Pick<
-      TaleRow,
-      | "id"
-      | "name"
-      | "description"
-      | "created_at"
-      | "scenario_id"
-      | "updated_at"
-    >[]
+    Array<{
+      id: string;
+      name: string;
+      description: string;
+      created_at: number;
+      scenario_id: string | null;
+      updated_at: number;
+      log_count: number;
+    }>
   >(
     `SELECT 
       id,
@@ -222,7 +234,8 @@ export async function getScenarioTales(
       description,
       created_at,
       scenario_id,
-      updated_at
+      updated_at,
+      json_array_length(log) AS log_count
     FROM tales 
     WHERE scenario_id = ? 
     ORDER BY created_at DESC LIMIT ? OFFSET ?`,
@@ -239,6 +252,7 @@ export async function getScenarioTales(
         id: r.id,
         name: r.name,
         description: r.description,
+        logCount: r.log_count,
         createdAt: r.created_at,
         scenarioId: r.scenario_id,
         updatedAt: r.updated_at,

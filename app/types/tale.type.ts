@@ -23,6 +23,7 @@ export type TaleHead = {
   description: string;
   createdAt: number;
   scenarioId: string | null;
+  logCount: number;
   updatedAt: number;
   scenarioHead?: ScenarioHead | null;
 };
