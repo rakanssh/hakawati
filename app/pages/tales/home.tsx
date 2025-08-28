@@ -80,13 +80,13 @@ export default function TalesHome() {
                         scenarioHead.thumbnailWebp as unknown as Uint8Array,
                       )}
                       alt={`${name} thumbnail`}
-                      className="h-24 w-128 object-cover pr-2"
+                      className="h-18 w-128 object-cover pr-2"
                     />
                   ) : (
                     <img
                       src={placeholderImage}
                       alt={`${name} thumbnail`}
-                      className="h-24 w-128 object-cover pr-2"
+                      className="h-18 w-128 object-cover pr-2"
                     />
                   )}
                   <div className="absolute left-1 top-0 z-10">
@@ -160,7 +160,7 @@ export default function TalesHome() {
                       </TooltipContent>
                     </Tooltip>
                   </div>
-                  <p className="line-clamp-3 text-sm text-muted-foreground">
+                  <p className="line-clamp-2 text-sm text-muted-foreground">
                     {description}
                   </p>
                 </div>
