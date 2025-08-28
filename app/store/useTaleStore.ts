@@ -88,7 +88,7 @@ const undoEntryActions = (
           newInventory = [
             ...newInventory,
             {
-              id: nanoid(),
+              id: nanoid(12),
               name: action.payload.item,
             },
           ];
@@ -142,7 +142,7 @@ const redoEntryActions = (
           newInventory = [
             ...newInventory,
             {
-              id: nanoid(),
+              id: nanoid(12),
               name: action.payload.item,
             },
           ];
@@ -267,7 +267,7 @@ export const useTaleStore = create<TaleStoreType>()(
           inventory: [
             ...state.inventory,
             {
-              id: nanoid(),
+              id: nanoid(12),
               name: itemName,
             },
           ],

@@ -1,9 +1,9 @@
 import { getDb } from "@/services/db";
-import { nanoid } from "nanoid";
 import { Tale, TaleHead } from "@/types/tale.type";
 import { GameMode } from "@/types/context.type";
 import { PaginatedResponse, TaleRow } from "@/types/db.type";
 import { getScenario, getScenarioHead } from "./scenario.repository";
+import { v4 as uuidv4 } from "uuid";
 
 function toRow(s: Tale): TaleRow {
   return {
@@ -58,7 +58,7 @@ export async function createTale(input: {
   undoStack: Tale["undoStack"];
 }): Promise<string> {
   const db = await getDb();
-  const id = nanoid(12);
+  const id = uuidv4();
 
   const scenario = await getScenario(input.scenarioId);
   const scenarioId: string | null = scenario ? input.scenarioId : null;

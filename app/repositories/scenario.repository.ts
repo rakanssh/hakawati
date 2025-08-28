@@ -1,7 +1,7 @@
 import { getDb } from "@/services/db";
-import { nanoid } from "nanoid";
 import { Scenario, ScenarioHead, GameMode } from "@/types/context.type";
 import { ScenarioRow, PaginatedResponse } from "@/types/db.type";
+import { v4 as uuidv4 } from "uuid"; // TODO: replace with nanoid
 
 function toUint8Array(value: unknown): Uint8Array | null {
   if (value === null || value === undefined) return null;
@@ -59,7 +59,7 @@ export async function upsertScenario(
 ): Promise<string> {
   const db = await getDb();
   const now = Date.now();
-  const scenarioId = id ?? nanoid(12);
+  const scenarioId = id ?? uuidv4();
   const row = toRow(scenarioId, input, now);
   await db.execute(
     `INSERT INTO scenarios (id, name, initial_game_mode, initial_description, initial_author_note, initial_stats, initial_inventory, initial_story_cards, thumbnail_webp, created_at, updated_at)
