@@ -23,6 +23,7 @@ import {
   BookIcon,
   SquareIcon,
   MegaphoneIcon,
+  SaveIcon,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -33,6 +34,7 @@ import {
 import { nanoid } from "nanoid";
 import { InlineEditableContent, LogEntryBubble } from "@/components/game";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
+import { usePersistTale } from "@/hooks/useGameSaves";
 interface Action {
   type: LogEntryMode;
   isRolling: boolean;
@@ -73,7 +75,7 @@ export default function Demo() {
   const [input, setInput] = useState("");
   const { send, loading } = useLLM();
   const { model, randomSeed } = useSettingsStore();
-  const { gameMode } = useTaleStore();
+  const { gameMode, id: taleId } = useTaleStore();
   const [currentlyEditingLogId, setCurrentlyEditingLogId] = useState<
     string | null
   >(null);
@@ -86,6 +88,7 @@ export default function Demo() {
   const [stickToBottom, setStickToBottom] = useState<boolean>(true);
   const bottomBarRef = useRef<HTMLDivElement | null>(null);
   const [bottomBarHeight, setBottomBarHeight] = useState<number>(80);
+  const { save, saving } = usePersistTale();
 
   useEffect(() => {
     if (loading) setStickToBottom(true);
@@ -194,6 +197,7 @@ export default function Demo() {
         });
       },
     });
+    save(taleId);
   };
 
   const handleSubmit = useCallback(async () => {
@@ -212,7 +216,8 @@ export default function Demo() {
     });
     setInput("");
     executeLlmSend(finalMessage, logMode);
-  }, [input, model, action, addLog, updateLogEntry, executeLlmSend]);
+    save(taleId);
+  }, [input, model, action, addLog, updateLogEntry, executeLlmSend, taleId]);
 
   const handleRetry = () => {
     if (loading) return;
@@ -361,14 +366,25 @@ export default function Demo() {
               className="absolute inset-x-0 bottom-0 resize-none rounded-xs !bg-accent"
             />
           </div>
-          <Button type="submit" onClick={handleSubmit} className="rounded-xs">
+          <Button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={saving}
+            className="rounded-xs"
+          >
             {loading ? (
               <SquareIcon className="w-4 h-4 animate-pulse" />
+            ) : saving ? (
+              <SaveIcon className="w-4 h-4 animate-spin" />
             ) : (
               <SendIcon className="w-4 h-4" />
             )}
           </Button>
-          <LogControl handleRetry={handleRetry} loading={loading} />
+          <LogControl
+            handleRetry={handleRetry}
+            loading={loading}
+            saving={saving}
+          />
         </div>
       </div>
       <div className="pointer-events-none absolute inset-0">

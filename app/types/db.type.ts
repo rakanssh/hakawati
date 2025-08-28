@@ -23,6 +23,7 @@ export type TaleRow = {
   inventory: string;
   log: string;
   game_mode: string;
+  undo_stack: string;
   created_at: number;
   updated_at: number;
 };

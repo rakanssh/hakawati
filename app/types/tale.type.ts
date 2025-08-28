@@ -13,6 +13,7 @@ export type Tale = {
   inventory: Item[];
   log: LogEntry[];
   gameMode: GameMode;
+  undoStack: LogEntry[];
   createdAt: number;
   updatedAt: number;
 };

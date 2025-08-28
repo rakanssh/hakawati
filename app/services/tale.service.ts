@@ -22,6 +22,7 @@ export async function initTale(scenarioId: string): Promise<string> {
     inventory: state.inventory,
     log: state.log,
     gameMode: state.gameMode,
+    undoStack: state.undoStack,
   });
   useTaleStore.setState({ id });
   return id;
@@ -39,6 +40,8 @@ export async function persistCurrentTale(taleId: string): Promise<void> {
     inventory: state.inventory,
     log: state.log,
     gameMode: state.gameMode,
+    undoStack: state.undoStack,
+    updatedAt: Date.now(),
   });
 }
 
@@ -57,8 +60,7 @@ export async function loadTaleIntoGame(taleId: string): Promise<void> {
     inventory: tale.inventory,
     log: tale.log,
     gameMode: tale.gameMode,
-    // keep existing createdAt in DB; store doesn't hold timestamps
-    undoStack: [],
+    undoStack: tale.undoStack,
   });
 }
 

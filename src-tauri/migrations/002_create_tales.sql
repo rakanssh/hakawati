@@ -8,6 +8,7 @@ CREATE TABLE
         scenario_id TEXT,
         stats TEXT NOT NULL,
         inventory TEXT NOT NULL,
+        undo_stack TEXT NOT NULL,
         log TEXT NOT NULL,
         game_mode TEXT NOT NULL DEFAULT 'gm',
         version INTEGER NOT NULL DEFAULT 1,
@@ -17,5 +18,5 @@ CREATE TABLE
     );
 
 CREATE INDEX IF NOT EXISTS idx_tales_created_at ON tales (created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_tales_scenario_id_created_at ON tales (scenario_id, created_at DESC);
 
+CREATE INDEX IF NOT EXISTS idx_tales_scenario_id_created_at ON tales (scenario_id, created_at DESC);

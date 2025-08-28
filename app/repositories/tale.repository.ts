@@ -17,6 +17,7 @@ function toRow(s: Tale): TaleRow {
     inventory: JSON.stringify(s.inventory),
     log: JSON.stringify(s.log),
     game_mode: s.gameMode,
+    undo_stack: JSON.stringify(s.undoStack),
     created_at: s.createdAt,
     updated_at: s.updatedAt,
   };
@@ -33,6 +34,7 @@ function fromRow(r: TaleRow): Tale {
     stats: JSON.parse(r.stats),
     inventory: JSON.parse(r.inventory),
     log: JSON.parse(r.log),
+    undoStack: JSON.parse(r.undo_stack),
     gameMode:
       r.game_mode === GameMode.STORY_TELLER
         ? GameMode.STORY_TELLER
@@ -53,6 +55,7 @@ export async function createTale(input: {
   inventory: Tale["inventory"];
   log: Tale["log"];
   gameMode: Tale["gameMode"];
+  undoStack: Tale["undoStack"];
 }): Promise<string> {
   const db = await getDb();
   const id = nanoid(12);
@@ -73,11 +76,12 @@ export async function createTale(input: {
     gameMode: input.gameMode,
     createdAt: Date.now(),
     updatedAt: Date.now(),
+    undoStack: input.undoStack,
   });
 
   await db.execute(
-    `INSERT INTO tales (id, name, description, author_note, story_cards, scenario_id, stats, inventory, log, game_mode, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO tales (id, name, description, author_note, story_cards, scenario_id, stats, inventory, log, game_mode, undo_stack, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       row.id,
       row.name,
@@ -89,6 +93,7 @@ export async function createTale(input: {
       row.inventory,
       row.log,
       row.game_mode,
+      row.undo_stack,
       row.created_at,
       row.updated_at,
     ],
@@ -107,6 +112,8 @@ export async function updateTale(input: {
   inventory: Tale["inventory"];
   log: Tale["log"];
   gameMode: Tale["gameMode"];
+  undoStack: Tale["undoStack"];
+  updatedAt: Tale["updatedAt"];
 }): Promise<void> {
   const db = await getDb();
 
@@ -120,6 +127,7 @@ export async function updateTale(input: {
        inventory = ?,
        log = ?,
        game_mode = ?,
+       undo_stack = ?,
        updated_at = ?
      WHERE id = ?`,
     [
@@ -131,7 +139,8 @@ export async function updateTale(input: {
       JSON.stringify(input.inventory),
       JSON.stringify(input.log),
       input.gameMode,
-      Date.now(),
+      JSON.stringify(input.undoStack),
+      input.updatedAt,
       input.id,
     ],
   );
