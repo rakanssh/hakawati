@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { useTheme } from "@/components/theme-provider";
 import { BookIcon, SwordIcon } from "lucide-react";
+import { usePersistTale } from "@/hooks/useGameSaves";
 
 function resolveGameModeLabel(gameMode: GameMode) {
   if (gameMode === GameMode.GM) return "Game Master";
@@ -18,13 +19,19 @@ function resolveGameModeLabel(gameMode: GameMode) {
 }
 
 export default function SettingsGame() {
-  const { gameMode, setGameMode } = useTaleStore();
+  const { gameMode, setGameMode, id } = useTaleStore();
   const { theme, setTheme } = useTheme();
+  const { save } = usePersistTale();
 
   const getGamemodeDescription = (gameMode: GameMode) => {
     if (gameMode === GameMode.GM)
       return "AI runs the full game: it tells the story, manages inventory, and updates stats. Best with smarter models.";
     return "AI tells the story only: no inventory or stats are tracked, just narrative. Works with any model.";
+  };
+
+  const handleGameModeChange = (value: GameMode) => {
+    setGameMode(value);
+    save(id);
   };
 
   function getGameModeOptions() {
@@ -42,7 +49,7 @@ export default function SettingsGame() {
       <Label>Game</Label>
       <Label>Game Mode</Label>
       <div className="flex flex-col gap-2">
-        <Select value={gameMode} onValueChange={setGameMode}>
+        <Select value={gameMode} onValueChange={handleGameModeChange}>
           <SelectTrigger className="w-full sm:w-[240px]">
             <SelectValue placeholder="Select a game mode" />
           </SelectTrigger>
