@@ -100,7 +100,7 @@ export default function Demo() {
       behavior: loading ? "auto" : "smooth",
       block: "end",
     });
-  }, [log]);
+  }, [log, loading, stickToBottom]);
 
   //fix bottom bar height
   useEffect(() => {
@@ -125,80 +125,95 @@ export default function Demo() {
     setStickToBottom(distanceFromBottom <= thresholdPx);
   };
 
-  const executeLlmSend = (message: string, mode: LogEntryMode) => {
-    if (!model) {
-      console.error("LLM model not configured.");
-      return;
-    }
-    const gmResponseId = nanoid();
-    addLog({
-      id: gmResponseId,
-      role: LogEntryRole.GM,
-      text: "...",
-      mode: LogEntryMode.STORY,
-    });
+  const executeLlmSend = useCallback(
+    async (message: string, mode: LogEntryMode) => {
+      if (!model) {
+        console.error("LLM model not configured.");
+        return;
+      }
+      const gmResponseId = nanoid();
+      addLog({
+        id: gmResponseId,
+        role: LogEntryRole.GM,
+        text: "...",
+        mode: LogEntryMode.STORY,
+      });
 
-    let storyContent = "";
+      let storyContent = "";
 
-    send({ text: message, mode }, model, {
-      onStoryStream: (storyChunk) => {
-        storyContent += storyChunk;
-        updateLogEntry(gmResponseId, {
-          text: storyContent,
-        });
-      },
-      onActionsReady: (actions) => {
-        console.debug(
-          `Processing received actions: ${JSON.stringify(actions)}`,
-        );
-        // Only process actions that affect game state in GM mode
-        if (gameMode === GameMode.GM && Array.isArray(actions)) {
-          updateLogEntry(gmResponseId, { actions });
-          for (const action of actions) {
-            switch (action.type) {
-              case "MODIFY_STAT":
-                if (action.payload.name && action.payload.value) {
-                  modifyStat(action.payload.name, action.payload.value);
-                }
-                break;
-              case "ADD_TO_INVENTORY":
-                if (action.payload.item) {
-                  addToInventory(action.payload.item);
-                }
-                break;
-              case "REMOVE_FROM_INVENTORY":
-                if (action.payload.item) {
-                  removeFromInventoryByName(action.payload.item);
-                }
-                break;
-              case "ADD_TO_STATS":
-                if (action.payload.name && action.payload.value) {
-                  addToStats({
-                    name: action.payload.name,
-                    value: action.payload.value,
-                    range: [0, 100],
-                  });
-                }
-                break;
-              default:
-                console.warn("Unknown action type:", action.type);
+      await send({ text: message, mode }, model, {
+        onStoryStream: (storyChunk) => {
+          storyContent += storyChunk;
+          updateLogEntry(gmResponseId, {
+            text: storyContent,
+          });
+        },
+        onActionsReady: (actions) => {
+          console.debug(
+            `Processing received actions: ${JSON.stringify(actions)}`,
+          );
+          // Only process actions that affect game state in GM mode
+          if (gameMode === GameMode.GM && Array.isArray(actions)) {
+            updateLogEntry(gmResponseId, { actions });
+            for (const action of actions) {
+              switch (action.type) {
+                case "MODIFY_STAT":
+                  if (action.payload.name && action.payload.value) {
+                    modifyStat(action.payload.name, action.payload.value);
+                  }
+                  break;
+                case "ADD_TO_INVENTORY":
+                  if (action.payload.item) {
+                    addToInventory(action.payload.item);
+                  }
+                  break;
+                case "REMOVE_FROM_INVENTORY":
+                  if (action.payload.item) {
+                    removeFromInventoryByName(action.payload.item);
+                  }
+                  break;
+                case "ADD_TO_STATS":
+                  if (action.payload.name && action.payload.value) {
+                    addToStats({
+                      name: action.payload.name,
+                      value: action.payload.value,
+                      range: [0, 100],
+                    });
+                  }
+                  break;
+                default:
+                  console.warn("Unknown action type:", action.type);
+              }
             }
           }
-        }
-      },
-      onActionParseError: () => {
-        console.warn("Failed to parse actions from LLM response");
-        updateLogEntry(gmResponseId, { isActionError: true });
-      },
-      onError: (error) => {
-        console.error("LLM Error:", error);
-        updateLogEntry(gmResponseId, {
-          text: "A strange force seems to have scrambled my thoughts. Please repeat that.",
-        });
-      },
-    });
-    save(taleId);
-  };
+        },
+        onActionParseError: () => {
+          console.warn("Failed to parse actions from LLM response");
+          updateLogEntry(gmResponseId, { isActionError: true });
+        },
+        onError: (error) => {
+          console.error("LLM Error:", error);
+          updateLogEntry(gmResponseId, {
+            text: "A strange force seems to have scrambled my thoughts. Please repeat that.",
+          });
+        },
+      });
+      await save(taleId);
+    },
+    [
+      model,
+      addLog,
+      updateLogEntry,
+      gameMode,
+      modifyStat,
+      addToInventory,
+      removeFromInventoryByName,
+      addToStats,
+      save,
+      taleId,
+      send,
+    ],
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || !model) return;
@@ -215,9 +230,8 @@ export default function Demo() {
       mode: logMode,
     });
     setInput("");
-    executeLlmSend(finalMessage, logMode);
-    save(taleId);
-  }, [input, model, action, addLog, updateLogEntry, executeLlmSend, taleId]);
+    void executeLlmSend(finalMessage, logMode);
+  }, [input, model, action, addLog, executeLlmSend]);
 
   const handleRetry = () => {
     if (loading) return;
