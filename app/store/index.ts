@@ -1,2 +1,2 @@
 export * from "./useSettingsStore";
-export * from "./useGameStore";
+export * from "./useTaleStore";

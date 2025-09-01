@@ -1,9 +1,9 @@
-import { useGameStore } from "@/store/useGameStore";
+import { useTaleStore } from "@/store/useTaleStore";
 import { Item } from "@/types";
 import { InlineEditableBadge } from "./inline-editable-badge";
 
 export function InventoryItem({ item }: { item: Item }) {
-  const { updateItem, removeFromInventory } = useGameStore();
+  const { updateItem, removeFromInventory } = useTaleStore();
 
   return (
     <div className="flex flex-row items-center justify-between">

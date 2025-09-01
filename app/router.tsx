@@ -13,10 +13,14 @@ import Demo from "./pages/demo/demo";
 import SettingsLayout from "./pages/settings/layout";
 import SettingsIndex from "./pages/settings/index";
 import SettingsApi from "./pages/settings/api";
-import SettingsScenario from "./pages/settings/scenario";
+import SettingsTale from "./pages/settings/tale";
 import SettingsStoryCards from "./pages/settings/story-cards";
 import SettingsModel from "./pages/settings/model";
 import SettingsGame from "./pages/settings/game";
+import ScenariosHome from "./pages/scenarios/home";
+import ScenarioCreate from "./pages/scenarios/create.tsx";
+import ScenarioEdit from "./pages/scenarios/edit.tsx";
+import TalesHome from "./pages/tales/home";
 
 const RootRoute = createRootRoute({ component: () => <AppShell /> });
 
@@ -56,10 +60,10 @@ const SettingsApiRoute = createRoute({
   component: SettingsApi,
 });
 
-const SettingsScenarioRoute = createRoute({
+const SettingsTaleRoute = createRoute({
   getParentRoute: () => SettingsRoute,
-  path: "scenario",
-  component: SettingsScenario,
+  path: "tale",
+  component: SettingsTale,
 });
 
 const SettingsStoryCardsRoute = createRoute({
@@ -84,10 +88,30 @@ const routeTree = RootRoute.addChildren([
   IndexRoute,
   // AboutRoute,
   DemoRoute,
+  createRoute({
+    getParentRoute: () => RootRoute,
+    path: "scenarios",
+    component: ScenariosHome,
+  }),
+  createRoute({
+    getParentRoute: () => RootRoute,
+    path: "tales",
+    component: TalesHome,
+  }),
+  createRoute({
+    getParentRoute: () => RootRoute,
+    path: "scenarios/new",
+    component: ScenarioCreate,
+  }),
+  createRoute({
+    getParentRoute: () => RootRoute,
+    path: "scenarios/$id",
+    component: ScenarioEdit,
+  }),
   SettingsRoute.addChildren([
     SettingsIndexRoute,
     SettingsApiRoute,
-    SettingsScenarioRoute,
+    SettingsTaleRoute,
     SettingsStoryCardsRoute,
     SettingsModelRoute,
     SettingsGameRoute,

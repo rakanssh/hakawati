@@ -61,7 +61,7 @@ export function ModelSelect() {
         <div className="flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge variant="highlight" className="text-xs">
+              <Badge variant="highlight" className="text-xs rounded-xs">
                 {formatUSD(per1k)} / K
               </Badge>
             </TooltipTrigger>
@@ -69,7 +69,7 @@ export function ModelSelect() {
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs rounded-xs">
                 {formatUSD(per1m, { maximumFractionDigits: 2 })} / M
               </Badge>
             </TooltipTrigger>
@@ -87,15 +87,18 @@ export function ModelSelect() {
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between"
+            className="w-full justify-between rounded-xs  "
           >
             {loading ? "Loading..." : (model?.name ?? "Select a model")}
             <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full p-0">
+        <PopoverContent className="w-full p-0 rounded-xs">
           <Command>
-            <CommandInput placeholder="Search model..." />
+            <CommandInput
+              placeholder="Search model..."
+              className="rounded-xs"
+            />
             <CommandList>
               <CommandEmpty>No model found.</CommandEmpty>
               <CommandGroup>
@@ -107,6 +110,7 @@ export function ModelSelect() {
                       setModel(m);
                       setOpen(false);
                     }}
+                    className="rounded-xs"
                   >
                     <CheckIcon
                       className={cn(
@@ -144,7 +148,7 @@ export function ModelSelect() {
         </PopoverContent>
       </Popover>
       {model && (
-        <Card className="mt-2">
+        <Card className="mt-2 rounded-xs">
           <CardHeader>
             <CardTitle className="text-base">{model.name}</CardTitle>
             <CardDescription>
@@ -170,17 +174,17 @@ export function ModelSelect() {
                 <Separator />
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   {toNumber(model.pricing?.request) !== undefined && (
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="rounded-xs">
                       Request: {formatUSD(toNumber(model.pricing?.request))}
                     </Badge>
                   )}
                   {toNumber(model.pricing?.image) !== undefined && (
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="rounded-xs">
                       Image: {formatUSD(toNumber(model.pricing?.image))}
                     </Badge>
                   )}
                   {toNumber(model.pricing?.audio) !== undefined && (
-                    <Badge variant="outline">
+                    <Badge variant="outline" className="rounded-xs">
                       Audio: {formatUSD(toNumber(model.pricing?.audio))}
                     </Badge>
                   )}

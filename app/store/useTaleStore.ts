@@ -1,15 +1,30 @@
-import { GameMode, Item, LogEntry } from "@/types";
+import { GameMode, Item, LogEntry, StoryCard, StoryCardInput } from "@/types";
 import { Stat } from "@/types/stats.type";
 import { nanoid } from "nanoid";
+import { v4 as uuidv4 } from "uuid";
+
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-interface GameStoreType {
+interface TaleStoreType {
+  id: string;
+  name: string;
   stats: Stat[];
   gameMode: GameMode;
   inventory: Item[];
   log: LogEntry[];
   undoStack: LogEntry[];
+  storyCards: StoryCard[];
+  description: string;
+  authorNote: string;
+  setName: (name: string) => void;
+  setDescription: (description: string) => void;
+  setAuthorNote: (authorNote: string) => void;
+  setStoryCards: (storyCards: StoryCard[]) => void;
+  addStoryCard: (storyCard: StoryCardInput) => void;
+  removeStoryCard: (id: string) => void;
+  updateStoryCard: (id: string, updates: Partial<StoryCard>) => void;
+  clearStoryCards: () => void;
   addLog: (log: LogEntry) => void;
   removeLastLogEntry: () => void;
   updateLogEntry: (id: string, updates: Partial<LogEntry>) => void;
@@ -31,9 +46,9 @@ interface GameStoreType {
 
 //TODO: Find a better way to execute/undo actions
 const undoEntryActions = (
-  state: GameStoreType,
+  state: TaleStoreType,
   entry: LogEntry,
-): Partial<GameStoreType> => {
+): Partial<TaleStoreType> => {
   if (!entry.actions) {
     return {};
   }
@@ -73,7 +88,7 @@ const undoEntryActions = (
           newInventory = [
             ...newInventory,
             {
-              id: nanoid(),
+              id: nanoid(12),
               name: action.payload.item,
             },
           ];
@@ -92,9 +107,9 @@ const undoEntryActions = (
 };
 
 const redoEntryActions = (
-  state: GameStoreType,
+  state: TaleStoreType,
   entry: LogEntry,
-): Partial<GameStoreType> => {
+): Partial<TaleStoreType> => {
   if (!entry.actions) {
     return {};
   }
@@ -127,7 +142,7 @@ const redoEntryActions = (
           newInventory = [
             ...newInventory,
             {
-              id: nanoid(),
+              id: nanoid(12),
               name: action.payload.item,
             },
           ];
@@ -159,10 +174,36 @@ const redoEntryActions = (
   return { stats: newStats, inventory: newInventory };
 };
 
-export const useGameStore = create<GameStoreType>()(
+export const useTaleStore = create<TaleStoreType>()(
   persist(
     (set) => ({
+      id: uuidv4(),
       gameMode: GameMode.GM,
+      name: "Default",
+      description: "",
+      authorNote: "",
+      storyCards: [],
+      setName: (name: string) => set({ name }),
+      setDescription: (description: string) => set({ description }),
+      setAuthorNote: (authorNote: string) => set({ authorNote }),
+      setStoryCards: (storyCards: StoryCard[]) => set({ storyCards }),
+      addStoryCard: (storyCard: StoryCardInput) =>
+        set((state) => ({
+          storyCards: [...state.storyCards, { ...storyCard, id: nanoid(12) }],
+        })),
+      removeStoryCard: (id: string) =>
+        set((state) => ({
+          storyCards: state.storyCards.filter(
+            (storyCard) => storyCard.id !== id,
+          ),
+        })),
+      updateStoryCard: (id: string, updates: Partial<StoryCard>) =>
+        set((state) => ({
+          storyCards: state.storyCards.map((storyCard) =>
+            storyCard.id === id ? { ...storyCard, ...updates } : storyCard,
+          ),
+        })),
+      clearStoryCards: () => set({ storyCards: [] }),
       setGameMode: (gameMode: GameMode) =>
         set({
           gameMode,
@@ -226,7 +267,7 @@ export const useGameStore = create<GameStoreType>()(
           inventory: [
             ...state.inventory,
             {
-              id: nanoid(),
+              id: nanoid(12),
               name: itemName,
             },
           ],
@@ -290,7 +331,7 @@ export const useGameStore = create<GameStoreType>()(
       },
     }),
     {
-      name: "game-store",
+      name: "tale-store",
     },
   ),
 );

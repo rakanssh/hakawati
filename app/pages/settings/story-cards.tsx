@@ -3,7 +3,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { HelpCircle, InfoIcon } from "lucide-react";
-import { useScenarioStore } from "@/store/useScenarioStore";
 import {
   Tooltip,
   TooltipTrigger,
@@ -12,10 +11,11 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Separator } from "@/components/ui/separator";
+import { useTaleStore } from "@/store/useTaleStore";
 
 export default function SettingsStoryCards() {
   const { storyCards, addStoryCard, removeStoryCard, updateStoryCard } =
-    useScenarioStore();
+    useTaleStore();
   const navigate = useNavigate();
   const [currentlyDeleting, setCurrentlyDeleting] = useState<string | null>(
     null,

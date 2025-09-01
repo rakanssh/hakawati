@@ -1,0 +1,34 @@
+{
+  "state": {
+    "scenario": {
+      "name": "Default",
+      "description": "You are a newly arrived adventurer to the city of Torum. You are seeking to join the local adventurer’s guild and take on jobs to earn a living.",
+      "authorNote": "",
+      "initialStats": [],
+      "initialInventory": [],
+      "initialStoryCards": [],
+      "id": "dZVy2n8CXg7A"
+    },
+    "storyCards": [
+      {
+        "title": "Torum",
+        "content": "The great city of torum is one of oldest cities in the Torumnal Empire. Great walls surround thriving guilds and stores. A great and diverse center of commerce and culture in the empire.",
+        "triggers": ["torum"],
+        "id": "tlKK6SbN27ct"
+      },
+      {
+        "title": "New Card",
+        "content": "",
+        "triggers": [],
+        "id": "BA1lm-xYmFdr"
+      },
+      {
+        "title": "New Card",
+        "content": "",
+        "triggers": [],
+        "id": "sDQ7vxE_wjLR"
+      }
+    ]
+  },
+  "version": 0
+}

@@ -53,3 +53,74 @@ export function decodeEscapedText(input: string): string {
     },
   );
 }
+
+/**
+ * Convert bytes to object URL. Chat-GPT method, no clue what this means but it fixed the problem.
+ * @param bytes - The bytes to convert
+ * @param mimeType - The mime type of the bytes
+ * @returns The object URL
+ */
+export function bytesToObjectUrl(
+  bytes?: Uint8Array | null,
+  mimeType = "image/webp",
+): string {
+  if (!bytes || bytes.byteLength === 0) return "";
+  const ab = bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength,
+  );
+  const blob = new Blob([ab as unknown as ArrayBuffer], { type: mimeType });
+  return URL.createObjectURL(blob);
+}
+
+/**
+ * Format a date as a human-readable relative time (e.g., "3 months ago").
+ */
+export function formatRelativeTime(
+  dateInput: Date | string | number,
+  baseDate: Date = new Date(),
+): string {
+  const targetDate = new Date(dateInput);
+  if (Number.isNaN(targetDate.getTime())) return "";
+
+  const diffMs = targetDate.getTime() - baseDate.getTime();
+  const absMs = Math.abs(diffMs);
+
+  const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+
+  const seconds = Math.round(diffMs / 1000);
+  const minutes = Math.round(diffMs / (1000 * 60));
+  const hours = Math.round(diffMs / (1000 * 60 * 60));
+  const days = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  const weeks = Math.round(diffMs / (1000 * 60 * 60 * 24 * 7));
+  const months = Math.round(diffMs / (1000 * 60 * 60 * 24 * 30));
+  const years = Math.round(diffMs / (1000 * 60 * 60 * 24 * 365));
+
+  if (absMs < 60 * 1000) return rtf.format(seconds, "second");
+  if (absMs < 60 * 60 * 1000) return rtf.format(minutes, "minute");
+  if (absMs < 24 * 60 * 60 * 1000) return rtf.format(hours, "hour");
+  if (absMs < 7 * 24 * 60 * 60 * 1000) return rtf.format(days, "day");
+  if (absMs < 30 * 24 * 60 * 60 * 1000) return rtf.format(weeks, "week");
+  if (absMs < 365 * 24 * 60 * 60 * 1000) return rtf.format(months, "month");
+  return rtf.format(years, "year");
+}
+
+/**
+ * Format a date as an exact, locale-aware date-time string.
+ */
+export function formatExactDateTime(
+  dateInput: Date | string | number,
+  locale?: string | string[],
+  options?: Intl.DateTimeFormatOptions,
+): string {
+  const date = new Date(dateInput);
+  if (Number.isNaN(date.getTime())) return "";
+  const defaultOptions: Intl.DateTimeFormatOptions = {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  };
+  return date.toLocaleString(locale, { ...defaultOptions, ...options });
+}
