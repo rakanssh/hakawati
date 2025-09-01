@@ -13,3 +13,5 @@ CREATE TABLE
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
     );
+
+CREATE INDEX IF NOT EXISTS idx_scenarios_updated_at ON scenarios (updated_at DESC);
