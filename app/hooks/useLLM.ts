@@ -50,6 +50,7 @@ export function useLLM() {
         minP,
         topA,
         seed,
+        responseMode,
       } = useSettingsStore.getState();
 
       const req = buildMessage({
@@ -61,6 +62,8 @@ export function useLLM() {
         description,
         authorNote,
         storyCards,
+        gameMode,
+        responseMode,
         options: {
           temperature,
           topP,

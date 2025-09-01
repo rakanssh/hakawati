@@ -1,3 +1,5 @@
+import { ResponseMode } from "@/types/api.type";
+
 export interface ChatMessage {
   role: "user" | "assistant" | "system";
   content: string;
@@ -22,6 +24,7 @@ export interface ChatRequest {
   // Maximum number of completion tokens to generate (provider-specific name: max_tokens)
   max_tokens?: number;
   options?: ChatRequestOptions;
+  responseMode: ResponseMode;
 }
 
 export interface ChatResponse {
@@ -53,6 +56,8 @@ export interface LLMModel {
   name: string;
   contextLength: number;
   pricing?: ModelPricing;
+  // Capability flags
+  supportsResponseFormat?: boolean;
 }
 
 export interface LLMAction {
@@ -68,3 +73,78 @@ export interface LLMResponse {
   story: string;
   actions?: LLMAction[];
 }
+
+// JSON schema for GM-mode structured output
+// Compatible with OpenAI response_format: { type: "json_schema", json_schema: { name, schema, strict } }
+export const GM_RESPONSE_JSON_SCHEMA = {
+  name: "gm_response",
+  schema: {
+    type: "object",
+    additionalProperties: false,
+    required: ["story", "actions"],
+    properties: {
+      story: {
+        type: "string",
+        description: "Narrative continuation of the story",
+      },
+      actions: {
+        type: "array",
+        description: "Optional game state changes based on the scene",
+        items: {
+          anyOf: [
+            {
+              type: "object",
+              additionalProperties: false,
+              required: ["type", "payload"],
+              properties: {
+                type: { type: "string", enum: ["MODIFY_STAT"] },
+                payload: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["name", "value"],
+                  properties: {
+                    name: { type: "string" },
+                    value: { type: "number" },
+                  },
+                },
+              },
+            },
+            {
+              type: "object",
+              additionalProperties: false,
+              required: ["type", "payload"],
+              properties: {
+                type: { type: "string", enum: ["ADD_TO_INVENTORY"] },
+                payload: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["item"],
+                  properties: {
+                    item: { type: "string" },
+                  },
+                },
+              },
+            },
+            {
+              type: "object",
+              additionalProperties: false,
+              required: ["type", "payload"],
+              properties: {
+                type: { type: "string", enum: ["REMOVE_FROM_INVENTORY"] },
+                payload: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["item"],
+                  properties: {
+                    item: { type: "string" },
+                  },
+                },
+              },
+            },
+          ],
+        },
+      },
+    },
+  },
+  strict: true,
+} as const;

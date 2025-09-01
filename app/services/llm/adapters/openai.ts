@@ -1,4 +1,11 @@
-import { LLMClient, ChatRequest, ChatResponse, LLMModel } from "../schema";
+import { ResponseMode } from "@/types/api.type";
+import {
+  LLMClient,
+  ChatRequest,
+  ChatResponse,
+  LLMModel,
+  GM_RESPONSE_JSON_SCHEMA,
+} from "../schema";
 import { parseOpenAIStream } from "../streaming";
 import { useSettingsStore } from "@/store/useSettingsStore";
 export function OpenAiClient(apiKey: string): LLMClient {
@@ -14,6 +21,12 @@ export function OpenAiClient(apiKey: string): LLMClient {
       ...req,
       messages: req.messages,
       stream: req.stream,
+      ...(req.responseMode === ResponseMode.RESPONSE_FORMAT && {
+        response_format: {
+          type: "json_schema",
+          json_schema: GM_RESPONSE_JSON_SCHEMA,
+        },
+      }),
     });
     const headers = {
       "Content-Type": "application/json",
@@ -84,6 +97,9 @@ export function OpenAiClient(apiKey: string): LLMClient {
       name: model.name,
       contextLength: model.context_length,
       pricing: model.pricing,
+      supportsResponseFormat: Array.isArray(model.supported_parameters)
+        ? model.supported_parameters.includes("response_format")
+        : undefined,
     }));
   }
   return { chat, models };

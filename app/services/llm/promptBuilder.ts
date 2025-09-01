@@ -9,8 +9,7 @@ import {
 import { GM_SYSTEM_PROMPT, STORY_TELLER_SYSTEM_PROMPT } from "@/prompts/system";
 import { countMessageTokens } from "./tokenCounter";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { GameMode, StoryCard, Item } from "@/types";
-import { useTaleStore } from "@/store/useTaleStore";
+import { GameMode, StoryCard, Item, ResponseMode } from "@/types";
 function injectStoryCards(text: string, storyCards: StoryCard[]): string {
   let storyCardInjections = "";
 
@@ -44,6 +43,8 @@ interface BuildMessageParams {
   storyCards: StoryCard[];
   model: LLMModel;
   options?: ChatRequestOptions;
+  gameMode: GameMode;
+  responseMode: ResponseMode;
 }
 
 export function buildMessage(params: BuildMessageParams): ChatRequest {
@@ -56,9 +57,9 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     model,
     description,
     authorNote,
+    gameMode,
+    responseMode,
   } = params;
-
-  const gameMode = useTaleStore.getState().gameMode;
 
   const configuredBudget = useSettingsStore.getState().contextWindow;
   const maxTokens = Math.min(model.contextLength, configuredBudget);
@@ -135,6 +136,9 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     stream: true,
     max_tokens: useSettingsStore.getState().maxTokens,
     options: params.options,
+    //override response mode for story mode.
+    responseMode:
+      gameMode === GameMode.GM ? responseMode : ResponseMode.FREE_FORM,
   };
 }
 
