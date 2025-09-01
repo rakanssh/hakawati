@@ -1,5 +1,11 @@
 import { useCallback } from "react";
-import { Outlet, Link, useNavigate, useSearch } from "@tanstack/react-router";
+import {
+  Outlet,
+  Link,
+  useLocation,
+  useNavigate,
+  useSearch,
+} from "@tanstack/react-router";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -13,20 +19,24 @@ const tabs = [
 
 export default function SettingsLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const search = useSearch({ from: "/settings" });
+  const redirectPath =
+    typeof (search as Record<string, unknown>).redirectPath === "string"
+      ? ((search as Record<string, unknown>).redirectPath as string)
+      : undefined;
   const handleOpenChange = useCallback(
     (open: boolean) => {
       if (!open) {
-        const redirectPath = (search as Record<string, unknown>)
-          ?.redirectPath as string | undefined;
         if (redirectPath) {
           navigate({ to: redirectPath, replace: true });
-        } else {
-          navigate({ to: "..", replace: true });
+          return;
         }
+        const masked = location.maskedLocation?.pathname;
+        navigate({ to: masked ?? "/", replace: true });
       }
     },
-    [navigate, search],
+    [navigate, redirectPath, location],
   );
 
   return (
@@ -42,7 +52,10 @@ export default function SettingsLayout() {
                 <li key={tab.to}>
                   <Link
                     to={"/settings/" + tab.to}
+                    // Preserve redirectPath across tab switches
                     search={(old: unknown) => old as Record<string, unknown>}
+                    // Keep rendering over the originating page
+                    mask={{ to: redirectPath || "." }}
                     className="block w-full rounded-md px-3 py-2 text-sm hover:bg-muted text-foreground [&.active]:bg-accent [&.active]:text-accent-foreground"
                   >
                     {tab.label}

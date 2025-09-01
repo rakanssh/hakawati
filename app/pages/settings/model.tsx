@@ -2,8 +2,7 @@ import { Label } from "@/components/ui/label";
 import { NumberInput } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { useSettingsStore } from "@/store";
-import { useEffect } from "react";
-import { useNavigate } from "@tanstack/react-router";
+// No navigation side-effects from here
 import { ApiType } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -14,7 +13,6 @@ import {
 import { DicesIcon, InfoIcon } from "lucide-react";
 
 export default function SettingsModel() {
-  const navigate = useNavigate();
   const {
     apiType,
     contextWindow,
@@ -44,9 +42,7 @@ export default function SettingsModel() {
     setToDefault,
   } = useSettingsStore();
 
-  useEffect(() => {
-    navigate({ to: "." });
-  }, [navigate]);
+  // Avoid initial navigate that could clear search/mask
 
   function resolveApiTypeLabel(apiType: ApiType) {
     if (apiType === ApiType.OPENAI) return "OpenAI";

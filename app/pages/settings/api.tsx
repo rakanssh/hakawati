@@ -2,8 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ModelSelect } from "@/components/layout";
 import { useSettingsStore, useTaleStore } from "@/store";
-import { useEffect } from "react";
-import { useNavigate } from "@tanstack/react-router";
+// No navigation side-effects from here
 import { Separator } from "@/components/ui/separator";
 import { ApiType, ResponseMode } from "@/types/api.type";
 import {
@@ -28,10 +27,6 @@ export default function SettingsApi() {
     setResponseMode,
   } = useSettingsStore();
   const { gameMode } = useTaleStore();
-  const navigate = useNavigate();
-  useEffect(() => {
-    navigate({ to: "." });
-  }, [navigate]);
 
   function resolveApiTypeLabel(apiType: ApiType) {
     if (apiType === ApiType.OPENAI) return "OpenAI";

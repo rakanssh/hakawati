@@ -8,21 +8,16 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-import { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { useTaleStore } from "@/store/useTaleStore";
 
 export default function SettingsStoryCards() {
   const { storyCards, addStoryCard, removeStoryCard, updateStoryCard } =
     useTaleStore();
-  const navigate = useNavigate();
   const [currentlyDeleting, setCurrentlyDeleting] = useState<string | null>(
     null,
   );
-  useEffect(() => {
-    navigate({ to: "." });
-  }, [navigate]);
 
   const handleClickDelete = (id: string) => {
     if (currentlyDeleting === id) {
