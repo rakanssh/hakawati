@@ -10,27 +10,6 @@ import { LogEntryMode } from "@/types";
 
 export function useLLM() {
   const [loading, setLoading] = useState(false);
-  const {
-    log,
-    stats,
-    inventory,
-    gameMode,
-    description,
-    authorNote,
-    storyCards,
-  } = useTaleStore();
-
-  const {
-    temperature,
-    topP,
-    topK,
-    frequencyPenalty,
-    presencePenalty,
-    repetitionPenalty,
-    minP,
-    topA,
-    seed,
-  } = useSettingsStore.getState();
   const abortRef = useRef<AbortController | null>(null);
 
   const send = async (
@@ -51,6 +30,28 @@ export function useLLM() {
     setLoading(true);
 
     try {
+      const {
+        log,
+        stats,
+        inventory,
+        gameMode,
+        description,
+        authorNote,
+        storyCards,
+      } = useTaleStore.getState();
+
+      const {
+        temperature,
+        topP,
+        topK,
+        frequencyPenalty,
+        presencePenalty,
+        repetitionPenalty,
+        minP,
+        topA,
+        seed,
+      } = useSettingsStore.getState();
+
       const req = buildMessage({
         log,
         stats,

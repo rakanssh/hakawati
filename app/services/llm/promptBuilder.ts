@@ -113,8 +113,14 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
       role: entry.role === LogEntryRole.PLAYER ? "user" : "assistant",
       content: injectMode(entryText, entry.mode),
     };
+    // Skip streaming placeholder
+    if (
+      msg.role === "assistant" &&
+      (msg.content === "..." || msg.content.trim() === "")
+    ) {
+      continue;
+    }
     if (canAddWithUser(msg, [...messages, ...history])) {
-      // unshift to keep chronological order
       history.unshift(msg);
     } else {
       break;
@@ -122,8 +128,6 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
   }
 
   messages.push(...history);
-
-  messages.push(userMsg);
 
   return {
     model: model.id,
