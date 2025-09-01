@@ -9,7 +9,7 @@ import {
   CommandGroup,
   CommandItem,
 } from "../ui/command";
-import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon, SwordsIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useLLMProviders } from "@/hooks/useLLMProviders";
@@ -23,11 +23,28 @@ import {
 import { Badge } from "../ui/badge";
 import { Separator } from "../ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { LLMModel } from "@/services/llm/schema";
+import { ResponseMode } from "@/types/api.type";
+import { toast } from "sonner";
 
 export function ModelSelect() {
-  const { model, setModel } = useSettingsStore();
+  const { model, setModel, setResponseMode, responseMode } = useSettingsStore();
   const [open, setOpen] = useState(false);
   const { models, loading } = useLLMProviders();
+
+  const handleModelChange = (model: LLMModel) => {
+    if (
+      !model.supportsResponseFormat &&
+      responseMode === ResponseMode.RESPONSE_FORMAT
+    ) {
+      setResponseMode(ResponseMode.FREE_FORM);
+      toast.warning(
+        "Model appears to not support response format. Setting response mode to free form.",
+      );
+    }
+    setModel(model);
+    setOpen(false);
+  };
 
   function toNumber(value: unknown): number | undefined {
     if (value === null || value === undefined) return undefined;
@@ -107,19 +124,26 @@ export function ModelSelect() {
                     key={m.id}
                     value={m.name}
                     onSelect={(_) => {
-                      setModel(m);
+                      handleModelChange(m);
                       setOpen(false);
                     }}
-                    className="rounded-xs"
+                    className="rounded-xs p-1 ml-0"
                   >
                     <CheckIcon
                       className={cn(
-                        "mr-2 h-4 w-4",
+                        "mr-0 h-4 w-4",
                         model?.name === m.name ? "opacity-100" : "opacity-0",
                       )}
                     />
                     <div className="flex w-full items-center justify-between">
-                      <span>{m.name}</span>
+                      <div className="flex items-center gap-2">
+                        {m.supportsResponseFormat ? (
+                          <SwordsIcon className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <div className="w-4 h-4" />
+                        )}
+                        <span>{m.name}</span>
+                      </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <span>tk: {m.contextLength.toLocaleString()}</span>
                         {m.pricing?.prompt !== undefined && (

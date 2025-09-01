@@ -1,11 +1,12 @@
 import { LLMModel } from "@/services/llm/schema";
-import { ApiType } from "@/types";
+import { ApiType, ResponseMode } from "@/types";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 interface SettingsStoreType {
   apiKey: string;
   apiType: ApiType;
+  responseMode: ResponseMode;
   model: LLMModel | undefined;
   contextWindow: number;
   modelContextLength: number;
@@ -22,6 +23,7 @@ interface SettingsStoreType {
   topA?: number; //range [0,1]
   setApiKey: (apiKey: string) => void;
   setApiType: (apiType: ApiType) => void;
+  setResponseMode: (responseMode: ResponseMode) => void;
   setModel: (model: LLMModel) => void;
   setContextWindow: (contextWindow: number) => void;
   setOpenAiBaseUrl: (openAiBaseUrl: string) => void;
@@ -44,6 +46,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
     (set, get) => ({
       apiKey: "",
       apiType: ApiType.OPENAI,
+      responseMode: ResponseMode.FREE_FORM,
       model: undefined,
       contextWindow: 10000,
       modelContextLength: 0,
@@ -52,6 +55,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
       seed: Math.floor(Math.random() * 1000000),
       setApiKey: (apiKey: string) => set({ apiKey }),
       setApiType: (apiType: ApiType) => set({ apiType }),
+      setResponseMode: (responseMode: ResponseMode) => set({ responseMode }),
       setModel: (model: LLMModel) => {
         console.debug(
           `Setting model: ${model.name} with context window: ${model.contextLength}.`,
@@ -106,6 +110,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
           repetitionPenalty: undefined,
           minP: undefined,
           topA: undefined,
+          responseMode: ResponseMode.FREE_FORM,
         }),
     }),
     {
