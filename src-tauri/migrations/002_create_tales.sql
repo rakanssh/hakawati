@@ -20,3 +20,7 @@ CREATE TABLE
 CREATE INDEX IF NOT EXISTS idx_tales_created_at ON tales (created_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_tales_scenario_id_created_at ON tales (scenario_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_tales_updated_at ON tales (updated_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_tales_scenario_id_updated_at ON tales (scenario_id, updated_at DESC);
