@@ -14,10 +14,10 @@ export function SettingsButton({
       onClick={() =>
         navigate({
           to: "/settings/game",
-          // Preserve existing search and carry a redirect back target
+          // Preserve existing search and carry a redirect back target (path only)
           search: (old: unknown) => ({
             ...(old as Record<string, unknown>),
-            redirect: location.href,
+            redirectPath: location.pathname,
           }),
         })
       }

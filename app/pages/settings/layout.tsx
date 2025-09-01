@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 const tabs = [
   { to: "game", label: "Game" },
   { to: "api", label: "API" },
-  { to: "scenario", label: "Scenario" },
+  { to: "tale", label: "Tale" },
   { to: "story-cards", label: "Story Cards" },
   { to: "model", label: "Model" },
 ] as const;
@@ -17,11 +17,10 @@ export default function SettingsLayout() {
   const handleOpenChange = useCallback(
     (open: boolean) => {
       if (!open) {
-        const redirect = (search as Record<string, unknown>)?.redirect as
-          | string
-          | undefined;
-        if (redirect) {
-          navigate({ to: redirect, replace: true });
+        const redirectPath = (search as Record<string, unknown>)
+          ?.redirectPath as string | undefined;
+        if (redirectPath) {
+          navigate({ to: redirectPath, replace: true });
         } else {
           navigate({ to: "..", replace: true });
         }

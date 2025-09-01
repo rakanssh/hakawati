@@ -1,4 +1,4 @@
-import { useGameStore } from "@/store/useGameStore";
+import { useTaleStore } from "@/store/useTaleStore";
 import { Separator } from "../ui/separator";
 import { InventoryItem } from "./inventory-item";
 import { PlusIcon } from "lucide-react";
@@ -14,7 +14,7 @@ const InventoryButton = ({ setOpen }: { setOpen: (open: boolean) => void }) => (
 );
 
 export function InventoryCard() {
-  const { inventory, addToInventory } = useGameStore();
+  const { inventory, addToInventory } = useTaleStore();
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
