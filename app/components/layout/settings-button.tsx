@@ -19,6 +19,8 @@ export function SettingsButton({
             ...(old as Record<string, unknown>),
             redirectPath: location.pathname,
           }),
+          // Render settings over the current page
+          mask: { to: location.pathname },
         })
       }
       {...props}

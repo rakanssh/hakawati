@@ -1,7 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useEffect } from "react";
-import { useNavigate } from "@tanstack/react-router";
+// No navigation side-effects from here
 import { Separator } from "@/components/ui/separator";
 import { useTaleStore } from "@/store/useTaleStore";
 
@@ -18,10 +17,6 @@ export default function SettingsTale() {
   //   useScenarioStore();
   const { description, authorNote, setDescription, setAuthorNote } =
     useTaleStore();
-  const navigate = useNavigate();
-  useEffect(() => {
-    navigate({ to: "." });
-  }, [navigate]);
 
   // TODO: Move to scenario UI later
   // async function handleExportScenario() {
