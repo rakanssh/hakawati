@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/select";
 import { GameMode } from "@/types";
 import { SwordsIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 
 export default function SettingsApi() {
   const {
@@ -27,6 +29,12 @@ export default function SettingsApi() {
     setResponseMode,
   } = useSettingsStore();
   const { gameMode } = useTaleStore();
+  const [baseUrl, setBaseUrl] = useState(openAiBaseUrl);
+
+  // Keep local input in sync if the store changes elsewhere
+  useEffect(() => {
+    setBaseUrl(openAiBaseUrl);
+  }, [openAiBaseUrl]);
 
   function resolveApiTypeLabel(apiType: ApiType) {
     if (apiType === ApiType.OPENAI) return "OpenAI";
@@ -71,10 +79,27 @@ export default function SettingsApi() {
         </div>
         <div className="flex flex-col gap-2 sm:col-span-3">
           <Label>{resolveApiTypeLabel(apiType)} base URL</Label>
-          <Input
-            value={openAiBaseUrl}
-            onChange={(e) => setOpenAiBaseUrl(e.target.value)}
-          />
+          <div className="flex gap-2">
+            <Input
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setOpenAiBaseUrl(baseUrl);
+                }
+              }}
+            />
+            <Button
+              variant="outline"
+              onClick={() => setOpenAiBaseUrl(baseUrl)}
+              disabled={
+                !baseUrl?.trim() || baseUrl.trim() === openAiBaseUrl.trim()
+              }
+              className="shrink-0"
+            >
+              Set
+            </Button>
+          </div>
         </div>
       </div>
       <div className="flex flex-col gap-2">
