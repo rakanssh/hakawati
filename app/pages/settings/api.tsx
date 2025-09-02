@@ -14,6 +14,9 @@ import {
 } from "@/components/ui/select";
 import { GameMode } from "@/types";
 import { SwordsIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { useLocalServerDiscovery } from "@/hooks/useLocalServerDiscovery";
 
 export default function SettingsApi() {
   const {
@@ -27,6 +30,13 @@ export default function SettingsApi() {
     setResponseMode,
   } = useSettingsStore();
   const { gameMode } = useTaleStore();
+  const [baseUrl, setBaseUrl] = useState(openAiBaseUrl);
+  const { servers, scanning, error, scan } = useLocalServerDiscovery(apiType);
+
+  // Keep local input in sync if the store changes elsewhere
+  useEffect(() => {
+    setBaseUrl(openAiBaseUrl);
+  }, [openAiBaseUrl]);
 
   function resolveApiTypeLabel(apiType: ApiType) {
     if (apiType === ApiType.OPENAI) return "OpenAI";
@@ -71,11 +81,72 @@ export default function SettingsApi() {
         </div>
         <div className="flex flex-col gap-2 sm:col-span-3">
           <Label>{resolveApiTypeLabel(apiType)} base URL</Label>
-          <Input
-            value={openAiBaseUrl}
-            onChange={(e) => setOpenAiBaseUrl(e.target.value)}
-          />
+          <div className="flex gap-2">
+            <Input
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  setOpenAiBaseUrl(baseUrl);
+                }
+              }}
+            />
+            <Button
+              variant="outline"
+              onClick={() => setOpenAiBaseUrl(baseUrl)}
+              disabled={
+                !baseUrl?.trim() || baseUrl.trim() === openAiBaseUrl.trim()
+              }
+              className="shrink-0"
+            >
+              Set
+            </Button>
+          </div>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <Label>Scan for compatible local servers</Label>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => scan()}
+              disabled={scanning}
+            >
+              {scanning ? "Scanning..." : "Scan"}
+            </Button>
+          </div>
+        </div>
+        {!!error && <span className="text-xs text-destructive">{error}</span>}
+        {servers.length === 0 ? (
+          <span className="text-sm text-muted-foreground">
+            No local servers found.
+          </span>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {servers.map((s) => (
+              <div
+                key={s.baseUrl}
+                className="flex items-center justify-between rounded-xs border p-2"
+              >
+                <div className="flex flex-col">
+                  <span className="text-sm">{s.label}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {s.baseUrl} {s.requiresAuth ? "(auth required)" : ""}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setOpenAiBaseUrl(s.baseUrl)}
+                  disabled={openAiBaseUrl.trim() === s.baseUrl.trim()}
+                >
+                  Use
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       <div className="flex flex-col gap-2">
         <Label>API Key</Label>
