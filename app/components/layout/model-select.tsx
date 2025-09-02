@@ -1,4 +1,4 @@
-import { useSettingsStore } from "@/store";
+import { useSettingsStore, useTaleStore } from "@/store";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Button } from "../ui/button";
 import {
@@ -11,7 +11,7 @@ import {
 } from "../ui/command";
 import { CheckIcon, ChevronsUpDownIcon, SwordsIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useLLMProviders } from "@/hooks/useLLMProviders";
 import {
   Card,
@@ -26,25 +26,31 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { LLMModel } from "@/services/llm/schema";
 import { ResponseMode } from "@/types/api.type";
 import { toast } from "sonner";
+import { GameMode } from "@/types";
 
 export function ModelSelect() {
   const { model, setModel, setResponseMode, responseMode } = useSettingsStore();
   const [open, setOpen] = useState(false);
   const { models, loading } = useLLMProviders();
+  const { gameMode } = useTaleStore();
 
-  const handleModelChange = (model: LLMModel) => {
-    if (
-      !model.supportsResponseFormat &&
-      responseMode === ResponseMode.RESPONSE_FORMAT
-    ) {
-      setResponseMode(ResponseMode.FREE_FORM);
-      toast.warning(
-        "Model appears to not support response format. Setting response mode to free form.",
-      );
-    }
-    setModel(model);
-    setOpen(false);
-  };
+  const handleModelChange = useCallback(
+    (model: LLMModel) => {
+      if (
+        !model.supportsResponseFormat &&
+        responseMode === ResponseMode.RESPONSE_FORMAT &&
+        gameMode === GameMode.GM
+      ) {
+        setResponseMode(ResponseMode.FREE_FORM);
+        toast.warning(
+          "Model appears to not support response format. Setting response mode to free form.",
+        );
+      }
+      setModel(model);
+      setOpen(false);
+    },
+    [setModel, setResponseMode, responseMode, gameMode],
+  );
 
   function toNumber(value: unknown): number | undefined {
     if (value === null || value === undefined) return undefined;
@@ -68,6 +74,22 @@ export function ModelSelect() {
       maximumFractionDigits: 3,
     });
   }
+
+  const somethingToDisplay = useMemo(() => {
+    return (
+      model?.pricing?.prompt !== undefined ||
+      model?.pricing?.completion !== undefined ||
+      toNumber(model?.pricing?.request) !== undefined ||
+      toNumber(model?.pricing?.image) !== undefined ||
+      toNumber(model?.pricing?.audio) !== undefined
+    );
+  }, [
+    model?.pricing?.prompt,
+    model?.pricing?.completion,
+    model?.pricing?.request,
+    model?.pricing?.image,
+    model?.pricing?.audio,
+  ]);
 
   function PriceRow({ label, perToken }: { label: string; perToken?: number }) {
     const per1k = perToken !== undefined ? perToken * 1000 : undefined;
@@ -173,26 +195,33 @@ export function ModelSelect() {
           </Command>
         </PopoverContent>
       </Popover>
-      {model && (
+      {model && somethingToDisplay && (
         <Card className="mt-2 rounded-xs">
           <CardHeader>
             <CardTitle className="text-base">{model.name}</CardTitle>
-            <CardDescription>
-              Context window:{" "}
-              {model.contextLength?.toLocaleString() ?? "Unknown"}
-              {model.contextLength !== undefined ? " tokens" : ""}
-            </CardDescription>
+            {model.contextLength !== undefined && (
+              <CardDescription>
+                Context window: {model.contextLength?.toLocaleString()} tokens
+              </CardDescription>
+            )}
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <PriceRow
-              label="Input (prompt)"
-              perToken={toNumber(model.pricing?.prompt)}
-            />
-            <Separator />
-            <PriceRow
-              label="Output (completion)"
-              perToken={toNumber(model.pricing?.completion)}
-            />
+            {model.pricing?.prompt !== undefined && (
+              <PriceRow
+                label="Input (prompt)"
+                perToken={toNumber(model.pricing?.prompt)}
+              />
+            )}
+            {model.pricing?.completion !== undefined && (
+              <>
+                <Separator />
+
+                <PriceRow
+                  label="Output (completion)"
+                  perToken={toNumber(model.pricing?.completion)}
+                />
+              </>
+            )}
             {!!(
               toNumber(model.pricing?.request) ||
               toNumber(model.pricing?.image) ||
