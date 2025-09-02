@@ -54,7 +54,7 @@ export interface ModelPricing {
 export interface LLMModel {
   id: string;
   name: string;
-  contextLength: number;
+  contextLength?: number;
   pricing?: ModelPricing;
   // Capability flags
   supportsResponseFormat?: boolean;

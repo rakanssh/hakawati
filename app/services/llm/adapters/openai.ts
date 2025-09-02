@@ -90,12 +90,20 @@ export function OpenAiClient(apiKey: string): LLMClient {
     });
     const json = await r.json();
     console.log(json);
-    // TODO: fix later
+    // Allow providers that return minimal model info
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return json.data.map((model: any) => ({
-      id: model.id,
-      name: model.name,
-      contextLength: model.context_length,
+    const data: any[] = Array.isArray(json?.data)
+      ? json.data
+      : Array.isArray(json?.models)
+        ? json.models
+        : Array.isArray(json)
+          ? json
+          : [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return data.map((model: any) => ({
+      id: model.id ?? model.name,
+      name: model.name ?? model.id ?? "unknown",
+      contextLength: model.context_length ?? model.contextLength,
       pricing: model.pricing,
       supportsResponseFormat: Array.isArray(model.supported_parameters)
         ? model.supported_parameters.includes("response_format")

@@ -58,14 +58,12 @@ export const useSettingsStore = create<SettingsStoreType>()(
       setResponseMode: (responseMode: ResponseMode) => set({ responseMode }),
       setModel: (model: LLMModel) => {
         console.debug(
-          `Setting model: ${model.name} with context window: ${model.contextLength}.`,
+          `Setting model: ${model.name} with context window: ${model.contextLength ?? "unknown"}.`,
         );
+        const length = model.contextLength ?? Number.MAX_SAFE_INTEGER;
         set({
-          contextWindow: Math.min(
-            get().contextWindow ?? 2048,
-            model.contextLength,
-          ),
-          modelContextLength: model.contextLength,
+          contextWindow: Math.min(get().contextWindow ?? 2048, length),
+          modelContextLength: length,
         });
         console.debug(`Setting context window: ${get().contextWindow}`);
         set({ model });
