@@ -145,7 +145,9 @@ export function ModelSelect() {
                         <span>{m.name}</span>
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>tk: {m.contextLength.toLocaleString()}</span>
+                        <span>
+                          tk: {m.contextLength?.toLocaleString() ?? "?"}
+                        </span>
                         {m.pricing?.prompt !== undefined && (
                           <span>
                             In:{" "}
@@ -176,7 +178,9 @@ export function ModelSelect() {
           <CardHeader>
             <CardTitle className="text-base">{model.name}</CardTitle>
             <CardDescription>
-              Context window: {model.contextLength.toLocaleString()} tokens
+              Context window:{" "}
+              {model.contextLength?.toLocaleString() ?? "Unknown"}
+              {model.contextLength !== undefined ? " tokens" : ""}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">

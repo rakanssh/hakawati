@@ -62,7 +62,10 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
   } = params;
 
   const configuredBudget = useSettingsStore.getState().contextWindow;
-  const maxTokens = Math.min(model.contextLength, configuredBudget);
+  const maxTokens = Math.min(
+    model.contextLength ?? configuredBudget,
+    configuredBudget,
+  );
   const messages: ChatMessage[] = [];
 
   // Build user message
