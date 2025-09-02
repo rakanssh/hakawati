@@ -8,15 +8,7 @@ import {
 
 import AppShell from "./root";
 import Home from "./pages/home/home";
-// import About from "./pages/about/about";
 import Demo from "./pages/demo/demo";
-import SettingsLayout from "./pages/settings/layout";
-import SettingsIndex from "./pages/settings/index";
-import SettingsApi from "./pages/settings/api";
-import SettingsTale from "./pages/settings/tale";
-import SettingsStoryCards from "./pages/settings/story-cards";
-import SettingsModel from "./pages/settings/model";
-import SettingsGame from "./pages/settings/game";
 import ScenariosHome from "./pages/scenarios/home";
 import ScenarioCreate from "./pages/scenarios/create.tsx";
 import ScenarioEdit from "./pages/scenarios/edit.tsx";
@@ -30,63 +22,14 @@ const IndexRoute = createRoute({
   component: Home,
 });
 
-// const AboutRoute = createRoute({
-//   getParentRoute: () => RootRoute,
-//   path: "about",
-//   component: About,
-// });
-
 const DemoRoute = createRoute({
   getParentRoute: () => RootRoute,
   path: "demo",
   component: Demo,
 });
 
-const SettingsRoute = createRoute({
-  getParentRoute: () => RootRoute,
-  path: "settings",
-  component: SettingsLayout,
-});
-
-const SettingsIndexRoute = createRoute({
-  getParentRoute: () => SettingsRoute,
-  path: "/",
-  component: SettingsIndex,
-});
-
-const SettingsApiRoute = createRoute({
-  getParentRoute: () => SettingsRoute,
-  path: "api",
-  component: SettingsApi,
-});
-
-const SettingsTaleRoute = createRoute({
-  getParentRoute: () => SettingsRoute,
-  path: "tale",
-  component: SettingsTale,
-});
-
-const SettingsStoryCardsRoute = createRoute({
-  getParentRoute: () => SettingsRoute,
-  path: "story-cards",
-  component: SettingsStoryCards,
-});
-
-const SettingsModelRoute = createRoute({
-  getParentRoute: () => SettingsRoute,
-  path: "model",
-  component: SettingsModel,
-});
-
-const SettingsGameRoute = createRoute({
-  getParentRoute: () => SettingsRoute,
-  path: "game",
-  component: SettingsGame,
-});
-
 const routeTree = RootRoute.addChildren([
   IndexRoute,
-  // AboutRoute,
   DemoRoute,
   createRoute({
     getParentRoute: () => RootRoute,
@@ -108,14 +51,6 @@ const routeTree = RootRoute.addChildren([
     path: "scenarios/$id",
     component: ScenarioEdit,
   }),
-  SettingsRoute.addChildren([
-    SettingsIndexRoute,
-    SettingsApiRoute,
-    SettingsTaleRoute,
-    SettingsStoryCardsRoute,
-    SettingsModelRoute,
-    SettingsGameRoute,
-  ]),
 ]);
 
 export const router = createRouter({

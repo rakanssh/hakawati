@@ -1,18 +1,13 @@
 import { HomeIcon, MinusIcon, SquareIcon, XIcon } from "lucide-react";
-import { SettingsButton } from "./settings-button";
+import { SettingsButton } from "./settings";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { Button } from "../ui/button";
-import { useLocation, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import fez from "@/assets/fez-offwh-bg-sqc.svg";
 
 export function Titlebar() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isShowButtons =
-    pathname.includes("demo") ||
-    pathname.includes("scenarios") ||
-    pathname.includes("tales") ||
-    pathname.includes("settings");
+  const isShowButtons = true;
   return (
     <div
       data-tauri-drag-region
@@ -20,14 +15,6 @@ export function Titlebar() {
     >
       <div className="grid grid-cols-3 items-center h-full px-2 select-none pointer-events-none">
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate({ to: "/" })}
-          >
-            <img src={fez} alt="Hakawati" className="w-6 h-6 " />
-          </Button>
-
           {isShowButtons && (
             <>
               <Tooltip>
@@ -55,10 +42,14 @@ export function Titlebar() {
             </>
           )}
         </div>
-        <div className="flex justify-center">
-          <span className="text-sm font-medium tracking-wide text-foreground">
-            Hakawati
-          </span>
+        <div className="flex justify-center items-center mb-1">
+          <div className="flex items-center gap-1">
+            <img src={fez} alt="Hakawati" className="w-5 h-5 " />
+
+            <span className="text-sm font-medium tracking-wide text-foreground">
+              Hakawati
+            </span>
+          </div>
         </div>
         <div className="titlebar-no-drag pointer-events-auto flex justify-end gap-1 w-fit absolute right-0">
           <button

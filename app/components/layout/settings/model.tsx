@@ -2,7 +2,6 @@ import { Label } from "@/components/ui/label";
 import { NumberInput } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { useSettingsStore } from "@/store";
-// No navigation side-effects from here
 import { ApiType } from "@/types";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -41,8 +40,6 @@ export default function SettingsModel() {
     randomSeed,
     setToDefault,
   } = useSettingsStore();
-
-  // Avoid initial navigate that could clear search/mask
 
   function resolveApiTypeLabel(apiType: ApiType) {
     if (apiType === ApiType.OPENAI) return "OpenAI";
