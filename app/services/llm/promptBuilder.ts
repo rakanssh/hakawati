@@ -133,6 +133,14 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
 
   messages.push(...history);
 
+  // ensure the latest user instruction is included when it isn't already
+  const lastLog = log.at(-1);
+  const lastIsUser =
+    lastLog?.role === LogEntryRole.PLAYER && lastLog.text === lastMessage.text;
+  if (!lastIsUser && canAddWithUser(userMsg, messages)) {
+    messages.push(userMsg);
+  }
+
   return {
     model: model.id,
     messages,
