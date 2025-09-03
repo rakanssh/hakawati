@@ -34,6 +34,9 @@ import {
 } from "@/components/game";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 import { usePersistTale } from "@/hooks/useGameSaves";
+//TODO: move to a prompt file
+const continuePrompt =
+  "Continue the current story seamlessly from the last sentence without starting a new paragraph. Maintain tone, characters, and pacing. Do not recap. Output only the next part of the story.";
 interface Action {
   type: LogEntryMode;
   isRolling: boolean;
@@ -275,7 +278,7 @@ export default function Demo() {
         (lastEntry.chainId ?? lastEntry.id)
     ) {
       removeLastLogEntry();
-      executeLlmSend("Continue", LogEntryMode.STORY, true);
+      executeLlmSend(continuePrompt, LogEntryMode.STORY, true);
       return;
     }
     if (prevEntry?.role === LogEntryRole.PLAYER) {
@@ -290,7 +293,7 @@ export default function Demo() {
     if (loading) return;
     const lastEntry = log.at(-1);
     if (lastEntry?.role !== LogEntryRole.GM) return;
-    executeLlmSend("Continue", LogEntryMode.STORY, true);
+    executeLlmSend(continuePrompt, LogEntryMode.STORY, true);
   };
 
   type LogBlock = { role: LogEntryRole; chainId?: string; entries: typeof log };
