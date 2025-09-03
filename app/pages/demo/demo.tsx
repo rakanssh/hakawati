@@ -35,8 +35,7 @@ import {
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 import { usePersistTale } from "@/hooks/useGameSaves";
 //TODO: move to a prompt file
-const continuePrompt =
-  "Continue the current story seamlessly from the last sentence without starting a new paragraph. Maintain tone, characters, and pacing. Do not recap. Output only the next part of the story.";
+const continuePrompt = "Continue the story seamlessy from where it left off.";
 interface Action {
   type: LogEntryMode;
   isRolling: boolean;
