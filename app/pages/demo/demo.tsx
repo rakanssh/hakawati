@@ -325,7 +325,10 @@ export default function Demo() {
                 <InlineEditableContent
                   initialValue={entry.text}
                   onCommit={(next) => {
-                    updateLogEntry(entry.id, { text: next });
+                    updateLogEntry(entry.id, {
+                      text: next,
+                      segments: [{ id: nanoid(), text: next }],
+                    });
                     setCurrentlyEditingLogId(null);
                   }}
                   onCancel={() => setCurrentlyEditingLogId(null)}
