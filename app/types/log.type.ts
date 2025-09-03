@@ -12,13 +12,6 @@ export enum LogEntryRole {
   GM = "gm",
 }
 
-export type LogSegment = {
-  id: string;
-  text: string;
-  actions?: LLMAction[];
-  isActionError?: boolean;
-};
-
 export type LogEntry = {
   id: string;
   role: LogEntryRole;
@@ -26,5 +19,5 @@ export type LogEntry = {
   text: string;
   isActionError?: boolean;
   actions?: LLMAction[];
-  segments?: LogSegment[];
+  chainId?: string;
 };

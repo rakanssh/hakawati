@@ -17,7 +17,6 @@ import {
 import {
   DicesIcon,
   HandIcon,
-  MessageCircleWarning,
   SendIcon,
   SpeechIcon,
   BookIcon,
@@ -26,13 +25,13 @@ import {
   SaveIcon,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+// tooltips currently unused here after block refactor
 import { nanoid } from "nanoid";
-import { InlineEditableContent, LogEntryBubble } from "@/components/game";
+import {
+  InlineEditableContent,
+  LogEntryBubble,
+  LogBlockBubble,
+} from "@/components/game";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 import { usePersistTale } from "@/hooks/useGameSaves";
 interface Action {
@@ -132,19 +131,20 @@ export default function Demo() {
         return;
       }
       let gmResponseId: string;
-      const segmentId = nanoid();
       if (append) {
         const lastEntry = useTaleStore.getState().log.at(-1);
         if (!lastEntry || lastEntry.role !== LogEntryRole.GM) {
           console.error("No GM entry to continue.");
           return;
         }
-        gmResponseId = lastEntry.id;
-        updateLogEntry(gmResponseId, {
-          segments: [
-            ...(lastEntry.segments || []),
-            { id: segmentId, text: "" },
-          ],
+        const chainId = lastEntry.chainId ?? lastEntry.id;
+        gmResponseId = nanoid();
+        addLog({
+          id: gmResponseId,
+          role: LogEntryRole.GM,
+          text: "",
+          mode: LogEntryMode.STORY,
+          chainId,
         });
       } else {
         gmResponseId = nanoid();
@@ -153,7 +153,7 @@ export default function Demo() {
           role: LogEntryRole.GM,
           text: "",
           mode: LogEntryMode.STORY,
-          segments: [{ id: segmentId, text: "" }],
+          chainId: gmResponseId,
         });
       }
 
@@ -162,17 +162,8 @@ export default function Demo() {
       await send({ text: message, mode }, model, {
         onStoryStream: (storyChunk) => {
           storyContent += storyChunk;
-          const entry = useTaleStore
-            .getState()
-            .log.find((e) => e.id === gmResponseId);
-          if (!entry) return;
-          const segments = entry.segments || [];
-          const newSegments = segments.map((s) =>
-            s.id === segmentId ? { ...s, text: storyContent } : s,
-          );
           updateLogEntry(gmResponseId, {
-            text: newSegments.map((s) => s.text).join(""),
-            segments: newSegments,
+            text: storyContent,
           });
         },
         onActionsReady: (actions) => {
@@ -183,9 +174,6 @@ export default function Demo() {
             .getState()
             .log.find((e) => e.id === gmResponseId);
           updateLogEntry(gmResponseId, {
-            segments: entry?.segments?.map((s) =>
-              s.id === segmentId ? { ...s, actions } : s,
-            ),
             actions: [...(entry?.actions || []), ...actions],
             isActionError: false,
           });
@@ -225,13 +213,7 @@ export default function Demo() {
         },
         onActionParseError: () => {
           console.warn("Failed to parse actions from LLM response");
-          const entry = useTaleStore
-            .getState()
-            .log.find((e) => e.id === gmResponseId);
           updateLogEntry(gmResponseId, {
-            segments: entry?.segments?.map((s) =>
-              s.id === segmentId ? { ...s, isActionError: true } : s,
-            ),
             isActionError: true,
           });
         },
@@ -282,25 +264,26 @@ export default function Demo() {
     randomSeed();
 
     const lastEntry = log.at(-1);
-    const secondLastEntry = log.at(-2);
-
-    if (
-      lastEntry?.role === LogEntryRole.GM &&
-      secondLastEntry?.role === LogEntryRole.PLAYER
-    ) {
-      if (lastEntry.segments && lastEntry.segments.length > 1) {
-        removeLastLogEntry();
-        executeLlmSend("Continue", LogEntryMode.STORY, true);
-      } else {
-        removeLastLogEntry();
-        executeLlmSend(
-          secondLastEntry.text,
-          secondLastEntry.mode ?? LogEntryMode.STORY,
-        );
-      }
-    } else {
-      console.warn("Cannot retry, log state is not as expected.");
+    if (lastEntry?.role !== LogEntryRole.GM) {
+      console.warn("Cannot retry, last entry is not GM.");
+      return;
     }
+    const prevEntry = log.at(-2);
+    if (
+      prevEntry?.role === LogEntryRole.GM &&
+      (prevEntry.chainId ?? prevEntry.id) ===
+        (lastEntry.chainId ?? lastEntry.id)
+    ) {
+      removeLastLogEntry();
+      executeLlmSend("Continue", LogEntryMode.STORY, true);
+      return;
+    }
+    if (prevEntry?.role === LogEntryRole.PLAYER) {
+      removeLastLogEntry();
+      executeLlmSend(prevEntry.text, prevEntry.mode ?? LogEntryMode.STORY);
+      return;
+    }
+    console.warn("Cannot retry, log state is not as expected.");
   };
 
   const handleContinue = () => {
@@ -310,6 +293,34 @@ export default function Demo() {
     executeLlmSend("Continue", LogEntryMode.STORY, true);
   };
 
+  type LogBlock = { role: LogEntryRole; chainId?: string; entries: typeof log };
+
+  const blocks: LogBlock[] = (() => {
+    const result: LogBlock[] = [];
+    for (const entry of log) {
+      const prev = result[result.length - 1] as LogBlock | undefined;
+      const entryChain =
+        entry.role === LogEntryRole.GM
+          ? (entry.chainId ?? entry.id)
+          : undefined;
+      const prevChain = prev?.chainId;
+      const canChain =
+        entry.role === LogEntryRole.GM &&
+        prev?.role === LogEntryRole.GM &&
+        prevChain === entryChain;
+      if (canChain) {
+        prev.entries.push(entry);
+      } else {
+        result.push({
+          role: entry.role,
+          chainId: entryChain,
+          entries: [entry],
+        });
+      }
+    }
+    return result;
+  })();
+
   // Shared content component for both modes
   const renderMainContent = () => (
     <>
@@ -318,55 +329,65 @@ export default function Demo() {
         viewportRef={viewportRef}
         onViewportScroll={handleViewportScroll}
       >
-        {log.length > 0 ? (
-          log.map((entry) =>
-            currentlyEditingLogId === entry.id ? (
-              <div key={entry.id} className="bg-accent/50 rounded-md p-0">
-                <InlineEditableContent
-                  initialValue={entry.text}
-                  onCommit={(next) => {
-                    updateLogEntry(entry.id, {
-                      text: next,
-                      segments: [{ id: nanoid(), text: next }],
-                    });
-                    setCurrentlyEditingLogId(null);
-                  }}
-                  onCancel={() => setCurrentlyEditingLogId(null)}
-                />
-              </div>
-            ) : (
-              <div
-                key={entry.id}
-                className={`whitespace-pre-wrap hover:bg-accent/50 rounded-md mt-2 cursor-pointer ${
-                  currentlyEditingLogId === entry.id ? "bg-accent" : ""
-                }`}
-                onClick={() => setCurrentlyEditingLogId(entry.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    setCurrentlyEditingLogId(entry.id);
+        {blocks.length > 0 ? (
+          blocks.map((block) => (
+            <div key={block.entries[0].id} className="mt-2">
+              {block.role === LogEntryRole.GM ? (
+                <LogBlockBubble
+                  block={block}
+                  onEditStart={(entryId) => setCurrentlyEditingLogId(entryId)}
+                  renderEntry={(entry, onClick) =>
+                    currentlyEditingLogId === entry.id ? (
+                      <div className="bg-accent/50 rounded-md p-0">
+                        <InlineEditableContent
+                          initialValue={entry.text}
+                          onCommit={(next) => {
+                            updateLogEntry(entry.id, { text: next });
+                            setCurrentlyEditingLogId(null);
+                          }}
+                          onCancel={() => setCurrentlyEditingLogId(null)}
+                        />
+                      </div>
+                    ) : (
+                      <span className="cursor-pointer" onClick={onClick}>
+                        {entry.text}
+                      </span>
+                    )
                   }
-                }}
-              >
-                <LogEntryBubble entry={entry} />
-                {entry.isActionError && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="mr-1 ml-1 text-muted-foreground hover:text-foreground"
-                      >
-                        <MessageCircleWarning />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-xs">
-                      <p>Failed to parse actions returned with this message.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-            ),
-          )
+                />
+              ) : (
+                block.entries.map((entry) =>
+                  currentlyEditingLogId === entry.id ? (
+                    <div key={entry.id} className="bg-accent/50 rounded-md p-0">
+                      <InlineEditableContent
+                        initialValue={entry.text}
+                        onCommit={(next) => {
+                          updateLogEntry(entry.id, { text: next });
+                          setCurrentlyEditingLogId(null);
+                        }}
+                        onCancel={() => setCurrentlyEditingLogId(null)}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      key={entry.id}
+                      className={`whitespace-pre-wrap hover:bg-accent/50 rounded-md cursor-pointer ${
+                        currentlyEditingLogId === entry.id ? "bg-accent" : ""
+                      }`}
+                      onClick={() => setCurrentlyEditingLogId(entry.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          setCurrentlyEditingLogId(entry.id);
+                        }
+                      }}
+                    >
+                      <LogEntryBubble entry={entry} />
+                    </div>
+                  ),
+                )
+              )}
+            </div>
+          ))
         ) : (
           <></>
         )}
