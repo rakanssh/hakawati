@@ -227,6 +227,29 @@ export const useTaleStore = create<TaleStoreType>()(
           if (!lastEntry) {
             return {};
           }
+          if (lastEntry.segments && lastEntry.segments.length > 1) {
+            const segment = lastEntry.segments[lastEntry.segments.length - 1];
+            const remainingSegments = lastEntry.segments.slice(0, -1);
+            const stateChanges = undoEntryActions(state, {
+              ...lastEntry,
+              actions: segment.actions,
+            });
+            return {
+              ...stateChanges,
+              log: [
+                ...state.log.slice(0, -1),
+                {
+                  ...lastEntry,
+                  segments: remainingSegments,
+                  text: remainingSegments.map((s) => s.text).join(""),
+                  actions: remainingSegments.flatMap((s) => s.actions || []),
+                  isActionError:
+                    remainingSegments[remainingSegments.length - 1]
+                      ?.isActionError,
+                },
+              ],
+            };
+          }
           const stateChanges = undoEntryActions(state, lastEntry);
           return { ...stateChanges, log: state.log.slice(0, -1) };
         }),
@@ -305,6 +328,39 @@ export const useTaleStore = create<TaleStoreType>()(
         set((state) => {
           const lastLog = state.log[state.log.length - 1];
           if (lastLog) {
+            if (lastLog.segments && lastLog.segments.length > 1) {
+              const segment = lastLog.segments[lastLog.segments.length - 1];
+              const remainingSegments = lastLog.segments.slice(0, -1);
+              const stateChanges = undoEntryActions(state, {
+                ...lastLog,
+                actions: segment.actions,
+              });
+              return {
+                ...stateChanges,
+                log: [
+                  ...state.log.slice(0, -1),
+                  {
+                    ...lastLog,
+                    segments: remainingSegments,
+                    text: remainingSegments.map((s) => s.text).join(""),
+                    actions: remainingSegments.flatMap((s) => s.actions || []),
+                    isActionError:
+                      remainingSegments[remainingSegments.length - 1]
+                        ?.isActionError,
+                  },
+                ],
+                undoStack: [
+                  ...state.undoStack,
+                  {
+                    ...lastLog,
+                    text: segment.text,
+                    actions: segment.actions,
+                    segments: [segment],
+                    isActionError: segment.isActionError,
+                  },
+                ],
+              };
+            }
             const stateChanges = undoEntryActions(state, lastLog);
             return {
               ...stateChanges,
@@ -319,6 +375,34 @@ export const useTaleStore = create<TaleStoreType>()(
         set((state) => {
           const lastLog = state.undoStack[state.undoStack.length - 1];
           if (lastLog) {
+            const existing = state.log[state.log.length - 1];
+            if (
+              lastLog.segments &&
+              lastLog.segments.length === 1 &&
+              existing &&
+              existing.id === lastLog.id
+            ) {
+              const segment = lastLog.segments[0];
+              const stateChanges = redoEntryActions(state, {
+                ...lastLog,
+                actions: segment.actions,
+              });
+              const newSegments = [...(existing.segments || []), segment];
+              return {
+                ...stateChanges,
+                log: [
+                  ...state.log.slice(0, -1),
+                  {
+                    ...existing,
+                    segments: newSegments,
+                    text: newSegments.map((s) => s.text).join(""),
+                    actions: newSegments.flatMap((s) => s.actions || []),
+                    isActionError: segment.isActionError,
+                  },
+                ],
+                undoStack: state.undoStack.slice(0, -1),
+              };
+            }
             const stateChanges = redoEntryActions(state, lastLog);
             return {
               ...stateChanges,

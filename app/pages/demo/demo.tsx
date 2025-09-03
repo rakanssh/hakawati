@@ -126,35 +126,71 @@ export default function Demo() {
   };
 
   const executeLlmSend = useCallback(
-    async (message: string, mode: LogEntryMode) => {
+    async (message: string, mode: LogEntryMode, append = false) => {
       if (!model) {
         console.error("LLM model not configured.");
         return;
       }
-      const gmResponseId = nanoid();
-      addLog({
-        id: gmResponseId,
-        role: LogEntryRole.GM,
-        text: "...",
-        mode: LogEntryMode.STORY,
-      });
+      let gmResponseId: string;
+      const segmentId = nanoid();
+      if (append) {
+        const lastEntry = useTaleStore.getState().log.at(-1);
+        if (!lastEntry || lastEntry.role !== LogEntryRole.GM) {
+          console.error("No GM entry to continue.");
+          return;
+        }
+        gmResponseId = lastEntry.id;
+        updateLogEntry(gmResponseId, {
+          segments: [
+            ...(lastEntry.segments || []),
+            { id: segmentId, text: "" },
+          ],
+        });
+      } else {
+        gmResponseId = nanoid();
+        addLog({
+          id: gmResponseId,
+          role: LogEntryRole.GM,
+          text: "",
+          mode: LogEntryMode.STORY,
+          segments: [{ id: segmentId, text: "" }],
+        });
+      }
 
       let storyContent = "";
 
       await send({ text: message, mode }, model, {
         onStoryStream: (storyChunk) => {
           storyContent += storyChunk;
+          const entry = useTaleStore
+            .getState()
+            .log.find((e) => e.id === gmResponseId);
+          if (!entry) return;
+          const segments = entry.segments || [];
+          const newSegments = segments.map((s) =>
+            s.id === segmentId ? { ...s, text: storyContent } : s,
+          );
           updateLogEntry(gmResponseId, {
-            text: storyContent,
+            text: newSegments.map((s) => s.text).join(""),
+            segments: newSegments,
           });
         },
         onActionsReady: (actions) => {
           console.debug(
             `Processing received actions: ${JSON.stringify(actions)}`,
           );
+          const entry = useTaleStore
+            .getState()
+            .log.find((e) => e.id === gmResponseId);
+          updateLogEntry(gmResponseId, {
+            segments: entry?.segments?.map((s) =>
+              s.id === segmentId ? { ...s, actions } : s,
+            ),
+            actions: [...(entry?.actions || []), ...actions],
+            isActionError: false,
+          });
           // Only process actions that affect game state in GM mode
           if (gameMode === GameMode.GM && Array.isArray(actions)) {
-            updateLogEntry(gmResponseId, { actions });
             for (const action of actions) {
               switch (action.type) {
                 case "MODIFY_STAT":
@@ -189,7 +225,15 @@ export default function Demo() {
         },
         onActionParseError: () => {
           console.warn("Failed to parse actions from LLM response");
-          updateLogEntry(gmResponseId, { isActionError: true });
+          const entry = useTaleStore
+            .getState()
+            .log.find((e) => e.id === gmResponseId);
+          updateLogEntry(gmResponseId, {
+            segments: entry?.segments?.map((s) =>
+              s.id === segmentId ? { ...s, isActionError: true } : s,
+            ),
+            isActionError: true,
+          });
         },
         onError: (error) => {
           console.error("LLM Error:", error);
@@ -244,14 +288,26 @@ export default function Demo() {
       lastEntry?.role === LogEntryRole.GM &&
       secondLastEntry?.role === LogEntryRole.PLAYER
     ) {
-      removeLastLogEntry();
-      executeLlmSend(
-        secondLastEntry.text,
-        secondLastEntry.mode ?? LogEntryMode.STORY,
-      );
+      if (lastEntry.segments && lastEntry.segments.length > 1) {
+        removeLastLogEntry();
+        executeLlmSend("Continue", LogEntryMode.STORY, true);
+      } else {
+        removeLastLogEntry();
+        executeLlmSend(
+          secondLastEntry.text,
+          secondLastEntry.mode ?? LogEntryMode.STORY,
+        );
+      }
     } else {
       console.warn("Cannot retry, log state is not as expected.");
     }
+  };
+
+  const handleContinue = () => {
+    if (loading) return;
+    const lastEntry = log.at(-1);
+    if (lastEntry?.role !== LogEntryRole.GM) return;
+    executeLlmSend("Continue", LogEntryMode.STORY, true);
   };
 
   // Shared content component for both modes
@@ -395,6 +451,7 @@ export default function Demo() {
             )}
           </Button>
           <LogControl
+            handleContinue={handleContinue}
             handleRetry={handleRetry}
             loading={loading}
             saving={saving}
