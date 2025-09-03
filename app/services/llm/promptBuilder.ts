@@ -112,21 +112,8 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
   type Merged = { role: "user" | "assistant"; content: string };
   type AssistantMerged = Merged & { __chainKey: string };
   const mergedLog: Merged[] = [];
-  const lastLogEntry = log.at(-1);
-  const shouldReplaceLastUser =
-    lastLogEntry?.role === LogEntryRole.PLAYER &&
-    lastLogEntry.text === lastMessage.text &&
-    (lastLogEntry.mode ?? LogEntryMode.STORY) === lastMessage.mode;
   for (let i = 0; i < log.length; i++) {
     const entry = log[i];
-    // Skip the last user entry when it matches lastMessage
-    if (
-      shouldReplaceLastUser &&
-      i === log.length - 1 &&
-      entry.role === LogEntryRole.PLAYER
-    ) {
-      continue;
-    }
     const content = injectMode(
       injectStoryCards(entry.text, storyCards),
       entry.mode,
@@ -175,11 +162,19 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
 
   messages.push(...history);
 
-  // Always include the latest user instruction (either normal input or "Continue")
-  if (canAddWithUser(userMsg, messages)) {
+  // Quick fix for continue prompt and preventing duplication of the last user entry.
+  // Until a more robust solution is implemented.
+  const prevEntry = log.at(-2);
+  const lastPlayerMatches =
+    prevEntry?.role === LogEntryRole.PLAYER &&
+    prevEntry.text === lastMessage.text &&
+    (prevEntry.mode ?? LogEntryMode.STORY) === lastMessage.mode;
+  const shouldAppendUser =
+    lastMessage.text.trim().length > 0 && !lastPlayerMatches;
+  if (shouldAppendUser && canAddWithUser(userMsg, messages)) {
     messages.push(userMsg);
   }
-
+  // ---
   return {
     model: model.id,
     messages,
