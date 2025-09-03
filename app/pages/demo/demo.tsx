@@ -338,16 +338,16 @@ export default function Demo() {
                   onEditStart={(entryId) => setCurrentlyEditingLogId(entryId)}
                   renderEntry={(entry, onClick) =>
                     currentlyEditingLogId === entry.id ? (
-                      <div className="bg-accent/50 rounded-md p-0">
-                        <InlineEditableContent
-                          initialValue={entry.text}
-                          onCommit={(next) => {
-                            updateLogEntry(entry.id, { text: next });
-                            setCurrentlyEditingLogId(null);
-                          }}
-                          onCancel={() => setCurrentlyEditingLogId(null)}
-                        />
-                      </div>
+                      <InlineEditableContent
+                        initialValue={entry.text}
+                        onCommit={(next) => {
+                          updateLogEntry(entry.id, { text: next });
+                          setCurrentlyEditingLogId(null);
+                        }}
+                        onCancel={() => setCurrentlyEditingLogId(null)}
+                        variant="inline"
+                        className="bg-accent py-0.5 border-b-1 border-b-amber-700/25"
+                      />
                     ) : (
                       <span className="cursor-pointer" onClick={onClick}>
                         {entry.text}
