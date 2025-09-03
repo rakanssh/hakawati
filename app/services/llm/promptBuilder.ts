@@ -78,7 +78,6 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     injectStoryCards(lastMessage.text, storyCards),
     lastMessage.mode,
   );
-  //TODO: Refactor these to a factory function if needed
   const userMessage =
     gameMode === GameMode.GM
       ? `${gameState}\n\n${userMessageContent}`
