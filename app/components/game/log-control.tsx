@@ -1,10 +1,17 @@
 import { Button } from "../ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import { UndoIcon, RedoIcon, RefreshCwIcon, SaveIcon } from "lucide-react";
+import {
+  UndoIcon,
+  RedoIcon,
+  RefreshCwIcon,
+  SaveIcon,
+  MoreHorizontal,
+} from "lucide-react";
 import { useTaleStore } from "@/store/useTaleStore";
 interface LogControlProps {
   className?: string;
   handleRetry: () => void;
+  handleContinue: () => void;
   loading?: boolean;
   saving?: boolean;
 }
@@ -13,6 +20,7 @@ export function LogControl({
   className,
   loading = false,
   handleRetry,
+  handleContinue,
   saving = false,
 }: LogControlProps) {
   const { undo, redo } = useTaleStore();
@@ -52,6 +60,21 @@ export function LogControl({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">Retry</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              onClick={handleContinue}
+              disabled={loading || saving}
+              variant="default"
+              size="icon"
+              className="rounded-none"
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">Continue</TooltipContent>
         </Tooltip>
 
         <Tooltip>

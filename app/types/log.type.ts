@@ -19,4 +19,5 @@ export type LogEntry = {
   text: string;
   isActionError?: boolean;
   actions?: LLMAction[];
+  chainId?: string;
 };

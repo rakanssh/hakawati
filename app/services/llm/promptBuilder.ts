@@ -78,7 +78,6 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     injectStoryCards(lastMessage.text, storyCards),
     lastMessage.mode,
   );
-  //TODO: Refactor these to a factory function if needed
   const userMessage =
     gameMode === GameMode.GM
       ? `${gameState}\n\n${userMessageContent}`
@@ -109,23 +108,53 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     messages.push({ role: "system", content: authorNote });
   }
 
-  const history: ChatMessage[] = [];
-  for (let i = log.length - 1; i >= 0; i--) {
+  // Merge consecutive GM entries with the same chainId into a single assistant message
+  type Merged = { role: "user" | "assistant"; content: string };
+  type AssistantMerged = Merged & { __chainKey: string };
+  const mergedLog: Merged[] = [];
+  for (let i = 0; i < log.length; i++) {
     const entry = log[i];
-    const entryText = injectStoryCards(entry.text, storyCards);
-    const msg: ChatMessage = {
-      role: entry.role === LogEntryRole.PLAYER ? "user" : "assistant",
-      content: injectMode(entryText, entry.mode),
-    };
-    // Skip streaming placeholder
+    const content = injectMode(
+      injectStoryCards(entry.text, storyCards),
+      entry.mode,
+    );
+    if (entry.role === LogEntryRole.GM) {
+      const chainKey = entry.chainId ?? entry.id;
+      const last = mergedLog[mergedLog.length - 1] as
+        | AssistantMerged
+        | undefined;
+      if (
+        last &&
+        last.role === "assistant" &&
+        (last as AssistantMerged).__chainKey === chainKey
+      ) {
+        last.content += content;
+      } else {
+        const merged: AssistantMerged = {
+          role: "assistant",
+          content,
+          __chainKey: chainKey,
+        };
+        mergedLog.push(merged);
+      }
+    } else {
+      mergedLog.push({ role: "user", content });
+    }
+  }
+
+  const history: ChatMessage[] = [];
+  for (let i = mergedLog.length - 1; i >= 0; i--) {
+    const msg = mergedLog[i];
+    // Skip empty assistant placeholders
     if (
       msg.role === "assistant" &&
       (msg.content === "..." || msg.content.trim() === "")
     ) {
       continue;
     }
-    if (canAddWithUser(msg, [...messages, ...history])) {
-      history.unshift(msg);
+    const chatMsg: ChatMessage = { role: msg.role, content: msg.content };
+    if (canAddWithUser(chatMsg, [...messages, ...history])) {
+      history.unshift(chatMsg);
     } else {
       break;
     }
@@ -133,6 +162,19 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
 
   messages.push(...history);
 
+  // Quick fix for continue prompt and preventing duplication of the last user entry.
+  // Until a more robust solution is implemented.
+  const prevEntry = log.at(-2);
+  const lastPlayerMatches =
+    prevEntry?.role === LogEntryRole.PLAYER &&
+    prevEntry.text === lastMessage.text &&
+    (prevEntry.mode ?? LogEntryMode.STORY) === lastMessage.mode;
+  const shouldAppendUser =
+    lastMessage.text.trim().length > 0 && !lastPlayerMatches;
+  if (shouldAppendUser && canAddWithUser(userMsg, messages)) {
+    messages.push(userMsg);
+  }
+  // ---
   return {
     model: model.id,
     messages,

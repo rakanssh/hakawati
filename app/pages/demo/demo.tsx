@@ -17,7 +17,6 @@ import {
 import {
   DicesIcon,
   HandIcon,
-  MessageCircleWarning,
   SendIcon,
   SpeechIcon,
   BookIcon,
@@ -26,15 +25,17 @@ import {
   SaveIcon,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+// tooltips currently unused here after block refactor
 import { nanoid } from "nanoid";
-import { InlineEditableContent, LogEntryBubble } from "@/components/game";
+import {
+  InlineEditableContent,
+  LogEntryBubble,
+  LogBlockBubble,
+} from "@/components/game";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 import { usePersistTale } from "@/hooks/useGameSaves";
+//TODO: move to a prompt file
+const continuePrompt = "Continue the story seamlessy from where it left off.";
 interface Action {
   type: LogEntryMode;
   isRolling: boolean;
@@ -126,18 +127,37 @@ export default function Demo() {
   };
 
   const executeLlmSend = useCallback(
-    async (message: string, mode: LogEntryMode) => {
+    async (message: string, mode: LogEntryMode, append = false) => {
       if (!model) {
         console.error("LLM model not configured.");
         return;
       }
-      const gmResponseId = nanoid();
-      addLog({
-        id: gmResponseId,
-        role: LogEntryRole.GM,
-        text: "...",
-        mode: LogEntryMode.STORY,
-      });
+      let gmResponseId: string;
+      if (append) {
+        const lastEntry = useTaleStore.getState().log.at(-1);
+        if (!lastEntry || lastEntry.role !== LogEntryRole.GM) {
+          console.error("No GM entry to continue.");
+          return;
+        }
+        const chainId = lastEntry.chainId ?? lastEntry.id;
+        gmResponseId = nanoid();
+        addLog({
+          id: gmResponseId,
+          role: LogEntryRole.GM,
+          text: "",
+          mode: LogEntryMode.STORY,
+          chainId,
+        });
+      } else {
+        gmResponseId = nanoid();
+        addLog({
+          id: gmResponseId,
+          role: LogEntryRole.GM,
+          text: "",
+          mode: LogEntryMode.STORY,
+          chainId: gmResponseId,
+        });
+      }
 
       let storyContent = "";
 
@@ -152,9 +172,15 @@ export default function Demo() {
           console.debug(
             `Processing received actions: ${JSON.stringify(actions)}`,
           );
+          const entry = useTaleStore
+            .getState()
+            .log.find((e) => e.id === gmResponseId);
+          updateLogEntry(gmResponseId, {
+            actions: [...(entry?.actions || []), ...actions],
+            isActionError: false,
+          });
           // Only process actions that affect game state in GM mode
           if (gameMode === GameMode.GM && Array.isArray(actions)) {
-            updateLogEntry(gmResponseId, { actions });
             for (const action of actions) {
               switch (action.type) {
                 case "MODIFY_STAT":
@@ -189,7 +215,9 @@ export default function Demo() {
         },
         onActionParseError: () => {
           console.warn("Failed to parse actions from LLM response");
-          updateLogEntry(gmResponseId, { isActionError: true });
+          updateLogEntry(gmResponseId, {
+            isActionError: true,
+          });
         },
         onError: (error) => {
           console.error("LLM Error:", error);
@@ -238,21 +266,62 @@ export default function Demo() {
     randomSeed();
 
     const lastEntry = log.at(-1);
-    const secondLastEntry = log.at(-2);
-
+    if (lastEntry?.role !== LogEntryRole.GM) {
+      console.warn("Cannot retry, last entry is not GM.");
+      return;
+    }
+    const prevEntry = log.at(-2);
     if (
-      lastEntry?.role === LogEntryRole.GM &&
-      secondLastEntry?.role === LogEntryRole.PLAYER
+      prevEntry?.role === LogEntryRole.GM &&
+      (prevEntry.chainId ?? prevEntry.id) ===
+        (lastEntry.chainId ?? lastEntry.id)
     ) {
       removeLastLogEntry();
-      executeLlmSend(
-        secondLastEntry.text,
-        secondLastEntry.mode ?? LogEntryMode.STORY,
-      );
-    } else {
-      console.warn("Cannot retry, log state is not as expected.");
+      executeLlmSend(continuePrompt, LogEntryMode.STORY, true);
+      return;
     }
+    if (prevEntry?.role === LogEntryRole.PLAYER) {
+      removeLastLogEntry();
+      executeLlmSend(prevEntry.text, prevEntry.mode ?? LogEntryMode.STORY);
+      return;
+    }
+    console.warn("Cannot retry, log state is not as expected.");
   };
+
+  const handleContinue = () => {
+    if (loading) return;
+    const lastEntry = log.at(-1);
+    if (lastEntry?.role !== LogEntryRole.GM) return;
+    executeLlmSend(continuePrompt, LogEntryMode.STORY, true);
+  };
+
+  type LogBlock = { role: LogEntryRole; chainId?: string; entries: typeof log };
+
+  const blocks: LogBlock[] = (() => {
+    const result: LogBlock[] = [];
+    for (const entry of log) {
+      const prev = result[result.length - 1] as LogBlock | undefined;
+      const entryChain =
+        entry.role === LogEntryRole.GM
+          ? (entry.chainId ?? entry.id)
+          : undefined;
+      const prevChain = prev?.chainId;
+      const canChain =
+        entry.role === LogEntryRole.GM &&
+        prev?.role === LogEntryRole.GM &&
+        prevChain === entryChain;
+      if (canChain) {
+        prev.entries.push(entry);
+      } else {
+        result.push({
+          role: entry.role,
+          chainId: entryChain,
+          entries: [entry],
+        });
+      }
+    }
+    return result;
+  })();
 
   // Shared content component for both modes
   const renderMainContent = () => (
@@ -262,52 +331,65 @@ export default function Demo() {
         viewportRef={viewportRef}
         onViewportScroll={handleViewportScroll}
       >
-        {log.length > 0 ? (
-          log.map((entry) =>
-            currentlyEditingLogId === entry.id ? (
-              <div key={entry.id} className="bg-accent/50 rounded-md p-0">
-                <InlineEditableContent
-                  initialValue={entry.text}
-                  onCommit={(next) => {
-                    updateLogEntry(entry.id, { text: next });
-                    setCurrentlyEditingLogId(null);
-                  }}
-                  onCancel={() => setCurrentlyEditingLogId(null)}
-                />
-              </div>
-            ) : (
-              <div
-                key={entry.id}
-                className={`whitespace-pre-wrap hover:bg-accent/50 rounded-md mt-2 cursor-pointer ${
-                  currentlyEditingLogId === entry.id ? "bg-accent" : ""
-                }`}
-                onClick={() => setCurrentlyEditingLogId(entry.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    setCurrentlyEditingLogId(entry.id);
+        {blocks.length > 0 ? (
+          blocks.map((block) => (
+            <div key={block.entries[0].id} className="mt-2">
+              {block.role === LogEntryRole.GM ? (
+                <LogBlockBubble
+                  block={block}
+                  onEditStart={(entryId) => setCurrentlyEditingLogId(entryId)}
+                  renderEntry={(entry, onClick) =>
+                    currentlyEditingLogId === entry.id ? (
+                      <InlineEditableContent
+                        initialValue={entry.text}
+                        onCommit={(next) => {
+                          updateLogEntry(entry.id, { text: next });
+                          setCurrentlyEditingLogId(null);
+                        }}
+                        onCancel={() => setCurrentlyEditingLogId(null)}
+                        variant="inline"
+                        className="bg-accent py-0.5 border-b-1 border-b-amber-700/25"
+                      />
+                    ) : (
+                      <span className="cursor-pointer" onClick={onClick}>
+                        {entry.text}
+                      </span>
+                    )
                   }
-                }}
-              >
-                <LogEntryBubble entry={entry} />
-                {entry.isActionError && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="mr-1 ml-1 text-muted-foreground hover:text-foreground"
-                      >
-                        <MessageCircleWarning />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-xs">
-                      <p>Failed to parse actions returned with this message.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-            ),
-          )
+                />
+              ) : (
+                block.entries.map((entry) =>
+                  currentlyEditingLogId === entry.id ? (
+                    <div key={entry.id} className="bg-accent/50 rounded-md p-0">
+                      <InlineEditableContent
+                        initialValue={entry.text}
+                        onCommit={(next) => {
+                          updateLogEntry(entry.id, { text: next });
+                          setCurrentlyEditingLogId(null);
+                        }}
+                        onCancel={() => setCurrentlyEditingLogId(null)}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      key={entry.id}
+                      className={`whitespace-pre-wrap hover:bg-accent/50 rounded-md cursor-pointer ${
+                        currentlyEditingLogId === entry.id ? "bg-accent" : ""
+                      }`}
+                      onClick={() => setCurrentlyEditingLogId(entry.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          setCurrentlyEditingLogId(entry.id);
+                        }
+                      }}
+                    >
+                      <LogEntryBubble entry={entry} />
+                    </div>
+                  ),
+                )
+              )}
+            </div>
+          ))
         ) : (
           <></>
         )}
@@ -395,6 +477,7 @@ export default function Demo() {
             )}
           </Button>
           <LogControl
+            handleContinue={handleContinue}
             handleRetry={handleRetry}
             loading={loading}
             saving={saving}

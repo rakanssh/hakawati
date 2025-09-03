@@ -224,9 +224,7 @@ export const useTaleStore = create<TaleStoreType>()(
       removeLastLogEntry: () =>
         set((state) => {
           const lastEntry = state.log.at(-1);
-          if (!lastEntry) {
-            return {};
-          }
+          if (!lastEntry) return {};
           const stateChanges = undoEntryActions(state, lastEntry);
           return { ...stateChanges, log: state.log.slice(0, -1) };
         }),
@@ -304,29 +302,25 @@ export const useTaleStore = create<TaleStoreType>()(
       undo: () => {
         set((state) => {
           const lastLog = state.log[state.log.length - 1];
-          if (lastLog) {
-            const stateChanges = undoEntryActions(state, lastLog);
-            return {
-              ...stateChanges,
-              log: state.log.slice(0, -1),
-              undoStack: [...state.undoStack, lastLog],
-            };
-          }
-          return {};
+          if (!lastLog) return {};
+          const stateChanges = undoEntryActions(state, lastLog);
+          return {
+            ...stateChanges,
+            log: state.log.slice(0, -1),
+            undoStack: [...state.undoStack, lastLog],
+          };
         });
       },
       redo: () => {
         set((state) => {
-          const lastLog = state.undoStack[state.undoStack.length - 1];
-          if (lastLog) {
-            const stateChanges = redoEntryActions(state, lastLog);
-            return {
-              ...stateChanges,
-              log: [...state.log, lastLog],
-              undoStack: state.undoStack.slice(0, -1),
-            };
-          }
-          return {};
+          const lastUndone = state.undoStack[state.undoStack.length - 1];
+          if (!lastUndone) return {};
+          const stateChanges = redoEntryActions(state, lastUndone);
+          return {
+            ...stateChanges,
+            log: [...state.log, lastUndone],
+            undoStack: state.undoStack.slice(0, -1),
+          };
         });
       },
     }),

@@ -4,11 +4,19 @@ interface InlineEditableContentProps {
   initialValue: string;
   onCommit: (next: string) => void;
   onCancel: () => void;
+  variant?: "block" | "inline";
+  className?: string;
 }
 
 export function InlineEditableContent(props: InlineEditableContentProps) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const { initialValue, onCommit, onCancel } = props;
+  const {
+    initialValue,
+    onCommit,
+    onCancel,
+    variant = "block",
+    className,
+  } = props;
 
   useEffect(() => {
     if (ref.current) {
@@ -38,6 +46,21 @@ export function InlineEditableContent(props: InlineEditableContentProps) {
     }
   };
 
+  if (variant === "inline") {
+    return (
+      <span
+        ref={ref as unknown as React.RefObject<HTMLSpanElement>}
+        contentEditable
+        suppressContentEditableWarning
+        onBlur={finish}
+        onKeyDown={onKeyDown}
+        className={`whitespace-pre-wrap break-words outline-none ${className ?? ""}`}
+        role="textbox"
+        aria-multiline="true"
+      />
+    );
+  }
+
   return (
     <div
       ref={ref}
@@ -45,7 +68,7 @@ export function InlineEditableContent(props: InlineEditableContentProps) {
       suppressContentEditableWarning
       onBlur={finish}
       onKeyDown={onKeyDown}
-      className="md:text-base whitespace-pre-wrap break-words outline-none ml-2 pt-2"
+      className={`md:text-base whitespace-pre-wrap break-words outline-none ml-2 pt-2 ${className ?? ""}`}
       style={{ minHeight: 0 }}
       role="textbox"
       aria-multiline="true"

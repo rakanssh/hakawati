@@ -103,6 +103,7 @@ export function useLLM() {
         if (response.actions) {
           callbacks.onActionsReady(response.actions);
         }
+        console.debug(`Response from ${model.id}:`, response);
       }
     } catch (e) {
       callbacks.onError(e);
