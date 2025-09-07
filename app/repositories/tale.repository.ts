@@ -10,6 +10,7 @@ function toRow(s: Tale): TaleRow {
     id: s.id,
     name: s.name,
     description: s.description,
+    thumbnail_data: s.thumbnail ?? null,
     author_note: s.authorNote,
     story_cards: JSON.stringify(s.storyCards),
     scenario_id: s.scenarioId ?? null,
@@ -23,11 +24,31 @@ function toRow(s: Tale): TaleRow {
   };
 }
 
+function toUint8Array(value: unknown): Uint8Array | null {
+  if (value === null || value === undefined) return null;
+  if (value instanceof Uint8Array) return value;
+  if (value instanceof ArrayBuffer) return new Uint8Array(value);
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      try {
+        const arr = JSON.parse(trimmed);
+        if (Array.isArray(arr)) return new Uint8Array(arr as number[]);
+      } catch (_e) {
+        return null;
+      }
+    }
+    return null;
+  }
+  return null;
+}
+
 function fromRow(r: TaleRow): Tale {
   return {
     id: r.id,
     name: r.name,
     description: r.description,
+    thumbnail: toUint8Array(r.thumbnail_data ?? null),
     authorNote: r.author_note,
     storyCards: JSON.parse(r.story_cards),
     scenarioId: r.scenario_id ?? null,
@@ -49,6 +70,7 @@ export async function createTale(input: {
   scenarioId: string;
   name: Tale["name"];
   description: Tale["description"];
+  thumbnail?: Uint8Array | null;
   authorNote: Tale["authorNote"];
   storyCards: Tale["storyCards"];
   stats: Tale["stats"];
@@ -67,6 +89,7 @@ export async function createTale(input: {
     id,
     name: input.name,
     description: input.description,
+    thumbnail: input.thumbnail ?? null,
     authorNote: input.authorNote,
     storyCards: input.storyCards,
     scenarioId,
@@ -80,12 +103,13 @@ export async function createTale(input: {
   });
 
   await db.execute(
-    `INSERT INTO tales (id, name, description, author_note, story_cards, scenario_id, stats, inventory, log, game_mode, undo_stack, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO tales (id, name, description, thumbnail_data, author_note, story_cards, scenario_id, stats, inventory, log, game_mode, undo_stack, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       row.id,
       row.name,
       row.description,
+      row.thumbnail_data ?? null,
       row.author_note,
       row.story_cards,
       row.scenario_id,
@@ -177,6 +201,7 @@ export async function getTales(
       id: string;
       name: string;
       description: string;
+      thumbnail_data?: Uint8Array | null;
       created_at: number;
       scenario_id: string | null;
       updated_at: number;
@@ -187,6 +212,7 @@ export async function getTales(
       id,
       name,
       description,
+      thumbnail_data,
       created_at,
       scenario_id,
       updated_at,
@@ -205,6 +231,7 @@ export async function getTales(
         id: r.id,
         name: r.name,
         description: r.description,
+        thumbnail: toUint8Array(r.thumbnail_data ?? null),
         logCount: r.log_count,
         createdAt: r.created_at,
         scenarioId: r.scenario_id,
@@ -231,6 +258,7 @@ export async function getScenarioTales(
       id: string;
       name: string;
       description: string;
+      thumbnail_data?: Uint8Array | null;
       created_at: number;
       scenario_id: string | null;
       updated_at: number;
@@ -241,6 +269,7 @@ export async function getScenarioTales(
       id,
       name,
       description,
+      thumbnail_data,
       created_at,
       scenario_id,
       updated_at,
@@ -261,6 +290,7 @@ export async function getScenarioTales(
         id: r.id,
         name: r.name,
         description: r.description,
+        thumbnail: toUint8Array(r.thumbnail_data ?? null),
         logCount: r.log_count,
         createdAt: r.created_at,
         scenarioId: r.scenario_id,

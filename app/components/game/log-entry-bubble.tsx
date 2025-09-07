@@ -45,16 +45,14 @@ export function LogEntryBubble({ entry }: LogEntryBubbleProps) {
 
   return (
     <div className="flex flex-col items-start ml-2">
+      {actions && actions.length > 0 && (
+        <div className="flex flex-row mb-2">
+          {actions.map((action, idx) => (
+            <ActionBadge key={`${action.type}-${idx}`} action={action} />
+          ))}
+        </div>
+      )}
       <p className="inline whitespace-pre-wrap break-words">{text}</p>
-      <div className="flex flex-row mt-2">
-        {actions && actions.length > 0 && (
-          <div className="flex flex-row">
-            {actions.map((action) => (
-              <ActionBadge key={action.type} action={action} />
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

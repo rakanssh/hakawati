@@ -70,7 +70,7 @@ export function useScenarioEditor(initial?: Partial<Scenario>) {
     initialStats: initial?.initialStats ?? [],
     initialInventory: initial?.initialInventory ?? [],
     initialStoryCards: initial?.initialStoryCards ?? [],
-    thumbnailWebp: initial?.thumbnailWebp ?? null,
+    thumbnail: initial?.thumbnail ?? null,
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>(null);

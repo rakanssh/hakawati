@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "@tanstack/react-router";
@@ -18,7 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PencilIcon } from "lucide-react";
+import { ArrowLeftIcon, PencilIcon } from "lucide-react";
 import { TrashIcon } from "lucide-react";
 import placeholderImage from "@/assets/scen-ph.png";
 
@@ -40,18 +40,19 @@ export default function TalesHome() {
     deleteTale(id);
   };
 
-  const handleClickCard = async (id: string, e?: React.MouseEvent) => {
-    // Prevent card click if the event target is the delete button or its children
-    if (e?.target instanceof Element && e.target.closest("button")) {
-      return;
-    }
-    await loadIntoGame(id);
-    navigate({ to: "/demo" });
-  };
+  // no-op
 
   return (
-    <div className="container mx-auto py-5 flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto w-full max-w-screen-2xl py-5 flex flex-col gap-4 px-3">
+      <div className="flex gap-4">
+        {/* back button */}
+        <Button
+          variant="default"
+          onClick={() => navigate({ to: "/" })}
+          className="rounded-xs mt-1.5"
+        >
+          <ArrowLeftIcon className="w-4 h-4" />
+        </Button>
         <div className="flex flex-col">
           <Label className="text-xl">Tales</Label>
           <span className="text-sm text-muted-foreground">
@@ -64,42 +65,44 @@ export default function TalesHome() {
       {Boolean(error) && (
         <div className="text-sm text-red-500">Failed to load tales.</div>
       )}
-      <div className="flex flex-col gap-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {items.map(
-          ({ id, name, description, scenarioHead, updatedAt, logCount }) => (
+          ({
+            id,
+            name,
+            description,
+            thumbnail,
+            scenarioHead,
+            updatedAt,
+            logCount,
+          }) => (
             <Card
               key={id}
-              className="flex flex-col p-0 cursor-pointer hover:bg-muted rounded-xs m-0"
-              onClick={(e) => handleClickCard(id, e)}
+              className="flex flex-col rounded-xs gap-1 pt-0 pb-2 border-accent/50"
             >
-              <CardContent className="flex flex-row p-0 pr-2">
+              <CardHeader className="p-0 m-0">
                 <div className="relative">
-                  {scenarioHead?.thumbnailWebp ? (
+                  {thumbnail ? (
                     <img
-                      src={bytesToObjectUrl(
-                        scenarioHead.thumbnailWebp as unknown as Uint8Array,
-                      )}
+                      src={bytesToObjectUrl(thumbnail as unknown as Uint8Array)}
                       alt={`${name} thumbnail`}
-                      className="h-18 w-128 object-cover pr-2"
+                      className="h-48 w-full object-cover"
                     />
                   ) : (
                     <img
                       src={placeholderImage}
                       alt={`${name} thumbnail`}
-                      className="h-18 w-128 object-cover pr-2"
+                      className="h-48 w-full object-cover"
                     />
                   )}
-                  <div className="absolute left-1 top-0 z-10">
+                  <div className="absolute right-1.5 top-0.5 z-10">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="secondary"
                           size="icon"
                           className="h-6 w-6 rounded-full pb-1.5 bg-accent/50"
-                          aria-label="Scenario actions"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                          }}
+                          aria-label="Tale actions"
                         >
                           ...
                         </Button>
@@ -109,31 +112,21 @@ export default function TalesHome() {
                         side="bottom"
                         sideOffset={4}
                         className="rounded-xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                        }}
                       >
                         {scenarioHead?.id && (
                           <DropdownMenuItem
-                            onSelect={(e) => {
-                              e.preventDefault();
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate({
-                                to: `/scenarios/${scenarioHead?.id}`,
-                              });
-                            }}
+                            onSelect={(e) => e.preventDefault()}
+                            onClick={() =>
+                              navigate({ to: `/scenarios/${scenarioHead?.id}` })
+                            }
                             className="rounded-xs text-xs"
                           >
                             <PencilIcon className="w-4 h-4 mr-2" /> Scenario
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleClickDelete(id);
-                          }}
+                          onSelect={(e) => e.preventDefault()}
+                          onClick={() => handleClickDelete(id)}
                           variant="destructive"
                           className="rounded-xs text-xs"
                         >
@@ -142,29 +135,37 @@ export default function TalesHome() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge className="absolute top-1 left-1 text-xs text-muted-foreground bg-accent/50">
+                        {formatRelativeTime(updatedAt)}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      Last played: {formatExactDateTime(updatedAt)}
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <div className="flex flex-row gap-2 pt-1">
-                    <p className="text-sm font-medium">{name}</p>
-                    <Badge variant="outline" className="rounded-xs text-xs">
-                      {logCount} {logCount === 1 ? "turn" : "turns"}
-                    </Badge>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge variant="outline" className="rounded-xs text-xs">
-                          {formatRelativeTime(updatedAt)}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">
-                        Last played: {formatExactDateTime(updatedAt)}
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                  <p className="line-clamp-2 text-sm text-muted-foreground">
-                    {description}
-                  </p>
+              </CardHeader>
+              <CardContent className="px-2 flex flex-col justify-between  gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold">{name}</span>
+                  <Badge variant="outline" className="rounded-xs text-xs">
+                    {logCount} {logCount === 1 ? "turn" : "turns"}
+                  </Badge>
                 </div>
-                <div className="flex flex-col justify-center ml-2"></div>
+                <p className="line-clamp-3 text-sm text-muted-foreground h-16 rounded-xs">
+                  {description}
+                </p>
+                <Button
+                  onClick={async () => {
+                    await loadIntoGame(id);
+                    navigate({ to: "/demo" });
+                  }}
+                  className="w-full rounded-xs"
+                >
+                  Load Tale
+                </Button>
               </CardContent>
             </Card>
           ),

@@ -10,12 +10,16 @@ import { useTaleStore } from "@/store/useTaleStore";
 import { PaginatedResponse } from "@/types/db.type";
 import { TaleHead } from "@/types/tale.type";
 
-export async function initTale(scenarioId: string): Promise<string> {
+export async function initTale(
+  scenarioId: string,
+  thumbnail: Uint8Array | null,
+): Promise<string> {
   const state = useTaleStore.getState();
   const id = await createTale({
     scenarioId,
     name: state.name,
     description: state.description,
+    thumbnail,
     authorNote: state.authorNote,
     storyCards: state.storyCards,
     stats: state.stats,

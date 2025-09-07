@@ -47,12 +47,12 @@ export default function ScenarioEdit() {
       <Separator />
       <ScenarioBasicsFields
         name={scenario.name}
-        thumbnailWebp={scenario.thumbnailWebp}
+        thumbnail={scenario.thumbnail}
         initialDescription={scenario.initialDescription}
         initialAuthorNote={scenario.initialAuthorNote}
         onNameChange={(name) => setScenario({ ...scenario, name })}
         onThumbnailChange={(bytes) =>
-          setScenario({ ...scenario, thumbnailWebp: bytes })
+          setScenario({ ...scenario, thumbnail: bytes })
         }
         onInitialDescriptionChange={(text) =>
           setScenario({ ...scenario, initialDescription: text })

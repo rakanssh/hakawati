@@ -7,7 +7,7 @@ export type ScenarioRow = {
   initial_stats: string;
   initial_inventory: string;
   initial_story_cards: string;
-  thumbnail_webp?: Uint8Array | null;
+  thumbnail_data?: Uint8Array | null;
   created_at: number;
   updated_at: number;
 };
@@ -16,6 +16,7 @@ export type TaleRow = {
   id: string;
   name: string;
   description: string;
+  thumbnail_data?: Uint8Array | null;
   author_note: string;
   story_cards: string;
   scenario_id: string | null;

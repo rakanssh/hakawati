@@ -34,8 +34,7 @@ import {
 } from "@/components/game";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 import { usePersistTale } from "@/hooks/useGameSaves";
-//TODO: move to a prompt file
-const continuePrompt = "Continue the story seamlessy from where it left off.";
+import { CONTINUE_SYSTEM_PROMPT } from "@/prompts/system";
 interface Action {
   type: LogEntryMode;
   isRolling: boolean;
@@ -172,41 +171,44 @@ export default function Demo() {
           console.debug(
             `Processing received actions: ${JSON.stringify(actions)}`,
           );
-          const entry = useTaleStore
-            .getState()
-            .log.find((e) => e.id === gmResponseId);
-          updateLogEntry(gmResponseId, {
-            actions: [...(entry?.actions || []), ...actions],
-            isActionError: false,
-          });
-          // Only process actions that affect game state in GM mode
-          if (gameMode === GameMode.GM && Array.isArray(actions)) {
+          if (Array.isArray(actions)) {
+            updateLogEntry(gmResponseId, { actions });
             for (const action of actions) {
               switch (action.type) {
-                case "MODIFY_STAT":
-                  if (action.payload.name && action.payload.value) {
-                    modifyStat(action.payload.name, action.payload.value);
+                case "MODIFY_STAT": {
+                  const name = action.payload.name;
+                  const value = action.payload.value;
+                  if (name && typeof value === "number") {
+                    modifyStat(name, value);
                   }
                   break;
-                case "ADD_TO_INVENTORY":
-                  if (action.payload.item) {
-                    addToInventory(action.payload.item);
+                }
+                case "ADD_TO_INVENTORY": {
+                  const item = action.payload.item;
+                  if (typeof item === "string" && item.length > 0) {
+                    addToInventory(item);
                   }
                   break;
-                case "REMOVE_FROM_INVENTORY":
-                  if (action.payload.item) {
-                    removeFromInventoryByName(action.payload.item);
+                }
+                case "REMOVE_FROM_INVENTORY": {
+                  const item = action.payload.item;
+                  if (typeof item === "string" && item.length > 0) {
+                    removeFromInventoryByName(item);
                   }
                   break;
-                case "ADD_TO_STATS":
-                  if (action.payload.name && action.payload.value) {
+                }
+                case "ADD_TO_STATS": {
+                  const name = action.payload.name;
+                  const value = action.payload.value;
+                  if (name && typeof value === "number") {
                     addToStats({
-                      name: action.payload.name,
-                      value: action.payload.value,
+                      name,
+                      value,
                       range: [0, 100],
                     });
                   }
                   break;
+                }
                 default:
                   console.warn("Unknown action type:", action.type);
               }
@@ -277,7 +279,7 @@ export default function Demo() {
         (lastEntry.chainId ?? lastEntry.id)
     ) {
       removeLastLogEntry();
-      executeLlmSend(continuePrompt, LogEntryMode.STORY, true);
+      executeLlmSend(CONTINUE_SYSTEM_PROMPT, LogEntryMode.STORY, true);
       return;
     }
     if (prevEntry?.role === LogEntryRole.PLAYER) {
@@ -292,7 +294,7 @@ export default function Demo() {
     if (loading) return;
     const lastEntry = log.at(-1);
     if (lastEntry?.role !== LogEntryRole.GM) return;
-    executeLlmSend(continuePrompt, LogEntryMode.STORY, true);
+    executeLlmSend(CONTINUE_SYSTEM_PROMPT, LogEntryMode.STORY, true);
   };
 
   type LogBlock = { role: LogEntryRole; chainId?: string; entries: typeof log };
@@ -325,7 +327,7 @@ export default function Demo() {
 
   // Shared content component for both modes
   const renderMainContent = () => (
-    <>
+    <div className="flex flex-col h-full">
       <ScrollArea
         className="flex-1 px-2 py-0 min-h-0"
         viewportRef={viewportRef}
@@ -348,7 +350,7 @@ export default function Demo() {
                         }}
                         onCancel={() => setCurrentlyEditingLogId(null)}
                         variant="inline"
-                        className="bg-accent py-0.5 border-b-1 border-b-amber-700/25"
+                        className="bg-amber-300/10 py-0.5 border-b-1 border-b-amber-700/25"
                       />
                     ) : (
                       <span className="cursor-pointer" onClick={onClick}>
@@ -487,7 +489,7 @@ export default function Demo() {
       <div className="pointer-events-none absolute inset-0">
         <OutletWrapper />
       </div>
-    </>
+    </div>
   );
 
   return (

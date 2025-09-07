@@ -3,6 +3,7 @@ CREATE TABLE
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         description TEXT NOT NULL,
+        thumbnail_data BLOB,
         author_note TEXT NOT NULL,
         story_cards TEXT NOT NULL,
         scenario_id TEXT,

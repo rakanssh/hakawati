@@ -24,7 +24,7 @@ export async function saveScenario(
     initialStats: scenario.initialStats ?? [],
     initialInventory: scenario.initialInventory ?? [],
     initialStoryCards: scenario.initialStoryCards ?? [],
-    thumbnailWebp: scenario.thumbnailWebp ?? null,
+    thumbnail: scenario.thumbnail ?? null,
   };
   return upsertScenario(normalized, id);
 }
@@ -72,5 +72,6 @@ export async function initTaleFromScenario(
     storyCards: scenario.initialStoryCards,
     log: [],
   });
-  return initTale(scenarioId);
+  // Copy scenario thumbnail into tale at creation time
+  return initTale(scenarioId, scenario.thumbnail ?? null);
 }

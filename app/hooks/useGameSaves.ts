@@ -15,7 +15,7 @@ export function useInitTale() {
     setSaving(true);
     setError(null);
     try {
-      return await initTale(scenarioId);
+      return await initTale(scenarioId, null);
     } catch (e) {
       setError(e);
       throw e;

@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PencilIcon, TrashIcon } from "lucide-react";
+import { ArrowLeftIcon, PencilIcon, TrashIcon } from "lucide-react";
 import placeholderImage from "@/assets/scen-ph.png";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -30,13 +30,23 @@ export default function ScenariosHome() {
     useScenariosList();
   const navigate = useNavigate();
   return (
-    <div className="container mx-auto py-5 flex flex-col gap-4">
+    <div className="mx-auto w-full max-w-screen-2xl py-5 flex flex-col gap-4 px-3">
       <div className="flex items-center justify-between">
-        <div className="flex flex-col">
-          <Label className="text-xl">Scenarios</Label>
-          <span className="text-sm text-muted-foreground">
-            Browse and manage your scenarios
-          </span>
+        <div className="flex gap-4">
+          {/* back button */}
+          <Button
+            variant="default"
+            onClick={() => navigate({ to: "/" })}
+            className="rounded-xs mt-1.5"
+          >
+            <ArrowLeftIcon className="w-4 h-4" />
+          </Button>
+          <div className="flex flex-col">
+            <Label className="text-xl">Scenarios</Label>
+            <span className="text-sm text-muted-foreground">
+              Browse and manage your scenarios
+            </span>
+          </div>
         </div>
         <Button
           onClick={() => navigate({ to: "/scenarios/new" })}
@@ -45,107 +55,104 @@ export default function ScenariosHome() {
           Create Scenario
         </Button>
       </div>
+
       <Separator />
       {loading && <div className="text-sm text-muted-foreground">Loading…</div>}
       {Boolean(error) && (
         <div className="text-sm text-red-500">Failed to load scenarios.</div>
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {items.map(
-          ({ id, name, initialDescription, thumbnailWebp, updatedAt }) => {
-            return (
-              <Card
-                key={id}
-                className="flex flex-col rounded-xs gap-1 pt-0 pb-2 border-accent/50"
-              >
-                <CardHeader className="p-0 m-0">
-                  <div className="relative">
-                    {thumbnailWebp ? (
-                      <img
-                        src={bytesToObjectUrl(
-                          thumbnailWebp as unknown as Uint8Array,
-                        )}
-                        alt={`${name} thumbnail`}
-                        className="h-48 w-full object-cover"
-                      />
-                    ) : (
-                      <img
-                        src={placeholderImage}
-                        alt={`${name} thumbnail`}
-                        className="h-48 w-full object-cover"
-                      />
-                    )}
-                    <div className="absolute right-1.5 top-0.5 z-10">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            className="h-6 w-6 rounded-full pb-1.5 bg-accent/50"
-                            aria-label="Scenario actions"
-                          >
-                            ...
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="end"
-                          side="bottom"
-                          sideOffset={4}
-                          className="rounded-xs"
+        {items.map(({ id, name, initialDescription, thumbnail, updatedAt }) => {
+          return (
+            <Card
+              key={id}
+              className="flex flex-col rounded-xs gap-1 pt-0 pb-2 border-accent/50"
+            >
+              <CardHeader className="p-0 m-0">
+                <div className="relative">
+                  {thumbnail ? (
+                    <img
+                      src={bytesToObjectUrl(thumbnail as unknown as Uint8Array)}
+                      alt={`${name} thumbnail`}
+                      className="h-48 w-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={placeholderImage}
+                      alt={`${name} thumbnail`}
+                      className="h-48 w-full object-cover"
+                    />
+                  )}
+                  <div className="absolute right-1.5 top-0.5 z-10">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="h-6 w-6 rounded-full pb-1.5 bg-accent/50"
+                          aria-label="Scenario actions"
                         >
-                          <DropdownMenuItem
-                            onSelect={(e) => e.preventDefault()}
-                            onClick={() => navigate({ to: `/scenarios/${id}` })}
-                            className="rounded-xs text-xs"
-                          >
-                            <PencilIcon className="w-4 h-4 mr-2" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={(e) => e.preventDefault()}
-                            onClick={() => {
-                              remove(id);
-                            }}
-                            variant="destructive"
-                            className="rounded-xs text-xs"
-                          >
-                            <TrashIcon className="w-4 h-4 mr-2" /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                    {/* Top left date */}{" "}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge className="absolute top-1 left-1 text-xs text-muted-foreground bg-accent/50">
-                          {formatRelativeTime(updatedAt)}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">
-                        Last updated: {formatExactDateTime(updatedAt)}
-                      </TooltipContent>
-                    </Tooltip>
+                          ...
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        side="bottom"
+                        sideOffset={4}
+                        className="rounded-xs"
+                      >
+                        <DropdownMenuItem
+                          onSelect={(e) => e.preventDefault()}
+                          onClick={() => navigate({ to: `/scenarios/${id}` })}
+                          className="rounded-xs text-xs"
+                        >
+                          <PencilIcon className="w-4 h-4 mr-2" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={(e) => e.preventDefault()}
+                          onClick={() => {
+                            remove(id);
+                          }}
+                          variant="destructive"
+                          className="rounded-xs text-xs"
+                        >
+                          <TrashIcon className="w-4 h-4 mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                </CardHeader>
-                <CardContent className="px-2 flex flex-col justify-between  gap-1">
-                  <span className="font-bold">{name}</span>
-                  <div className="flex items-center gap-2"></div>
-                  <p className="line-clamp-3 text-sm text-muted-foreground h-16 rounded-xs">
-                    {initialDescription}
-                  </p>
-                  <Button
-                    onClick={async () => {
-                      await initTaleFromScenario(id);
-                      navigate({ to: "/demo" });
-                    }}
-                    className="w-full rounded-xs"
-                  >
-                    New Tale
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          },
-        )}
+                  {/* Top left date */}{" "}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge className="absolute top-1 left-1 text-xs text-muted-foreground bg-accent/50">
+                        {formatRelativeTime(updatedAt)}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      Last updated: {formatExactDateTime(updatedAt)}
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </CardHeader>
+              <CardContent className="px-2 flex flex-col justify-between  gap-1">
+                <span className="font-bold">{name}</span>
+                <div className="flex items-center gap-2"></div>
+                <p className="line-clamp-3 text-sm text-muted-foreground h-16 rounded-xs">
+                  {initialDescription}
+                </p>
+                <Button
+                  onClick={async () => {
+                    await initTaleFromScenario(id);
+                    navigate({ to: "/demo" });
+                  }}
+                  className="w-full rounded-xs"
+                >
+                  New Tale
+                </Button>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
       {total > limit && (
         <div className="flex items-center justify-end gap-2 ">

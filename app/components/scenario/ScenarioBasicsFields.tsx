@@ -6,7 +6,7 @@ import { useMemo } from "react";
 
 export type ScenarioBasicsFieldsProps = {
   name: string;
-  thumbnailWebp?: Uint8Array | null;
+  thumbnail?: Uint8Array | null;
   initialDescription: string;
   initialAuthorNote: string;
   onNameChange: (name: string) => void;
@@ -17,7 +17,7 @@ export type ScenarioBasicsFieldsProps = {
 
 export function ScenarioBasicsFields({
   name,
-  thumbnailWebp,
+  thumbnail,
   initialDescription,
   initialAuthorNote,
   onNameChange,
@@ -26,8 +26,8 @@ export function ScenarioBasicsFields({
   onInitialAuthorNoteChange,
 }: ScenarioBasicsFieldsProps) {
   const previewUrl = useMemo(
-    () => bytesToObjectUrl(thumbnailWebp ?? null),
-    [thumbnailWebp],
+    () => bytesToObjectUrl(thumbnail ?? null),
+    [thumbnail],
   );
 
   return (

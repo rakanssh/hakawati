@@ -6,6 +6,7 @@ export type Tale = {
   id: string;
   name: string;
   description: string;
+  thumbnail: Uint8Array | null;
   authorNote: string;
   storyCards: StoryCard[];
   scenarioId: string | null;
@@ -22,6 +23,7 @@ export type TaleHead = {
   id: string;
   name: string;
   description: string;
+  thumbnail?: Uint8Array | null;
   createdAt: number;
   scenarioId: string | null;
   logCount: number;
