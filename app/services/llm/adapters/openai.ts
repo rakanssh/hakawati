@@ -16,18 +16,25 @@ export function OpenAiClient(apiKey: string): LLMClient {
     req: ChatRequest,
     signal?: AbortSignal,
   ): Promise<ChatResponse> {
-    const { options } = req;
-    const body = JSON.stringify({
-      ...req,
+    const body = {
+      model: req.model,
       messages: req.messages,
       stream: req.stream,
+      max_tokens: req.max_tokens,
+      options: Object.fromEntries(
+        Object.entries(req.options ?? {}).filter(
+          ([_, value]) => value !== undefined && value !== null,
+        ),
+      ),
       ...(req.responseMode === ResponseMode.RESPONSE_FORMAT && {
+        response_mode: req.responseMode,
         response_format: {
           type: "json_schema",
           json_schema: GM_RESPONSE_JSON_SCHEMA,
         },
       }),
-    });
+    };
+    console.debug(`Sending request to ${req.model}:`, body);
     const headers = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
@@ -37,7 +44,7 @@ export function OpenAiClient(apiKey: string): LLMClient {
       fetch(`${base}/chat/completions`, {
         method: "POST",
         headers,
-        body,
+        body: JSON.stringify(body),
         signal,
       }).then(async (r) => {
         if (!r.ok) throw new Error(await r.text());
@@ -52,21 +59,6 @@ export function OpenAiClient(apiKey: string): LLMClient {
               completion_tokens: 0,
               total_tokens: 0,
             },
-            ...(options?.temperature && { temperature: options.temperature }),
-            ...(options?.topP && { top_p: options.topP }),
-            ...(options?.topK && { top_k: options.topK }),
-            ...(options?.frequencyPenalty && {
-              frequency_penalty: options.frequencyPenalty,
-            }),
-            ...(options?.presencePenalty && {
-              presence_penalty: options.presencePenalty,
-            }),
-            ...(options?.repetitionPenalty && {
-              repetition_penalty: options.repetitionPenalty,
-            }),
-            ...(options?.minP && { min_p: options.minP }),
-            ...(options?.topA && { top_a: options.topA }),
-            ...(options?.seed && { seed: options.seed }),
           };
         } else {
           const json = await r.json();

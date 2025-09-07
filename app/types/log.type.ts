@@ -5,6 +5,7 @@ export enum LogEntryMode {
   DO = "do",
   STORY = "story",
   DIRECT = "direct",
+  CONTINUE = "continue",
 }
 
 export enum LogEntryRole {

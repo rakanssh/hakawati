@@ -34,7 +34,6 @@ import {
 } from "@/components/game";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 import { usePersistTale } from "@/hooks/useGameSaves";
-import { CONTINUE_SYSTEM_PROMPT } from "@/prompts/system";
 interface Action {
   type: LogEntryMode;
   isRolling: boolean;
@@ -128,8 +127,23 @@ export default function Demo() {
   const executeLlmSend = useCallback(
     async (message: string, mode: LogEntryMode, append = false) => {
       if (!model) {
-        console.error("LLM model not configured.");
+        console.error("LLM model not configsured.");
         return;
+      }
+
+      // Not actually using last text in CONTINUE anymore, but keeping it in case it's needed.
+      let payloadText = message;
+      if (mode === LogEntryMode.CONTINUE) {
+        const currentLog = useTaleStore.getState().log;
+        const lastGm = [...currentLog]
+          .slice()
+          .reverse()
+          .find((e) => e.role === LogEntryRole.GM);
+        if (!lastGm) {
+          console.error("No GM entry to continue.");
+          return;
+        }
+        payloadText = lastGm.text;
       }
       let gmResponseId: string;
       if (append) {
@@ -160,7 +174,7 @@ export default function Demo() {
 
       let storyContent = "";
 
-      await send({ text: message, mode }, model, {
+      await send({ text: payloadText, mode }, model, {
         onStoryStream: (storyChunk) => {
           storyContent += storyChunk;
           updateLogEntry(gmResponseId, {
@@ -234,7 +248,6 @@ export default function Demo() {
       model,
       addLog,
       updateLogEntry,
-      gameMode,
       modifyStat,
       addToInventory,
       removeFromInventoryByName,
@@ -245,6 +258,16 @@ export default function Demo() {
     ],
   );
 
+  const handleContinue = useCallback(() => {
+    if (loading) return;
+    const lastEntry = useTaleStore.getState().log.at(-1);
+    if (lastEntry?.role !== LogEntryRole.GM) return;
+    updateLogEntry(lastEntry.id, {
+      text: lastEntry.text + " ",
+    });
+    executeLlmSend("", LogEntryMode.CONTINUE, true);
+  }, [loading, executeLlmSend, updateLogEntry]);
+
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || !model) return;
 
@@ -253,49 +276,57 @@ export default function Demo() {
       : input;
     const logMode: LogEntryMode = action.type;
 
-    addLog({
-      id: nanoid(),
-      role: LogEntryRole.PLAYER,
-      text: finalMessage,
-      mode: logMode,
-    });
-    setInput("");
-    void executeLlmSend(finalMessage, logMode);
-  }, [input, model, action, addLog, executeLlmSend]);
+    if (logMode === LogEntryMode.STORY) {
+      // For "Story" Input, faux GM entry followed by continue prompt.
+      const lastChainId = log.at(-1)?.chainId;
+      addLog({
+        id: nanoid(),
+        role: LogEntryRole.GM,
+        text: "\n\n" + finalMessage,
+        mode: LogEntryMode.STORY,
+        chainId: lastChainId,
+      });
+      setInput("");
+      handleContinue();
+    } else {
+      addLog({
+        id: nanoid(),
+        role: LogEntryRole.PLAYER,
+        text: finalMessage,
+        mode: logMode,
+      });
+      setInput("");
+      void executeLlmSend(finalMessage, logMode);
+    }
+  }, [input, model, action, addLog, executeLlmSend, handleContinue, log]);
 
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     if (loading) return;
     randomSeed();
 
-    const lastEntry = log.at(-1);
+    const stateLog = useTaleStore.getState().log;
+    const lastEntry = stateLog.at(-1);
     if (lastEntry?.role !== LogEntryRole.GM) {
       console.warn("Cannot retry, last entry is not GM.");
       return;
     }
-    const prevEntry = log.at(-2);
+    const prevEntry = stateLog.at(-2);
     if (
       prevEntry?.role === LogEntryRole.GM &&
       (prevEntry.chainId ?? prevEntry.id) ===
         (lastEntry.chainId ?? lastEntry.id)
     ) {
       removeLastLogEntry();
-      executeLlmSend(CONTINUE_SYSTEM_PROMPT, LogEntryMode.STORY, true);
+      void executeLlmSend("", LogEntryMode.CONTINUE, true);
       return;
     }
     if (prevEntry?.role === LogEntryRole.PLAYER) {
       removeLastLogEntry();
-      executeLlmSend(prevEntry.text, prevEntry.mode ?? LogEntryMode.STORY);
+      void executeLlmSend(prevEntry.text, prevEntry.mode ?? LogEntryMode.STORY);
       return;
     }
     console.warn("Cannot retry, log state is not as expected.");
-  };
-
-  const handleContinue = () => {
-    if (loading) return;
-    const lastEntry = log.at(-1);
-    if (lastEntry?.role !== LogEntryRole.GM) return;
-    executeLlmSend(CONTINUE_SYSTEM_PROMPT, LogEntryMode.STORY, true);
-  };
+  }, [loading, executeLlmSend, removeLastLogEntry, randomSeed]);
 
   type LogBlock = { role: LogEntryRole; chainId?: string; entries: typeof log };
 

@@ -76,7 +76,9 @@ export function useLLM() {
           seed,
         },
       });
-      console.debug(`Sending request to ${model.id}:`, req);
+      console.debug(
+        `Sending request to ${model.id} with response mode: ${responseMode} and API URL: ${useSettingsStore.getState().openAiBaseUrl}`,
+      );
       const res = await sendChat(req, abortRef.current?.signal);
 
       if (res.iterator) {

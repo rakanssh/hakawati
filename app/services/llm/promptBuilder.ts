@@ -6,7 +6,12 @@ import {
   ChatRequestOptions,
   LLMModel,
 } from "./schema";
-import { GM_SYSTEM_PROMPT, STORY_TELLER_SYSTEM_PROMPT } from "@/prompts/system";
+import {
+  CONTINUE_AUTHOR_NOTE,
+  CONTINUE_SYSTEM_PROMPT,
+  GM_SYSTEM_PROMPT,
+  STORY_TELLER_SYSTEM_PROMPT,
+} from "@/prompts/system";
 import { countMessageTokens } from "./tokenCounter";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { GameMode, StoryCard, Item, ResponseMode } from "@/types";
@@ -101,19 +106,34 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
   ) {
     messages.push({ role: "system", content: description });
   }
+
   if (
     authorNote &&
     canAddWithUser({ role: "system", content: authorNote }, messages)
   ) {
     messages.push({ role: "system", content: authorNote });
   }
+  if (
+    lastMessage.mode === LogEntryMode.CONTINUE &&
+    canAddWithUser({ role: "system", content: CONTINUE_AUTHOR_NOTE }, messages)
+  ) {
+    messages.push({ role: "system", content: CONTINUE_AUTHOR_NOTE });
+  }
+
+  //Depending on whether we are continuing or not, the last user message maybe the last message, or second to last.
+  //Filter out last user message
+  console.debug("Log entries:", log);
+  const effectiveLog = log.filter(
+    (entry) =>
+      entry.role !== LogEntryRole.PLAYER || entry.text !== lastMessage.text,
+  );
 
   // Merge consecutive GM entries with the same chainId into a single assistant message
   type Merged = { role: "user" | "assistant"; content: string };
   type AssistantMerged = Merged & { __chainKey: string };
   const mergedLog: Merged[] = [];
-  for (let i = 0; i < log.length; i++) {
-    const entry = log[i];
+  for (let i = 0; i < effectiveLog.length; i++) {
+    const entry = effectiveLog[i];
     const content = injectMode(
       injectStoryCards(entry.text, storyCards),
       entry.mode,
@@ -162,16 +182,7 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
 
   messages.push(...history);
 
-  // Quick fix for continue prompt and preventing duplication of the last user entry.
-  // Until a more robust solution is implemented.
-  const prevEntry = log.at(-2);
-  const lastPlayerMatches =
-    prevEntry?.role === LogEntryRole.PLAYER &&
-    prevEntry.text === lastMessage.text &&
-    (prevEntry.mode ?? LogEntryMode.STORY) === lastMessage.mode;
-  const shouldAppendUser =
-    lastMessage.text.trim().length > 0 && !lastPlayerMatches;
-  if (shouldAppendUser && canAddWithUser(userMsg, messages)) {
+  if (lastMessage.text.trim().length > 0 && canAddWithUser(userMsg, messages)) {
     messages.push(userMsg);
   }
   // ---
@@ -181,7 +192,6 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     stream: true,
     max_tokens: useSettingsStore.getState().maxTokens,
     options: params.options,
-    //override response mode for story mode.
     responseMode:
       gameMode === GameMode.GM ? responseMode : ResponseMode.FREE_FORM,
   };
@@ -192,5 +202,10 @@ function injectMode(text: string, mode?: LogEntryMode): string {
   if (mode === LogEntryMode.STORY) return `${text}`;
   if (mode === LogEntryMode.DO) return `Action: ${text}`;
   if (mode === LogEntryMode.SAY) return `You Say:"${text}"`;
+  //Continue prompt + last ~100 characters of the previous assistant message
+  if (mode === LogEntryMode.CONTINUE) {
+    console.log("text", text);
+    return `${CONTINUE_SYSTEM_PROMPT}`;
+  }
   return text;
 }

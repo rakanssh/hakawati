@@ -70,6 +70,7 @@ export async function initTaleFromScenario(
       name,
     })),
     storyCards: scenario.initialStoryCards,
+    gameMode: scenario.initialGameMode,
     log: [],
   });
   // Copy scenario thumbnail into tale at creation time
