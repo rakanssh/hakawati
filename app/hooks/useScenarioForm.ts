@@ -14,22 +14,22 @@ export function useScenarioForm(
       )
     )
       return;
-    setScenario({
-      ...scenario,
+    setScenario((prev) => ({
+      ...prev,
       initialStats: [
-        ...scenario.initialStats,
+        ...prev.initialStats,
         { name: trimmed, value: 0, range: [0, 100] },
       ],
-    });
+    }));
   };
 
   const updateStat = (
     prevName: string,
     update: Partial<{ name: string; value: number; rangeMax: number }>,
   ) => {
-    setScenario({
-      ...scenario,
-      initialStats: scenario.initialStats.map((s) => {
+    setScenario((prev) => ({
+      ...prev,
+      initialStats: prev.initialStats.map((s) => {
         if (s.name !== prevName) return s;
         const nextName = update.name?.trim() ?? s.name;
         const nextValue =
@@ -46,23 +46,23 @@ export function useScenarioForm(
           range: [s.range[0], nextMax],
         };
       }),
-    });
+    }));
   };
 
   const removeStat = (name: string) => {
-    setScenario({
-      ...scenario,
-      initialStats: scenario.initialStats.filter((s) => s.name !== name),
-    });
+    setScenario((prev) => ({
+      ...prev,
+      initialStats: prev.initialStats.filter((s) => s.name !== name),
+    }));
   };
 
   const addInventoryItem = (name: string) => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    setScenario({
-      ...scenario,
-      initialInventory: [...scenario.initialInventory, trimmed],
-    });
+    setScenario((prev) => ({
+      ...prev,
+      initialInventory: [...prev.initialInventory, trimmed],
+    }));
   };
 
   const updateInventoryItem = (index: number, name: string) => {
@@ -72,35 +72,37 @@ export function useScenarioForm(
   };
 
   const removeInventoryItem = (index: number) => {
-    const copy = [...scenario.initialInventory];
-    copy.splice(index, 1);
-    setScenario({ ...scenario, initialInventory: copy });
+    setScenario((prev) => {
+      const copy = [...prev.initialInventory];
+      copy.splice(index, 1);
+      return { ...prev, initialInventory: copy };
+    });
   };
 
   const addStoryCard = (input: StoryCardInput) => {
-    setScenario({
-      ...scenario,
+    setScenario((prev) => ({
+      ...prev,
       initialStoryCards: [
-        ...scenario.initialStoryCards,
+        ...prev.initialStoryCards,
         { id: nanoid(12), ...input },
       ],
-    });
+    }));
   };
 
   const updateStoryCard = (id: string, update: Partial<StoryCardInput>) => {
-    setScenario({
-      ...scenario,
-      initialStoryCards: scenario.initialStoryCards.map((c) =>
+    setScenario((prev) => ({
+      ...prev,
+      initialStoryCards: prev.initialStoryCards.map((c) =>
         c.id === id ? { ...c, ...update } : c,
       ),
-    });
+    }));
   };
 
   const removeStoryCard = (id: string) => {
-    setScenario({
-      ...scenario,
-      initialStoryCards: scenario.initialStoryCards.filter((c) => c.id !== id),
-    });
+    setScenario((prev) => ({
+      ...prev,
+      initialStoryCards: prev.initialStoryCards.filter((c) => c.id !== id),
+    }));
   };
 
   return {

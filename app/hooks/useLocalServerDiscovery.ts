@@ -13,9 +13,17 @@ const knownNames = ["ollama", "localai"];
 const knownPorts = [11434, 8000, 8080, 3000, 5000, 7860];
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort("timeout"), ms);
-  return promise.finally(() => clearTimeout(timeout));
+  let timeoutId: NodeJS.Timeout | number | undefined;
+  return new Promise<T>((resolve, reject) => {
+    timeoutId = setTimeout(
+      () => reject(new Error("timeout")),
+      ms,
+    ) as unknown as number;
+    promise
+      .then((value) => resolve(value))
+      .catch((err) => reject(err))
+      .finally(() => clearTimeout(timeoutId as number));
+  });
 }
 
 async function probeOpenAICompatible(
@@ -39,7 +47,7 @@ async function probeOpenAICompatible(
         if (hasModelsArray) {
           return {
             baseUrl,
-            label: await derievLabel(baseUrl),
+            label: await deriveLabel(baseUrl),
             requiresAuth: false,
           };
         }
@@ -48,7 +56,7 @@ async function probeOpenAICompatible(
       }
       return {
         baseUrl,
-        label: await derievLabel(baseUrl),
+        label: await deriveLabel(baseUrl),
         requiresAuth: false,
       };
     }
@@ -56,7 +64,7 @@ async function probeOpenAICompatible(
     if (response.status === 401 || response.status === 403) {
       return {
         baseUrl,
-        label: await derievLabel(baseUrl),
+        label: await deriveLabel(baseUrl),
         requiresAuth: true,
       };
     }
@@ -66,7 +74,7 @@ async function probeOpenAICompatible(
   return null;
 }
 
-async function derievLabel(baseUrl: string): Promise<string> {
+async function deriveLabel(baseUrl: string): Promise<string> {
   const port = new URL(baseUrl).port;
   return (
     (await labelByHome(baseUrl)) ?? `Local server ${port ? `:${port}` : ""}`

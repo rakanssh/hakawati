@@ -6,56 +6,35 @@ import {
   getScenarioTales,
   deleteTale,
 } from "@/repositories/tale.repository";
-import { useTaleStore } from "@/store/useTaleStore";
 import { PaginatedResponse } from "@/types/db.type";
-import { TaleHead } from "@/types/tale.type";
+import { createTaleDTO, TaleHead, updateTaleDTO } from "@/types/tale.type";
 
-export async function initTale(
-  scenarioId: string,
-  thumbnail: Uint8Array | null,
-): Promise<string> {
-  const state = useTaleStore.getState();
+export async function initTale(tale: createTaleDTO): Promise<string> {
   const id = await createTale({
-    scenarioId,
-    name: state.name,
-    description: state.description,
-    thumbnail,
-    authorNote: state.authorNote,
-    storyCards: state.storyCards,
-    stats: state.stats,
-    inventory: state.inventory,
-    log: state.log,
-    gameMode: state.gameMode,
-    undoStack: state.undoStack,
+    scenarioId: tale.scenarioId,
+    name: tale.name,
+    description: tale.description,
+    thumbnail: tale.thumbnail,
+    authorNote: tale.authorNote,
+    storyCards: tale.storyCards,
+    stats: tale.stats,
+    inventory: tale.inventory,
+    log: tale.log,
+    gameMode: tale.gameMode,
+    undoStack: tale.undoStack,
   });
-  useTaleStore.setState({ id });
   return id;
 }
 
-export async function persistCurrentTale(taleId: string): Promise<void> {
-  const state = useTaleStore.getState();
+export async function persistCurrentTale({
+  id,
+  tale,
+}: {
+  id: string;
+  tale: updateTaleDTO;
+}): Promise<void> {
   await updateTale({
-    id: taleId,
-    name: state.name,
-    description: state.description,
-    authorNote: state.authorNote,
-    storyCards: state.storyCards,
-    stats: state.stats,
-    inventory: state.inventory,
-    log: state.log,
-    gameMode: state.gameMode,
-    undoStack: state.undoStack,
-    updatedAt: Date.now(),
-  });
-}
-
-export async function loadTaleIntoGame(taleId: string): Promise<void> {
-  const tale = await getTale(taleId);
-  if (!tale) {
-    throw new Error("Tale not found");
-  }
-  useTaleStore.setState({
-    id: tale.id,
+    id,
     name: tale.name,
     description: tale.description,
     authorNote: tale.authorNote,
@@ -65,7 +44,12 @@ export async function loadTaleIntoGame(taleId: string): Promise<void> {
     log: tale.log,
     gameMode: tale.gameMode,
     undoStack: tale.undoStack,
+    updatedAt: Date.now(),
   });
+}
+
+export async function getTaleById(taleId: string) {
+  return getTale(taleId);
 }
 
 export async function getAllTales(

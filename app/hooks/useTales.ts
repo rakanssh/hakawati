@@ -1,40 +1,29 @@
-import { useCallback, useEffect, useState } from "react";
-import {
-  getAllTales,
-  loadTaleIntoGame,
-  deleteTaleById,
-} from "@/services/tale.service";
+import { useCallback } from "react";
+import { getAllTales, deleteTaleById } from "@/services/tale.service";
+import { useLoadTale } from "@/hooks/useGameSaves";
 import { TaleHead } from "@/types/tale.type";
+import { usePaginatedList } from "@/hooks/usePaginatedList";
 
 export function useTalesList(initialPage = 1, initialLimit = 12) {
-  const [items, setItems] = useState<TaleHead[]>([]);
-  const [page, setPage] = useState(initialPage);
-  const [limit, setLimit] = useState(initialLimit);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<unknown>(null);
+  const {
+    items,
+    page,
+    limit,
+    total,
+    setPage,
+    setLimit,
+    loading,
+    error,
+    refresh,
+  } = usePaginatedList<TaleHead>(getAllTales, initialPage, initialLimit);
+  const { load } = useLoadTale();
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resp = await getAllTales(page, limit);
-      setItems(resp.data);
-      setTotal(resp.total);
-    } catch (e) {
-      setError(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, limit]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  const loadIntoGame = useCallback(async (id: string) => {
-    await loadTaleIntoGame(id);
-  }, []);
+  const loadIntoGame = useCallback(
+    async (id: string) => {
+      await load(id);
+    },
+    [load],
+  );
 
   const deleteTale = useCallback(
     async (id: string) => {

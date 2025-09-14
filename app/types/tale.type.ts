@@ -9,7 +9,7 @@ export type Tale = {
   thumbnail: Uint8Array | null;
   authorNote: string;
   storyCards: StoryCard[];
-  scenarioId: string | null;
+  scenarioId?: string;
   stats: Stat[];
   inventory: Item[];
   log: LogEntry[];
@@ -19,6 +19,8 @@ export type Tale = {
   updatedAt: number;
 };
 
+export type createTaleDTO = Omit<Tale, "id" | "createdAt" | "updatedAt">;
+export type updateTaleDTO = Omit<Tale, "createdAt" | "updatedAt">;
 export type TaleHead = {
   id: string;
   name: string;

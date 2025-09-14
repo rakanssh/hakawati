@@ -33,6 +33,7 @@ function toRow(id: string, s: Scenario, ts: number): ScenarioRow {
     initial_inventory: JSON.stringify(s.initialInventory),
     initial_story_cards: JSON.stringify(s.initialStoryCards),
     thumbnail_data: s.thumbnail ?? null,
+    opening_text: s.openingText ?? "",
     created_at: ts,
     updated_at: ts,
   };
@@ -50,6 +51,7 @@ function fromRow(r: ScenarioRow): Scenario {
     initialInventory: JSON.parse(r.initial_inventory),
     initialStoryCards: JSON.parse(r.initial_story_cards),
     thumbnail: toUint8Array(r.thumbnail_data ?? null),
+    openingText: r.opening_text ?? "",
   };
 }
 
@@ -62,9 +64,9 @@ export async function upsertScenario(
   const scenarioId = id ?? uuidv4();
   const row = toRow(scenarioId, input, now);
   await db.execute(
-    `INSERT INTO scenarios (id, name, initial_game_mode, initial_description, initial_author_note, initial_stats, initial_inventory, initial_story_cards, thumbnail_data, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-     ON CONFLICT(id) DO UPDATE SET
+    `INSERT INTO scenarios (id, name, initial_game_mode, initial_description, initial_author_note, initial_stats, initial_inventory, initial_story_cards, thumbnail_data, opening_text, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
        name=excluded.name,
        initial_game_mode=excluded.initial_game_mode,
        initial_description=excluded.initial_description,
@@ -73,6 +75,7 @@ export async function upsertScenario(
        initial_inventory=excluded.initial_inventory,
        initial_story_cards=excluded.initial_story_cards,
        thumbnail_data=excluded.thumbnail_data,
+       opening_text=excluded.opening_text,
        updated_at=excluded.updated_at`,
     [
       row.id,
@@ -84,6 +87,7 @@ export async function upsertScenario(
       row.initial_inventory,
       row.initial_story_cards,
       row.thumbnail_data ?? null,
+      row.opening_text ?? "",
       row.created_at,
       row.updated_at,
     ],

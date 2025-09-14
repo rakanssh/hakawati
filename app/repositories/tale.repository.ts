@@ -51,7 +51,7 @@ function fromRow(r: TaleRow): Tale {
     thumbnail: toUint8Array(r.thumbnail_data ?? null),
     authorNote: r.author_note,
     storyCards: JSON.parse(r.story_cards),
-    scenarioId: r.scenario_id ?? null,
+    scenarioId: r.scenario_id ?? undefined,
     stats: JSON.parse(r.stats),
     inventory: JSON.parse(r.inventory),
     log: JSON.parse(r.log),
@@ -67,7 +67,7 @@ function fromRow(r: TaleRow): Tale {
 
 // Create once with scenario; later updates do not require scenarioId.
 export async function createTale(input: {
-  scenarioId: string;
+  scenarioId?: string;
   name: Tale["name"];
   description: Tale["description"];
   thumbnail?: Uint8Array | null;
@@ -82,8 +82,11 @@ export async function createTale(input: {
   const db = await getDb();
   const id = uuidv4();
 
-  const scenario = await getScenario(input.scenarioId);
-  const scenarioId: string | null = scenario ? input.scenarioId : null;
+  let scenarioId: string | undefined = undefined;
+  if (input.scenarioId) {
+    const scenario = await getScenario(input.scenarioId);
+    scenarioId = scenario ? input.scenarioId : undefined;
+  }
 
   const row = toRow({
     id,
@@ -92,7 +95,7 @@ export async function createTale(input: {
     thumbnail: input.thumbnail ?? null,
     authorNote: input.authorNote,
     storyCards: input.storyCards,
-    scenarioId,
+    scenarioId: scenarioId ?? undefined,
     stats: input.stats,
     inventory: input.inventory,
     log: input.log,

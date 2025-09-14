@@ -1,31 +1,7 @@
 import { useCallback, useState } from "react";
-import {
-  initTale,
-  persistCurrentTale,
-  loadTaleIntoGame,
-  getTalesForScenario,
-  getAllTales,
-} from "@/services/tale.service";
-
-export function useInitTale() {
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<unknown>(null);
-
-  const save = useCallback(async (scenarioId: string) => {
-    setSaving(true);
-    setError(null);
-    try {
-      return await initTale(scenarioId, null);
-    } catch (e) {
-      setError(e);
-      throw e;
-    } finally {
-      setSaving(false);
-    }
-  }, []);
-
-  return { save, saving, error } as const;
-}
+import { persistCurrentTale, getTaleById } from "@/services/tale.service";
+import { updateTaleDTO } from "@/types/tale.type";
+import { useTaleStore } from "@/store/useTaleStore";
 
 export function usePersistTale() {
   const [saving, setSaving] = useState(false);
@@ -33,9 +9,23 @@ export function usePersistTale() {
 
   const save = useCallback(async (taleId: string) => {
     setSaving(true);
+    const state = useTaleStore.getState();
+    const tale: updateTaleDTO = {
+      id: taleId,
+      name: state.name,
+      description: state.description,
+      thumbnail: null,
+      authorNote: state.authorNote,
+      storyCards: state.storyCards,
+      stats: state.stats,
+      inventory: state.inventory,
+      log: state.log,
+      gameMode: state.gameMode,
+      undoStack: state.undoStack,
+    };
     setError(null);
     try {
-      await persistCurrentTale(taleId);
+      await persistCurrentTale({ id: taleId, tale });
     } catch (e) {
       setError(e);
       throw e;
@@ -55,7 +45,20 @@ export function useLoadTale() {
     setLoading(true);
     setError(null);
     try {
-      await loadTaleIntoGame(taleId);
+      const tale = await getTaleById(taleId);
+      if (!tale) throw new Error("Tale not found");
+      useTaleStore.setState({
+        id: tale.id,
+        name: tale.name,
+        description: tale.description,
+        authorNote: tale.authorNote,
+        storyCards: tale.storyCards,
+        stats: tale.stats,
+        inventory: tale.inventory,
+        log: tale.log,
+        gameMode: tale.gameMode,
+        undoStack: tale.undoStack,
+      });
     } catch (e) {
       setError(e);
       throw e;
@@ -65,26 +68,4 @@ export function useLoadTale() {
   }, []);
 
   return { load, loading, error } as const;
-}
-
-export function useGetTales(page: number, limit: number, scenarioId?: string) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<unknown>(null);
-
-  const getTales = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      return scenarioId
-        ? await getTalesForScenario(scenarioId, page, limit)
-        : await getAllTales(page, limit);
-    } catch (e) {
-      setError(e);
-      throw e;
-    } finally {
-      setLoading(false);
-    }
-  }, [page, limit, scenarioId]);
-
-  return { getTales, loading, error } as const;
 }

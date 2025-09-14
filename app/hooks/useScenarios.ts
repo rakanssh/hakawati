@@ -1,42 +1,35 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   removeScenario,
   saveScenario,
   initTaleFromScenario,
   getScenarioById,
   getAllScenarios,
+  serializeScenarioExportV1,
+  deserializeScenarioExportV1,
 } from "@/services/scenario.service";
+import { useLoadTale } from "@/hooks/useGameSaves";
 import { GameMode, Scenario, ScenarioHead } from "@/types/context.type";
-import { PaginatedResponse } from "@/types/db.type";
+import { usePaginatedList } from "@/hooks/usePaginatedList";
+import { copyTextToClipboard, readTextFromClipboard } from "@/lib/clipboard";
+import { toast } from "sonner";
 
 export function useScenariosList(initialPage = 1, initialLimit = 12) {
-  const [items, setItems] = useState<ScenarioHead[]>([]);
-  const [page, setPage] = useState(initialPage);
-  const [limit, setLimit] = useState(initialLimit);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<unknown>(null);
-
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const resp: PaginatedResponse<ScenarioHead> = await getAllScenarios(
-        page,
-        limit,
-      );
-      setItems(resp.data);
-      setTotal(resp.total);
-    } catch (e) {
-      setError(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, limit]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  const {
+    items,
+    page,
+    limit,
+    total,
+    setPage,
+    setLimit,
+    loading,
+    error,
+    refresh,
+  } = usePaginatedList<ScenarioHead>(
+    getAllScenarios,
+    initialPage,
+    initialLimit,
+  );
 
   const remove = useCallback(
     async (id: string) => {
@@ -67,6 +60,7 @@ export function useScenarioEditor(initial?: Partial<Scenario>) {
     initialGameMode: initial?.initialGameMode ?? GameMode.STORY_TELLER,
     initialDescription: initial?.initialDescription ?? "",
     initialAuthorNote: initial?.initialAuthorNote ?? "",
+    openingText: initial?.openingText ?? "",
     initialStats: initial?.initialStats ?? [],
     initialInventory: initial?.initialInventory ?? [],
     initialStoryCards: initial?.initialStoryCards ?? [],
@@ -95,13 +89,18 @@ export function useScenarioEditor(initial?: Partial<Scenario>) {
     }
   }, [scenario]);
 
+  const { load: loadTale } = useLoadTale();
   const startTale = useCallback(async () => {
     if (!scenario.id) {
       const id = await save();
-      return initTaleFromScenario(id);
+      const taleId = await initTaleFromScenario(id);
+      await loadTale(taleId);
+      return taleId;
     }
-    return initTaleFromScenario(scenario.id);
-  }, [scenario.id, save]);
+    const taleId = await initTaleFromScenario(scenario.id);
+    await loadTale(taleId);
+    return taleId;
+  }, [scenario.id, save, loadTale]);
 
   return {
     scenario,
@@ -112,4 +111,35 @@ export function useScenarioEditor(initial?: Partial<Scenario>) {
     error,
     startTale,
   } as const;
+}
+
+export function useScenariosExport() {
+  const exportById = useCallback(async (id: string) => {
+    const scenario = await getScenarioById(id);
+    if (!scenario) {
+      toast.error("Scenario not found");
+      return;
+    }
+    const json = serializeScenarioExportV1(scenario);
+    await copyTextToClipboard(json);
+    toast.success("Scenario JSON copied to clipboard");
+  }, []);
+
+  const exportFromValue = useCallback(async (scenario: Scenario) => {
+    const json = serializeScenarioExportV1(scenario);
+    await copyTextToClipboard(json);
+    toast.success("Scenario JSON copied to clipboard");
+  }, []);
+
+  return { exportById, exportFromValue } as const;
+}
+
+export function useScenariosImport() {
+  const importFromClipboard = useCallback(async () => {
+    const raw = await readTextFromClipboard();
+    const scenario = deserializeScenarioExportV1(raw);
+    return scenario;
+  }, []);
+
+  return { importFromClipboard } as const;
 }

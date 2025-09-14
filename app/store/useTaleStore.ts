@@ -42,6 +42,7 @@ interface TaleStoreType {
   undo: () => void;
   redo: () => void;
   setGameMode: (gameMode: GameMode) => void;
+  setId: (id: string) => void;
 }
 
 //TODO: Find a better way to execute/undo actions
@@ -183,6 +184,7 @@ export const useTaleStore = create<TaleStoreType>()(
       description: "",
       authorNote: "",
       storyCards: [],
+      setId: (id: string) => set({ id }),
       setName: (name: string) => set({ name }),
       setDescription: (description: string) => set({ description }),
       setAuthorNote: (authorNote: string) => set({ authorNote }),

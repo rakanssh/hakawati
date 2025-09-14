@@ -2,12 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { HelpCircle, InfoIcon } from "lucide-react";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
+import { HelpTooltip } from "@/components/ui";
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { useTaleStore } from "@/store/useTaleStore";
@@ -64,22 +59,14 @@ export default function SettingsStoryCards() {
             />
             <div className="flex items-center gap-1">
               <Label className="text-sm">Triggers</Label>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  <div className="flex items-center gap-1 ">
-                    <InfoIcon className="w-3.5 h-3.5" />
-                    <span>
-                      These are words that will trigger adding this card around
-                      the end of context.
-                      <br />
-                      Separate them with commas like: pup,puppy,dog,canine
-                    </span>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
+              <HelpTooltip>
+                <span>
+                  These are words that will trigger adding this card around the
+                  end of context.
+                  <br />
+                  Separate them with commas like: pup,puppy,dog,canine
+                </span>
+              </HelpTooltip>
             </div>
             <Input
               value={card.triggers.join(", ")}

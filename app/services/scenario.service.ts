@@ -6,10 +6,12 @@ import {
   getScenarios,
 } from "@/repositories/scenario.repository";
 import { Scenario, ScenarioHead } from "@/types/context.type";
-import { useTaleStore } from "@/store/useTaleStore";
 import { initTale } from "./tale.service";
 import { nanoid } from "nanoid";
 import { PaginatedResponse } from "@/types/db.type";
+import type { ScenarioExportV1 } from "@/types/export.type";
+import { ScenarioV1Schema } from "@/types/export.type";
+import { LogEntryRole } from "@/types/log.type";
 
 export async function saveScenario(
   scenario: Scenario,
@@ -25,6 +27,7 @@ export async function saveScenario(
     initialInventory: scenario.initialInventory ?? [],
     initialStoryCards: scenario.initialStoryCards ?? [],
     thumbnail: scenario.thumbnail ?? null,
+    openingText: scenario.openingText ?? "",
   };
   return upsertScenario(normalized, id);
 }
@@ -59,20 +62,51 @@ export async function initTaleFromScenario(
 ): Promise<string> {
   const scenario = await getScenario(scenarioId);
   if (!scenario) throw new Error("Scenario not found");
-  // Seed tale store with scenario initial data
-  useTaleStore.setState({
-    name: scenario.name,
-    description: scenario.initialDescription,
-    authorNote: scenario.initialAuthorNote,
+  // Copy scenario thumbnail into tale at creation time
+  return initTale({
+    scenarioId,
+    thumbnail: scenario.thumbnail ?? null,
+    authorNote: scenario.initialAuthorNote ?? "",
+    storyCards: scenario.initialStoryCards,
     stats: scenario.initialStats,
-    inventory: (scenario.initialInventory ?? []).map((name) => ({
+    inventory: scenario.initialInventory.map((name) => ({
       id: nanoid(12),
       name,
     })),
-    storyCards: scenario.initialStoryCards,
+    log: scenario.openingText
+      ? [
+          {
+            id: nanoid(12),
+            text: scenario.openingText,
+            role: LogEntryRole.GM,
+          },
+        ]
+      : [],
     gameMode: scenario.initialGameMode,
-    log: [],
+    undoStack: [],
+    name: scenario.name,
+    description: scenario.initialDescription,
   });
-  // Copy scenario thumbnail into tale at creation time
-  return initTale(scenarioId, scenario.thumbnail ?? null);
+}
+
+export function buildScenarioExportV1(scenario: Scenario): ScenarioExportV1 {
+  const { thumbnail: _omitThumbnail, ...rest } = scenario;
+  return {
+    type: "hakawati.scenario",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data: rest,
+  };
+}
+
+export function serializeScenarioExportV1(scenario: Scenario): string {
+  const payload = buildScenarioExportV1(scenario);
+  console.debug("Serialized scenario", payload);
+  return JSON.stringify(payload, null, 2);
+}
+
+export function deserializeScenarioExportV1(json: string): Scenario {
+  const payload = ScenarioV1Schema.parse(JSON.parse(json) as ScenarioExportV1);
+  console.debug("Deserialized scenario", payload);
+  return payload.data as Scenario;
 }

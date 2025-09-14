@@ -9,6 +9,7 @@ CREATE TABLE
         initial_stats TEXT NOT NULL,
         initial_inventory TEXT NOT NULL,
         initial_story_cards TEXT NOT NULL,
+        opening_text TEXT NOT NULL,
         version INTEGER NOT NULL DEFAULT 1,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL

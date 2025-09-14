@@ -3,8 +3,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "@tanstack/react-router";
-import { useScenariosList } from "@/hooks/useScenarios";
+import {
+  useScenariosList,
+  useScenariosExport,
+  useScenariosImport,
+} from "@/hooks/useScenarios";
 import { initTaleFromScenario } from "@/services/scenario.service";
+import { useLoadTale } from "@/hooks/useGameSaves";
 import {
   bytesToObjectUrl,
   formatExactDateTime,
@@ -16,7 +21,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeftIcon, PencilIcon, TrashIcon } from "lucide-react";
+import {
+  ArrowLeftIcon,
+  PencilIcon,
+  TrashIcon,
+  ClipboardIcon,
+} from "lucide-react";
 import placeholderImage from "@/assets/scen-ph.png";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -24,11 +34,15 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { toast } from "sonner";
 
 export default function ScenariosHome() {
   const { items, loading, error, page, limit, total, setPage, remove } =
     useScenariosList();
   const navigate = useNavigate();
+  const { load: loadTale } = useLoadTale();
+  const { exportById } = useScenariosExport();
+  const { importFromClipboard } = useScenariosImport();
   return (
     <div className="mx-auto w-full max-w-screen-2xl py-5 flex flex-col gap-4 px-3">
       <div className="flex items-center justify-between">
@@ -48,12 +62,33 @@ export default function ScenariosHome() {
             </span>
           </div>
         </div>
-        <Button
-          onClick={() => navigate({ to: "/scenarios/new" })}
-          className="rounded-xs"
-        >
-          Create Scenario
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            className="rounded-xs"
+            onClick={async () => {
+              try {
+                const scenario = await importFromClipboard();
+                navigate({
+                  to: "/scenarios/new",
+                  state: (prev) => ({
+                    ...(prev ?? {}),
+                    importedScenario: scenario,
+                  }),
+                });
+              } catch (_e) {
+                toast.error("Failed to import scenario");
+              }
+            }}
+          >
+            Import From Clipboard
+          </Button>
+          <Button
+            onClick={() => navigate({ to: "/scenarios/new" })}
+            className="rounded-xs"
+          >
+            Create Scenario
+          </Button>
+        </div>
       </div>
 
       <Separator />
@@ -110,6 +145,13 @@ export default function ScenariosHome() {
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onSelect={(e) => e.preventDefault()}
+                          onClick={() => exportById(id)}
+                          className="rounded-xs text-xs"
+                        >
+                          <ClipboardIcon className="w-4 h-4 mr-2" /> Export JSON
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={(e) => e.preventDefault()}
                           onClick={() => {
                             remove(id);
                           }}
@@ -142,7 +184,8 @@ export default function ScenariosHome() {
                 </p>
                 <Button
                   onClick={async () => {
-                    await initTaleFromScenario(id);
+                    const taleId = await initTaleFromScenario(id);
+                    await loadTale(taleId);
                     navigate({ to: "/demo" });
                   }}
                   className="w-full rounded-xs"

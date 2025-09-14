@@ -9,6 +9,7 @@ export type Scenario = {
   initialStats: Stat[];
   initialInventory: string[];
   initialStoryCards: StoryCard[];
+  openingText?: string;
   thumbnail?: Uint8Array | null;
 };
 

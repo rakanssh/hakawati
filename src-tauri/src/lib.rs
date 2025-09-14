@@ -24,6 +24,7 @@ pub fn run() {
     ];
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(
             tauri_plugin_sql::Builder::new()
                 .add_migrations("sqlite:hakawati.db", migrations)

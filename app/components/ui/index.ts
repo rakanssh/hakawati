@@ -9,3 +9,5 @@ export * from "./tabs";
 export * from "./textarea";
 export * from "./tooltip";
 export * from "./sonner";
+
+export * from "./help-tooltip";
