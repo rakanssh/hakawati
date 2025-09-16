@@ -15,26 +15,49 @@ import {
 import { countMessageTokens } from "./tokenCounter";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { GameMode, StoryCard, Item, ResponseMode } from "@/types";
-function injectStoryCards(text: string, storyCards: StoryCard[]): string {
-  let storyCardInjections = "";
+import { toast } from "sonner";
 
+function collectCardsForText(
+  text: string,
+  storyCards: StoryCard[],
+): StoryCard[] {
+  const matched: StoryCard[] = [];
+  const lcText = text.toLowerCase();
   for (const card of storyCards) {
     if (
       card.triggers.some(
-        (trigger) =>
-          trigger && text.toLowerCase().includes(trigger.toLowerCase()),
+        (trigger) => trigger && lcText.includes(trigger.toLowerCase()),
       )
     ) {
-      storyCardInjections += `\n${card.content}`;
+      if (!matched.find((c) => c.id === card.id)) {
+        matched.push(card);
+      }
     }
   }
+  return matched;
+}
 
-  if (storyCardInjections) {
-    return `${text}\n[Context: ${storyCardInjections}]`;
+function buildStoryBookPrompt(cards: StoryCard[]): string {
+  if (!cards || cards.length === 0) return "";
+  let out = "**StoryBook:**\n";
+  for (let i = 0; i < cards.length; i++) {
+    const c = cards[i];
+    out += `\n${i + 1}. ${c.title}\n${c.content}\n`;
   }
+  return out;
+}
 
+function injectMode(text: string, mode?: LogEntryMode): string {
+  if (mode === LogEntryMode.DIRECT) return `[Director's Note: ${text}]`;
+  if (mode === LogEntryMode.STORY) return text;
+  if (mode === LogEntryMode.DO) return `Action: ${text}`;
+  if (mode === LogEntryMode.SAY) return `You say: "${text}"`;
+  if (mode === LogEntryMode.CONTINUE) {
+    return CONTINUE_SYSTEM_PROMPT;
+  }
   return text;
 }
+
 interface BuildMessageParams {
   log: LogEntry[];
   stats: Stat[];
@@ -66,23 +89,22 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     responseMode,
   } = params;
 
-  const configuredBudget = useSettingsStore.getState().contextWindow;
-  const maxTokens = Math.min(
-    model.contextLength ?? configuredBudget,
-    configuredBudget,
+  const settings = useSettingsStore.getState();
+  const contextLimit = Math.min(
+    model.contextLength ?? settings.contextWindow,
+    settings.contextWindow,
   );
+  const completionMax = Math.max(0, settings.maxTokens);
+  const promptBudget = Math.max(1, contextLimit - completionMax);
   const messages: ChatMessage[] = [];
 
-  // Build user message
+  // Build user message (do not inline story cards)
   const gameState = `
 **Game State:**
 - Stats: ${JSON.stringify(stats)}
 - Inventory: ${JSON.stringify(inventory.map((item) => item.name))}
 `;
-  const userMessageContent = injectMode(
-    injectStoryCards(lastMessage.text, storyCards),
-    lastMessage.mode,
-  );
+  const userMessageContent = injectMode(lastMessage.text, lastMessage.mode);
   const userMessage =
     gameMode === GameMode.GM
       ? `${gameState}\n\n${userMessageContent}`
@@ -91,63 +113,48 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     gameMode === GameMode.GM ? GM_SYSTEM_PROMPT : STORY_TELLER_SYSTEM_PROMPT;
 
   const userMsg: ChatMessage = { role: "user", content: userMessage };
-  const userTokens = countMessageTokens([userMsg]);
 
   const tokenCountFor = (msgs: ChatMessage[]) => countMessageTokens(msgs);
-  const canAddWithUser = (candidate: ChatMessage, current: ChatMessage[]) =>
-    tokenCountFor([...current, candidate]) + userTokens <= maxTokens;
 
-  if (canAddWithUser({ role: "system", content: systemPrompt }, messages)) {
-    messages.push({ role: "system", content: systemPrompt });
-  }
-  if (
-    description &&
-    canAddWithUser({ role: "system", content: description }, messages)
-  ) {
-    messages.push({ role: "system", content: description });
+  // Build required meta messages in fixed priority order (without the current user message)
+  const requiredMeta: ChatMessage[] = [
+    { role: "system", content: systemPrompt },
+  ];
+  if (description) requiredMeta.push({ role: "system", content: description });
+  if (authorNote) requiredMeta.push({ role: "system", content: authorNote });
+  if (lastMessage.mode === LogEntryMode.CONTINUE) {
+    requiredMeta.push({ role: "system", content: CONTINUE_AUTHOR_NOTE });
   }
 
-  if (
-    authorNote &&
-    canAddWithUser({ role: "system", content: authorNote }, messages)
-  ) {
-    messages.push({ role: "system", content: authorNote });
-  }
-  if (
-    lastMessage.mode === LogEntryMode.CONTINUE &&
-    canAddWithUser({ role: "system", content: CONTINUE_AUTHOR_NOTE }, messages)
-  ) {
-    messages.push({ role: "system", content: CONTINUE_AUTHOR_NOTE });
+  // For budgeting, the current user message is also required
+  const baseRequiredForCounting: ChatMessage[] = [...requiredMeta, userMsg];
+
+  // Check if required messages exceed the prompt budget
+  const requiredTokens = tokenCountFor(baseRequiredForCounting);
+  if (requiredTokens > promptBudget) {
+    toast.warning(
+      `Context limit exceeded. Required messages use ${requiredTokens} tokens but only ${promptBudget} are available.`,
+    );
   }
 
-  //Depending on whether we are continuing or not, the last user message maybe the last message, or second to last.
-  //Filter out last user message
-  console.debug("Log entries:", log);
+  // Filter out last user message
   const effectiveLog = log.filter(
     (entry) =>
       entry.role !== LogEntryRole.PLAYER || entry.text !== lastMessage.text,
   );
 
-  // Merge consecutive GM entries with the same chainId into a single assistant message
+  // Merge consecutive GM entries by chainId
   type Merged = { role: "user" | "assistant"; content: string };
   type AssistantMerged = Merged & { __chainKey: string };
   const mergedLog: Merged[] = [];
-  for (let i = 0; i < effectiveLog.length; i++) {
-    const entry = effectiveLog[i];
-    const content = injectMode(
-      injectStoryCards(entry.text, storyCards),
-      entry.mode,
-    );
+  for (const entry of effectiveLog) {
+    const content = injectMode(entry.text, entry.mode);
     if (entry.role === LogEntryRole.GM) {
       const chainKey = entry.chainId ?? entry.id;
       const last = mergedLog[mergedLog.length - 1] as
         | AssistantMerged
         | undefined;
-      if (
-        last &&
-        last.role === "assistant" &&
-        (last as AssistantMerged).__chainKey === chainKey
-      ) {
+      if (last && last.role === "assistant" && last.__chainKey === chainKey) {
         last.content += content;
       } else {
         const merged: AssistantMerged = {
@@ -162,30 +169,71 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     }
   }
 
-  const history: ChatMessage[] = [];
+  const selectedHistory: ChatMessage[] = [];
+  const includedCardIds = new Set<string>();
+
+  const currentBaseMessages = [...baseRequiredForCounting];
+
   for (let i = mergedLog.length - 1; i >= 0; i--) {
     const msg = mergedLog[i];
-    // Skip empty assistant placeholders
     if (
       msg.role === "assistant" &&
       (msg.content === "..." || msg.content.trim() === "")
     ) {
       continue;
     }
+
     const chatMsg: ChatMessage = { role: msg.role, content: msg.content };
-    if (canAddWithUser(chatMsg, [...messages, ...history])) {
-      history.unshift(chatMsg);
+
+    const matched = collectCardsForText(msg.content, storyCards);
+    const newCards = matched.filter((c) => !includedCardIds.has(c.id));
+
+    const tentativeCardList = [
+      ...storyCards.filter((c) => includedCardIds.has(c.id)),
+      ...newCards,
+    ];
+
+    const storyBookContent = buildStoryBookPrompt(tentativeCardList);
+    const storyBookMsg: ChatMessage | null = storyBookContent
+      ? { role: "system", content: storyBookContent }
+      : null;
+
+    const msgsIfIncluded = [...currentBaseMessages, ...selectedHistory];
+    if (storyBookMsg) msgsIfIncluded.push(storyBookMsg);
+    msgsIfIncluded.push(chatMsg);
+
+    const totalTokensIfIncluded = tokenCountFor(msgsIfIncluded);
+
+    if (totalTokensIfIncluded <= promptBudget) {
+      selectedHistory.unshift(chatMsg);
+      for (const c of newCards) includedCardIds.add(c.id);
     } else {
+      // Cannot include this message because adding it (and any new cards) would exceed budget
       break;
     }
   }
 
-  messages.push(...history);
-
-  if (lastMessage.text.trim().length > 0 && canAddWithUser(userMsg, messages)) {
-    messages.push(userMsg);
+  // Check if no history could be fitted
+  if (selectedHistory.length === 0 && mergedLog.length > 0) {
+    toast.warning(
+      "No conversation history could be included due to token limits.",
+    );
   }
-  // ---
+
+  // Prepare StoryBook system message for later inclusion
+  const includedCards = storyCards.filter((c) => includedCardIds.has(c.id));
+  const storyBookContentFinal = buildStoryBookPrompt(includedCards);
+  const storyBookMsgFinal: ChatMessage | null = storyBookContentFinal
+    ? { role: "system", content: storyBookContentFinal }
+    : null;
+
+  // Final assembly: meta, StoryBook (if any), history, then the current user message LAST
+  messages.length = 0;
+  messages.push(...requiredMeta);
+  if (storyBookMsgFinal) messages.push(storyBookMsgFinal);
+  messages.push(...selectedHistory);
+  messages.push(userMsg);
+
   return {
     model: model.id,
     messages,
@@ -195,17 +243,4 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     responseMode:
       gameMode === GameMode.GM ? responseMode : ResponseMode.FREE_FORM,
   };
-}
-
-function injectMode(text: string, mode?: LogEntryMode): string {
-  if (mode === LogEntryMode.DIRECT) return `[Director's Note: ${text}]`;
-  if (mode === LogEntryMode.STORY) return `${text}`;
-  if (mode === LogEntryMode.DO) return `Action: ${text}`;
-  if (mode === LogEntryMode.SAY) return `You Say:"${text}"`;
-  //Continue prompt + last ~100 characters of the previous assistant message
-  if (mode === LogEntryMode.CONTINUE) {
-    console.log("text", text);
-    return `${CONTINUE_SYSTEM_PROMPT}`;
-  }
-  return text;
 }
