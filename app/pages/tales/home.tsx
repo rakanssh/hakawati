@@ -49,7 +49,7 @@ export default function TalesHome() {
         <Button
           variant="default"
           onClick={() => navigate({ to: "/" })}
-          className="rounded-xs mt-1.5"
+          className="mt-1.5"
         >
           <ArrowLeftIcon className="w-4 h-4" />
         </Button>
@@ -71,6 +71,7 @@ export default function TalesHome() {
             id,
             name,
             description,
+            lastLogEntry,
             thumbnail,
             scenarioHead,
             updatedAt,
@@ -78,7 +79,7 @@ export default function TalesHome() {
           }) => (
             <Card
               key={id}
-              className="flex flex-col rounded-xs gap-1 pt-0 pb-2 border-accent/50"
+              className="flex flex-col gap-1 pt-0 pb-2 border-accent/50"
             >
               <CardHeader className="p-0 m-0">
                 <div className="relative">
@@ -111,7 +112,6 @@ export default function TalesHome() {
                         align="end"
                         side="bottom"
                         sideOffset={4}
-                        className="rounded-xs"
                       >
                         {scenarioHead?.id && (
                           <DropdownMenuItem
@@ -119,7 +119,7 @@ export default function TalesHome() {
                             onClick={() =>
                               navigate({ to: `/scenarios/${scenarioHead?.id}` })
                             }
-                            className="rounded-xs text-xs"
+                            className="text-xs"
                           >
                             <PencilIcon className="w-4 h-4 mr-2" /> Scenario
                           </DropdownMenuItem>
@@ -128,7 +128,7 @@ export default function TalesHome() {
                           onSelect={(e) => e.preventDefault()}
                           onClick={() => handleClickDelete(id)}
                           variant="destructive"
-                          className="rounded-xs text-xs"
+                          className="text-xs"
                         >
                           <TrashIcon className="w-4 h-4 mr-2" /> Delete
                         </DropdownMenuItem>
@@ -150,19 +150,20 @@ export default function TalesHome() {
               <CardContent className="px-2 flex flex-col justify-between  gap-1">
                 <div className="flex items-center gap-2">
                   <span className="font-bold">{name}</span>
-                  <Badge variant="outline" className="rounded-xs text-xs">
+                  <Badge variant="outline" className="text-xs">
                     {logCount} {logCount === 1 ? "turn" : "turns"}
                   </Badge>
                 </div>
                 <p className="line-clamp-3 text-sm text-muted-foreground h-16 rounded-xs">
-                  {description}
+                  {lastLogEntry?.text ?? description}
                 </p>
+
                 <Button
                   onClick={async () => {
                     await loadIntoGame(id);
-                    navigate({ to: "/demo" });
+                    navigate({ to: "/play" });
                   }}
-                  className="w-full rounded-xs"
+                  className="w-full "
                 >
                   Load Tale
                 </Button>

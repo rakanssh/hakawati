@@ -39,6 +39,10 @@ export function ModelSelect() {
   const { models, loading, refresh } = useLLMProviders();
   const { gameMode } = useTaleStore();
 
+  const anySupportsResponseFormat = models.some(
+    (m) => m.supportsResponseFormat,
+  );
+
   const handleModelChange = useCallback(
     (model: LLMModel) => {
       if (
@@ -105,7 +109,7 @@ export function ModelSelect() {
         <div className="flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge variant="highlight" className="text-xs rounded-xs">
+              <Badge variant="highlight" className="text-xs">
                 {formatUSD(per1k)} / K
               </Badge>
             </TooltipTrigger>
@@ -113,7 +117,7 @@ export function ModelSelect() {
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge variant="outline" className="text-xs rounded-xs">
+              <Badge variant="outline" className="text-xs">
                 {formatUSD(per1m, { maximumFractionDigits: 2 })} / M
               </Badge>
             </TooltipTrigger>
@@ -132,7 +136,7 @@ export function ModelSelect() {
               variant="outline"
               role="combobox"
               aria-expanded={open}
-              className="flex-1 justify-between rounded-xs"
+              className="flex-1 justify-between"
             >
               {loading ? "Loading..." : (model?.name ?? "Select a model")}
               <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -165,17 +169,20 @@ export function ModelSelect() {
                       />
                       <div className="flex w-full items-center justify-between">
                         <div className="flex items-center gap-2">
-                          {m.supportsResponseFormat ? (
-                            <SwordsIcon className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <div className="w-4 h-4" />
-                          )}
+                          {anySupportsResponseFormat &&
+                            (m.supportsResponseFormat ? (
+                              <SwordsIcon className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <div className="w-4 h-4" />
+                            ))}
                           <span>{m.name}</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>
-                            tk: {m.contextLength?.toLocaleString() ?? "?"}
-                          </span>
+                          {m.contextLength !== undefined && (
+                            <span>
+                              tk: {m.contextLength?.toLocaleString() ?? "?"}
+                            </span>
+                          )}
                           {m.pricing?.prompt !== undefined && (
                             <span>
                               In:{" "}
@@ -210,7 +217,6 @@ export function ModelSelect() {
               size="icon"
               onClick={refresh}
               disabled={loading}
-              className="rounded-xs"
             >
               <RefreshCwIcon
                 className={cn("h-4 w-4", loading && "animate-spin")}
@@ -221,7 +227,7 @@ export function ModelSelect() {
         </Tooltip>
       </div>
       {model && somethingToDisplay && (
-        <Card className="mt-2 rounded-xs">
+        <Card className="mt-2">
           <CardHeader>
             <CardTitle className="text-base">{model.name}</CardTitle>
             {model.contextLength !== undefined && (
@@ -256,17 +262,17 @@ export function ModelSelect() {
                 <Separator />
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   {toNumber(model.pricing?.request) !== undefined && (
-                    <Badge variant="outline" className="rounded-xs">
+                    <Badge variant="outline">
                       Request: {formatUSD(toNumber(model.pricing?.request))}
                     </Badge>
                   )}
                   {toNumber(model.pricing?.image) !== undefined && (
-                    <Badge variant="outline" className="rounded-xs">
+                    <Badge variant="outline">
                       Image: {formatUSD(toNumber(model.pricing?.image))}
                     </Badge>
                   )}
                   {toNumber(model.pricing?.audio) !== undefined && (
-                    <Badge variant="outline" className="rounded-xs">
+                    <Badge variant="outline">
                       Audio: {formatUSD(toNumber(model.pricing?.audio))}
                     </Badge>
                   )}

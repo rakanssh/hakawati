@@ -8,7 +8,7 @@ import {
 
 import AppShell from "./root";
 import Home from "./pages/home/home";
-import Demo from "./pages/demo/demo";
+import Play from "./pages/play";
 import ScenariosHome from "./pages/scenarios/home";
 import ScenarioCreate from "./pages/scenarios/create.tsx";
 import ScenarioEdit from "./pages/scenarios/edit.tsx";
@@ -22,15 +22,15 @@ const IndexRoute = createRoute({
   component: Home,
 });
 
-const DemoRoute = createRoute({
+const PlayRoute = createRoute({
   getParentRoute: () => RootRoute,
-  path: "demo",
-  component: Demo,
+  path: "play",
+  component: Play,
 });
 
 const routeTree = RootRoute.addChildren([
   IndexRoute,
-  DemoRoute,
+  PlayRoute,
   createRoute({
     getParentRoute: () => RootRoute,
     path: "scenarios",

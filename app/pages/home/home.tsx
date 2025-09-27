@@ -6,56 +6,85 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "@tanstack/react-router";
 import { useSettingsStore } from "@/store/useSettingsStore";
 
-import { ModelSelect } from "@/components/layout";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Label } from "@/components/ui/label";
 import { useTaleStore } from "@/store/useTaleStore";
+import { useState, useMemo } from "react";
+import { SettingsModal } from "@/components/layout/settings";
+import { AlertTriangle } from "lucide-react";
 
 export default function Home() {
   const navigate = useNavigate();
-  const { apiKey, setApiKey, model } = useSettingsStore();
-  const { log } = useTaleStore();
+  const { apiKey, model, openAiBaseUrl } = useSettingsStore();
+  const { name, description, log } = useTaleStore();
+  const lastEntry = log.at(-1);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const { hasIssues, issues } = useMemo(() => {
+    const missing: string[] = [];
+    if (!openAiBaseUrl?.trim()) missing.push("API URL");
+    if (!apiKey?.trim()) missing.push("API key");
+    if (!model) missing.push("Model");
+    return { hasIssues: missing.length > 0, issues: missing };
+  }, [apiKey, model, openAiBaseUrl]);
   return (
     <main className="flex flex-col items-center justify-center h-[calc(100vh-2.5rem)] ">
-      <Card className="w-full max-w-xl rounded-xs">
+      <Card className="w-full max-w-xl">
         <CardContent className="flex flex-col gap-2">
           <div className="flex flex-col gap-2">
-            <div className="flex flex-col gap-2">
-              <Label className="text-sm">API Key</Label>
-              <div className="flex flex-row gap-2">
-                <Input
-                  type="password"
-                  placeholder="Enter your key here"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  className="rounded-xs"
-                />
-                <Button className="rounded-xs">Fetch</Button>
+            {hasIssues && (
+              <div className="flex items-center gap-3 rounded-xs border border-destructive/40 bg-destructive/10 p-3 text-destructive">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <div className="flex-1">
+                  <div className="font-semibold leading-tight">
+                    Setup required
+                  </div>
+                  <p className="text-sm">
+                    Missing settings: {issues.join(", ")}. Configure your API in
+                    Settings.
+                  </p>
+                </div>
+                <Button
+                  variant="destructive"
+                  onClick={() => setSettingsOpen(true)}
+                >
+                  Open Settings
+                </Button>
               </div>
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label>Model</Label>
-            <ModelSelect />
+            )}
+            {(name || description || log.length > 0) && (
+              <div className="border border-accent/50 bg-accent/20 p-3">
+                <div className="flex items-center justify-between">
+                  <div className="font-semibold leading-tight">
+                    {name || "Untitled"}
+                  </div>
+                  <Badge variant="outline" className="text-[10px] ml-auto">
+                    {log.length} {log.length === 1 ? "turn" : "turns"}
+                  </Badge>
+                </div>
+                <div className="mt-1.5">
+                  <p className="text-sm text-mutesd-foreground line-clamp-2">
+                    {(lastEntry?.text ?? description) || "No description yet."}
+                  </p>
+                </div>
+              </div>
+            )}
             <Button
-              onClick={() => navigate({ to: "/demo" })}
+              onClick={() => navigate({ to: "/play" })}
               disabled={log.length === 0}
-              className="rounded-xs"
             >
               Continue
             </Button>
             <Button
               variant="outline"
               onClick={() => navigate({ to: "/tales" })}
-              className="rounded-xs"
             >
               My Tales
             </Button>
@@ -63,7 +92,6 @@ export default function Home() {
               variant="outline"
               disabled={!apiKey || !model}
               onClick={() => navigate({ to: "/scenarios" })}
-              className="rounded-xs"
             >
               Scenarios
             </Button>
@@ -107,6 +135,11 @@ export default function Home() {
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+      <SettingsModal
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        defaultTab="api"
+      />
     </main>
   );
 }

@@ -10,7 +10,7 @@ export interface DiscoveredServer {
 //TODO: Test and add more
 const knownNames = ["ollama", "localai"];
 
-const knownPorts = [11434, 8000, 8080, 3000, 5000, 7860];
+const knownPorts = [11434, 8000, 8080, 3000, 5000, 7860, 1234];
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   let timeoutId: NodeJS.Timeout | number | undefined;

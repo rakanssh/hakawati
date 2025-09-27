@@ -60,7 +60,7 @@ function getPlaceholder(action: Action) {
   return placeholder;
 }
 
-export default function Demo() {
+export default function Play() {
   const {
     log,
     addLog,
@@ -85,8 +85,6 @@ export default function Demo() {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [stickToBottom, setStickToBottom] = useState<boolean>(true);
-  const bottomBarRef = useRef<HTMLDivElement | null>(null);
-  const [bottomBarHeight, setBottomBarHeight] = useState<number>(80);
   const { save, saving } = usePersistTale();
 
   useEffect(() => {
@@ -100,21 +98,6 @@ export default function Demo() {
       block: "end",
     });
   }, [log, loading, stickToBottom]);
-
-  //fix bottom bar height
-  useEffect(() => {
-    const el = bottomBarRef.current;
-    if (!el) return;
-    const update = () => setBottomBarHeight(el.getBoundingClientRect().height);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    window.addEventListener("resize", update);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", update);
-    };
-  }, []);
 
   const handleViewportScroll = () => {
     const el = viewportRef.current;
@@ -358,11 +341,12 @@ export default function Demo() {
 
   // Shared content component for both modes
   const renderMainContent = () => (
-    <div className="flex flex-col h-full">
+    <div className="relative grid h-full grid-rows-[1fr_auto]">
       <ScrollArea
-        className="flex-1 px-2 py-0 min-h-0"
+        className="min-h-0 w-full px-2 py-0"
         viewportRef={viewportRef}
         onViewportScroll={handleViewportScroll}
+        viewportClassName="!flex !flex-col"
       >
         {blocks.length > 0 ? (
           blocks.map((block) => (
@@ -426,20 +410,12 @@ export default function Demo() {
         ) : (
           <></>
         )}
-        <div
-          ref={bottomRef}
-          className="mt-2"
-          style={{ height: bottomBarHeight + 8 }}
-        />
+        <div ref={bottomRef} className="mt-2 h-px" />
       </ScrollArea>
-      <div
-        ref={bottomBarRef}
-        className="pointer-events-auto absolute inset-x-0 bottom-0 z-20 border-t bg-accent p-2"
-      >
+      <div className="pointer-events-auto z-20 w-full border-t bg-accent p-2">
         <div className="flex w-full items-end space-x-1">
           <Button
             variant={action.isRolling ? "default" : "outline"}
-            className="rounded-xs"
             size="icon"
             onClick={() =>
               setAction({
@@ -492,15 +468,10 @@ export default function Demo() {
                 }
               }}
               rows={1}
-              className="absolute inset-x-0 bottom-0 resize-none rounded-xs !bg-accent"
+              className="absolute inset-x-0 bottom-0 resize-none !bg-accent"
             />
           </div>
-          <Button
-            type="submit"
-            onClick={handleSubmit}
-            disabled={saving}
-            className="rounded-xs"
-          >
+          <Button type="submit" onClick={handleSubmit} disabled={saving}>
             {loading ? (
               <SquareIcon className="w-4 h-4 animate-pulse" />
             ) : saving ? (

@@ -1,5 +1,6 @@
 import { getDb } from "@/services/db";
 import { Tale, TaleHead } from "@/types/tale.type";
+import { LogEntry } from "@/types/log.type";
 import { GameMode } from "@/types/context.type";
 import { PaginatedResponse, TaleRow } from "@/types/db.type";
 import { getScenario, getScenarioHead } from "./scenario.repository";
@@ -41,6 +42,15 @@ function toUint8Array(value: unknown): Uint8Array | null {
     return null;
   }
   return null;
+}
+
+function parseJsonValue<T>(value: string | null | undefined): T | null {
+  if (!value) return null;
+  try {
+    return JSON.parse(value) as T;
+  } catch (_error) {
+    return null;
+  }
 }
 
 function fromRow(r: TaleRow): Tale {
@@ -209,6 +219,7 @@ export async function getTales(
       scenario_id: string | null;
       updated_at: number;
       log_count: number;
+      last_log_entry: string | null;
     }>
   >(
     `SELECT 
@@ -219,7 +230,12 @@ export async function getTales(
       created_at,
       scenario_id,
       updated_at,
-      json_array_length(log) AS log_count
+      json_array_length(log) AS log_count,
+      CASE
+        WHEN json_array_length(log) > 0
+          THEN json_extract(log, '$[' || (json_array_length(log) - 1) || ']')
+        ELSE NULL
+      END AS last_log_entry
     FROM tales 
     ORDER BY created_at DESC LIMIT ? OFFSET ?`,
     [limit, (page - 1) * limit],
@@ -236,6 +252,7 @@ export async function getTales(
         description: r.description,
         thumbnail: toUint8Array(r.thumbnail_data ?? null),
         logCount: r.log_count,
+        lastLogEntry: parseJsonValue<LogEntry>(r.last_log_entry),
         createdAt: r.created_at,
         scenarioId: r.scenario_id,
         updatedAt: r.updated_at,
@@ -266,6 +283,7 @@ export async function getScenarioTales(
       scenario_id: string | null;
       updated_at: number;
       log_count: number;
+      last_log_entry: string | null;
     }>
   >(
     `SELECT 
@@ -276,7 +294,12 @@ export async function getScenarioTales(
       created_at,
       scenario_id,
       updated_at,
-      json_array_length(log) AS log_count
+      json_array_length(log) AS log_count,
+      CASE
+        WHEN json_array_length(log) > 0
+          THEN json_extract(log, '$[' || (json_array_length(log) - 1) || ']')
+        ELSE NULL
+      END AS last_log_entry
     FROM tales 
     WHERE scenario_id = ? 
     ORDER BY created_at DESC LIMIT ? OFFSET ?`,
@@ -295,6 +318,7 @@ export async function getScenarioTales(
         description: r.description,
         thumbnail: toUint8Array(r.thumbnail_data ?? null),
         logCount: r.log_count,
+        lastLogEntry: parseJsonValue<LogEntry>(r.last_log_entry),
         createdAt: r.created_at,
         scenarioId: r.scenario_id,
         updatedAt: r.updated_at,

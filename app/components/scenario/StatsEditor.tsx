@@ -36,13 +36,12 @@ export function StatsEditor({
               <Input
                 value={stat.name}
                 onChange={(e) => onUpdate(stat.name, { name: e.target.value })}
-                className="w-full rounded-xs"
               />
               <Button
                 variant="destructive"
                 size="sm"
                 onClick={() => onRemove(stat.name)}
-                className="rounded-xs w-24"
+                className="w-24"
               >
                 Remove
               </Button>
@@ -54,7 +53,7 @@ export function StatsEditor({
                 min={stat.range[0]}
                 max={stat.range[1]}
                 onValueCommit={(v) => onUpdate(stat.name, { value: v })}
-                className="w-24 rounded-xs"
+                className="w-24"
               />
               <span>/</span>
               <Label className="text-xs text-muted-foreground">Max</Label>
@@ -78,7 +77,6 @@ export function StatsEditor({
                 setNewName("");
               }
             }}
-            className="rounded-xs"
           />
           <Button
             variant="outline"
@@ -86,7 +84,6 @@ export function StatsEditor({
               onAdd(newName);
               setNewName("");
             }}
-            className="rounded-xs"
           >
             Add Stat
           </Button>

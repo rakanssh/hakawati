@@ -45,7 +45,6 @@ export default function ScenarioEdit() {
           <Button
             variant="default"
             onClick={() => navigate({ to: `/scenarios` })}
-            className="rounded-xs"
           >
             <ArrowLeftIcon className="w-4 h-4" />
           </Button>
@@ -53,7 +52,6 @@ export default function ScenarioEdit() {
         </div>
         <Button
           disabled={saving}
-          className="rounded-xs"
           onClick={async () => {
             await handleSave();
           }}

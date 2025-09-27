@@ -30,5 +30,6 @@ export type TaleHead = {
   scenarioId: string | null;
   logCount: number;
   updatedAt: number;
+  lastLogEntry: LogEntry | null;
   scenarioHead?: ScenarioHead | null;
 };

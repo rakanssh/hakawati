@@ -27,13 +27,12 @@ export function InventoryEditor({
             <Input
               value={item}
               onChange={(e) => onUpdate(idx, e.target.value)}
-              className="rounded-xs"
             />
             <Button
               variant="destructive"
               size="sm"
               onClick={() => onRemove(idx)}
-              className="rounded-xs w-24"
+              className="w-24"
             >
               Remove
             </Button>
@@ -50,7 +49,6 @@ export function InventoryEditor({
                 setNewItem("");
               }
             }}
-            className="rounded-xs"
           />
           <Button
             variant="outline"
@@ -58,7 +56,7 @@ export function InventoryEditor({
               onAdd(newItem);
               setNewItem("");
             }}
-            className="rounded-xs w-24"
+            className="w-24"
           >
             Add Item
           </Button>

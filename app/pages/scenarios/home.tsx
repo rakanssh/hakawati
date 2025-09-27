@@ -51,7 +51,7 @@ export default function ScenariosHome() {
           <Button
             variant="default"
             onClick={() => navigate({ to: "/" })}
-            className="rounded-xs mt-1.5"
+            className="mt-1.5"
           >
             <ArrowLeftIcon className="w-4 h-4" />
           </Button>
@@ -64,7 +64,6 @@ export default function ScenariosHome() {
         </div>
         <div className="flex gap-2">
           <Button
-            className="rounded-xs"
             onClick={async () => {
               try {
                 const scenario = await importFromClipboard();
@@ -82,10 +81,7 @@ export default function ScenariosHome() {
           >
             Import From Clipboard
           </Button>
-          <Button
-            onClick={() => navigate({ to: "/scenarios/new" })}
-            className="rounded-xs"
-          >
+          <Button onClick={() => navigate({ to: "/scenarios/new" })}>
             Create Scenario
           </Button>
         </div>
@@ -101,7 +97,7 @@ export default function ScenariosHome() {
           return (
             <Card
               key={id}
-              className="flex flex-col rounded-xs gap-1 pt-0 pb-2 border-accent/50"
+              className="flex flex-col gap-1 pt-0 pb-2 border-accent/50"
             >
               <CardHeader className="p-0 m-0">
                 <div className="relative">
@@ -134,19 +130,18 @@ export default function ScenariosHome() {
                         align="end"
                         side="bottom"
                         sideOffset={4}
-                        className="rounded-xs"
                       >
                         <DropdownMenuItem
                           onSelect={(e) => e.preventDefault()}
                           onClick={() => navigate({ to: `/scenarios/${id}` })}
-                          className="rounded-xs text-xs"
+                          className="text-xs"
                         >
                           <PencilIcon className="w-4 h-4 mr-2" /> Edit
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onSelect={(e) => e.preventDefault()}
                           onClick={() => exportById(id)}
-                          className="rounded-xs text-xs"
+                          className="text-xs"
                         >
                           <ClipboardIcon className="w-4 h-4 mr-2" /> Export JSON
                         </DropdownMenuItem>
@@ -156,7 +151,7 @@ export default function ScenariosHome() {
                             remove(id);
                           }}
                           variant="destructive"
-                          className="rounded-xs text-xs"
+                          className="text-xs"
                         >
                           <TrashIcon className="w-4 h-4 mr-2" /> Delete
                         </DropdownMenuItem>
@@ -186,9 +181,9 @@ export default function ScenariosHome() {
                   onClick={async () => {
                     const taleId = await initTaleFromScenario(id);
                     await loadTale(taleId);
-                    navigate({ to: "/demo" });
+                    navigate({ to: "/play" });
                   }}
-                  className="w-full rounded-xs"
+                  className="w-full "
                 >
                   New Tale
                 </Button>
@@ -203,7 +198,6 @@ export default function ScenariosHome() {
             variant="secondary"
             disabled={page <= 1}
             onClick={() => setPage(Math.max(1, page - 1))}
-            className="rounded-xs"
           >
             Prev
           </Button>
@@ -214,7 +208,6 @@ export default function ScenariosHome() {
             variant="secondary"
             disabled={page * limit >= total}
             onClick={() => setPage(page + 1)}
-            className="rounded-xs"
           >
             Next
           </Button>
