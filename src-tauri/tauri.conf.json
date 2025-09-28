@@ -36,6 +36,15 @@
   "plugins": {
     "sql": {
       "preload": ["sqlite:hakawati.db"]
+    },
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDIzNEM5RUM2NDZBNzU4REQKUldUZFdLZEd4cDVNSTBqZTRmcUJZRXJ4eGlaMlpLaEs4ZGlRQnA0TlE5V1dQYUx6NDlhMXBRVWwK",
+      "endpoints": [
+        "https://github.com/rakanssh/hakawati/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }
