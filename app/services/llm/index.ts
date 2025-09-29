@@ -4,8 +4,7 @@ import { ChatRequest } from "./schema";
 
 function getClient() {
   const apiKey = useSettingsStore.getState().apiKey?.trim();
-  if (!apiKey) throw new Error("Missing API key");
-  return OpenAiClient(apiKey);
+  return OpenAiClient(apiKey || undefined);
 }
 
 export async function sendChat(req: ChatRequest, signal?: AbortSignal) {

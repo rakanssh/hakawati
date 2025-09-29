@@ -22,7 +22,7 @@ import { AlertTriangle } from "lucide-react";
 
 export default function Home() {
   const navigate = useNavigate();
-  const { apiKey, model, openAiBaseUrl } = useSettingsStore();
+  const { model, openAiBaseUrl } = useSettingsStore();
   const { name, description, log } = useTaleStore();
   const lastEntry = log.at(-1);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -30,10 +30,9 @@ export default function Home() {
   const { hasIssues, issues } = useMemo(() => {
     const missing: string[] = [];
     if (!openAiBaseUrl?.trim()) missing.push("API URL");
-    if (!apiKey?.trim()) missing.push("API key");
     if (!model) missing.push("Model");
     return { hasIssues: missing.length > 0, issues: missing };
-  }, [apiKey, model, openAiBaseUrl]);
+  }, [model, openAiBaseUrl]);
   return (
     <main className="flex flex-col items-center justify-center h-[calc(100vh-2.5rem)] ">
       <Card className="w-full max-w-xl">
@@ -78,7 +77,7 @@ export default function Home() {
             )}
             <Button
               onClick={() => navigate({ to: "/play" })}
-              disabled={log.length === 0}
+              disabled={log.length === 0 || hasIssues}
             >
               Continue
             </Button>
@@ -90,7 +89,6 @@ export default function Home() {
             </Button>
             <Button
               variant="outline"
-              disabled={!apiKey || !model}
               onClick={() => navigate({ to: "/scenarios" })}
             >
               Scenarios

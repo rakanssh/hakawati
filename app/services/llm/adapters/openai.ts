@@ -8,7 +8,7 @@ import {
 } from "../schema";
 import { parseOpenAIStream } from "../streaming";
 import { useSettingsStore } from "@/store/useSettingsStore";
-export function OpenAiClient(apiKey: string): LLMClient {
+export function OpenAiClient(apiKey?: string): LLMClient {
   const { openAiBaseUrl } = useSettingsStore.getState();
   const base = openAiBaseUrl;
 
@@ -35,9 +35,9 @@ export function OpenAiClient(apiKey: string): LLMClient {
       }),
     };
     console.debug(`Sending request to ${req.model}:`, body);
-    const headers = {
+    const headers: HeadersInit = {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
+      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
     };
 
     const doFetch = () =>
@@ -75,11 +75,18 @@ export function OpenAiClient(apiKey: string): LLMClient {
 
   async function models(): Promise<LLMModel[]> {
     console.debug(`Fetching models from OpenAI`);
+    const headers: HeadersInit = apiKey
+      ? {
+          Authorization: `Bearer ${apiKey}`,
+        }
+      : {};
     const r = await fetch(`${base}/models`, {
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-      },
+      headers,
     });
+    if (!r.ok) {
+      const errorText = await r.text().catch(() => "");
+      throw new Error(errorText || `Failed to fetch models (${r.status})`);
+    }
     const json = await r.json();
     console.log(json);
     // Allow providers that return minimal model info
