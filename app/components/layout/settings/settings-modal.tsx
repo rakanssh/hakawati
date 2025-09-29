@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -18,27 +18,61 @@ const tabs = [
   { id: "model", label: "Model", component: SettingsModel },
 ] as const;
 
+type Tab = (typeof tabs)[number];
+export type SettingsTabId = Tab["id"];
+
+const DEFAULT_TAB: SettingsTabId = "game";
+
 interface SettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  defaultTab?: string;
+  defaultTab?: SettingsTabId;
+  visibleTabs?: readonly SettingsTabId[];
 }
 
 export function SettingsModal({
   open,
   onOpenChange,
-  defaultTab = "game",
+  defaultTab = DEFAULT_TAB,
+  visibleTabs,
 }: SettingsModalProps) {
-  const [activeTab, setActiveTab] = useState<string>(defaultTab);
+  const availableTabs = useMemo(() => {
+    if (!visibleTabs) return tabs;
+    const allowed = new Set(visibleTabs);
+    const filtered = tabs.filter((tab) => allowed.has(tab.id));
+    return filtered.length > 0 ? filtered : tabs;
+  }, [visibleTabs]);
+
+  const [activeTab, setActiveTab] = useState<SettingsTabId>(() => {
+    const fallback =
+      availableTabs.find((tab) => tab.id === defaultTab)?.id ??
+      availableTabs[0]?.id ??
+      DEFAULT_TAB;
+    return fallback;
+  });
 
   useEffect(() => {
-    if (open && defaultTab) {
-      setActiveTab(defaultTab);
+    if (!open) return;
+    const nextActive =
+      availableTabs.find((tab) => tab.id === defaultTab)?.id ??
+      availableTabs[0]?.id ??
+      DEFAULT_TAB;
+    setActiveTab(nextActive);
+  }, [open, defaultTab, availableTabs]);
+
+  useEffect(() => {
+    const isActiveAvailable = availableTabs.some((tab) => tab.id === activeTab);
+    if (isActiveAvailable) return;
+    const fallback = availableTabs[0]?.id ?? DEFAULT_TAB;
+    if (fallback !== activeTab) {
+      setActiveTab(fallback);
     }
-  }, [open, defaultTab]);
+  }, [availableTabs, activeTab]);
 
   const ActiveComponent =
-    tabs.find((tab) => tab.id === activeTab)?.component || SettingsGame;
+    availableTabs.find((tab) => tab.id === activeTab)?.component ||
+    availableTabs[0]?.component ||
+    SettingsGame;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -49,7 +83,7 @@ export function SettingsModal({
         <div className="grid grid-cols-[160px_1fr] gap-0 h-full">
           <nav className="border-r px-3 py-4 overflow-auto">
             <ul className="flex flex-col gap-1">
-              {tabs.map((tab) => (
+              {availableTabs.map((tab) => (
                 <li key={tab.id}>
                   <Button
                     variant={activeTab === tab.id ? "default" : "ghost"}

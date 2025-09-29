@@ -17,7 +17,10 @@ import {
 } from "@/components/ui/tooltip";
 import { useTaleStore } from "@/store/useTaleStore";
 import { useState, useMemo } from "react";
-import { SettingsModal } from "@/components/layout/settings";
+import {
+  SettingsModal,
+  type SettingsTabId,
+} from "@/components/layout/settings";
 import { AlertTriangle } from "lucide-react";
 
 export default function Home() {
@@ -26,6 +29,7 @@ export default function Home() {
   const { name, description, log } = useTaleStore();
   const lastEntry = log.at(-1);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const nonPlayTabs: readonly SettingsTabId[] = ["game", "api", "model"];
 
   const { hasIssues, issues } = useMemo(() => {
     const missing: string[] = [];
@@ -137,6 +141,7 @@ export default function Home() {
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         defaultTab="api"
+        visibleTabs={nonPlayTabs}
       />
     </main>
   );
