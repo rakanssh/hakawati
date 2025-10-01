@@ -28,7 +28,6 @@ Download the latest release for your operating system from the Releases page.
 
 - Node.js 20+ and npm
 - Rust toolchain and platform dependencies required by [Tauri](https://tauri.app/start/prerequisites/)
-- (Optional) Tauri CLI for native packaging: `cargo install tauri-cli`
 
 ### Installation
 
