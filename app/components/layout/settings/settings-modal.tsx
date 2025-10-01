@@ -9,6 +9,7 @@ import SettingsApi from "@/components/layout/settings/api";
 import SettingsTale from "@/components/layout/settings/tale";
 import SettingsStoryCards from "@/components/layout/settings/story-cards";
 import SettingsModel from "@/components/layout/settings/model";
+import SettingsUpdates from "@/components/layout/settings/updates";
 
 const tabs = [
   { id: "game", label: "Game", component: SettingsGame },
@@ -16,6 +17,7 @@ const tabs = [
   { id: "tale", label: "Tale", component: SettingsTale },
   { id: "story-cards", label: "Story Cards", component: SettingsStoryCards },
   { id: "model", label: "Model", component: SettingsModel },
+  { id: "updates", label: "Updates", component: SettingsUpdates },
 ] as const;
 
 type Tab = (typeof tabs)[number];

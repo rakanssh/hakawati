@@ -12,8 +12,8 @@ export function SettingsButton({
 
   const isPlayRoute = routerState.location.pathname?.startsWith("/play");
   const visibleTabs: readonly SettingsTabId[] = isPlayRoute
-    ? ["game", "api", "tale", "story-cards", "model"]
-    : ["game", "api", "model"];
+    ? ["game", "api", "tale", "story-cards", "model", "updates"]
+    : ["game", "api", "model", "updates"];
 
   return (
     <>
