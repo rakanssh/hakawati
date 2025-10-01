@@ -2,6 +2,8 @@
 
 Hakawati is an AI-powered, text-based RPG client. Bring your own OpenAI-Compatible endpoint (Cloud or local), create or import a scenario, and start an on-demand, interactive, text-based adventure!
 
+> ℹ️ The client is in an early experiment stage. Expect bugs!
+
 ## Features
 
 - Two gamemodes:
