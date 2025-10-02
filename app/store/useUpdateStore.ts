@@ -115,7 +115,16 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
         errorMessage: null,
       });
 
-      toast.info(`Update ${update.version} is available.`);
+      toast.info(`Update ${update.version} is available.`, {
+        duration: 10000,
+        action: {
+          label: "Install",
+          onClick: () => {
+            void get().installUpdate();
+          },
+        },
+        closeButton: true,
+      });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Unknown error";
       set({
