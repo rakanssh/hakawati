@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented in this file.
 
+## [v0.1.2] - 2025-10-02
+
+### Added
+
+- Settings tab for manual update checking and installation using Tauri updater.
+- Automatic update check on application startup.
+- Finalized product name as "Hakawati" with proper capitalization.
+
+### Changed
+
+- Added release notes to the release process.
+- Finalized application identifier as "dev.hakawati.app" (breaking: will store DB in a new location).
+
 ## [v0.1.1] - 2025-10-02
 
 ### Changed
