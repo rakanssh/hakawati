@@ -28,7 +28,9 @@ interface UpdateInfo {
   notes?: string;
 }
 
-type TauriWindow = Window & { __TAURI__?: unknown };
+function isTauriEnvironment(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
 
 function formatBytes(bytes: number) {
   if (!bytes) return "0 B";
@@ -57,10 +59,8 @@ export default function SettingsUpdates() {
 
   useEffect(() => {
     let canceled = false;
-    const tauriWindow = window as unknown as TauriWindow;
-    const hasTauri =
-      typeof window !== "undefined" && "__TAURI_INTERNALS__" in tauriWindow;
-    if (!hasTauri) {
+
+    if (!isTauriEnvironment()) {
       setPhase("unsupported");
       return () => {
         canceled = true;
@@ -94,21 +94,21 @@ export default function SettingsUpdates() {
   }, []);
 
   const handleCheck = useCallback(async () => {
-    const tauriWindow = window as unknown as TauriWindow;
-    const hasTauri =
-      typeof window !== "undefined" && "__TAURI_INTERNALS__" in tauriWindow;
-    if (!hasTauri) {
+    if (!isTauriEnvironment()) {
       setPhase("unsupported");
       toast.info("Manual updates are only available in the desktop app.");
       return;
     }
 
+    let canceled = false;
     setPhase("checking");
     setErrorMessage(null);
     setDownloadedBytes(0);
 
     try {
       const update = await check();
+      if (canceled) return;
+
       const now = new Date();
       setCheckedAt(now);
 
@@ -132,12 +132,18 @@ export default function SettingsUpdates() {
       setPhase("available");
       toast.info(`Update ${update.version} is available.`);
     } catch (error) {
+      if (canceled) return;
+
       console.error("Update check failed", error);
       const message = error instanceof Error ? error.message : "Unknown error";
       setErrorMessage(message);
       setPhase("error");
       toast.error("Failed to check for updates.");
     }
+
+    return () => {
+      canceled = true;
+    };
   }, []);
 
   const handleInstall = useCallback(async () => {
@@ -146,16 +152,20 @@ export default function SettingsUpdates() {
       return;
     }
 
+    let canceled = false;
     setPhase("installing");
     setErrorMessage(null);
     setDownloadedBytes(0);
 
     try {
       await update.downloadAndInstall((event) => {
+        if (canceled) return;
         if (event.event === "Progress") {
           setDownloadedBytes((prev) => prev + (event.data.chunkLength ?? 0));
         }
       });
+
+      if (canceled) return;
 
       toast.success(
         "Update downloaded. The app will relaunch to finish installation.",
@@ -163,6 +173,8 @@ export default function SettingsUpdates() {
       setPhase("idle");
       setUpdateInfo(null);
     } catch (error) {
+      if (canceled) return;
+
       console.error("Update install failed", error);
       const message = error instanceof Error ? error.message : "Unknown error";
       setErrorMessage(message);
@@ -172,6 +184,10 @@ export default function SettingsUpdates() {
       await update.close().catch(() => undefined);
       updateRef.current = null;
     }
+
+    return () => {
+      canceled = true;
+    };
   }, []);
 
   const renderStatus = () => {
