@@ -54,6 +54,9 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Generate release notes
+        run: npx tsx scripts/extract-latest-release-notes.ts
+
       - name: Import Apple Developer Certificate
         if: matrix.platform == 'macos-latest'
         env:
@@ -97,7 +100,7 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "Hakawati ${{ github.ref_name }}"
-          releaseBody: "See the assets to download and install this version."
+          releaseBodyPath: artifacts/release-notes.md
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
