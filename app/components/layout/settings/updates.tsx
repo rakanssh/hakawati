@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { check, type Update } from "@tauri-apps/plugin-updater";
+import { useEffect, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -10,27 +9,7 @@ import {
   DownloadCloud,
   Loader2,
 } from "lucide-react";
-import { toast } from "sonner";
-
-type UpdatePhase =
-  | "idle"
-  | "checking"
-  | "available"
-  | "installing"
-  | "upToDate"
-  | "error"
-  | "unsupported";
-
-interface UpdateInfo {
-  version: string;
-  currentVersion: string;
-  releaseDate?: string;
-  notes?: string;
-}
-
-function isTauriEnvironment(): boolean {
-  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-}
+import { useUpdateStore } from "@/store/useUpdateStore";
 
 function formatBytes(bytes: number) {
   if (!bytes) return "0 B";
@@ -49,146 +28,54 @@ function formatCheckedAt(date: Date | null) {
 }
 
 export default function SettingsUpdates() {
-  const [phase, setPhase] = useState<UpdatePhase>("idle");
   const [currentVersion, setCurrentVersion] = useState<string | null>(null);
-  const [checkedAt, setCheckedAt] = useState<Date | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [downloadedBytes, setDownloadedBytes] = useState(0);
-  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
-  const updateRef = useRef<Update | null>(null);
+
+  // Select state values
+  const phase = useUpdateStore((state) => state.phase);
+  const checkedAt = useUpdateStore((state) => state.checkedAt);
+  const errorMessage = useUpdateStore((state) => state.errorMessage);
+  const downloadedBytes = useUpdateStore((state) => state.downloadedBytes);
+  const updateInfo = useUpdateStore((state) => state.updateInfo);
+
+  // Select actions separately (these are stable references)
+  const checkForUpdates = useUpdateStore((state) => state.checkForUpdates);
+  const installUpdate = useUpdateStore((state) => state.installUpdate);
+  const markNotificationSeen = useUpdateStore(
+    (state) => state.markNotificationSeen,
+  );
 
   useEffect(() => {
-    let canceled = false;
-
-    if (!isTauriEnvironment()) {
-      setPhase("unsupported");
-      return () => {
-        canceled = true;
-      };
-    }
+    let isActive = true;
 
     getVersion()
       .then((version) => {
-        if (!canceled) {
+        if (isActive) {
           setCurrentVersion(version);
         }
       })
       .catch(() => {
-        if (!canceled) {
+        if (isActive) {
           setCurrentVersion(null);
         }
       });
 
     return () => {
-      canceled = true;
+      isActive = false;
     };
   }, []);
 
   useEffect(() => {
-    return () => {
-      const resource = updateRef.current;
-      if (resource) {
-        resource.close().catch(() => undefined);
-      }
-    };
+    markNotificationSeen();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleCheck = useCallback(async () => {
-    if (!isTauriEnvironment()) {
-      setPhase("unsupported");
-      toast.info("Manual updates are only available in the desktop app.");
-      return;
-    }
+  const handleCheck = () => {
+    void checkForUpdates();
+  };
 
-    let canceled = false;
-    setPhase("checking");
-    setErrorMessage(null);
-    setDownloadedBytes(0);
-
-    try {
-      const update = await check();
-      if (canceled) return;
-
-      const now = new Date();
-      setCheckedAt(now);
-
-      if (!update) {
-        setUpdateInfo(null);
-        setPhase("upToDate");
-        toast.success("Hakawati is up to date.");
-        return;
-      }
-
-      await updateRef.current?.close().catch(() => undefined);
-      updateRef.current = update;
-
-      setUpdateInfo({
-        version: update.version,
-        currentVersion: update.currentVersion,
-        releaseDate: update.date,
-        notes: update.body,
-      });
-
-      setPhase("available");
-      toast.info(`Update ${update.version} is available.`);
-    } catch (error) {
-      if (canceled) return;
-
-      console.error("Update check failed", error);
-      const message = error instanceof Error ? error.message : "Unknown error";
-      setErrorMessage(message);
-      setPhase("error");
-      toast.error("Failed to check for updates.");
-    }
-
-    return () => {
-      canceled = true;
-    };
-  }, []);
-
-  const handleInstall = useCallback(async () => {
-    const update = updateRef.current;
-    if (!update) {
-      return;
-    }
-
-    let canceled = false;
-    setPhase("installing");
-    setErrorMessage(null);
-    setDownloadedBytes(0);
-
-    try {
-      await update.downloadAndInstall((event) => {
-        if (canceled) return;
-        if (event.event === "Progress") {
-          setDownloadedBytes((prev) => prev + (event.data.chunkLength ?? 0));
-        }
-      });
-
-      if (canceled) return;
-
-      toast.success(
-        "Update downloaded. The app will relaunch to finish installation.",
-      );
-      setPhase("idle");
-      setUpdateInfo(null);
-    } catch (error) {
-      if (canceled) return;
-
-      console.error("Update install failed", error);
-      const message = error instanceof Error ? error.message : "Unknown error";
-      setErrorMessage(message);
-      setPhase("error");
-      toast.error("Failed to install the update.");
-    } finally {
-      await update.close().catch(() => undefined);
-      updateRef.current = null;
-    }
-
-    return () => {
-      canceled = true;
-    };
-  }, []);
+  const handleInstall = () => {
+    void installUpdate();
+  };
 
   const renderStatus = () => {
     switch (phase) {

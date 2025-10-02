@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import { useUpdateStore } from "@/store/useUpdateStore";
 
 // Import all settings components
 import SettingsGame from "@/components/layout/settings/game";
@@ -45,6 +46,10 @@ export function SettingsModal({
     return filtered.length > 0 ? filtered : tabs;
   }, [visibleTabs]);
 
+  const hasUpdateNotification = useUpdateStore(
+    (state) => state.hasNotification,
+  );
+
   const [activeTab, setActiveTab] = useState<SettingsTabId>(() => {
     const fallback =
       availableTabs.find((tab) => tab.id === defaultTab)?.id ??
@@ -53,13 +58,18 @@ export function SettingsModal({
     return fallback;
   });
 
+  const prevOpenRef = useRef(open);
+
   useEffect(() => {
-    if (!open) return;
-    const nextActive =
-      availableTabs.find((tab) => tab.id === defaultTab)?.id ??
-      availableTabs[0]?.id ??
-      DEFAULT_TAB;
-    setActiveTab(nextActive);
+    const wasOpen = prevOpenRef.current;
+    if (open && !wasOpen) {
+      const nextActive =
+        availableTabs.find((tab) => tab.id === defaultTab)?.id ??
+        availableTabs[0]?.id ??
+        DEFAULT_TAB;
+      setActiveTab(nextActive);
+    }
+    prevOpenRef.current = open;
   }, [open, defaultTab, availableTabs]);
 
   useEffect(() => {
@@ -89,10 +99,16 @@ export function SettingsModal({
                 <li key={tab.id}>
                   <Button
                     variant={activeTab === tab.id ? "default" : "ghost"}
-                    className="w-full justify-start text-sm"
+                    className="relative w-full justify-start text-sm"
                     onClick={() => setActiveTab(tab.id)}
                   >
                     {tab.label}
+                    {tab.id === "updates" && hasUpdateNotification ? (
+                      <span
+                        aria-hidden
+                        className="absolute right-3 top-1/2 inline-flex h-2 w-2 -translate-y-1/2 rounded-full bg-destructive"
+                      />
+                    ) : null}
                   </Button>
                 </li>
               ))}
