@@ -222,13 +222,18 @@ export const useTaleStore = create<TaleStoreType>()(
       inventory: [],
       log: [],
       undoStack: [],
-      addLog: (log: LogEntry) => set((state) => ({ log: [...state.log, log] })),
+      addLog: (log: LogEntry) =>
+        set((state) => ({ log: [...state.log, log], undoStack: [] })),
       removeLastLogEntry: () =>
         set((state) => {
           const lastEntry = state.log.at(-1);
           if (!lastEntry) return {};
           const stateChanges = undoEntryActions(state, lastEntry);
-          return { ...stateChanges, log: state.log.slice(0, -1) };
+          return {
+            ...stateChanges,
+            log: state.log.slice(0, -1),
+            undoStack: [],
+          };
         }),
       updateLogEntry: (id, updates) =>
         set((state) => ({
@@ -286,8 +291,8 @@ export const useTaleStore = create<TaleStoreType>()(
             i.id === id ? { ...i, ...updates } : i,
           ),
         })),
-      clearInventory: () => set({ inventory: [] }),
-      clearStats: () => set({ stats: [] }),
+      clearInventory: () => set({ inventory: [], undoStack: [] }),
+      clearStats: () => set({ stats: [], undoStack: [] }),
       resetAllState: () =>
         set({
           stats: [
