@@ -112,9 +112,32 @@ export default function Home() {
           <AccordionTrigger>How to play</AccordionTrigger>
           <AccordionContent>
             <ul className="list-disc pl-4 space-y-1 text-sm">
-              <li>Type an action, the AI continues the story.</li>
-              <li>State changes appear under the narration.</li>
-              <li>Your health and inventory are displayed on the sidebar.</li>
+              <li>Open Settings → set API URL/key and pick a model.</li>
+              <li>Go to Scenarios → Create or Import from Clipboard.</li>
+              <li>Go to Scenarios → New Tale.</li>
+              <li>
+                Type actions, the AI continues. Available actions:
+                <ul className="list-disc pl-4 space-y-1 text-sm">
+                  <li>Do: Act in the story.</li>
+                  <li>Say: Speak something out loud.</li>
+                  <li>
+                    Story: Write a segment of text that the AI will treat as
+                    part of the story and continue from.
+                  </li>
+                  <li>
+                    Direct: An out of character note telling teh AI to do
+                    something.
+                  </li>
+                  <li>Continue: Continue the story.</li>
+                  <li>
+                    Retry: Retry the last message. Can only be done if the last
+                    message is by the AI.
+                  </li>
+                </ul>
+              </li>
+              <li>
+                In Game Master mode, the AI keeps track of stats and inventory.
+              </li>
             </ul>
           </AccordionContent>
         </AccordionItem>
@@ -127,14 +150,17 @@ export default function Home() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="font-bold underline">
-                      OpenAI-Compatible
+                      OpenAI-compatible
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    Any OpenAI-compatible provider. OpenAi, OpenRouter, etc.
+                    Works with any OpenAI-compatible API (cloud or local).
                   </TooltipContent>
                 </Tooltip>
               </li>
+              <li>Examples (cloud): OpenRouter, OpenAI.</li>
+              <li>Examples (local): Ollama, LocalAI, LLM Studio.</li>
+              <li>Tip: For local servers, enable CORS if needed.</li>
             </ul>
           </AccordionContent>
         </AccordionItem>
