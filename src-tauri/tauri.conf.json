@@ -33,6 +33,11 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "resources": {
+      "../THIRD_PARTY_LICENSES.json": "LICENSES/THIRD_PARTY_LICENSES.json",
+      "../THIRD_PARTY_LICENSES-rust.md": "LICENSES/THIRD_PARTY_LICENSES-rust.md",
+      "../LICENSE": "LICENSES/LICENSE"
+    },
     "windows": {
       "webviewInstallMode": {
         "type": "embedBootstrapper"

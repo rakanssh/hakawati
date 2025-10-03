@@ -9,6 +9,8 @@ All notable changes to this project are documented in this file.
 - Settings tab for manual update checking and installation using Tauri updater.
 - Automatic update check on application startup.
 - Finalized product name as "Hakawati" with proper capitalization.
+- Added licenses to the application and build process.
+- Published the project under the GPLv3 license.
 
 ### Changed
 

@@ -20,8 +20,16 @@ export function SettingsButton({
   const visibleTabs = useMemo<readonly SettingsTabId[]>(
     () =>
       isPlayRoute
-        ? (["game", "api", "tale", "story-cards", "model", "updates"] as const)
-        : (["game", "api", "model", "updates"] as const),
+        ? ([
+            "game",
+            "api",
+            "tale",
+            "story-cards",
+            "model",
+            "updates",
+            "about",
+          ] as const)
+        : (["game", "api", "model", "updates", "about"] as const),
     [isPlayRoute],
   );
 

@@ -20,6 +20,9 @@ Thumbs.db
 .vscode/
 *.swp
 
+# Generated license files
+THIRD_PARTY_LICENSES*.json
+THIRD_PARTY_LICENSES*.md
 
 .env
 .env.*

@@ -4,6 +4,8 @@ Hakawati is an AI-powered, text-based RPG client. Bring your own OpenAI-Compatib
 
 > ℹ️ The client is in an early experiment stage. Expect bugs!
 
+`© 2025 Rakan AlShammari`
+
 ## Features
 
 - Two gamemodes:
@@ -30,6 +32,7 @@ Download the latest release for your operating system from the Releases page.
 
 - Node.js 20+ and npm
 - Rust toolchain and platform dependencies required by [Tauri](https://tauri.app/start/prerequisites/)
+- [`cargo-about`](https://github.com/EmbarkStudios/cargo-about) CLI (`cargo install cargo-about --locked`)
 
 ### Installation
 
@@ -41,8 +44,9 @@ npm install
 
 - Desktop app preview: `npm run tauri dev`
 - Build: `npm run tauri build`
+- Refresh license reports manually: `npm run licenses:generate`
 
-On first launch, setup your API URL and key if applicable, then select a model from the list.
+On first launch, follow the home screen prompt tosetup your API URL and key if applicable, then select a model from the list.
 
 ## Project Structure
 
@@ -67,3 +71,10 @@ Planned areas of exploration include:
 - AI-generated/assisted story cards.
 - Cross-device sync.
 - Mobile support.
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 or later - see the [LICENSE](LICENSE) file for details.
+
+Third-party dependencies are used under their respective licenses. The generated reports ship with the desktop build inside the `LICENSES/` directory.
+Run `npm run licenses:generate` to refresh the license bundle before building (requires the [`cargo-about`](https://github.com/EmbarkStudios/cargo-about) CLI to be installed and available on your `PATH`).

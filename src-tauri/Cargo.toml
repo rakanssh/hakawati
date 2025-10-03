@@ -2,8 +2,9 @@
 name = "hakawati"
 version = "0.1.2"
 description = "AI-powered, text-based RPG client"
-authors = ["rakansshssh"]
+authors = ["rakanssh"]
 edition = "2021"
+license = "GPL-3.0-or-later"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

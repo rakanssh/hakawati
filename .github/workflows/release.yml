@@ -54,6 +54,9 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Install cargo-about
+        run: cargo install cargo-about --locked
+
       - name: Generate release notes
         run: npx tsx scripts/extract-latest-release-notes.ts
 

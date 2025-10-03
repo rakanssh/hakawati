@@ -52,6 +52,9 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Install cargo-about
+        run: cargo install cargo-about --locked
+
       - name: Run frontend tests
         run: npm run typecheck
 
