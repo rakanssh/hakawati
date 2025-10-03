@@ -53,7 +53,9 @@ jobs:
         run: npm ci
 
       - name: Install cargo-about
-        run: cargo install cargo-about --locked
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-about
 
       - name: Run frontend tests
         run: npm run typecheck
