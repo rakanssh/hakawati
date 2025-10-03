@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Markdown support for release notes in the update tab.
+
 ## [v0.1.2] - 2025-10-02
 
 ### Added

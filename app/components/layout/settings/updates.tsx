@@ -10,6 +10,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { useUpdateStore } from "@/store/useUpdateStore";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 function formatBytes(bytes: number) {
   if (!bytes) return "0 B";
@@ -106,9 +108,11 @@ export default function SettingsUpdates() {
               </Button>
             </div>
             {updateInfo?.notes ? (
-              <p className="text-xs text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                {updateInfo.notes}
-              </p>
+              <div className="prose prose-sm prose-neutral dark:prose-invert max-w-none">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {updateInfo.notes}
+                </ReactMarkdown>
+              </div>
             ) : null}
             {updateInfo?.releaseDate ? (
               <span className="text-xs text-muted-foreground">
