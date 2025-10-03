@@ -11,11 +11,7 @@ Hakawati is an AI-powered, text-based RPG client. Bring your own OpenAI-Compatib
 - Two gamemodes:
   - StoryTeller: Standard AI text-based adventure.
   - GameMaster: The game keeps track of items and statistics, allowing the AI to represent and remember the current state of your character. Stats can be any numeric value with a minimum and maximum. (Experimental — best with more capable models.)
-- Different prompt types:
-  - Do: Take an action.
-  - Say: Speak out loud.
-  - Story: Impersonate the AI for a turn, and let it continue story content.
-  - Direct: An "out of character" note or instruction you can pass to the AI to nudge it in the right direction.
+- Different prompt types: `Do`, `Say`, `Story`, `Direct` or `Continue`.
 - Self-contained application — download (or build) and run.
 - Supports OpenAI-compatible endpoints (including OpenRouter metadata such as pricing/token limits). Works with local servers and tools like Ollama, LocalAI, and LLM Studio. (Remember to enable CORS when required.)
 - Scenario builder to create and save templates for new tales. Supports sharing scenarios via import/export to the clipboard.
@@ -24,7 +20,48 @@ Hakawati is an AI-powered, text-based RPG client. Bring your own OpenAI-Compatib
 
 ## How to Play
 
-Download the latest release for your operating system from the Releases page.
+### Install
+
+Download the latest release for your operating system from the [Releases page](https://github.com/rakanssh/hakawati/releases/latest).
+
+### Setup
+
+On first launch, follow the home screen prompt to navigate to the settings tab, setup your API URL and key if it requires one. (OpenAI-compatible endpoints are supported. click scan to detect local servers.)
+ℹ️ If you're using a local server, make sure to enable CORS.
+
+### Create or Import a Scenario
+
+Click `Scenarios` to navigate to the scenario page. You can create a new scenario from scratch `Create Scenario` or import one from the clipboard `Import From Clipboard`.
+
+Scenario Fields:
+
+- **Name**: The name of the scenario. Used to identify it.
+- **Thumbnail**: A thumbnail image for the scenario. (Optional)
+- **Initial Description**: A description of the scenario passed to the LLM with every action. Can be customized per tale.
+- **Initial Author Notes**: A note directing how the AI should write the story. Can be customized per tale.
+- **Opening Text**: The initial text at the start of the tale.
+- **Initial Game Mode**: The game mode new tales will start in.(`Story Teller` or `Game Master`)
+- **Initial Stats**: A list of stats that the AI can use to track the state of the scenario.(Used only in `Game Master` mode.)
+- **Initial Inventory**: A list of items that the AI can use to track the state of the scenario.(Used only in `Game Master` mode.)
+- **Initial Story Cards**: A list of story cards that the AI can use to track the state of the scenario.
+
+These fields can be customized per tale from the settings tab after creating a new tale. The values in the scenario will be used as initial values for new tales created from it.
+
+### Create a Tale
+
+From the scenario page, click `New Tale` on a scenario card to create a new tale from it. The tale will be saved automatically on every action.
+
+### Manage Tales
+
+From the home page, click `Tales` to navigate to the tales page. You can continue or manage existing tales from here.
+
+### Export a Scenario
+
+Click the three dot menu on a scenario and click `Export JSON` to copy the scenario to the clipboard. The scenario can then be shared with others to be imported into their client.
+
+### Edit a Scenario
+
+Click the three dot menu on a scenario and click `Edit` to edit its values.
 
 ## Getting Started
 
