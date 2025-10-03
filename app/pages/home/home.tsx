@@ -79,12 +79,14 @@ export default function Home() {
                 </div>
               </div>
             )}
-            <Button
-              onClick={() => navigate({ to: "/play" })}
-              disabled={log.length === 0 || hasIssues}
-            >
-              Continue
-            </Button>
+            {(name || description || log.length > 0) && (
+              <Button
+                onClick={() => navigate({ to: "/play" })}
+                disabled={log.length === 0 || hasIssues}
+              >
+                Continue
+              </Button>
+            )}
             <Button
               variant="outline"
               onClick={() => navigate({ to: "/tales" })}

@@ -180,7 +180,7 @@ export const useTaleStore = create<TaleStoreType>()(
     (set) => ({
       id: uuidv4(),
       gameMode: GameMode.GM,
-      name: "Default",
+      name: "",
       description: "",
       authorNote: "",
       storyCards: [],

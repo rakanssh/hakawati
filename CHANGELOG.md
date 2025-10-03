@@ -8,6 +8,11 @@ All notable changes to this project are documented in this file.
 
 - Markdown support for release notes in the update tab.
 
+### Changed
+
+- Hide the home screen card if there is no current tale.
+- Hide the continue button if there is no current tale.
+
 ## [v0.1.2] - 2025-10-02
 
 ### Added
