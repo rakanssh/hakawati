@@ -27,7 +27,31 @@ Download the latest release for your operating system from the [Releases page](h
 ### Setup
 
 On first launch, follow the home screen prompt to navigate to the settings tab, setup your API URL and key if it requires one. (OpenAI-compatible endpoints are supported. click scan to detect local servers.)
-ℹ️ If you're using a local server, make sure to enable CORS.
+
+#### Getting an Inference endpoint
+
+The client supports OpenAI-compatible endpoints. There are two main straightforward ways to get an OpenAI-compatible endpoint for the client:
+
+- **Cloud Providers:** Check each provider for their pricing, limits, and privacy policies.
+- **Local Servers:** Run open LLMs on your own hardware using tools that expose a local server.
+
+**Example Cloud Providers:**
+
+- OpenRouter: [https://openrouter.ai](https://openrouter.ai)
+  A good option if you want to use models from various providers without having to sign up for each one. Has multiple free providers. (Check their website for more details). Note that free providers often collect your prompts.
+- OpenAI: [https://platform.openai.com](https://platform.openai.com)
+  The official OpenAI API.
+- Many others...
+
+**Example Local tools:**
+
+- LocalAI: [https://localai.io](https://localai.io)
+- LLM Studio: [https://lmstudio.ai](https://lmstudio.ai)
+- Ollama: [https://ollama.com](https://ollama.com)
+- Many others...
+
+I've tested with these tools and they work, anything that exposes an OpenAI-compatible endpoint should work too. Reach out if you find one that doesn't.
+Check your chosen tool's documentation for how to enable the server, you may need to enable CORS too.
 
 ### Create or Import a Scenario
 
