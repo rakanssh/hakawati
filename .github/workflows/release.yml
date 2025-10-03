@@ -60,6 +60,7 @@ jobs:
           tool: cargo-about
 
       - name: Generate release notes
+        id: release_notes
         run: npx tsx scripts/extract-latest-release-notes.ts
 
       - name: Import Apple Developer Certificate
@@ -105,7 +106,7 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "Hakawati ${{ github.ref_name }}"
-          releaseBodyPath: artifacts/release-notes.md
+          releaseBody: ${{ steps.release_notes.outputs.release_body }}
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}

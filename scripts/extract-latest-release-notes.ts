@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "fs/promises";
+import { mkdir, readFile, writeFile, appendFile } from "fs/promises";
 import path from "path";
 
 const TAG_ENV_KEYS = [
@@ -79,6 +79,12 @@ async function main() {
 
   await mkdir(artifactsDir, { recursive: true });
   await writeFile(outputPath, `${notes}\n`, "utf8");
+
+  const githubOutput = process.env.GITHUB_OUTPUT;
+  if (githubOutput) {
+    const payload = `release_body<<EOF\n${notes}\nEOF\n`;
+    await appendFile(githubOutput, payload);
+  }
 
   process.stdout.write(`Release notes for ${tag} written to ${outputPath}\n`);
 }
