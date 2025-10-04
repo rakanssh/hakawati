@@ -20,7 +20,6 @@ import {
   SendIcon,
   SpeechIcon,
   BookIcon,
-  SquareIcon,
   MegaphoneIcon,
   SaveIcon,
 } from "lucide-react";
@@ -471,10 +470,12 @@ export default function Play() {
               className="absolute inset-x-0 bottom-0 resize-none !bg-accent"
             />
           </div>
-          <Button type="submit" onClick={handleSubmit} disabled={saving}>
-            {loading ? (
-              <SquareIcon className="w-4 h-4 animate-pulse" />
-            ) : saving ? (
+          <Button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={saving || loading}
+          >
+            {saving ? (
               <SaveIcon className="w-4 h-4 animate-spin" />
             ) : (
               <SendIcon className="w-4 h-4" />

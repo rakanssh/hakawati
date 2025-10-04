@@ -20,6 +20,10 @@ All notable changes to this project are documented in this file.
 - Clear undo stack when clearing inventory or stats.
 - Clear undo stack when adding a log entry.
 
+### Removed
+
+- Stop button from log control. Currently buggy. (Temporary)
+
 ## [v0.1.2] - 2025-10-02
 
 ### Added
