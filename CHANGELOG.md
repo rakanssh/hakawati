@@ -7,6 +7,7 @@ All notable changes to this project are documented in this file.
 ### Added
 
 - Markdown support for release notes in the update tab.
+- Added Openrouter ranking headers to API requests.
 
 ### Changed
 

@@ -37,6 +37,8 @@ export function OpenAiClient(apiKey?: string): LLMClient {
     console.debug(`Sending request to ${req.model}:`, body);
     const headers: HeadersInit = {
       "Content-Type": "application/json",
+      "HTTP-Referer": "https://github.com/rakanssh/hakawati",
+      "X-Title": "Hakawati",
       ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
     };
 
