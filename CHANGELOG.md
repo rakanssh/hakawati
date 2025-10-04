@@ -13,6 +13,9 @@ All notable changes to this project are documented in this file.
 - Hide the home screen card if there is no current tale.
 - Hide the continue button if there is no current tale.
 - Update home screen how to play and supported providers.
+
+### Fixed
+
 - Clear undo stack when clearing inventory or stats.
 - Clear undo stack when adding a log entry.
 
