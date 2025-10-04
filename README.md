@@ -4,8 +4,12 @@ Hakawati is an AI-powered, text-based RPG client. Bring your own OpenAI-Compatib
 
 > ℹ️ The client is in an early experiment stage. Expect bugs!
 
-![Game Master Mode](./public/gm.png)
-![Story Teller Mode](./public/st.png)
+Game Modes:
+
+- Game Master Mode
+  ![Game Master Mode](./public/gm.png)
+- Story Teller Mode
+  ![Story Teller Mode](./public/st.png)
 
 ## Features
 
