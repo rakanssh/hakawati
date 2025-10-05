@@ -16,6 +16,7 @@ All notable changes to this project are documented in this file.
 - Hide the continue button if there is no current tale.
 - Update home screen how to play and supported providers.
 - If the first log entry is a player message, auto-send it to the LLM. (Used for the quickstart wizard. May be expanded later.)
+- Removed default value for API url.
 
 ### Fixed
 

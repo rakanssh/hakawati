@@ -51,7 +51,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
       contextWindow: 10000,
       modelContextLength: 0,
       maxTokens: 2048,
-      openAiBaseUrl: "https://openrouter.ai/api/v1",
+      openAiBaseUrl: "",
       seed: Math.floor(Math.random() * 1000000),
       setApiKey: (apiKey: string) => set({ apiKey }),
       setApiType: (apiType: ApiType) => set({ apiType }),
