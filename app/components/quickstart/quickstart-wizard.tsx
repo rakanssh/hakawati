@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Drawer,
@@ -210,19 +210,19 @@ export function QuickstartWizard({
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === steps.length - 1;
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (!isLastStep) {
       setCurrentStep((prev) => prev + 1);
     }
-  };
+  }, [isLastStep]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (!isFirstStep) {
       setCurrentStep((prev) => prev - 1);
     }
-  };
+  }, [isFirstStep]);
 
-  const handleComplete = async () => {
+  const handleComplete = useCallback(async () => {
     const finalAuthorNote =
       state.authorNote ||
       generateAuthorNote(
@@ -302,7 +302,27 @@ export function QuickstartWizard({
 
     onOpenChange(false);
     navigate({ to: "/play" });
-  };
+  }, [state, taleStore, onOpenChange, navigate]);
+
+  const handleKeyPress = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === "Enter" && currentStepData.canProgress) {
+        if (isLastStep) {
+          handleComplete();
+        } else {
+          handleNext();
+        }
+      }
+    },
+    [currentStepData.canProgress, isLastStep, handleComplete, handleNext],
+  );
+
+  useEffect(() => {
+    if (open) {
+      document.addEventListener("keydown", handleKeyPress);
+      return () => document.removeEventListener("keydown", handleKeyPress);
+    }
+  }, [open, handleKeyPress]);
 
   const handleClose = () => {
     setCurrentStep(0);
