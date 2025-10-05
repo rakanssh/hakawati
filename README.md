@@ -58,6 +58,12 @@ The client supports OpenAI-compatible endpoints. There are two main straightforw
 I've tested with these tools and they work, anything that exposes an OpenAI-compatible endpoint should work too. Reach out if you find one that doesn't.
 Check your chosen tool's documentation for how to enable the server, you may need to enable CORS too.
 
+### Create a Tale
+
+You can get started right away by clicking `Quickstart` on the home page and following the on-screen instructions to create a new tale by defining your character, setting, and tone. This will give you a tale with data based on your choices, the resulting description and author note can be changed at any time from the settings tab while in the tale.
+
+You can also create, share, and import scenarios that act as templates for new tales allowing further customization.
+
 ### Create or Import a Scenario
 
 Click `Scenarios` to navigate to the scenario page. You can create a new scenario from scratch `Create Scenario` or import one from the clipboard `Import From Clipboard`.

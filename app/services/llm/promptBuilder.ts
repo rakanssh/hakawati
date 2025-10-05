@@ -98,7 +98,6 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
   const promptBudget = Math.max(1, contextLimit - completionMax);
   const messages: ChatMessage[] = [];
 
-  // Build user message (do not inline story cards)
   const gameState = `
 **Game State:**
 - Stats: ${JSON.stringify(stats)}
@@ -171,6 +170,7 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
 
   const selectedHistory: ChatMessage[] = [];
   const includedCardIds = new Set<string>();
+  let hitTokenLimit = false;
 
   const currentBaseMessages = [...baseRequiredForCounting];
 
@@ -209,12 +209,12 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
       for (const c of newCards) includedCardIds.add(c.id);
     } else {
       // Cannot include this message because adding it (and any new cards) would exceed budget
+      hitTokenLimit = true;
       break;
     }
   }
 
-  // Check if no history could be fitted
-  if (selectedHistory.length === 0 && mergedLog.length > 0) {
+  if (hitTokenLimit && selectedHistory.length === 0) {
     toast.warning(
       "No conversation history could be included due to token limits.",
     );

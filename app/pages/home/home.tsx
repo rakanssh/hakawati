@@ -22,6 +22,7 @@ import {
   type SettingsTabId,
 } from "@/components/layout/settings";
 import { AlertTriangle } from "lucide-react";
+import { QuickstartWizard } from "@/components/quickstart";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ export default function Home() {
   const { name, description, log } = useTaleStore();
   const lastEntry = log.at(-1);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [quickstartOpen, setQuickstartOpen] = useState(false);
   const nonPlayTabs: readonly SettingsTabId[] = ["game", "api", "model"];
 
   const { hasIssues, issues } = useMemo(() => {
@@ -88,6 +90,13 @@ export default function Home() {
               </Button>
             )}
             <Button
+              onClick={() => setQuickstartOpen(true)}
+              disabled={hasIssues}
+              className="gap-2 bg-primary"
+            >
+              Quickstart
+            </Button>
+            <Button
               variant="outline"
               onClick={() => navigate({ to: "/tales" })}
             >
@@ -113,6 +122,10 @@ export default function Home() {
           <AccordionContent>
             <ul className="list-disc pl-4 space-y-1 text-sm">
               <li>Open Settings → set API URL/key and pick a model.</li>
+              <li>
+                <strong>Quick Start:</strong> Click &quot;Quickstart&quot; to
+                jump right in with a guided wizard, or
+              </li>
               <li>Go to Scenarios → Create or Import from Clipboard.</li>
               <li>Go to Scenarios → New Tale.</li>
               <li>
@@ -170,6 +183,10 @@ export default function Home() {
         onOpenChange={setSettingsOpen}
         defaultTab="api"
         visibleTabs={nonPlayTabs}
+      />
+      <QuickstartWizard
+        open={quickstartOpen}
+        onOpenChange={setQuickstartOpen}
       />
     </main>
   );

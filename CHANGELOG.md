@@ -6,6 +6,7 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- Quickstart wizard for creating a new tale without a scenario.
 - Markdown support for release notes in the update tab.
 - Added Openrouter ranking headers to API requests.
 
@@ -14,11 +15,13 @@ All notable changes to this project are documented in this file.
 - Hide the home screen card if there is no current tale.
 - Hide the continue button if there is no current tale.
 - Update home screen how to play and supported providers.
+- If the first log entry is a player message, auto-send it to the LLM. (Used for the quickstart wizard. May be expanded later.)
 
 ### Fixed
 
 - Clear undo stack when clearing inventory or stats.
 - Clear undo stack when adding a log entry.
+- Prevent lack of history from being reported as an error.
 
 ### Removed
 

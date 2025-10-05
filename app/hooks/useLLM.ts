@@ -25,7 +25,9 @@ export function useLLM() {
       onError: (error: unknown) => void;
     },
   ) => {
-    abortRef.current?.abort();
+    if (abortRef.current && !abortRef.current.signal.aborted) {
+      abortRef.current.abort();
+    }
     abortRef.current = new AbortController();
     setLoading(true);
 

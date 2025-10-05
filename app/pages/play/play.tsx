@@ -85,6 +85,7 @@ export default function Play() {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [stickToBottom, setStickToBottom] = useState<boolean>(true);
   const { save, saving } = usePersistTale();
+  const hasAutoSentRef = useRef(false);
 
   useEffect(() => {
     if (loading) setStickToBottom(true);
@@ -309,6 +310,19 @@ export default function Play() {
     }
     console.warn("Cannot retry, log state is not as expected.");
   }, [loading, executeLlmSend, removeLastLogEntry, randomSeed]);
+
+  useEffect(() => {
+    if (hasAutoSentRef.current || loading || !model) return;
+
+    if (log.length === 1 && log[0].role === LogEntryRole.PLAYER) {
+      const firstEntry = log[0];
+      hasAutoSentRef.current = true;
+      void executeLlmSend(
+        firstEntry.text,
+        firstEntry.mode ?? LogEntryMode.DIRECT,
+      );
+    }
+  }, [log, loading, model, executeLlmSend]);
 
   type LogBlock = { role: LogEntryRole; chainId?: string; entries: typeof log };
 
