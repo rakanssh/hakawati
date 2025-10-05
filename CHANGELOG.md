@@ -23,6 +23,7 @@ All notable changes to this project are documented in this file.
 - Clear undo stack when clearing inventory or stats.
 - Clear undo stack when adding a log entry.
 - Prevent lack of history from being reported as an error.
+- Prevent massive max output tokens from being reported when no data is available.
 
 ### Removed
 

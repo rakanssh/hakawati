@@ -70,15 +70,18 @@ export const useSettingsStore = create<SettingsStoreType>()(
       },
       setContextWindow: (contextWindow: number) =>
         set({
-          contextWindow: Math.min(
-            contextWindow,
-            get().modelContextLength ?? 2048,
-          ),
+          contextWindow:
+            get().modelContextLength > 0
+              ? Math.min(contextWindow, get().modelContextLength)
+              : contextWindow,
         }),
       setOpenAiBaseUrl: (openAiBaseUrl: string) => set({ openAiBaseUrl }),
       setMaxTokens: (maxTokens: number) =>
         set({
-          maxTokens: Math.max(1, Math.min(get().modelContextLength, maxTokens)),
+          maxTokens:
+            get().modelContextLength > 0
+              ? Math.max(1, Math.min(get().modelContextLength, maxTokens))
+              : maxTokens,
         }),
       setTemperature: (temperature: number) =>
         set({ temperature: Math.max(0, Math.min(2, temperature)) }),

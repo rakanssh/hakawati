@@ -54,8 +54,11 @@ export default function SettingsModel() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
           <Label>
-            Context Window (0 - {Intl.NumberFormat().format(modelContextLength)}
-            )
+            Context Window
+            {modelContextLength > 0 &&
+            modelContextLength < Number.MAX_SAFE_INTEGER
+              ? ` (0 - ${Intl.NumberFormat().format(modelContextLength)})`
+              : ""}
             <Tooltip>
               <TooltipTrigger>
                 <InfoIcon className="w-4 h-4" />
@@ -67,7 +70,11 @@ export default function SettingsModel() {
           </Label>
           <NumberInput
             min={1}
-            max={Math.max(1, modelContextLength || 1)}
+            max={
+              modelContextLength > 0
+                ? modelContextLength
+                : Number.MAX_SAFE_INTEGER
+            }
             step={1}
             value={contextWindow}
             onValueCommit={(val) => setContextWindow(val)}
@@ -75,12 +82,19 @@ export default function SettingsModel() {
         </div>
         <div className="flex flex-col gap-2">
           <Label>
-            Max Output Tokens (1 -{" "}
-            {Intl.NumberFormat().format(modelContextLength)})
+            Max Output Tokens
+            {modelContextLength > 0 &&
+            modelContextLength < Number.MAX_SAFE_INTEGER
+              ? ` (1 - ${Intl.NumberFormat().format(modelContextLength)})`
+              : ""}
           </Label>
           <NumberInput
             min={1}
-            max={Math.max(1, modelContextLength || 1)}
+            max={
+              modelContextLength > 0
+                ? modelContextLength
+                : Number.MAX_SAFE_INTEGER
+            }
             step={1}
             value={maxTokens}
             onValueCommit={(val) => setMaxTokens(val)}
