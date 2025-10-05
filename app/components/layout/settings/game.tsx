@@ -1,7 +1,9 @@
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { NumberInput } from "@/components/ui";
 import { Separator } from "@/components/ui/separator";
 import { GameMode } from "@/types";
-import { useTaleStore } from "@/store";
+import { useSettingsStore, useTaleStore } from "@/store";
 import {
   Select,
   SelectContent,
@@ -22,6 +24,7 @@ export default function SettingsGame() {
   const { gameMode, setGameMode, id } = useTaleStore();
   const { theme, setTheme } = useTheme();
   const { save } = usePersistTale();
+  const { uiScale, setUiScale } = useSettingsStore();
 
   const getGamemodeDescription = (gameMode: GameMode) => {
     if (gameMode === GameMode.GM)
@@ -47,6 +50,7 @@ export default function SettingsGame() {
       <Separator />
 
       <Label>Game</Label>
+      <Separator />
       <Label>Game Mode</Label>
       <div className="flex flex-col gap-2">
         <Select value={gameMode} onValueChange={handleGameModeChange}>
@@ -74,26 +78,49 @@ export default function SettingsGame() {
         </span>
       </div>
 
+      <Label>Appearance</Label>
       <Separator />
 
-      <Label>Appearance</Label>
-      <div className="flex flex-col gap-2">
-        <Label>Theme</Label>
-        <Select
-          value={theme}
-          onValueChange={(value) =>
-            setTheme(value as "light" | "dark" | "system")
-          }
-        >
-          <SelectTrigger className="w-full sm:w-[240px]">
-            <SelectValue placeholder="Select a theme" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="system">System</SelectItem>
-            <SelectItem value="light">Light</SelectItem>
-            <SelectItem value="dark">Dark</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex flex-col gap-2">
+          <Label>Theme</Label>
+          <Select
+            value={theme}
+            onValueChange={(value) =>
+              setTheme(value as "light" | "dark" | "system")
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a theme" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="system">System</SelectItem>
+              <SelectItem value="light">Light</SelectItem>
+              <SelectItem value="dark">Dark</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label>UI Scale (0.8 - 1.5)</Label>
+          <div className="flex flex-row items-center gap-2">
+            <NumberInput
+              min={0.8}
+              max={1.5}
+              step={0.05}
+              value={uiScale}
+              onValueCommit={(value) => setUiScale(value)}
+              aria-label="User interface scale"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setUiScale(1)}
+              disabled={Math.abs(uiScale - 1) < 0.01}
+            >
+              Reset
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

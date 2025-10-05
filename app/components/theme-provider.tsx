@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { useSettingsStore } from "@/store";
 
 type Theme = "dark" | "light" | "system";
 
@@ -26,6 +27,7 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
+  const uiScale = useSettingsStore((state) => state.uiScale);
   const [theme, setTheme] = useState<Theme>(() => {
     try {
       return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
@@ -51,6 +53,11 @@ export function ThemeProvider({
 
     root.classList.add(theme);
   }, [theme]);
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.style.setProperty("--ui-scale", uiScale.toString());
+  }, [uiScale]);
 
   const value = {
     theme,

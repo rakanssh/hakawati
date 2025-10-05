@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [UNRELEASED]
+
+### Added
+
+- UI scale slider to the settings game tab.
+
 ## [v0.2.0] - 2025-10-05
 
 ### Added

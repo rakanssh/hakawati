@@ -21,6 +21,7 @@ interface SettingsStoreType {
   minP?: number; //range [0,1]
   seed: number;
   topA?: number; //range [0,1]
+  uiScale: number;
   setApiKey: (apiKey: string) => void;
   setApiType: (apiType: ApiType) => void;
   setResponseMode: (responseMode: ResponseMode) => void;
@@ -38,6 +39,7 @@ interface SettingsStoreType {
   setTopA: (topA: number) => void;
   setSeed: (seed: number) => void;
   randomSeed: () => void;
+  setUiScale: (scale: number) => void;
   setToDefault: () => void;
 }
 
@@ -53,6 +55,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
       maxTokens: 2048,
       openAiBaseUrl: "",
       seed: Math.floor(Math.random() * 1000000),
+      uiScale: 1,
       setApiKey: (apiKey: string) => set({ apiKey }),
       setApiType: (apiType: ApiType) => set({ apiType }),
       setResponseMode: (responseMode: ResponseMode) => set({ responseMode }),
@@ -99,6 +102,13 @@ export const useSettingsStore = create<SettingsStoreType>()(
       setTopA: (topA: number) => set({ topA: Math.max(0, Math.min(1, topA)) }),
       setSeed: (seed: number) => set({ seed }),
       randomSeed: () => set({ seed: Math.floor(Math.random() * 1000000) }),
+      setUiScale: (scale: number) =>
+        set(() => {
+          const isFiniteNumber = Number.isFinite(scale);
+          const normalized = isFiniteNumber ? scale : 1;
+          const clamped = Math.min(Math.max(normalized, 0.8), 1.5);
+          return { uiScale: Number(clamped.toFixed(2)) };
+        }),
       setToDefault: () =>
         set({
           contextWindow: 10000,
@@ -112,6 +122,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
           minP: undefined,
           topA: undefined,
           responseMode: ResponseMode.FREE_FORM,
+          uiScale: 1,
         }),
     }),
     {
