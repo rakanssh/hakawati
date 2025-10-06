@@ -3,6 +3,7 @@ import { ReactNode, Fragment } from "react";
 import { LLMAction } from "@/services/llm/schema";
 import { Badge } from "../ui/badge";
 import { ChartBarIcon, ShoppingBagIcon, Trash2Icon } from "lucide-react";
+import { ErrorTooltip } from "./error-tooltip";
 
 export type LogBlock = {
   role: LogEntryRole;
@@ -22,6 +23,9 @@ export function LogBlockBubble({
   renderEntry,
 }: LogBlockBubbleProps) {
   const actions: LLMAction[] = block.entries.flatMap((e) => e.actions || []);
+  const hasError = block.entries.some((e) => e.error !== undefined);
+  const errorEntry = block.entries.find((e) => e.error !== undefined);
+
   return (
     <div className="flex flex-col items-start ml-2">
       <div className="inline whitespace-pre-wrap break-words">
@@ -36,6 +40,7 @@ export function LogBlockBubble({
             </span>
           );
         })}
+        {hasError && errorEntry && <ErrorTooltip error={errorEntry.error} />}
       </div>
       <div className="flex flex-row mt-2">
         {actions.length > 0 && (

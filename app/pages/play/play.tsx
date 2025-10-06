@@ -222,6 +222,7 @@ export default function Play() {
           console.error("LLM Error:", error);
           updateLogEntry(gmResponseId, {
             text: "A strange force seems to have scrambled my thoughts. Please repeat that.",
+            error: error,
           });
         },
       });
