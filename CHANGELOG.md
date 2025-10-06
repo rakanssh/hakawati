@@ -7,6 +7,7 @@ All notable changes to this project are documented in this file.
 ### Added
 
 - UI scale slider to the settings game tab.
+- UI font dropdown to the settings game tab.
 
 ## [v0.2.0] - 2025-10-05
 

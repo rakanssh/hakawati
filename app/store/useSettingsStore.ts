@@ -22,6 +22,7 @@ interface SettingsStoreType {
   seed: number;
   topA?: number; //range [0,1]
   uiScale: number;
+  fontFamily: string;
   setApiKey: (apiKey: string) => void;
   setApiType: (apiType: ApiType) => void;
   setResponseMode: (responseMode: ResponseMode) => void;
@@ -40,6 +41,7 @@ interface SettingsStoreType {
   setSeed: (seed: number) => void;
   randomSeed: () => void;
   setUiScale: (scale: number) => void;
+  setFontFamily: (fontFamily: string) => void;
   setToDefault: () => void;
 }
 
@@ -56,6 +58,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
       openAiBaseUrl: "",
       seed: Math.floor(Math.random() * 1000000),
       uiScale: 1,
+      fontFamily: "system-ui",
       setApiKey: (apiKey: string) => set({ apiKey }),
       setApiType: (apiType: ApiType) => set({ apiType }),
       setResponseMode: (responseMode: ResponseMode) => set({ responseMode }),
@@ -109,6 +112,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
           const clamped = Math.min(Math.max(normalized, 0.8), 1.5);
           return { uiScale: Number(clamped.toFixed(2)) };
         }),
+      setFontFamily: (fontFamily: string) => set({ fontFamily }),
       setToDefault: () =>
         set({
           contextWindow: 10000,
@@ -123,6 +127,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
           topA: undefined,
           responseMode: ResponseMode.FREE_FORM,
           uiScale: 1,
+          fontFamily: "system-ui",
         }),
     }),
     {

@@ -14,6 +14,7 @@ import {
 import { useTheme } from "@/components/theme-provider";
 import { BookIcon, SwordIcon } from "lucide-react";
 import { usePersistTale } from "@/hooks/useGameSaves";
+import { FontSelector } from "./font-selector";
 
 function resolveGameModeLabel(gameMode: GameMode) {
   if (gameMode === GameMode.GM) return "Game Master";
@@ -121,6 +122,10 @@ export default function SettingsGame() {
             </Button>
           </div>
         </div>
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label>Font Family</Label>
+        <FontSelector />
       </div>
     </div>
   );

@@ -28,6 +28,7 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const uiScale = useSettingsStore((state) => state.uiScale);
+  const fontFamily = useSettingsStore((state) => state.fontFamily);
   const [theme, setTheme] = useState<Theme>(() => {
     try {
       return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
@@ -58,6 +59,11 @@ export function ThemeProvider({
     const root = window.document.documentElement;
     root.style.setProperty("--ui-scale", uiScale.toString());
   }, [uiScale]);
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.style.setProperty("--font-family", fontFamily);
+  }, [fontFamily]);
 
   const value = {
     theme,

@@ -41,6 +41,7 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
   --scale-base: var(--ui-scale);
+  --font-family-base: var(--font-family);
 }
 
 :root {
@@ -77,6 +78,7 @@
   --sidebar-border: oklch(0.92 0.004 286.32);
   --sidebar-ring: oklch(0.705 0.015 286.067);
   --ui-scale: 1;
+  --font-family: system-ui;
 }
 
 .dark {
@@ -122,6 +124,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-family-base);
   }
 }
 
