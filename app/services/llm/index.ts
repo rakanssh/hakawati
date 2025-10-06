@@ -11,6 +11,6 @@ export async function sendChat(req: ChatRequest, signal?: AbortSignal) {
   return getClient().chat(req, signal);
 }
 
-export async function getModels() {
-  return getClient().models();
+export async function getModels(signal?: AbortSignal) {
+  return getClient().models(signal);
 }

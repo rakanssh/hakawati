@@ -40,7 +40,7 @@ export interface ChatResponse {
 
 export interface LLMClient {
   chat(request: ChatRequest, signal?: AbortSignal): Promise<ChatResponse>;
-  models(): Promise<LLMModel[]>;
+  models(signal?: AbortSignal): Promise<LLMModel[]>;
 }
 
 export interface ModelPricing {

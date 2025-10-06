@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getModels } from "@/services/llm";
 import { LLMModel } from "@/services/llm/schema";
 import { useSettingsStore } from "@/store";
@@ -7,15 +7,25 @@ export function useLLMProviders() {
   const [models, setModels] = useState<LLMModel[]>([]);
   const [loading, setLoading] = useState(false);
   const { openAiBaseUrl, setModel } = useSettingsStore();
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchModels = useCallback(async () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    abortControllerRef.current = new AbortController();
     setLoading(true);
+
     try {
-      const fetchedModels = await getModels();
+      const fetchedModels = await getModels(abortControllerRef.current.signal);
+
+      if (abortControllerRef.current?.signal.aborted) {
+        return;
+      }
+
       setModels(fetchedModels);
 
-      // Automatically set the first model if no model is currently selected
-      // or if we have new models after an API URL change
       if (fetchedModels.length > 0) {
         const currentModel = useSettingsStore.getState().model;
         if (
@@ -26,10 +36,15 @@ export function useLLMProviders() {
         }
       }
     } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        return;
+      }
       console.error("Failed to fetch models:", error);
       setModels([]);
     } finally {
-      setLoading(false);
+      if (!abortControllerRef.current?.signal.aborted) {
+        setLoading(false);
+      }
     }
   }, [setModel]);
 
@@ -37,9 +52,14 @@ export function useLLMProviders() {
     fetchModels();
   }, [fetchModels]);
 
-  // Initial fetch and refetch when API URL changes
   useEffect(() => {
     fetchModels();
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [openAiBaseUrl, fetchModels]);
 
   return { models, loading, refresh };

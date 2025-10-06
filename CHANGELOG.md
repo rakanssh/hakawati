@@ -11,6 +11,7 @@ All notable changes to this project are documented in this file.
 ### Fixed
 
 - Disabled the un/re-do buttons if the log is loading.
+- Prevent double model fetching when opening the model select.
 
 ## [v0.2.1] - 2025-10-06
 

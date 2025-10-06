@@ -75,7 +75,7 @@ export function OpenAiClient(apiKey?: string): LLMClient {
     return doFetch();
   }
 
-  async function models(): Promise<LLMModel[]> {
+  async function models(signal?: AbortSignal): Promise<LLMModel[]> {
     console.debug(`Fetching models from OpenAI`);
     const headers: HeadersInit = apiKey
       ? {
@@ -84,6 +84,7 @@ export function OpenAiClient(apiKey?: string): LLMClient {
       : {};
     const r = await fetch(`${base}/models`, {
       headers,
+      signal,
     });
     if (!r.ok) {
       const errorText = await r.text().catch(() => "");
