@@ -35,7 +35,7 @@ export function LogControl({
               variant="default"
               size="icon"
               onClick={undo}
-              disabled={saving}
+              disabled={loading || saving}
             >
               <UndoIcon className="w-4 h-4" />
             </Button>
@@ -84,7 +84,7 @@ export function LogControl({
               variant="default"
               size="icon"
               onClick={redo}
-              disabled={saving}
+              disabled={loading || saving}
             >
               <RedoIcon className="w-4 h-4" />
             </Button>

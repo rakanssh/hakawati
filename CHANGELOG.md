@@ -8,6 +8,10 @@ All notable changes to this project are documented in this file.
 
 - Changed the default game mode to Story Teller.
 
+### Fixed
+
+- Disabled the un/re-do buttons if the log is loading.
+
 ## [v0.2.1] - 2025-10-06
 
 ### Added
