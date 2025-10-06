@@ -179,7 +179,7 @@ export const useTaleStore = create<TaleStoreType>()(
   persist(
     (set) => ({
       id: uuidv4(),
-      gameMode: GameMode.GM,
+      gameMode: GameMode.STORY_TELLER,
       name: "",
       description: "",
       authorNote: "",

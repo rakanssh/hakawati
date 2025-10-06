@@ -59,7 +59,7 @@ export function QuickstartWizard({
 
   const [currentStep, setCurrentStep] = useState(0);
   const [state, setState] = useState<QuickstartState>({
-    gameMode: GameMode.GM,
+    gameMode: GameMode.STORY_TELLER,
     setting: "fantasy",
     customSetting: "",
     archetype: "warrior",

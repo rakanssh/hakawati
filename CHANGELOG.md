@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [UNRELEASED]
+
+### Changed
+
+- Changed the default game mode to Story Teller.
+
 ## [v0.2.1] - 2025-10-06
 
 ### Added

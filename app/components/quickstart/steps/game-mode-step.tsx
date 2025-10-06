@@ -10,6 +10,17 @@ interface GameModeStepProps {
 export function GameModeStep({ value, onChange }: GameModeStepProps) {
   const modes = [
     {
+      id: GameMode.STORY_TELLER,
+      name: "Story Teller",
+      description: "Pure narrative freedom without game mechanics",
+      icon: BookOpen,
+      features: [
+        "Pure storytelling",
+        "No stats or inventory tracking",
+        "Works with all models",
+      ],
+    },
+    {
       id: GameMode.GM,
       name: "Game Master (GM)",
       description:
@@ -19,17 +30,6 @@ export function GameModeStep({ value, onChange }: GameModeStepProps) {
         "Stats and inventory tracking",
         "Structured gameplay",
         "Best with more capable models",
-      ],
-    },
-    {
-      id: GameMode.STORY_TELLER,
-      name: "Story Teller",
-      description: "Pure narrative freedom without game mechanics",
-      icon: BookOpen,
-      features: [
-        "Pure storytelling",
-        "No stats or inventory tracking",
-        "Works with all models",
       ],
     },
   ];
