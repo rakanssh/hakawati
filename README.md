@@ -51,7 +51,7 @@ Standard AI text-based adventure. Works with any model.
 - Two gamemodes: `Game Master` and `Story Teller`.
 - Different prompt types: `Do`, `Say`, `Story`, `Direct` or `Continue`.
 - Self-contained application — download (or build) and run.
-- Supports OpenAI-compatible endpoints (including OpenRouter metadata such as pricing/token limits). Works with local servers and tools like Ollama, LocalAI, and LLM Studio. (Remember to enable CORS when required.)
+- Supports OpenAI-compatible endpoints (including OpenRouter metadata such as pricing/token limits). Works with local servers and tools like Ollama, LocalAI, and LLM Studio.
 - Scenario builder to create and save templates for new tales. Supports sharing scenarios via import/export to the clipboard.
 - Persistence using an easily editable/queryable local SQLite database.
 - Flexible model configuration with adjustable sampling parameters.
@@ -89,7 +89,7 @@ The client supports OpenAI-compatible endpoints. There are two main straightforw
 - Many others...
 
 I've tested with these tools and they work, anything that exposes an OpenAI-compatible endpoint should work too. Reach out if you find one that doesn't.
-Check your chosen tool's documentation for how to enable the server, you may need to enable CORS too.
+Check your chosen tool's documentation for how to enable the server.
 
 ### Create a Tale
 
