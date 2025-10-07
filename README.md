@@ -1,10 +1,38 @@
 # Hakawati
 
-Hakawati is an AI-powered, text-based RPG client. Bring your own OpenAI-Compatible endpoint (Cloud or local), create or import a scenario, and start an on-demand, interactive, text-based adventure!
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Release](https://img.shields.io/github/v/release/rakanssh/hakawati)](https://github.com/rakanssh/hakawati/releases/latest)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](https://github.com/rakanssh/hakawati/releases)
+
+Hakawati is an AI-powered, text-based RPG. Bring your own OpenAI-Compatible endpoint (Cloud or local), and start an on-demand, interactive, text-based adventure!
 
 > ℹ️ The client is in an early experiment stage. Expect bugs! (Ctrl+R will refresh the app, may resolve the occasional issue.)
 
-Game Modes:
+[📥 Download Latest Release Here](https://github.com/rakanssh/hakawati/releases/latest)
+
+## Table of Contents
+
+- [Game Modes](#game-modes)
+- [Features](#features)
+- [How to Play](#how-to-play)
+  - [Install](#install)
+  - [Setup](#setup)
+  - [Getting an Inference endpoint](#getting-an-inference-endpoint)
+  - [Create a Tale](#create-a-tale)
+  - [Create or Import a Scenario](#create-or-import-a-scenario)
+  - [Manage Tales](#manage-tales)
+  - [Export a Scenario](#export-a-scenario)
+  - [Edit a Scenario](#edit-a-scenario)
+- [Getting Started (For Development)](#getting-started-for-development)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+- [Running and Building the App](#running-and-building-the-app)
+- [Project Structure](#project-structure)
+- [Tech Stack](#tech-stack)
+- [Roadmap](#roadmap)
+- [License](#license)
+
+## Game Modes
 
 - Game Master Mode
   ![Game Master Mode](./public/gm.png)
