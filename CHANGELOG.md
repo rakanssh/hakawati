@@ -7,6 +7,7 @@ All notable changes to this project are documented in this file.
 ## Fixed
 
 - Use fetch from Tauri to bypass CORS issues.
+- Clear selected model when changing the API URL.
 
 ## Changed
 

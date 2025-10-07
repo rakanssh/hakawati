@@ -26,7 +26,7 @@ interface SettingsStoreType {
   setApiKey: (apiKey: string) => void;
   setApiType: (apiType: ApiType) => void;
   setResponseMode: (responseMode: ResponseMode) => void;
-  setModel: (model: LLMModel) => void;
+  setModel: (model: LLMModel | undefined) => void;
   setContextWindow: (contextWindow: number) => void;
   setOpenAiBaseUrl: (openAiBaseUrl: string) => void;
   setMaxTokens: (maxTokens: number) => void;
@@ -62,16 +62,20 @@ export const useSettingsStore = create<SettingsStoreType>()(
       setApiKey: (apiKey: string) => set({ apiKey }),
       setApiType: (apiType: ApiType) => set({ apiType }),
       setResponseMode: (responseMode: ResponseMode) => set({ responseMode }),
-      setModel: (model: LLMModel) => {
-        console.debug(
-          `Setting model: ${model.name} with context window: ${model.contextLength ?? "unknown"}.`,
-        );
-        const length = model.contextLength ?? Number.MAX_SAFE_INTEGER;
-        set({
-          contextWindow: Math.min(get().contextWindow ?? 2048, length),
-          modelContextLength: length,
-        });
-        console.debug(`Setting context window: ${get().contextWindow}`);
+      setModel: (model: LLMModel | undefined) => {
+        if (model) {
+          console.debug(
+            `Setting model: ${model.name} with context window: ${model.contextLength ?? "unknown"}.`,
+          );
+          const length = model.contextLength ?? Number.MAX_SAFE_INTEGER;
+          set({
+            contextWindow: Math.min(get().contextWindow ?? 2048, length),
+            modelContextLength: length,
+          });
+          console.debug(`Setting context window: ${get().contextWindow}`);
+        } else {
+          console.debug("Clearing model selection");
+        }
         set({ model });
       },
       setContextWindow: (contextWindow: number) =>

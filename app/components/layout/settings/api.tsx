@@ -33,6 +33,7 @@ export default function SettingsApi() {
     setOpenAiBaseUrl,
     responseMode,
     setResponseMode,
+    setModel,
   } = useSettingsStore();
   const { gameMode } = useTaleStore();
   const [baseUrl, setBaseUrl] = useState(openAiBaseUrl);
@@ -63,6 +64,11 @@ export default function SettingsApi() {
   function resolveResponseModeLabel(responseMode: ResponseMode) {
     if (responseMode === ResponseMode.FREE_FORM) return "Free Form";
     return "Response Format";
+  }
+
+  function handleUrlChange(newUrl: string) {
+    setOpenAiBaseUrl(newUrl);
+    setModel(undefined);
   }
 
   return (
@@ -105,15 +111,20 @@ export default function SettingsApi() {
             <Input
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
+              onBlur={() => {
+                if (baseUrl.trim() !== openAiBaseUrl.trim()) {
+                  handleUrlChange(baseUrl);
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
-                  setOpenAiBaseUrl(baseUrl);
+                  handleUrlChange(baseUrl);
                 }
               }}
             />
             <Button
               variant="outline"
-              onClick={() => setOpenAiBaseUrl(baseUrl)}
+              onClick={() => handleUrlChange(baseUrl)}
               disabled={
                 !baseUrl?.trim() || baseUrl.trim() === openAiBaseUrl.trim()
               }
@@ -164,7 +175,7 @@ export default function SettingsApi() {
                 </div>
                 <Button
                   variant="outline"
-                  onClick={() => setOpenAiBaseUrl(s.baseUrl)}
+                  onClick={() => handleUrlChange(s.baseUrl)}
                   disabled={openAiBaseUrl.trim() === s.baseUrl.trim()}
                 >
                   Use
