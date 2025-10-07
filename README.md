@@ -1,8 +1,10 @@
-# Hakawati
+<h1 align="center">Hakawati</h1>
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Release](https://img.shields.io/github/v/release/rakanssh/hakawati)](https://github.com/rakanssh/hakawati/releases/latest)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)](https://github.com/rakanssh/hakawati/releases)
+<p align="center">
+  <a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3"></a>
+  <a href="https://github.com/rakanssh/hakawati/releases/latest"><img src="https://img.shields.io/github/v/release/rakanssh/hakawati" alt="Release"></a>
+  <a href="https://github.com/rakanssh/hakawati/releases"><img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey" alt="Platform"></a>
+</p>
 
 Hakawati is an AI-powered, text-based RPG. Bring your own OpenAI-Compatible endpoint (Cloud or local), and start an on-demand, interactive, text-based adventure!
 
