@@ -16,6 +16,11 @@
     "sql:allow-select",
     "clipboard-manager:default",
     "clipboard-manager:allow-read-text",
-    "clipboard-manager:allow-write-text"
+    "clipboard-manager:allow-write-text",
+    "http:allow-fetch",
+    {
+      "identifier": "http:default",
+      "allow": [{ "url": "https://*:*" }, { "url": "http://*:*" }]
+    }
   ]
 }
