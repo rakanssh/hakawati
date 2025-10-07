@@ -34,16 +34,19 @@ Hakawati is an AI-powered, text-based RPG. Bring your own OpenAI-Compatible endp
 
 ## Game Modes
 
-- Game Master Mode
-  ![Game Master Mode](./public/gm.png)
-- Story Teller Mode
-  ![Story Teller Mode](./public/st.png)
+### Game Master Mode
+
+The game keeps track of items and statistics, allowing the AI to represent, remember, and change the current state of your character. Stats can be any numeric value with a minimum and maximum. (Experimental — best with more capable models.)
+![Game Master Mode](./public/gm.png)
+
+### Story Teller Mode
+
+Standard AI text-based adventure. Works with any model.
+![Story Teller Mode](./public/st.png)
 
 ## Features
 
-- Two gamemodes:
-  - StoryTeller: Standard AI text-based adventure.
-  - GameMaster: The game keeps track of items and statistics, allowing the AI to represent and remember the current state of your character. Stats can be any numeric value with a minimum and maximum. (Experimental — best with more capable models.)
+- Two gamemodes: `Game Master` and `Story Teller`.
 - Different prompt types: `Do`, `Say`, `Story`, `Direct` or `Continue`.
 - Self-contained application — download (or build) and run.
 - Supports OpenAI-compatible endpoints (including OpenRouter metadata such as pricing/token limits). Works with local servers and tools like Ollama, LocalAI, and LLM Studio. (Remember to enable CORS when required.)
