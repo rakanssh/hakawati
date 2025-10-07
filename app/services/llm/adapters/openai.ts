@@ -8,6 +8,7 @@ import {
 } from "../schema";
 import { parseOpenAIStream } from "../streaming";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { fetch } from "@tauri-apps/plugin-http";
 export function OpenAiClient(apiKey?: string): LLMClient {
   const { openAiBaseUrl } = useSettingsStore.getState();
   const base = openAiBaseUrl;

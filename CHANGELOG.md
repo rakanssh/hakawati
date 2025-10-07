@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [UNRELEASED]
+
+## Fixed
+
+- Use fetch from Tauri to bypass CORS issues.
+
 ## [v0.2.2] - 2025-10-06
 
 ### Changed
