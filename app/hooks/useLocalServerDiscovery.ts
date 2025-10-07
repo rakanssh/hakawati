@@ -116,8 +116,11 @@ export function useLocalServerDiscovery(apiType: ApiType) {
     return bases;
   }, [apiType]);
 
+  const scanningRef = useRef(false);
+
   const scan = useCallback(async () => {
-    if (scanning) return;
+    if (scanningRef.current) return;
+    scanningRef.current = true;
     setScanning(true);
     setError(undefined);
     try {
@@ -133,9 +136,10 @@ export function useLocalServerDiscovery(apiType: ApiType) {
     } catch (e) {
       setError((e as Error)?.message ?? "Failed to scan local servers");
     } finally {
+      scanningRef.current = false;
       setScanning(false);
     }
-  }, [candidates, scanning]);
+  }, [candidates]);
 
   return { servers, scanning, error, lastScanAt: lastScanRef.current, scan };
 }

@@ -33,10 +33,15 @@ export default function SettingsApi() {
   const [baseUrl, setBaseUrl] = useState(openAiBaseUrl);
   const { servers, scanning, error, scan } = useLocalServerDiscovery(apiType);
 
-  // Keep local input in sync if the store changes elsewhere
   useEffect(() => {
     setBaseUrl(openAiBaseUrl);
   }, [openAiBaseUrl]);
+
+  useEffect(() => {
+    if (apiType === ApiType.OPENAI && servers.length === 0) {
+      scan();
+    }
+  }, [apiType, scan, servers.length]);
 
   function resolveApiTypeLabel(apiType: ApiType) {
     if (apiType === ApiType.OPENAI) return "OpenAI";
@@ -107,23 +112,29 @@ export default function SettingsApi() {
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <Label>Scan for compatible local servers</Label>
+          <Label>Local servers</Label>
           <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={() => scan()}
               disabled={scanning}
             >
-              {scanning ? "Scanning..." : "Scan"}
+              {scanning ? "Scanning..." : "Rescan"}
             </Button>
           </div>
         </div>
         {!!error && <span className="text-xs text-destructive">{error}</span>}
-        {servers.length === 0 ? (
+        {scanning && servers.length === 0 && (
+          <span className="text-sm text-muted-foreground">
+            Scanning for local servers...
+          </span>
+        )}
+        {!scanning && servers.length === 0 && (
           <span className="text-sm text-muted-foreground">
             No local servers found.
           </span>
-        ) : (
+        )}
+        {servers.length > 0 && (
           <div className="flex flex-col gap-2">
             {servers.map((s) => (
               <div
