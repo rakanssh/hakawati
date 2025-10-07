@@ -13,10 +13,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { GameMode } from "@/types";
-import { SwordsIcon } from "lucide-react";
+import { SwordsIcon, InfoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useLocalServerDiscovery } from "@/hooks/useLocalServerDiscovery";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function SettingsApi() {
   const {
@@ -67,7 +72,17 @@ export default function SettingsApi() {
 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="flex flex-col gap-2 sm:col-span-1">
-          <Label>API Type</Label>
+          <Label>
+            API Type
+            <Tooltip>
+              <TooltipTrigger>
+                <InfoIcon className="w-4 h-4" />
+              </TooltipTrigger>
+              <TooltipContent>
+                This refers to compatible URLs, not exclusively this provider.
+              </TooltipContent>
+            </Tooltip>
+          </Label>
           <Select
             value={apiType}
             onValueChange={(value) => setApiType(value as ApiType)}
@@ -85,7 +100,7 @@ export default function SettingsApi() {
           </Select>
         </div>
         <div className="flex flex-col gap-2 sm:col-span-3">
-          <Label>{resolveApiTypeLabel(apiType)} base URL</Label>
+          <Label>{resolveApiTypeLabel(apiType)}-Compatible base URL</Label>
           <div className="flex gap-2">
             <Input
               value={baseUrl}

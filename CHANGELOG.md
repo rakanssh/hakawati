@@ -10,7 +10,8 @@ All notable changes to this project are documented in this file.
 
 ## Changed
 
-- Automatically scan for compatible local servers on entering API settings
+- Automatically scan for compatible local servers on entering API settings.
+- Clarified API type tooltip and label.
 
 ## [v0.2.2] - 2025-10-06
 
