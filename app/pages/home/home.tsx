@@ -203,7 +203,6 @@ export default function Home() {
               </li>
               <li>Examples (cloud): OpenRouter, OpenAI.</li>
               <li>Examples (local): Ollama, LocalAI, LLM Studio.</li>
-              <li>Tip: For local servers, enable CORS if needed.</li>
             </ul>
           </AccordionContent>
         </AccordionItem>

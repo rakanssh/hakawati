@@ -17,6 +17,7 @@ All notable changes to this project are documented in this file.
 - Tale log is now windowed in memory (200 entries by default, 300 max) instead of loading entire history.
 - Improved save strategy: immediate save after LLM responses, debounced saves for manual edits.
 - Capped Undo stack limit of 50 entries.
+- Removed now redundant references to CORS.
 
 ### Fixed
 
