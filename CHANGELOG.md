@@ -2,14 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
-## [Unreleased]
+## [v0.2.4] - 2025-10-08
 
 ### Added
 
 - Windowed log loading system to handle tales with many entries.
 - Lazy loading of older log entries when scrolling to the top of the tale log.
 - Token count caching for log entries to improve prompt building performance.
-- Automatic debounced saves (2 seconds) for manual edits to stats, inventory, and log entries.
 - Visual loading indicator when fetching older log entries.
 
 ### Changed
