@@ -2,9 +2,15 @@ import { GameMode, Item, LogEntry, StoryCard, StoryCardInput } from "@/types";
 import { Stat } from "@/types/stats.type";
 import { nanoid } from "nanoid";
 import { v4 as uuidv4 } from "uuid";
+import { toast } from "sonner";
+import { getLogEntries } from "@/repositories/tale.repository";
 
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+
+// Windowing
+export const DEFAULT_WINDOW_SIZE = 200;
+export const MAX_WINDOW_SIZE = 300;
+export const MAX_UNDO_STACK = 50;
 
 interface TaleStoreType {
   id: string;
@@ -17,6 +23,11 @@ interface TaleStoreType {
   storyCards: StoryCard[];
   description: string;
   authorNote: string;
+  // Windowing
+  totalLogCount: number;
+  oldestLoadedIndex: number;
+  logWindowSize: number;
+  isLoadingOlderEntries: boolean;
   setName: (name: string) => void;
   setDescription: (description: string) => void;
   setAuthorNote: (authorNote: string) => void;
@@ -43,6 +54,10 @@ interface TaleStoreType {
   redo: () => void;
   setGameMode: (gameMode: GameMode) => void;
   setId: (id: string) => void;
+  loadOlderLogEntries: (count: number) => Promise<void>;
+  ensureLogEntriesLoaded: (minCount: number) => Promise<void>;
+  trimLogWindow: () => void;
+  resetLogWindow: () => void;
 }
 
 //TODO: Find a better way to execute/undo actions
@@ -175,43 +190,160 @@ const redoEntryActions = (
   return { stats: newStats, inventory: newInventory };
 };
 
-export const useTaleStore = create<TaleStoreType>()(
-  persist(
-    (set) => ({
-      id: uuidv4(),
-      gameMode: GameMode.STORY_TELLER,
-      name: "",
-      description: "",
-      authorNote: "",
-      storyCards: [],
-      setId: (id: string) => set({ id }),
-      setName: (name: string) => set({ name }),
-      setDescription: (description: string) => set({ description }),
-      setAuthorNote: (authorNote: string) => set({ authorNote }),
-      setStoryCards: (storyCards: StoryCard[]) => set({ storyCards }),
-      addStoryCard: (storyCard: StoryCardInput) =>
-        set((state) => ({
-          storyCards: [...state.storyCards, { ...storyCard, id: nanoid(12) }],
-        })),
-      removeStoryCard: (id: string) =>
-        set((state) => ({
-          storyCards: state.storyCards.filter(
-            (storyCard) => storyCard.id !== id,
-          ),
-        })),
-      updateStoryCard: (id: string, updates: Partial<StoryCard>) =>
-        set((state) => ({
-          storyCards: state.storyCards.map((storyCard) =>
-            storyCard.id === id ? { ...storyCard, ...updates } : storyCard,
-          ),
-        })),
-      clearStoryCards: () => set({ storyCards: [] }),
-      setGameMode: (gameMode: GameMode) =>
-        set({
-          gameMode,
-          stats: [],
-          inventory: [],
-        }),
+export const useTaleStore = create<TaleStoreType>()((set) => ({
+  id: uuidv4(),
+  gameMode: GameMode.STORY_TELLER,
+  name: "",
+  description: "",
+  authorNote: "",
+  storyCards: [],
+  totalLogCount: 0,
+  oldestLoadedIndex: 0,
+  logWindowSize: DEFAULT_WINDOW_SIZE,
+  isLoadingOlderEntries: false,
+  setId: (id: string) => set({ id }),
+  setName: (name: string) => set({ name }),
+  setDescription: (description: string) => set({ description }),
+  setAuthorNote: (authorNote: string) => set({ authorNote }),
+  setStoryCards: (storyCards: StoryCard[]) => set({ storyCards }),
+  addStoryCard: (storyCard: StoryCardInput) =>
+    set((state) => ({
+      storyCards: [...state.storyCards, { ...storyCard, id: nanoid(12) }],
+    })),
+  removeStoryCard: (id: string) =>
+    set((state) => ({
+      storyCards: state.storyCards.filter((storyCard) => storyCard.id !== id),
+    })),
+  updateStoryCard: (id: string, updates: Partial<StoryCard>) =>
+    set((state) => ({
+      storyCards: state.storyCards.map((storyCard) =>
+        storyCard.id === id ? { ...storyCard, ...updates } : storyCard,
+      ),
+    })),
+  clearStoryCards: () => set({ storyCards: [] }),
+  setGameMode: (gameMode: GameMode) =>
+    set({
+      gameMode,
+      stats: [],
+      inventory: [],
+    }),
+  stats: [
+    {
+      name: "HP",
+      value: 100,
+      range: [0, 100],
+    },
+  ],
+  inventory: [],
+  log: [],
+  undoStack: [],
+  addLog: (log: LogEntry) =>
+    set((state) => {
+      const newLog = [...state.log, log];
+      const newTotalLogCount = state.totalLogCount + 1;
+
+      if (newLog.length > MAX_WINDOW_SIZE) {
+        const entriesToKeep = state.logWindowSize;
+        const trimmed = newLog.slice(-entriesToKeep);
+        const newOldestLoadedIndex = newTotalLogCount - entriesToKeep;
+
+        return {
+          log: trimmed,
+          totalLogCount: newTotalLogCount,
+          oldestLoadedIndex: newOldestLoadedIndex,
+          undoStack: [],
+        };
+      }
+
+      return {
+        log: newLog,
+        totalLogCount: newTotalLogCount,
+        undoStack: [],
+      };
+    }),
+  removeLastLogEntry: () =>
+    set((state) => {
+      const lastEntry = state.log.at(-1);
+      if (!lastEntry) return {};
+      const stateChanges = undoEntryActions(state, lastEntry);
+
+      const newTotalLogCount = state.totalLogCount - 1;
+
+      const newOldestLoadedIndex = Math.min(
+        state.oldestLoadedIndex,
+        Math.max(0, newTotalLogCount - (state.log.length - 1)),
+      );
+
+      return {
+        ...stateChanges,
+        log: state.log.slice(0, -1),
+        totalLogCount: newTotalLogCount,
+        oldestLoadedIndex: newOldestLoadedIndex,
+        undoStack: [],
+      };
+    }),
+  updateLogEntry: (id, updates) =>
+    set((state) => ({
+      log: state.log.map((entry) =>
+        entry.id === id
+          ? { ...entry, ...updates, _tokenCount: undefined }
+          : entry,
+      ),
+    })),
+  modifyStat: (name: string, value: number) =>
+    set((state) => ({
+      stats: state.stats.map((stat) =>
+        stat.name === name
+          ? {
+              ...stat,
+              value: Math.min(
+                Math.max(stat.value + value, stat.range[0]),
+                stat.range[1],
+              ),
+            }
+          : stat,
+      ),
+    })),
+  addToStats: (stat: Stat) =>
+    set((state) => ({ stats: [...state.stats, stat] })),
+  removeFromStats: (name: string) =>
+    set((state) => ({
+      stats: state.stats.filter((stat) => stat.name !== name),
+    })),
+  updateStat: (name: string, updates: Partial<Stat>) =>
+    set((state) => ({
+      stats: state.stats.map((stat) =>
+        stat.name === name ? { ...stat, ...updates } : stat,
+      ),
+    })),
+  addToInventory: (itemName: string) =>
+    set((state) => ({
+      inventory: [
+        ...state.inventory,
+        {
+          id: nanoid(12),
+          name: itemName,
+        },
+      ],
+    })),
+  removeFromInventoryByName: (itemName: string) =>
+    set((state) => ({
+      inventory: state.inventory.filter((i) => i.name !== itemName),
+    })),
+  removeFromInventory: (id: string) =>
+    set((state) => ({
+      inventory: state.inventory.filter((i) => i.id !== id),
+    })),
+  updateItem: (id: string, updates: Partial<Item>) =>
+    set((state) => ({
+      inventory: state.inventory.map((i) =>
+        i.id === id ? { ...i, ...updates } : i,
+      ),
+    })),
+  clearInventory: () => set({ inventory: [], undoStack: [] }),
+  clearStats: () => set({ stats: [], undoStack: [] }),
+  resetAllState: () =>
+    set({
       stats: [
         {
           name: "HP",
@@ -222,117 +354,103 @@ export const useTaleStore = create<TaleStoreType>()(
       inventory: [],
       log: [],
       undoStack: [],
-      addLog: (log: LogEntry) =>
-        set((state) => ({ log: [...state.log, log], undoStack: [] })),
-      removeLastLogEntry: () =>
-        set((state) => {
-          const lastEntry = state.log.at(-1);
-          if (!lastEntry) return {};
-          const stateChanges = undoEntryActions(state, lastEntry);
-          return {
-            ...stateChanges,
-            log: state.log.slice(0, -1),
-            undoStack: [],
-          };
-        }),
-      updateLogEntry: (id, updates) =>
-        set((state) => ({
-          log: state.log.map((entry) =>
-            entry.id === id ? { ...entry, ...updates } : entry,
-          ),
-        })),
-      modifyStat: (name: string, value: number) =>
-        set((state) => ({
-          stats: state.stats.map((stat) =>
-            stat.name === name
-              ? {
-                  ...stat,
-                  value: Math.min(
-                    Math.max(stat.value + value, stat.range[0]),
-                    stat.range[1],
-                  ),
-                }
-              : stat,
-          ),
-        })),
-      addToStats: (stat: Stat) =>
-        set((state) => ({ stats: [...state.stats, stat] })),
-      removeFromStats: (name: string) =>
-        set((state) => ({
-          stats: state.stats.filter((stat) => stat.name !== name),
-        })),
-      updateStat: (name: string, updates: Partial<Stat>) =>
-        set((state) => ({
-          stats: state.stats.map((stat) =>
-            stat.name === name ? { ...stat, ...updates } : stat,
-          ),
-        })),
-      addToInventory: (itemName: string) =>
-        set((state) => ({
-          inventory: [
-            ...state.inventory,
-            {
-              id: nanoid(12),
-              name: itemName,
-            },
-          ],
-        })),
-      removeFromInventoryByName: (itemName: string) =>
-        set((state) => ({
-          inventory: state.inventory.filter((i) => i.name !== itemName),
-        })),
-      removeFromInventory: (id: string) =>
-        set((state) => ({
-          inventory: state.inventory.filter((i) => i.id !== id),
-        })),
-      updateItem: (id: string, updates: Partial<Item>) =>
-        set((state) => ({
-          inventory: state.inventory.map((i) =>
-            i.id === id ? { ...i, ...updates } : i,
-          ),
-        })),
-      clearInventory: () => set({ inventory: [], undoStack: [] }),
-      clearStats: () => set({ stats: [], undoStack: [] }),
-      resetAllState: () =>
-        set({
-          stats: [
-            {
-              name: "HP",
-              value: 100,
-              range: [0, 100],
-            },
-          ],
-          inventory: [],
-          log: [],
-          undoStack: [],
-        }),
-      undo: () => {
-        set((state) => {
-          const lastLog = state.log[state.log.length - 1];
-          if (!lastLog) return {};
-          const stateChanges = undoEntryActions(state, lastLog);
-          return {
-            ...stateChanges,
-            log: state.log.slice(0, -1),
-            undoStack: [...state.undoStack, lastLog],
-          };
-        });
-      },
-      redo: () => {
-        set((state) => {
-          const lastUndone = state.undoStack[state.undoStack.length - 1];
-          if (!lastUndone) return {};
-          const stateChanges = redoEntryActions(state, lastUndone);
-          return {
-            ...stateChanges,
-            log: [...state.log, lastUndone],
-            undoStack: state.undoStack.slice(0, -1),
-          };
-        });
-      },
     }),
-    {
-      name: "tale-store",
-    },
-  ),
-);
+  undo: () => {
+    set((state) => {
+      const lastLog = state.log[state.log.length - 1];
+      if (!lastLog) return {};
+      const stateChanges = undoEntryActions(state, lastLog);
+
+      const newUndoStack = [...state.undoStack, lastLog];
+      const limitedUndoStack = newUndoStack.slice(-MAX_UNDO_STACK);
+
+      return {
+        ...stateChanges,
+        log: state.log.slice(0, -1),
+        undoStack: limitedUndoStack,
+      };
+    });
+  },
+  redo: () => {
+    set((state) => {
+      const lastUndone = state.undoStack[state.undoStack.length - 1];
+      if (!lastUndone) return {};
+      const stateChanges = redoEntryActions(state, lastUndone);
+
+      return {
+        ...stateChanges,
+        log: [...state.log, lastUndone],
+        undoStack: state.undoStack.slice(0, -1),
+      };
+    });
+  },
+  loadOlderLogEntries: async (count: number) => {
+    const state = useTaleStore.getState();
+
+    if (state.isLoadingOlderEntries || state.oldestLoadedIndex === 0) {
+      return;
+    }
+
+    set({ isLoadingOlderEntries: true });
+
+    try {
+      const startIndex = Math.max(0, state.oldestLoadedIndex - count);
+      const entriesToLoad = state.oldestLoadedIndex - startIndex;
+
+      if (entriesToLoad === 0) {
+        return;
+      }
+
+      const entries = await getLogEntries(state.id, startIndex, entriesToLoad);
+
+      // Check if state changed during async operation
+      const currentState = useTaleStore.getState();
+      if (currentState.id !== state.id) {
+        return;
+      }
+
+      set({
+        log: [...entries, ...currentState.log],
+        oldestLoadedIndex: startIndex,
+      });
+    } catch (error) {
+      console.error("Failed to load older entries:", error);
+      toast.error("Failed to load older entries. Please try again.");
+    } finally {
+      set({ isLoadingOlderEntries: false });
+    }
+  },
+  ensureLogEntriesLoaded: async (minCount: number) => {
+    const state = useTaleStore.getState();
+
+    const needed = minCount - state.log.length;
+
+    if (needed > 0 && state.oldestLoadedIndex > 0) {
+      await state.loadOlderLogEntries(needed);
+    }
+  },
+  trimLogWindow: () => {
+    set((state) => {
+      if (state.log.length <= MAX_WINDOW_SIZE) {
+        return {};
+      }
+
+      const entriesToKeep = state.logWindowSize;
+      const trimmed = state.log.slice(-entriesToKeep);
+      const newOldestLoadedIndex = state.totalLogCount - entriesToKeep;
+
+      return {
+        log: trimmed,
+        oldestLoadedIndex: newOldestLoadedIndex,
+      };
+    });
+  },
+  resetLogWindow: () => {
+    set({
+      totalLogCount: 0,
+      oldestLoadedIndex: 0,
+      logWindowSize: DEFAULT_WINDOW_SIZE,
+      isLoadingOlderEntries: false,
+    });
+  },
+}));

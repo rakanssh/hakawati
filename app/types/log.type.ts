@@ -22,4 +22,5 @@ export type LogEntry = {
   actions?: LLMAction[];
   chainId?: string;
   error?: unknown;
+  _tokenCount?: number;
 };

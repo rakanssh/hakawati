@@ -2,13 +2,16 @@ import { useCallback, useState } from "react";
 import { persistCurrentTale, getTaleById } from "@/services/tale.service";
 import { updateTaleDTO } from "@/types/tale.type";
 import { useTaleStore } from "@/store/useTaleStore";
+import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 
 export function usePersistTale() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const [lastSaveSuccess, setLastSaveSuccess] = useState(false);
 
   const save = useCallback(async (taleId: string) => {
     setSaving(true);
+    setLastSaveSuccess(false);
     const state = useTaleStore.getState();
     const tale: updateTaleDTO = {
       id: taleId,
@@ -25,7 +28,14 @@ export function usePersistTale() {
     };
     setError(null);
     try {
-      await persistCurrentTale({ id: taleId, tale });
+      await persistCurrentTale({
+        id: taleId,
+        tale,
+        oldestLoadedIndex: state.oldestLoadedIndex,
+        totalLogCount: state.totalLogCount,
+      });
+      setLastSaveSuccess(true);
+      setTimeout(() => setLastSaveSuccess(false), 2000);
     } catch (e) {
       setError(e);
       throw e;
@@ -34,7 +44,7 @@ export function usePersistTale() {
     }
   }, []);
 
-  return { save, saving, error } as const;
+  return { save, saving, error, lastSaveSuccess } as const;
 }
 
 export function useLoadTale() {
@@ -45,6 +55,8 @@ export function useLoadTale() {
     setLoading(true);
     setError(null);
     try {
+      useTaleStore.getState().resetLogWindow();
+
       const tale = await getTaleById(taleId);
       if (!tale) throw new Error("Tale not found");
       useTaleStore.setState({
@@ -58,7 +70,12 @@ export function useLoadTale() {
         log: tale.log,
         gameMode: tale.gameMode,
         undoStack: tale.undoStack,
+        totalLogCount: tale.totalLogCount,
+        oldestLoadedIndex: tale.oldestLoadedIndex,
+        logWindowSize: tale.log.length < 200 ? tale.log.length : 200,
       });
+
+      useLastPlayedStore.getState().setLastPlayedTaleId(taleId);
     } catch (e) {
       setError(e);
       throw e;

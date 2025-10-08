@@ -22,6 +22,7 @@ import {
   BookIcon,
   MegaphoneIcon,
   SaveIcon,
+  Loader2Icon,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 // tooltips currently unused here after block refactor
@@ -33,6 +34,7 @@ import {
 } from "@/components/game";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 import { usePersistTale } from "@/hooks/useGameSaves";
+import { toast } from "sonner";
 interface Action {
   type: LogEntryMode;
   isRolling: boolean;
@@ -69,6 +71,11 @@ export default function Play() {
     addToStats,
     updateLogEntry,
     removeLastLogEntry,
+    oldestLoadedIndex,
+    isLoadingOlderEntries,
+    loadOlderLogEntries,
+    stats,
+    inventory,
   } = useTaleStore();
   const [input, setInput] = useState("");
   const { send, loading } = useLLM();
@@ -86,10 +93,80 @@ export default function Play() {
   const [stickToBottom, setStickToBottom] = useState<boolean>(true);
   const { save, saving } = usePersistTale();
   const hasAutoSentRef = useRef(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const loadDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debouncedSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasUnsavedChangesRef = useRef(false);
 
   useEffect(() => {
     if (loading) setStickToBottom(true);
   }, [loading]);
+
+  useEffect(() => {
+    setStickToBottom(true);
+    // Use a small delay to ensure content is rendered
+    const timer = setTimeout(() => {
+      if (viewportRef.current) {
+        viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [taleId]);
+
+  useEffect(() => {
+    return () => {
+      if (loadDebounceTimerRef.current) {
+        clearTimeout(loadDebounceTimerRef.current);
+      }
+      if (debouncedSaveTimerRef.current) {
+        clearTimeout(debouncedSaveTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    if (debouncedSaveTimerRef.current) {
+      clearTimeout(debouncedSaveTimerRef.current);
+    }
+
+    hasUnsavedChangesRef.current = true;
+
+    debouncedSaveTimerRef.current = setTimeout(() => {
+      save(taleId)
+        .then(() => {
+          hasUnsavedChangesRef.current = false;
+        })
+        .catch((error) => {
+          console.error("Debounced save failed:", error);
+          toast.error("Failed to save tale. Your changes may be lost.");
+        });
+    }, 2000);
+
+    return () => {
+      if (debouncedSaveTimerRef.current) {
+        clearTimeout(debouncedSaveTimerRef.current);
+      }
+    };
+  }, [log, stats, inventory, loading, save, taleId]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChangesRef.current) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
 
   useEffect(() => {
     if (!stickToBottom) return;
@@ -99,13 +176,54 @@ export default function Play() {
     });
   }, [log, loading, stickToBottom]);
 
-  const handleViewportScroll = () => {
+  const handleViewportScroll = useCallback(() => {
     const el = viewportRef.current;
     if (!el) return;
+
     const thresholdPx = 64;
     const distanceFromBottom = el.scrollHeight - el.clientHeight - el.scrollTop;
     setStickToBottom(distanceFromBottom <= thresholdPx);
-  };
+
+    const LOAD_THRESHOLD = 200;
+    const DEBOUNCE_MS = 300;
+
+    if (
+      el.scrollTop < LOAD_THRESHOLD &&
+      !loadingOlder &&
+      !isLoadingOlderEntries
+    ) {
+      if (oldestLoadedIndex > 0) {
+        if (loadDebounceTimerRef.current) {
+          clearTimeout(loadDebounceTimerRef.current);
+        }
+
+        loadDebounceTimerRef.current = setTimeout(() => {
+          setLoadingOlder(true);
+
+          const scrollHeightBefore = el.scrollHeight;
+          const scrollTopBefore = el.scrollTop;
+
+          loadOlderLogEntries(50).finally(() => {
+            setLoadingOlder(false);
+
+            requestAnimationFrame(() => {
+              if (viewportRef.current) {
+                const scrollHeightAfter = viewportRef.current.scrollHeight;
+                const heightDiff = scrollHeightAfter - scrollHeightBefore;
+
+                viewportRef.current.scrollTop = scrollTopBefore + heightDiff;
+              }
+            });
+          });
+        }, DEBOUNCE_MS);
+      }
+    }
+  }, [
+    loadingOlder,
+    oldestLoadedIndex,
+    isLoadingOlderEntries,
+    loadOlderLogEntries,
+  ]);
 
   const executeLlmSend = useCallback(
     async (message: string, mode: LogEntryMode, append = false) => {
@@ -114,7 +232,6 @@ export default function Play() {
         return;
       }
 
-      // Not actually using last text in CONTINUE anymore, but keeping it in case it's needed.
       let payloadText = message;
       if (mode === LogEntryMode.CONTINUE) {
         const currentLog = useTaleStore.getState().log;
@@ -227,6 +344,7 @@ export default function Play() {
         },
       });
       await save(taleId);
+      hasUnsavedChangesRef.current = false;
     },
     [
       model,
@@ -362,6 +480,12 @@ export default function Play() {
         onViewportScroll={handleViewportScroll}
         viewportClassName="!flex !flex-col"
       >
+        {loadingOlder && (
+          <div className="flex items-center justify-center py-2 text-muted-foreground">
+            <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+            <span className="text-sm">Loading older entries...</span>
+          </div>
+        )}
         {blocks.length > 0 ? (
           blocks.map((block) => (
             <div key={block.entries[0].id} className="mt-2">

@@ -14,6 +14,7 @@ import {
 } from "@/prompts/system";
 import { countMessageTokens } from "./tokenCounter";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { useTaleStore } from "@/store/useTaleStore";
 import { GameMode, StoryCard, Item, ResponseMode } from "@/types";
 import { toast } from "sonner";
 
@@ -58,6 +59,23 @@ function injectMode(text: string, mode?: LogEntryMode): string {
   return text;
 }
 
+/**
+ * Get token count for a log entry, using cached value if available.
+ * Caches the result in the entry's _tokenCount field for future use.
+ */
+function getEntryTokens(entry: LogEntry): number {
+  if (entry._tokenCount !== undefined) {
+    return entry._tokenCount;
+  }
+
+  const content = injectMode(entry.text, entry.mode);
+  const tokens = countMessageTokens([{ role: "user", content }]);
+
+  entry._tokenCount = tokens;
+
+  return tokens;
+}
+
 interface BuildMessageParams {
   log: LogEntry[];
   stats: Stat[];
@@ -75,9 +93,11 @@ interface BuildMessageParams {
   responseMode: ResponseMode;
 }
 
-export function buildMessage(params: BuildMessageParams): ChatRequest {
+export async function buildMessage(
+  params: BuildMessageParams,
+): Promise<ChatRequest> {
   const {
-    log,
+    log: _log,
     stats,
     inventory,
     lastMessage,
@@ -97,6 +117,19 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
   const completionMax = Math.max(0, settings.maxTokens);
   const promptBudget = Math.max(1, contextLimit - completionMax);
   const messages: ChatMessage[] = [];
+
+  const DESIRED_ENTRIES = 100;
+  const store = useTaleStore.getState();
+
+  if (
+    store.log.length < DESIRED_ENTRIES &&
+    store.oldestLoadedIndex > 0 &&
+    store.totalLogCount > store.log.length
+  ) {
+    await store.ensureLogEntriesLoaded(DESIRED_ENTRIES);
+  }
+
+  const effectiveLogSource = useTaleStore.getState().log;
 
   const gameState = `
 **Game State:**
@@ -136,11 +169,15 @@ export function buildMessage(params: BuildMessageParams): ChatRequest {
     );
   }
 
-  // Filter out last user message
-  const effectiveLog = log.filter(
+  // Filter out last user message from the expanded log
+  const effectiveLog = effectiveLogSource.filter(
     (entry) =>
       entry.role !== LogEntryRole.PLAYER || entry.text !== lastMessage.text,
   );
+
+  for (const entry of effectiveLog) {
+    getEntryTokens(entry);
+  }
 
   // Merge consecutive GM entries by chainId
   type Merged = { role: "user" | "assistant"; content: string };

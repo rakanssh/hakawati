@@ -337,3 +337,122 @@ export async function deleteTale(id: string): Promise<void> {
   const db = await getDb();
   await db.execute(`DELETE FROM tales WHERE id = ?`, [id]);
 }
+
+/**
+ * Get a range of log entries by index
+ * @param taleId - The tale ID
+ * @param startIndex - Starting index (0-based)
+ * @param limit - Maximum number of entries to return
+ * @returns Array of log entries in the specified range
+ */
+export async function getLogEntries(
+  taleId: string,
+  startIndex: number,
+  limit: number,
+): Promise<LogEntry[]> {
+  const db = await getDb();
+
+  if (startIndex < 0 || limit <= 0) {
+    return [];
+  }
+
+  try {
+    const rows = await db.select<Array<{ log: string }>>(
+      `SELECT log FROM tales WHERE id = ? LIMIT 1`,
+      [taleId],
+    );
+
+    if (!rows || rows.length === 0) {
+      return [];
+    }
+
+    const fullLog: LogEntry[] = JSON.parse(rows[0].log);
+
+    if (!fullLog || !Array.isArray(fullLog) || fullLog.length === 0) {
+      return [];
+    }
+
+    if (startIndex >= fullLog.length) {
+      return [];
+    }
+
+    const endIndex = Math.min(startIndex + limit, fullLog.length);
+    return fullLog.slice(startIndex, endIndex);
+  } catch (error) {
+    console.error("Error fetching log entries:", error);
+    return [];
+  }
+}
+
+/**
+ * Get log entries from the end (most recent entries)
+ * @param taleId - The tale ID
+ * @param fromEnd - Number of entries to skip from the end (0 = include last entry)
+ * @param limit - Maximum number of entries to return
+ * @returns Array of log entries
+ */
+export async function getLogEntriesReverse(
+  taleId: string,
+  fromEnd: number,
+  limit: number,
+): Promise<LogEntry[]> {
+  const db = await getDb();
+
+  if (fromEnd < 0 || limit <= 0) {
+    return [];
+  }
+
+  try {
+    const rows = await db.select<Array<{ log: string }>>(
+      `SELECT log FROM tales WHERE id = ? LIMIT 1`,
+      [taleId],
+    );
+
+    if (!rows || rows.length === 0) {
+      return [];
+    }
+
+    const fullLog: LogEntry[] = JSON.parse(rows[0].log);
+
+    if (!fullLog || !Array.isArray(fullLog) || fullLog.length === 0) {
+      return [];
+    }
+
+    const startIndex = Math.max(0, fullLog.length - fromEnd - limit);
+    const endIndex = fullLog.length - fromEnd;
+
+    if (startIndex >= fullLog.length || endIndex <= 0) {
+      return [];
+    }
+
+    return fullLog.slice(startIndex, endIndex);
+  } catch (error) {
+    console.error("Error fetching log entries reverse:", error);
+    return [];
+  }
+}
+
+/**
+ * Get the total count of log entries for a tale
+ * @param taleId - The tale ID
+ * @returns Total number of log entries
+ */
+export async function getLogCount(taleId: string): Promise<number> {
+  const db = await getDb();
+
+  try {
+    const rows = await db.select<Array<{ count: number }>>(
+      `SELECT json_array_length(log) as count FROM tales WHERE id = ? LIMIT 1`,
+      [taleId],
+    );
+
+    if (!rows || rows.length === 0) {
+      return 0;
+    }
+
+    return rows[0].count ?? 0;
+  } catch (error) {
+    console.error("Error fetching log count:", error);
+    return 0;
+  }
+}

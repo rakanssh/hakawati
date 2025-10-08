@@ -55,7 +55,7 @@ export function useLLM() {
         responseMode,
       } = useSettingsStore.getState();
 
-      const req = buildMessage({
+      const req = await buildMessage({
         log,
         stats,
         inventory,

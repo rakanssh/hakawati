@@ -2,6 +2,29 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Windowed log loading system to handle tales with many entries.
+- Lazy loading of older log entries when scrolling to the top of the tale log.
+- Token count caching for log entries to improve prompt building performance.
+- Automatic debounced saves (2 seconds) for manual edits to stats, inventory, and log entries.
+- Visual loading indicator when fetching older log entries.
+
+### Changed
+
+- Tale log is now windowed in memory (200 entries by default, 300 max) instead of loading entire history.
+- Improved save strategy: immediate save after LLM responses, debounced saves for manual edits.
+- Capped Undo stack limit of 50 entries.
+
+### Fixed
+
+- Storage quota errors during extended play sessions with large tale logs.
+- Performance degradation when processing very long tale histories.
+- Memory leaks from unbounded undo stacks.
+- Made scroll start at the bottom when loading a new tale.
+
 ## [v0.2.3] - 2025-10-07
 
 ## Fixed

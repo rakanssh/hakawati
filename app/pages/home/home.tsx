@@ -16,22 +16,28 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTaleStore } from "@/store/useTaleStore";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   SettingsModal,
   type SettingsTabId,
 } from "@/components/layout/settings";
 import { AlertTriangle } from "lucide-react";
 import { QuickstartWizard } from "@/components/quickstart";
+import { useLastPlayedStore } from "@/store/useLastPlayedStore";
+import { useLoadTale } from "@/hooks/useGameSaves";
 
 export default function Home() {
   const navigate = useNavigate();
   const { model, openAiBaseUrl } = useSettingsStore();
-  const { name, description, log } = useTaleStore();
+  const { name, description, log, id: currentTaleId } = useTaleStore();
   const lastEntry = log.at(-1);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [quickstartOpen, setQuickstartOpen] = useState(false);
   const nonPlayTabs: readonly SettingsTabId[] = ["game", "api", "model"];
+  const { lastPlayedTaleId } = useLastPlayedStore();
+  const { load } = useLoadTale();
+  const hasLoadedRef = useRef(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   const { hasIssues, issues } = useMemo(() => {
     const missing: string[] = [];
@@ -39,6 +45,30 @@ export default function Home() {
     if (!model) missing.push("Model");
     return { hasIssues: missing.length > 0, issues: missing };
   }, [model, openAiBaseUrl]);
+
+  // Auto-load last played tale on mount
+  useEffect(() => {
+    if (hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
+
+    if (!lastPlayedTaleId || currentTaleId === lastPlayedTaleId) {
+      setIsInitializing(false);
+      return;
+    }
+
+    load(lastPlayedTaleId)
+      .catch((error) => {
+        console.error("Failed to auto-load last played tale:", error);
+      })
+      .finally(() => {
+        setIsInitializing(false);
+      });
+  }, [lastPlayedTaleId, currentTaleId, load]);
+
+  // Show nothing while initializing
+  if (isInitializing) {
+    return null;
+  }
   return (
     <main className="flex flex-col items-center justify-center h-[calc(100vh-2.5rem)] ">
       <Card className="w-full max-w-xl">

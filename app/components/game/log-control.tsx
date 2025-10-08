@@ -4,7 +4,6 @@ import {
   UndoIcon,
   RedoIcon,
   RefreshCwIcon,
-  SaveIcon,
   MoreHorizontal,
 } from "lucide-react";
 import { useTaleStore } from "@/store/useTaleStore";
@@ -52,11 +51,7 @@ export function LogControl({
               size="icon"
               className="rounded-none"
             >
-              {saving ? (
-                <SaveIcon className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCwIcon strokeWidth={1.5} />
-              )}
+              <RefreshCwIcon strokeWidth={1.5} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">Retry</TooltipContent>
