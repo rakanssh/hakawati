@@ -98,7 +98,7 @@ export function StorybookEditor({
         title: "",
         content: "",
         triggers: "",
-        category: StorybookCategory.UNCATEGORIZED,
+        category: selectedCategory || StorybookCategory.UNCATEGORIZED,
         isPinned: false,
       });
     }
