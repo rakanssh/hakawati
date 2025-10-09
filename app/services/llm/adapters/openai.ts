@@ -77,18 +77,22 @@ export function OpenAiClient(apiKey?: string): LLMClient {
   }
 
   async function models(signal?: AbortSignal): Promise<LLMModel[]> {
-    console.debug(`Fetching models from OpenAI`);
-    const headers: HeadersInit = apiKey
-      ? {
-          Authorization: `Bearer ${apiKey}`,
-        }
-      : {};
+    console.debug(`Fetching models from ${base}/models`);
+    const headers: HeadersInit = {
+      "HTTP-Referer": "https://github.com/rakanssh/hakawati",
+      "X-Title": "Hakawati",
+      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+    };
     const r = await fetch(`${base}/models`, {
+      method: "GET",
       headers,
       signal,
     });
     if (!r.ok) {
       const errorText = await r.text().catch(() => "");
+      console.error(`Models fetch failed (${r.status}):`, errorText);
+      console.error("Request URL:", `${base}/models`);
+      console.error("Request headers:", headers);
       throw new Error(errorText || `Failed to fetch models (${r.status})`);
     }
     const json = await r.json();

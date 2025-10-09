@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { ApiType } from "@/types/api.type";
+import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 
 export interface DiscoveredServer {
   baseUrl: string;
@@ -32,7 +33,7 @@ async function probeOpenAICompatible(
   const endpoint = `${baseUrl.replace(/\/$/, "")}/models`;
   try {
     const response = await withTimeout(
-      fetch(endpoint, { method: "GET" }),
+      tauriFetch(endpoint, { method: "GET" }),
       1200,
     );
 
@@ -84,7 +85,7 @@ async function deriveLabel(baseUrl: string): Promise<string> {
 async function labelByHome(baseUrl: string): Promise<string | null> {
   try {
     const rootUrl = baseUrl.split("/").slice(0, -1).join("/");
-    const rootHtml = await fetch(rootUrl).then((r) => r.text());
+    const rootHtml = await tauriFetch(rootUrl).then((r) => r.text());
     console.log(`Root of ${baseUrl}:`, rootHtml);
     for (const name of knownNames) {
       console.log(`Checking for ${name} in ${rootHtml.toLowerCase()}`);
