@@ -5,13 +5,35 @@ import {
   deleteScenario,
   getScenarios,
 } from "@/repositories/scenario.repository";
-import { Scenario, ScenarioHead } from "@/types/context.type";
+import {
+  Scenario,
+  ScenarioHead,
+  StoryCard,
+  StorybookCategory,
+} from "@/types/context.type";
 import { initTale } from "./tale.service";
 import { nanoid } from "nanoid";
 import { PaginatedResponse } from "@/types/db.type";
 import type { ScenarioExportV1 } from "@/types/export.type";
 import { ScenarioV1Schema } from "@/types/export.type";
 import { LogEntryRole } from "@/types/log.type";
+
+/**
+ * Normalizes a story card by applying default values for missing fields.
+ */
+function normalizeStoryCard(card: StoryCard): StoryCard {
+  const now = Date.now();
+  return {
+    id: card.id,
+    title: card.title,
+    triggers: card.triggers || [],
+    content: card.content,
+    category: card.category || StorybookCategory.UNCATEGORIZED,
+    isPinned: card.isPinned || false,
+    createdAt: card.createdAt || now,
+    updatedAt: card.updatedAt || now,
+  };
+}
 
 export async function saveScenario(
   scenario: Scenario,
@@ -33,7 +55,13 @@ export async function saveScenario(
 }
 
 export async function getScenarioById(id: string): Promise<Scenario | null> {
-  return getScenario(id);
+  const scenario = await getScenario(id);
+  if (!scenario) return null;
+
+  return {
+    ...scenario,
+    initialStoryCards: scenario.initialStoryCards.map(normalizeStoryCard),
+  };
 }
 
 export async function createScenario(scenario: Scenario): Promise<string> {
@@ -43,7 +71,15 @@ export async function createScenario(scenario: Scenario): Promise<string> {
 export async function listAllScenarios(): Promise<
   Array<{ id: string; scenario: Scenario; updatedAt: number }>
 > {
-  return listScenarios();
+  const scenarios = await listScenarios();
+  return scenarios.map((item) => ({
+    ...item,
+    scenario: {
+      ...item.scenario,
+      initialStoryCards:
+        item.scenario.initialStoryCards.map(normalizeStoryCard),
+    },
+  }));
 }
 
 export async function removeScenario(id: string): Promise<void> {
@@ -67,7 +103,7 @@ export async function initTaleFromScenario(
     scenarioId,
     thumbnail: scenario.thumbnail ?? null,
     authorNote: scenario.initialAuthorNote ?? "",
-    storyCards: scenario.initialStoryCards,
+    storyCards: scenario.initialStoryCards.map(normalizeStoryCard),
     stats: scenario.initialStats,
     inventory: scenario.initialInventory.map((name) => ({
       id: nanoid(12),
@@ -108,5 +144,9 @@ export function serializeScenarioExportV1(scenario: Scenario): string {
 export function deserializeScenarioExportV1(json: string): Scenario {
   const payload = ScenarioV1Schema.parse(JSON.parse(json) as ScenarioExportV1);
   console.debug("Deserialized scenario", payload);
-  return payload.data as Scenario;
+  const scenario = payload.data as Scenario;
+  return {
+    ...scenario,
+    initialStoryCards: scenario.initialStoryCards.map(normalizeStoryCard),
+  };
 }

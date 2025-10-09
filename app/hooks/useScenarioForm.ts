@@ -1,4 +1,8 @@
-import { Scenario, StoryCardInput } from "@/types/context.type";
+import {
+  Scenario,
+  StoryCardInput,
+  StorybookCategory,
+} from "@/types/context.type";
 import { nanoid } from "nanoid";
 
 export function useScenarioForm(
@@ -80,11 +84,19 @@ export function useScenarioForm(
   };
 
   const addStoryCard = (input: StoryCardInput) => {
+    const now = Date.now();
     setScenario((prev) => ({
       ...prev,
       initialStoryCards: [
         ...prev.initialStoryCards,
-        { id: nanoid(12), ...input },
+        {
+          id: nanoid(12),
+          ...input,
+          category: input.category ?? StorybookCategory.UNCATEGORIZED,
+          isPinned: input.isPinned ?? false,
+          createdAt: now,
+          updatedAt: now,
+        },
       ],
     }));
   };
@@ -93,7 +105,7 @@ export function useScenarioForm(
     setScenario((prev) => ({
       ...prev,
       initialStoryCards: prev.initialStoryCards.map((c) =>
-        c.id === id ? { ...c, ...update } : c,
+        c.id === id ? { ...c, ...update, updatedAt: Date.now() } : c,
       ),
     }));
   };

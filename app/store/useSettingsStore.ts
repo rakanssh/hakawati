@@ -3,7 +3,7 @@ import { ApiType, ResponseMode } from "@/types";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-interface SettingsStoreType {
+export interface SettingsStoreType {
   apiKey: string;
   apiType: ApiType;
   responseMode: ResponseMode;

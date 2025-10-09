@@ -25,6 +25,9 @@ function collectCardsForText(
   const matched: StoryCard[] = [];
   const lcText = text.toLowerCase();
   for (const card of storyCards) {
+    // Skip pinned cards (They're included regardless of matching)
+    if (card.isPinned) continue;
+
     if (
       card.triggers.some(
         (trigger) => trigger && lcText.includes(trigger.toLowerCase()),
@@ -205,14 +208,33 @@ export async function buildMessage(
     }
   }
 
-  const selectedHistory: ChatMessage[] = [];
-  const includedCardIds = new Set<string>();
-  let hitTokenLimit = false;
+  // Always include pinned cards first
+  const pinnedCards = storyCards.filter((card) => card.isPinned);
+  const includedCardIds = new Set<string>(pinnedCards.map((c) => c.id));
 
-  const currentBaseMessages = [...baseRequiredForCounting];
+  // Check if base messages + pinned cards exceed budget
+  const pinnedContent = buildStoryBookPrompt(pinnedCards);
+  const pinnedMsg: ChatMessage | null = pinnedContent
+    ? { role: "system", content: pinnedContent }
+    : null;
+
+  const baseWithPinned = [...baseRequiredForCounting];
+  if (pinnedMsg) baseWithPinned.push(pinnedMsg);
+
+  const baseTokensWithPinned = tokenCountFor(baseWithPinned);
+  if (baseTokensWithPinned > promptBudget) {
+    toast.warning(
+      `Context limit exceeded. Required messages and pinned cards use ${baseTokensWithPinned} tokens but only ${promptBudget} are available.`,
+    );
+  }
+
+  // Build conversation history, adding triggered cards as we go
+  const selectedHistory: ChatMessage[] = [];
+  let hitTokenLimit = false;
 
   for (let i = mergedLog.length - 1; i >= 0; i--) {
     const msg = mergedLog[i];
+    // Skip empty GM responses
     if (
       msg.role === "assistant" &&
       (msg.content === "..." || msg.content.trim() === "")
@@ -222,30 +244,36 @@ export async function buildMessage(
 
     const chatMsg: ChatMessage = { role: msg.role, content: msg.content };
 
+    // Find cards triggered by this message (excluding already included ones)
     const matched = collectCardsForText(msg.content, storyCards);
     const newCards = matched.filter((c) => !includedCardIds.has(c.id));
 
-    const tentativeCardList = [
-      ...storyCards.filter((c) => includedCardIds.has(c.id)),
-      ...newCards,
-    ];
-
-    const storyBookContent = buildStoryBookPrompt(tentativeCardList);
-    const storyBookMsg: ChatMessage | null = storyBookContent
-      ? { role: "system", content: storyBookContent }
+    // Build complete storybook with all cards (pinned + previously triggered + new)
+    const allIncludedCards = storyCards.filter((c) =>
+      includedCardIds.has(c.id),
+    );
+    const tentativeCards = [...allIncludedCards, ...newCards];
+    const tentativeContent = buildStoryBookPrompt(tentativeCards);
+    const tentativeStoryBookMsg: ChatMessage | null = tentativeContent
+      ? {
+          role: "system",
+          content: tentativeContent,
+        }
       : null;
 
-    const msgsIfIncluded = [...currentBaseMessages, ...selectedHistory];
-    if (storyBookMsg) msgsIfIncluded.push(storyBookMsg);
-    msgsIfIncluded.push(chatMsg);
+    // Test token count: meta + storybook + history + this message + final user message
+    const msgsIfIncluded: ChatMessage[] = [...requiredMeta];
+    if (tentativeStoryBookMsg) {
+      msgsIfIncluded.push(tentativeStoryBookMsg);
+    }
+    msgsIfIncluded.push(...selectedHistory, chatMsg, userMsg);
 
     const totalTokensIfIncluded = tokenCountFor(msgsIfIncluded);
 
     if (totalTokensIfIncluded <= promptBudget) {
       selectedHistory.unshift(chatMsg);
-      for (const c of newCards) includedCardIds.add(c.id);
+      newCards.forEach((c) => includedCardIds.add(c.id));
     } else {
-      // Cannot include this message because adding it (and any new cards) would exceed budget
       hitTokenLimit = true;
       break;
     }

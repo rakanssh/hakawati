@@ -8,7 +8,7 @@ import { ScenarioBasicsFields } from "@/components/scenario/ScenarioBasicsFields
 import { GameModeField } from "@/components/scenario/GameModeField";
 import { StatsEditor } from "@/components/scenario/StatsEditor";
 import { InventoryEditor } from "@/components/scenario/InventoryEditor";
-import { StoryCardsEditor } from "@/components/scenario/StoryCardsEditor";
+import { StorybookEditor } from "@/components/storybook";
 import { useScenarioForm } from "@/hooks/useScenarioForm";
 import { ArrowLeftIcon } from "lucide-react";
 
@@ -99,8 +99,8 @@ export default function ScenarioEdit() {
         onRemove={removeInventoryItem}
       />
       <Separator />
-      <StoryCardsEditor
-        cards={scenario.initialStoryCards}
+      <StorybookEditor
+        entries={scenario.initialStoryCards}
         onAdd={addStoryCard}
         onUpdate={updateStoryCard}
         onRemove={removeStoryCard}

@@ -25,7 +25,6 @@ import {
   Loader2Icon,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-// tooltips currently unused here after block refactor
 import { nanoid } from "nanoid";
 import {
   InlineEditableContent,
@@ -76,6 +75,7 @@ export default function Play() {
     loadOlderLogEntries,
     stats,
     inventory,
+    storyCards,
   } = useTaleStore();
   const [input, setInput] = useState("");
   const { send, loading } = useLLM();
@@ -151,7 +151,7 @@ export default function Play() {
         clearTimeout(debouncedSaveTimerRef.current);
       }
     };
-  }, [log, stats, inventory, loading, save, taleId]);
+  }, [log, stats, inventory, storyCards, loading, save, taleId]);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {

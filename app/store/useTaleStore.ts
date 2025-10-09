@@ -12,7 +12,7 @@ export const DEFAULT_WINDOW_SIZE = 200;
 export const MAX_WINDOW_SIZE = 300;
 export const MAX_UNDO_STACK = 50;
 
-interface TaleStoreType {
+export interface TaleStoreType {
   id: string;
   name: string;
   stats: Stat[];
@@ -32,9 +32,9 @@ interface TaleStoreType {
   setDescription: (description: string) => void;
   setAuthorNote: (authorNote: string) => void;
   setStoryCards: (storyCards: StoryCard[]) => void;
-  addStoryCard: (storyCard: StoryCardInput) => void;
-  removeStoryCard: (id: string) => void;
+  addStoryCard: (input: StoryCardInput) => void;
   updateStoryCard: (id: string, updates: Partial<StoryCard>) => void;
+  removeStoryCard: (id: string) => void;
   clearStoryCards: () => void;
   addLog: (log: LogEntry) => void;
   removeLastLogEntry: () => void;
@@ -206,19 +206,30 @@ export const useTaleStore = create<TaleStoreType>()((set) => ({
   setDescription: (description: string) => set({ description }),
   setAuthorNote: (authorNote: string) => set({ authorNote }),
   setStoryCards: (storyCards: StoryCard[]) => set({ storyCards }),
-  addStoryCard: (storyCard: StoryCardInput) =>
+  addStoryCard: (input: StoryCardInput) =>
+    set((state) => {
+      const now = Date.now();
+      return {
+        storyCards: [
+          ...state.storyCards,
+          {
+            ...input,
+            id: nanoid(12),
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      };
+    }),
+  updateStoryCard: (id: string, updates: Partial<StoryCard>) =>
     set((state) => ({
-      storyCards: [...state.storyCards, { ...storyCard, id: nanoid(12) }],
+      storyCards: state.storyCards.map((card) =>
+        card.id === id ? { ...card, ...updates, updatedAt: Date.now() } : card,
+      ),
     })),
   removeStoryCard: (id: string) =>
     set((state) => ({
-      storyCards: state.storyCards.filter((storyCard) => storyCard.id !== id),
-    })),
-  updateStoryCard: (id: string, updates: Partial<StoryCard>) =>
-    set((state) => ({
-      storyCards: state.storyCards.map((storyCard) =>
-        storyCard.id === id ? { ...storyCard, ...updates } : storyCard,
-      ),
+      storyCards: state.storyCards.filter((card) => card.id !== id),
     })),
   clearStoryCards: () => set({ storyCards: [] }),
   setGameMode: (gameMode: GameMode) =>
