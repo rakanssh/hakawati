@@ -7,7 +7,10 @@ export async function getDb(): Promise<Database> {
   if (!databasePromise) {
     const dbDirectory = await appLocalDataDir();
     const dbPath = await join(dbDirectory, "hakawati.db");
-    databasePromise = Database.load(`sqlite:${dbPath}`);
+    databasePromise = Database.load(`sqlite:${dbPath}`).catch((err) => {
+      databasePromise = null;
+      throw err;
+    });
   }
   return databasePromise;
 }

@@ -37,7 +37,6 @@ export default function Home() {
   const { lastPlayedTaleId } = useLastPlayedStore();
   const { load } = useLoadTale();
   const hasLoadedRef = useRef(false);
-  const [isInitializing, setIsInitializing] = useState(true);
 
   const { hasIssues, issues } = useMemo(() => {
     const missing: string[] = [];
@@ -46,29 +45,18 @@ export default function Home() {
     return { hasIssues: missing.length > 0, issues: missing };
   }, [model, openAiBaseUrl]);
 
-  // Auto-load last played tale on mount
   useEffect(() => {
     if (hasLoadedRef.current) return;
     hasLoadedRef.current = true;
 
     if (!lastPlayedTaleId || currentTaleId === lastPlayedTaleId) {
-      setIsInitializing(false);
       return;
     }
 
-    load(lastPlayedTaleId)
-      .catch((error) => {
-        console.error("Failed to auto-load last played tale:", error);
-      })
-      .finally(() => {
-        setIsInitializing(false);
-      });
+    load(lastPlayedTaleId).catch((error) => {
+      console.error("Failed to auto-load last played tale:", error);
+    });
   }, [lastPlayedTaleId, currentTaleId, load]);
-
-  // Show nothing while initializing
-  if (isInitializing) {
-    return null;
-  }
   return (
     <main className="flex flex-col items-center justify-center h-[calc(100vh-2.5rem)] ">
       <Card className="w-full max-w-xl">

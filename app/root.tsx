@@ -25,10 +25,12 @@ import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "./components/ui";
 import { Titlebar } from "./components/layout";
 import { isTauriEnvironment, useUpdateStore } from "./store/useUpdateStore";
+import { useDbReady } from "./hooks/useDbReady";
 
 export default function AppShell() {
   const checkForUpdates = useUpdateStore((state) => state.checkForUpdates);
   const hasRunRef = useRef(false);
+  const { isReady: dbReady, error: dbError } = useDbReady();
 
   useEffect(() => {
     if (hasRunRef.current) return;
@@ -42,7 +44,17 @@ export default function AppShell() {
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <Titlebar />
       <div className="pt-8">
-        <Outlet />
+        {!dbReady && !dbError && (
+          <div className="flex items-center justify-center h-[calc(100vh-2.5rem)]">
+            <div className="text-muted-foreground">Initializing...</div>
+          </div>
+        )}
+        {dbError && (
+          <div className="flex items-center justify-center h-[calc(100vh-2.5rem)]">
+            <div className="text-destructive">Database error: {dbError}</div>
+          </div>
+        )}
+        {dbReady && <Outlet />}
       </div>
       <Toaster richColors expand />
     </ThemeProvider>

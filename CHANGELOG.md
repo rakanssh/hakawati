@@ -19,6 +19,7 @@ All notable changes to this project are documented in this file.
 - Normalization layer ensures legacy scenario and tale story cards receive default metadata during load, export, and import.
 - Eliminated duplicate storybook cards from overlapping triggers and filtered out empty assistant turns during prompt assembly.
 - Local servers, again, seriously this time.
+- DB error on launch.
 
 ## [v0.2.4] - 2025-10-08
 
