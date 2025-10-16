@@ -8,7 +8,7 @@
 
 Hakawati is an AI-powered, text-based RPG. Bring your own OpenAI-Compatible endpoint (Cloud or local), and start an on-demand, interactive, text-based adventure!
 
-> ℹ️ The client is in an early experiment stage. Expect bugs! (Ctrl+R will refresh the app, may resolve the occasional issue.)
+> ℹ️ The client is in an early experimental stage. Expect bugs! (Ctrl+R will refresh the app, may resolve the occasional issue.)
 
 [📥 Download Latest Release Here](https://github.com/rakanssh/hakawati/releases/latest)
 
@@ -134,6 +134,8 @@ Click the three dot menu on a scenario and click `Edit` to edit its values.
 ## Getting Started
 
 ### Prerequisites
+
+> ℹ️ This is section is only required for development or modifying the app. If you just want to play, download the latest release from the [Releases page](https://github.com/rakanssh/hakawati/releases/latest).
 
 - Node.js 20+ and npm
 - Rust toolchain and platform dependencies required by [Tauri](https://tauri.app/start/prerequisites/)
