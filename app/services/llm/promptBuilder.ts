@@ -7,11 +7,11 @@ import {
   LLMModel,
 } from "./schema";
 import {
-  CONTINUE_AUTHOR_NOTE,
-  CONTINUE_SYSTEM_PROMPT,
-  GM_SYSTEM_PROMPT,
-  STORY_TELLER_SYSTEM_PROMPT,
-} from "@/prompts/system";
+  getActiveGmPrompt,
+  getActiveStorytellerPrompt,
+  getActiveContinuePrompt,
+  getActiveContinueAuthorNote,
+} from "@/prompts";
 import { countMessageTokens } from "./tokenCounter";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useTaleStore } from "@/store/useTaleStore";
@@ -57,7 +57,7 @@ function injectMode(text: string, mode?: LogEntryMode): string {
   if (mode === LogEntryMode.DO) return `Action: ${text}`;
   if (mode === LogEntryMode.SAY) return `You say: "${text}"`;
   if (mode === LogEntryMode.CONTINUE) {
-    return CONTINUE_SYSTEM_PROMPT;
+    return getActiveContinuePrompt();
   }
   return text;
 }
@@ -145,7 +145,9 @@ export async function buildMessage(
       ? `${gameState}\n\n${userMessageContent}`
       : userMessageContent;
   const systemPrompt =
-    gameMode === GameMode.GM ? GM_SYSTEM_PROMPT : STORY_TELLER_SYSTEM_PROMPT;
+    gameMode === GameMode.GM
+      ? getActiveGmPrompt()
+      : getActiveStorytellerPrompt();
 
   const userMsg: ChatMessage = { role: "user", content: userMessage };
 
@@ -158,7 +160,10 @@ export async function buildMessage(
   if (description) requiredMeta.push({ role: "system", content: description });
   if (authorNote) requiredMeta.push({ role: "system", content: authorNote });
   if (lastMessage.mode === LogEntryMode.CONTINUE) {
-    requiredMeta.push({ role: "system", content: CONTINUE_AUTHOR_NOTE });
+    requiredMeta.push({
+      role: "system",
+      content: getActiveContinueAuthorNote(),
+    });
   }
 
   // For budgeting, the current user message is also required

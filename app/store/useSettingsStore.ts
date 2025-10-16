@@ -23,6 +23,14 @@ export interface SettingsStoreType {
   topA?: number; //range [0,1]
   uiScale: number;
   fontFamily: string;
+  customGmPrompt?: string;
+  customStorytellerPrompt?: string;
+  customContinuePrompt?: string;
+  customContinueAuthorNote?: string;
+  useCustomGmPrompt: boolean;
+  useCustomStorytellerPrompt: boolean;
+  useCustomContinuePrompt: boolean;
+  useCustomContinueAuthorNote: boolean;
   setApiKey: (apiKey: string) => void;
   setApiType: (apiType: ApiType) => void;
   setResponseMode: (responseMode: ResponseMode) => void;
@@ -43,6 +51,19 @@ export interface SettingsStoreType {
   setUiScale: (scale: number) => void;
   setFontFamily: (fontFamily: string) => void;
   setToDefault: () => void;
+  setCustomGmPrompt: (prompt: string) => void;
+  setCustomStorytellerPrompt: (prompt: string) => void;
+  setCustomContinuePrompt: (prompt: string) => void;
+  setCustomContinueAuthorNote: (prompt: string) => void;
+  setUseCustomGmPrompt: (use: boolean) => void;
+  setUseCustomStorytellerPrompt: (use: boolean) => void;
+  setUseCustomContinuePrompt: (use: boolean) => void;
+  setUseCustomContinueAuthorNote: (use: boolean) => void;
+  resetGmPrompt: () => void;
+  resetStorytellerPrompt: () => void;
+  resetContinuePrompt: () => void;
+  resetContinueAuthorNote: () => void;
+  resetAllPromptsToDefault: () => void;
 }
 
 export const useSettingsStore = create<SettingsStoreType>()(
@@ -59,6 +80,14 @@ export const useSettingsStore = create<SettingsStoreType>()(
       seed: Math.floor(Math.random() * 1000000),
       uiScale: 1,
       fontFamily: "system-ui",
+      customGmPrompt: undefined,
+      customStorytellerPrompt: undefined,
+      customContinuePrompt: undefined,
+      customContinueAuthorNote: undefined,
+      useCustomGmPrompt: false,
+      useCustomStorytellerPrompt: false,
+      useCustomContinuePrompt: false,
+      useCustomContinueAuthorNote: false,
       setApiKey: (apiKey: string) => set({ apiKey }),
       setApiType: (apiType: ApiType) => set({ apiType }),
       setResponseMode: (responseMode: ResponseMode) => set({ responseMode }),
@@ -117,6 +146,48 @@ export const useSettingsStore = create<SettingsStoreType>()(
           return { uiScale: Number(clamped.toFixed(2)) };
         }),
       setFontFamily: (fontFamily: string) => set({ fontFamily }),
+      setCustomGmPrompt: (prompt: string) => set({ customGmPrompt: prompt }),
+      setCustomStorytellerPrompt: (prompt: string) =>
+        set({ customStorytellerPrompt: prompt }),
+      setCustomContinuePrompt: (prompt: string) =>
+        set({ customContinuePrompt: prompt }),
+      setCustomContinueAuthorNote: (prompt: string) =>
+        set({ customContinueAuthorNote: prompt }),
+      setUseCustomGmPrompt: (use: boolean) => set({ useCustomGmPrompt: use }),
+      setUseCustomStorytellerPrompt: (use: boolean) =>
+        set({ useCustomStorytellerPrompt: use }),
+      setUseCustomContinuePrompt: (use: boolean) =>
+        set({ useCustomContinuePrompt: use }),
+      setUseCustomContinueAuthorNote: (use: boolean) =>
+        set({ useCustomContinueAuthorNote: use }),
+      resetGmPrompt: () =>
+        set({ customGmPrompt: undefined, useCustomGmPrompt: false }),
+      resetStorytellerPrompt: () =>
+        set({
+          customStorytellerPrompt: undefined,
+          useCustomStorytellerPrompt: false,
+        }),
+      resetContinuePrompt: () =>
+        set({
+          customContinuePrompt: undefined,
+          useCustomContinuePrompt: false,
+        }),
+      resetContinueAuthorNote: () =>
+        set({
+          customContinueAuthorNote: undefined,
+          useCustomContinueAuthorNote: false,
+        }),
+      resetAllPromptsToDefault: () =>
+        set({
+          customGmPrompt: undefined,
+          customStorytellerPrompt: undefined,
+          customContinuePrompt: undefined,
+          customContinueAuthorNote: undefined,
+          useCustomGmPrompt: false,
+          useCustomStorytellerPrompt: false,
+          useCustomContinuePrompt: false,
+          useCustomContinueAuthorNote: false,
+        }),
       setToDefault: () =>
         set({
           contextWindow: 10000,

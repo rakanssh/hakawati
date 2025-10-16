@@ -28,8 +28,9 @@ export function SettingsButton({
             "model",
             "updates",
             "about",
+            "advanced",
           ] as const)
-        : (["game", "api", "model", "updates", "about"] as const),
+        : (["game", "api", "model", "updates", "about", "advanced"] as const),
     [isPlayRoute],
   );
 

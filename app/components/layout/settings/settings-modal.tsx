@@ -4,12 +4,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { useUpdateStore } from "@/store/useUpdateStore";
 
-// Import all settings components
 import SettingsGame from "@/components/layout/settings/game";
 import SettingsApi from "@/components/layout/settings/api";
 import SettingsTale from "@/components/layout/settings/tale";
 import SettingsStoryCards from "@/components/layout/settings/story-cards";
 import SettingsModel from "@/components/layout/settings/model";
+import SettingsAdvanced from "@/components/layout/settings/advanced";
 import SettingsUpdates from "@/components/layout/settings/updates";
 import SettingsAbout from "@/components/layout/settings/about";
 
@@ -19,6 +19,7 @@ const tabs = [
   { id: "tale", label: "Tale", component: SettingsTale },
   { id: "story-cards", label: "Story Cards", component: SettingsStoryCards },
   { id: "model", label: "Model", component: SettingsModel },
+  { id: "advanced", label: "Advanced", component: SettingsAdvanced },
   { id: "updates", label: "Updates", component: SettingsUpdates },
   { id: "about", label: "About", component: SettingsAbout },
 ] as const;
