@@ -45,28 +45,28 @@ export default function SettingsAdvanced() {
 
   const handleGmCheckChange = (checked: boolean) => {
     setUseCustomGmPrompt(checked);
-    if (checked && !customGmPrompt) {
+    if (checked) {
       setCustomGmPrompt(GM_SYSTEM_PROMPT);
     }
   };
 
   const handleStorytellerCheckChange = (checked: boolean) => {
     setUseCustomStorytellerPrompt(checked);
-    if (checked && !customStorytellerPrompt) {
+    if (checked) {
       setCustomStorytellerPrompt(STORY_TELLER_SYSTEM_PROMPT);
     }
   };
 
   const handleContinueCheckChange = (checked: boolean) => {
     setUseCustomContinuePrompt(checked);
-    if (checked && !customContinuePrompt) {
+    if (checked) {
       setCustomContinuePrompt(CONTINUE_SYSTEM_PROMPT);
     }
   };
 
   const handleContinueAuthorNoteCheckChange = (checked: boolean) => {
     setUseCustomContinueAuthorNote(checked);
-    if (checked && !customContinueAuthorNote) {
+    if (checked) {
       setCustomContinueAuthorNote(CONTINUE_AUTHOR_NOTE);
     }
   };
