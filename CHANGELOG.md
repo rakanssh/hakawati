@@ -12,6 +12,7 @@ All notable changes to this project are documented in this file.
 ### Changed
 
 - Reworded update toast to be more descriptive.
+- Updated npm and rust dependencies.
 
 ## [v0.3.0] - 2025-10-09
 
