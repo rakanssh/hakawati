@@ -9,6 +9,10 @@ All notable changes to this project are documented in this file.
 - Advanced settings tab for customizing system prompts (GM, Storyteller, Continue, and Author Note).
 - Users with default prompts automatically receive updates, while custom prompts persist across app updates in local storage.
 
+### Changed
+
+- Reworded update toast to be more descriptive.
+
 ## [v0.3.0] - 2025-10-09
 
 ### Added

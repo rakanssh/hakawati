@@ -163,9 +163,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
         }
       });
 
-      toast.success(
-        "Update downloaded. The app will relaunch to finish installation.",
-      );
+      toast.success("Update downloaded. Restart the app to apply the update.");
 
       set({
         phase: "idle",
