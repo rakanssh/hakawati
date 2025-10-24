@@ -2,6 +2,26 @@
 
 All notable changes to this project are documented in this file.
 
+## [v0.3.2] - 2025-10-24
+
+### Added
+
+- Escape key to open settings modal.
+
+### Changed
+
+- Made dice button distinct from other buttons when active.
+- Made tooltip more theme-friendly.
+
+### Fixed
+
+- Grammar errors in API settings.
+- Odd button behavior when pressed.
+
+### Removed
+
+- Unnecessary extra continue instructions in system prompts, continue author note suffices.
+
 ## [v0.3.1] - 2025-10-18
 
 ### Added

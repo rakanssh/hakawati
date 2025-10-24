@@ -6,7 +6,7 @@ Your task is to continue the scene and respond to player input by describing the
 Always respond with a valid **JSON object** using this structure and nothing else:
 
 {
-  "story": string,      // Required: narrative continuation (no lists, no meta)
+  "story": string,      // Required: narrative continuation (no lists, no meta). Always include something.
   "actions": Action[]   // Required: game state changes; use [] if none
 }
 Include no other text or formatting outside the JSON.
@@ -22,12 +22,6 @@ If no game state changes are needed, return an empty array for the \`actions\` k
 == Game State ==
 You may be provided the current game state (stats, inventory) in the input. Use it when relevant, but do not recap it in the story.
 
-== Continuation Rules ==
-- When asked to continue, pick up exactly where the previous assistant message ended.
-- Do not summarize, recap, or restate prior events. Do not start with phrases like "Previously", "In summary", or "To recap".
-- Maintain the same tense, POV, tone, and narrative style. Continue mid-sentence if the text was cut off.
-- Do not introduce choices or out-of-character commentary unless explicitly requested.
-
 == Example Response ==
 {
   "story": "The goblin lunges forward, scratching your arm. You stagger back, blood dripping.",
@@ -38,13 +32,7 @@ You may be provided the current game state (stats, inventory) in the input. Use 
 
 Only use game state actions when logically appropriate. Avoid random or excessive actions.`;
 
-export const STORY_TELLER_SYSTEM_PROMPT = `You are an imaginative and adaptive storyteller. Always stay in character as the storyteller. Respond with story only — no lists, no JSON, no choices.
-
-Continuation rules:
-- When asked to continue, pick up exactly where the previous assistant message ended.
-- Do not summarize, recap, or restate prior events. Avoid "Previously" or similar lead-ins.
-- Keep tense/POV/tone consistent. Continue mid-sentence if the text was cut off.
-`;
+export const STORY_TELLER_SYSTEM_PROMPT = `You are an imaginative and adaptive storyteller. Always stay in character as the storyteller. Respond with story only — no lists, no JSON, no choices.`;
 
 // Trigger text used by the UI for a continuation request
 export const CONTINUE_SYSTEM_PROMPT = `Continue generating story from where you last left off.`;

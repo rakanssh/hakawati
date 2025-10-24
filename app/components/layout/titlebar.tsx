@@ -31,14 +31,9 @@ export function Titlebar() {
                 </TooltipTrigger>
                 <TooltipContent side="top">Home</TooltipContent>
               </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="titlebar-no-drag pointer-events-auto">
-                    <SettingsButton className="" />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top">Settings</TooltipContent>
-              </Tooltip>
+              <span className="titlebar-no-drag pointer-events-auto">
+                <SettingsButton className="" />
+              </span>
             </>
           )}
         </div>

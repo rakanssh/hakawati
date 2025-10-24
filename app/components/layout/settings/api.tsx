@@ -23,6 +23,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+function resolveApiTypeLabel(apiType: ApiType) {
+  if (apiType === ApiType.OPENAI) return "OpenAI";
+  return "Borked";
+}
+
 export default function SettingsApi() {
   const {
     apiKey,
@@ -48,11 +53,6 @@ export default function SettingsApi() {
       scan();
     }
   }, [apiType, scan, servers.length]);
-
-  function resolveApiTypeLabel(apiType: ApiType) {
-    if (apiType === ApiType.OPENAI) return "OpenAI";
-    return "Borked";
-  }
 
   function getApiTypeOptions() {
     return Object.values(ApiType).map((type) => ({
@@ -85,7 +85,7 @@ export default function SettingsApi() {
                 <InfoIcon className="w-4 h-4" />
               </TooltipTrigger>
               <TooltipContent>
-                This refers to compatible URLs, not exclusively this provider.
+                This refers to API types, not exclusively this API provider.
               </TooltipContent>
             </Tooltip>
           </Label>
@@ -106,7 +106,7 @@ export default function SettingsApi() {
           </Select>
         </div>
         <div className="flex flex-col gap-2 sm:col-span-3">
-          <Label>{resolveApiTypeLabel(apiType)}-Compatible base URL</Label>
+          <Label>{resolveApiTypeLabel(apiType)}-Type Base URL</Label>
           <div className="flex gap-2">
             <Input
               value={baseUrl}
@@ -138,7 +138,7 @@ export default function SettingsApi() {
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <Label>Local servers</Label>
+          <Label>Local API Servers</Label>
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -205,11 +205,11 @@ export default function SettingsApi() {
             <br />
             <ul className="list-disc pl-4 space-y-1 text-sm">
               <li>
-                Response Format: Predefined schema.{" "}
-                {<SwordsIcon className="w-4 h-4 inline-block" />} icon support
-                this.
+                Response Format: Uses a predefined schema.{" "}
+                {<SwordsIcon className="w-4 h-4 inline-block" />} indicates
+                support.
               </li>
-              <li>Free Form: Works with any model. Not Recommended.</li>
+              <li>Free Form: Works with any model. Not recommended.</li>
             </ul>
           </span>
 

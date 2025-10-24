@@ -43,12 +43,12 @@ export function CategoryFilter({
   onCategoryChange,
 }: CategoryFilterProps): React.JSX.Element {
   return (
-    <div className="flex flex-wrap gap-2">
-      {CATEGORIES.map((category) => {
-        const isSelected = selectedCategory === category.value;
-        return (
-          <TooltipProvider key={String(category.value ?? "all")}>
-            <Tooltip>
+    <TooltipProvider>
+      <div className="flex flex-wrap gap-2">
+        {CATEGORIES.map((category) => {
+          const isSelected = selectedCategory === category.value;
+          return (
+            <Tooltip key={String(category.value ?? "all")}>
               <TooltipTrigger asChild>
                 <Button
                   variant={isSelected ? "default" : "outline"}
@@ -60,9 +60,9 @@ export function CategoryFilter({
               </TooltipTrigger>
               <TooltipContent side="top">{category.label}</TooltipContent>
             </Tooltip>
-          </TooltipProvider>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+    </TooltipProvider>
   );
 }

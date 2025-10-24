@@ -34,6 +34,11 @@ import {
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 import { usePersistTale } from "@/hooks/useGameSaves";
 import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 interface Action {
   type: LogEntryMode;
   isRolling: boolean;
@@ -552,19 +557,29 @@ export default function Play() {
       </ScrollArea>
       <div className="pointer-events-auto z-20 w-full border-t bg-accent p-2">
         <div className="flex w-full items-end space-x-1">
-          <Button
-            variant={action.isRolling ? "default" : "outline"}
-            size="icon"
-            onClick={() =>
-              setAction({
-                type: action.type,
-                isRolling: !action.isRolling,
-              })
-            }
-            disabled={loading}
-          >
-            <DicesIcon strokeWidth={1.5} />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={"outline"}
+                size="icon"
+                className={
+                  action.isRolling
+                    ? "border-green-500/50  text-green-300/90 hover:text-green-300/90"
+                    : " text-muted-foreground hover:text-green-300/90"
+                }
+                onClick={() =>
+                  setAction({
+                    type: action.type,
+                    isRolling: !action.isRolling,
+                  })
+                }
+                disabled={loading}
+              >
+                <DicesIcon strokeWidth={1.5} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top">Roll a dice</TooltipContent>
+          </Tooltip>
 
           <Select
             value={action.type}
