@@ -47,11 +47,17 @@ export function useLLMProviders() {
         }
       }
     } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
-        return;
-      }
       const errorMessage =
         error instanceof Error ? error.message : "Failed to fetch models";
+
+      if (
+        (error instanceof Error && error.name === "AbortError") ||
+        abortControllerRef.current?.signal.aborted ||
+        errorMessage.toLowerCase().includes("cancelled")
+      ) {
+        return;
+      }
+
       console.error("Failed to fetch models:", error);
       setError(errorMessage);
       toast.error("Failed to fetch models", {

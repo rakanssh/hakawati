@@ -2,11 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
-## [Unreleased]
+## [v0.4.1] - 2025-10-30
 
 ### Fixed
 
 - Input field height issue on desktop.
+- Prevent duplicate error messages when navigating away from the model select.
 
 ## [v0.4.0] - 2025-10-29
 
