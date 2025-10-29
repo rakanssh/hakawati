@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Input field height issue on desktop.
+
 ## [v0.4.0] - 2025-10-29
 
 ### Added

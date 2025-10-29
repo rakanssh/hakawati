@@ -239,7 +239,7 @@ export function PlayInputControls({
                   }
                 }}
                 rows={1}
-                className="absolute inset-x-0 bottom-0 resize-none !bg-accent h-10"
+                className="absolute inset-x-0 bottom-0 resize-none !bg-accent min-h-10"
                 aria-label="Enter your action"
               />
             </div>
@@ -334,7 +334,8 @@ export function PlayInputControls({
           </SelectContent>
         </Select>
 
-        <div className="relative flex-1 min-w-0 h-10">
+        <div className="relative flex-1 min-w-0">
+          <div className="h-9" aria-hidden="true" />
           <Textarea
             placeholder={getPlaceholder(action)}
             value={input}
@@ -346,7 +347,7 @@ export function PlayInputControls({
               }
             }}
             rows={1}
-            className="absolute inset-0 resize-none !bg-accent !h-10"
+            className="absolute inset-x-0 bottom-0 resize-none !bg-accent min-h-10"
             aria-label="Enter your action"
           />
         </div>
