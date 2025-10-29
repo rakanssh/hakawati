@@ -1,41 +1,66 @@
 import { useTaleStore } from "@/store/useTaleStore";
 import { Separator } from "../ui/separator";
 import { Progress } from "../ui/progress";
-// Button not used directly after AddIconButton extraction
 import { PlusIcon } from "lucide-react";
-import { useRef, useState } from "react";
-import { AddDrawer } from "./add-drawer";
+import { useState } from "react";
 import { Input } from "../ui/input";
 import { InlineEditableBadge } from "./inline-editable-badge";
 import { InlineEditableNumber } from "./inline-editable-number";
 import { Stat } from "@/types/stats.type";
 import { AddIconButton } from "./add-icon-button";
 import { Label } from "../ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { Button } from "../ui/button";
 
 function ProgressBar({ stat }: { stat: Stat }) {
   const progress = (stat.value / stat.range[1]) * 100;
   return <Progress value={progress} max={100} className="h-2 mt-1" />;
 }
+
+const StatsButton = ({ setOpen }: { setOpen: (open: boolean) => void }) => (
+  <AddIconButton onClick={() => setOpen(true)} ariaLabel="Add stat" />
+);
+
 export function StatsCard() {
   const { stats, addToStats, updateStat, removeFromStats } = useTaleStore();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [currentValue, setCurrentValue] = useState("0");
+  const [maxValue, setMaxValue] = useState("100");
 
   const nameExists = (candidate: string) =>
     stats.some((s) => s.name.toLowerCase() === candidate.trim().toLowerCase());
-  const canSubmit = name.trim() && !nameExists(name);
+  const canSubmit = name.trim() && !nameExists(name) && maxValue.trim();
+
+  const handleSubmit = () => {
+    if (!canSubmit) return;
+    const max = parseInt(maxValue) || 100;
+    const current = parseInt(currentValue) || 0;
+    addToStats({
+      name: name.trim(),
+      value: Math.min(Math.max(current, 0), max),
+      range: [0, max],
+    });
+    setName("");
+    setCurrentValue("0");
+    setMaxValue("100");
+    setOpen(false);
+  };
 
   return (
-    <div ref={containerRef} className="relative overflow-hidden">
+    <div className="relative overflow-hidden">
       <div className="py-1 flex flex-col gap-1 mt-1">
         <div className="px-1">
           <div className="relative flex flex-row justify-between">
             <div className="absolute right-0">
-              <AddIconButton
-                onClick={() => setOpen(true)}
-                ariaLabel="Add stat"
-              />
+              <StatsButton setOpen={setOpen} />
             </div>
             <Label className="text-sm pb-1">Stats</Label>
           </div>
@@ -88,33 +113,64 @@ export function StatsCard() {
             ))}
           </div>
         </div>
-        <AddDrawer
-          open={open}
-          setOpen={(o) => {
-            setOpen(o);
-            if (!o) {
-              setName("");
-            }
-          }}
-          containerRef={containerRef}
-          onSubmit={() => {
-            if (!canSubmit) return;
-            addToStats({ name: name.trim(), value: 0, range: [0, 100] });
-            setName("");
-          }}
-          submitDisabled={!canSubmit}
-          submitIcon={<PlusIcon className="w-4 h-4" />}
-          submitAriaLabel="Add stat"
-        >
-          <div className="flex gap-2 w-full">
-            <Input
-              placeholder="Stat name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-        </AddDrawer>
       </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Stat</DialogTitle>
+            <DialogDescription>
+              Create a new stat with initial and maximum values.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 w-full">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="stat-name">Name</Label>
+              <Input
+                id="stat-name"
+                placeholder="Stat name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-4">
+              <div className="flex flex-col gap-2 flex-1">
+                <Label htmlFor="stat-current">Current Value</Label>
+                <Input
+                  id="stat-current"
+                  type="number"
+                  placeholder="0"
+                  value={currentValue}
+                  onChange={(e) => setCurrentValue(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                />
+              </div>
+              <div className="flex flex-col gap-2 flex-1">
+                <Label htmlFor="stat-max">Maximum Value</Label>
+                <Input
+                  id="stat-max"
+                  type="number"
+                  placeholder="100"
+                  value={maxValue}
+                  onChange={(e) => setMaxValue(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit} disabled={!canSubmit}>
+              <PlusIcon className="w-4 h-4 mr-2" />
+              Add Stat
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

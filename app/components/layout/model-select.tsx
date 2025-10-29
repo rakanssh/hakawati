@@ -1,5 +1,6 @@
 import { useSettingsStore, useTaleStore } from "@/store";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "../ui/drawer";
 import { Button } from "../ui/button";
 import {
   Command,
@@ -9,12 +10,7 @@ import {
   CommandGroup,
   CommandItem,
 } from "../ui/command";
-import {
-  CheckIcon,
-  ChevronsUpDownIcon,
-  RefreshCwIcon,
-  SwordsIcon,
-} from "lucide-react";
+import { ChevronsUpDownIcon, RefreshCwIcon, SwordsIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCallback, useMemo, useState } from "react";
 import { useLLMProviders } from "@/hooks/useLLMProviders";
@@ -32,12 +28,14 @@ import { LLMModel } from "@/services/llm/schema";
 import { ResponseMode } from "@/types/api.type";
 import { toast } from "sonner";
 import { GameMode } from "@/types";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 export function ModelSelect() {
   const { model, setModel, setResponseMode, responseMode } = useSettingsStore();
   const [open, setOpen] = useState(false);
   const { models, loading, refresh } = useLLMProviders();
   const { gameMode } = useTaleStore();
+  const { isMobile } = useIsMobile();
 
   const anySupportsResponseFormat = models.some(
     (m) => m.supportsResponseFormat,
@@ -127,6 +125,125 @@ export function ModelSelect() {
       </div>
     );
   }
+
+  const modelList = (
+    <CommandList className={cn(isMobile && "max-h-[60vh]")}>
+      <CommandEmpty>No model found.</CommandEmpty>
+      <CommandGroup>
+        {models.map((m) => (
+          <CommandItem
+            key={m.id}
+            value={m.name}
+            onSelect={(_) => {
+              handleModelChange(m);
+              setOpen(false);
+            }}
+            className={cn(
+              "rounded-xs p-1 ml-0",
+              isMobile && "min-h-[44px] p-3",
+              model?.name === m.name && "border-l-2 border-foreground",
+            )}
+          >
+            <div className="flex w-full items-center justify-between">
+              <div className="flex items-center gap-2">
+                {anySupportsResponseFormat &&
+                  (m.supportsResponseFormat ? (
+                    <SwordsIcon className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <div className="w-4 h-4" />
+                  ))}
+                <span>{m.name}</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                {m.contextLength !== undefined && (
+                  <span>tk: {m.contextLength?.toLocaleString() ?? "?"}</span>
+                )}
+                {m.pricing?.prompt !== undefined && (
+                  <span>
+                    In: {formatPerMillionUSDFromPerToken(m.pricing?.prompt)}
+                    /M
+                  </span>
+                )}
+                {m.pricing?.completion !== undefined && (
+                  <span>
+                    Out:{" "}
+                    {formatPerMillionUSDFromPerToken(m.pricing?.completion)}
+                    /M
+                  </span>
+                )}
+              </div>
+            </div>
+          </CommandItem>
+        ))}
+      </CommandGroup>
+    </CommandList>
+  );
+
+  const condensedPricing = model && somethingToDisplay && (
+    <div className="flex flex-wrap items-center gap-2 px-1 py-2 text-xs">
+      {model.contextLength !== undefined && (
+        <Badge variant="outline" className="text-xs">
+          {model.contextLength?.toLocaleString()} tk
+        </Badge>
+      )}
+      {model.pricing?.prompt !== undefined && (
+        <Badge variant="outline" className="text-xs">
+          In: {formatPerMillionUSDFromPerToken(model.pricing?.prompt)}/M
+        </Badge>
+      )}
+      {model.pricing?.completion !== undefined && (
+        <Badge variant="outline" className="text-xs">
+          Out: {formatPerMillionUSDFromPerToken(model.pricing?.completion)}/M
+        </Badge>
+      )}
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-2">
+          <Drawer open={open} onOpenChange={setOpen}>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="flex-1 justify-between min-h-[44px]"
+              onClick={() => setOpen(true)}
+            >
+              {loading ? "Loading..." : (model?.name ?? "Select a model")}
+              <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+            <DrawerContent>
+              <DrawerHeader>
+                <DrawerTitle>Select Model</DrawerTitle>
+              </DrawerHeader>
+              <Command className="border-none">
+                <CommandInput
+                  placeholder="Search model..."
+                  className="rounded-xs"
+                />
+                {modelList}
+              </Command>
+            </DrawerContent>
+          </Drawer>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={refresh}
+            disabled={loading}
+            className="min-h-[44px] min-w-[44px]"
+          >
+            <RefreshCwIcon
+              className={cn("h-4 w-4", loading && "animate-spin")}
+            />
+          </Button>
+        </div>
+        {condensedPricing}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex gap-2">
@@ -148,65 +265,7 @@ export function ModelSelect() {
                 placeholder="Search model..."
                 className="rounded-xs"
               />
-              <CommandList>
-                <CommandEmpty>No model found.</CommandEmpty>
-                <CommandGroup>
-                  {models.map((m) => (
-                    <CommandItem
-                      key={m.id}
-                      value={m.name}
-                      onSelect={(_) => {
-                        handleModelChange(m);
-                        setOpen(false);
-                      }}
-                      className="rounded-xs p-1 ml-0"
-                    >
-                      <CheckIcon
-                        className={cn(
-                          "mr-0 h-4 w-4",
-                          model?.name === m.name ? "opacity-100" : "opacity-0",
-                        )}
-                      />
-                      <div className="flex w-full items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {anySupportsResponseFormat &&
-                            (m.supportsResponseFormat ? (
-                              <SwordsIcon className="h-4 w-4 text-muted-foreground" />
-                            ) : (
-                              <div className="w-4 h-4" />
-                            ))}
-                          <span>{m.name}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          {m.contextLength !== undefined && (
-                            <span>
-                              tk: {m.contextLength?.toLocaleString() ?? "?"}
-                            </span>
-                          )}
-                          {m.pricing?.prompt !== undefined && (
-                            <span>
-                              In:{" "}
-                              {formatPerMillionUSDFromPerToken(
-                                m.pricing?.prompt,
-                              )}
-                              /M
-                            </span>
-                          )}
-                          {m.pricing?.completion !== undefined && (
-                            <span>
-                              Out:{" "}
-                              {formatPerMillionUSDFromPerToken(
-                                m.pricing?.completion,
-                              )}
-                              /M
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
+              {modelList}
             </Command>
           </PopoverContent>
         </Popover>

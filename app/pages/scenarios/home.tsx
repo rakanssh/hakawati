@@ -62,7 +62,7 @@ export default function ScenariosHome() {
             </span>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col md:flex-row gap-2">
           <Button
             onClick={async () => {
               try {
@@ -75,14 +75,14 @@ export default function ScenariosHome() {
                   }),
                 });
               } catch (_e) {
-                toast.error("Failed to import scenario");
+                toast.error("Failed to import scenario from clipboard");
               }
             }}
           >
-            Import From Clipboard
+            Import
           </Button>
           <Button onClick={() => navigate({ to: "/scenarios/new" })}>
-            Create Scenario
+            Create
           </Button>
         </div>
       </div>

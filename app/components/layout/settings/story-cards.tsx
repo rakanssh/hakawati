@@ -8,7 +8,7 @@ export default function SettingsStoryCards() {
     useTaleStore();
 
   return (
-    <div className="flex flex-col max-w-2xl h-full gap-4">
+    <div className="flex flex-col max-w-full h-full gap-4">
       <Label>Story Cards</Label>
       <Separator />
       <StorybookEditor

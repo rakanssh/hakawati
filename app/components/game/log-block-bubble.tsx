@@ -28,7 +28,10 @@ export function LogBlockBubble({
 
   return (
     <div className="flex flex-col items-start ml-2">
-      <div className="inline whitespace-pre-wrap break-words">
+      <div
+        className="inline whitespace-pre-wrap break-words"
+        style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
+      >
         {block.entries.map((e) => {
           const onClick = () => onEditStart?.(e.id);
           if (renderEntry) {

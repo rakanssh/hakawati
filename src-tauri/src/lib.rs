@@ -9,40 +9,47 @@ pub fn run() {
     use tauri::Manager;
     use tauri_plugin_sql::{ Migration, MigrationKind };
 
-    tauri::Builder
-        ::default()
-        .setup(|app| {
-            let app_data_dir = app.path().app_local_data_dir()?;
+    let builder = tauri::Builder::default();
 
-            std::fs::create_dir_all(&app_data_dir)?;
+    let builder = builder.setup(|app| {
+        let app_data_dir = app.path().app_local_data_dir()?;
 
-            let db_path = app_data_dir.join("hakawati.db");
-            let db_url = format!("sqlite:{}", db_path.to_string_lossy());
+        std::fs::create_dir_all(&app_data_dir)?;
 
-            let migrations = vec![
-                Migration {
-                    version: 1,
-                    description: "create_scenarios_table",
-                    sql: include_str!("../migrations/001_create_scenarios.sql"),
-                    kind: MigrationKind::Up,
-                },
-                Migration {
-                    version: 2,
-                    description: "create_tales_table",
-                    sql: include_str!("../migrations/002_create_tales.sql"),
-                    kind: MigrationKind::Up,
-                }
-            ];
+        let db_path = app_data_dir.join("hakawati.db");
+        let db_url = format!("sqlite:{}", db_path.to_string_lossy());
 
-            app
-                .handle()
-                .plugin(
-                    tauri_plugin_sql::Builder::new().add_migrations(&db_url, migrations).build()
-                )?;
+        let migrations = vec![
+            Migration {
+                version: 1,
+                description: "create_scenarios_table",
+                sql: include_str!("../migrations/001_create_scenarios.sql"),
+                kind: MigrationKind::Up,
+            },
+            Migration {
+                version: 2,
+                description: "create_tales_table",
+                sql: include_str!("../migrations/002_create_tales.sql"),
+                kind: MigrationKind::Up,
+            }
+        ];
 
-            Ok(())
-        })
-        .plugin(tauri_plugin_updater::Builder::new().build())
+        app
+            .handle()
+            .plugin(
+                tauri_plugin_sql::Builder::new().add_migrations(&db_url, migrations).build()
+            )?;
+
+        Ok(())
+    });
+
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    let builder = builder;
+
+    builder
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())

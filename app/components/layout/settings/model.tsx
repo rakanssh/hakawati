@@ -47,7 +47,7 @@ export default function SettingsModel() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 max-w-full">
       <Label>{resolveApiTypeLabel(apiType)} Compatible Settings</Label>
       <Separator />
 

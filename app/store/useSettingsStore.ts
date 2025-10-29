@@ -23,6 +23,7 @@ export interface SettingsStoreType {
   topA?: number; //range [0,1]
   uiScale: number;
   fontFamily: string;
+  fontSize: number;
   customGmPrompt?: string;
   customStorytellerPrompt?: string;
   customContinuePrompt?: string;
@@ -50,6 +51,7 @@ export interface SettingsStoreType {
   randomSeed: () => void;
   setUiScale: (scale: number) => void;
   setFontFamily: (fontFamily: string) => void;
+  setFontSize: (fontSize: number) => void;
   setToDefault: () => void;
   setCustomGmPrompt: (prompt: string) => void;
   setCustomStorytellerPrompt: (prompt: string) => void;
@@ -80,6 +82,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
       seed: Math.floor(Math.random() * 1000000),
       uiScale: 1,
       fontFamily: "system-ui",
+      fontSize: 1,
       customGmPrompt: undefined,
       customStorytellerPrompt: undefined,
       customContinuePrompt: undefined,
@@ -146,6 +149,13 @@ export const useSettingsStore = create<SettingsStoreType>()(
           return { uiScale: Number(clamped.toFixed(2)) };
         }),
       setFontFamily: (fontFamily: string) => set({ fontFamily }),
+      setFontSize: (fontSize: number) =>
+        set(() => {
+          const isFiniteNumber = Number.isFinite(fontSize);
+          const normalized = isFiniteNumber ? fontSize : 1;
+          const clamped = Math.min(Math.max(normalized, 0.5), 3);
+          return { fontSize: Number(clamped.toFixed(2)) };
+        }),
       setCustomGmPrompt: (prompt: string) => set({ customGmPrompt: prompt }),
       setCustomStorytellerPrompt: (prompt: string) =>
         set({ customStorytellerPrompt: prompt }),
@@ -203,6 +213,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
           responseMode: ResponseMode.FREE_FORM,
           uiScale: 1,
           fontFamily: "system-ui",
+          fontSize: 1,
         }),
     }),
     {

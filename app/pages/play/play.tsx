@@ -1,69 +1,19 @@
 import { useTaleStore } from "@/store/useTaleStore";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout";
-import { Button } from "@/components/ui/button";
+import { MobilePlayHeader } from "@/components/layout/mobile-play-header";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLLM } from "@/hooks/useLLM";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { GameMode } from "@/types";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DicesIcon,
-  HandIcon,
-  SendIcon,
-  SpeechIcon,
-  BookIcon,
-  MegaphoneIcon,
-  SaveIcon,
-  Loader2Icon,
-} from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
 import { nanoid } from "nanoid";
-import {
-  InlineEditableContent,
-  LogEntryBubble,
-  LogBlockBubble,
-} from "@/components/game";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 import { usePersistTale } from "@/hooks/useGameSaves";
 import { toast } from "sonner";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-interface Action {
-  type: LogEntryMode;
-  isRolling: boolean;
-}
-function getPlaceholder(action: Action) {
-  let placeholder = "";
-  switch (action.type) {
-    case LogEntryMode.DO:
-      placeholder = "You...";
-      break;
-    case LogEntryMode.SAY:
-      placeholder = "You say...";
-      break;
-    case LogEntryMode.STORY:
-      placeholder = "...";
-      break;
-    case LogEntryMode.DIRECT:
-      placeholder = "Director's Note...";
-      break;
-  }
-  if (action.isRolling) {
-    placeholder += ` [With Roll]`;
-  }
-  return placeholder;
-}
+import { PlayInputControls, PlayLogDisplay } from "@/components/play";
+import { Action, groupLogEntriesIntoBlocks } from "@/lib/play-utils";
+import { Outlet } from "@tanstack/react-router";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 export default function Play() {
   const {
@@ -84,8 +34,9 @@ export default function Play() {
   } = useTaleStore();
   const [input, setInput] = useState("");
   const { send, loading } = useLLM();
-  const { model, randomSeed } = useSettingsStore();
+  const { model, randomSeed, fontSize, setFontSize } = useSettingsStore();
   const { gameMode, id: taleId } = useTaleStore();
+  const { isMobilePlatform } = useIsMobile();
   const [currentlyEditingLogId, setCurrentlyEditingLogId] = useState<
     string | null
   >(null);
@@ -102,6 +53,8 @@ export default function Play() {
   const loadDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const debouncedSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const hasUnsavedChangesRef = useRef(false);
+  const [showZoomIndicator, setShowZoomIndicator] = useState(false);
+  const zoomIndicatorTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (loading) setStickToBottom(true);
@@ -125,6 +78,9 @@ export default function Play() {
       }
       if (debouncedSaveTimerRef.current) {
         clearTimeout(debouncedSaveTimerRef.current);
+      }
+      if (zoomIndicatorTimerRef.current) {
+        clearTimeout(zoomIndicatorTimerRef.current);
       }
     };
   }, []);
@@ -172,6 +128,53 @@ export default function Play() {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, []);
+
+  const showZoomIndicatorTemporarily = useCallback(() => {
+    setShowZoomIndicator(true);
+    if (zoomIndicatorTimerRef.current) {
+      clearTimeout(zoomIndicatorTimerRef.current);
+    }
+    zoomIndicatorTimerRef.current = setTimeout(() => {
+      setShowZoomIndicator(false);
+    }, 1500);
+  }, []);
+
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        setFontSize(fontSize + delta);
+        showZoomIndicatorTemporarily();
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === "=" || e.key === "+") {
+          e.preventDefault();
+          setFontSize(fontSize + 0.1);
+          showZoomIndicatorTemporarily();
+        } else if (e.key === "-") {
+          e.preventDefault();
+          setFontSize(fontSize - 0.1);
+          showZoomIndicatorTemporarily();
+        } else if (e.key === "0") {
+          e.preventDefault();
+          setFontSize(1);
+          showZoomIndicatorTemporarily();
+        }
+      }
+    };
+
+    globalThis.addEventListener("wheel", handleWheel, { passive: false });
+    globalThis.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      globalThis.removeEventListener("wheel", handleWheel);
+      globalThis.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [fontSize, setFontSize, showZoomIndicatorTemporarily]);
 
   useEffect(() => {
     if (!stickToBottom) return;
@@ -448,201 +451,42 @@ export default function Play() {
     }
   }, [log, loading, model, executeLlmSend]);
 
-  type LogBlock = { role: LogEntryRole; chainId?: string; entries: typeof log };
-
-  const blocks: LogBlock[] = (() => {
-    const result: LogBlock[] = [];
-    for (const entry of log) {
-      const prev = result[result.length - 1] as LogBlock | undefined;
-      const entryChain =
-        entry.role === LogEntryRole.GM
-          ? (entry.chainId ?? entry.id)
-          : undefined;
-      const prevChain = prev?.chainId;
-      const canChain =
-        entry.role === LogEntryRole.GM &&
-        prev?.role === LogEntryRole.GM &&
-        prevChain === entryChain;
-      if (canChain) {
-        prev.entries.push(entry);
-      } else {
-        result.push({
-          role: entry.role,
-          chainId: entryChain,
-          entries: [entry],
-        });
-      }
-    }
-    return result;
-  })();
+  const blocks = groupLogEntriesIntoBlocks(log);
 
   // Shared content component for both modes
   const renderMainContent = () => (
     <div className="relative grid h-full grid-rows-[1fr_auto]">
-      <ScrollArea
-        className="min-h-0 w-full px-2 py-0"
+      <PlayLogDisplay
+        blocks={blocks}
+        loadingOlder={loadingOlder}
+        currentlyEditingLogId={currentlyEditingLogId}
+        setCurrentlyEditingLogId={setCurrentlyEditingLogId}
+        updateLogEntry={updateLogEntry}
         viewportRef={viewportRef}
+        bottomRef={bottomRef}
         onViewportScroll={handleViewportScroll}
-        viewportClassName="!flex !flex-col"
-      >
-        {loadingOlder && (
-          <div className="flex items-center justify-center py-2 text-muted-foreground">
-            <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-            <span className="text-sm">Loading older entries...</span>
-          </div>
-        )}
-        {blocks.length > 0 ? (
-          blocks.map((block) => (
-            <div key={block.entries[0].id} className="mt-2">
-              {block.role === LogEntryRole.GM ? (
-                <LogBlockBubble
-                  block={block}
-                  onEditStart={(entryId) => setCurrentlyEditingLogId(entryId)}
-                  renderEntry={(entry, onClick) =>
-                    currentlyEditingLogId === entry.id ? (
-                      <InlineEditableContent
-                        initialValue={entry.text}
-                        onCommit={(next) => {
-                          updateLogEntry(entry.id, { text: next });
-                          setCurrentlyEditingLogId(null);
-                        }}
-                        onCancel={() => setCurrentlyEditingLogId(null)}
-                        variant="inline"
-                        className="bg-amber-300/10 py-0.5 border-b-1 border-b-amber-700/25"
-                      />
-                    ) : (
-                      <span className="cursor-pointer" onClick={onClick}>
-                        {entry.text}
-                      </span>
-                    )
-                  }
-                />
-              ) : (
-                block.entries.map((entry) =>
-                  currentlyEditingLogId === entry.id ? (
-                    <div key={entry.id} className="bg-accent/50 rounded-md p-0">
-                      <InlineEditableContent
-                        initialValue={entry.text}
-                        onCommit={(next) => {
-                          updateLogEntry(entry.id, { text: next });
-                          setCurrentlyEditingLogId(null);
-                        }}
-                        onCancel={() => setCurrentlyEditingLogId(null)}
-                      />
-                    </div>
-                  ) : (
-                    <div
-                      key={entry.id}
-                      className={`whitespace-pre-wrap hover:bg-accent/50 rounded-md cursor-pointer ${
-                        currentlyEditingLogId === entry.id ? "bg-accent" : ""
-                      }`}
-                      onClick={() => setCurrentlyEditingLogId(entry.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          setCurrentlyEditingLogId(entry.id);
-                        }
-                      }}
-                    >
-                      <LogEntryBubble entry={entry} />
-                    </div>
-                  ),
-                )
-              )}
+      />
+      <PlayInputControls
+        action={action}
+        setAction={setAction}
+        input={input}
+        setInput={setInput}
+        onSubmit={handleSubmit}
+        loading={loading}
+        saving={saving}
+        onContinue={handleContinue}
+        onRetry={handleRetry}
+      />
+      {showZoomIndicator && (
+        <div className="pointer-events-none absolute top-4 right-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="rounded-md bg-background/95 px-4 py-2 shadow-lg border border-border backdrop-blur-sm">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <span className="text-muted-foreground">Zoom:</span>
+              <span className="font-mono">{Math.round(fontSize * 100)}%</span>
             </div>
-          ))
-        ) : (
-          <></>
-        )}
-        <div ref={bottomRef} className="mt-2 h-px" />
-      </ScrollArea>
-      <div className="pointer-events-auto z-20 w-full border-t bg-accent p-2">
-        <div className="flex w-full items-end space-x-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={"outline"}
-                size="icon"
-                className={
-                  action.isRolling
-                    ? "border-green-500/50  text-green-300/90 hover:text-green-300/90"
-                    : " text-muted-foreground hover:text-green-300/90"
-                }
-                onClick={() =>
-                  setAction({
-                    type: action.type,
-                    isRolling: !action.isRolling,
-                  })
-                }
-                disabled={loading}
-              >
-                <DicesIcon strokeWidth={1.5} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top">Roll a dice</TooltipContent>
-          </Tooltip>
-
-          <Select
-            value={action.type}
-            onValueChange={(value) =>
-              setAction({
-                type: value as Action["type"],
-                isRolling: action.isRolling,
-              })
-            }
-          >
-            <SelectTrigger className="w-40 rounded-xs">
-              <SelectValue placeholder="Action" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={LogEntryMode.DO}>
-                <HandIcon className="w-4 h-4 mr-2" /> Act
-              </SelectItem>
-              <SelectItem value={LogEntryMode.SAY}>
-                <SpeechIcon className="w-4 h-4 mr-2" /> Say
-              </SelectItem>
-              <SelectItem value={LogEntryMode.STORY}>
-                <BookIcon className="w-4 h-4 mr-2" /> Story
-              </SelectItem>
-              <SelectItem value={LogEntryMode.DIRECT}>
-                <MegaphoneIcon className="w-4 h-4 mr-2" /> Direct
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="relative flex-1 min-w-0">
-            <div className="h-9" aria-hidden="true" />
-            <Textarea
-              placeholder={getPlaceholder(action)}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit();
-                }
-              }}
-              rows={1}
-              className="absolute inset-x-0 bottom-0 resize-none !bg-accent"
-            />
           </div>
-          <Button
-            type="submit"
-            onClick={handleSubmit}
-            disabled={saving || loading}
-          >
-            {saving ? (
-              <SaveIcon className="w-4 h-4 animate-spin" />
-            ) : (
-              <SendIcon className="w-4 h-4" />
-            )}
-          </Button>
-          <LogControl
-            handleContinue={handleContinue}
-            handleRetry={handleRetry}
-            loading={loading}
-            saving={saving}
-          />
         </div>
-      </div>
+      )}
       <div className="pointer-events-none absolute inset-0">
         <OutletWrapper />
       </div>
@@ -651,19 +495,49 @@ export default function Play() {
 
   return (
     <>
+      <MobilePlayHeader />
       {gameMode === GameMode.GM ? (
         <SidebarProvider
           defaultOpen={true}
-          className="min-h-0 h-[calc(100svh-2rem)]"
+          className="min-h-0 h-full"
+          style={
+            isMobilePlatform
+              ? { height: "100svh" }
+              : { height: "calc(100vh - 2rem)" }
+          }
         >
-          <AppSidebar />
-          <SidebarInset className="relative flex h-full flex-col overflow-hidden !rounded-none border-x">
+          <AppSidebar
+            style={
+              isMobilePlatform
+                ? { paddingLeft: "env(safe-area-inset-left)" }
+                : undefined
+            }
+          />
+          <SidebarInset
+            className="relative flex h-full flex-col overflow-hidden !rounded-none border-x"
+            style={
+              isMobilePlatform
+                ? { paddingRight: "env(safe-area-inset-right)" }
+                : undefined
+            }
+          >
             {renderMainContent()}
           </SidebarInset>
         </SidebarProvider>
       ) : (
         // Story Teller Mode - No sidebar, full width
-        <div className="relative flex h-[calc(100svh-2rem)] flex-col overflow-hidden">
+        <div
+          className="relative flex flex-col overflow-hidden h-full"
+          style={
+            isMobilePlatform
+              ? {
+                  height: "100svh",
+                  paddingLeft: "env(safe-area-inset-left)",
+                  paddingRight: "env(safe-area-inset-right)",
+                }
+              : { height: "calc(100vh - 2rem)" }
+          }
+        >
           {renderMainContent()}
         </div>
       )}
@@ -671,9 +545,7 @@ export default function Play() {
   );
 }
 
-// Lightweight wrapper that renders nested outlet without affecting layout; defined here to avoid imports
-import { Outlet } from "@tanstack/react-router";
-import { LogControl } from "@/components/game/log-control";
+// Lightweight wrapper that renders nested outlet
 function OutletWrapper() {
   return <Outlet />;
 }

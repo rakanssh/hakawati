@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Font size controls.
+- Mobile-friendly bottom navigation. (App can technically build for android, not tested yet.)
+
+### Changed
+
+- Toasts now show up on the top right of the screen.
+- Support for mobile-width screens.
+
+### Fixed
+
+- Disabled update plugin on mobile builds.
+- Mismatched plugin versions between js and rust.
+
 ## [v0.3.2] - 2025-10-24
 
 ### Added

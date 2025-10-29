@@ -159,7 +159,7 @@ export default function SettingsUpdates() {
   };
 
   return (
-    <div className="flex flex-col gap-4 max-w-2xl">
+    <div className="flex flex-col gap-4 max-w-full">
       <div className="flex flex-col gap-2">
         <Label>App Updates</Label>
         <Separator />

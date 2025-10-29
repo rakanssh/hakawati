@@ -26,17 +26,18 @@ export function LogControl({
 
   return (
     <div className={className}>
-      <div className="flex flex-row w-full gap-0">
+      <div className="flex flex-row gap-0 w-full">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className="rounded-none rounded-l-xs"
+              className="rounded-none !rounded-l-xs flex-1 h-10"
               variant="default"
               size="icon"
               onClick={undo}
               disabled={loading || saving}
+              aria-label="Undo"
             >
-              <UndoIcon className="w-4 h-4" />
+              <UndoIcon className="w-3.5 h-3.5 md:w-4 md:h-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">Undo (Ctrl+Z)</TooltipContent>
@@ -49,9 +50,13 @@ export function LogControl({
               disabled={loading || saving}
               variant="default"
               size="icon"
-              className="rounded-none"
+              className="rounded-none flex-1 h-10"
+              aria-label="Retry"
             >
-              <RefreshCwIcon strokeWidth={1.5} />
+              <RefreshCwIcon
+                strokeWidth={1.5}
+                className="w-3.5 h-3.5 md:w-4 md:h-4"
+              />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">Retry</TooltipContent>
@@ -64,9 +69,10 @@ export function LogControl({
               disabled={loading || saving}
               variant="default"
               size="icon"
-              className="rounded-none"
+              className="rounded-none flex-1 h-10"
+              aria-label="Continue"
             >
-              <MoreHorizontal className="w-4 h-4" />
+              <MoreHorizontal className="w-3.5 h-3.5 md:w-4 md:h-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">Continue</TooltipContent>
@@ -75,13 +81,14 @@ export function LogControl({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className="rounded-none rounded-r-xs"
+              className="rounded-none !rounded-r-xs flex-1 h-10"
               variant="default"
               size="icon"
               onClick={redo}
               disabled={loading || saving}
+              aria-label="Redo"
             >
-              <RedoIcon className="w-4 h-4" />
+              <RedoIcon className="w-3.5 h-3.5 md:w-4 md:h-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">Redo (Ctrl+Y)</TooltipContent>

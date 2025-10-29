@@ -4,3 +4,5 @@ export * from "./app-sidebar";
 export * from "./settings/settings-button";
 export * from "./model-select";
 export * from "./titlebar";
+export * from "./mobile-bottom-nav";
+export * from "./mobile-play-header";

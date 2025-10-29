@@ -25,7 +25,7 @@ export default function SettingsGame() {
   const { gameMode, setGameMode, id } = useTaleStore();
   const { theme, setTheme } = useTheme();
   const { save } = usePersistTale();
-  const { uiScale, setUiScale } = useSettingsStore();
+  const { uiScale, setUiScale, fontSize, setFontSize } = useSettingsStore();
 
   const getGamemodeDescription = (gameMode: GameMode) => {
     if (gameMode === GameMode.GM)
@@ -46,7 +46,7 @@ export default function SettingsGame() {
   }
 
   return (
-    <div className="flex flex-col gap-4 max-w-2xl">
+    <div className="flex flex-col gap-4 max-w-full">
       <Label>Game Settings</Label>
       <Separator />
 
@@ -121,6 +121,27 @@ export default function SettingsGame() {
               Reset
             </Button>
           </div>
+        </div>
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label>Font Size (0.75 - 2.0)</Label>
+        <div className="flex flex-row items-center gap-2">
+          <NumberInput
+            min={0.75}
+            max={2}
+            step={0.05}
+            value={fontSize}
+            onValueCommit={(value) => setFontSize(value)}
+            aria-label="Game log font size"
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setFontSize(1)}
+            disabled={Math.abs(fontSize - 1) < 0.01}
+          >
+            Reset
+          </Button>
         </div>
       </div>
       <div className="flex flex-col gap-2">

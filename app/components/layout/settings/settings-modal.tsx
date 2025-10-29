@@ -2,6 +2,13 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useUpdateStore } from "@/store/useUpdateStore";
 
 import SettingsGame from "@/components/layout/settings/game";
@@ -93,10 +100,12 @@ export function SettingsModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={true}
-        className="p-0 sm:max-w-[900px] w-[min(95vw,900px)] h-[min(85vh,700px)] flex flex-col"
+        className="p-0 gap-0 w-[95vw] h-[90vh] sm:max-w-[1300px] sm:max-h-[900px] flex flex-col"
       >
-        <div className="grid grid-cols-[160px_1fr] gap-0 h-full">
-          <nav className="border-r px-3 py-4 overflow-auto">
+        {/* Desktop & Mobile content */}
+        <div className="md:grid md:grid-cols-[160px_1fr] gap-0 h-full overflow-hidden flex flex-col">
+          {/* Desktop: Sidebar navigation */}
+          <nav className="hidden md:block border-r px-3 py-4 overflow-auto">
             <ul className="flex flex-col gap-1">
               {availableTabs.map((tab) => (
                 <li key={tab.id}>
@@ -117,11 +126,38 @@ export function SettingsModal({
               ))}
             </ul>
           </nav>
-          <section className="py-3 px-4 overflow-auto bg-card h-full">
-            <ScrollArea className="flex-1 px-2 py-0 min-h-0 h-full">
-              <ActiveComponent />
+
+          {/* Content area */}
+          <section className="py-3 bg-card h-full">
+            <ScrollArea className="flex-1 h-full">
+              <div className="px-4">
+                <ActiveComponent />
+              </div>
             </ScrollArea>
           </section>
+        </div>
+        {/* Mobile: Dropdown selector */}
+        <div className="md:hidden border-b px-4 py-3">
+          <Select
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as SettingsTabId)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {availableTabs.map((tab) => (
+                <SelectItem key={tab.id} value={tab.id}>
+                  <span className="flex items-center gap-2">
+                    {tab.label}
+                    {tab.id === "updates" && hasUpdateNotification && (
+                      <span className="inline-flex h-2 w-2 rounded-full bg-destructive" />
+                    )}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </DialogContent>
     </Dialog>

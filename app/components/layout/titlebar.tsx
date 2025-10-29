@@ -4,10 +4,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { Button } from "../ui/button";
 import { useNavigate } from "@tanstack/react-router";
 import fez from "@/assets/fez-offwh-bg-sqc.svg";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 export function Titlebar() {
   const navigate = useNavigate();
   const isShowButtons = true;
+  const { isMobilePlatform } = useIsMobile();
+  if (isMobilePlatform) return null;
   return (
     <div
       data-tauri-drag-region

@@ -10,7 +10,7 @@ const COPYRIGHT_NOTICE = "© 2025 Rakan AlShammari";
 
 export default function SettingsAbout() {
   return (
-    <div className="flex h-full max-w-2xl flex-col gap-4">
+    <div className="flex h-full max-w-full flex-col gap-4">
       <div className="flex flex-col gap-2">
         <Label>About Hakawati</Label>
         <Separator />

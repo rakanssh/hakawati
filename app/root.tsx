@@ -17,20 +17,27 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { Outlet } from "@tanstack/react-router";
+import { Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 
 import "./App.css";
 import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "./components/ui";
 import { Titlebar } from "./components/layout";
+import { MobileBottomNav } from "./components/layout/mobile-bottom-nav";
 import { isTauriEnvironment, useUpdateStore } from "./store/useUpdateStore";
 import { useDbReady } from "./hooks/useDbReady";
+import { useIsMobile } from "./hooks/useIsMobile";
 
 export default function AppShell() {
   const checkForUpdates = useUpdateStore((state) => state.checkForUpdates);
   const hasRunRef = useRef(false);
   const { isReady: dbReady, error: dbError } = useDbReady();
+  const { isMobilePlatform } = useIsMobile();
+  const routerState = useRouterState();
+
+  const isPlayRoute = routerState.location.pathname?.startsWith("/play");
+  const showMobileBottomNav = isMobilePlatform && !isPlayRoute;
 
   useEffect(() => {
     if (hasRunRef.current) return;
@@ -43,7 +50,21 @@ export default function AppShell() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <Titlebar />
-      <div className="pt-8">
+      <div
+        className={isMobilePlatform ? "" : "pt-8"}
+        style={
+          isMobilePlatform && !isPlayRoute
+            ? {
+                paddingTop: "env(safe-area-inset-top)",
+                paddingBottom: showMobileBottomNav
+                  ? "calc(3.5rem + env(safe-area-inset-bottom))"
+                  : "env(safe-area-inset-bottom)",
+                paddingLeft: "env(safe-area-inset-left)",
+                paddingRight: "env(safe-area-inset-right)",
+              }
+            : undefined
+        }
+      >
         {!dbReady && !dbError && (
           <div className="flex items-center justify-center h-[calc(100vh-2.5rem)]">
             <div className="text-muted-foreground">Initializing...</div>
@@ -56,7 +77,8 @@ export default function AppShell() {
         )}
         {dbReady && <Outlet />}
       </div>
-      <Toaster richColors expand />
+      <MobileBottomNav />
+      <Toaster richColors expand position="top-right" />
     </ThemeProvider>
   );
 }

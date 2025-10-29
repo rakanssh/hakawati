@@ -6,6 +6,7 @@ interface InlineEditableContentProps {
   onCancel: () => void;
   variant?: "block" | "inline";
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export function InlineEditableContent(props: InlineEditableContentProps) {
@@ -16,6 +17,7 @@ export function InlineEditableContent(props: InlineEditableContentProps) {
     onCancel,
     variant = "block",
     className,
+    style,
   } = props;
 
   useEffect(() => {
@@ -55,6 +57,7 @@ export function InlineEditableContent(props: InlineEditableContentProps) {
         onBlur={finish}
         onKeyDown={onKeyDown}
         className={`whitespace-pre-wrap break-words outline-none ${className ?? ""}`}
+        style={style}
         role="textbox"
         aria-multiline="true"
       />
@@ -69,7 +72,7 @@ export function InlineEditableContent(props: InlineEditableContentProps) {
       onBlur={finish}
       onKeyDown={onKeyDown}
       className={`md:text-base whitespace-pre-wrap break-words outline-none ml-2 pt-2 ${className ?? ""}`}
-      style={{ minHeight: 0 }}
+      style={{ minHeight: 0, ...style }}
       role="textbox"
       aria-multiline="true"
     />

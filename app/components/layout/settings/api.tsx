@@ -72,7 +72,7 @@ export default function SettingsApi() {
   }
 
   return (
-    <div className="flex flex-col gap-4 max-w-2xl">
+    <div className="flex flex-col gap-4 max-w-full">
       <Label>API Settings</Label>
       <Separator />
 

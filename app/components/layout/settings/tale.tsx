@@ -130,7 +130,7 @@ export default function SettingsTale() {
   // }
 
   return (
-    <div className="flex flex-col gap-4 max-w-2xl">
+    <div className="flex flex-col gap-4 max-w-full">
       <Label>Tale</Label>
       <Separator />
 
