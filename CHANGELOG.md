@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [v0.4.2] - 2025-10-31
+
+### Changed
+
+- Simplified continue system prompt. Should work better.
+
 ## [v0.4.1] - 2025-10-30
 
 ### Fixed

@@ -34,8 +34,6 @@ Only use game state actions when logically appropriate. Avoid random or excessiv
 
 export const STORY_TELLER_SYSTEM_PROMPT = `You are an imaginative and adaptive storyteller. Always stay in character as the storyteller. Respond with story only — no lists, no JSON, no choices.`;
 
-// Trigger text used by the UI for a continuation request
-export const CONTINUE_SYSTEM_PROMPT = `Continue generating story from where you last left off.`;
+export const CONTINUE_SYSTEM_PROMPT = `Continue`;
 
-// Author's note injected near the end of the prompt during continuation (inspired by Kobold-style A/N placement)
-export const CONTINUE_AUTHOR_NOTE = `A/N: Continue the scene exactly from the last line of the previous assistant message. Do not summarize or recap. Keep the same tense, POV, and tone. If the last line is mid-sentence, continue seamlessly.`;
+export const CONTINUE_AUTHOR_NOTE = `A/N: Continue the scene exactly from the last line of the previous assistant message. Do not summarize or recap. Keep the same tense, POV, and tone. Complete the last output.`;
