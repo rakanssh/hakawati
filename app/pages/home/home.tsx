@@ -25,6 +25,10 @@ import { AlertTriangle } from "lucide-react";
 import { QuickstartWizard } from "@/components/quickstart";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 import { useLoadTale } from "@/hooks/useGameSaves";
+import { WhatsNewModal } from "@/components/layout";
+import { useUpdateStore } from "@/store/useUpdateStore";
+import { useVersionStore } from "@/store/useVersionStore";
+import { getVersion } from "@tauri-apps/api/app";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -33,10 +37,22 @@ export default function Home() {
   const lastEntry = log.at(-1);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [quickstartOpen, setQuickstartOpen] = useState(false);
+  const [whatsNewOpen, setWhatsNewOpen] = useState(false);
   const nonPlayTabs: readonly SettingsTabId[] = ["game", "api", "model"];
   const { lastPlayedTaleId } = useLastPlayedStore();
   const { load } = useLoadTale();
   const hasLoadedRef = useRef(false);
+
+  const pendingChangelogVersion = useUpdateStore(
+    (state) => state.pendingChangelogVersion,
+  );
+  const pendingChangelogNotes = useUpdateStore(
+    (state) => state.pendingChangelogNotes,
+  );
+  const clearPendingChangelog = useUpdateStore(
+    (state) => state.clearPendingChangelog,
+  );
+  const { lastSeenVersion, setLastSeenVersion } = useVersionStore();
 
   const { hasIssues, issues } = useMemo(() => {
     const missing: string[] = [];
@@ -57,6 +73,38 @@ export default function Home() {
       console.error("Failed to auto-load last played tale:", error);
     });
   }, [lastPlayedTaleId, currentTaleId, load]);
+
+  useEffect(() => {
+    const checkForWhatsNew = async () => {
+      try {
+        const currentVersion = await getVersion();
+
+        if (
+          pendingChangelogVersion &&
+          pendingChangelogNotes &&
+          lastSeenVersion !== currentVersion
+        ) {
+          setWhatsNewOpen(true);
+        }
+      } catch (error) {
+        console.error("Failed to check app version:", error);
+      }
+    };
+
+    void checkForWhatsNew();
+  }, [pendingChangelogVersion, pendingChangelogNotes, lastSeenVersion]);
+
+  const handleWhatsNewClose = async () => {
+    try {
+      const currentVersion = await getVersion();
+      setLastSeenVersion(currentVersion);
+      clearPendingChangelog();
+      setWhatsNewOpen(false);
+    } catch (error) {
+      console.error("Failed to update last seen version:", error);
+      setWhatsNewOpen(false);
+    }
+  };
   return (
     <main className="flex flex-col items-center justify-center h-[calc(100vh-2.5rem)] ">
       <Card className="w-full max-w-xl">
@@ -205,6 +253,14 @@ export default function Home() {
         open={quickstartOpen}
         onOpenChange={setQuickstartOpen}
       />
+      {pendingChangelogVersion && pendingChangelogNotes && (
+        <WhatsNewModal
+          open={whatsNewOpen}
+          onOpenChange={handleWhatsNewClose}
+          version={pendingChangelogVersion}
+          notes={pendingChangelogNotes}
+        />
+      )}
     </main>
   );
 }

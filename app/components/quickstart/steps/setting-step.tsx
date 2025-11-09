@@ -10,6 +10,7 @@ interface SettingStepProps {
   customValue: string;
   onChange: (value: string) => void;
   onCustomChange: (value: string) => void;
+  onNext?: () => void;
 }
 
 export function SettingStep({
@@ -17,11 +18,15 @@ export function SettingStep({
   customValue,
   onChange,
   onCustomChange,
+  onNext,
 }: SettingStepProps) {
   const handleSurpriseMe = () => {
     const nonCustomSettings = SETTINGS.filter((s) => s.id !== "custom");
     const randomSetting = getRandomElement(nonCustomSettings);
     onChange(randomSetting.id);
+    if (onNext) {
+      onNext();
+    }
   };
 
   return (

@@ -2,6 +2,22 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Token counting in the quickstart wizard/tale settings.
+- Ctrl+Z, Ctrl+Y, and Ctrl+R keybinds to the log control.
+- "What's New" modal to show release notes for newly installed versions.
+
+### Fixed
+
+- It's now possible to set model settings to null by deleting the value, instead of it resetting to min.
+
+### Removed
+
+- Char limits for description and style in the quickstart wizard.
+
 ## [v0.4.2] - 2025-10-31
 
 ### Changed

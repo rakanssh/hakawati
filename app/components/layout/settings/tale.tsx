@@ -3,6 +3,7 @@ import { Textarea } from "@/components/ui/textarea";
 // No navigation side-effects from here
 import { Separator } from "@/components/ui/separator";
 import { useTaleStore } from "@/store/useTaleStore";
+import { countTokens } from "@/services/llm/tokenCounter";
 
 // type ExportedScenarioV1 = {
 //   format: "hakawati-scenario";
@@ -18,116 +19,10 @@ export default function SettingsTale() {
   const { description, authorNote, setDescription, setAuthorNote } =
     useTaleStore();
 
-  // TODO: Move to scenario UI later
-  // async function handleExportScenario() {
-  //   try {
-  //     const exportPayload: ExportedScenarioV1 = {
-  //       format: "hakawati-scenario",
-  //       version: 1,
-  //       exportedAt: new Date().toISOString(),
-  //       scenario: {
-  //         id: scenario.id,
-  //         name: scenario.name,
-  //         description: scenario.description,
-  //         authorNote: scenario.authorNote,
-  //         initialStats: Array.isArray(scenario.initialStats)
-  //           ? scenario.initialStats
-  //           : [],
-  //         initialInventory: Array.isArray(scenario.initialInventory)
-  //           ? scenario.initialInventory
-  //           : [],
-  //         initialStoryCards: Array.isArray(scenario.initialStoryCards)
-  //           ? scenario.initialStoryCards.map(
-  //               ({ title, triggers, content, id }) => ({
-  //                 id: id ?? nanoid(12),
-  //                 title,
-  //                 triggers,
-  //                 content,
-  //               }),
-  //             )
-  //           : [],
-  //       },
-  //       storyCards: storyCards.map(({ title, triggers, content, id }) => ({
-  //         id: id ?? nanoid(12),
-  //         title,
-  //         triggers,
-  //         content,
-  //       })),
-  //     };
-  //     const json = JSON.stringify(exportPayload, null, 2);
-  //     await navigator.clipboard.writeText(json);
-  //     toast.success("Scenario exported to clipboard", {
-  //       description: `${exportPayload.storyCards.length} story card(s) included`,
-  //     });
-  //   } catch (error) {
-  //     const message = error instanceof Error ? error.message : String(error);
-  //     toast.error("Failed to export scenario", { description: message });
-  //   }
-  // }
-
-  // TODO: Move to scenario UI later
-  // async function handleImportScenario() {
-  //   try {
-  //     const text = await navigator.clipboard.readText();
-  //     let data: unknown;
-  //     try {
-  //       data = JSON.parse(text);
-  //     } catch {
-  //       toast.error("Clipboard does not contain valid JSON");
-  //       return;
-  //     }
-
-  //     const payload = data as Partial<ExportedScenarioV1>;
-  //     if (
-  //       !payload ||
-  //       payload.format !== "hakawati-scenario" ||
-  //       payload.version !== 1 ||
-  //       !payload.scenario ||
-  //       !Array.isArray(payload.storyCards)
-  //     ) {
-  //       toast.error("Invalid scenario format in clipboard");
-  //       return;
-  //     }
-
-  //     const importedScenario = {
-  //       id: payload.scenario.id ?? nanoid(12),
-  //       name: payload.scenario.name ?? "Imported",
-  //       description: payload.scenario.description ?? "",
-  //       authorNote: payload.scenario.authorNote ?? "",
-  //       initialStats: Array.isArray(payload.scenario.initialStats)
-  //         ? payload.scenario.initialStats
-  //         : [],
-  //       initialInventory: Array.isArray(payload.scenario.initialInventory)
-  //         ? payload.scenario.initialInventory
-  //         : [],
-  //       initialStoryCards: Array.isArray(payload.scenario.initialStoryCards)
-  //         ? payload.scenario.initialStoryCards.map((c) => ({
-  //             id: nanoid(12),
-  //             title: c.title ?? "Untitled",
-  //             triggers: Array.isArray(c.triggers) ? c.triggers : [],
-  //             content: c.content ?? "",
-  //           }))
-  //         : [],
-  //     };
-
-  //     const importedStoryCards = payload.storyCards.map((c) => ({
-  //       id: nanoid(12),
-  //       title: c.title ?? "Untitled",
-  //       triggers: Array.isArray(c.triggers) ? c.triggers : [],
-  //       content: c.content ?? "",
-  //     }));
-
-  //     setScenario(importedScenario as typeof scenario);
-  //     setStoryCards(importedStoryCards);
-
-  //     toast.success("Scenario imported", {
-  //       description: `${importedStoryCards.length} story card(s) loaded`,
-  //     });
-  //   } catch (error) {
-  //     const message = error instanceof Error ? error.message : String(error);
-  //     toast.error("Failed to import scenario", { description: message });
-  //   }
-  // }
+  const descriptionChars = description.length;
+  const descriptionTokens = countTokens(description);
+  const authorNoteChars = authorNote.length;
+  const authorNoteTokens = countTokens(authorNote);
 
   return (
     <div className="flex flex-col gap-4 max-w-full">
@@ -135,14 +30,24 @@ export default function SettingsTale() {
       <Separator />
 
       <div className="flex flex-col gap-2">
-        <Label>Description</Label>
+        <div className="flex items-center justify-between">
+          <Label>Description</Label>
+          <span className="text-xs text-muted-foreground">
+            {descriptionChars} characters • ~{descriptionTokens} tokens
+          </span>
+        </div>
         <Textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
       </div>
       <div className="flex flex-col gap-2">
-        <Label>Author Notes</Label>
+        <div className="flex items-center justify-between">
+          <Label>Author Notes</Label>
+          <span className="text-xs text-muted-foreground">
+            {authorNoteChars} characters • ~{authorNoteTokens} tokens
+          </span>
+        </div>
         <Textarea
           value={authorNote}
           onChange={(e) => setAuthorNote(e.target.value)}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Drawer,
@@ -76,6 +76,14 @@ export function QuickstartWizard({
     setState((prev) => ({ ...prev, ...updates }));
   };
 
+  const handleNextRef = useRef<(() => void) | null>(null);
+
+  const handleNext = useCallback(() => {
+    if (handleNextRef.current) {
+      handleNextRef.current();
+    }
+  }, []);
+
   const steps = [
     {
       title: "Game Mode",
@@ -105,6 +113,7 @@ export function QuickstartWizard({
           onCustomChange={(customSetting: string) =>
             updateState({ customSetting })
           }
+          onNext={handleNext}
         />
       ),
       canProgress:
@@ -125,6 +134,7 @@ export function QuickstartWizard({
           onCustomChange={(customArchetype: string) =>
             updateState({ customArchetype })
           }
+          onNext={handleNext}
         />
       ),
       canProgress:
@@ -149,6 +159,7 @@ export function QuickstartWizard({
         <ToneStep
           value={state.tone}
           onChange={(tone: string) => updateState({ tone })}
+          onNext={handleNext}
         />
       ),
       canProgress: true,
@@ -206,15 +217,21 @@ export function QuickstartWizard({
     });
   }
 
+  // Set up the actual handleNext implementation now that steps is defined
+  useEffect(() => {
+    handleNextRef.current = () => {
+      setCurrentStep((prev) => {
+        if (prev < steps.length - 1) {
+          return prev + 1;
+        }
+        return prev;
+      });
+    };
+  }, [steps.length]);
+
   const currentStepData = steps[currentStep];
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === steps.length - 1;
-
-  const handleNext = useCallback(() => {
-    if (!isLastStep) {
-      setCurrentStep((prev) => prev + 1);
-    }
-  }, [isLastStep]);
 
   const handleBack = useCallback(() => {
     if (!isFirstStep) {
@@ -264,6 +281,7 @@ export function QuickstartWizard({
 
     taleStore.resetAllState();
     taleStore.clearStoryCards();
+    taleStore.resetLogWindow();
     taleStore.setId(nanoid());
     taleStore.setName(taleName);
     taleStore.setDescription(taleDescription);

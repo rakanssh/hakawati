@@ -6,12 +6,16 @@ import { Shuffle } from "lucide-react";
 interface ToneStepProps {
   value: string;
   onChange: (value: string) => void;
+  onNext?: () => void;
 }
 
-export function ToneStep({ value, onChange }: ToneStepProps) {
+export function ToneStep({ value, onChange, onNext }: ToneStepProps) {
   const handleSurpriseMe = () => {
     const randomTone = getRandomElement(TONES);
     onChange(randomTone.id);
+    if (onNext) {
+      onNext();
+    }
   };
 
   return (

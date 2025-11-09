@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, KeyboardEvent, FocusEvent } from "react";
 import { Input } from "./input";
 import { cn } from "@/lib/utils";
 
-type NumberInputProps = {
+type BaseNumberInputProps = {
   value?: number | null;
   min?: number;
   max?: number;
@@ -12,8 +12,19 @@ type NumberInputProps = {
   disabled?: boolean;
   placeholder?: string;
   "aria-label"?: string;
+};
+
+type NumberInputPropsWithNull = BaseNumberInputProps & {
+  allowNull: true;
+  onValueCommit: (nextValue: number | null) => void;
+};
+
+type NumberInputPropsWithoutNull = BaseNumberInputProps & {
+  allowNull?: false;
   onValueCommit: (nextValue: number) => void;
 };
+
+type NumberInputProps = NumberInputPropsWithNull | NumberInputPropsWithoutNull;
 
 export function NumberInput({
   value,
@@ -24,6 +35,7 @@ export function NumberInput({
   className,
   disabled,
   placeholder,
+  allowNull = false,
   onValueCommit,
   ...aria
 }: NumberInputProps) {
@@ -53,23 +65,25 @@ export function NumberInput({
   function commit(nextRaw?: string) {
     const raw = nextRaw ?? draft;
     const parsed = Number(raw);
-    let next: number;
+    let next: number | null;
 
-    if (Number.isFinite(parsed)) {
+    if (raw === "" && allowNull) {
+      next = null;
+    } else if (Number.isFinite(parsed)) {
       next = clampNumber(parsed);
+    } else if (typeof min === "number") {
+      next = min;
+    } else if (allowNull) {
+      next = null;
     } else {
-      if (typeof min === "number") {
-        next = min;
-      } else {
-        next = 0;
-      }
+      next = 0;
     }
 
-    const current = typeof value === "number" ? value : undefined;
+    const current = typeof value === "number" ? value : null;
     if (current !== next) {
-      onValueCommit(next);
+      onValueCommit(next as never);
     }
-    setDraft(String(next));
+    setDraft(next === null ? "" : String(next));
   }
 
   function handleBlur(_e: FocusEvent<HTMLInputElement>) {

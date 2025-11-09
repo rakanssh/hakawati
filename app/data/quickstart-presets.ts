@@ -241,17 +241,16 @@ export function generateDescription(
   const archetypeName = archetypeObj?.name || archetype || "character";
 
   const hooks: Record<string, string> = {
-    fantasy: "with a quest",
-    mystery: "with a new mystery",
-    zombies: "as the dead walk the earth",
-    scifi: "among the stars",
-    horror: "as darkness falls",
-    custom: "with endless possibilities",
+    fantasy: " with a quest",
+    mystery: " with a new mystery",
+    zombies: " as the dead walk the earth",
+    scifi: " among the stars",
+    horror: " as darkness falls",
   };
 
-  const hook = hooks[baseSetting] || "with endless possibilities";
+  const hook = hooks[baseSetting] || "";
 
-  return `You are ${characterName}, a ${archetypeName.toLowerCase()} in a ${settingName.toLowerCase()} world. The adventure begins ${hook}.`;
+  return `You are ${characterName}, a ${archetypeName.toLowerCase()} in a ${settingName.toLowerCase()} world. The adventure begins${hook}.`;
 }
 
 export function getRandomElement<T>(array: T[]): T {

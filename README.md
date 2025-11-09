@@ -8,7 +8,7 @@
 
 Hakawati is an AI-powered, text-based RPG. Bring your own OpenAI-Compatible endpoint (Cloud or local), and start an on-demand, interactive, text-based adventure!
 
-> ℹ️ The client is in an early experimental stage. Expect bugs! (Ctrl+R will refresh the app, may resolve the occasional issue.)
+> ℹ️ The client is in an early experimental stage. Expect bugs! (right click -> refresh app may resolve the occasional issue.)
 
 [📥 Download Latest Release Here](https://github.com/rakanssh/hakawati/releases/latest)
 
@@ -141,26 +141,23 @@ Click the three dot menu on a scenario and click `Edit` to edit its values.
 - Rust toolchain and platform dependencies required by [Tauri](https://tauri.app/start/prerequisites/)
 - [`cargo-about`](https://github.com/EmbarkStudios/cargo-about) CLI (`cargo install cargo-about --locked`)
 
-### Installation
+### Preparing the Development Environment
 
 ```bash
+# Install dependencies
 npm install
+# Install cargo-about
+cargo install cargo-about --locked
+# Generate license reports
+npm run licenses:generate
+# Run the development server
+npm run tauri dev
 ```
 
 ## Running and Building the App
 
-- Desktop app preview: `npm run tauri dev`
-- Build: `npm run tauri build`
-- Refresh license reports manually: `npm run licenses:generate`
-
-On first launch, follow the home screen prompt tosetup your API URL and key if applicable, then select a model from the list.
-
-## Project Structure
-
-- `app/` – React + Vite UI, including components, pages, Zustand stores, hooks, and LLM services
-- `src-tauri/` – Rust backend, Tauri configuration, and SQLite migrations.
-- `public/` – Static assets bundled with the web build
-- `dist/` – Generated production assets (do not edit manually)
+- Refresh license reports: `npm run licenses:generate`
+- Build Desktop App: `npm run tauri build`
 
 ## Tech Stack
 
@@ -174,7 +171,6 @@ On first launch, follow the home screen prompt tosetup your API URL and key if a
 Planned areas of exploration include:
 
 - Scenario scripting (allow inserting variables/options in scenarios and prompting the user to fill or select them when starting a tale)
-- Deeper and more advanced system prompt customization.
 - AI-generated/assisted story cards.
 - Cross-device sync.
 - Mobile support.

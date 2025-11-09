@@ -62,6 +62,7 @@ export default function Play() {
 
   useEffect(() => {
     setStickToBottom(true);
+    hasAutoSentRef.current = false; // Reset auto-send flag when tale changes
     // Use a small delay to ensure content is rendered
     const timer = setTimeout(() => {
       if (viewportRef.current) {

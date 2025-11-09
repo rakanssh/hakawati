@@ -106,7 +106,8 @@ export default function SettingsModel() {
             min={0}
             max={2}
             step={0.1}
-            value={temperature ?? undefined}
+            value={temperature ?? null}
+            allowNull
             onValueCommit={(val) => setTemperature(val)}
           />
         </div>
@@ -117,7 +118,8 @@ export default function SettingsModel() {
             min={0}
             max={1}
             step={0.01}
-            value={topP ?? undefined}
+            value={topP ?? null}
+            allowNull
             onValueCommit={(val) => setTopP(val)}
           />
         </div>
@@ -127,7 +129,8 @@ export default function SettingsModel() {
           <NumberInput
             min={1}
             step={1}
-            value={topK ?? undefined}
+            value={topK ?? null}
+            allowNull
             onValueCommit={(val) => setTopK(val)}
           />
         </div>
@@ -138,7 +141,8 @@ export default function SettingsModel() {
             min={-2}
             max={2}
             step={0.1}
-            value={frequencyPenalty ?? undefined}
+            value={frequencyPenalty ?? null}
+            allowNull
             onValueCommit={(val) => setFrequencyPenalty(val)}
           />
         </div>
@@ -149,7 +153,8 @@ export default function SettingsModel() {
             min={-2}
             max={2}
             step={0.1}
-            value={presencePenalty ?? undefined}
+            value={presencePenalty ?? null}
+            allowNull
             onValueCommit={(val) => setPresencePenalty(val)}
           />
         </div>
@@ -160,7 +165,8 @@ export default function SettingsModel() {
             min={0}
             max={10}
             step={0.1}
-            value={repetitionPenalty ?? undefined}
+            value={repetitionPenalty ?? null}
+            allowNull
             onValueCommit={(val) => setRepetitionPenalty(val)}
           />
         </div>
@@ -171,7 +177,8 @@ export default function SettingsModel() {
             min={0}
             max={1}
             step={0.01}
-            value={minP ?? undefined}
+            value={minP ?? null}
+            allowNull
             onValueCommit={(val) => setMinP(val)}
           />
         </div>
@@ -182,7 +189,8 @@ export default function SettingsModel() {
             min={0}
             max={1}
             step={0.01}
-            value={topA ?? undefined}
+            value={topA ?? null}
+            allowNull
             onValueCommit={(val) => setTopA(val)}
           />
         </div>

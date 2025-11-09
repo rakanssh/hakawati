@@ -39,14 +39,14 @@ export interface SettingsStoreType {
   setContextWindow: (contextWindow: number) => void;
   setOpenAiBaseUrl: (openAiBaseUrl: string) => void;
   setMaxTokens: (maxTokens: number) => void;
-  setTemperature: (temperature: number) => void;
-  setTopP: (topP: number) => void;
-  setTopK: (topK: number) => void;
-  setFrequencyPenalty: (frequencyPenalty: number) => void;
-  setPresencePenalty: (presencePenalty: number) => void;
-  setRepetitionPenalty: (repetitionPenalty: number) => void;
-  setMinP: (minP: number) => void;
-  setTopA: (topA: number) => void;
+  setTemperature: (temperature: number | null) => void;
+  setTopP: (topP: number | null) => void;
+  setTopK: (topK: number | null) => void;
+  setFrequencyPenalty: (frequencyPenalty: number | null) => void;
+  setPresencePenalty: (presencePenalty: number | null) => void;
+  setRepetitionPenalty: (repetitionPenalty: number | null) => void;
+  setMinP: (minP: number | null) => void;
+  setTopA: (topA: number | null) => void;
   setSeed: (seed: number) => void;
   randomSeed: () => void;
   setUiScale: (scale: number) => void;
@@ -125,20 +125,48 @@ export const useSettingsStore = create<SettingsStoreType>()(
               ? Math.max(1, Math.min(get().modelContextLength, maxTokens))
               : maxTokens,
         }),
-      setTemperature: (temperature: number) =>
-        set({ temperature: Math.max(0, Math.min(2, temperature)) }),
-      setTopP: (topP: number) => set({ topP: Math.max(0, Math.min(1, topP)) }),
-      setTopK: (topK: number) => set({ topK: Math.max(1, topK) }),
-      setFrequencyPenalty: (frequencyPenalty: number) =>
-        set({ frequencyPenalty: Math.max(-2, Math.min(2, frequencyPenalty)) }),
-      setPresencePenalty: (presencePenalty: number) =>
-        set({ presencePenalty: Math.max(-2, Math.min(2, presencePenalty)) }),
-      setRepetitionPenalty: (repetitionPenalty: number) =>
+      setTemperature: (temperature: number | null) =>
         set({
-          repetitionPenalty: Math.max(0, Math.min(10, repetitionPenalty)),
+          temperature:
+            temperature === null
+              ? undefined
+              : Math.max(0, Math.min(2, temperature)),
         }),
-      setMinP: (minP: number) => set({ minP: Math.max(0, Math.min(1, minP)) }),
-      setTopA: (topA: number) => set({ topA: Math.max(0, Math.min(1, topA)) }),
+      setTopP: (topP: number | null) =>
+        set({
+          topP: topP === null ? undefined : Math.max(0, Math.min(1, topP)),
+        }),
+      setTopK: (topK: number | null) =>
+        set({ topK: topK === null ? undefined : Math.max(1, topK) }),
+      setFrequencyPenalty: (frequencyPenalty: number | null) =>
+        set({
+          frequencyPenalty:
+            frequencyPenalty === null
+              ? undefined
+              : Math.max(-2, Math.min(2, frequencyPenalty)),
+        }),
+      setPresencePenalty: (presencePenalty: number | null) =>
+        set({
+          presencePenalty:
+            presencePenalty === null
+              ? undefined
+              : Math.max(-2, Math.min(2, presencePenalty)),
+        }),
+      setRepetitionPenalty: (repetitionPenalty: number | null) =>
+        set({
+          repetitionPenalty:
+            repetitionPenalty === null
+              ? undefined
+              : Math.max(0, Math.min(10, repetitionPenalty)),
+        }),
+      setMinP: (minP: number | null) =>
+        set({
+          minP: minP === null ? undefined : Math.max(0, Math.min(1, minP)),
+        }),
+      setTopA: (topA: number | null) =>
+        set({
+          topA: topA === null ? undefined : Math.max(0, Math.min(1, topA)),
+        }),
       setSeed: (seed: number) => set({ seed }),
       randomSeed: () => set({ seed: Math.floor(Math.random() * 1000000) }),
       setUiScale: (scale: number) =>

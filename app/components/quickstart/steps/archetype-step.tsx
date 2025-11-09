@@ -13,6 +13,7 @@ interface ArchetypeStepProps {
   gameMode: GameMode;
   onChange: (value: string) => void;
   onCustomChange: (value: string) => void;
+  onNext?: () => void;
 }
 
 export function ArchetypeStep({
@@ -22,6 +23,7 @@ export function ArchetypeStep({
   gameMode,
   onChange,
   onCustomChange,
+  onNext,
 }: ArchetypeStepProps) {
   const baseArchetypes = ARCHETYPES[setting] || ARCHETYPES.custom;
 
@@ -45,6 +47,9 @@ export function ArchetypeStep({
     if (nonCustomArchetypes.length > 0) {
       const randomArchetype = getRandomElement(nonCustomArchetypes);
       onChange(randomArchetype.id);
+      if (onNext) {
+        onNext();
+      }
     }
   };
 
@@ -124,7 +129,7 @@ export function ArchetypeStep({
           <Label htmlFor="custom-archetype">Custom Archetype</Label>
           <Input
             id="custom-archetype"
-            placeholder="e.g., Wandering Bard, Cyborg Assassin..."
+            placeholder="e.g., Soldier, Sapient Potato, etc."
             value={customValue}
             onChange={(e) => onCustomChange(e.target.value)}
             autoFocus

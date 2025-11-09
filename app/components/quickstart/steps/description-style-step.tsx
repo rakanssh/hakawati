@@ -1,6 +1,6 @@
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { AlertCircle } from "lucide-react";
+import { countTokens } from "@/services/llm/tokenCounter";
 
 interface DescriptionStyleStepProps {
   description: string;
@@ -9,19 +9,16 @@ interface DescriptionStyleStepProps {
   onStyleChange: (value: string) => void;
 }
 
-const DESCRIPTION_MAX_LENGTH = 500;
-const STYLE_MAX_LENGTH = 200;
-
 export function DescriptionStyleStep({
   description,
   style,
   onDescriptionChange,
   onStyleChange,
 }: DescriptionStyleStepProps) {
-  const descriptionRemaining = DESCRIPTION_MAX_LENGTH - description.length;
-  const styleRemaining = STYLE_MAX_LENGTH - style.length;
-  const isDescriptionOverLimit = descriptionRemaining < 0;
-  const isStyleOverLimit = styleRemaining < 0;
+  const descriptionChars = description.length;
+  const descriptionTokens = countTokens(description);
+  const styleChars = style.length;
+  const styleTokens = countTokens(style);
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
@@ -36,14 +33,8 @@ export function DescriptionStyleStep({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="description">Description</Label>
-              <span
-                className={`text-xs ${
-                  isDescriptionOverLimit
-                    ? "text-destructive"
-                    : "text-muted-foreground"
-                }`}
-              >
-                {descriptionRemaining} characters remaining
+              <span className="text-xs text-muted-foreground">
+                {descriptionChars} characters • ~{descriptionTokens} tokens
               </span>
             </div>
             <Textarea
@@ -52,14 +43,7 @@ export function DescriptionStyleStep({
               onChange={(e) => onDescriptionChange(e.target.value)}
               placeholder="e.g., A mysterious adventure in a forgotten temple..."
               className="min-h-[120px] resize-none"
-              maxLength={DESCRIPTION_MAX_LENGTH}
             />
-            {isDescriptionOverLimit && (
-              <div className="flex items-start gap-2 text-xs text-destructive">
-                <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
-                <p>Description is too long. Please shorten it to continue.</p>
-              </div>
-            )}
           </div>
 
           <div className="space-y-2 text-xs text-muted-foreground">
@@ -86,14 +70,8 @@ export function DescriptionStyleStep({
               <Label htmlFor="narration-style">
                 Narration Style (Optional)
               </Label>
-              <span
-                className={`text-xs ${
-                  isStyleOverLimit
-                    ? "text-destructive"
-                    : "text-muted-foreground"
-                }`}
-              >
-                {styleRemaining} characters remaining
+              <span className="text-xs text-muted-foreground">
+                {styleChars} characters • ~{styleTokens} tokens
               </span>
             </div>
             <Textarea
@@ -102,16 +80,7 @@ export function DescriptionStyleStep({
               onChange={(e) => onStyleChange(e.target.value)}
               placeholder="e.g., Respond in the second person. Keep responses concise..."
               className="min-h-[120px] resize-none"
-              maxLength={STYLE_MAX_LENGTH}
             />
-            {isStyleOverLimit && (
-              <div className="flex items-start gap-2 text-xs text-destructive">
-                <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
-                <p>
-                  Narration style is too long. Please shorten it to continue.
-                </p>
-              </div>
-            )}
           </div>
 
           <div className="space-y-2 text-xs text-muted-foreground">

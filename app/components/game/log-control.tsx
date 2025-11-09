@@ -7,6 +7,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { useTaleStore } from "@/store/useTaleStore";
+import { useEffect } from "react";
 interface LogControlProps {
   className?: string;
   handleRetry: () => void;
@@ -23,6 +24,47 @@ export function LogControl({
   saving = false,
 }: LogControlProps) {
   const { undo, redo } = useTaleStore();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent keybinds from firing if user is typing in an input/textarea
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      if (e.key === "z" && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+        e.preventDefault();
+        if (!loading && !saving) {
+          undo();
+        }
+      }
+
+      if (
+        (e.key === "y" && (e.ctrlKey || e.metaKey)) ||
+        (e.key === "z" && (e.ctrlKey || e.metaKey) && e.shiftKey)
+      ) {
+        e.preventDefault();
+        if (!loading && !saving) {
+          redo();
+        }
+      }
+
+      if (e.key === "r" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        if (!loading && !saving) {
+          handleRetry();
+        }
+      }
+    };
+
+    globalThis.addEventListener("keydown", handleKeyDown);
+    return () => globalThis.removeEventListener("keydown", handleKeyDown);
+  }, [undo, redo, handleRetry, loading, saving]);
 
   return (
     <div className={className}>
@@ -59,7 +101,7 @@ export function LogControl({
               />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">Retry</TooltipContent>
+          <TooltipContent side="top">Retry (Ctrl+R)</TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>

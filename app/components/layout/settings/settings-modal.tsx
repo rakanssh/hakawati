@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -102,6 +102,7 @@ export function SettingsModal({
         showCloseButton={true}
         className="p-0 gap-0 w-[95vw] h-[90vh] sm:max-w-[1300px] sm:max-h-[900px] flex flex-col"
       >
+        <DialogTitle></DialogTitle>
         {/* Desktop & Mobile content */}
         <div className="md:grid md:grid-cols-[160px_1fr] gap-0 h-full overflow-hidden flex flex-col">
           {/* Desktop: Sidebar navigation */}
