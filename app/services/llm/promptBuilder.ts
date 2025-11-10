@@ -155,9 +155,11 @@ export async function buildMessage(
 
   // Build required meta messages in fixed priority order (without the current user message)
   const requiredMeta: ChatMessage[] = [
-    { role: "system", content: systemPrompt },
+    {
+      role: "system",
+      content: `${systemPrompt} - ${description ? "\n\nThe story is: " + description : ""}`,
+    },
   ];
-  if (description) requiredMeta.push({ role: "system", content: description });
   if (authorNote) requiredMeta.push({ role: "system", content: authorNote });
   if (lastMessage.mode === LogEntryMode.CONTINUE) {
     requiredMeta.push({

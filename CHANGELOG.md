@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [v0.5.1] - 2025-11-10
+
+### Fixed
+
+- Fixed the way story description is given to the LLM. Should no longer make the LLM think that it's the character.
+
 ## [v0.5.0] - 2025-11-09
 
 ### Added

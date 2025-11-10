@@ -107,7 +107,9 @@ export default function SettingsAdvanced() {
                 <div className="flex items-center gap-2">
                   <p className="text-sm text-muted-foreground">
                     This is the system prompt used when the game is in
-                    &quot;Game Master&quot; mode.
+                    &quot;Game Master&quot; mode. The story description is
+                    appended to the prompt. (Two new lines, followed by
+                    &quot;The story is: &quot; and the description text.)
                     <br />
                     <b className="flex items-center gap-2">
                       <AlertTriangleIcon className="w-4 h-4 inline-block" />
@@ -155,7 +157,9 @@ export default function SettingsAdvanced() {
                 <div className="flex items-center gap-2">
                   <p className="text-sm text-muted-foreground">
                     This is the system prompt used when the game is in
-                    &quot;Story Teller&quot; mode.
+                    &quot;Story Teller&quot; mode. The story description is
+                    appended to the prompt. (Two new lines, followed by
+                    &quot;The story is: &quot; and the description text.)
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
