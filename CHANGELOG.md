@@ -8,6 +8,7 @@ All notable changes to this project are documented in this file.
 
 - GM mode now uses tool calling to modify game state.
 - Reworded GM system prompt to support new changes (Make sure to update or reset your custom prompts if you use them.)
+- Error message is no longer cringe.
 
 ## [v0.5.1] - 2025-11-10
 

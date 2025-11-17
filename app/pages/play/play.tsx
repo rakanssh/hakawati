@@ -354,7 +354,7 @@ export default function Play() {
         onError: (error) => {
           console.error("LLM Error:", error);
           updateLogEntry(gmResponseId, {
-            text: "A strange force seems to have scrambled my thoughts. Please repeat that.",
+            text: "An error occured while processing your request.",
             error: error,
           });
         },
