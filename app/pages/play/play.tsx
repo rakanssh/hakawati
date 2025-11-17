@@ -49,6 +49,7 @@ export default function Play() {
   const [stickToBottom, setStickToBottom] = useState<boolean>(true);
   const { save, saving } = usePersistTale();
   const hasAutoSentRef = useRef(false);
+  const lastTaleIdRef = useRef(taleId);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const loadDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const debouncedSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -60,10 +61,16 @@ export default function Play() {
     if (loading) setStickToBottom(true);
   }, [loading]);
 
+  // On new tales.
   useEffect(() => {
+    // Reset auto-send flag
+    if (lastTaleIdRef.current !== taleId) {
+      hasAutoSentRef.current = false;
+      lastTaleIdRef.current = taleId;
+    }
+
+    // Scroll to bottom
     setStickToBottom(true);
-    hasAutoSentRef.current = false; // Reset auto-send flag when tale changes
-    // Use a small delay to ensure content is rendered
     const timer = setTimeout(() => {
       if (viewportRef.current) {
         viewportRef.current.scrollTop = viewportRef.current.scrollHeight;

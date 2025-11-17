@@ -279,26 +279,8 @@ export function QuickstartWizard({
       text: "Open the scene",
     };
 
-    taleStore.resetAllState();
-    taleStore.clearStoryCards();
-    taleStore.resetLogWindow();
-    taleStore.setId(nanoid());
-    taleStore.setName(taleName);
-    taleStore.setDescription(taleDescription);
-    taleStore.setAuthorNote(finalAuthorNote);
-    taleStore.setGameMode(state.gameMode);
-
-    finalStats.forEach((stat) => {
-      taleStore.addToStats(stat);
-    });
-
-    finalInventory.forEach((item) => {
-      taleStore.addToInventory(item);
-    });
-
-    taleStore.addLog(initialLogEntry);
-
     try {
+      // Save to database first
       const taleId = await initTale({
         name: taleName,
         description: taleDescription,
@@ -313,13 +295,31 @@ export function QuickstartWizard({
         undoStack: [],
       });
 
+      // Set ID FIRST, then reset state, to avoid ID change after log is added
       taleStore.setId(taleId);
+      taleStore.resetAllState();
+      taleStore.clearStoryCards();
+      taleStore.resetLogWindow();
+      taleStore.setName(taleName);
+      taleStore.setDescription(taleDescription);
+      taleStore.setAuthorNote(finalAuthorNote);
+      taleStore.setGameMode(state.gameMode);
+
+      for (const stat of finalStats) {
+        taleStore.addToStats(stat);
+      }
+
+      for (const item of finalInventory) {
+        taleStore.addToInventory(item);
+      }
+
+      taleStore.addLog(initialLogEntry);
+
+      onOpenChange(false);
+      navigate({ to: "/play" });
     } catch (error) {
       console.error("Failed to save tale:", error);
     }
-
-    onOpenChange(false);
-    navigate({ to: "/play" });
   }, [state, taleStore, onOpenChange, navigate]);
 
   const handleKeyPress = useCallback(
