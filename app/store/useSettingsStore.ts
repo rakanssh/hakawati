@@ -1,12 +1,11 @@
 import { LLMModel } from "@/services/llm/schema";
-import { ApiType, ResponseMode } from "@/types";
+import { ApiType } from "@/types";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export interface SettingsStoreType {
   apiKey: string;
   apiType: ApiType;
-  responseMode: ResponseMode;
   model: LLMModel | undefined;
   contextWindow: number;
   modelContextLength: number;
@@ -34,7 +33,6 @@ export interface SettingsStoreType {
   useCustomContinueAuthorNote: boolean;
   setApiKey: (apiKey: string) => void;
   setApiType: (apiType: ApiType) => void;
-  setResponseMode: (responseMode: ResponseMode) => void;
   setModel: (model: LLMModel | undefined) => void;
   setContextWindow: (contextWindow: number) => void;
   setOpenAiBaseUrl: (openAiBaseUrl: string) => void;
@@ -73,7 +71,6 @@ export const useSettingsStore = create<SettingsStoreType>()(
     (set, get) => ({
       apiKey: "",
       apiType: ApiType.OPENAI,
-      responseMode: ResponseMode.FREE_FORM,
       model: undefined,
       contextWindow: 10000,
       modelContextLength: 0,
@@ -93,7 +90,6 @@ export const useSettingsStore = create<SettingsStoreType>()(
       useCustomContinueAuthorNote: false,
       setApiKey: (apiKey: string) => set({ apiKey }),
       setApiType: (apiType: ApiType) => set({ apiType }),
-      setResponseMode: (responseMode: ResponseMode) => set({ responseMode }),
       setModel: (model: LLMModel | undefined) => {
         if (model) {
           console.debug(
@@ -238,7 +234,6 @@ export const useSettingsStore = create<SettingsStoreType>()(
           repetitionPenalty: undefined,
           minP: undefined,
           topA: undefined,
-          responseMode: ResponseMode.FREE_FORM,
           uiScale: 1,
           fontFamily: "system-ui",
           fontSize: 1,

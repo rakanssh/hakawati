@@ -1,5 +1,5 @@
 import { sendChat } from "@/services/llm";
-import { LLMAction, LLMModel, LLMResponse } from "@/services/llm/schema";
+import { LLMAction, LLMModel } from "@/services/llm/schema";
 import { useTaleStore } from "@/store/useTaleStore";
 import { useRef, useState } from "react";
 import { parseStreamWithDecoder } from "@/services/llm/streaming";
@@ -52,7 +52,6 @@ export function useLLM() {
         minP,
         topA,
         seed,
-        responseMode,
       } = useSettingsStore.getState();
 
       const req = await buildMessage({
@@ -65,7 +64,6 @@ export function useLLM() {
         authorNote,
         storyCards,
         gameMode,
-        responseMode,
         options: {
           temperature,
           topP,
@@ -79,7 +77,7 @@ export function useLLM() {
         },
       });
       console.debug(
-        `Sending request to ${model.id} with response mode: ${responseMode} and API URL: ${useSettingsStore.getState().openAiBaseUrl}`,
+        `Sending request to ${model.id} with game mode: ${gameMode} and API URL: ${useSettingsStore.getState().openAiBaseUrl}`,
       );
       const res = await sendChat(req, abortRef.current?.signal);
 
@@ -100,14 +98,19 @@ export function useLLM() {
           }
         }
       } else {
-        const response: LLMResponse = JSON.parse(res.content);
-        if (response.story) {
-          callbacks.onStoryStream(response.story);
+        if (res.content) {
+          callbacks.onStoryStream(res.content);
         }
-        if (response.actions) {
-          callbacks.onActionsReady(response.actions);
+        if (res.tool_calls && res.tool_calls.length > 0) {
+          const { convertToolCallsToActions } = await import(
+            "@/services/llm/tools"
+          );
+          const actions = convertToolCallsToActions(res.tool_calls);
+          if (actions.length > 0) {
+            callbacks.onActionsReady(actions);
+          }
         }
-        console.debug(`Response from ${model.id}:`, response);
+        console.debug(`Response from ${model.id}:`, res);
       }
     } catch (e) {
       callbacks.onError(e);

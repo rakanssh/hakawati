@@ -1,14 +1,9 @@
 import { ResponseMode } from "@/types/api.type";
-import {
-  LLMClient,
-  ChatRequest,
-  ChatResponse,
-  LLMModel,
-  GM_RESPONSE_JSON_SCHEMA,
-} from "../schema";
+import { LLMClient, ChatRequest, ChatResponse, LLMModel } from "../schema";
 import { parseOpenAIStream } from "../streaming";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { fetch } from "@tauri-apps/plugin-http";
+import { GM_TOOLS, ToolCall } from "../tools";
 export function OpenAiClient(apiKey?: string): LLMClient {
   const { openAiBaseUrl } = useSettingsStore.getState();
   const base = openAiBaseUrl;
@@ -17,24 +12,25 @@ export function OpenAiClient(apiKey?: string): LLMClient {
     req: ChatRequest,
     signal?: AbortSignal,
   ): Promise<ChatResponse> {
-    const body = {
+    const useToolCalling = req.responseMode !== ResponseMode.FREE_FORM;
+
+    const body: Record<string, unknown> = {
       model: req.model,
       messages: req.messages,
       stream: req.stream,
       max_tokens: req.max_tokens,
-      options: Object.fromEntries(
+      ...Object.fromEntries(
         Object.entries(req.options ?? {}).filter(
           ([_, value]) => value !== undefined && value !== null,
         ),
       ),
-      ...(req.responseMode === ResponseMode.RESPONSE_FORMAT && {
-        response_mode: req.responseMode,
-        response_format: {
-          type: "json_schema",
-          json_schema: GM_RESPONSE_JSON_SCHEMA,
-        },
-      }),
     };
+
+    if (useToolCalling) {
+      body.tools = GM_TOOLS;
+      body.tool_choice = "auto";
+    }
+
     console.debug(`Sending request to ${req.model}:`, body);
     const headers: HeadersInit = {
       "Content-Type": "application/json",
@@ -56,7 +52,6 @@ export function OpenAiClient(apiKey?: string): LLMClient {
             content: "",
             iterator: parseOpenAIStream(r.body!),
             raw: r,
-            // TODO: get usage from response
             usage: {
               prompt_tokens: 0,
               completion_tokens: 0,
@@ -65,11 +60,25 @@ export function OpenAiClient(apiKey?: string): LLMClient {
           };
         } else {
           const json = await r.json();
-          return {
-            content: json.choices[0].message.content as string,
+          const message = json.choices[0].message;
+          const response: ChatResponse = {
+            content: message.content || "",
             raw: json,
             usage: json.usage,
           };
+
+          if (message.tool_calls && Array.isArray(message.tool_calls)) {
+            response.tool_calls = message.tool_calls.map((tc: ToolCall) => ({
+              id: tc.id,
+              type: tc.type,
+              function: {
+                name: tc.function.name,
+                arguments: tc.function.arguments,
+              },
+            }));
+          }
+
+          return response;
         }
       });
 
@@ -107,15 +116,29 @@ export function OpenAiClient(apiKey?: string): LLMClient {
           ? json
           : [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return data.map((model: any) => ({
-      id: model.id ?? model.name,
-      name: model.name ?? model.id ?? "unknown",
-      contextLength: model.context_length ?? model.contextLength,
-      pricing: model.pricing,
-      supportsResponseFormat: Array.isArray(model.supported_parameters)
-        ? model.supported_parameters.includes("response_format")
-        : undefined,
-    }));
+    return data.map((model: any) => {
+      const supportedParameters = Array.isArray(model.supported_parameters)
+        ? (model.supported_parameters as string[])
+        : undefined;
+
+      const supportsToolCalls = supportedParameters
+        ? supportedParameters.some((param) =>
+            ["tools", "tool_choice", "tool_calls", "function_call"].includes(
+              param,
+            ),
+          )
+        : undefined;
+
+      return {
+        id: model.id ?? model.name,
+        name: model.name ?? model.id ?? "unknown",
+        contextLength: model.context_length ?? model.contextLength,
+        pricing: model.pricing,
+        supportsResponseFormat:
+          supportedParameters?.includes("response_format"),
+        supportsToolCalls,
+      } satisfies LLMModel;
+    });
   }
   return { chat, models };
 }

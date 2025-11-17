@@ -1,5 +1,6 @@
-import { LLMAction } from "./schema";
+import { LLMAction, StreamChunk } from "./schema";
 import { GameMode } from "@/types";
+import { convertToolCallsToActions, ToolCall } from "./tools";
 
 export interface DecodedResponse {
   story?: string;
@@ -9,11 +10,11 @@ export interface DecodedResponse {
 
 export interface OutputDecoder {
   decode(
-    iterator: AsyncIterable<string>,
+    iterator: AsyncIterable<StreamChunk>,
   ): AsyncGenerator<Partial<DecodedResponse>>;
 }
 
-function decodeEscapeAtShared(
+export function decodeJsonEscape(
   src: string,
   i: number,
 ): { char?: string; advance?: number; incomplete?: boolean } {
@@ -78,119 +79,94 @@ function decodeEscapeAtShared(
   }
 }
 
-/**
- * JSON Decoder for GM Mode
- * Expects structured JSON response with {story, actions} format
- * Streams story content and extracts actions at the end
- */
-export class JsonDecoder implements OutputDecoder {
+export class ToolCallingDecoder implements OutputDecoder {
   async *decode(
-    iterator: AsyncIterable<string>,
+    iterator: AsyncIterable<StreamChunk>,
   ): AsyncGenerator<Partial<DecodedResponse>> {
-    let buffer = "";
-    let decodedStoryBuffer = "";
-    let inStory = false;
-    let storyParsingDone = false;
-    let lastYieldedStoryLength = 0;
-
-    function decodeEscapeAt(
-      src: string,
-      i: number,
-    ): { char?: string; advance?: number; incomplete?: boolean } {
-      return decodeEscapeAtShared(src, i);
-    }
+    const toolCallsAccumulator: Map<
+      number,
+      { id?: string; name?: string; arguments: string }
+    > = new Map();
 
     for await (const chunk of iterator) {
-      buffer += chunk;
-
-      if (storyParsingDone) continue;
-
-      if (!inStory) {
-        const storyStartIndex = buffer.indexOf('"story": "');
-        if (storyStartIndex !== -1) {
-          inStory = true;
-        }
+      if (chunk.content) {
+        yield { story: chunk.content };
       }
 
-      if (inStory) {
-        const storyContentStartIndex = buffer.indexOf('"story": "') + 10;
-        let i = storyContentStartIndex;
-        decodedStoryBuffer = "";
-        while (i < buffer.length) {
-          const ch = buffer[i];
-          if (ch === "\\") {
-            const res = decodeEscapeAt(buffer, i);
-            if (res.incomplete) break; // wait for more data
-            decodedStoryBuffer += res.char ?? "";
-            i += res.advance ?? 2;
-            continue;
-          }
-          if (ch === '"') {
-            storyParsingDone = true;
-            break;
-          }
-          decodedStoryBuffer += ch;
-          i++;
-        }
+      if (chunk.tool_calls) {
+        for (const toolCallDelta of chunk.tool_calls) {
+          const index = toolCallDelta.index;
+          let accumulated = toolCallsAccumulator.get(index);
 
-        if (decodedStoryBuffer.length > lastYieldedStoryLength) {
-          const newStoryChunk = decodedStoryBuffer.substring(
-            lastYieldedStoryLength,
-          );
-          yield { story: newStoryChunk };
-          lastYieldedStoryLength = decodedStoryBuffer.length;
+          if (!accumulated) {
+            accumulated = { arguments: "" };
+            toolCallsAccumulator.set(index, accumulated);
+          }
+
+          if (toolCallDelta.id) {
+            accumulated.id = toolCallDelta.id;
+          }
+
+          if (toolCallDelta.function?.name) {
+            accumulated.name = toolCallDelta.function.name;
+          }
+
+          if (toolCallDelta.function?.arguments) {
+            accumulated.arguments += toolCallDelta.function.arguments;
+          }
         }
       }
     }
 
-    try {
-      const fullJson = JSON.parse(buffer);
-      if (fullJson.actions) {
-        yield { actions: fullJson.actions };
+    if (toolCallsAccumulator.size > 0) {
+      const toolCalls: ToolCall[] = [];
+
+      for (const [index, data] of toolCallsAccumulator.entries()) {
+        if (data.id && data.name) {
+          toolCalls.push({
+            id: data.id,
+            type: "function",
+            function: {
+              name: data.name,
+              arguments: data.arguments,
+            },
+          });
+        } else {
+          console.warn(`Incomplete tool call at index ${index}:`, data);
+        }
       }
-    } catch (e) {
-      console.warn("Could not parse final JSON:", buffer, e);
-      const startIndex = buffer.indexOf("{");
-      const endIndex = buffer.lastIndexOf("}");
-      if (startIndex !== -1 && endIndex !== -1) {
-        const jsonString = buffer.substring(startIndex, endIndex + 1);
+
+      if (toolCalls.length > 0) {
         try {
-          const finalJson = JSON.parse(jsonString);
-          if (finalJson.actions) {
-            yield { actions: finalJson.actions };
-          }
-        } catch (e2) {
-          console.warn(
-            "Could not parse extracted JSON object:",
-            jsonString,
-            e2,
-          );
+          const actions = convertToolCallsToActions(toolCalls);
+          yield { actions };
+        } catch (e) {
+          console.error("Failed to convert tool calls to actions:", e);
           yield { actionParseError: true };
         }
-      } else {
-        yield { actionParseError: true };
       }
     }
   }
 }
 
 /**
- * Plain Text Decoder for Story Mode
- * Treats all incoming text as story content
+ * Plain Text Decoder for Story Teller Mode
+ * Extracts content from chunks and decodes escape sequences
  */
 export class PlainTextDecoder implements OutputDecoder {
   async *decode(
-    iterator: AsyncIterable<string>,
+    iterator: AsyncIterable<StreamChunk>,
   ): AsyncGenerator<Partial<DecodedResponse>> {
     let carry = "";
     for await (const chunk of iterator) {
-      const input = carry + (chunk ?? "");
+      const text = chunk.content ?? "";
+      const input = carry + text;
       let i = 0;
       let out = "";
       while (i < input.length) {
         const ch = input[i];
         if (ch === "\\") {
-          const res = decodeEscapeAtShared(input, i);
+          const res = decodeJsonEscape(input, i);
           if (res.incomplete) break; // keep incomplete sequence in carry
           out += res.char ?? "";
           i += res.advance ?? 2;
@@ -204,13 +180,14 @@ export class PlainTextDecoder implements OutputDecoder {
       }
       carry = input.substring(i);
     }
+    // Flush remaining carry
     if (carry) {
       let i = 0;
       let out = "";
       while (i < carry.length) {
         const ch = carry[i];
         if (ch === "\\") {
-          const res = decodeEscapeAtShared(carry, i);
+          const res = decodeJsonEscape(carry, i);
           if (res.incomplete) {
             out += "\\";
             i += 1;
@@ -238,11 +215,11 @@ export class PlainTextDecoder implements OutputDecoder {
 export function createDecoder(gameMode: GameMode): OutputDecoder {
   switch (gameMode) {
     case GameMode.GM:
-      return new JsonDecoder();
+      return new ToolCallingDecoder();
     case GameMode.STORY_TELLER:
       return new PlainTextDecoder();
     default:
       console.warn(`Unknown game mode: ${gameMode}, defaulting to GM mode`);
-      return new JsonDecoder();
+      return new ToolCallingDecoder();
   }
 }

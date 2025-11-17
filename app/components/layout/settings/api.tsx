@@ -1,10 +1,10 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ModelSelect } from "@/components/layout";
-import { useSettingsStore, useTaleStore } from "@/store";
+import { useSettingsStore } from "@/store";
 // No navigation side-effects from here
 import { Separator } from "@/components/ui/separator";
-import { ApiType, ResponseMode } from "@/types/api.type";
+import { ApiType } from "@/types/api.type";
 import {
   Select,
   SelectContent,
@@ -12,8 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { GameMode } from "@/types";
-import { SwordsIcon, InfoIcon } from "lucide-react";
+import { InfoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useLocalServerDiscovery } from "@/hooks/useLocalServerDiscovery";
@@ -36,11 +35,8 @@ export default function SettingsApi() {
     openAiBaseUrl,
     setApiType,
     setOpenAiBaseUrl,
-    responseMode,
-    setResponseMode,
     setModel,
   } = useSettingsStore();
-  const { gameMode } = useTaleStore();
   const [baseUrl, setBaseUrl] = useState(openAiBaseUrl);
   const { servers, scanning, error, scan } = useLocalServerDiscovery(apiType);
 
@@ -59,11 +55,6 @@ export default function SettingsApi() {
       label: resolveApiTypeLabel(type),
       value: type,
     }));
-  }
-
-  function resolveResponseModeLabel(responseMode: ResponseMode) {
-    if (responseMode === ResponseMode.FREE_FORM) return "Free Form";
-    return "Response Format";
   }
 
   function handleUrlChange(newUrl: string) {
@@ -197,39 +188,6 @@ export default function SettingsApi() {
         <Label>Model</Label>
         <ModelSelect />
       </div>
-      {gameMode === GameMode.GM && (
-        <div className="flex flex-col gap-2">
-          <Label>Response Mode</Label>
-          <span className="text-sm text-muted-foreground">
-            This is the response mode for the API.
-            <br />
-            <ul className="list-disc pl-4 space-y-1 text-sm">
-              <li>
-                Response Format: Uses a predefined schema.{" "}
-                {<SwordsIcon className="w-4 h-4 inline-block" />} indicates
-                support.
-              </li>
-              <li>Free Form: Works with any model. Not recommended.</li>
-            </ul>
-          </span>
-
-          <Select
-            value={responseMode}
-            onValueChange={(value) => setResponseMode(value as ResponseMode)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a response mode" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.values(ResponseMode).map((option: ResponseMode) => (
-                <SelectItem key={option} value={option}>
-                  {resolveResponseModeLabel(option)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
     </div>
   );
 }

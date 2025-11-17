@@ -25,38 +25,30 @@ import { Badge } from "../ui/badge";
 import { Separator } from "../ui/separator";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { LLMModel } from "@/services/llm/schema";
-import { ResponseMode } from "@/types/api.type";
 import { toast } from "sonner";
 import { GameMode } from "@/types";
 import { useIsMobile } from "@/hooks/useIsMobile";
 
 export function ModelSelect() {
-  const { model, setModel, setResponseMode, responseMode } = useSettingsStore();
+  const { model, setModel } = useSettingsStore();
   const [open, setOpen] = useState(false);
   const { models, loading, refresh } = useLLMProviders();
   const { gameMode } = useTaleStore();
   const { isMobile } = useIsMobile();
 
-  const anySupportsResponseFormat = models.some(
-    (m) => m.supportsResponseFormat,
-  );
+  const anySupportsToolCalls = models.some((m) => m.supportsToolCalls);
 
   const handleModelChange = useCallback(
     (model: LLMModel) => {
-      if (
-        !model.supportsResponseFormat &&
-        responseMode === ResponseMode.RESPONSE_FORMAT &&
-        gameMode === GameMode.GM
-      ) {
-        setResponseMode(ResponseMode.FREE_FORM);
+      if (!model.supportsToolCalls && gameMode === GameMode.GM) {
         toast.warning(
-          "Model appears to not support response format. Setting response mode to free form.",
+          "Model cannot be confirmed to support tool calling. GM mode may not work properly.",
         );
       }
       setModel(model);
       setOpen(false);
     },
-    [setModel, setResponseMode, responseMode, gameMode],
+    [setModel, gameMode],
   );
 
   function toNumber(value: unknown): number | undefined {
@@ -146,8 +138,8 @@ export function ModelSelect() {
           >
             <div className="flex w-full items-center justify-between">
               <div className="flex items-center gap-2">
-                {anySupportsResponseFormat &&
-                  (m.supportsResponseFormat ? (
+                {anySupportsToolCalls &&
+                  (m.supportsToolCalls ? (
                     <SwordsIcon className="h-4 w-4 text-muted-foreground" />
                   ) : (
                     <div className="w-4 h-4" />

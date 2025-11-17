@@ -1,7 +1,8 @@
 export enum ApiType {
   OPENAI = "openai",
 }
+
 export enum ResponseMode {
-  RESPONSE_FORMAT = "response_format",
+  TOOL_CALLING = "tool_calling",
   FREE_FORM = "free_form",
 }

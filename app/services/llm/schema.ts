@@ -1,5 +1,9 @@
 import { ResponseMode } from "@/types/api.type";
+import { ToolCall } from "./tools";
 
+/**
+ * Core chat message types
+ */
 export interface ChatMessage {
   role: "user" | "assistant" | "system";
   content: string;
@@ -21,21 +25,39 @@ export interface ChatRequest {
   model: string;
   messages: ChatMessage[];
   stream?: boolean;
-  // Maximum number of completion tokens to generate (provider-specific name: max_tokens)
   max_tokens?: number;
   options?: ChatRequestOptions;
   responseMode: ResponseMode;
 }
 
+/**
+ * Streaming chunk types
+ */
+export interface ToolCallDelta {
+  index: number;
+  id?: string;
+  type?: "function";
+  function?: {
+    name?: string;
+    arguments?: string;
+  };
+}
+
+export interface StreamChunk {
+  content?: string;
+  tool_calls?: ToolCallDelta[];
+}
+
 export interface ChatResponse {
   content: string;
-  iterator?: AsyncGenerator<string>;
+  iterator?: AsyncGenerator<StreamChunk>;
   raw: unknown;
   usage: {
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
   };
+  tool_calls?: ToolCall[];
 }
 
 export interface LLMClient {
@@ -43,6 +65,9 @@ export interface LLMClient {
   models(signal?: AbortSignal): Promise<LLMModel[]>;
 }
 
+/**
+ * Model types
+ */
 export interface ModelPricing {
   prompt: number;
   completion: number;
@@ -56,10 +81,13 @@ export interface LLMModel {
   name: string;
   contextLength?: number;
   pricing?: ModelPricing;
-  // Capability flags
   supportsResponseFormat?: boolean;
+  supportsToolCalls?: boolean;
 }
 
+/**
+ * Action types for game state modifications
+ */
 export interface LLMAction {
   type:
     | "MODIFY_STAT"
@@ -69,82 +97,10 @@ export interface LLMAction {
   payload: { name?: string; value?: number; item?: string };
 }
 
+/**
+ * Response format used by decoders (backward compatibility)
+ */
 export interface LLMResponse {
   story: string;
   actions?: LLMAction[];
 }
-
-// JSON schema for GM-mode structured output
-// Compatible with OpenAI response_format: { type: "json_schema", json_schema: { name, schema, strict } }
-export const GM_RESPONSE_JSON_SCHEMA = {
-  name: "gm_response",
-  schema: {
-    type: "object",
-    additionalProperties: false,
-    required: ["story", "actions"],
-    properties: {
-      story: {
-        type: "string",
-        description: "Narrative continuation of the story",
-      },
-      actions: {
-        type: "array",
-        description: "Optional game state changes based on the scene",
-        items: {
-          anyOf: [
-            {
-              type: "object",
-              additionalProperties: false,
-              required: ["type", "payload"],
-              properties: {
-                type: { type: "string", enum: ["MODIFY_STAT"] },
-                payload: {
-                  type: "object",
-                  additionalProperties: false,
-                  required: ["name", "value"],
-                  properties: {
-                    name: { type: "string" },
-                    value: { type: "number" },
-                  },
-                },
-              },
-            },
-            {
-              type: "object",
-              additionalProperties: false,
-              required: ["type", "payload"],
-              properties: {
-                type: { type: "string", enum: ["ADD_TO_INVENTORY"] },
-                payload: {
-                  type: "object",
-                  additionalProperties: false,
-                  required: ["item"],
-                  properties: {
-                    item: { type: "string" },
-                  },
-                },
-              },
-            },
-            {
-              type: "object",
-              additionalProperties: false,
-              required: ["type", "payload"],
-              properties: {
-                type: { type: "string", enum: ["REMOVE_FROM_INVENTORY"] },
-                payload: {
-                  type: "object",
-                  additionalProperties: false,
-                  required: ["item"],
-                  properties: {
-                    item: { type: "string" },
-                  },
-                },
-              },
-            },
-          ],
-        },
-      },
-    },
-  },
-  strict: true,
-} as const;

@@ -1,6 +1,12 @@
 import { OutputDecoder, DecodedResponse } from "./decoders";
+import { StreamChunk, ToolCallDelta } from "./schema";
 
-export async function* parseOpenAIStream(body: ReadableStream<Uint8Array>) {
+/**
+ * Parse OpenAI streaming response and yield chunks containing content and/or tool_calls
+ */
+export async function* parseOpenAIStream(
+  body: ReadableStream<Uint8Array>,
+): AsyncGenerator<StreamChunk> {
   const reader = body.getReader();
   const decoder = new TextDecoder("utf-8");
   let buffer = "";
@@ -19,8 +25,32 @@ export async function* parseOpenAIStream(body: ReadableStream<Uint8Array>) {
       if (payload === "[DONE]") return;
       try {
         const json = JSON.parse(payload);
-        const token = json?.choices?.[0]?.delta?.content;
-        if (token) yield token as string;
+        const delta = json?.choices?.[0]?.delta;
+        if (!delta) continue;
+
+        const chunk: StreamChunk = {};
+
+        if (delta.content) {
+          chunk.content = delta.content;
+        }
+
+        if (delta.tool_calls && Array.isArray(delta.tool_calls)) {
+          chunk.tool_calls = delta.tool_calls.map((tc: ToolCallDelta) => ({
+            index: tc.index,
+            id: tc.id,
+            type: tc.type,
+            function: tc.function
+              ? {
+                  name: tc.function.name,
+                  arguments: tc.function.arguments,
+                }
+              : undefined,
+          }));
+        }
+
+        if (chunk.content || chunk.tool_calls) {
+          yield chunk;
+        }
       } catch {
         // ignore malformed partials; remaining bytes will arrive in subsequent chunks
       }
@@ -33,8 +63,32 @@ export async function* parseOpenAIStream(body: ReadableStream<Uint8Array>) {
     if (payload !== "[DONE]") {
       try {
         const json = JSON.parse(payload);
-        const token = json?.choices?.[0]?.delta?.content;
-        if (token) yield token as string;
+        const delta = json?.choices?.[0]?.delta;
+        if (delta) {
+          const chunk: StreamChunk = {};
+
+          if (delta.content) {
+            chunk.content = delta.content;
+          }
+
+          if (delta.tool_calls && Array.isArray(delta.tool_calls)) {
+            chunk.tool_calls = delta.tool_calls.map((tc: ToolCallDelta) => ({
+              index: tc.index,
+              id: tc.id,
+              type: tc.type,
+              function: tc.function
+                ? {
+                    name: tc.function.name,
+                    arguments: tc.function.arguments,
+                  }
+                : undefined,
+            }));
+          }
+
+          if (chunk.content || chunk.tool_calls) {
+            yield chunk;
+          }
+        }
       } catch {
         // ignore
       }
@@ -195,7 +249,7 @@ export async function* parseJsonStream<T>(
  * This replaces parseJsonStream for mode-aware parsing
  */
 export async function* parseStreamWithDecoder(
-  iterator: AsyncIterable<string>,
+  iterator: AsyncIterable<StreamChunk>,
   decoder: OutputDecoder,
 ): AsyncGenerator<Partial<DecodedResponse>> {
   yield* decoder.decode(iterator);

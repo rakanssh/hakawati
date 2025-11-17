@@ -93,7 +93,6 @@ interface BuildMessageParams {
   model: LLMModel;
   options?: ChatRequestOptions;
   gameMode: GameMode;
-  responseMode: ResponseMode;
 }
 
 export async function buildMessage(
@@ -109,7 +108,6 @@ export async function buildMessage(
     description,
     authorNote,
     gameMode,
-    responseMode,
   } = params;
 
   const settings = useSettingsStore.getState();
@@ -312,7 +310,10 @@ export async function buildMessage(
     stream: true,
     max_tokens: useSettingsStore.getState().maxTokens,
     options: params.options,
+    // Automatic response mode: Tool calling for GM mode, free form for Story Teller mode
     responseMode:
-      gameMode === GameMode.GM ? responseMode : ResponseMode.FREE_FORM,
+      gameMode === GameMode.GM
+        ? ResponseMode.TOOL_CALLING
+        : ResponseMode.FREE_FORM,
   };
 }

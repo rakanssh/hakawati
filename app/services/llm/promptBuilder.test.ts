@@ -102,7 +102,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       expect(result).toBeDefined();
@@ -124,7 +123,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       expect(result.messages).toHaveLength(4); // system + description + authorNote + user
@@ -145,7 +143,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.GM,
-        responseMode: ResponseMode.RESPONSE_FORMAT,
       });
 
       expect(result.messages[0].content).toBe("You are a game master.");
@@ -171,10 +168,10 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       expect(result.messages[0].content).toBe("You are a storyteller.");
+      // Response mode is now automatically determined based on game mode
       expect(result.responseMode).toBe(ResponseMode.FREE_FORM);
     });
   });
@@ -191,7 +188,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       const userMsg = result.messages[result.messages.length - 1];
@@ -209,7 +205,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       const userMsg = result.messages[result.messages.length - 1];
@@ -227,7 +222,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       const userMsg = result.messages[result.messages.length - 1];
@@ -245,7 +239,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       const userMsg = result.messages[result.messages.length - 1];
@@ -263,7 +256,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       const hasContinueNote = result.messages.some(
@@ -293,7 +285,6 @@ describe("promptBuilder", () => {
         storyCards: [pinnedCard],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       const storybookMsg = result.messages.find((msg) =>
@@ -338,7 +329,6 @@ describe("promptBuilder", () => {
         storyCards: [dragonCard],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       const storybookMsg = result.messages.find((msg) =>
@@ -383,7 +373,6 @@ describe("promptBuilder", () => {
         storyCards: [dragonCard],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       const storybookMsg = result.messages.find((msg) =>
@@ -434,7 +423,6 @@ describe("promptBuilder", () => {
         storyCards: [pinnedCard, dragonCard],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       const storybookMsg = result.messages.find((msg) =>
@@ -485,7 +473,6 @@ describe("promptBuilder", () => {
         storyCards: [dragonCard, dragonLoreCard],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       const storybookMsg = result.messages.find((msg) =>
@@ -530,7 +517,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       // Should have: system, history (2 messages), user
@@ -570,7 +556,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       expect(ensureLogEntriesLoaded).toHaveBeenCalledWith(100);
@@ -610,7 +595,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       const assistantMessages = result.messages.filter(
@@ -658,7 +642,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       const assistantMessages = result.messages.filter(
@@ -698,7 +681,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       const userMessages = result.messages.filter((m) => m.role === "user");
@@ -744,7 +726,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel({ contextLength: 100 }),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       // Should have limited history due to token budget
@@ -771,7 +752,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel({ contextLength: 2000 }), // Smaller than settings
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       expect(result).toBeDefined();
@@ -805,7 +785,6 @@ describe("promptBuilder", () => {
         storyCards: [pinnedCard],
         model: createMockModel({ contextLength: 250 }),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       expect(vi.mocked(toast.warning)).toHaveBeenCalledWith(
@@ -826,7 +805,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       expect(result.messages).toHaveLength(2); // system + user
@@ -843,7 +821,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       const storybookMsg = result.messages.find((msg) =>
@@ -863,7 +840,6 @@ describe("promptBuilder", () => {
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.GM,
-        responseMode: ResponseMode.RESPONSE_FORMAT,
       });
 
       const userMsg = result.messages[result.messages.length - 1];
@@ -900,7 +876,6 @@ describe("promptBuilder", () => {
         storyCards: [dragonCard],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       const storybookMsg = result.messages.find((msg) =>
@@ -939,7 +914,6 @@ describe("promptBuilder", () => {
         storyCards: [dragonCard],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       const storybookMsg = result.messages.find((msg) =>
@@ -987,7 +961,6 @@ describe("promptBuilder", () => {
         storyCards: [pinnedCard],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
-        responseMode: ResponseMode.FREE_FORM,
       });
 
       // Verify order
