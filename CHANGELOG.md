@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file.
 
+## [v0.6.1] - 2025-11-18
+
+### Changed
+
+- Quickstart wizard "Open the scene" is now more reliable.
+
+### Fixed
+
+- Refreshing the page now loads the last played tale instead of a blank page.
+
 ## [v0.6.0] - 2025-11-18
 
 ### Changed

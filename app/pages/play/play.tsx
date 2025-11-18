@@ -8,12 +8,13 @@ import { useSettingsStore } from "@/store/useSettingsStore";
 import { GameMode } from "@/types";
 import { nanoid } from "nanoid";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
-import { usePersistTale } from "@/hooks/useGameSaves";
+import { usePersistTale, useLoadTale } from "@/hooks/useGameSaves";
 import { toast } from "sonner";
 import { PlayInputControls, PlayLogDisplay } from "@/components/play";
 import { Action, groupLogEntriesIntoBlocks } from "@/lib/play-utils";
 import { Outlet } from "@tanstack/react-router";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 
 export default function Play() {
   const {
@@ -56,6 +57,20 @@ export default function Play() {
   const hasUnsavedChangesRef = useRef(false);
   const [showZoomIndicator, setShowZoomIndicator] = useState(false);
   const zoomIndicatorTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const { lastPlayedTaleId } = useLastPlayedStore();
+  const { load, loading: isLoadingTale } = useLoadTale();
+
+  useEffect(() => {
+    if (!lastPlayedTaleId) return;
+
+    if (!taleId || taleId !== lastPlayedTaleId) {
+      load(lastPlayedTaleId).catch((err) => {
+        console.error("Failed to auto-load tale in Play:", err);
+        toast.error("Failed to load game session.");
+      });
+    }
+  }, [lastPlayedTaleId, taleId, load]);
 
   useEffect(() => {
     if (loading) setStickToBottom(true);
@@ -447,7 +462,7 @@ export default function Play() {
   }, [loading, executeLlmSend, removeLastLogEntry, randomSeed]);
 
   useEffect(() => {
-    if (hasAutoSentRef.current || loading || !model) return;
+    if (hasAutoSentRef.current || loading || !model || isLoadingTale) return;
 
     if (log.length === 1 && log[0].role === LogEntryRole.PLAYER) {
       const firstEntry = log[0];
@@ -457,49 +472,61 @@ export default function Play() {
         firstEntry.mode ?? LogEntryMode.DIRECT,
       );
     }
-  }, [log, loading, model, executeLlmSend]);
+  }, [log, loading, model, executeLlmSend, isLoadingTale]);
 
   const blocks = groupLogEntriesIntoBlocks(log);
 
   // Shared content component for both modes
-  const renderMainContent = () => (
-    <div className="relative grid h-full grid-rows-[1fr_auto]">
-      <PlayLogDisplay
-        blocks={blocks}
-        loadingOlder={loadingOlder}
-        currentlyEditingLogId={currentlyEditingLogId}
-        setCurrentlyEditingLogId={setCurrentlyEditingLogId}
-        updateLogEntry={updateLogEntry}
-        viewportRef={viewportRef}
-        bottomRef={bottomRef}
-        onViewportScroll={handleViewportScroll}
-      />
-      <PlayInputControls
-        action={action}
-        setAction={setAction}
-        input={input}
-        setInput={setInput}
-        onSubmit={handleSubmit}
-        loading={loading}
-        saving={saving}
-        onContinue={handleContinue}
-        onRetry={handleRetry}
-      />
-      {showZoomIndicator && (
-        <div className="pointer-events-none absolute top-4 right-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="rounded-md bg-background/95 px-4 py-2 shadow-lg border border-border backdrop-blur-sm">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <span className="text-muted-foreground">Zoom:</span>
-              <span className="font-mono">{Math.round(fontSize * 100)}%</span>
-            </div>
+  const renderMainContent = () => {
+    if (isLoadingTale) {
+      return (
+        <div className="flex h-full items-center justify-center">
+          <div className="text-sm text-muted-foreground animate-pulse">
+            Loading adventure...
           </div>
         </div>
-      )}
-      <div className="pointer-events-none absolute inset-0">
-        <OutletWrapper />
+      );
+    }
+
+    return (
+      <div className="relative grid h-full grid-rows-[1fr_auto]">
+        <PlayLogDisplay
+          blocks={blocks}
+          loadingOlder={loadingOlder}
+          currentlyEditingLogId={currentlyEditingLogId}
+          setCurrentlyEditingLogId={setCurrentlyEditingLogId}
+          updateLogEntry={updateLogEntry}
+          viewportRef={viewportRef}
+          bottomRef={bottomRef}
+          onViewportScroll={handleViewportScroll}
+        />
+        <PlayInputControls
+          action={action}
+          setAction={setAction}
+          input={input}
+          setInput={setInput}
+          onSubmit={handleSubmit}
+          loading={loading}
+          saving={saving}
+          onContinue={handleContinue}
+          onRetry={handleRetry}
+        />
+        {showZoomIndicator && (
+          <div className="pointer-events-none absolute top-4 right-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="rounded-md bg-background/95 px-4 py-2 shadow-lg border border-border backdrop-blur-sm">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <span className="text-muted-foreground">Zoom:</span>
+                <span className="font-mono">{Math.round(fontSize * 100)}%</span>
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="pointer-events-none absolute inset-0">
+          <OutletWrapper />
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <>

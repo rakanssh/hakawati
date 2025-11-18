@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
 import { persistCurrentTale, getTaleById } from "@/services/tale.service";
 import { updateTaleDTO } from "@/types/tale.type";
 import { useTaleStore } from "@/store/useTaleStore";
@@ -50,15 +50,31 @@ export function usePersistTale() {
 export function useLoadTale() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const loadingIdRef = useRef<string | null>(null);
 
   const load = useCallback(async (taleId: string) => {
+    if (loadingIdRef.current === taleId) {
+      return;
+    }
+
+    // If we switch tales mid-load, the previous load will be ignored via the token check below
+    loadingIdRef.current = taleId;
+    const myToken = taleId;
+
     setLoading(true);
     setError(null);
+
     try {
       useTaleStore.getState().resetLogWindow();
 
       const tale = await getTaleById(taleId);
+
+      if (loadingIdRef.current !== myToken) {
+        return;
+      }
+
       if (!tale) throw new Error("Tale not found");
+
       useTaleStore.setState({
         id: tale.id,
         name: tale.name,
@@ -77,10 +93,15 @@ export function useLoadTale() {
 
       useLastPlayedStore.getState().setLastPlayedTaleId(taleId);
     } catch (e) {
-      setError(e);
-      throw e;
+      if (loadingIdRef.current === myToken) {
+        setError(e);
+        throw e;
+      }
     } finally {
-      setLoading(false);
+      if (loadingIdRef.current === myToken) {
+        setLoading(false);
+        loadingIdRef.current = null;
+      }
     }
   }, []);
 

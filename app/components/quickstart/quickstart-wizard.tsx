@@ -30,6 +30,7 @@ import { useTaleStore } from "@/store/useTaleStore";
 import { initTale } from "@/services/tale.service";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 import { nanoid } from "nanoid";
+import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 
 export interface QuickstartState {
   gameMode: GameMode;
@@ -56,6 +57,7 @@ export function QuickstartWizard({
 }: QuickstartWizardProps) {
   const navigate = useNavigate();
   const taleStore = useTaleStore();
+  const { setLastPlayedTaleId } = useLastPlayedStore();
 
   const [currentStep, setCurrentStep] = useState(0);
   const [state, setState] = useState<QuickstartState>({
@@ -280,7 +282,6 @@ export function QuickstartWizard({
     };
 
     try {
-      // Save to database first
       const taleId = await initTale({
         name: taleName,
         description: taleDescription,
@@ -295,32 +296,15 @@ export function QuickstartWizard({
         undoStack: [],
       });
 
-      // Set ID FIRST, then reset state, to avoid ID change after log is added
-      taleStore.setId(taleId);
       taleStore.resetAllState();
-      taleStore.clearStoryCards();
-      taleStore.resetLogWindow();
-      taleStore.setName(taleName);
-      taleStore.setDescription(taleDescription);
-      taleStore.setAuthorNote(finalAuthorNote);
-      taleStore.setGameMode(state.gameMode);
-
-      for (const stat of finalStats) {
-        taleStore.addToStats(stat);
-      }
-
-      for (const item of finalInventory) {
-        taleStore.addToInventory(item);
-      }
-
-      taleStore.addLog(initialLogEntry);
+      setLastPlayedTaleId(taleId);
 
       onOpenChange(false);
       navigate({ to: "/play" });
     } catch (error) {
       console.error("Failed to save tale:", error);
     }
-  }, [state, taleStore, onOpenChange, navigate]);
+  }, [state, taleStore, onOpenChange, navigate, setLastPlayedTaleId]);
 
   const handleKeyPress = useCallback(
     (event: KeyboardEvent) => {
