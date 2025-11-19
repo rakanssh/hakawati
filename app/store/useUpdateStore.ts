@@ -1,4 +1,5 @@
 import { check, type Update } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
 import { toast } from "sonner";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
@@ -180,9 +181,8 @@ export const useUpdateStore = create<UpdateState>()(
             }
           });
 
-          toast.success(
-            "Update downloaded. Restart the app to apply the update.",
-          );
+          toast.success("Update downloaded. Restarting...");
+          await relaunch();
 
           set({
             phase: "idle",

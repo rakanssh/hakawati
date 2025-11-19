@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+## Fixed
+
+- MacOS restart post update.
+
 ## [v0.6.1] - 2025-11-18
 
 ### Changed
