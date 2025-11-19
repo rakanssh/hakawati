@@ -4,7 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
-## Fixed
+### Added
+
+- Update download progress toast.
+
+### Fixed
 
 - MacOS restart post update.
 

@@ -10,19 +10,9 @@ import {
   Loader2,
 } from "lucide-react";
 import { useUpdateStore } from "@/store/useUpdateStore";
+import { formatBytes } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-
-function formatBytes(bytes: number) {
-  if (!bytes) return "0 B";
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  const index = Math.min(
-    Math.floor(Math.log(bytes) / Math.log(1024)),
-    units.length - 1,
-  );
-  const size = bytes / Math.pow(1024, index);
-  return `${size.toFixed(size >= 10 || index === 0 ? 0 : 1)} ${units[index]}`;
-}
 
 function formatCheckedAt(date: Date | null) {
   if (!date) return "Never";

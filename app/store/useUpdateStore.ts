@@ -3,6 +3,7 @@ import { relaunch } from "@tauri-apps/plugin-process";
 import { toast } from "sonner";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { formatBytes } from "@/lib/utils";
 
 export type UpdatePhase =
   | "idle"
@@ -125,7 +126,7 @@ export const useUpdateStore = create<UpdateState>()(
           });
 
           toast.info(`Update ${update.version} is available.`, {
-            duration: 10000,
+            duration: 2000000,
             action: {
               label: "Install",
               onClick: () => {
@@ -169,19 +170,31 @@ export const useUpdateStore = create<UpdateState>()(
 
         set({ phase: "installing", errorMessage: null, downloadedBytes: 0 });
 
+        const toastId = toast.loading("Starting download...");
+
         try {
           await update.downloadAndInstall((event) => {
             if (event.event === "Progress") {
               const chunkLength = event.data?.chunkLength ?? 0;
               if (chunkLength > 0) {
-                set((state) => ({
-                  downloadedBytes: state.downloadedBytes + chunkLength,
-                }));
+                set((state) => {
+                  const newDownloadedBytes =
+                    state.downloadedBytes + chunkLength;
+                  toast.loading(
+                    `Downloading update... (${formatBytes(newDownloadedBytes)})`,
+                    {
+                      id: toastId,
+                    },
+                  );
+                  return {
+                    downloadedBytes: newDownloadedBytes,
+                  };
+                });
               }
             }
           });
 
-          toast.success("Update downloaded. Restarting...");
+          toast.success("Update downloaded. Restarting...", { id: toastId });
           await relaunch();
 
           set({
@@ -195,7 +208,7 @@ export const useUpdateStore = create<UpdateState>()(
           const message =
             error instanceof Error ? error.message : "Unknown error";
           set({ phase: "error", errorMessage: message });
-          toast.error("Failed to install the update.");
+          toast.error("Failed to install the update.", { id: toastId });
           set({
             pendingChangelogVersion: null,
             pendingChangelogNotes: null,
