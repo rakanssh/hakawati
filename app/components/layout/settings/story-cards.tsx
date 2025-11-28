@@ -1,5 +1,3 @@
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { useTaleStore } from "@/store/useTaleStore";
 import { StorybookEditor } from "@/components/storybook";
 
@@ -9,8 +7,6 @@ export default function SettingsStoryCards() {
 
   return (
     <div className="flex flex-col max-w-full h-full gap-4">
-      <Label>Story Cards</Label>
-      <Separator />
       <StorybookEditor
         entries={storyCards}
         onAdd={addStoryCard}

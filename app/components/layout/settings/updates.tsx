@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   AlertCircle,
   CheckCircle2,
@@ -150,11 +148,6 @@ export default function SettingsUpdates() {
 
   return (
     <div className="flex flex-col gap-4 max-w-full">
-      <div className="flex flex-col gap-2">
-        <Label>App Updates</Label>
-        <Separator />
-      </div>
-
       <div className="flex flex-col gap-2 rounded-sm border border-border/60 bg-card/50 p-3">
         <div className="flex items-center justify-between">
           <div className="flex flex-col">

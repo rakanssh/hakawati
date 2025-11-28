@@ -1,14 +1,14 @@
 import { useTaleStore } from "@/store/useTaleStore";
-import { Separator } from "../ui/separator";
-import { Progress } from "../ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
-import { Input } from "../ui/input";
+import { Input } from "@/components/ui/input";
 import { InlineEditableBadge } from "./inline-editable-badge";
 import { InlineEditableNumber } from "./inline-editable-number";
 import { Stat } from "@/types/stats.type";
 import { AddIconButton } from "./add-icon-button";
-import { Label } from "../ui/label";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -16,8 +16,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../ui/dialog";
-import { Button } from "../ui/button";
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 function ProgressBar({ stat }: { stat: Stat }) {
   const progress = (stat.value / stat.range[1]) * 100;
@@ -67,51 +67,56 @@ export function StatsCard() {
           <Separator className="mb-1" />
         </div>
         <div className="px-1">
-          <div className="flex flex-col gap-4">
-            {stats.map((stat) => (
-              <div key={stat.name} className="flex flex-col gap-1">
-                <div className="flex flex-row justify-between items-baseline">
-                  <InlineEditableBadge
-                    label={stat.name}
-                    onRename={(newName) => {
-                      if (
-                        nameExists(newName) &&
-                        newName.trim().toLowerCase() !== stat.name.toLowerCase()
-                      ) {
-                        return;
-                      }
-                      updateStat(stat.name, { name: newName.trim() });
-                    }}
-                    onRemove={() => removeFromStats(stat.name)}
-                    className="cursor-pointer border-white/35 text-wrap whitespace-normal text-left"
-                  />
-                  <div className="flex items-baseline gap-1">
-                    <InlineEditableNumber
-                      value={stat.value}
-                      min={stat.range[0]}
-                      max={stat.range[1]}
-                      step={1}
-                      onChange={(newValue) =>
-                        updateStat(stat.name, { value: newValue })
-                      }
+          {stats.length === 0 ? (
+            <Label className="text-muted-foreground text-xs">Nothing...</Label>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {stats.map((stat) => (
+                <div key={stat.name} className="flex flex-col gap-1">
+                  <div className="flex flex-row justify-between items-baseline">
+                    <InlineEditableBadge
+                      label={stat.name}
+                      onRename={(newName) => {
+                        if (
+                          nameExists(newName) &&
+                          newName.trim().toLowerCase() !==
+                            stat.name.toLowerCase()
+                        ) {
+                          return;
+                        }
+                        updateStat(stat.name, { name: newName.trim() });
+                      }}
+                      onRemove={() => removeFromStats(stat.name)}
+                      className="cursor-pointer border-white/35 text-wrap whitespace-normal text-left"
                     />
-                    /
-                    <InlineEditableNumber
-                      value={stat.range[1]}
-                      min={stat.value}
-                      step={1}
-                      onChange={(newValue) =>
-                        updateStat(stat.name, {
-                          range: [stat.range[0], newValue],
-                        })
-                      }
-                    />
+                    <div className="flex items-baseline gap-1">
+                      <InlineEditableNumber
+                        value={stat.value}
+                        min={stat.range[0]}
+                        max={stat.range[1]}
+                        step={1}
+                        onChange={(newValue) =>
+                          updateStat(stat.name, { value: newValue })
+                        }
+                      />
+                      /
+                      <InlineEditableNumber
+                        value={stat.range[1]}
+                        min={stat.value}
+                        step={1}
+                        onChange={(newValue) =>
+                          updateStat(stat.name, {
+                            range: [stat.range[0], newValue],
+                          })
+                        }
+                      />
+                    </div>
                   </div>
+                  <ProgressBar stat={stat} />
                 </div>
-                <ProgressBar stat={stat} />
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

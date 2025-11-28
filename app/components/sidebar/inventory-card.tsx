@@ -1,11 +1,11 @@
 import { useTaleStore } from "@/store/useTaleStore";
-import { Separator } from "../ui/separator";
+import { Separator } from "@/components/ui/separator";
 import { InventoryItem } from "./inventory-item";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
-import { Input } from "../ui/input";
+import { Input } from "@/components/ui/input";
 import { AddIconButton } from "./add-icon-button";
-import { Label } from "../ui/label";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -13,8 +13,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../ui/dialog";
-import { Button } from "../ui/button";
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 const InventoryButton = ({ setOpen }: { setOpen: (open: boolean) => void }) => (
   <AddIconButton onClick={() => setOpen(true)} ariaLabel="Add item" />

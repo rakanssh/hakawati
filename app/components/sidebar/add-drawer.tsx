@@ -1,5 +1,5 @@
-import { Drawer, DrawerFooter } from "../ui/drawer";
-import { Button } from "../ui/button";
+import { Drawer, DrawerFooter } from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Drawer as DrawerPrimitive } from "vaul";
 import { ReactNode } from "react";

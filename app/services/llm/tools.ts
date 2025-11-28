@@ -93,14 +93,22 @@ export function convertToolCallsToActions(toolCalls: ToolCall[]): LLMAction[] {
     if (toolCall.type !== "function") continue;
 
     const functionName = toolCall.function.name;
+    const rawArgs = toolCall.function.arguments?.trim();
+
+    // Skip empty or incomplete arguments
+    if (!rawArgs || rawArgs.length === 0) {
+      console.warn(`Empty arguments for tool call: ${functionName}`);
+      continue;
+    }
+
     let args: Record<string, unknown>;
 
     try {
-      args = JSON.parse(toolCall.function.arguments);
+      args = JSON.parse(rawArgs);
     } catch (e) {
       console.warn(
         `Failed to parse tool call arguments for ${functionName}:`,
-        toolCall.function.arguments,
+        rawArgs,
         e,
       );
       continue;

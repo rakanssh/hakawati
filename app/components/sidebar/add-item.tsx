@@ -1,9 +1,9 @@
-import { Drawer, DrawerFooter } from "../ui/drawer";
-import { Button } from "../ui/button";
+import { Drawer, DrawerFooter } from "@/components/ui/drawer";
+import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Drawer as DrawerPrimitive } from "vaul";
-import { Input } from "../ui/input";
+import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useTaleStore } from "@/store/useTaleStore";
 

@@ -1,21 +1,9 @@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-// No navigation side-effects from here
-import { Separator } from "@/components/ui/separator";
 import { useTaleStore } from "@/store/useTaleStore";
 import { countTokens } from "@/services/llm/tokenCounter";
 
-// type ExportedScenarioV1 = {
-//   format: "hakawati-scenario";
-//   version: 1;
-//   exportedAt: string;
-//   scenario: Scenario;
-//   storyCards: { title: string; triggers: string[]; content: string }[];
-// };
-
 export default function SettingsTale() {
-  // const { scenario, storyCards, setScenario, setStoryCards } =
-  //   useScenarioStore();
   const { description, authorNote, setDescription, setAuthorNote } =
     useTaleStore();
 
@@ -26,9 +14,6 @@ export default function SettingsTale() {
 
   return (
     <div className="flex flex-col gap-4 max-w-full">
-      <Label>Tale</Label>
-      <Separator />
-
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <Label>Description</Label>
@@ -54,14 +39,6 @@ export default function SettingsTale() {
           rows={4}
         />
       </div>
-      {/* <div className="flex gap-2 pt-1">
-        <Button variant="secondary" onClick={handleExportScenario}>
-          Export
-        </Button>
-        <Button variant="default" onClick={handleImportScenario}>
-          Import
-        </Button>
-      </div> */}
     </div>
   );
 }

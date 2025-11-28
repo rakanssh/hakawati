@@ -1,5 +1,5 @@
 import { useEffect, useState, KeyboardEvent } from "react";
-import { Input } from "../ui/input";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 interface InlineEditableNumberProps {

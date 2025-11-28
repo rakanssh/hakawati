@@ -19,6 +19,7 @@ import SettingsModel from "@/components/layout/settings/model";
 import SettingsAdvanced from "@/components/layout/settings/advanced";
 import SettingsUpdates from "@/components/layout/settings/updates";
 import SettingsAbout from "@/components/layout/settings/about";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 const tabs = [
   { id: "game", label: "Game", component: SettingsGame },
@@ -60,6 +61,8 @@ export function SettingsModal({
     (state) => state.hasNotification,
   );
 
+  const { isMobileViewport } = useIsMobile();
+
   const [activeTab, setActiveTab] = useState<SettingsTabId>(() => {
     const fallback =
       availableTabs.find((tab) => tab.id === defaultTab)?.id ??
@@ -99,12 +102,35 @@ export function SettingsModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        showCloseButton={true}
+        showCloseButton={!isMobileViewport}
         className="p-0 gap-0 w-[95vw] h-[90vh] sm:max-w-[1300px] sm:max-h-[900px] flex flex-col"
       >
         <DialogTitle></DialogTitle>
+        <div className="md:hidden border-b px-4 py-3">
+          <Select
+            value={activeTab}
+            onValueChange={(value) => setActiveTab(value as SettingsTabId)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {availableTabs.map((tab) => (
+                <SelectItem key={tab.id} value={tab.id}>
+                  <span className="flex items-center gap-2">
+                    {tab.label}
+                    {tab.id === "updates" && hasUpdateNotification && (
+                      <span className="inline-flex h-2 w-2 rounded-full bg-destructive" />
+                    )}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Desktop & Mobile content */}
-        <div className="md:grid md:grid-cols-[160px_1fr] gap-0 h-full overflow-hidden flex flex-col">
+        <div className="md:grid md:grid-cols-[160px_1fr] gap-0 flex-1 overflow-hidden flex flex-col">
           {/* Desktop: Sidebar navigation */}
           <nav className="hidden md:block border-r px-3 py-4 overflow-auto">
             <ul className="flex flex-col gap-1">
@@ -129,36 +155,17 @@ export function SettingsModal({
           </nav>
 
           {/* Content area */}
-          <section className="py-3 bg-card h-full">
-            <ScrollArea className="flex-1 h-full">
+          <section className="py-3 bg-card h-full overflow-hidden flex flex-col">
+            <h2 className="px-4 pb-3 text-lg font-semibold border-b mb-3">
+              {availableTabs.find((tab) => tab.id === activeTab)?.label ??
+                "Settings"}
+            </h2>
+            <ScrollArea className="flex-1">
               <div className="px-4">
                 <ActiveComponent />
               </div>
             </ScrollArea>
           </section>
-        </div>
-        {/* Mobile: Dropdown selector */}
-        <div className="md:hidden border-b px-4 py-3">
-          <Select
-            value={activeTab}
-            onValueChange={(value) => setActiveTab(value as SettingsTabId)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {availableTabs.map((tab) => (
-                <SelectItem key={tab.id} value={tab.id}>
-                  <span className="flex items-center gap-2">
-                    {tab.label}
-                    {tab.id === "updates" && hasUpdateNotification && (
-                      <span className="inline-flex h-2 w-2 rounded-full bg-destructive" />
-                    )}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
       </DialogContent>
     </Dialog>

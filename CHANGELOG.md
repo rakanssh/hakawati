@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Scroll to bottom button to the play page when not at the bottom of the log.
+- Minor UI improvements to the play page.
+- Confirmation dialog for removing stats and items.
+
+### Fixed
+
+- Mouse wheel scroll in model and font selectors.
+
 ## [v0.6.2] - 2025-11-19
 
 ### Added

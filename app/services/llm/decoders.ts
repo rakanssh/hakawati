@@ -109,10 +109,16 @@ export class ToolCallingDecoder implements OutputDecoder {
 
           if (toolCallDelta.function?.name) {
             accumulated.name = toolCallDelta.function.name;
+            console.debug(
+              `Tool call ${index}: name=${toolCallDelta.function.name}`,
+            );
           }
 
           if (toolCallDelta.function?.arguments) {
             accumulated.arguments += toolCallDelta.function.arguments;
+            console.debug(
+              `Tool call ${index}: args chunk="${toolCallDelta.function.arguments}" (total: ${accumulated.arguments.length} chars)`,
+            );
           }
         }
       }
@@ -123,6 +129,11 @@ export class ToolCallingDecoder implements OutputDecoder {
 
       for (const [index, data] of toolCallsAccumulator.entries()) {
         if (data.id && data.name) {
+          if (!data.arguments || data.arguments.trim().length === 0) {
+            console.warn(
+              `Tool call ${data.name} has empty arguments after accumulation`,
+            );
+          }
           toolCalls.push({
             id: data.id,
             type: "function",

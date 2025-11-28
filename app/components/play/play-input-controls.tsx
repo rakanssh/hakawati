@@ -23,7 +23,7 @@ import {
   ChevronLeftIcon,
 } from "lucide-react";
 import { LogEntryMode } from "@/types/log.type";
-import { LogControl } from "@/components/game/log-control";
+import { LogControl } from "@/components/play/log";
 import { getPlaceholder, Action } from "@/lib/play-utils";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";

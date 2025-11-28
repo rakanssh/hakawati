@@ -47,11 +47,6 @@ export default function SettingsGame() {
 
   return (
     <div className="flex flex-col gap-4 max-w-full">
-      <Label>Game Settings</Label>
-      <Separator />
-
-      <Label>Game</Label>
-      <Separator />
       <Label>Game Mode</Label>
       <div className="flex flex-col gap-2">
         <Select value={gameMode} onValueChange={handleGameModeChange}>
@@ -79,8 +74,9 @@ export default function SettingsGame() {
         </span>
       </div>
 
-      <Label>Appearance</Label>
       <Separator />
+
+      <Label>Appearance</Label>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">

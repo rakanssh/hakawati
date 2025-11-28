@@ -2,8 +2,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ModelSelect } from "@/components/layout";
 import { useSettingsStore } from "@/store";
-// No navigation side-effects from here
-import { Separator } from "@/components/ui/separator";
 import { ApiType } from "@/types/api.type";
 import {
   Select,
@@ -64,9 +62,6 @@ export default function SettingsApi() {
 
   return (
     <div className="flex flex-col gap-4 max-w-full">
-      <Label>API Settings</Label>
-      <Separator />
-
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="flex flex-col gap-2 sm:col-span-1">
           <Label>
@@ -86,14 +81,14 @@ export default function SettingsApi() {
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select an API type" />
-              <SelectContent>
-                {getApiTypeOptions().map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
             </SelectTrigger>
+            <SelectContent>
+              {getApiTypeOptions().map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </div>
         <div className="flex flex-col gap-2 sm:col-span-3">

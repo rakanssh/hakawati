@@ -2,8 +2,6 @@ import { Label } from "@/components/ui/label";
 import { NumberInput } from "@/components/ui";
 import { Button } from "@/components/ui/button";
 import { useSettingsStore } from "@/store";
-import { ApiType } from "@/types";
-import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
@@ -13,7 +11,6 @@ import { DicesIcon, InfoIcon } from "lucide-react";
 
 export default function SettingsModel() {
   const {
-    apiType,
     contextWindow,
     modelContextLength,
     maxTokens,
@@ -41,16 +38,8 @@ export default function SettingsModel() {
     setToDefault,
   } = useSettingsStore();
 
-  function resolveApiTypeLabel(apiType: ApiType) {
-    if (apiType === ApiType.OPENAI) return "OpenAI";
-    return "Borked";
-  }
-
   return (
     <div className="flex flex-col gap-4 max-w-full">
-      <Label>{resolveApiTypeLabel(apiType)} Compatible Settings</Label>
-      <Separator />
-
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
           <Label>

@@ -1,15 +1,7 @@
-import {
-  ChartBarIcon,
-  HandIcon,
-  MegaphoneIcon,
-  SpeechIcon,
-  ShoppingBagIcon,
-  Trash2Icon,
-} from "lucide-react";
+import { HandIcon, MegaphoneIcon, SpeechIcon } from "lucide-react";
 import { LogEntry, LogEntryMode } from "@/types/log.type";
-import { Badge } from "../ui/badge";
-import { LLMAction } from "@/services/llm/schema";
 import { ErrorTooltip } from "./error-tooltip";
+import { ActionBadge } from "./action-badge";
 
 export interface LogEntryBubbleProps {
   entry: LogEntry;
@@ -83,62 +75,5 @@ export function LogEntryBubble({ entry }: LogEntryBubbleProps) {
         {hasError && <ErrorTooltip error={error} />}
       </div>
     </div>
-  );
-}
-
-/**
- * Returns the colored of the badge for the given action.
- * + Stats: green
- * - Stats: red
- * + Inventory: green
- * - Inventory: red
- * @param action
- */
-function ActionBadge({ action }: { action: LLMAction }) {
-  if (action.type === "MODIFY_STAT" && action.payload.value! > 0) {
-    return (
-      <Badge variant="outline" className="ml-2 border-green-300/15 ">
-        <ChartBarIcon className="w-4 h-4 mr-2 text-green-300" />
-        <span>
-          {action.payload.value} {action.payload.name}
-        </span>
-      </Badge>
-    );
-  }
-  if (action.type === "MODIFY_STAT" && action.payload.value! < 0) {
-    return (
-      <Badge variant="outline" className="ml-2 border-red-300/15 ">
-        <ChartBarIcon className="w-4 h-4 mr-2 text-red-300  " />
-        <span>
-          {action.payload.value} {action.payload.name}
-        </span>
-      </Badge>
-    );
-  }
-  if (action.type === "MODIFY_STAT" && action.payload.value == 0) {
-    return;
-  }
-  if (action.type === "ADD_TO_INVENTORY") {
-    return (
-      <Badge variant="outline" className="ml-2 border-green-300/15 ">
-        <ShoppingBagIcon className="w-4 h-4 mr-2 text-green-300" />
-        <span>{action.payload.item}</span>
-      </Badge>
-    );
-  }
-  if (action.type === "REMOVE_FROM_INVENTORY") {
-    return (
-      <Badge variant="outline" className="ml-2 border-red-300/15 ">
-        <Trash2Icon className="w-4 h-4 mr-2 text-red-300" />
-        <span>{action.payload.item}</span>
-      </Badge>
-    );
-  }
-  return (
-    <Badge variant="outline" className="ml-2 ">
-      <span>
-        {action.payload.name} {action.payload.value}
-      </span>
-    </Badge>
   );
 }
