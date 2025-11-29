@@ -11,3 +11,5 @@ export * from "./tooltip";
 export * from "./sonner";
 
 export * from "./help-tooltip";
+export * from "./stat-item";
+export * from "./inventory-item";

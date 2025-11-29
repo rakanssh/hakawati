@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Tale settings tab containing tale and story card settings.
+- A dedicated character settings tab to manage stats and inventory.
+
+### Changed
+
+- Game mode selection is moved to the tale settings tab.
+- Changing game mode from GM to Story teller will no longer wipe stats and inventory, they wont be sent to the LLM, but will be there if the game mode is changed back later.
+- Updated quickstart wizard to use the new editors for stats and inventory.
+
 ## [v0.6.3] - 2025-11-29
 
 ### Added

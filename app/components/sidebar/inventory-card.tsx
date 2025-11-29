@@ -15,12 +15,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const InventoryButton = ({ setOpen }: { setOpen: (open: boolean) => void }) => (
   <AddIconButton onClick={() => setOpen(true)} ariaLabel="Add item" />
 );
 
-export function InventoryCard() {
+export function InventoryCard({ className }: { className?: string }) {
   const { inventory, addToInventory } = useTaleStore();
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState("");
@@ -34,7 +35,7 @@ export function InventoryCard() {
   };
 
   return (
-    <div className="relative overflow-hidden">
+    <div className={cn("relative overflow-hidden", className)}>
       <div className="py-1 flex flex-col gap-1 mt-2">
         <div className="px-1">
           <div className="relative flex flex-row justify-between">

@@ -1,15 +1,17 @@
 import { HomeIcon, MinusIcon, SquareIcon, XIcon } from "lucide-react";
-import { SettingsButton } from "./settings";
+import { SettingsButton, TaleSettingsButton } from "./settings";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { Button } from "../ui/button";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import fez from "@/assets/fez-offwh-bg-sqc.svg";
 import { useIsMobile } from "@/hooks/useIsMobile";
 
 export function Titlebar() {
   const navigate = useNavigate();
+  const routerState = useRouterState();
   const isShowButtons = true;
   const { isMobilePlatform } = useIsMobile();
+  const isPlayRoute = routerState.location.pathname?.startsWith("/play");
   if (isMobilePlatform) return null;
   return (
     <div
@@ -37,6 +39,11 @@ export function Titlebar() {
               <span className="titlebar-no-drag pointer-events-auto">
                 <SettingsButton className="" />
               </span>
+              {isPlayRoute && (
+                <span className="titlebar-no-drag pointer-events-auto">
+                  <TaleSettingsButton className="" />
+                </span>
+              )}
             </>
           )}
         </div>

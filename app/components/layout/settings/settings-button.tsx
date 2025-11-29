@@ -1,7 +1,6 @@
 import { Button } from "../../ui/button";
 import { SettingsIcon } from "lucide-react";
-import { useMemo, useState, useEffect, useCallback } from "react";
-import { useRouterState } from "@tanstack/react-router";
+import { useState, useEffect, useCallback } from "react";
 import { SettingsModal, SettingsTabId } from "@/components/layout/settings";
 import { useUpdateStore } from "@/store/useUpdateStore";
 import { cn } from "@/lib/utils";
@@ -13,28 +12,18 @@ export function SettingsButton({
 }: React.ComponentProps<typeof Button>) {
   const [isOpen, setIsOpen] = useState(false);
   const [tooltipOpen, setTooltipOpen] = useState(false);
-  const routerState = useRouterState();
   const hasUpdateNotification = useUpdateStore(
     (state) => state.hasNotification,
   );
 
-  const isPlayRoute = routerState.location.pathname?.startsWith("/play");
-  const visibleTabs = useMemo<readonly SettingsTabId[]>(
-    () =>
-      isPlayRoute
-        ? ([
-            "game",
-            "api",
-            "tale",
-            "story-cards",
-            "model",
-            "updates",
-            "about",
-            "advanced",
-          ] as const)
-        : (["game", "api", "model", "updates", "about", "advanced"] as const),
-    [isPlayRoute],
-  );
+  const visibleTabs: readonly SettingsTabId[] = [
+    "game",
+    "api",
+    "model",
+    "updates",
+    "about",
+    "advanced",
+  ];
 
   // Close tooltip when dialog opens
   useEffect(() => {

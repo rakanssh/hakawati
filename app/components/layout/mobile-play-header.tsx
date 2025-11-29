@@ -2,7 +2,7 @@ import { ArrowLeftIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { SettingsButton } from "./settings";
+import { SettingsButton, TaleSettingsButton } from "./settings";
 
 export function MobilePlayHeader() {
   const navigate = useNavigate();
@@ -28,6 +28,11 @@ export function MobilePlayHeader() {
       >
         <ArrowLeftIcon className="w-4 h-4" />
       </Button>
+      <TaleSettingsButton
+        variant="default"
+        size="sm"
+        className="h-8 w-8 rounded-full bg-input/75 text-foreground"
+      />
       <SettingsButton
         variant="default"
         size="sm"

@@ -232,12 +232,7 @@ export const useTaleStore = create<TaleStoreType>()((set) => ({
       storyCards: state.storyCards.filter((card) => card.id !== id),
     })),
   clearStoryCards: () => set({ storyCards: [] }),
-  setGameMode: (gameMode: GameMode) =>
-    set({
-      gameMode,
-      stats: [],
-      inventory: [],
-    }),
+  setGameMode: (gameMode: GameMode) => set({ gameMode }),
   stats: [
     {
       name: "HP",

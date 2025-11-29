@@ -1,20 +1,22 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { StatItem } from "@/components/ui/stat-item";
+import { InventoryItem } from "@/components/ui/inventory-item";
 import { Stat } from "@/types/stats.type";
+import type { Item } from "@/types/item.type";
 import { ARCHETYPES } from "@/data/quickstart-presets";
-import { Plus, Trash2, RotateCcw } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Plus, RotateCcw, BarChart3, Package } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { nanoid } from "nanoid";
 
 interface StatsInventoryStepProps {
   stats: Stat[];
-  inventory: string[];
+  inventory: Item[];
   archetype: string;
   setting: string;
   onStatsChange: (stats: Stat[]) => void;
-  onInventoryChange: (inventory: string[]) => void;
+  onInventoryChange: (inventory: Item[]) => void;
 }
 
 export function StatsInventoryStep({
@@ -50,42 +52,74 @@ export function StatsInventoryStep({
         (a) => a.id === archetype,
       );
       if (archetypeData?.defaultInventory) {
-        onInventoryChange([...archetypeData.defaultInventory]);
+        onInventoryChange(
+          archetypeData.defaultInventory.map((name) => ({
+            id: nanoid(12),
+            name,
+          })),
+        );
       }
     }
   }, [archetype, setting, inventory.length, onInventoryChange]);
 
   const handleAddStat = () => {
     if (!newStatName.trim()) return;
+    if (
+      stats.some(
+        (s) => s.name.toLowerCase() === newStatName.trim().toLowerCase(),
+      )
+    ) {
+      return;
+    }
     const value = parseInt(newStatValue) || 50;
     const max = parseInt(newStatMax) || 100;
     onStatsChange([
       ...stats,
-      { name: newStatName.trim(), value, range: [0, max] },
+      {
+        name: newStatName.trim(),
+        value: Math.min(Math.max(value, 0), max),
+        range: [0, max],
+      },
     ]);
     setNewStatName("");
     setNewStatValue("50");
     setNewStatMax("100");
   };
 
-  const handleRemoveStat = (index: number) => {
-    onStatsChange(stats.filter((_, i) => i !== index));
+  const handleUpdateStat = (name: string, updates: Partial<Stat>) => {
+    onStatsChange(
+      stats.map((stat) =>
+        stat.name === name ? { ...stat, ...updates } : stat,
+      ),
+    );
   };
 
-  const handleUpdateStat = (index: number, updates: Partial<Stat>) => {
-    onStatsChange(
-      stats.map((stat, i) => (i === index ? { ...stat, ...updates } : stat)),
-    );
+  const handleRemoveStat = (name: string) => {
+    onStatsChange(stats.filter((s) => s.name !== name));
   };
 
   const handleAddItem = () => {
     if (!newItemName.trim()) return;
-    onInventoryChange([...inventory, newItemName.trim()]);
+    onInventoryChange([
+      ...inventory,
+      { id: nanoid(12), name: newItemName.trim() },
+    ]);
     setNewItemName("");
   };
 
-  const handleRemoveItem = (index: number) => {
-    onInventoryChange(inventory.filter((_, i) => i !== index));
+  const handleUpdateItem = (
+    id: string,
+    updates: { name?: string; description?: string },
+  ) => {
+    onInventoryChange(
+      inventory.map((item) =>
+        item.id === id ? { ...item, ...updates } : item,
+      ),
+    );
+  };
+
+  const handleRemoveItem = (id: string) => {
+    onInventoryChange(inventory.filter((item) => item.id !== id));
   };
 
   const handleResetToDefaults = () => {
@@ -94,7 +128,12 @@ export function StatsInventoryStep({
       onStatsChange([...archetypeData.defaultStats]);
     }
     if (archetypeData?.defaultInventory) {
-      onInventoryChange([...archetypeData.defaultInventory]);
+      onInventoryChange(
+        archetypeData.defaultInventory.map((name) => ({
+          id: nanoid(12),
+          name,
+        })),
+      );
     }
   };
 
@@ -122,151 +161,119 @@ export function StatsInventoryStep({
         </TabsList>
 
         <TabsContent value="stats" className="space-y-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                {stats.map((stat, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <div className="flex-1 grid grid-cols-3 gap-2">
-                      <Input
-                        value={stat.name}
-                        onChange={(e) =>
-                          handleUpdateStat(index, { name: e.target.value })
-                        }
-                        placeholder="Stat name"
-                      />
-                      <Input
-                        type="number"
-                        value={stat.value}
-                        onChange={(e) =>
-                          handleUpdateStat(index, {
-                            value: parseInt(e.target.value) || 0,
-                          })
-                        }
-                        placeholder="Value"
-                      />
-                      <Input
-                        type="number"
-                        value={stat.range[1]}
-                        onChange={(e) =>
-                          handleUpdateStat(index, {
-                            range: [
-                              stat.range[0],
-                              parseInt(e.target.value) || 100,
-                            ],
-                          })
-                        }
-                        placeholder="Max"
-                      />
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveStat(index)}
-                      className="shrink-0"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
+          <div className="flex items-center gap-2 mb-2">
+            <BarChart3 className="h-4 w-4 text-primary" />
+            <span className="text-xs text-muted-foreground">
+              {stats.length} {stats.length === 1 ? "stat" : "stats"}
+            </span>
+          </div>
 
-                <div className="pt-2 border-t">
-                  <Label className="text-xs text-muted-foreground mb-2 block">
-                    Add New Stat
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 grid grid-cols-3 gap-2">
-                      <Input
-                        value={newStatName}
-                        onChange={(e) => setNewStatName(e.target.value)}
-                        placeholder="Name"
-                        onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
-                      />
-                      <Input
-                        type="number"
-                        value={newStatValue}
-                        onChange={(e) => setNewStatValue(e.target.value)}
-                        placeholder="Value"
-                        onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
-                      />
-                      <Input
-                        type="number"
-                        value={newStatMax}
-                        onChange={(e) => setNewStatMax(e.target.value)}
-                        placeholder="Max"
-                        onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
-                      />
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleAddStat}
-                      disabled={!newStatName.trim()}
-                      className="shrink-0"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
+          <div className="flex gap-2 mb-4 items-end">
+            <div className="flex-1 flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Name</span>
+              <Input
+                placeholder="Stat name"
+                value={newStatName}
+                onChange={(e) => setNewStatName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Current</span>
+              <Input
+                type="number"
+                value={newStatValue}
+                onChange={(e) => setNewStatValue(e.target.value)}
+                className="w-20"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Max</span>
+              <Input
+                type="number"
+                value={newStatMax}
+                onChange={(e) => setNewStatMax(e.target.value)}
+                className="w-20"
+              />
+            </div>
+            <Button
+              onClick={handleAddStat}
+              disabled={!newStatName.trim()}
+              size="icon"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {stats.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <BarChart3 className="h-10 w-10 text-muted-foreground/30 mb-2" />
+                <p className="text-sm text-muted-foreground">No stats yet</p>
+                <p className="text-xs text-muted-foreground/70">
+                  Add a stat to track character attributes
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            ) : (
+              stats.map((stat) => (
+                <StatItem
+                  key={stat.name}
+                  stat={stat}
+                  onUpdate={handleUpdateStat}
+                  onRemove={handleRemoveStat}
+                />
+              ))
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="inventory" className="space-y-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="space-y-2">
-                {inventory.length > 0 ? (
-                  <div className="space-y-2">
-                    {inventory.map((item, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <div className="flex-1 px-3 py-2 bg-muted rounded-md text-sm">
-                          {item}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveItem(index)}
-                          className="shrink-0"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-sm text-muted-foreground">
-                    No items yet.
-                  </div>
-                )}
+          <div className="flex items-center gap-2 mb-2">
+            <Package className="h-4 w-4 text-primary" />
+            <span className="text-xs text-muted-foreground">
+              {inventory.length} {inventory.length === 1 ? "item" : "items"}
+            </span>
+          </div>
 
-                <div className="pt-2 border-t">
-                  <Label className="text-xs text-muted-foreground mb-2 block">
-                    Add Item
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      value={newItemName}
-                      onChange={(e) => setNewItemName(e.target.value)}
-                      placeholder="Item name (e.g., Sword, Potion)"
-                      onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
-                      className="flex-1"
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleAddItem}
-                      disabled={!newItemName.trim()}
-                      className="shrink-0"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
+          <div className="flex gap-2 mb-4 items-end">
+            <div className="flex-1 flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Name</span>
+              <Input
+                placeholder="Add item..."
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
+              />
+            </div>
+            <Button
+              onClick={handleAddItem}
+              disabled={!newItemName.trim()}
+              size="icon"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            {inventory.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <Package className="h-10 w-10 text-muted-foreground/30 mb-2" />
+                <p className="text-sm text-muted-foreground">Inventory empty</p>
+                <p className="text-xs text-muted-foreground/70">
+                  Items collected will appear here
+                </p>
               </div>
-            </CardContent>
-          </Card>
+            ) : (
+              inventory.map((item) => (
+                <InventoryItem
+                  key={item.id}
+                  item={item}
+                  onUpdate={handleUpdateItem}
+                  onRemove={handleRemoveItem}
+                />
+              ))
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>

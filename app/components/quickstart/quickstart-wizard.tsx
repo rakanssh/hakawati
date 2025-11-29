@@ -20,6 +20,7 @@ import {
 } from "./steps";
 import { GameMode } from "@/types";
 import { Stat } from "@/types/stats.type";
+import type { Item } from "@/types/item.type";
 import {
   generateAuthorNote,
   generateDescription,
@@ -43,7 +44,7 @@ export interface QuickstartState {
   description: string;
   authorNote: string;
   stats: Stat[];
-  inventory: string[];
+  inventory: Item[];
 }
 
 interface QuickstartWizardProps {
@@ -210,9 +211,7 @@ export function QuickstartWizard({
           archetype={state.archetype}
           setting={state.setting}
           onStatsChange={(stats: Stat[]) => updateState({ stats })}
-          onInventoryChange={(inventory: string[]) =>
-            updateState({ inventory })
-          }
+          onInventoryChange={(inventory: Item[]) => updateState({ inventory })}
         />
       ),
       canProgress: state.stats.length > 0,
@@ -271,7 +270,10 @@ export function QuickstartWizard({
       finalStats = archetypeData?.defaultStats || [
         { name: "HP", value: 100, range: [0, 100] },
       ];
-      finalInventory = archetypeData?.defaultInventory || [];
+      finalInventory = (archetypeData?.defaultInventory || []).map((name) => ({
+        id: nanoid(12),
+        name,
+      }));
     }
 
     const initialLogEntry = {
@@ -290,7 +292,7 @@ export function QuickstartWizard({
         storyCards: [],
         scenarioId: undefined,
         stats: finalStats,
-        inventory: finalInventory.map((name) => ({ id: nanoid(12), name })),
+        inventory: finalInventory,
         log: [initialLogEntry],
         gameMode: state.gameMode,
         undoStack: [],

@@ -9,7 +9,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar variant="inset" className="bg-background p-0" {...props}>
       <SidebarContent className="flex flex-col gap-2 bg-background gap-bottom-2 p-2">
         <Separator />
-        <InventoryCard />
+        <InventoryCard className="mt-4" />
         <StatsCard />
       </SidebarContent>
     </Sidebar>
