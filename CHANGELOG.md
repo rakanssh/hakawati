@@ -8,6 +8,7 @@ All notable changes to this project are documented in this file.
 
 - Tale settings, containing tale and story card settings.
 - A dedicated character settings tab to manage stats and inventory.
+- Description field to stats and inventory items, that can be used to pass item or stat specific context to the LLM.
 
 ### Changed
 

@@ -10,7 +10,12 @@ export type StatsEditorProps = {
   onAdd: (name: string) => void;
   onUpdate: (
     prevName: string,
-    update: Partial<{ name: string; value: number; rangeMax: number }>,
+    update: Partial<{
+      name: string;
+      description: string | undefined;
+      value: number;
+      rangeMax: number;
+    }>,
   ) => void;
   onRemove: (name: string) => void;
 };
@@ -46,6 +51,16 @@ export function StatsEditor({
                 Remove
               </Button>
             </div>
+            <Input
+              value={stat.description || ""}
+              onChange={(e) =>
+                onUpdate(stat.name, {
+                  description: e.target.value || undefined,
+                })
+              }
+              placeholder="Description (optional)"
+              className="text-sm text-muted-foreground"
+            />
             <div className="flex items-center gap-2">
               <Label className="text-xs text-muted-foreground">Value</Label>
               <NumberInput

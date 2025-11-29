@@ -29,13 +29,20 @@ export function useScenarioForm(
 
   const updateStat = (
     prevName: string,
-    update: Partial<{ name: string; value: number; rangeMax: number }>,
+    update: Partial<{
+      name: string;
+      description: string | undefined;
+      value: number;
+      rangeMax: number;
+    }>,
   ) => {
     setScenario((prev) => ({
       ...prev,
       initialStats: prev.initialStats.map((s) => {
         if (s.name !== prevName) return s;
         const nextName = update.name?.trim() ?? s.name;
+        const nextDescription =
+          "description" in update ? update.description : s.description;
         const nextValue =
           typeof update.value === "number"
             ? Math.max(s.range[0], Math.min(update.value, s.range[1]))
@@ -46,8 +53,9 @@ export function useScenarioForm(
             : s.range[1];
         return {
           name: nextName,
+          description: nextDescription,
           value: nextValue,
-          range: [s.range[0], nextMax],
+          range: [s.range[0], nextMax] as [number, number],
         };
       }),
     }));

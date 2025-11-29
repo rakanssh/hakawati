@@ -25,11 +25,13 @@ export function InventoryCard({ className }: { className?: string }) {
   const { inventory, addToInventory } = useTaleStore();
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState("");
+  const [itemDescription, setItemDescription] = useState("");
 
   const handleSubmit = () => {
     if (itemName.trim()) {
-      addToInventory(itemName.trim());
+      addToInventory(itemName.trim(), itemDescription.trim() || undefined);
       setItemName("");
+      setItemDescription("");
       setOpen(false);
     }
   };
@@ -69,14 +71,28 @@ export function InventoryCard({ className }: { className?: string }) {
               Enter a new item to add to your inventory.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex gap-2 w-full">
-            <Input
-              placeholder="Item name"
-              value={itemName}
-              onChange={(e) => setItemName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-              autoFocus
-            />
+          <div className="flex flex-col gap-4 w-full">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="item-name">Name</Label>
+              <Input
+                id="item-name"
+                placeholder="Item name"
+                value={itemName}
+                onChange={(e) => setItemName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                autoFocus
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="item-description">Description (optional)</Label>
+              <Input
+                id="item-description"
+                placeholder="Add context for the AI..."
+                value={itemDescription}
+                onChange={(e) => setItemDescription(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>

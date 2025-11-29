@@ -53,9 +53,10 @@ export function StatsInventoryStep({
       );
       if (archetypeData?.defaultInventory) {
         onInventoryChange(
-          archetypeData.defaultInventory.map((name) => ({
+          archetypeData.defaultInventory.map((item) => ({
             id: nanoid(12),
-            name,
+            name: item.name,
+            description: item.description,
           })),
         );
       }
@@ -129,9 +130,10 @@ export function StatsInventoryStep({
     }
     if (archetypeData?.defaultInventory) {
       onInventoryChange(
-        archetypeData.defaultInventory.map((name) => ({
+        archetypeData.defaultInventory.map((item) => ({
           id: nanoid(12),
-          name,
+          name: item.name,
+          description: item.description,
         })),
       );
     }

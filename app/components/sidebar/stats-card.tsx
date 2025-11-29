@@ -32,6 +32,7 @@ export function StatsCard() {
   const { stats, addToStats, updateStat, removeFromStats } = useTaleStore();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [currentValue, setCurrentValue] = useState("0");
   const [maxValue, setMaxValue] = useState("100");
 
@@ -45,10 +46,12 @@ export function StatsCard() {
     const current = parseInt(currentValue) || 0;
     addToStats({
       name: name.trim(),
+      description: description.trim() || undefined,
       value: Math.min(Math.max(current, 0), max),
       range: [0, max],
     });
     setName("");
+    setDescription("");
     setCurrentValue("0");
     setMaxValue("100");
     setOpen(false);
@@ -140,6 +143,7 @@ export function StatsCard() {
                 autoFocus
               />
             </div>
+
             <div className="flex gap-4">
               <div className="flex flex-col gap-2 flex-1">
                 <Label htmlFor="stat-current">Current Value</Label>
@@ -163,6 +167,16 @@ export function StatsCard() {
                   onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                 />
               </div>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="stat-description">Description (optional)</Label>
+              <Input
+                id="stat-description"
+                placeholder="Add context for the AI..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+              />
             </div>
           </div>
           <DialogFooter>

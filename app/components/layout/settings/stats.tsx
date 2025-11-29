@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 export default function SettingsStats() {
   const { stats, addToStats, removeFromStats, updateStat } = useTaleStore();
   const [newStatName, setNewStatName] = useState("");
+  const [newStatDescription, setNewStatDescription] = useState("");
   const [newStatValue, setNewStatValue] = useState("50");
   const [newStatMax, setNewStatMax] = useState("100");
 
@@ -15,8 +16,14 @@ export default function SettingsStats() {
     if (!newStatName.trim()) return;
     const value = Number.parseInt(newStatValue) || 50;
     const max = Number.parseInt(newStatMax) || 100;
-    addToStats({ name: newStatName.trim(), value, range: [0, max] });
+    addToStats({
+      name: newStatName.trim(),
+      description: newStatDescription.trim() || undefined,
+      value,
+      range: [0, max],
+    });
     setNewStatName("");
+    setNewStatDescription("");
     setNewStatValue("50");
     setNewStatMax("100");
   };
@@ -37,7 +44,7 @@ export default function SettingsStats() {
                 key={stat.name}
                 className="group p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
               >
-                <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex items-start justify-between gap-3 mb-2">
                   <Input
                     value={stat.name}
                     onChange={(e) =>
@@ -54,6 +61,17 @@ export default function SettingsStats() {
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
+
+                <Input
+                  value={stat.description || ""}
+                  onChange={(e) =>
+                    updateStat(stat.name, {
+                      description: e.target.value || undefined,
+                    })
+                  }
+                  placeholder="Description (optional)"
+                  className="mb-3 h-8 text-sm text-muted-foreground bg-transparent border-dashed"
+                />
 
                 <div className="space-y-2">
                   <Progress value={percentage} className="h-2" />
@@ -90,38 +108,47 @@ export default function SettingsStats() {
         </div>
       )}
 
-      <div className="flex items-center gap-2 p-3 rounded-lg border border-dashed">
+      <div className="flex flex-col gap-2 p-3 rounded-lg border border-dashed">
+        <div className="flex items-center gap-2">
+          <Input
+            value={newStatName}
+            onChange={(e) => setNewStatName(e.target.value)}
+            placeholder="New stat name"
+            onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
+            className="flex-1"
+          />
+          <Input
+            type="number"
+            value={newStatValue}
+            onChange={(e) => setNewStatValue(e.target.value)}
+            placeholder="Value"
+            onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
+            className="w-20"
+          />
+          <Input
+            type="number"
+            value={newStatMax}
+            onChange={(e) => setNewStatMax(e.target.value)}
+            placeholder="Max"
+            onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
+            className="w-20"
+          />
+          <Button
+            size="icon"
+            onClick={handleAddStat}
+            disabled={!newStatName.trim()}
+            className="shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
+        </div>
         <Input
-          value={newStatName}
-          onChange={(e) => setNewStatName(e.target.value)}
-          placeholder="New stat name"
+          value={newStatDescription}
+          onChange={(e) => setNewStatDescription(e.target.value)}
+          placeholder="Description (optional)"
           onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
-          className="flex-1"
+          className="text-sm"
         />
-        <Input
-          type="number"
-          value={newStatValue}
-          onChange={(e) => setNewStatValue(e.target.value)}
-          placeholder="Value"
-          onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
-          className="w-20"
-        />
-        <Input
-          type="number"
-          value={newStatMax}
-          onChange={(e) => setNewStatMax(e.target.value)}
-          placeholder="Max"
-          onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
-          className="w-20"
-        />
-        <Button
-          size="icon"
-          onClick={handleAddStat}
-          disabled={!newStatName.trim()}
-          className="shrink-0"
-        >
-          <Plus className="w-4 h-4" />
-        </Button>
       </div>
     </div>
   );

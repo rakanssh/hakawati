@@ -94,7 +94,12 @@ export interface LLMAction {
     | "ADD_TO_INVENTORY"
     | "REMOVE_FROM_INVENTORY"
     | "ADD_TO_STATS";
-  payload: { name?: string; value?: number; item?: string };
+  payload: {
+    name?: string;
+    value?: number;
+    item?: string;
+    description?: string;
+  };
 }
 
 /**

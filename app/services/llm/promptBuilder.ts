@@ -132,10 +132,26 @@ export async function buildMessage(
 
   const effectiveLogSource = useTaleStore.getState().log;
 
+  const formatStats = (stats: Stat[]) =>
+    stats
+      .map((s) =>
+        s.description
+          ? `${s.name} (${s.value}/${s.range[1]}): ${s.description}`
+          : `${s.name}: ${s.value}/${s.range[1]}`,
+      )
+      .join("\n  ");
+
+  const formatInventory = (items: Item[]) =>
+    items
+      .map((i) => (i.description ? `${i.name}: ${i.description}` : i.name))
+      .join("\n  ");
+
   const gameState = `
 **Game State:**
-- Stats: ${JSON.stringify(stats)}
-- Inventory: ${JSON.stringify(inventory.map((item) => item.name))}
+- Stats:
+  ${formatStats(stats)}
+- Inventory:
+  ${formatInventory(inventory)}
 `;
   const userMessageContent = injectMode(lastMessage.text, lastMessage.mode);
   const userMessage =

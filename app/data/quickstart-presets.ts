@@ -6,11 +6,16 @@ export type Setting = {
   icon: string;
 };
 
+export type InventoryPreset = {
+  name: string;
+  description?: string;
+};
+
 export type Archetype = {
   id: string;
   name: string;
   defaultStats?: Stat[];
-  defaultInventory?: string[];
+  defaultInventory?: InventoryPreset[];
 };
 
 export type Tone = {
@@ -58,33 +63,52 @@ export const ARCHETYPES: Record<string, Archetype[]> = {
       name: "Warrior",
       defaultStats: [
         { name: "HP", value: 100, range: [0, 100] },
-        { name: "Stamina", value: 30, range: [0, 50] },
+        {
+          name: "Stamina",
+          value: 30,
+          range: [0, 50],
+          description: "Current energy",
+        },
       ],
-      defaultInventory: ["Iron Sword", "Wooden Shield"],
+      defaultInventory: [{ name: "Iron Sword" }, { name: "Wooden Shield" }],
     },
     {
       id: "mage",
       name: "Mage",
       defaultStats: [
         { name: "HP", value: 100, range: [0, 100] },
-        { name: "Mana", value: 70, range: [0, 100] },
+        {
+          name: "Mana",
+          value: 70,
+          range: [0, 100],
+          description: "Expendable magical energy",
+        },
       ],
-      defaultInventory: ["Wooden Staff", "Mana Potion"],
+      defaultInventory: [{ name: "Wooden Staff" }, { name: "Mana Potion" }],
     },
     {
       id: "rogue",
       name: "Rogue",
       defaultStats: [{ name: "HP", value: 100, range: [0, 100] }],
-      defaultInventory: ["Dagger", "Lockpick Set"],
+      defaultInventory: [{ name: "Dagger" }, { name: "Lockpick Set" }],
     },
     {
       id: "ranger",
       name: "Ranger",
       defaultStats: [
         { name: "HP", value: 100, range: [0, 100] },
-        { name: "Stamina", value: 85, range: [0, 100] },
+        {
+          name: "Stamina",
+          value: 85,
+          range: [0, 100],
+          description: "Current energy",
+        },
       ],
-      defaultInventory: ["Longbow", "Quiver", "Hunting Knife"],
+      defaultInventory: [
+        { name: "Longbow" },
+        { name: "Quiver" },
+        { name: "Hunting Knife" },
+      ],
     },
   ],
   mystery: [
@@ -92,19 +116,22 @@ export const ARCHETYPES: Record<string, Archetype[]> = {
       id: "detective",
       name: "Detective",
       defaultStats: [{ name: "HP", value: 100, range: [0, 100] }],
-      defaultInventory: ["Notebook", "Revolver"],
+      defaultInventory: [{ name: "Notebook" }, { name: "Revolver" }],
     },
     {
       id: "journalist",
       name: "Journalist",
       defaultStats: [{ name: "HP", value: 100, range: [0, 100] }],
-      defaultInventory: ["Camera", "Recorder"],
+      defaultInventory: [{ name: "Camera" }, { name: "Recorder" }],
     },
     {
       id: "psychic",
       name: "Psychic",
       defaultStats: [{ name: "HP", value: 100, range: [0, 100] }],
-      defaultInventory: ["Tarot Cards", "Incense"],
+      defaultInventory: [
+        { name: "Tarot Cards" },
+        { name: "Incense", description: "A small bundle of incense sticks" },
+      ],
     },
   ],
   zombies: [
@@ -113,28 +140,52 @@ export const ARCHETYPES: Record<string, Archetype[]> = {
       name: "Survivor",
       defaultStats: [
         { name: "HP", value: 100, range: [0, 100] },
-        { name: "Stamina", value: 85, range: [0, 100] },
-        { name: "Stress", value: 0, range: [0, 100] },
+        {
+          name: "Stamina",
+          value: 85,
+          range: [0, 100],
+          description: "Current energy",
+        },
+        {
+          name: "Stress",
+          value: 0,
+          range: [0, 100],
+          description: "Mental strain",
+        },
       ],
-      defaultInventory: ["Crowbar", "Canned Food", "First Aid Kit"],
+      defaultInventory: [
+        { name: "Crowbar" },
+        { name: "Canned Food" },
+        { name: "First Aid Kit" },
+      ],
     },
     {
       id: "medic",
       name: "Medic",
       defaultStats: [
         { name: "HP", value: 100, range: [0, 100] },
-        { name: "Stress", value: 0, range: [0, 100] },
+        {
+          name: "Stress",
+          value: 0,
+          range: [0, 100],
+          description: "Mental strain",
+        },
       ],
-      defaultInventory: ["Medkit", "Painkillers"],
+      defaultInventory: [{ name: "Medkit" }, { name: "Painkillers" }],
     },
     {
       id: "soldier",
       name: "Soldier",
       defaultStats: [
         { name: "HP", value: 100, range: [0, 100] },
-        { name: "Stamina", value: 90, range: [0, 100] },
+        {
+          name: "Stamina",
+          value: 90,
+          range: [0, 100],
+          description: "Current energy",
+        },
       ],
-      defaultInventory: ["Pistol", "Combat Knife"],
+      defaultInventory: [{ name: "Pistol" }, { name: "Combat Knife" }],
     },
   ],
   scifi: [
@@ -142,19 +193,27 @@ export const ARCHETYPES: Record<string, Archetype[]> = {
       id: "pilot",
       name: "Pilot",
       defaultStats: [{ name: "HP", value: 100, range: [0, 100] }],
-      defaultInventory: ["Phaser"],
+      defaultInventory: [{ name: "Phaser", description: "Energy sidearm" }],
     },
     {
       id: "scientist",
       name: "Scientist",
       defaultStats: [{ name: "HP", value: 100, range: [0, 100] }],
-      defaultInventory: ["Tricorder"],
+      defaultInventory: [
+        { name: "Tricorder", description: "Handheld scanner" },
+      ],
     },
     {
       id: "marine",
       name: "Space Marine",
       defaultStats: [{ name: "HP", value: 100, range: [0, 100] }],
-      defaultInventory: ["Pulse Rifle", "Power Armor"],
+      defaultInventory: [
+        { name: "Pulse Rifle" },
+        {
+          name: "Power Armor",
+          description: "Exosuit with enhanced protection",
+        },
+      ],
     },
   ],
   horror: [
@@ -162,25 +221,43 @@ export const ARCHETYPES: Record<string, Archetype[]> = {
       id: "investigator",
       name: "Investigator",
       defaultStats: [{ name: "HP", value: 100, range: [0, 100] }],
-      defaultInventory: ["Flashlight", "Old Diary", "Pocket Knife"],
+      defaultInventory: [
+        { name: "Flashlight" },
+        { name: "Old Diary" },
+        { name: "Pocket Knife" },
+      ],
     },
     {
       id: "occultist",
       name: "Occultist",
       defaultStats: [
         { name: "HP", value: 100, range: [0, 100] },
-        { name: "Sanity", value: 80, range: [0, 100] },
+        {
+          name: "Sanity",
+          value: 80,
+          range: [0, 100],
+          description: "Mental stability",
+        },
       ],
-      defaultInventory: ["Ancient Tome", "Candles", "Amulet"],
+      defaultInventory: [
+        { name: "Ancient Tome", description: "Contains forbidden knowledge" },
+        { name: "Candles" },
+        { name: "Amulet", description: "Protective charm" },
+      ],
     },
     {
       id: "skeptic",
       name: "Skeptic",
       defaultStats: [
         { name: "HP", value: 100, range: [0, 100] },
-        { name: "Sanity", value: 100, range: [0, 100] },
+        {
+          name: "Sanity",
+          value: 100,
+          range: [0, 100],
+          description: "Mental stability",
+        },
       ],
-      defaultInventory: ["Camera", "Research Notes"],
+      defaultInventory: [{ name: "Camera" }, { name: "Research Notes" }],
     },
   ],
   custom: [

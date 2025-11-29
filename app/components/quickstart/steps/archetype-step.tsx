@@ -109,10 +109,10 @@ export function ArchetypeStep({
                         </p>
                         {archetype.defaultInventory?.slice(0, 3).map((item) => (
                           <span
-                            key={item}
+                            key={item.name}
                             className="text-xs px-2 py-0.5 rounded-full bg-muted"
                           >
-                            {item}
+                            {item.name}
                           </span>
                         ))}
                       </div>

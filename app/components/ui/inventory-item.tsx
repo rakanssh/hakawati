@@ -43,18 +43,24 @@ export function InventoryItem({
     <div className="group relative flex items-center gap-3 rounded-xs border bg-card/50 p-3 transition-colors hover:bg-card overflow-hidden">
       {isEditing ? (
         <div className="flex flex-1 flex-col gap-2">
-          <Input
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            placeholder="Item name"
-            className="h-8"
-          />
-          <Input
-            value={editDescription}
-            onChange={(e) => setEditDescription(e.target.value)}
-            placeholder="Description (optional)"
-            className="h-8"
-          />
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted-foreground">Name</span>
+            <Input
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="Item name"
+              className="h-8 text-sm"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted-foreground">Description</span>
+            <Input
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              placeholder="Add context for the AI..."
+              className="h-8 text-sm"
+            />
+          </div>
           <div className="flex justify-end gap-1">
             <Button variant="ghost" size="sm" onClick={handleCancel}>
               <X className="h-3 w-3 mr-1" />

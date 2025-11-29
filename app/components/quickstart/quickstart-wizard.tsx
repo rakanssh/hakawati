@@ -270,9 +270,10 @@ export function QuickstartWizard({
       finalStats = archetypeData?.defaultStats || [
         { name: "HP", value: 100, range: [0, 100] },
       ];
-      finalInventory = (archetypeData?.defaultInventory || []).map((name) => ({
+      finalInventory = (archetypeData?.defaultInventory || []).map((item) => ({
         id: nanoid(12),
-        name,
+        name: item.name,
+        description: item.description,
       }));
     }
 

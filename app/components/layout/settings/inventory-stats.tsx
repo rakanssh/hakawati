@@ -25,9 +25,11 @@ export default function SettingsInventoryStats() {
   const { save } = usePersistTale();
 
   const [newStatName, setNewStatName] = useState("");
+  const [newStatDescription, setNewStatDescription] = useState("");
   const [newStatValue, setNewStatValue] = useState(50);
   const [newStatMax, setNewStatMax] = useState(100);
   const [newItemName, setNewItemName] = useState("");
+  const [newItemDescription, setNewItemDescription] = useState("");
 
   const handleAddStat = () => {
     if (!newStatName.trim()) return;
@@ -40,10 +42,12 @@ export default function SettingsInventoryStats() {
     }
     addToStats({
       name: newStatName.trim(),
+      description: newStatDescription.trim() || undefined,
       value: Math.min(Math.max(newStatValue, 0), newStatMax),
       range: [0, newStatMax],
     });
     setNewStatName("");
+    setNewStatDescription("");
     setNewStatValue(50);
     setNewStatMax(100);
     save(id);
@@ -61,8 +65,9 @@ export default function SettingsInventoryStats() {
 
   const handleAddItem = () => {
     if (!newItemName.trim()) return;
-    addToInventory(newItemName.trim());
+    addToInventory(newItemName.trim(), newItemDescription.trim() || undefined);
     setNewItemName("");
+    setNewItemDescription("");
     save(id);
   };
 
@@ -91,41 +96,55 @@ export default function SettingsInventoryStats() {
           </span>
         </div>
 
-        <div className="flex gap-2 mb-4 items-end">
-          <div className="flex-1 flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Name</span>
+        <div className="flex flex-col gap-2 mb-4">
+          <div className="flex gap-2 items-end">
+            <div className="flex-1 flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Name</span>
+              <Input
+                placeholder="Stat name"
+                value={newStatName}
+                onChange={(e) => setNewStatName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Current</span>
+              <Input
+                type="number"
+                value={newStatValue}
+                onChange={(e) => setNewStatValue(Number(e.target.value))}
+                className="w-20"
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Max</span>
+              <Input
+                type="number"
+                value={newStatMax}
+                onChange={(e) => setNewStatMax(Number(e.target.value))}
+                className="w-20"
+              />
+            </div>
+            <Button
+              onClick={handleAddStat}
+              disabled={!newStatName.trim()}
+              size="icon"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted-foreground">
+              Description (optional)
+            </span>
             <Input
-              placeholder="Stat name"
-              value={newStatName}
-              onChange={(e) => setNewStatName(e.target.value)}
+              placeholder="Add context for the AI..."
+              value={newStatDescription}
+              onChange={(e) => setNewStatDescription(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
+              className="text-sm"
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Current</span>
-            <Input
-              type="number"
-              value={newStatValue}
-              onChange={(e) => setNewStatValue(Number(e.target.value))}
-              className="w-20"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Max</span>
-            <Input
-              type="number"
-              value={newStatMax}
-              onChange={(e) => setNewStatMax(Number(e.target.value))}
-              className="w-20"
-            />
-          </div>
-          <Button
-            onClick={handleAddStat}
-            disabled={!newStatName.trim()}
-            size="icon"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
         </div>
 
         <ScrollArea className="flex-1 -mx-1 px-1">
@@ -166,23 +185,37 @@ export default function SettingsInventoryStats() {
           </span>
         </div>
 
-        <div className="flex gap-2 mb-4 items-end">
-          <div className="flex-1 flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Name</span>
+        <div className="flex flex-col gap-2 mb-4">
+          <div className="flex gap-2 items-end">
+            <div className="flex-1 flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">Name</span>
+              <Input
+                placeholder="Add item..."
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
+              />
+            </div>
+            <Button
+              onClick={handleAddItem}
+              disabled={!newItemName.trim()}
+              size="icon"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex flex-col gap-1">
+            <span className="text-xs text-muted-foreground">
+              Description (optional)
+            </span>
             <Input
-              placeholder="Add item..."
-              value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
+              placeholder="Add context for the AI..."
+              value={newItemDescription}
+              onChange={(e) => setNewItemDescription(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
+              className="text-sm"
             />
           </div>
-          <Button
-            onClick={handleAddItem}
-            disabled={!newItemName.trim()}
-            size="icon"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
         </div>
 
         <ScrollArea className="flex-1 -mx-1 px-1">

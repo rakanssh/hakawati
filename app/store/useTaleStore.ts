@@ -43,7 +43,7 @@ export interface TaleStoreType {
   addToStats: (stat: Stat) => void;
   removeFromStats: (name: string) => void;
   updateStat: (name: string, updates: Partial<Stat>) => void;
-  addToInventory: (itemName: string) => void;
+  addToInventory: (itemName: string, itemDescription?: string) => void;
   removeFromInventory: (id: string) => void;
   removeFromInventoryByName: (itemName: string) => void;
   updateItem: (id: string, updates: Partial<Item>) => void;
@@ -179,6 +179,7 @@ const redoEntryActions = (
             ...newStats,
             {
               name: action.payload.name,
+              description: action.payload.description,
               value: addValue,
               range: [0, 100],
             },
@@ -322,13 +323,14 @@ export const useTaleStore = create<TaleStoreType>()((set) => ({
         stat.name === name ? { ...stat, ...updates } : stat,
       ),
     })),
-  addToInventory: (itemName: string) =>
+  addToInventory: (itemName: string, itemDescription?: string) =>
     set((state) => ({
       inventory: [
         ...state.inventory,
         {
           id: nanoid(12),
           name: itemName,
+          description: itemDescription,
         },
       ],
     })),
