@@ -1,18 +1,14 @@
 import { Button } from "../../ui/button";
 import { BookOpen } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   SettingsModal,
   type SettingsTabId,
 } from "@/components/layout/settings/settings-modal";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
-
-const TALE_TABS: readonly SettingsTabId[] = [
-  "tale",
-  "inventory-stats",
-  "story-cards",
-];
+import { useTaleStore } from "@/store";
+import { GameMode } from "@/types";
 
 export function TaleSettingsButton({
   className,
@@ -20,6 +16,15 @@ export function TaleSettingsButton({
 }: React.ComponentProps<typeof Button>) {
   const [isOpen, setIsOpen] = useState(false);
   const [tooltipOpen, setTooltipOpen] = useState(false);
+  const gameMode = useTaleStore((s) => s.gameMode);
+
+  const visibleTabs = useMemo<SettingsTabId[]>(() => {
+    const tabs: SettingsTabId[] = ["tale", "story-cards"];
+    if (gameMode === GameMode.GM) {
+      tabs.unshift("inventory-stats");
+    }
+    return tabs;
+  }, [gameMode]);
 
   // Close tooltip when dialog opens
   useEffect(() => {
@@ -48,8 +53,8 @@ export function TaleSettingsButton({
       <SettingsModal
         open={isOpen}
         onOpenChange={setIsOpen}
-        visibleTabs={TALE_TABS}
-        defaultTab="tale"
+        visibleTabs={visibleTabs}
+        defaultTab={visibleTabs[0]}
       />
     </>
   );
