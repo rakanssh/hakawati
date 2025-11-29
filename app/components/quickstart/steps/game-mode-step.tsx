@@ -29,7 +29,7 @@ export function GameModeStep({ value, onChange }: GameModeStepProps) {
       features: [
         "Stats and inventory tracking",
         "Structured gameplay",
-        "Best with more capable models",
+        "Best with more capable models. Requires tool calling.",
       ],
     },
   ];

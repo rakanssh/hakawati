@@ -37,7 +37,7 @@ export default function SettingsTale() {
 
   const getGamemodeDescription = (gameMode: GameMode) => {
     if (gameMode === GameMode.GM)
-      return "AI runs the full game: it tells the story, manages inventory, and updates stats. Best with smarter models.";
+      return "AI runs the full game: it tells the story, manages inventory, and updates stats. Best with smarter models. Requires tool calling to be supported by the model.";
     return "AI tells the story only: no inventory or stats are tracked, just narrative. Works with any model.";
   };
 

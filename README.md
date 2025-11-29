@@ -38,7 +38,7 @@ Hakawati is an AI-powered, text-based RPG. Bring your own OpenAI-Compatible endp
 
 ### Game Master Mode
 
-The game keeps track of items and statistics, allowing the AI to represent, remember, and change the current state of your character. Stats can be any numeric value with a minimum and maximum. (Experimental — best with more capable models.)
+The game keeps track of items and statistics, allowing the AI to represent, remember, and change the current state of your character. Stats can be any numeric value with a minimum and maximum. (Experimental — best with more capable models. Requires tool calling to be supported by the model.)
 ![Game Master Mode](./public/gm.png)
 
 ### Story Teller Mode
