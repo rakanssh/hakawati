@@ -285,7 +285,7 @@ export const TONES: Tone[] = [
   },
   {
     id: "none",
-    name: "None",
+    name: "Nothing Specific",
   },
 ];
 
