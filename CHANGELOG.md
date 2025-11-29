@@ -6,7 +6,7 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
-- Tale settings tab containing tale and story card settings.
+- Tale settings, containing tale and story card settings.
 - A dedicated character settings tab to manage stats and inventory.
 
 ### Changed
