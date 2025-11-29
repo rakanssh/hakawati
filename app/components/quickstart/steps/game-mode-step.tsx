@@ -23,8 +23,7 @@ export function GameModeStep({ value, onChange }: GameModeStepProps) {
     {
       id: GameMode.GM,
       name: "Game Master (GM)",
-      description:
-        "The AI acts as a Game Master, tracking stats and inventory [Experimental]",
+      description: "The AI acts as a Game Master, tracking stats and inventory",
       icon: Swords,
       features: [
         "Stats and inventory tracking",
@@ -44,13 +43,20 @@ export function GameModeStep({ value, onChange }: GameModeStepProps) {
           return (
             <Card
               key={mode.id}
-              className={`cursor-pointer transition-all ${
+              className={`cursor-pointer transition-all relative overflow-hidden ${
                 isSelected
                   ? "border-primary ring-2 ring-primary ring-offset-2"
                   : "hover:border-primary/50"
               }`}
               onClick={() => onChange(mode.id)}
             >
+              {mode.id === GameMode.GM && (
+                <div className="absolute top-0 right-0 overflow-hidden w-24 h-24 pointer-events-none">
+                  <div className="absolute top-3 -right-6 w-28 bg-yellow-500 text-yellow-950 text-[10px] font-bold text-center py-0.5 rotate-45 shadow-sm">
+                    &nbsp;&nbsp;&nbsp;EXPERIMENTAL
+                  </div>
+                </div>
+              )}
               <CardContent className="p-6">
                 <div className="flex items-start gap-3">
                   <Icon
