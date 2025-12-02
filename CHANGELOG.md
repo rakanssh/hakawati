@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- Quickstart tales now include deeper and more detailed descriptions, author notes, and opening prompts.
+
 ## [v0.7.0] - 2025-11-29
 
 ### Added

@@ -25,6 +25,7 @@ import {
   generateAuthorNote,
   generateDescription,
   generateTaleName,
+  generateOpeningPrompt,
   ARCHETYPES,
 } from "@/data/quickstart-presets";
 import { useTaleStore } from "@/store/useTaleStore";
@@ -277,11 +278,19 @@ export function QuickstartWizard({
       }));
     }
 
+    const openingPrompt = generateOpeningPrompt(
+      state.characterName,
+      state.archetype === "custom-archetype"
+        ? state.customArchetype
+        : state.archetype,
+      state.setting === "custom" ? state.customSetting : state.setting,
+    );
+
     const initialLogEntry = {
       id: nanoid(),
       role: LogEntryRole.PLAYER,
       mode: LogEntryMode.DIRECT,
-      text: "Open the scene",
+      text: openingPrompt,
     };
 
     try {
