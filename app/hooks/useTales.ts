@@ -1,5 +1,9 @@
 import { useCallback } from "react";
-import { getAllTales, deleteTaleById } from "@/services/tale.service";
+import {
+  getAllTales,
+  deleteTaleById,
+  saveAsScenario as saveAsScenarioService,
+} from "@/services/tale.service";
 import { useLoadTale } from "@/hooks/useGameSaves";
 import { TaleHead } from "@/types/tale.type";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
@@ -33,6 +37,15 @@ export function useTalesList(initialPage = 1, initialLimit = 12) {
     [refresh],
   );
 
+  const saveAsScenario = useCallback(
+    async (id: string) => {
+      const scenarioId = await saveAsScenarioService(id);
+      await refresh();
+      return scenarioId;
+    },
+    [refresh],
+  );
+
   return {
     items,
     page,
@@ -45,5 +58,6 @@ export function useTalesList(initialPage = 1, initialLimit = 12) {
     refresh,
     loadIntoGame,
     deleteTale,
+    saveAsScenario,
   } as const;
 }

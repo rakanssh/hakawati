@@ -5,10 +5,12 @@ import {
   getTales,
   getScenarioTales,
   deleteTale,
+  linkTaleToScenario,
 } from "@/repositories/tale.repository";
+import { saveScenario } from "@/services/scenario.service";
 import { PaginatedResponse } from "@/types/db.type";
 import { createTaleDTO, TaleHead, updateTaleDTO } from "@/types/tale.type";
-import { StoryCard, StorybookCategory } from "@/types/context.type";
+import { StoryCard, StorybookCategory, Scenario } from "@/types/context.type";
 
 /**
  * Normalizes a story card by applying default values for missing fields.
@@ -132,4 +134,28 @@ export async function getTalesForScenario(
 
 export async function deleteTaleById(id: string): Promise<void> {
   return deleteTale(id);
+}
+
+export async function saveAsScenario(taleId: string): Promise<string> {
+  const tale = await getTale(taleId);
+  if (!tale) throw new Error("Tale not found");
+  if (tale.scenarioId) throw new Error("Tale already has a scenario");
+
+  const scenario: Scenario = {
+    id: "",
+    name: tale.name,
+    initialGameMode: tale.gameMode,
+    initialDescription: tale.description,
+    initialAuthorNote: tale.authorNote,
+    initialStats: tale.stats,
+    initialInventory: tale.inventory.map((item) => item.name),
+    initialStoryCards: tale.storyCards.map(normalizeStoryCard),
+    thumbnail: tale.thumbnail,
+    openingText: "",
+  };
+
+  const scenarioId = await saveScenario(scenario);
+  await linkTaleToScenario(taleId, scenarioId);
+
+  return scenarioId;
 }

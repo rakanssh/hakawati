@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- "Save as scenario" button to tale context menu, allows for creating a scenario from a tale.
+
 ### Changed
 
 - Quickstart tales now include deeper and more detailed descriptions, author notes, and opening prompts.

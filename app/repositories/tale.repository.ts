@@ -338,6 +338,17 @@ export async function deleteTale(id: string): Promise<void> {
   await db.execute(`DELETE FROM tales WHERE id = ?`, [id]);
 }
 
+export async function linkTaleToScenario(
+  taleId: string,
+  scenarioId: string,
+): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `UPDATE tales SET scenario_id = ?, updated_at = ? WHERE id = ?`,
+    [scenarioId, Date.now(), taleId],
+  );
+}
+
 /**
  * Get a range of log entries by index
  * @param taleId - The tale ID

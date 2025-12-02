@@ -10,16 +10,23 @@ import {
   formatRelativeTime,
 } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent } from "@/components/ui/tooltip";
-import { TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeftIcon, PencilIcon } from "lucide-react";
-import { TrashIcon } from "lucide-react";
+import {
+  ArrowLeftIcon,
+  FilePlus2Icon,
+  PencilIcon,
+  TrashIcon,
+} from "lucide-react";
 import placeholderImage from "@/assets/scen-ph.png";
 
 export default function TalesHome() {
@@ -34,10 +41,15 @@ export default function TalesHome() {
     total,
     setPage,
     deleteTale,
+    saveAsScenario,
   } = useTalesList();
 
   const handleClickDelete = async (id: string) => {
     deleteTale(id);
+  };
+
+  const handleSaveAsScenario = async (id: string) => {
+    await saveAsScenario(id);
   };
 
   // no-op
@@ -122,6 +134,16 @@ export default function TalesHome() {
                             className="text-xs"
                           >
                             <PencilIcon className="w-4 h-4 mr-2" /> Scenario
+                          </DropdownMenuItem>
+                        )}
+                        {!scenarioHead?.id && (
+                          <DropdownMenuItem
+                            onSelect={(e) => e.preventDefault()}
+                            onClick={() => handleSaveAsScenario(id)}
+                            className="text-xs"
+                          >
+                            <FilePlus2Icon className="w-4 h-4 mr-2" /> Save as
+                            Scenario
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem
