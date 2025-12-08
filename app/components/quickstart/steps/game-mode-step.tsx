@@ -52,7 +52,7 @@ export function GameModeStep({ value, onChange }: GameModeStepProps) {
             >
               {mode.id === GameMode.GM && (
                 <div className="absolute top-0 right-0 overflow-hidden w-24 h-24 pointer-events-none">
-                  <div className="absolute top-3 -right-6 w-28 bg-yellow-500 text-yellow-950 text-[10px] font-bold text-center py-0.5 rotate-45 shadow-sm">
+                  <div className="absolute top-4.5 -right-6 w-28 bg-yellow-500 text-yellow-950 text-[9.5px] font-bold text-center py-1 rotate-45 shadow-sm">
                     &nbsp;&nbsp;&nbsp;EXPERIMENTAL
                   </div>
                 </div>

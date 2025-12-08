@@ -8,6 +8,7 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   GameModeStep,
@@ -358,53 +359,59 @@ export function QuickstartWizard({
 
   return (
     <Drawer open={open} onOpenChange={handleClose}>
-      <DrawerContent className="max-h-[100vh]">
-        <DrawerHeader className="border-b">
-          <div className="flex items-center gap-2">
-            <DrawerTitle>{currentStepData.title}</DrawerTitle>
-          </div>
-          <DrawerDescription>{currentStepData.description}</DrawerDescription>
-          <div className="flex gap-1 mt-4">
-            {steps.map((step, index) => (
-              <div
-                key={step.title}
-                className={`h-1 flex-1 rounded-full transition-colors ${
-                  index <= currentStep ? "bg-primary" : "bg-muted"
-                }`}
-              />
-            ))}
-          </div>
-        </DrawerHeader>
+      <DrawerContent className="!h-[96vh] !mt-4">
+        <div className="flex flex-col h-full overflow-hidden">
+          <DrawerHeader className="border-b shrink-0">
+            <div className="flex items-center gap-2">
+              <DrawerTitle>{currentStepData.title}</DrawerTitle>
+            </div>
+            <DrawerDescription>{currentStepData.description}</DrawerDescription>
+            <div className="flex gap-1 mt-4">
+              {steps.map((step, index) => (
+                <div
+                  key={step.title}
+                  className={`h-1 flex-1 rounded-full transition-colors ${
+                    index <= currentStep ? "bg-primary" : "bg-muted"
+                  }`}
+                />
+              ))}
+            </div>
+          </DrawerHeader>
 
-        <div className="overflow-y-auto p-6 flex-1">
-          {currentStepData.component}
-        </div>
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="p-6">{currentStepData.component}</div>
+          </ScrollArea>
 
-        <div className="border-t p-4 flex justify-between gap-2">
-          <Button variant="outline" onClick={handleBack} disabled={isFirstStep}>
-            <ChevronLeft className="w-4 h-4 mr-1" />
-            Back
-          </Button>
-          <div className="text-sm text-muted-foreground self-center">
-            Step {currentStep + 1} of {steps.length}
+          <div className="border-t p-4 flex justify-between gap-2 shrink-0">
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              disabled={isFirstStep}
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Back
+            </Button>
+            <div className="text-sm text-muted-foreground self-center">
+              Step {currentStep + 1} of {steps.length}
+            </div>
+            {!isLastStep ? (
+              <Button
+                onClick={handleNext}
+                disabled={!currentStepData.canProgress}
+              >
+                Next
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            ) : (
+              <Button
+                onClick={handleComplete}
+                disabled={!currentStepData.canProgress}
+                className="bg-primary"
+              >
+                Start Adventure
+              </Button>
+            )}
           </div>
-          {!isLastStep ? (
-            <Button
-              onClick={handleNext}
-              disabled={!currentStepData.canProgress}
-            >
-              Next
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          ) : (
-            <Button
-              onClick={handleComplete}
-              disabled={!currentStepData.canProgress}
-              className="bg-primary"
-            >
-              Start Adventure
-            </Button>
-          )}
         </div>
       </DrawerContent>
     </Drawer>

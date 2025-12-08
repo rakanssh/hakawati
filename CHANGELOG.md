@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- GM Sidebar now supports scrollable inventory and stats.
+
+### Fixed
+
+- Settings modal not scrolling.
+- Quickstart wizard scrolling weird.
+- text area scrollbar not matching other scrollbars.
+
 ## [v0.8.0] - 2025-12-03
 
 ### Added

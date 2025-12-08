@@ -1,5 +1,6 @@
 import { useTaleStore } from "@/store/useTaleStore";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
@@ -18,6 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 function ProgressBar({ stat }: { stat: Stat }) {
   const progress = (stat.value / stat.range[1]) * 100;
@@ -28,7 +30,7 @@ const StatsButton = ({ setOpen }: { setOpen: (open: boolean) => void }) => (
   <AddIconButton onClick={() => setOpen(true)} ariaLabel="Add stat" />
 );
 
-export function StatsCard() {
+export function StatsCard({ className }: { className?: string }) {
   const { stats, addToStats, updateStat, removeFromStats } = useTaleStore();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -58,18 +60,18 @@ export function StatsCard() {
   };
 
   return (
-    <div className="relative overflow-hidden">
-      <div className="py-1 flex flex-col gap-1 mt-1">
-        <div className="px-1">
-          <div className="relative flex flex-row justify-between">
-            <div className="absolute right-0">
-              <StatsButton setOpen={setOpen} />
-            </div>
-            <Label className="text-sm pb-1">Stats</Label>
+    <div className={cn("relative flex flex-col overflow-hidden", className)}>
+      <div className="px-1 flex-shrink-0 pt-1 mt-1">
+        <div className="relative flex flex-row justify-between">
+          <div className="absolute right-0">
+            <StatsButton setOpen={setOpen} />
           </div>
-          <Separator className="mb-1" />
+          <Label className="text-sm pb-1">Stats</Label>
         </div>
-        <div className="px-1">
+        <Separator className="mb-1" />
+      </div>
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="px-1 pb-1">
           {stats.length === 0 ? (
             <Label className="text-muted-foreground text-xs">Nothing...</Label>
           ) : (
@@ -121,7 +123,7 @@ export function StatsCard() {
             </div>
           )}
         </div>
-      </div>
+      </ScrollArea>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

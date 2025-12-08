@@ -87,7 +87,7 @@ export function TabbedModal<TId extends string>({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={!isMobileViewport}
-        className="p-0 gap-0 w-[95vw] h-[90vh] sm:max-w-[1300px] sm:max-h-[900px] flex flex-col overflow-hidden"
+        className="p-0 gap-0 w-[95vw] h-[90vh] sm:max-w-[1300px] sm:max-h-[900px] flex flex-col overflow-hidden min-h-0"
       >
         <DialogTitle></DialogTitle>
         {/* Mobile: Dropdown selector */}
@@ -113,33 +113,35 @@ export function TabbedModal<TId extends string>({
         </div>
 
         {/* Desktop & Mobile content */}
-        <div className="md:grid md:grid-cols-[160px_1fr] gap-0 flex-1 overflow-hidden flex flex-col">
+        <div className="md:grid md:grid-cols-[160px_1fr] gap-0 flex-1 overflow-hidden flex flex-col min-h-0">
           {/* Desktop: Sidebar navigation */}
-          <nav className="hidden md:block border-r px-3 py-4 overflow-auto">
-            <ul className="flex flex-col gap-1">
-              {availableTabs.map((tab) => (
-                <li key={tab.id}>
-                  <Button
-                    variant={activeTab === tab.id ? "default" : "ghost"}
-                    className="relative w-full justify-start text-sm"
-                    onClick={() => setActiveTab(tab.id)}
-                  >
-                    {tab.label}
-                    {renderTabExtra?.(tab.id)}
-                  </Button>
-                </li>
-              ))}
-            </ul>
+          <nav className="hidden md:block border-r px-3 py-4 min-h-0">
+            <ScrollArea className="h-full pr-2">
+              <ul className="flex flex-col gap-1 pb-1">
+                {availableTabs.map((tab) => (
+                  <li key={tab.id}>
+                    <Button
+                      variant={activeTab === tab.id ? "default" : "ghost"}
+                      className="relative w-full justify-start text-sm"
+                      onClick={() => setActiveTab(tab.id)}
+                    >
+                      {tab.label}
+                      {renderTabExtra?.(tab.id)}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </ScrollArea>
           </nav>
 
           {/* Content area */}
-          <section className="py-3 bg-card h-full overflow-hidden flex flex-col min-w-0">
+          <section className="py-3 bg-card h-full overflow-hidden flex flex-col min-w-0 min-h-0">
             <h2 className="px-4 pb-3 text-lg font-semibold border-b mb-3">
               {availableTabs.find((tab) => tab.id === activeTab)?.label ??
                 title}
             </h2>
-            <ScrollArea className="flex-1 w-full">
-              <div className="px-4 w-full overflow-hidden">
+            <ScrollArea className="flex-1 w-full min-h-0">
+              <div className="px-4 pb-4 w-full overflow-hidden">
                 {ActiveComponent && <ActiveComponent />}
               </div>
             </ScrollArea>

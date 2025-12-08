@@ -1,5 +1,6 @@
 import { useTaleStore } from "@/store/useTaleStore";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { InventoryItem } from "./inventory-item";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
@@ -37,18 +38,18 @@ export function InventoryCard({ className }: { className?: string }) {
   };
 
   return (
-    <div className={cn("relative overflow-hidden", className)}>
-      <div className="py-1 flex flex-col gap-1 mt-2">
-        <div className="px-1">
-          <div className="relative flex flex-row justify-between">
-            <div className="absolute right-0">
-              <InventoryButton setOpen={setOpen} />
-            </div>
-            <Label className="text-sm pb-1">Inventory</Label>
+    <div className={cn("relative flex flex-col overflow-hidden", className)}>
+      <div className="px-1 flex-shrink-0 pt-1 mt-2">
+        <div className="relative flex flex-row justify-between">
+          <div className="absolute right-0">
+            <InventoryButton setOpen={setOpen} />
           </div>
-          <Separator className="mb-1" />
+          <Label className="text-sm pb-1">Inventory</Label>
         </div>
-        <div className="px-1">
+        <Separator className="mb-1" />
+      </div>
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="px-1 pb-1">
           {inventory.length > 0 ? (
             <ul className="flex flex-row flex-wrap gap-1">
               {inventory.map((item) => (
@@ -61,7 +62,7 @@ export function InventoryCard({ className }: { className?: string }) {
             <Label className="text-muted-foreground text-xs">Nothing...</Label>
           )}
         </div>
-      </div>
+      </ScrollArea>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
