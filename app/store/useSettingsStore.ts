@@ -1,15 +1,23 @@
+import { createDefaultProfiles } from "@/data/api-presets";
 import { LLMModel } from "@/services/llm/schema";
-import { ApiType } from "@/types";
+import { ApiPreset, ApiProfileSettings, ApiType } from "@/types";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export interface SettingsStoreType {
+  // Profile-based settings
+  activePreset: ApiPreset;
+  profiles: Record<ApiPreset, ApiProfileSettings>;
+
+  // Derived from active profile (for backward compatibility)
   apiKey: string;
   apiType: ApiType;
   model: LLMModel | undefined;
+  openAiBaseUrl: string;
+
+  // Global settings
   contextWindow: number;
   modelContextLength: number;
-  openAiBaseUrl: string;
   maxTokens: number; //range [1, contextWindow]
   temperature?: number; //range [0,2]
   topP?: number; //range [0,1]
@@ -31,6 +39,8 @@ export interface SettingsStoreType {
   useCustomStorytellerPrompt: boolean;
   useCustomContinuePrompt: boolean;
   useCustomContinueAuthorNote: boolean;
+
+  setActivePreset: (preset: ApiPreset) => void;
   setApiKey: (apiKey: string) => void;
   setApiType: (apiType: ApiType) => void;
   setModel: (model: LLMModel | undefined) => void;
@@ -66,16 +76,25 @@ export interface SettingsStoreType {
   resetAllPromptsToDefault: () => void;
 }
 
+const defaultProfiles = createDefaultProfiles();
+
 export const useSettingsStore = create<SettingsStoreType>()(
   persist<SettingsStoreType>(
     (set, get) => ({
+      // Profile-based settings
+      activePreset: ApiPreset.GENERIC,
+      profiles: defaultProfiles,
+
+      // Derived from active profile
       apiKey: "",
       apiType: ApiType.OPENAI,
       model: undefined,
+      openAiBaseUrl: "",
+
+      // Global settings
       contextWindow: 10000,
       modelContextLength: 0,
       maxTokens: 2048,
-      openAiBaseUrl: "",
       seed: Math.floor(Math.random() * 1000000),
       uiScale: 1,
       fontFamily: "system-ui",
@@ -88,9 +107,46 @@ export const useSettingsStore = create<SettingsStoreType>()(
       useCustomStorytellerPrompt: false,
       useCustomContinuePrompt: false,
       useCustomContinueAuthorNote: false,
-      setApiKey: (apiKey: string) => set({ apiKey }),
+
+      setActivePreset: (preset: ApiPreset) => {
+        const profiles = get().profiles;
+        // Fallback to defaults if preset is missing (e.g., newly added preset)
+        const defaults = createDefaultProfiles();
+        const profile = profiles[preset] ?? defaults[preset];
+        set({
+          activePreset: preset,
+          apiKey: profile.apiKey,
+          openAiBaseUrl: profile.baseUrl,
+          model: profile.model,
+          modelContextLength: profile.model?.contextLength ?? 0,
+          // Ensure the profile exists in storage
+          profiles: profiles[preset]
+            ? profiles
+            : { ...profiles, [preset]: profile },
+        });
+      },
+
+      setApiKey: (apiKey: string) => {
+        const activePreset = get().activePreset;
+        const profiles = get().profiles;
+        set({
+          apiKey,
+          profiles: {
+            ...profiles,
+            [activePreset]: {
+              ...profiles[activePreset],
+              apiKey,
+            },
+          },
+        });
+      },
+
       setApiType: (apiType: ApiType) => set({ apiType }),
+
       setModel: (model: LLMModel | undefined) => {
+        const activePreset = get().activePreset;
+        const profiles = get().profiles;
+
         if (model) {
           console.debug(
             `Setting model: ${model.name} with context window: ${model.contextLength ?? "unknown"}.`,
@@ -104,8 +160,19 @@ export const useSettingsStore = create<SettingsStoreType>()(
         } else {
           console.debug("Clearing model selection");
         }
-        set({ model });
+
+        set({
+          model,
+          profiles: {
+            ...profiles,
+            [activePreset]: {
+              ...profiles[activePreset],
+              model,
+            },
+          },
+        });
       },
+
       setContextWindow: (contextWindow: number) =>
         set({
           contextWindow:
@@ -113,7 +180,22 @@ export const useSettingsStore = create<SettingsStoreType>()(
               ? Math.min(contextWindow, get().modelContextLength)
               : contextWindow,
         }),
-      setOpenAiBaseUrl: (openAiBaseUrl: string) => set({ openAiBaseUrl }),
+
+      setOpenAiBaseUrl: (openAiBaseUrl: string) => {
+        const activePreset = get().activePreset;
+        const profiles = get().profiles;
+        set({
+          openAiBaseUrl,
+          profiles: {
+            ...profiles,
+            [activePreset]: {
+              ...profiles[activePreset],
+              baseUrl: openAiBaseUrl,
+            },
+          },
+        });
+      },
+
       setMaxTokens: (maxTokens: number) =>
         set({
           maxTokens:
@@ -241,6 +323,46 @@ export const useSettingsStore = create<SettingsStoreType>()(
     }),
     {
       name: "settings",
+      // Migration: merge defaults with persisted profiles to handle new presets
+      migrate: (persistedState, _version) => {
+        const state = persistedState as SettingsStoreType & {
+          profiles?: Partial<Record<ApiPreset, ApiProfileSettings>>;
+        };
+
+        // Always start with fresh defaults, then merge persisted data
+        const defaults = createDefaultProfiles();
+        const persistedProfiles = state.profiles ?? {};
+
+        // Handle legacy flat settings (pre-profiles era)
+        if (
+          !state.profiles &&
+          (state.apiKey || state.openAiBaseUrl || state.model)
+        ) {
+          defaults[ApiPreset.GENERIC] = {
+            baseUrl: state.openAiBaseUrl || "",
+            apiKey: state.apiKey || "",
+            model: state.model,
+          };
+        }
+
+        // Merge: defaults first, then persisted values take precedence
+        const mergedProfiles = { ...defaults };
+        for (const key of Object.keys(persistedProfiles) as ApiPreset[]) {
+          if (persistedProfiles[key]) {
+            mergedProfiles[key] = {
+              ...defaults[key],
+              ...persistedProfiles[key],
+            };
+          }
+        }
+
+        return {
+          ...state,
+          activePreset: state.activePreset ?? ApiPreset.GENERIC,
+          profiles: mergedProfiles,
+        };
+      },
+      version: 1,
     },
   ),
 );
