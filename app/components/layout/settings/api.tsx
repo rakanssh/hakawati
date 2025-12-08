@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useLocalServerDiscovery } from "@/hooks/useLocalServerDiscovery";
 import { ProviderHelpModal } from "./provider-help-modal";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function SettingsApi() {
   const {
@@ -28,6 +29,7 @@ export default function SettingsApi() {
     setModel,
   } = useSettingsStore();
   const [baseUrl, setBaseUrl] = useState(openAiBaseUrl);
+  const [showApiKey, setShowApiKey] = useState(false);
   const { servers, scanning, error, scan } = useLocalServerDiscovery(apiType);
 
   const isLocalPreset = activePreset === ApiPreset.LOCAL;
@@ -159,12 +161,29 @@ export default function SettingsApi() {
       <div className="flex flex-col gap-2">
         <Label>API Key</Label>
         <div className="flex gap-2">
-          <Input
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder={isLocalPreset ? "Optional for most local servers" : ""}
-          />
+          <div className="relative flex-1">
+            <Input
+              type={showApiKey ? "text" : "password"}
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder={
+                isLocalPreset ? "Optional for most local servers" : ""
+              }
+              className="pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowApiKey(!showApiKey)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={showApiKey ? "Hide API key" : "Show API key"}
+            >
+              {showApiKey ? (
+                <EyeOff className="size-4" />
+              ) : (
+                <Eye className="size-4" />
+              )}
+            </button>
+          </div>
           {apiPresetMap[activePreset]?.help && (
             <ProviderHelpModal preset={apiPresetMap[activePreset]} />
           )}

@@ -9,6 +9,7 @@ All notable changes to this project are documented in this file.
 - GM Sidebar now supports scrollable inventory and stats.
 - Connection presets! This allows for simpler setup of API connections and switching back and forth between different profiles.
 - Instructions on how to setup each provider.
+- API key visibility toggle in settings.
 
 ### Fixed
 
