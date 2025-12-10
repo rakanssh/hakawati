@@ -1,0 +1,45 @@
+name: Distribute
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to distribute (e.g., v1.0.0)"
+        required: true
+        type: string
+
+jobs:
+  upload-itchio:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Download release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release download ${{ env.RELEASE_TAG }} \
+            --repo ${{ github.repository }} \
+            --dir ./release-assets \
+            --pattern '*.dmg' \
+            --pattern '*.AppImage' \
+            --pattern '*.msi'
+
+      - name: Install butler
+        run: |
+          curl -L -o butler.zip https://broth.itch.ovh/butler/linux-amd64/LATEST/archive/default
+          unzip butler.zip
+          chmod +x butler
+          ./butler -V
+
+      - name: Push to itch.io
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          VERSION="${{ env.RELEASE_TAG }}"
+          VERSION="${VERSION#v}"
+          ./butler push release-assets/*.dmg rakanssh/hakawati:macos --userversion "$VERSION"
+          ./butler push release-assets/*.AppImage rakanssh/hakawati:linux --userversion "$VERSION"
+          ./butler push release-assets/*.msi rakanssh/hakawati:windows --userversion "$VERSION"
