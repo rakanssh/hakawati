@@ -23,11 +23,43 @@ interface UsePlaySessionReturn {
   handleSubmit: () => Promise<void>;
   handleContinue: () => void;
   handleRetry: () => void;
+  handleStop: () => void;
   executeLlmSend: (
     message: string,
     mode: LogEntryMode,
     append?: boolean,
   ) => Promise<void>;
+}
+
+function isAbortError(error: unknown): boolean {
+  if (!error) return false;
+
+  const toString = (val: unknown): string =>
+    typeof val === "string" ? val : "";
+
+  if (error instanceof Error) {
+    if (error.name === "AbortError") return true;
+    const text = `${error.name} ${error.message}`.toLowerCase();
+    return text.includes("abort") || text.includes("cancel");
+  }
+
+  if (typeof error === "string") {
+    const text = error.toLowerCase();
+    return text.includes("abort") || text.includes("cancel");
+  }
+
+  if (typeof error === "object") {
+    const obj = error as Record<string, unknown>;
+    const text =
+      `${toString(obj.name)} ${toString(obj.message)} ${toString(obj.code)}`.toLowerCase();
+    return (
+      obj.name === "AbortError" ||
+      text.includes("abort") ||
+      text.includes("cancel")
+    );
+  }
+
+  return false;
 }
 
 /**
@@ -90,18 +122,24 @@ export function usePlaySession(
     isRolling: false,
   });
 
-  const { send, loading } = useLLM();
+  const { send, loading, cancel } = useLLM();
   const { save, saving } = usePersistTale();
   const { model, randomSeed } = useSettingsStore();
 
-  const { log, addLog, updateLogEntry, removeLastLogEntry } = useTaleStore();
+  const { addLog, updateLogEntry, removeLastLogEntry } = useTaleStore();
 
   const taleId = useTaleStore((state) => state.id);
+
+  const handleStop = useCallback(() => {
+    if (!loading) return;
+    cancel();
+  }, [cancel, loading]);
 
   const executeLlmSend = useCallback(
     async (message: string, mode: LogEntryMode, append = false) => {
       if (!model) {
         console.error("LLM model not configured.");
+        toast.error("No model selected. Choose one in Settings.");
         return;
       }
 
@@ -147,37 +185,67 @@ export function usePlaySession(
       }
 
       let storyContent = "";
+      let rafId: number | null = null;
+      const flushStory = () => {
+        rafId = null;
+        updateLogEntry(gmResponseId, {
+          text: storyContent,
+        });
+      };
+      const scheduleFlush = () => {
+        if (rafId !== null) return;
+        const raf = globalThis.requestAnimationFrame;
+        if (typeof raf === "function") {
+          rafId = raf(() => flushStory());
+        } else {
+          // Fallback (non-browser/test env)
+          flushStory();
+        }
+      };
 
-      await send({ text: payloadText, mode }, model, {
-        onStoryStream: (storyChunk) => {
-          storyContent += storyChunk;
-          updateLogEntry(gmResponseId, {
-            text: storyContent,
-          });
-        },
-        onActionsReady: (actions) => {
-          console.debug(
-            `Processing received actions: ${JSON.stringify(actions)}`,
-          );
-          if (Array.isArray(actions)) {
-            updateLogEntry(gmResponseId, { actions });
-            processActions(actions);
+      try {
+        await send({ text: payloadText, mode }, model, {
+          onStoryStream: (storyChunk) => {
+            storyContent += storyChunk;
+            scheduleFlush();
+          },
+          onActionsReady: (actions) => {
+            console.debug(
+              `Processing received actions: ${JSON.stringify(actions)}`,
+            );
+            if (Array.isArray(actions)) {
+              updateLogEntry(gmResponseId, { actions });
+              processActions(actions);
+            }
+          },
+          onActionParseError: () => {
+            console.warn("Failed to parse actions from LLM response");
+            updateLogEntry(gmResponseId, {
+              isActionError: true,
+            });
+          },
+          onError: (error) => {
+            // Keep any partial text that streamed already.
+            if (isAbortError(error)) return;
+            console.error("LLM Error:", error);
+            updateLogEntry(gmResponseId, {
+              error: error,
+              ...(storyContent.length === 0
+                ? { text: "An error occurred while processing your request." }
+                : {}),
+            });
+          },
+        });
+      } finally {
+        if (rafId !== null) {
+          const cancelRaf = globalThis.cancelAnimationFrame;
+          if (typeof cancelRaf === "function") cancelRaf(rafId);
+          rafId = null;
+          if (storyContent.length > 0) {
+            updateLogEntry(gmResponseId, { text: storyContent });
           }
-        },
-        onActionParseError: () => {
-          console.warn("Failed to parse actions from LLM response");
-          updateLogEntry(gmResponseId, {
-            isActionError: true,
-          });
-        },
-        onError: (error) => {
-          console.error("LLM Error:", error);
-          updateLogEntry(gmResponseId, {
-            text: "An error occurred while processing your request.",
-            error: error,
-          });
-        },
-      });
+        }
+      }
 
       try {
         await save(taleId);
@@ -201,7 +269,12 @@ export function usePlaySession(
   }, [loading, executeLlmSend, updateLogEntry]);
 
   const handleSubmit = useCallback(async () => {
-    if (!input.trim() || !model) return;
+    if (!input.trim()) return;
+    if (loading) return;
+    if (!model) {
+      toast.error("No model selected. Choose one in Settings.");
+      return;
+    }
 
     const finalMessage = action.isRolling
       ? input + ` [Roll: ${Math.floor(Math.random() * 100) + 1}/100]`
@@ -210,7 +283,7 @@ export function usePlaySession(
 
     if (logMode === LogEntryMode.STORY) {
       // For "Story" Input, faux GM entry followed by continue prompt.
-      const lastChainId = log.at(-1)?.chainId;
+      const lastChainId = useTaleStore.getState().log.at(-1)?.chainId;
       addLog({
         id: nanoid(),
         role: LogEntryRole.GM,
@@ -230,7 +303,7 @@ export function usePlaySession(
       setInput("");
       void executeLlmSend(finalMessage, logMode);
     }
-  }, [input, model, action, addLog, executeLlmSend, handleContinue, log]);
+  }, [input, model, loading, action, addLog, executeLlmSend, handleContinue]);
 
   const handleRetry = useCallback(() => {
     if (loading) return;
@@ -270,6 +343,7 @@ export function usePlaySession(
     handleSubmit,
     handleContinue,
     handleRetry,
+    handleStop,
     executeLlmSend,
   };
 }

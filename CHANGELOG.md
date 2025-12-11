@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- "Stop generating" button and Esc keybind while streaming.
+- Keyboard-accessible log entry editing (Tab + Enter/Space).
+
+### Changed
+
+- Streamed responses are now batched to reduce re-renders.
+- Enter-to-submit is now guarded during loading/saving.
+
 ## [v0.9.0] - 2025-12-08
 
 ### Added

@@ -35,6 +35,7 @@ export function SettingsButton({
   const handleEscapeKey = useCallback(
     (event: KeyboardEvent) => {
       if (event.key !== "Escape" || isOpen) return;
+      if (event.defaultPrevented) return;
 
       const target = event.target as HTMLElement;
       const isEditableElement =

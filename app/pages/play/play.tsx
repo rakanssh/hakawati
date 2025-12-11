@@ -55,6 +55,7 @@ export default function Play() {
     handleSubmit,
     handleContinue,
     handleRetry,
+    handleStop,
     executeLlmSend,
   } = usePlaySession();
 
@@ -181,6 +182,7 @@ export default function Play() {
           input={input}
           setInput={setInput}
           onSubmit={handleSubmit}
+          onStop={handleStop}
           loading={loading}
           saving={saving}
           onContinue={handleContinue}

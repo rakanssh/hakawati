@@ -21,6 +21,7 @@ import {
   MegaphoneIcon,
   SaveIcon,
   ChevronLeftIcon,
+  SquareIcon,
 } from "lucide-react";
 import { LogEntryMode } from "@/types/log.type";
 import { LogControl } from "@/components/play/log";
@@ -35,6 +36,7 @@ interface PlayInputControlsProps {
   input: string;
   setInput: (input: string) => void;
   onSubmit: () => void;
+  onStop?: () => void;
   loading: boolean;
   saving: boolean;
   onContinue: () => void;
@@ -47,6 +49,7 @@ export function PlayInputControls({
   input,
   setInput,
   onSubmit,
+  onStop,
   loading,
   saving,
   onContinue,
@@ -100,6 +103,9 @@ export function PlayInputControls({
     }
   };
 
+  const canStop = loading && !!onStop;
+  const primaryHandler = canStop ? onStop : onSubmit;
+
   return (
     <div
       className={cn(
@@ -118,6 +124,7 @@ export function PlayInputControls({
           <LogControl
             handleContinue={onContinue}
             handleRetry={onRetry}
+            handleStop={onStop}
             loading={loading}
             saving={saving}
             className="w-full"
@@ -235,6 +242,7 @@ export function PlayInputControls({
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
+                    if (loading || saving) return;
                     onSubmit();
                   }
                 }}
@@ -246,13 +254,19 @@ export function PlayInputControls({
 
             <Button
               type="submit"
-              onClick={onSubmit}
-              disabled={saving || loading}
+              onClick={primaryHandler}
+              disabled={canStop ? false : saving || loading}
               size="icon"
               className="w-10 h-10"
-              aria-label="Submit action"
+              aria-label={canStop ? "Stop generating" : "Submit action"}
             >
-              {saving ? <SaveIcon className="" /> : <SendIcon className="" />}
+              {canStop ? (
+                <SquareIcon className="w-4 h-4" />
+              ) : saving ? (
+                <SaveIcon className="w-4 h-4 animate-spin" />
+              ) : (
+                <SendIcon className="w-4 h-4" />
+              )}
             </Button>
           </div>
         </div>
@@ -343,6 +357,7 @@ export function PlayInputControls({
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
+                if (loading || saving) return;
                 onSubmit();
               }
             }}
@@ -354,12 +369,14 @@ export function PlayInputControls({
 
         <Button
           type="submit"
-          onClick={onSubmit}
-          disabled={saving || loading}
+          onClick={primaryHandler}
+          disabled={canStop ? false : saving || loading}
           className="shrink-0 h-10 w-10"
-          aria-label="Submit action"
+          aria-label={canStop ? "Stop generating" : "Submit action"}
         >
-          {saving ? (
+          {canStop ? (
+            <SquareIcon className="w-4 h-4" />
+          ) : saving ? (
             <SaveIcon className="w-4 h-4 animate-spin" />
           ) : (
             <SendIcon className="w-4 h-4" />
@@ -369,6 +386,7 @@ export function PlayInputControls({
         <LogControl
           handleContinue={onContinue}
           handleRetry={onRetry}
+          handleStop={onStop}
           loading={loading}
           saving={saving}
           className="shrink-0"

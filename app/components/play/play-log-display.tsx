@@ -77,6 +77,15 @@ export function PlayLogDisplay({
                       <span
                         className="cursor-pointer"
                         onClick={onClick}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            onClick();
+                          }
+                        }}
+                        aria-label="Edit entry"
                         style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
                       >
                         {entry.text}
@@ -105,8 +114,12 @@ export function PlayLogDisplay({
                         currentlyEditingLogId === entry.id ? "bg-accent" : ""
                       }`}
                       onClick={() => setCurrentlyEditingLogId(entry.id)}
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Edit entry"
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
                           setCurrentlyEditingLogId(entry.id);
                         }
                       }}

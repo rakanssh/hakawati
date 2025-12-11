@@ -9,6 +9,7 @@ import {
   RedoIcon,
   RefreshCwIcon,
   MoreHorizontal,
+  SquareIcon,
 } from "lucide-react";
 import { useTaleStore } from "@/store/useTaleStore";
 import { useEffect } from "react";
@@ -16,6 +17,7 @@ interface LogControlProps {
   className?: string;
   handleRetry: () => void;
   handleContinue: () => void;
+  handleStop?: () => void;
   loading?: boolean;
   saving?: boolean;
 }
@@ -25,12 +27,24 @@ export function LogControl({
   loading = false,
   handleRetry,
   handleContinue,
+  handleStop,
   saving = false,
 }: LogControlProps) {
   const { undo, redo } = useTaleStore();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const hasOpenDialog = document.querySelector(
+        '[role="dialog"], [aria-modal="true"]',
+      );
+      if (hasOpenDialog) return;
+
+      if (e.key === "Escape" && loading && handleStop) {
+        e.preventDefault();
+        handleStop();
+        return;
+      }
+
       // Prevent keybinds from firing if user is typing in an input/textarea
       const target = e.target as HTMLElement;
       if (
@@ -66,9 +80,12 @@ export function LogControl({
       }
     };
 
-    globalThis.addEventListener("keydown", handleKeyDown);
-    return () => globalThis.removeEventListener("keydown", handleKeyDown);
-  }, [undo, redo, handleRetry, loading, saving]);
+    globalThis.addEventListener("keydown", handleKeyDown, { capture: true });
+    return () =>
+      globalThis.removeEventListener("keydown", handleKeyDown, {
+        capture: true,
+      });
+  }, [undo, redo, handleRetry, handleStop, loading, saving]);
 
   return (
     <div className={className}>
@@ -111,17 +128,25 @@ export function LogControl({
           <TooltipTrigger asChild>
             <Button
               type="button"
-              onClick={handleContinue}
-              disabled={loading || saving}
+              onClick={loading && handleStop ? handleStop : handleContinue}
+              disabled={loading ? !handleStop : saving}
               variant="default"
               size="icon"
               className="rounded-none flex-1 h-10"
-              aria-label="Continue"
+              aria-label={
+                loading && handleStop ? "Stop generating" : "Continue"
+              }
             >
-              <MoreHorizontal className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              {loading && handleStop ? (
+                <SquareIcon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              ) : (
+                <MoreHorizontal className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">Continue</TooltipContent>
+          <TooltipContent side="top">
+            {loading && handleStop ? "Stop generating (Esc)" : "Continue"}
+          </TooltipContent>
         </Tooltip>
 
         <Tooltip>
