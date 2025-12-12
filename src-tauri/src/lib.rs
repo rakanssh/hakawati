@@ -16,7 +16,8 @@ pub fn run() {
 
         std::fs::create_dir_all(&app_data_dir)?;
 
-        let db_path = app_data_dir.join("hakawati.db");
+        let db_name = if cfg!(debug_assertions) { "hakawati-dev.db" } else { "hakawati.db" };
+        let db_path = app_data_dir.join(db_name);
         let db_url = format!("sqlite:{}", db_path.to_string_lossy());
 
         let migrations = vec![
@@ -36,9 +37,7 @@ pub fn run() {
 
         app
             .handle()
-            .plugin(
-                tauri_plugin_sql::Builder::new().add_migrations(&db_url, migrations).build()
-            )?;
+            .plugin(tauri_plugin_sql::Builder::new().add_migrations(&db_url, migrations).build())?;
 
         Ok(())
     });
