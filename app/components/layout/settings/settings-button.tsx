@@ -5,6 +5,7 @@ import { SettingsModal, SettingsTabId } from "@/components/layout/settings";
 import { useUpdateStore } from "@/store/useUpdateStore";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
+import { Trans } from "@lingui/react/macro";
 
 export function SettingsButton({
   className,
@@ -78,7 +79,9 @@ export function SettingsButton({
             ) : null}
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="top">Settings</TooltipContent>
+        <TooltipContent side="top">
+          <Trans>Settings</Trans>
+        </TooltipContent>
       </Tooltip>
 
       <SettingsModal

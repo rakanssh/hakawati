@@ -28,7 +28,7 @@ export default function SettingsInventory() {
             <Badge
               key={item.id}
               variant="secondary"
-              className="group pl-3 pr-1.5 py-1.5 text-sm gap-1.5 hover:bg-secondary/80"
+              className="group ps-3 pe-1.5 py-1.5 text-sm gap-1.5 hover:bg-secondary/80"
             >
               {item.name}
               <button

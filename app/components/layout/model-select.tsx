@@ -28,21 +28,21 @@ import { LLMModel } from "@/services/llm/schema";
 import { toast } from "sonner";
 import { GameMode } from "@/types";
 import { useIsMobile } from "@/hooks/useIsMobile";
-
+import { Trans, useLingui } from "@lingui/react/macro";
 export function ModelSelect() {
   const { model, setModel } = useSettingsStore();
   const [open, setOpen] = useState(false);
   const { models, loading, refresh } = useLLMProviders();
   const { gameMode } = useTaleStore();
   const { isMobile } = useIsMobile();
-
+  const { t } = useLingui();
   const anySupportsToolCalls = models.some((m) => m.supportsToolCalls);
 
   const handleModelChange = useCallback(
     (model: LLMModel) => {
       if (!model.supportsToolCalls && gameMode === GameMode.GM) {
         toast.warning(
-          "Model cannot be confirmed to support tool calling. GM mode may not work properly.",
+          t`Model cannot be confirmed to support tool calling. GM mode may not work properly.`,
         );
       }
       setModel(model);
@@ -203,16 +203,18 @@ export function ModelSelect() {
               className="flex-1 justify-between min-h-[44px]"
               onClick={() => setOpen(true)}
             >
-              {loading ? "Loading..." : (model?.name ?? "Select a model")}
+              {loading ? t`Loading...` : (model?.name ?? t`Select a model`)}
               <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
             <DrawerContent>
               <DrawerHeader>
-                <DrawerTitle>Select Model</DrawerTitle>
+                <DrawerTitle>
+                  <Trans>Select Model</Trans>
+                </DrawerTitle>
               </DrawerHeader>
               <Command className="border-none">
                 <CommandInput
-                  placeholder="Search model..."
+                  placeholder={t`Search model...`}
                   className="rounded-xs"
                 />
                 {modelList}
@@ -247,14 +249,14 @@ export function ModelSelect() {
               aria-expanded={open}
               className="flex-1 justify-between"
             >
-              {loading ? "Loading..." : (model?.name ?? "Select a model")}
+              {loading ? t`Loading...` : (model?.name ?? t`Select a model`)}
               <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-full p-0 rounded-xs">
             <Command>
               <CommandInput
-                placeholder="Search model..."
+                placeholder={t`Search model...`}
                 className="rounded-xs"
               />
               {modelList}
@@ -274,7 +276,9 @@ export function ModelSelect() {
               />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Refresh models</TooltipContent>
+          <TooltipContent>
+            <Trans>Refresh models</Trans>
+          </TooltipContent>
         </Tooltip>
       </div>
       {model && somethingToDisplay && (
@@ -283,14 +287,15 @@ export function ModelSelect() {
             <CardTitle className="text-base">{model.name}</CardTitle>
             {model.contextLength !== undefined && (
               <CardDescription>
-                Context window: {model.contextLength?.toLocaleString()} tokens
+                <Trans>Context window:</Trans>{" "}
+                {model.contextLength?.toLocaleString()} tokens
               </CardDescription>
             )}
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             {model.pricing?.prompt !== undefined && (
               <PriceRow
-                label="Input (prompt)"
+                label={t`Input (prompt)`}
                 perToken={toNumber(model.pricing?.prompt)}
               />
             )}
@@ -299,7 +304,7 @@ export function ModelSelect() {
                 <Separator />
 
                 <PriceRow
-                  label="Output (completion)"
+                  label={t`Output (completion)`}
                   perToken={toNumber(model.pricing?.completion)}
                 />
               </>
@@ -314,17 +319,18 @@ export function ModelSelect() {
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   {toNumber(model.pricing?.request) !== undefined && (
                     <Badge variant="outline">
-                      Request: {formatUSD(toNumber(model.pricing?.request))}
+                      {t`Request:`}{" "}
+                      {formatUSD(toNumber(model.pricing?.request))}
                     </Badge>
                   )}
                   {toNumber(model.pricing?.image) !== undefined && (
                     <Badge variant="outline">
-                      Image: {formatUSD(toNumber(model.pricing?.image))}
+                      {t`Image:`} {formatUSD(toNumber(model.pricing?.image))}
                     </Badge>
                   )}
                   {toNumber(model.pricing?.audio) !== undefined && (
                     <Badge variant="outline">
-                      Audio: {formatUSD(toNumber(model.pricing?.audio))}
+                      {t`Audio:`} {formatUSD(toNumber(model.pricing?.audio))}
                     </Badge>
                   )}
                 </div>

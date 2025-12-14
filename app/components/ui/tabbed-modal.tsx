@@ -1,4 +1,11 @@
-import { useState, useEffect, useMemo, useRef, type ReactNode } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  type ReactNode,
+  type ReactElement,
+} from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
@@ -13,7 +20,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 
 export interface TabDefinition<TId extends string = string> {
   id: TId;
-  label: string;
+  label: ReactElement;
   component: React.ComponentType;
 }
 
@@ -23,7 +30,7 @@ export interface TabbedModalProps<TId extends string> {
   tabs: readonly TabDefinition<TId>[];
   defaultTab?: TId;
   visibleTabs?: readonly TId[];
-  title?: string;
+  title?: ReactElement;
   /** Render extra content for a tab (e.g., notification badge) */
   renderTabExtra?: (tabId: TId) => ReactNode;
 }
@@ -34,7 +41,7 @@ export function TabbedModal<TId extends string>({
   tabs,
   defaultTab,
   visibleTabs,
-  title = "Settings",
+  title,
   renderTabExtra,
 }: TabbedModalProps<TId>) {
   const effectiveDefaultTab = defaultTab ?? tabs[0]?.id;
@@ -116,7 +123,7 @@ export function TabbedModal<TId extends string>({
         <div className="md:grid md:grid-cols-[160px_1fr] gap-0 flex-1 overflow-hidden flex flex-col min-h-0">
           {/* Desktop: Sidebar navigation */}
           <nav className="hidden md:block border-r px-3 py-4 min-h-0">
-            <ScrollArea className="h-full pr-2">
+            <ScrollArea className="h-full pe-2">
               <ul className="flex flex-col gap-1 pb-1">
                 {availableTabs.map((tab) => (
                   <li key={tab.id}>

@@ -1,30 +1,30 @@
 import { LogEntryMode, LogEntryRole, LogEntry } from "@/types/log.type";
+import { msg } from "@lingui/core/macro";
+import { MessageDescriptor } from "@lingui/core";
 
 export interface Action {
   type: LogEntryMode;
   isRolling: boolean;
 }
 
-export function getPlaceholder(action: Action): string {
-  let placeholder = "";
+export function getPlaceholderMessage(action: Action): MessageDescriptor {
   switch (action.type) {
     case LogEntryMode.DO:
-      placeholder = "You...";
-      break;
+      return action.isRolling ? msg`🎲 You...` : msg`You...`;
     case LogEntryMode.SAY:
-      placeholder = "You say...";
-      break;
+      return action.isRolling ? msg`🎲 You say...` : msg`You say...`;
     case LogEntryMode.STORY:
-      placeholder = "...";
-      break;
+    case LogEntryMode.CONTINUE:
+      return action.isRolling ? msg`🎲 ...` : msg`...`;
     case LogEntryMode.DIRECT:
-      placeholder = "Director's Note...";
-      break;
+      return action.isRolling
+        ? msg`🎲 Director's Note...`
+        : msg`Director's Note...`;
+    default: {
+      const _exhaustive: never = action.type;
+      return _exhaustive;
+    }
   }
-  if (action.isRolling) {
-    placeholder = "🎲 " + placeholder;
-  }
-  return placeholder;
 }
 
 export interface LogBlock {

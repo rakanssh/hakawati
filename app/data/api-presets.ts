@@ -1,15 +1,17 @@
 import { ApiPreset, ApiProfileSettings } from "@/types";
+import { msg } from "@lingui/core/macro";
+import { MessageDescriptor } from "@lingui/core";
 
 export interface ApiPresetHelp {
-  description: string;
+  description: MessageDescriptor;
   signupUrl?: string;
   apiKeyUrl?: string;
-  steps: string[];
+  steps: MessageDescriptor[];
 }
 
 export interface ApiPresetConfig {
   id: ApiPreset;
-  label: string;
+  label: MessageDescriptor;
   baseUrl: string;
   /** Whether the base URL can be edited by the user */
   editableUrl: boolean;
@@ -19,105 +21,99 @@ export interface ApiPresetConfig {
 export const apiPresets: ApiPresetConfig[] = [
   {
     id: ApiPreset.OPENROUTER,
-    label: "OpenRouter",
+    label: msg`OpenRouter`,
     baseUrl: "https://openrouter.ai/api/v1",
     editableUrl: false,
     help: {
-      description:
-        "Multi-provider AI gateway with access to hundreds of models from major and minor providers. Pay-as-you-go pricing. Generous free tier after charging once.",
+      description: msg`Multi-provider AI gateway with access to hundreds of models from major and minor providers. Pay-as-you-go pricing. Generous free tier after charging once.`,
       signupUrl: "https://openrouter.ai/auth",
       apiKeyUrl: "https://openrouter.ai/settings/keys",
       steps: [
-        "Sign up for an account at OpenRouter",
-        "Add credits to your account (To access non-free models)",
-        "Go to Settings → Keys",
-        "Create a new API key and paste it here",
+        msg`Sign up for an account at OpenRouter`,
+        msg`Add credits to your account (To access non-free models)`,
+        msg`Go to Settings → Keys`,
+        msg`Create a new API key and paste it here`,
       ],
     },
   },
   {
     id: ApiPreset.NANOGPT,
-    label: "NanoGPT",
+    label: msg`NanoGPT`,
     baseUrl: "https://nano-gpt.com/api/v1",
     editableUrl: false,
     help: {
-      description:
-        "Privacy-focused provider with multiple models on offer. Account optional. Offers subscription plan with unlimited usage on some models.",
+      description: msg`Privacy-focused provider with multiple models on offer. Account optional. Offers subscription plan with unlimited usage on some models.`,
       signupUrl: "https://nano-gpt.com/",
       apiKeyUrl: "https://nano-gpt.com/api",
       steps: [
-        "Visit NanoGPT (Account optional)",
-        "Add funds or subscribe to a plan",
-        "Go to the API section in the dashboard",
-        "Copy your API key and paste it here",
+        msg`Visit NanoGPT (Account optional)`,
+        msg`Add funds or subscribe to a plan`,
+        msg`Go to the API section in the dashboard`,
+        msg`Copy your API key and paste it here`,
       ],
     },
   },
   {
     id: ApiPreset.VENICE,
-    label: "Venice AI",
+    label: msg`Venice AI`,
     baseUrl: "https://api.venice.ai/api/v1",
     editableUrl: false,
     help: {
-      description:
-        "Pay-as-you-go Privacy-focused provider with multiple models on offer.",
+      description: msg`Pay-as-you-go Privacy-focused provider with multiple models on offer.`,
       signupUrl: "https://venice.ai/sign-up",
       apiKeyUrl: "https://venice.ai/settings/api",
       steps: [
-        "Sign up for an account at Venice AI",
-        "Add API funds",
-        "Go to the API section in the dashboard",
-        "Generate an API key and paste it here",
+        msg`Sign up for an account at Venice AI`,
+        msg`Add API funds`,
+        msg`Go to the API section in the dashboard`,
+        msg`Generate an API key and paste it here`,
       ],
     },
   },
   {
     id: ApiPreset.OPENAI,
-    label: "OpenAI",
+    label: msg`OpenAI`,
     baseUrl: "https://api.openai.com/v1",
     editableUrl: false,
     help: {
-      description:
-        "The Official OpenAI API. Requires an OpenAI account with charged credits.",
+      description: msg`The Official OpenAI API. Requires an OpenAI account with charged credits.`,
       signupUrl: "https://platform.openai.com/signup",
       apiKeyUrl: "https://platform.openai.com/api-keys",
       steps: [
-        "Create an OpenAI account",
-        "Add API funds",
-        "Go to API Keys in the dashboard",
-        "Create a new secret key and paste it here",
+        msg`Create an OpenAI account`,
+        msg`Add API funds`,
+        msg`Go to API Keys in the dashboard`,
+        msg`Create a new secret key and paste it here`,
       ],
     },
   },
   {
     id: ApiPreset.GENERIC,
-    label: "Generic OpenAI",
+    label: msg`Generic OpenAI`,
     baseUrl: "",
     editableUrl: true,
     help: {
-      description:
-        "Connect to any other OpenAI-compatible API. Enter the base URL and API key for your provider.",
+      description: msg`Connect to any other OpenAI-compatible API. Enter the base URL and API key for your provider.`,
       steps: [
-        "Get the base URL from your API provider (usually ends with /v1)",
-        "Enter the base URL in the URL field",
-        "Enter your API key (If required)",
+        msg`Get the base URL from your API provider (usually ends with /v1)`,
+        msg`Enter the base URL in the URL field`,
+        msg`Enter your API key (If required)`,
       ],
     },
   },
   {
     id: ApiPreset.LOCAL,
-    label: "Local",
+    label: msg`Local`,
     baseUrl: "",
     editableUrl: true,
     help: {
-      description:
-        "This preset includes auto-detection of local servers (They must expose an OpenAI-compatible endpoint). LM Studio, Ollama, LocalAI, etc.",
+      description: msg`This preset includes auto-detection of local servers (They must expose an OpenAI-compatible endpoint). LM Studio, Ollama, LocalAI, etc.`,
       steps: [
-        "Install a tool that exposes a local inference server",
-        "Download a model",
-        "If the tool requires auth, look up how to generate a key (Ollama requires this)",
-        "Start the server (Different tools have different ways to start the server, look up your tool's documentation)",
-        "Use the Rescan button to detect your server (This will only work if the server is running and accessible)",
+        msg`Install a tool that exposes a local inference server`,
+        msg`Download a model`,
+        msg`If the tool requires auth, look up how to generate a key (Ollama requires this)`,
+        msg`Start the server (Different tools have different ways to start the server, look up your tool's documentation)`,
+        msg`Use the Rescan button to detect your server (This will only work if the server is running and accessible)`,
       ],
     },
   },

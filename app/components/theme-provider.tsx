@@ -1,5 +1,9 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { useSettingsStore } from "@/store";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { DirectionProvider } from "@radix-ui/react-direction";
+import {
+  useSettingsStore,
+  resolveTextDirection,
+} from "@/store/useSettingsStore";
 
 type Theme = "dark" | "light" | "system";
 
@@ -29,6 +33,14 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const uiScale = useSettingsStore((state) => state.uiScale);
   const fontFamily = useSettingsStore((state) => state.fontFamily);
+  const textDirection = useSettingsStore((state) => state.textDirection);
+  const language = useSettingsStore((state) => state.language);
+
+  const resolvedDirection = useMemo(
+    () => resolveTextDirection(textDirection, language),
+    [textDirection, language],
+  );
+
   const [theme, setTheme] = useState<Theme>(() => {
     try {
       return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
@@ -65,6 +77,11 @@ export function ThemeProvider({
     root.style.setProperty("--font-family", fontFamily);
   }, [fontFamily]);
 
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.dir = resolvedDirection;
+  }, [resolvedDirection]);
+
   const value = {
     theme,
     setTheme: (theme: Theme) => {
@@ -78,9 +95,11 @@ export function ThemeProvider({
   };
 
   return (
-    <ThemeProviderContext.Provider {...props} value={value}>
-      {children}
-    </ThemeProviderContext.Provider>
+    <DirectionProvider dir={resolvedDirection}>
+      <ThemeProviderContext.Provider {...props} value={value}>
+        {children}
+      </ThemeProviderContext.Provider>
+    </DirectionProvider>
   );
 }
 

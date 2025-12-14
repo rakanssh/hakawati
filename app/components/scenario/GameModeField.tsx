@@ -7,6 +7,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { GameMode } from "@/types/context.type";
+import { useLingui } from "@lingui/react/macro";
+import { Trans } from "@lingui/react/macro";
 
 export type GameModeFieldProps = {
   value: GameMode;
@@ -14,19 +16,22 @@ export type GameModeFieldProps = {
 };
 
 export function GameModeField({ value, onChange }: GameModeFieldProps) {
+  const { t } = useLingui();
   function getGameModeOptions() {
     return Object.values(GameMode).map((mode) => ({
-      label: mode === GameMode.GM ? "Game Master" : "Story Teller",
+      label: mode === GameMode.GM ? t`Game Master` : t`Story Teller`,
       value: mode,
     }));
   }
 
   return (
     <div className="flex flex-col gap-2">
-      <Label>Initial Game Mode</Label>
+      <Label>
+        <Trans>Initial Game Mode</Trans>
+      </Label>
       <Select value={value} onValueChange={(v) => onChange(v as GameMode)}>
         <SelectTrigger className="w-full sm:w-[240px] rounded-xs">
-          <SelectValue placeholder="Select a game mode" />
+          <SelectValue placeholder={t`Select a game mode`} />
         </SelectTrigger>
         <SelectContent className="rounded-xs">
           {getGameModeOptions().map((option) => (

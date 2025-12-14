@@ -1,6 +1,7 @@
 import { GameMode } from "@/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Swords, BookOpen } from "lucide-react";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 interface GameModeStepProps {
   value: GameMode;
@@ -8,34 +9,37 @@ interface GameModeStepProps {
 }
 
 export function GameModeStep({ value, onChange }: GameModeStepProps) {
+  const { t } = useLingui();
   const modes = [
     {
       id: GameMode.STORY_TELLER,
-      name: "Story Teller",
-      description: "Pure narrative freedom without game mechanics",
+      name: t`Story Teller`,
+      description: t`Pure narrative freedom without game mechanics`,
       icon: BookOpen,
       features: [
-        "Pure storytelling",
-        "No stats or inventory tracking",
-        "Works with all models",
+        t`Pure storytelling`,
+        t`No stats or inventory tracking`,
+        t`Works with all models`,
       ],
     },
     {
       id: GameMode.GM,
-      name: "Game Master (GM)",
-      description: "The AI acts as a Game Master, tracking stats and inventory",
+      name: t`Game Master (GM)`,
+      description: t`The AI acts as a Game Master, tracking stats and inventory`,
       icon: Swords,
       features: [
-        "Stats and inventory tracking",
-        "Structured gameplay",
-        "Best with more capable models. Requires tool calling.",
+        t`Stats and inventory tracking`,
+        t`Structured gameplay`,
+        t`Best with more capable models. Requires tool calling.`,
       ],
     },
   ];
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">Choose your game mode</p>
+      <p className="text-sm text-muted-foreground">
+        <Trans>Choose your game mode</Trans>
+      </p>
       <div className="grid gap-4 md:grid-cols-2">
         {modes.map((mode) => {
           const Icon = mode.icon;
@@ -53,7 +57,7 @@ export function GameModeStep({ value, onChange }: GameModeStepProps) {
               {mode.id === GameMode.GM && (
                 <div className="absolute top-0 right-0 overflow-hidden w-24 h-24 pointer-events-none">
                   <div className="absolute top-4.5 -right-6 w-28 bg-yellow-500 text-yellow-950 text-[9.5px] font-bold text-center py-1 rotate-45 shadow-sm">
-                    &nbsp;&nbsp;&nbsp;EXPERIMENTAL
+                    &nbsp;&nbsp;&nbsp;<Trans>EXPERIMENTAL</Trans>
                   </div>
                 </div>
               )}

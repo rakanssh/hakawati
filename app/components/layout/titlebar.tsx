@@ -15,6 +15,7 @@ export function Titlebar() {
   if (isMobilePlatform) return null;
   return (
     <div
+      dir="ltr"
       data-tauri-drag-region
       className="titlebar-drag fixed top-0 left-0 right-0 z-50 h-8 bg-background border-b"
     >

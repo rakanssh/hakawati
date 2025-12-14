@@ -2,6 +2,7 @@ import { TONES, getRandomElement } from "@/data/quickstart-presets";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Shuffle } from "lucide-react";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 interface ToneStepProps {
   value: string;
@@ -10,6 +11,8 @@ interface ToneStepProps {
 }
 
 export function ToneStep({ value, onChange, onNext }: ToneStepProps) {
+  const { t } = useLingui();
+
   const handleSurpriseMe = () => {
     const randomTone = getRandomElement(TONES);
     onChange(randomTone.id);
@@ -22,7 +25,7 @@ export function ToneStep({ value, onChange, onNext }: ToneStepProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Set the narrative tone for your story
+          <Trans>Set the narrative tone for your story</Trans>
         </p>
         <Button
           variant="outline"
@@ -31,7 +34,7 @@ export function ToneStep({ value, onChange, onNext }: ToneStepProps) {
           className="gap-2"
         >
           <Shuffle className="w-4 h-4" />
-          Surprise Me
+          <Trans>Surprise Me</Trans>
         </Button>
       </div>
 
@@ -49,7 +52,7 @@ export function ToneStep({ value, onChange, onNext }: ToneStepProps) {
               onClick={() => onChange(tone.id)}
             >
               <CardContent className="p-4">
-                <h3 className="font-semibold mb-1">{tone.name}</h3>
+                <h3 className="font-semibold mb-1">{t(tone.name)}</h3>
               </CardContent>
             </Card>
           );
@@ -58,8 +61,10 @@ export function ToneStep({ value, onChange, onNext }: ToneStepProps) {
 
       <div className="pt-4 border-t">
         <p className="text-xs text-muted-foreground">
-          💡 Tip: You can always adjust the tone later by editing the author
-          note
+          <Trans>
+            💡 Tip: You can always adjust the tone later by editing the author
+            note
+          </Trans>
         </p>
       </div>
     </div>

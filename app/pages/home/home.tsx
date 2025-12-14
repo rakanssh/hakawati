@@ -7,6 +7,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useNavigate } from "@tanstack/react-router";
 import { useSettingsStore } from "@/store/useSettingsStore";
 
@@ -21,7 +28,7 @@ import {
   SettingsModal,
   type SettingsTabId,
 } from "@/components/layout/settings";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Globe } from "lucide-react";
 import { QuickstartWizard } from "@/components/quickstart";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 import { useLoadTale } from "@/hooks/useGameSaves";
@@ -29,10 +36,19 @@ import { WhatsNewModal } from "@/components/layout";
 import { useUpdateStore } from "@/store/useUpdateStore";
 import { useVersionStore } from "@/store/useVersionStore";
 import { getVersion } from "@tauri-apps/api/app";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { type Locale, LOCALES, loadLocale } from "@/i18n";
 
 export default function Home() {
   const navigate = useNavigate();
-  const { model, openAiBaseUrl } = useSettingsStore();
+  const { t } = useLingui();
+  const { model, openAiBaseUrl, language, setLanguage } = useSettingsStore();
+
+  const handleLanguageChange = (value: string) => {
+    const locale = value as Locale;
+    setLanguage(locale);
+    void loadLocale(locale);
+  };
   const { name, description, log, id: currentTaleId } = useTaleStore();
   const lastEntry = log.at(-1);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -106,7 +122,23 @@ export default function Home() {
     }
   };
   return (
-    <main className="flex flex-col items-center justify-center h-[calc(100vh-2.5rem)] ">
+    <main className="relative flex flex-col items-center justify-center h-[calc(100vh-2.5rem)]">
+      <div className="absolute top-4 right-4">
+        <Select value={language} onValueChange={handleLanguageChange}>
+          <SelectTrigger className="w-auto gap-2 border-none bg-transparent hover:bg-accent/50 transition-colors">
+            <Globe className="h-4 w-4 text-muted-foreground" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align="end">
+            {Object.entries(LOCALES).map(([code, name]) => (
+              <SelectItem key={code} value={code}>
+                {name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <Card className="w-full max-w-xl">
         <CardContent className="flex flex-col gap-2">
           <div className="flex flex-col gap-2">
@@ -115,18 +147,20 @@ export default function Home() {
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 <div className="flex-1">
                   <div className="font-semibold leading-tight">
-                    Setup required
+                    <Trans>Setup required</Trans>
                   </div>
                   <p className="text-sm">
-                    Missing settings: {issues.join(", ")}. Configure your API in
-                    Settings.
+                    <Trans>
+                      Missing settings: {issues.join(", ")}. Configure your API
+                      in Settings.
+                    </Trans>
                   </p>
                 </div>
                 <Button
                   variant="destructive"
                   onClick={() => setSettingsOpen(true)}
                 >
-                  Open Settings
+                  <Trans>Open Settings</Trans>
                 </Button>
               </div>
             )}
@@ -134,15 +168,15 @@ export default function Home() {
               <div className="border border-accent/50 bg-accent/20 p-3">
                 <div className="flex items-center justify-between">
                   <div className="font-semibold leading-tight">
-                    {name || "Untitled"}
+                    {name || t`Untitled`}
                   </div>
                   <Badge variant="outline" className="text-[10px] ml-auto">
-                    {log.length} {log.length === 1 ? "turn" : "turns"}
+                    {log.length} {log.length === 1 ? t`turn` : t`turns`}
                   </Badge>
                 </div>
                 <div className="mt-1.5">
                   <p className="text-sm text-mutesd-foreground line-clamp-2">
-                    {(lastEntry?.text ?? description) || "No description yet."}
+                    {(lastEntry?.text ?? description) || t`No description yet.`}
                   </p>
                 </div>
               </div>
@@ -152,7 +186,7 @@ export default function Home() {
                 onClick={() => navigate({ to: "/play" })}
                 disabled={log.length === 0 || hasIssues}
               >
-                Continue
+                <Trans>Continue</Trans>
               </Button>
             )}
             <Button
@@ -160,19 +194,19 @@ export default function Home() {
               disabled={hasIssues}
               className="gap-2 bg-primary"
             >
-              Quickstart
+              <Trans>Quickstart</Trans>
             </Button>
             <Button
               variant="outline"
               onClick={() => navigate({ to: "/tales" })}
             >
-              My Tales
+              <Trans>My Tales</Trans>
             </Button>
             <Button
               variant="outline"
               onClick={() => navigate({ to: "/scenarios" })}
             >
-              Scenarios
+              <Trans>Scenarios</Trans>
             </Button>
           </div>
         </CardContent>
@@ -184,61 +218,101 @@ export default function Home() {
         className="w-full max-w-xl rounded-none mt-4"
       >
         <AccordionItem value="how">
-          <AccordionTrigger>How to play</AccordionTrigger>
+          <AccordionTrigger>
+            <Trans>How to play</Trans>
+          </AccordionTrigger>
           <AccordionContent>
             <ul className="list-disc pl-4 space-y-1 text-sm">
-              <li>Open Settings → set API URL/key and pick a model.</li>
               <li>
-                <strong>Quick Start:</strong> Click &quot;Quickstart&quot; to
-                jump right in with a guided wizard, or
+                <Trans>Open Settings → set API URL/key and pick a model.</Trans>
               </li>
-              <li>Go to Scenarios → Create or Import from Clipboard.</li>
-              <li>Go to Scenarios → New Tale.</li>
               <li>
-                Type actions, the AI continues. Available actions:
+                <strong>
+                  <Trans>Quick Start:</Trans>
+                </strong>{" "}
+                <Trans>
+                  Click &quot;Quickstart&quot; to jump right in with a guided
+                  wizard, or
+                </Trans>
+              </li>
+              <li>
+                <Trans>
+                  Go to Scenarios → Create or Import from Clipboard.
+                </Trans>
+              </li>
+              <li>
+                <Trans>Go to Scenarios → New Tale.</Trans>
+              </li>
+              <li>
+                <Trans>
+                  Type actions, the AI continues. Available actions:
+                </Trans>
                 <ul className="list-disc pl-4 space-y-1 text-sm">
-                  <li>Do: Act in the story.</li>
-                  <li>Say: Speak something out loud.</li>
                   <li>
-                    Story: Write a segment of text that the AI will treat as
-                    part of the story and continue from.
+                    <Trans>Do: Act in the story.</Trans>
                   </li>
                   <li>
-                    Direct: An out of character note telling teh AI to do
-                    something.
+                    <Trans>Say: Speak something out loud.</Trans>
                   </li>
-                  <li>Continue: Continue the story.</li>
                   <li>
-                    Retry: Retry the last message. Can only be done if the last
-                    message is by the AI.
+                    <Trans>
+                      Story: Write a segment of text that the AI will treat as
+                      part of the story and continue from.
+                    </Trans>
+                  </li>
+                  <li>
+                    <Trans>
+                      Direct: An out of character note telling the AI to do
+                      something.
+                    </Trans>
+                  </li>
+                  <li>
+                    <Trans>Continue: Continue the story.</Trans>
+                  </li>
+                  <li>
+                    <Trans>
+                      Retry: Retry the last message. Can only be done if the
+                      last message is by the AI.
+                    </Trans>
                   </li>
                 </ul>
               </li>
               <li>
-                In Game Master mode, the AI keeps track of stats and inventory.
+                <Trans>
+                  In Game Master mode, the AI keeps track of stats and
+                  inventory.
+                </Trans>
               </li>
             </ul>
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="llms">
-          <AccordionTrigger>Supported Providers</AccordionTrigger>
+          <AccordionTrigger>
+            <Trans>Supported Providers</Trans>
+          </AccordionTrigger>
           <AccordionContent>
             <ul className="list-disc pl-4 space-y-1 text-sm">
               <li>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="font-bold underline">
-                      OpenAI-compatible
+                      <Trans>OpenAI-compatible</Trans>
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    Works with any OpenAI-compatible API (cloud or local).
+                    <Trans>
+                      Works with any OpenAI-compatible API (cloud or local).
+                    </Trans>
                   </TooltipContent>
                 </Tooltip>
               </li>
-              <li>Examples (cloud): OpenRouter, OpenAI.</li>
-              <li>Examples (local): Ollama, LocalAI, LLM Studio.</li>
+              <li>
+                <Trans>Examples (cloud): OpenRouter, OpenAI.</Trans>
+              </li>
+              <li>
+                <Trans>Examples (local): Ollama, LocalAI, LLM Studio.</Trans>
+              </li>
             </ul>
           </AccordionContent>
         </AccordionItem>

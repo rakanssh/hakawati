@@ -28,9 +28,11 @@ import {
   TrashIcon,
 } from "lucide-react";
 import placeholderImage from "@/assets/scen-ph.png";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 export default function TalesHome() {
   const navigate = useNavigate();
+  const { t } = useLingui();
   const {
     items,
     loading,
@@ -63,19 +65,27 @@ export default function TalesHome() {
           onClick={() => navigate({ to: "/" })}
           className="mt-1.5"
         >
-          <ArrowLeftIcon className="w-4 h-4" />
+          <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
         </Button>
         <div className="flex flex-col">
-          <Label className="text-xl">Tales</Label>
+          <Label className="text-xl">
+            <Trans>Tales</Trans>
+          </Label>
           <span className="text-sm text-muted-foreground">
-            Browse and load saved tales
+            <Trans>Browse and load saved tales</Trans>
           </span>
         </div>
       </div>
       <Separator />
-      {loading && <div className="text-sm text-muted-foreground">Loading…</div>}
+      {loading && (
+        <div className="text-sm text-muted-foreground">
+          <Trans>Loading…</Trans>
+        </div>
+      )}
       {Boolean(error) && (
-        <div className="text-sm text-red-500">Failed to load tales.</div>
+        <div className="text-sm text-red-500">
+          <Trans>Failed to load tales.</Trans>
+        </div>
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {items.map(
@@ -98,13 +108,13 @@ export default function TalesHome() {
                   {thumbnail ? (
                     <img
                       src={bytesToObjectUrl(thumbnail as unknown as Uint8Array)}
-                      alt={`${name} thumbnail`}
+                      alt={t`${name} thumbnail`}
                       className="h-48 w-full object-cover"
                     />
                   ) : (
                     <img
                       src={placeholderImage}
-                      alt={`${name} thumbnail`}
+                      alt={t`${name} thumbnail`}
                       className="h-48 w-full object-cover"
                     />
                   )}
@@ -115,7 +125,7 @@ export default function TalesHome() {
                           variant="secondary"
                           size="icon"
                           className="h-6 w-6 rounded-full pb-1.5 bg-accent/50"
-                          aria-label="Tale actions"
+                          aria-label={t`Tale actions`}
                         >
                           ...
                         </Button>
@@ -133,7 +143,8 @@ export default function TalesHome() {
                             }
                             className="text-xs"
                           >
-                            <PencilIcon className="w-4 h-4 mr-2" /> Scenario
+                            <PencilIcon className="w-4 h-4 me-2" />{" "}
+                            <Trans>Scenario</Trans>
                           </DropdownMenuItem>
                         )}
                         {!scenarioHead?.id && (
@@ -142,8 +153,8 @@ export default function TalesHome() {
                             onClick={() => handleSaveAsScenario(id)}
                             className="text-xs"
                           >
-                            <FilePlus2Icon className="w-4 h-4 mr-2" /> Save as
-                            Scenario
+                            <FilePlus2Icon className="w-4 h-4 me-2" />{" "}
+                            <Trans>Save as Scenario</Trans>
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem
@@ -152,7 +163,8 @@ export default function TalesHome() {
                           variant="destructive"
                           className="text-xs"
                         >
-                          <TrashIcon className="w-4 h-4 mr-2" /> Delete
+                          <TrashIcon className="w-4 h-4 me-2" />{" "}
+                          <Trans>Delete</Trans>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -164,7 +176,9 @@ export default function TalesHome() {
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent side="top">
-                      Last played: {formatExactDateTime(updatedAt)}
+                      <Trans>
+                        Last played: {formatExactDateTime(updatedAt)}
+                      </Trans>
                     </TooltipContent>
                   </Tooltip>
                 </div>
@@ -173,7 +187,7 @@ export default function TalesHome() {
                 <div className="flex items-center gap-2">
                   <span className="font-bold">{name}</span>
                   <Badge variant="outline" className="text-xs">
-                    {logCount} {logCount === 1 ? "turn" : "turns"}
+                    {logCount} {logCount === 1 ? t`turn` : t`turns`}
                   </Badge>
                 </div>
                 <p className="line-clamp-3 text-sm text-muted-foreground h-16 rounded-xs">
@@ -187,7 +201,7 @@ export default function TalesHome() {
                   }}
                   className="w-full "
                 >
-                  Load Tale
+                  <Trans>Load Tale</Trans>
                 </Button>
               </CardContent>
             </Card>
@@ -201,17 +215,19 @@ export default function TalesHome() {
             disabled={page <= 1}
             onClick={() => setPage(Math.max(1, page - 1))}
           >
-            Prev
+            <Trans>Prev</Trans>
           </Button>
           <span className="text-sm text-muted-foreground">
-            Page {page} of {Math.max(1, Math.ceil(total / limit) || 1)}
+            <Trans>
+              Page {page} of {Math.max(1, Math.ceil(total / limit) || 1)}
+            </Trans>
           </span>
           <Button
             variant="secondary"
             disabled={page * limit >= total}
             onClick={() => setPage(page + 1)}
           >
-            Next
+            <Trans>Next</Trans>
           </Button>
         </div>
       )}

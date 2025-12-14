@@ -34,6 +34,8 @@ import { initTale } from "@/services/tale.service";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 import { nanoid } from "nanoid";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useLingui as useLinguiCore } from "@lingui/react";
 
 export interface QuickstartState {
   gameMode: GameMode;
@@ -59,6 +61,8 @@ export function QuickstartWizard({
   onOpenChange,
 }: QuickstartWizardProps) {
   const navigate = useNavigate();
+  const { t } = useLingui();
+  const { _ } = useLinguiCore();
   const taleStore = useTaleStore();
   const { setLastPlayedTaleId } = useLastPlayedStore();
 
@@ -91,8 +95,8 @@ export function QuickstartWizard({
 
   const steps = [
     {
-      title: "Game Mode",
-      description: "Choose your play style",
+      title: t`Game Mode`,
+      description: t`Choose your play style`,
       component: (
         <GameModeStep
           value={state.gameMode}
@@ -102,8 +106,8 @@ export function QuickstartWizard({
       canProgress: true,
     },
     {
-      title: "Setting",
-      description: "Pick your world",
+      title: t`Setting`,
+      description: t`Pick your world`,
       component: (
         <SettingStep
           value={state.setting}
@@ -125,8 +129,8 @@ export function QuickstartWizard({
         state.setting !== "custom" || state.customSetting.trim().length > 0,
     },
     {
-      title: "Archetype",
-      description: "Define your character",
+      title: t`Archetype`,
+      description: t`Define your character`,
       component: (
         <ArchetypeStep
           setting={state.setting}
@@ -147,8 +151,8 @@ export function QuickstartWizard({
         state.customArchetype.trim().length > 0,
     },
     {
-      title: "Character Name",
-      description: "Name your hero",
+      title: t`Character Name`,
+      description: t`Name your hero`,
       component: (
         <CharacterNameStep
           value={state.characterName}
@@ -158,8 +162,8 @@ export function QuickstartWizard({
       canProgress: state.characterName.trim().length > 0,
     },
     {
-      title: "Tone",
-      description: "Set the atmosphere",
+      title: t`Tone`,
+      description: t`Set the atmosphere`,
       component: (
         <ToneStep
           value={state.tone}
@@ -170,8 +174,8 @@ export function QuickstartWizard({
       canProgress: true,
     },
     {
-      title: "Description & Style",
-      description: "Customize your scenario and narration style",
+      title: t`Description & Style`,
+      description: t`Customize your scenario and narration style`,
       component: (
         <DescriptionStyleStep
           description={
@@ -183,6 +187,7 @@ export function QuickstartWizard({
                 : state.archetype,
               state.setting === "custom" ? state.customSetting : state.setting,
               state.tone,
+              _,
             )
           }
           style={
@@ -204,8 +209,8 @@ export function QuickstartWizard({
 
   if (state.gameMode === GameMode.GM) {
     steps.push({
-      title: "Stats & Inventory",
-      description: "Configure your character",
+      title: t`Stats & Inventory`,
+      description: t`Configure your character`,
       component: (
         <StatsInventoryStep
           stats={state.stats}
@@ -250,7 +255,7 @@ export function QuickstartWizard({
         state.tone,
       );
 
-    const taleName = generateTaleName(state.characterName, state.setting);
+    const taleName = generateTaleName(state.characterName, state.setting, _);
     const taleDescription =
       state.description ||
       generateDescription(
@@ -260,6 +265,7 @@ export function QuickstartWizard({
           : state.archetype,
         state.setting === "custom" ? state.customSetting : state.setting,
         state.tone,
+        _,
       );
 
     let finalStats = state.stats;
@@ -269,13 +275,19 @@ export function QuickstartWizard({
       const archetypeData = ARCHETYPES[state.setting]?.find(
         (a) => a.id === state.archetype,
       );
-      finalStats = archetypeData?.defaultStats || [
-        { name: "HP", value: 100, range: [0, 100] },
-      ];
+      finalStats = (archetypeData?.defaultStats || []).map((stat) => ({
+        name: _(stat.name),
+        value: stat.value,
+        range: stat.range,
+        description: stat.description ? _(stat.description) : undefined,
+      }));
+      if (finalStats.length === 0) {
+        finalStats = [{ name: "HP", value: 100, range: [0, 100] }];
+      }
       finalInventory = (archetypeData?.defaultInventory || []).map((item) => ({
         id: nanoid(12),
-        name: item.name,
-        description: item.description,
+        name: _(item.name),
+        description: item.description ? _(item.description) : undefined,
       }));
     }
 
@@ -317,7 +329,7 @@ export function QuickstartWizard({
     } catch (error) {
       console.error("Failed to save tale:", error);
     }
-  }, [state, taleStore, onOpenChange, navigate, setLastPlayedTaleId]);
+  }, [state, taleStore, onOpenChange, navigate, setLastPlayedTaleId, _]);
 
   const handleKeyPress = useCallback(
     (event: KeyboardEvent) => {
@@ -388,27 +400,29 @@ export function QuickstartWizard({
               onClick={handleBack}
               disabled={isFirstStep}
             >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              Back
+              <ChevronLeft className="w-4 h-4 mr-1 rtl:rotate-180" />
+              <Trans>Back</Trans>
             </Button>
             <div className="text-sm text-muted-foreground self-center">
-              Step {currentStep + 1} of {steps.length}
+              <Trans>
+                Step {currentStep + 1} of {steps.length}
+              </Trans>
             </div>
-            {!isLastStep ? (
-              <Button
-                onClick={handleNext}
-                disabled={!currentStepData.canProgress}
-              >
-                Next
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            ) : (
+            {isLastStep ? (
               <Button
                 onClick={handleComplete}
                 disabled={!currentStepData.canProgress}
                 className="bg-primary"
               >
-                Start Adventure
+                <Trans>Start Adventure</Trans>
+              </Button>
+            ) : (
+              <Button
+                onClick={handleNext}
+                disabled={!currentStepData.canProgress}
+              >
+                <Trans>Next</Trans>
+                <ChevronRight className="w-4 h-4 ml-1 rtl:rotate-180" />
               </Button>
             )}
           </div>

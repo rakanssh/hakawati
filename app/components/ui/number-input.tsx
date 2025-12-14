@@ -115,7 +115,7 @@ export function NumberInput({
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
       className={cn(
-        align === "right" ? "text-right" : "text-left",
+        align === "right" ? "text-end" : "text-start",
         "font-mono",
         className,
       )}

@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 function ProgressBar({ stat }: { stat: Stat }) {
   const progress = (stat.value / stat.range[1]) * 100;
@@ -32,6 +33,7 @@ const StatsButton = ({ setOpen }: { setOpen: (open: boolean) => void }) => (
 
 export function StatsCard({ className }: { className?: string }) {
   const { stats, addToStats, updateStat, removeFromStats } = useTaleStore();
+  const { t } = useLingui();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -63,17 +65,21 @@ export function StatsCard({ className }: { className?: string }) {
     <div className={cn("relative flex flex-col overflow-hidden", className)}>
       <div className="px-1 flex-shrink-0 pt-1 mt-1">
         <div className="relative flex flex-row justify-between">
-          <div className="absolute right-0">
+          <div className="absolute end-0">
             <StatsButton setOpen={setOpen} />
           </div>
-          <Label className="text-sm pb-1">Stats</Label>
+          <Label className="text-sm pb-1">
+            <Trans>Stats</Trans>
+          </Label>
         </div>
         <Separator className="mb-1" />
       </div>
       <ScrollArea className="flex-1 min-h-0">
         <div className="px-1 pb-1">
           {stats.length === 0 ? (
-            <Label className="text-muted-foreground text-xs">Nothing...</Label>
+            <Label className="text-muted-foreground text-xs">
+              <Trans>Nothing...</Trans>
+            </Label>
           ) : (
             <div className="flex flex-col gap-4">
               {stats.map((stat) => (
@@ -92,7 +98,7 @@ export function StatsCard({ className }: { className?: string }) {
                         updateStat(stat.name, { name: newName.trim() });
                       }}
                       onRemove={() => removeFromStats(stat.name)}
-                      className="cursor-pointer border-white/35 text-wrap whitespace-normal text-left"
+                      className="cursor-pointer border-white/35 text-wrap whitespace-normal text-start"
                     />
                     <div className="flex items-baseline gap-1">
                       <InlineEditableNumber
@@ -128,17 +134,21 @@ export function StatsCard({ className }: { className?: string }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Stat</DialogTitle>
+            <DialogTitle>
+              <Trans>Add Stat</Trans>
+            </DialogTitle>
             <DialogDescription>
-              Create a new stat with initial and maximum values.
+              <Trans>Create a new stat with initial and maximum values.</Trans>
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4 w-full">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="stat-name">Name</Label>
+              <Label htmlFor="stat-name">
+                <Trans>Name</Trans>
+              </Label>
               <Input
                 id="stat-name"
-                placeholder="Stat name"
+                placeholder={t`Stat name`}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -148,22 +158,26 @@ export function StatsCard({ className }: { className?: string }) {
 
             <div className="flex gap-4">
               <div className="flex flex-col gap-2 flex-1">
-                <Label htmlFor="stat-current">Current Value</Label>
+                <Label htmlFor="stat-current">
+                  <Trans>Current Value</Trans>
+                </Label>
                 <Input
                   id="stat-current"
                   type="number"
-                  placeholder="0"
+                  placeholder={t`0`}
                   value={currentValue}
                   onChange={(e) => setCurrentValue(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                 />
               </div>
               <div className="flex flex-col gap-2 flex-1">
-                <Label htmlFor="stat-max">Maximum Value</Label>
+                <Label htmlFor="stat-max">
+                  <Trans>Maximum Value</Trans>
+                </Label>
                 <Input
                   id="stat-max"
                   type="number"
-                  placeholder="100"
+                  placeholder={t`100`}
                   value={maxValue}
                   onChange={(e) => setMaxValue(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -171,10 +185,12 @@ export function StatsCard({ className }: { className?: string }) {
               </div>
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="stat-description">Description (optional)</Label>
+              <Label htmlFor="stat-description">
+                <Trans>Description (optional)</Trans>
+              </Label>
               <Input
                 id="stat-description"
-                placeholder="Add context for the AI..."
+                placeholder={t`Add context for the AI...`}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -183,11 +199,11 @@ export function StatsCard({ className }: { className?: string }) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
+              <Trans>Cancel</Trans>
             </Button>
             <Button onClick={handleSubmit} disabled={!canSubmit}>
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Add Stat
+              <PlusIcon className="w-4 h-4 me-2" />
+              <Trans>Add Stat</Trans>
             </Button>
           </DialogFooter>
         </DialogContent>

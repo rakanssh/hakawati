@@ -14,10 +14,10 @@ export function MobilePlayHeader() {
 
   return (
     <div
-      className="fixed top-0 right-0 z-50 flex items-center gap-2 p-2"
+      className="fixed top-0 end-0 z-50 flex items-center gap-2 p-2"
       style={{
         paddingTop: "calc(0.5rem + env(safe-area-inset-top))",
-        paddingRight: "calc(0.5rem + env(safe-area-inset-right))",
+        paddingInlineEnd: "calc(0.5rem + env(safe-area-inset-right))",
       }}
     >
       <Button
@@ -26,7 +26,7 @@ export function MobilePlayHeader() {
         onClick={() => navigate({ to: "/" })}
         className="h-8 w-8 p-0 bg-input/75 text-foreground rounded-full"
       >
-        <ArrowLeftIcon className="w-4 h-4" />
+        <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
       </Button>
       <TaleSettingsButton
         variant="default"

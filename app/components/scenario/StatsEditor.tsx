@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { NumberInput } from "@/components/ui/number-input";
 import { Stat } from "@/types/stats.type";
+import { useLingui } from "@lingui/react/macro";
+import { Trans } from "@lingui/react/macro";
 
 export type StatsEditorProps = {
   stats: Stat[];
@@ -27,10 +29,12 @@ export function StatsEditor({
   onRemove,
 }: StatsEditorProps) {
   const [newName, setNewName] = useState("");
-
+  const { t } = useLingui();
   return (
     <div className="flex flex-col gap-2">
-      <Label>Initial Stats</Label>
+      <Label>
+        <Trans>Initial Stats</Trans>
+      </Label>
       <div className="flex flex-col gap-3">
         {stats.map((stat) => (
           <div
@@ -48,7 +52,7 @@ export function StatsEditor({
                 onClick={() => onRemove(stat.name)}
                 className="w-24"
               >
-                Remove
+                <Trans>Remove</Trans>
               </Button>
             </div>
             <Input
@@ -58,11 +62,13 @@ export function StatsEditor({
                   description: e.target.value || undefined,
                 })
               }
-              placeholder="Description (optional)"
+              placeholder={t`Description (optional)`}
               className="text-sm text-muted-foreground"
             />
             <div className="flex items-center gap-2">
-              <Label className="text-xs text-muted-foreground">Value</Label>
+              <Label className="text-xs text-muted-foreground">
+                <Trans>Value</Trans>
+              </Label>
               <NumberInput
                 value={stat.value}
                 min={stat.range[0]}
@@ -71,7 +77,9 @@ export function StatsEditor({
                 className="w-24"
               />
               <span>/</span>
-              <Label className="text-xs text-muted-foreground">Max</Label>
+              <Label className="text-xs text-muted-foreground">
+                <Trans>Max</Trans>
+              </Label>
               <NumberInput
                 value={stat.range[1]}
                 min={stat.value}
@@ -83,7 +91,7 @@ export function StatsEditor({
         ))}
         <div className="flex items-center gap-2">
           <Input
-            placeholder="Add stat name"
+            placeholder={t`Add stat name`}
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => {
@@ -100,7 +108,7 @@ export function StatsEditor({
               setNewName("");
             }}
           >
-            Add Stat
+            <Trans>Add Stat</Trans>
           </Button>
         </div>
       </div>

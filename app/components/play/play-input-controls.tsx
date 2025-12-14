@@ -25,10 +25,11 @@ import {
 } from "lucide-react";
 import { LogEntryMode } from "@/types/log.type";
 import { LogControl } from "@/components/play/log";
-import { getPlaceholder, Action } from "@/lib/play-utils";
+import { getPlaceholderMessage, Action } from "@/lib/play-utils";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 interface PlayInputControlsProps {
   action: Action;
@@ -55,6 +56,7 @@ export function PlayInputControls({
   onContinue,
   onRetry,
 }: PlayInputControlsProps) {
+  const { t } = useLingui();
   const { isMobileViewport, isMobilePlatform } = useIsMobile();
   const [isExpanded, setIsExpanded] = useState(!isMobileViewport);
 
@@ -91,15 +93,15 @@ export function PlayInputControls({
   const getModeLabel = () => {
     switch (action.type) {
       case LogEntryMode.DO:
-        return "Act";
+        return t`Act`;
       case LogEntryMode.SAY:
-        return "Say";
+        return t`Say`;
       case LogEntryMode.STORY:
-        return "Story";
+        return t`Story`;
       case LogEntryMode.DIRECT:
-        return "Direct";
+        return t`Direct`;
       default:
-        return "Act";
+        return t`Act`;
     }
   };
 
@@ -133,9 +135,9 @@ export function PlayInputControls({
             className="w-full !h-10"
             onClick={() => setIsExpanded(true)}
             disabled={loading}
-            aria-label="Take a turn"
+            aria-label={t`Take a turn`}
           >
-            Take a Turn
+            <Trans>Take a Turn</Trans>
           </Button>
         </div>
       )}
@@ -150,10 +152,10 @@ export function PlayInputControls({
               size="default"
               className="shrink-0 h-10"
               onClick={() => setIsExpanded(false)}
-              aria-label="Go back"
+              aria-label={t`Go back`}
             >
               <ChevronLeftIcon className="w-4 h-4" />
-              Back
+              <Trans>Back</Trans>
             </Button>
 
             <Select
@@ -167,7 +169,7 @@ export function PlayInputControls({
             >
               <SelectTrigger
                 className="flex-1 rounded-xs !h-10"
-                aria-label="Select action mode"
+                aria-label={t`Select action mode`}
               >
                 <SelectValue>
                   <div className="flex items-center gap-2">
@@ -180,25 +182,33 @@ export function PlayInputControls({
                 <SelectItem value={LogEntryMode.DO}>
                   <div className="flex items-center gap-2">
                     <HandIcon className="w-4 h-4" />
-                    <span>Act</span>
+                    <span>
+                      <Trans>Act</Trans>
+                    </span>
                   </div>
                 </SelectItem>
                 <SelectItem value={LogEntryMode.SAY}>
                   <div className="flex items-center gap-2">
                     <SpeechIcon className="w-4 h-4" />
-                    <span>Say</span>
+                    <span>
+                      <Trans>Say</Trans>
+                    </span>
                   </div>
                 </SelectItem>
                 <SelectItem value={LogEntryMode.STORY}>
                   <div className="flex items-center gap-2">
                     <BookIcon className="w-4 h-4" />
-                    <span>Story</span>
+                    <span>
+                      <Trans>Story</Trans>
+                    </span>
                   </div>
                 </SelectItem>
                 <SelectItem value={LogEntryMode.DIRECT}>
                   <div className="flex items-center gap-2">
                     <MegaphoneIcon className="w-4 h-4" />
-                    <span>Direct</span>
+                    <span>
+                      <Trans>Direct</Trans>
+                    </span>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -222,12 +232,14 @@ export function PlayInputControls({
                     })
                   }
                   disabled={loading}
-                  aria-label="Roll a dice"
+                  aria-label={t`Roll a dice`}
                 >
                   <DicesIcon strokeWidth={1.5} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top">Roll a dice</TooltipContent>
+              <TooltipContent side="top">
+                <Trans>Roll a dice</Trans>
+              </TooltipContent>
             </Tooltip>
           </div>
 
@@ -236,7 +248,7 @@ export function PlayInputControls({
             <div className="relative flex-1 min-w-0">
               <div className="h-9" aria-hidden="true" />
               <Textarea
-                placeholder={getPlaceholder(action)}
+                placeholder={t(getPlaceholderMessage(action))}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -248,7 +260,7 @@ export function PlayInputControls({
                 }}
                 rows={1}
                 className="absolute inset-x-0 bottom-0 resize-none !bg-accent min-h-10"
-                aria-label="Enter your action"
+                aria-label={t`Enter your action`}
               />
             </div>
 
@@ -258,7 +270,7 @@ export function PlayInputControls({
               disabled={canStop ? false : saving || loading}
               size="icon"
               className="w-10 h-10"
-              aria-label={canStop ? "Stop generating" : "Submit action"}
+              aria-label={canStop ? t`Stop generating` : t`Submit action`}
             >
               {canStop ? (
                 <SquareIcon className="w-4 h-4" />
@@ -292,12 +304,14 @@ export function PlayInputControls({
                 })
               }
               disabled={loading}
-              aria-label="Roll a dice"
+              aria-label={t`Roll a dice`}
             >
               <DicesIcon strokeWidth={1.5} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">Roll a dice</TooltipContent>
+          <TooltipContent side="top">
+            <Trans>Roll a dice</Trans>
+          </TooltipContent>
         </Tooltip>
 
         <Select
@@ -311,7 +325,7 @@ export function PlayInputControls({
         >
           <SelectTrigger
             className="w-40 rounded-xs shrink-0 !h-10"
-            aria-label="Select action mode"
+            aria-label={t`Select action mode`}
           >
             <SelectValue>
               <div className="flex items-center gap-2">
@@ -324,25 +338,33 @@ export function PlayInputControls({
             <SelectItem value={LogEntryMode.DO}>
               <div className="flex items-center gap-2">
                 <HandIcon className="w-4 h-4" />
-                <span>Act</span>
+                <span>
+                  <Trans>Act</Trans>
+                </span>
               </div>
             </SelectItem>
             <SelectItem value={LogEntryMode.SAY}>
               <div className="flex items-center gap-2">
                 <SpeechIcon className="w-4 h-4" />
-                <span>Say</span>
+                <span>
+                  <Trans>Say</Trans>
+                </span>
               </div>
             </SelectItem>
             <SelectItem value={LogEntryMode.STORY}>
               <div className="flex items-center gap-2">
                 <BookIcon className="w-4 h-4" />
-                <span>Story</span>
+                <span>
+                  <Trans>Story</Trans>
+                </span>
               </div>
             </SelectItem>
             <SelectItem value={LogEntryMode.DIRECT}>
               <div className="flex items-center gap-2">
                 <MegaphoneIcon className="w-4 h-4" />
-                <span>Direct</span>
+                <span>
+                  <Trans>Direct</Trans>
+                </span>
               </div>
             </SelectItem>
           </SelectContent>
@@ -351,7 +373,7 @@ export function PlayInputControls({
         <div className="relative flex-1 min-w-0">
           <div className="h-9" aria-hidden="true" />
           <Textarea
-            placeholder={getPlaceholder(action)}
+            placeholder={t(getPlaceholderMessage(action))}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -363,7 +385,7 @@ export function PlayInputControls({
             }}
             rows={1}
             className="absolute inset-x-0 bottom-0 resize-none !bg-accent min-h-10"
-            aria-label="Enter your action"
+            aria-label={t`Enter your action`}
           />
         </div>
 
@@ -372,7 +394,7 @@ export function PlayInputControls({
           onClick={primaryHandler}
           disabled={canStop ? false : saving || loading}
           className="shrink-0 h-10 w-10"
-          aria-label={canStop ? "Stop generating" : "Submit action"}
+          aria-label={canStop ? t`Stop generating` : t`Submit action`}
         >
           {canStop ? (
             <SquareIcon className="w-4 h-4" />

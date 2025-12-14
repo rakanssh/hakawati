@@ -8,6 +8,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import { useTaleStore } from "@/store";
+import { Trans } from "@lingui/react/macro";
 import { GameMode } from "@/types";
 
 export function TaleSettingsButton({
@@ -47,7 +48,9 @@ export function TaleSettingsButton({
             <BookOpen className="w-4 h-4" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="top">Tale Settings</TooltipContent>
+        <TooltipContent side="top">
+          <Trans>Tale Settings</Trans>
+        </TooltipContent>
       </Tooltip>
 
       <SettingsModal

@@ -9,8 +9,11 @@ import { InventoryItem } from "@/components/ui/inventory-item";
 import { Plus, Package, BarChart3 } from "lucide-react";
 import { useState } from "react";
 import type { Stat } from "@/types/stats.type";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { plural } from "@lingui/core/macro";
 
 export default function SettingsInventoryStats() {
+  const { t } = useLingui();
   const {
     stats,
     inventory,
@@ -90,25 +93,31 @@ export default function SettingsInventoryStats() {
       <section className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <div className="flex items-center gap-2 mb-4">
           <BarChart3 className="h-5 w-5 text-primary" />
-          <Label className="text-base font-semibold">Stats</Label>
+          <Label className="text-base font-semibold">
+            <Trans>Stats</Trans>
+          </Label>
           <span className="text-xs text-muted-foreground ml-auto">
-            {stats.length} {stats.length === 1 ? "stat" : "stats"}
+            {plural(stats.length, { one: "# stat", other: "# stats" })}
           </span>
         </div>
 
         <div className="flex flex-col gap-2 mb-4">
           <div className="flex gap-2 items-end">
             <div className="flex-1 flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground">Name</span>
+              <span className="text-xs text-muted-foreground">
+                <Trans>Name</Trans>
+              </span>
               <Input
-                placeholder="Stat name"
+                placeholder={t`Stat name`}
                 value={newStatName}
                 onChange={(e) => setNewStatName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground">Current</span>
+              <span className="text-xs text-muted-foreground">
+                <Trans>Current</Trans>
+              </span>
               <Input
                 type="number"
                 value={newStatValue}
@@ -117,7 +126,9 @@ export default function SettingsInventoryStats() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground">Max</span>
+              <span className="text-xs text-muted-foreground">
+                <Trans>Max</Trans>
+              </span>
               <Input
                 type="number"
                 value={newStatMax}
@@ -135,10 +146,10 @@ export default function SettingsInventoryStats() {
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">
-              Description (optional)
+              <Trans>Description (optional)</Trans>
             </span>
             <Input
-              placeholder="Add context for the AI..."
+              placeholder={t`Add context for the AI...`}
               value={newStatDescription}
               onChange={(e) => setNewStatDescription(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
@@ -152,9 +163,11 @@ export default function SettingsInventoryStats() {
             {stats.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <BarChart3 className="h-10 w-10 text-muted-foreground/30 mb-2" />
-                <p className="text-sm text-muted-foreground">No stats yet</p>
+                <p className="text-sm text-muted-foreground">
+                  <Trans>No stats yet</Trans>
+                </p>
                 <p className="text-xs text-muted-foreground/70">
-                  Add a stat to track character attributes
+                  <Trans>Add a stat to track character attributes</Trans>
                 </p>
               </div>
             ) : (
@@ -179,18 +192,22 @@ export default function SettingsInventoryStats() {
       <section className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <div className="flex items-center gap-2 mb-4">
           <Package className="h-5 w-5 text-primary" />
-          <Label className="text-base font-semibold">Inventory</Label>
+          <Label className="text-base font-semibold">
+            <Trans>Inventory</Trans>
+          </Label>
           <span className="text-xs text-muted-foreground ml-auto">
-            {inventory.length} {inventory.length === 1 ? "item" : "items"}
+            {plural(inventory.length, { one: "# item", other: "# items" })}
           </span>
         </div>
 
         <div className="flex flex-col gap-2 mb-4">
           <div className="flex gap-2 items-end">
             <div className="flex-1 flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground">Name</span>
+              <span className="text-xs text-muted-foreground">
+                <Trans>Name</Trans>
+              </span>
               <Input
-                placeholder="Add item..."
+                placeholder={t`Add item...`}
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
@@ -206,10 +223,10 @@ export default function SettingsInventoryStats() {
           </div>
           <div className="flex flex-col gap-1">
             <span className="text-xs text-muted-foreground">
-              Description (optional)
+              <Trans>Description (optional)</Trans>
             </span>
             <Input
-              placeholder="Add context for the AI..."
+              placeholder={t`Add context for the AI...`}
               value={newItemDescription}
               onChange={(e) => setNewItemDescription(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
@@ -223,9 +240,11 @@ export default function SettingsInventoryStats() {
             {inventory.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Package className="h-10 w-10 text-muted-foreground/30 mb-2" />
-                <p className="text-sm text-muted-foreground">Inventory empty</p>
+                <p className="text-sm text-muted-foreground">
+                  <Trans>Inventory empty</Trans>
+                </p>
                 <p className="text-xs text-muted-foreground/70">
-                  Items collected will appear here
+                  <Trans>Items collected will appear here</Trans>
                 </p>
               </div>
             ) : (

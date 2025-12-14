@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PinIcon, PinOffIcon, EditIcon, TrashIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLingui } from "@lingui/react/macro";
 
 export type StoryCardProps = {
   entry: StoryCardType;
@@ -34,6 +35,25 @@ export function StoryCard({
   onPin,
   onEdit,
 }: StoryCardProps): React.JSX.Element {
+  const { t } = useLingui();
+
+  const getCategoryLabel = (category: StorybookCategory): string => {
+    switch (category) {
+      case StorybookCategory.CHARACTER:
+        return t`Character`;
+      case StorybookCategory.THING:
+        return t`Thing`;
+      case StorybookCategory.PLACE:
+        return t`Place`;
+      case StorybookCategory.CONCEPT:
+        return t`Concept`;
+      case StorybookCategory.UNCATEGORIZED:
+        return t`Uncategorized`;
+      default:
+        return category;
+    }
+  };
+
   const handlePinToggle = () => {
     onPin(entry.id, !entry.isPinned);
   };
@@ -61,7 +81,7 @@ export function StoryCard({
               CATEGORY_COLORS[entry.category],
             )}
           >
-            {entry.category}
+            {getCategoryLabel(entry.category)}
           </Badge>
         </div>
 

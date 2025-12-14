@@ -4,12 +4,23 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import wasm from "vite-plugin-wasm";
 import topLevelAwait from "vite-plugin-top-level-await";
+import { lingui } from "@lingui/vite-plugin";
 
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
-  plugins: [react(), tailwindcss(), wasm(), topLevelAwait()],
+  plugins: [
+    react({
+      babel: {
+        plugins: ["@lingui/babel-plugin-lingui-macro"],
+      },
+    }),
+    lingui(),
+    tailwindcss(),
+    wasm(),
+    topLevelAwait(),
+  ],
 
   resolve: {
     alias: {

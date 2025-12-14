@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { bytesToObjectUrl } from "@/lib/utils";
 import { useMemo } from "react";
 import { HelpTooltip } from "../ui/help-tooltip";
+import { Trans } from "@lingui/react/macro";
 
 export type ScenarioBasicsFieldsProps = {
   name: string;
@@ -38,11 +39,15 @@ export function ScenarioBasicsFields({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <Label>Name</Label>
+        <Label>
+          <Trans>Name</Trans>
+        </Label>
         <Input value={name} onChange={(e) => onNameChange(e.target.value)} />
       </div>
       <div className="flex flex-col gap-2">
-        <Label>Thumbnail (WebP recommended)</Label>
+        <Label>
+          <Trans>Thumbnail (WebP recommended)</Trans>
+        </Label>
         {previewUrl && (
           <img
             src={previewUrl}
@@ -62,14 +67,18 @@ export function ScenarioBasicsFields({
         />
       </div>
       <div className="flex flex-col gap-2">
-        <Label>Initial Description</Label>
+        <Label>
+          <Trans>Initial Description</Trans>
+        </Label>
         <Textarea
           value={initialDescription}
           onChange={(e) => onInitialDescriptionChange(e.target.value)}
         />
       </div>
       <div className="flex flex-col gap-2">
-        <Label>Initial Author Notes</Label>
+        <Label>
+          <Trans>Initial Author Notes</Trans>
+        </Label>
         <Textarea
           value={initialAuthorNote}
           onChange={(e) => onInitialAuthorNoteChange(e.target.value)}
@@ -77,11 +86,15 @@ export function ScenarioBasicsFields({
       </div>
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-1">
-          <Label>Opening Text</Label>
+          <Label>
+            <Trans>Opening Text</Trans>
+          </Label>
           <HelpTooltip>
             <span>
-              This is the initial paragraph of story that the player will
-              respond to. <br /> Useful for setting up the initial scene.
+              <Trans>
+                This is the initial paragraph of story that the player will
+                respond to. <br /> Useful for setting up the initial scene.
+              </Trans>
             </span>
           </HelpTooltip>
         </div>

@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Shuffle } from "lucide-react";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 interface SettingStepProps {
   value: string;
@@ -20,6 +21,8 @@ export function SettingStep({
   onCustomChange,
   onNext,
 }: SettingStepProps) {
+  const { t } = useLingui();
+
   const handleSurpriseMe = () => {
     const nonCustomSettings = SETTINGS.filter((s) => s.id !== "custom");
     const randomSetting = getRandomElement(nonCustomSettings);
@@ -33,7 +36,7 @@ export function SettingStep({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Select a world for your story
+          <Trans>Select a world for your story</Trans>
         </p>
         <Button
           variant="outline"
@@ -42,7 +45,7 @@ export function SettingStep({
           className="gap-2"
         >
           <Shuffle className="w-4 h-4" />
-          Surprise Me
+          <Trans>Surprise Me</Trans>
         </Button>
       </div>
 
@@ -62,7 +65,9 @@ export function SettingStep({
               <CardContent className="p-4">
                 <div className="text-center">
                   <div className="text-3xl mb-2">{setting.icon}</div>
-                  <h3 className="font-semibold text-sm mb-1">{setting.name}</h3>
+                  <h3 className="font-semibold text-sm mb-1">
+                    {t(setting.name)}
+                  </h3>
                 </div>
               </CardContent>
             </Card>
@@ -72,15 +77,19 @@ export function SettingStep({
 
       {value === "custom" && (
         <div className="space-y-2 pt-4 border-t">
-          <Label htmlFor="custom-setting">Custom Setting</Label>
+          <Label htmlFor="custom-setting">
+            <Trans>Custom Setting</Trans>
+          </Label>
           <Input
             id="custom-setting"
-            placeholder="e.g., Steampunk, Space Opera, etc."
+            placeholder={t`e.g., Steampunk, Space Opera, etc.`}
             value={customValue}
             onChange={(e) => onCustomChange(e.target.value)}
             autoFocus
           />
-          <p className="text-xs text-muted-foreground">Describe the world</p>
+          <p className="text-xs text-muted-foreground">
+            <Trans>Describe the world</Trans>
+          </p>
         </div>
       )}
     </div>

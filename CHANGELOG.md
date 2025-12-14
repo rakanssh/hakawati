@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Internationalization system with current support for English and Arabic.
+- UI Direction (RTL and LTR) to support different languages.
+
 ## [v0.10.0] - 2025-12-11
 
 ### Added

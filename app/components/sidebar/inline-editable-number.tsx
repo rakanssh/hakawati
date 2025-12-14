@@ -50,7 +50,7 @@ export function InlineEditableNumber({
   if (isEditing) {
     return (
       <Input
-        className={cn("h-7 w-20 text-right font-mono", className)}
+        className={cn("h-7 w-20 text-end font-mono", className)}
         // type="number" // Looks fugly
         inputMode="numeric"
         step={step}

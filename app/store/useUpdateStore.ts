@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { formatBytes } from "@/lib/utils";
+import { t } from "@lingui/core/macro";
 
 export type UpdatePhase =
   | "idle"
@@ -71,7 +72,7 @@ export const useUpdateStore = create<UpdateState>()(
       checkForUpdates: async (options) => {
         if (!isTauriEnvironment()) {
           set({ phase: "unsupported" });
-          toast.info("Manual updates are only available in the desktop app.");
+          toast.info(t`Manual updates are only available in the desktop app.`);
           return;
         }
 
@@ -101,7 +102,7 @@ export const useUpdateStore = create<UpdateState>()(
             });
 
             if (!options?.suppressUpToDateToast) {
-              toast.success("Hakawati is up to date.");
+              toast.success(t`Hakawati is up to date.`);
             }
             return;
           }
@@ -125,10 +126,10 @@ export const useUpdateStore = create<UpdateState>()(
             errorMessage: null,
           });
 
-          toast.info(`Update ${update.version} is available.`, {
+          toast.info(t`Update ${update.version} is available.`, {
             duration: 2000000,
             action: {
-              label: "Install",
+              label: t`Install`,
               onClick: () => {
                 void get().installUpdate();
               },
@@ -144,7 +145,7 @@ export const useUpdateStore = create<UpdateState>()(
             updateInfo: get().updateInfo,
             checkedAt: new Date(),
           });
-          toast.error("Failed to check for updates.");
+          toast.error(t`Failed to check for updates.`);
         }
       },
 
@@ -156,7 +157,7 @@ export const useUpdateStore = create<UpdateState>()(
 
         if (!isTauriEnvironment()) {
           set({ phase: "unsupported" });
-          toast.info("Manual updates are only available in the desktop app.");
+          toast.info(t`Manual updates are only available in the desktop app.`);
           return;
         }
 
@@ -170,7 +171,7 @@ export const useUpdateStore = create<UpdateState>()(
 
         set({ phase: "installing", errorMessage: null, downloadedBytes: 0 });
 
-        const toastId = toast.loading("Starting download...");
+        const toastId = toast.loading(t`Starting download...`);
 
         try {
           await update.downloadAndInstall((event) => {
@@ -181,7 +182,7 @@ export const useUpdateStore = create<UpdateState>()(
                   const newDownloadedBytes =
                     state.downloadedBytes + chunkLength;
                   toast.loading(
-                    `Downloading update... (${formatBytes(newDownloadedBytes)})`,
+                    t`Downloading update... (${formatBytes(newDownloadedBytes)})`,
                     {
                       id: toastId,
                     },
@@ -194,7 +195,7 @@ export const useUpdateStore = create<UpdateState>()(
             }
           });
 
-          toast.success("Update downloaded. Restarting...", { id: toastId });
+          toast.success(t`Update downloaded. Restarting...`, { id: toastId });
           await relaunch();
 
           set({
@@ -208,7 +209,7 @@ export const useUpdateStore = create<UpdateState>()(
           const message =
             error instanceof Error ? error.message : "Unknown error";
           set({ phase: "error", errorMessage: message });
-          toast.error("Failed to install the update.", { id: toastId });
+          toast.error(t`Failed to install the update.`, { id: toastId });
           set({
             pendingChangelogVersion: null,
             pendingChangelogNotes: null,

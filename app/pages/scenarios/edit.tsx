@@ -11,7 +11,7 @@ import { InventoryEditor } from "@/components/scenario/InventoryEditor";
 import { StorybookEditor } from "@/components/storybook";
 import { useScenarioForm } from "@/hooks/useScenarioForm";
 import { ArrowLeftIcon } from "lucide-react";
-
+import { Trans } from "@lingui/react/macro";
 export default function ScenarioEdit() {
   const { id } = useParams({ from: "/scenarios/$id" });
   const navigate = useNavigate();
@@ -46,9 +46,11 @@ export default function ScenarioEdit() {
             variant="default"
             onClick={() => navigate({ to: `/scenarios` })}
           >
-            <ArrowLeftIcon className="w-4 h-4" />
+            <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
           </Button>
-          <Label className="text-xl">Edit Scenario</Label>
+          <Label className="text-xl">
+            <Trans>Edit Scenario</Trans>
+          </Label>
         </div>
         <Button
           disabled={saving}
@@ -56,7 +58,7 @@ export default function ScenarioEdit() {
             await handleSave();
           }}
         >
-          Save Scenario
+          <Trans>Save Scenario</Trans>
         </Button>
       </div>
       <Separator />

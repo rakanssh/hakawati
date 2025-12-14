@@ -14,9 +14,9 @@ export function LogEntryBubble({ entry }: LogEntryBubbleProps) {
   if (mode === LogEntryMode.SAY) {
     return (
       <div className="flex items-center rounded-xs border-accent-foreground/50 py-1 bg-blue-300/15">
-        <SpeechIcon className="inline w-4 h-4 mr-2 text-muted-foreground ml-2 shrink-0" />
+        <SpeechIcon className="inline w-4 h-4 me-2 text-muted-foreground ms-2 shrink-0" />
         <p
-          className="inline whitespace-pre-wrap break-words mr-1"
+          className="inline whitespace-pre-wrap break-words me-1"
           style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
         >
           {text}
@@ -29,9 +29,9 @@ export function LogEntryBubble({ entry }: LogEntryBubbleProps) {
   if (mode === LogEntryMode.DO) {
     return (
       <div className="flex items-center rounded-xs border-accent-foreground/50 py-1 bg-amber-300/15">
-        <HandIcon className="inline w-4 h-4 mr-2 text-muted-foreground ml-2 shrink-0" />
+        <HandIcon className="inline w-4 h-4 me-2 text-muted-foreground ms-2 shrink-0" />
         <p
-          className="inline whitespace-pre-wrap break-words mr-1"
+          className="inline whitespace-pre-wrap break-words me-1"
           style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
         >
           {text}
@@ -44,9 +44,9 @@ export function LogEntryBubble({ entry }: LogEntryBubbleProps) {
   if (mode === LogEntryMode.DIRECT) {
     return (
       <div className="flex items-center rounded-xs border-accent-foreground/50 py-1 bg-green-300/15">
-        <MegaphoneIcon className="inline w-4 h-4 mr-2 text-muted-foreground ml-2 shrink-0" />
+        <MegaphoneIcon className="inline w-4 h-4 me-2 text-muted-foreground ms-2 shrink-0" />
         <p
-          className="inline whitespace-pre-wrap break-words mr-1"
+          className="inline whitespace-pre-wrap break-words me-1"
           style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
         >
           {text}
@@ -57,7 +57,7 @@ export function LogEntryBubble({ entry }: LogEntryBubbleProps) {
   }
 
   return (
-    <div className="flex flex-col items-start ml-2">
+    <div className="flex flex-col items-start ms-2">
       {actions && actions.length > 0 && (
         <div className="flex flex-row mb-2">
           {actions.map((action, idx) => (

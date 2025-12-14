@@ -15,33 +15,40 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import { useLingui } from "@lingui/react/macro";
 
 export type CategoryFilterProps = {
   selectedCategory: StorybookCategory | null;
   onCategoryChange: (category: StorybookCategory | null) => void;
 };
 
-const CATEGORIES = [
-  { value: null, label: "All", icon: <CircleIcon /> },
-  {
-    value: StorybookCategory.CHARACTER,
-    label: "Char",
-    icon: <UserIcon />,
-  },
-  { value: StorybookCategory.THING, label: "Thing", icon: <BoxIcon /> },
-  { value: StorybookCategory.PLACE, label: "Place", icon: <MapIcon /> },
-  { value: StorybookCategory.CONCEPT, label: "Concept", icon: <BrainIcon /> },
-  {
-    value: StorybookCategory.UNCATEGORIZED,
-    label: "Other",
-    icon: <CircleSlash2Icon />,
-  },
-];
-
 export function CategoryFilter({
   selectedCategory,
   onCategoryChange,
 }: CategoryFilterProps): React.JSX.Element {
+  const { t } = useLingui();
+
+  const CATEGORIES = [
+    { value: null, label: t`All`, icon: <CircleIcon /> },
+    {
+      value: StorybookCategory.CHARACTER,
+      label: t`Character`,
+      icon: <UserIcon />,
+    },
+    { value: StorybookCategory.THING, label: t`Thing`, icon: <BoxIcon /> },
+    { value: StorybookCategory.PLACE, label: t`Place`, icon: <MapIcon /> },
+    {
+      value: StorybookCategory.CONCEPT,
+      label: t`Concept`,
+      icon: <BrainIcon />,
+    },
+    {
+      value: StorybookCategory.UNCATEGORIZED,
+      label: t`Uncategorized`,
+      icon: <CircleSlash2Icon />,
+    },
+  ];
+
   return (
     <TooltipProvider>
       <div className="flex flex-wrap gap-2">

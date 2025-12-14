@@ -1,8 +1,31 @@
 import { createDefaultProfiles } from "@/data/api-presets";
 import { LLMModel } from "@/services/llm/schema";
 import { ApiPreset, ApiProfileSettings, ApiType } from "@/types";
+import type { Locale } from "@/i18n";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+
+export type TextDirection = "system" | "ltr" | "rtl";
+
+// Languages that require a RTL UI. Expand later.
+const RTL_LANGUAGES = new Set([
+  "ar", // Arabic
+]);
+
+/**
+ * Resolve the effective text direction based on preference and app language.
+ * Returns "ltr" or "rtl". priority is given to user preference then language dir.
+ */
+export function resolveTextDirection(
+  preference: TextDirection,
+  appLanguage: string,
+): "ltr" | "rtl" {
+  if (preference === "ltr" || preference === "rtl") {
+    return preference;
+  }
+  const primaryLang = appLanguage.split("-")[0].toLowerCase();
+  return RTL_LANGUAGES.has(primaryLang) ? "rtl" : "ltr";
+}
 
 export interface SettingsStoreType {
   // Profile-based settings
@@ -31,6 +54,8 @@ export interface SettingsStoreType {
   uiScale: number;
   fontFamily: string;
   fontSize: number;
+  textDirection: TextDirection;
+  language: Locale;
   customGmPrompt?: string;
   customStorytellerPrompt?: string;
   customContinuePrompt?: string;
@@ -60,6 +85,8 @@ export interface SettingsStoreType {
   setUiScale: (scale: number) => void;
   setFontFamily: (fontFamily: string) => void;
   setFontSize: (fontSize: number) => void;
+  setTextDirection: (direction: TextDirection) => void;
+  setLanguage: (language: Locale) => void;
   setToDefault: () => void;
   setCustomGmPrompt: (prompt: string) => void;
   setCustomStorytellerPrompt: (prompt: string) => void;
@@ -99,6 +126,8 @@ export const useSettingsStore = create<SettingsStoreType>()(
       uiScale: 1,
       fontFamily: "system-ui",
       fontSize: 1,
+      textDirection: "system",
+      language: "en",
       customGmPrompt: undefined,
       customStorytellerPrompt: undefined,
       customContinuePrompt: undefined,
@@ -262,6 +291,9 @@ export const useSettingsStore = create<SettingsStoreType>()(
           const clamped = Math.min(Math.max(normalized, 0.5), 3);
           return { fontSize: Number(clamped.toFixed(2)) };
         }),
+      setTextDirection: (direction: TextDirection) =>
+        set({ textDirection: direction }),
+      setLanguage: (language: Locale) => set({ language }),
       setCustomGmPrompt: (prompt: string) => set({ customGmPrompt: prompt }),
       setCustomStorytellerPrompt: (prompt: string) =>
         set({ customStorytellerPrompt: prompt }),
@@ -319,6 +351,8 @@ export const useSettingsStore = create<SettingsStoreType>()(
           uiScale: 1,
           fontFamily: "system-ui",
           fontSize: 1,
+          textDirection: "system",
+          language: "en",
         }),
     }),
     {
@@ -360,6 +394,8 @@ export const useSettingsStore = create<SettingsStoreType>()(
           ...state,
           activePreset: state.activePreset ?? ApiPreset.GENERIC,
           profiles: mergedProfiles,
+          textDirection: state.textDirection ?? "system",
+          language: state.language ?? "en",
         };
       },
       version: 1,

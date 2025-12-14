@@ -8,6 +8,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ExternalLinkIcon } from "lucide-react";
+import { Trans } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react";
 
 interface PresetHelpDialogProps {
   preset: ApiPresetConfig | undefined;
@@ -20,6 +22,7 @@ export function PresetHelpDialog({
   open,
   onOpenChange,
 }: PresetHelpDialogProps) {
+  const { _ } = useLingui();
   const { help } = preset ?? {};
   if (!preset || !help) return null;
 
@@ -29,18 +32,20 @@ export function PresetHelpDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{preset.label}</DialogTitle>
+          <DialogTitle>{_(preset.label)}</DialogTitle>
           {help.description && (
-            <DialogDescription>{help.description}</DialogDescription>
+            <DialogDescription>{_(help.description)}</DialogDescription>
           )}
         </DialogHeader>
 
         {help.steps && help.steps.length > 0 && (
           <div className="flex flex-col gap-2">
-            <h4 className="text-sm font-medium">Getting Started</h4>
+            <h4 className="text-sm font-medium">
+              <Trans>Getting Started</Trans>
+            </h4>
             <ol className="list-decimal list-inside space-y-1.5 text-sm text-muted-foreground">
               {help.steps.map((step, index) => (
-                <li key={index}>{step}</li>
+                <li key={index}>{_(step)}</li>
               ))}
             </ol>
           </div>
@@ -55,7 +60,7 @@ export function PresetHelpDialog({
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Sign Up
+                  <Trans>Sign Up</Trans>
                   <ExternalLinkIcon className="ml-1.5 size-3.5" />
                 </a>
               </Button>
@@ -67,7 +72,7 @@ export function PresetHelpDialog({
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Get API Key
+                  <Trans>Get API Key</Trans>
                   <ExternalLinkIcon className="ml-1.5 size-3.5" />
                 </a>
               </Button>

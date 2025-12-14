@@ -11,6 +11,7 @@ import { StorybookEditor } from "@/components/storybook";
 import { useScenarioForm } from "@/hooks/useScenarioForm";
 import { Scenario } from "@/types";
 import { ArrowLeftIcon } from "lucide-react";
+import { Trans } from "@lingui/react/macro";
 
 export default function ScenarioCreate() {
   const navigate = useNavigate();
@@ -44,9 +45,11 @@ export default function ScenarioCreate() {
             variant="default"
             onClick={() => navigate({ to: `/scenarios` })}
           >
-            <ArrowLeftIcon className="w-4 h-4" />
+            <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
           </Button>
-          <Label className="text-xl">Create Scenario</Label>
+          <Label className="text-xl">
+            <Trans>Create Scenario</Trans>
+          </Label>
         </div>
         <Button
           disabled={saving}
@@ -55,7 +58,7 @@ export default function ScenarioCreate() {
             navigate({ to: `/scenarios` });
           }}
         >
-          Save Scenario
+          <Trans>Save Scenario</Trans>
         </Button>
       </div>
       <Separator />

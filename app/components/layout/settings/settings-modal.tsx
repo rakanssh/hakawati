@@ -10,21 +10,30 @@ import SettingsAbout from "@/components/layout/settings/about";
 import SettingsTale from "@/components/layout/settings/tale";
 import SettingsStoryCards from "@/components/layout/settings/story-cards";
 import SettingsInventoryStats from "@/components/layout/settings/inventory-stats";
+import { Trans } from "@lingui/react/macro";
 
 const tabs = [
-  { id: "game", label: "Game", component: SettingsGame },
-  { id: "api", label: "API", component: SettingsApi },
-  { id: "model", label: "Model", component: SettingsModel },
-  { id: "advanced", label: "Advanced", component: SettingsAdvanced },
-  { id: "updates", label: "Updates", component: SettingsUpdates },
-  { id: "about", label: "About", component: SettingsAbout },
-  { id: "tale", label: "Tale", component: SettingsTale },
+  { id: "game", label: <Trans>Game</Trans>, component: SettingsGame },
+  { id: "api", label: <Trans>API</Trans>, component: SettingsApi },
+  { id: "model", label: <Trans>Model</Trans>, component: SettingsModel },
+  {
+    id: "advanced",
+    label: <Trans>Advanced</Trans>,
+    component: SettingsAdvanced,
+  },
+  { id: "updates", label: <Trans>Updates</Trans>, component: SettingsUpdates },
+  { id: "about", label: <Trans>About</Trans>, component: SettingsAbout },
+  { id: "tale", label: <Trans>Tale</Trans>, component: SettingsTale },
   {
     id: "inventory-stats",
-    label: "Character",
+    label: <Trans>Character</Trans>,
     component: SettingsInventoryStats,
   },
-  { id: "story-cards", label: "Story Cards", component: SettingsStoryCards },
+  {
+    id: "story-cards",
+    label: <Trans>Story Cards</Trans>,
+    component: SettingsStoryCards,
+  },
 ] as const satisfies readonly TabDefinition[];
 
 type Tab = (typeof tabs)[number];
@@ -54,7 +63,7 @@ export function SettingsModal({
       return (
         <span
           aria-hidden
-          className="absolute right-3 top-1/2 inline-flex h-2 w-2 -translate-y-1/2 rounded-full bg-destructive"
+          className="absolute end-3 top-1/2 inline-flex h-2 w-2 -translate-y-1/2 rounded-full bg-destructive"
         />
       );
     }
@@ -68,7 +77,7 @@ export function SettingsModal({
       tabs={tabs}
       defaultTab={defaultTab}
       visibleTabs={visibleTabs}
-      title="Settings"
+      title={<Trans>Settings</Trans>}
       renderTabExtra={renderTabExtra}
     />
   );

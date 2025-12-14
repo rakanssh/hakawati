@@ -4,6 +4,7 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useState } from "react";
 import { QuickstartWizard } from "@/components/quickstart";
+import { Trans } from "@lingui/react/macro";
 import {
   SettingsModal,
   type SettingsTabId,
@@ -51,7 +52,9 @@ export function MobileBottomNav() {
               className="flex items-center gap-1.5 h-9 px-3 rounded-full"
             >
               <Sparkles className="w-4 h-4" />
-              <span className="text-xs">Quickstart</span>
+              <span className="text-xs">
+                <Trans>Quickstart</Trans>
+              </span>
             </Button>
           </div>
 

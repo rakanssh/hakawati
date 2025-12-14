@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useTaleStore } from "@/store/useTaleStore";
 import { useEffect } from "react";
+import { Trans, useLingui } from "@lingui/react/macro";
 interface LogControlProps {
   className?: string;
   handleRetry: () => void;
@@ -30,6 +31,7 @@ export function LogControl({
   handleStop,
   saving = false,
 }: LogControlProps) {
+  const { t } = useLingui();
   const { undo, redo } = useTaleStore();
 
   useEffect(() => {
@@ -98,12 +100,14 @@ export function LogControl({
               size="icon"
               onClick={undo}
               disabled={loading || saving}
-              aria-label="Undo"
+              aria-label={t`Undo`}
             >
-              <UndoIcon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <UndoIcon className="w-3.5 h-3.5 md:w-4 md:h-4 rtl:scale-x-[-1]" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">Undo (Ctrl+Z)</TooltipContent>
+          <TooltipContent side="top">
+            <Trans>Undo (Ctrl+Z)</Trans>
+          </TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -114,7 +118,7 @@ export function LogControl({
               variant="default"
               size="icon"
               className="rounded-none flex-1 h-10"
-              aria-label="Retry"
+              aria-label={t`Retry`}
             >
               <RefreshCwIcon
                 strokeWidth={1.5}
@@ -122,7 +126,9 @@ export function LogControl({
               />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">Retry (Ctrl+R)</TooltipContent>
+          <TooltipContent side="top">
+            <Trans>Retry (Ctrl+R)</Trans>
+          </TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -134,7 +140,7 @@ export function LogControl({
               size="icon"
               className="rounded-none flex-1 h-10"
               aria-label={
-                loading && handleStop ? "Stop generating" : "Continue"
+                loading && handleStop ? t`Stop generating` : t`Continue`
               }
             >
               {loading && handleStop ? (
@@ -145,7 +151,11 @@ export function LogControl({
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
-            {loading && handleStop ? "Stop generating (Esc)" : "Continue"}
+            {loading && handleStop ? (
+              <Trans>Stop generating (Esc)</Trans>
+            ) : (
+              <Trans>Continue</Trans>
+            )}
           </TooltipContent>
         </Tooltip>
 
@@ -157,12 +167,14 @@ export function LogControl({
               size="icon"
               onClick={redo}
               disabled={loading || saving}
-              aria-label="Redo"
+              aria-label={t`Redo`}
             >
-              <RedoIcon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <RedoIcon className="w-3.5 h-3.5 md:w-4 md:h-4 rtl:scale-x-[-1]" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="top">Redo (Ctrl+Y)</TooltipContent>
+          <TooltipContent side="top">
+            <Trans>Redo (Ctrl+Y)</Trans>
+          </TooltipContent>
         </Tooltip>
       </div>
     </div>

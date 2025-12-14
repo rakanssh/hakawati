@@ -11,6 +11,7 @@ import { useUpdateStore } from "@/store/useUpdateStore";
 import { formatBytes } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { Trans } from "@lingui/react/macro";
 
 function formatCheckedAt(date: Date | null) {
   if (!date) return "Never";
@@ -73,7 +74,7 @@ export default function SettingsUpdates() {
         return (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
-            Checking for updates...
+            <Trans>Checking for updates...</Trans>
           </div>
         );
       case "available":
@@ -84,15 +85,17 @@ export default function SettingsUpdates() {
                 <DownloadCloud className="size-4 text-primary" />
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">
-                    Update {updateInfo?.version} available
+                    <Trans>Update {updateInfo?.version} available</Trans>
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    Current version: {updateInfo?.currentVersion ?? "unknown"}
+                    <Trans>
+                      Current version: {updateInfo?.currentVersion ?? "unknown"}
+                    </Trans>
                   </span>
                 </div>
               </div>
               <Button size="sm" onClick={handleInstall}>
-                Install update
+                <Trans>Install update</Trans>
               </Button>
             </div>
             {updateInfo?.notes ? (
@@ -104,8 +107,10 @@ export default function SettingsUpdates() {
             ) : null}
             {updateInfo?.releaseDate ? (
               <span className="text-xs text-muted-foreground">
-                Published{" "}
-                {new Date(updateInfo.releaseDate).toLocaleDateString()}
+                <Trans>
+                  Published{" "}
+                  {new Date(updateInfo.releaseDate).toLocaleDateString()}
+                </Trans>
               </span>
             ) : null}
           </div>
@@ -114,31 +119,31 @@ export default function SettingsUpdates() {
         return (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
-            Downloading update…{" "}
-            {downloadedBytes
-              ? `(${formatBytes(downloadedBytes)} downloaded)`
-              : null}
+            <Trans>Downloading update… </Trans>
+            {downloadedBytes ? (
+              <Trans>(${formatBytes(downloadedBytes)} downloaded)</Trans>
+            ) : null}
           </div>
         );
       case "upToDate":
         return (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <CheckCircle2 className="size-4 text-emerald-500" />
-            Hakawati is up to date.
+            <Trans>Hakawati is up to date.</Trans>
           </div>
         );
       case "error":
         return (
           <div className="flex items-center gap-2 text-sm text-destructive">
             <AlertCircle className="size-4" />
-            {errorMessage ?? "Something went wrong."}
+            {errorMessage ?? <Trans>Something went wrong.</Trans>}
           </div>
         );
       case "unsupported":
         return (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <AlertCircle className="size-4" />
-            Desktop-only feature.
+            <Trans>Desktop-only feature.</Trans>
           </div>
         );
       default:
@@ -151,9 +156,11 @@ export default function SettingsUpdates() {
       <div className="flex flex-col gap-2 rounded-sm border border-border/60 bg-card/50 p-3">
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-sm font-medium">Installed version</span>
+            <span className="text-sm font-medium">
+              <Trans>Installed version</Trans>
+            </span>
             <span className="text-xs text-muted-foreground">
-              {currentVersion ?? "Detecting..."}
+              {currentVersion ?? <Trans>Detecting...</Trans>}
             </span>
           </div>
           <Button
@@ -169,15 +176,15 @@ export default function SettingsUpdates() {
             {phase === "checking" ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
-                Checking
+                <Trans>Checking</Trans>
               </>
             ) : (
-              "Check for updates"
+              <Trans>Check for updates</Trans>
             )}
           </Button>
         </div>
         <span className="text-xs text-muted-foreground">
-          Last checked: {formatCheckedAt(checkedAt)}
+          <Trans>Last checked: {formatCheckedAt(checkedAt)}</Trans>
         </span>
       </div>
 

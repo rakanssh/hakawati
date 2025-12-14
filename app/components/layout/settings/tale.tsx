@@ -12,13 +12,10 @@ import { countTokens } from "@/services/llm/tokenCounter";
 import { usePersistTale } from "@/hooks/useGameSaves";
 import { GameMode } from "@/types";
 import { BookIcon, SwordIcon } from "lucide-react";
-
-function resolveGameModeLabel(gameMode: GameMode) {
-  if (gameMode === GameMode.GM) return "Game Master";
-  return "Story Teller";
-}
+import { Trans, useLingui } from "@lingui/react/macro";
 
 export default function SettingsTale() {
+  const { t } = useLingui();
   const {
     description,
     authorNote,
@@ -37,8 +34,8 @@ export default function SettingsTale() {
 
   const getGamemodeDescription = (gameMode: GameMode) => {
     if (gameMode === GameMode.GM)
-      return "AI runs the full game: it tells the story, manages inventory, and updates stats. Best with smarter models. Requires tool calling to be supported by the model.";
-    return "AI tells the story only: no inventory or stats are tracked, just narrative. Works with any model.";
+      return t`AI runs the full game: it tells the story, manages inventory, and updates stats. Best with smarter models. Requires tool calling to be supported by the model.`;
+    return t`AI tells the story only: no inventory or stats are tracked, just narrative. Works with any model.`;
   };
 
   const handleGameModeChange = (value: GameMode) => {
@@ -48,18 +45,20 @@ export default function SettingsTale() {
 
   function getGameModeOptions() {
     return Object.values(GameMode).map((mode) => ({
-      label: resolveGameModeLabel(mode),
+      label: mode === GameMode.GM ? t`Game Master` : t`Story Teller`,
       value: mode,
     }));
   }
 
   return (
     <div className="flex flex-col gap-4 max-w-full">
-      <Label>Game Mode</Label>
+      <Label>
+        <Trans>Game Mode</Trans>
+      </Label>
       <div className="flex flex-col gap-2">
         <Select value={gameMode} onValueChange={handleGameModeChange}>
           <SelectTrigger className="w-full sm:w-[240px]">
-            <SelectValue placeholder="Select a game mode" />
+            <SelectValue placeholder={t`Select a game mode`} />
           </SelectTrigger>
           <SelectContent>
             {getGameModeOptions().map((option) => (
@@ -84,9 +83,13 @@ export default function SettingsTale() {
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <Label>Description</Label>
+          <Label>
+            <Trans>Description</Trans>
+          </Label>
           <span className="text-xs text-muted-foreground">
-            {descriptionChars} characters • ~{descriptionTokens} tokens
+            <Trans>
+              {descriptionChars} characters • ~{descriptionTokens} tokens
+            </Trans>
           </span>
         </div>
         <Textarea
@@ -96,9 +99,13 @@ export default function SettingsTale() {
       </div>
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <Label>Author Notes</Label>
+          <Label>
+            <Trans>Author Notes</Trans>
+          </Label>
           <span className="text-xs text-muted-foreground">
-            {authorNoteChars} characters • ~{authorNoteTokens} tokens
+            <Trans>
+              {authorNoteChars} characters • ~{authorNoteTokens} tokens
+            </Trans>
           </span>
         </div>
         <Textarea

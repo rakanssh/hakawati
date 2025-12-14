@@ -5,6 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Shuffle } from "lucide-react";
 import { GameMode } from "@/types";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { msg } from "@lingui/core/macro";
+import { useLingui as useLinguiCore } from "@lingui/react";
 
 interface ArchetypeStepProps {
   setting: string;
@@ -25,13 +28,17 @@ export function ArchetypeStep({
   onCustomChange,
   onNext,
 }: ArchetypeStepProps) {
+  const { t } = useLingui();
+  const { _: resolveMessage } = useLinguiCore();
   const baseArchetypes = ARCHETYPES[setting] || ARCHETYPES.custom;
 
   const customArchetype = {
     id: "custom-archetype",
-    name: "Custom",
+    name: msg`Custom`,
     description: "Define your own unique character archetype",
-    defaultStats: [{ name: "HP", value: 100, range: [0, 100] }],
+    defaultStats: [
+      { name: msg`HP`, value: 100, range: [0, 100] as [number, number] },
+    ],
     defaultInventory: [],
   };
 
@@ -57,7 +64,7 @@ export function ArchetypeStep({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Choose your character archetype
+          <Trans>Choose your character archetype</Trans>
         </p>
         {archetypes.some((a) => a.id !== "custom-archetype") && (
           <Button
@@ -67,7 +74,7 @@ export function ArchetypeStep({
             className="gap-2"
           >
             <Shuffle className="w-4 h-4" />
-            Surprise Me
+            <Trans>Surprise Me</Trans>
           </Button>
         )}
       </div>
@@ -86,33 +93,35 @@ export function ArchetypeStep({
               onClick={() => onChange(archetype.id)}
             >
               <CardContent className="p-4">
-                <h3 className="font-semibold mb-1">{archetype.name}</h3>
+                <h3 className="font-semibold mb-1">{t(archetype.name)}</h3>
 
                 {gameMode === GameMode.GM &&
                   archetype.defaultStats &&
                   archetype.defaultStats.length > 0 && (
                     <>
                       <div className="mt-2 flex flex-wrap gap-1">
-                        <p className="text-xs text-muted-foreground">Stats:</p>
+                        <p className="text-xs text-muted-foreground">
+                          <Trans>Stats:</Trans>
+                        </p>
                         {archetype.defaultStats.slice(0, 3).map((stat) => (
                           <span
-                            key={stat.name}
+                            key={resolveMessage(stat.name)}
                             className="text-xs px-2 py-0.5 rounded-full bg-muted"
                           >
-                            {stat.name}
+                            {resolveMessage(stat.name)}
                           </span>
                         ))}
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1">
                         <p className="text-xs text-muted-foreground">
-                          Inventory:
+                          <Trans>Inventory:</Trans>
                         </p>
                         {archetype.defaultInventory?.slice(0, 3).map((item) => (
                           <span
-                            key={item.name}
+                            key={resolveMessage(item.name)}
                             className="text-xs px-2 py-0.5 rounded-full bg-muted"
                           >
-                            {item.name}
+                            {resolveMessage(item.name)}
                           </span>
                         ))}
                       </div>
@@ -126,16 +135,18 @@ export function ArchetypeStep({
 
       {value === "custom-archetype" && (
         <div className="space-y-2 pt-4 border-t">
-          <Label htmlFor="custom-archetype">Custom Archetype</Label>
+          <Label htmlFor="custom-archetype">
+            <Trans>Custom Archetype</Trans>
+          </Label>
           <Input
             id="custom-archetype"
-            placeholder="e.g., Soldier, Sapient Potato, etc."
+            placeholder={t`e.g., Soldier, Sapient Potato, etc.`}
             value={customValue}
             onChange={(e) => onCustomChange(e.target.value)}
             autoFocus
           />
           <p className="text-xs text-muted-foreground">
-            Describe your character&apos;s role
+            <Trans>Describe your character&apos;s role</Trans>
           </p>
         </div>
       )}

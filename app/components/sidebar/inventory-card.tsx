@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 const InventoryButton = ({ setOpen }: { setOpen: (open: boolean) => void }) => (
   <AddIconButton onClick={() => setOpen(true)} ariaLabel="Add item" />
@@ -24,6 +25,7 @@ const InventoryButton = ({ setOpen }: { setOpen: (open: boolean) => void }) => (
 
 export function InventoryCard({ className }: { className?: string }) {
   const { inventory, addToInventory } = useTaleStore();
+  const { t } = useLingui();
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState("");
   const [itemDescription, setItemDescription] = useState("");
@@ -41,10 +43,12 @@ export function InventoryCard({ className }: { className?: string }) {
     <div className={cn("relative flex flex-col overflow-hidden", className)}>
       <div className="px-1 flex-shrink-0 pt-1 mt-2">
         <div className="relative flex flex-row justify-between">
-          <div className="absolute right-0">
+          <div className="absolute end-0">
             <InventoryButton setOpen={setOpen} />
           </div>
-          <Label className="text-sm pb-1">Inventory</Label>
+          <Label className="text-sm pb-1">
+            <Trans>Inventory</Trans>
+          </Label>
         </div>
         <Separator className="mb-1" />
       </div>
@@ -59,7 +63,9 @@ export function InventoryCard({ className }: { className?: string }) {
               ))}
             </ul>
           ) : (
-            <Label className="text-muted-foreground text-xs">Nothing...</Label>
+            <Label className="text-muted-foreground text-xs">
+              <Trans>Nothing...</Trans>
+            </Label>
           )}
         </div>
       </ScrollArea>
@@ -67,17 +73,21 @@ export function InventoryCard({ className }: { className?: string }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Item</DialogTitle>
+            <DialogTitle>
+              <Trans>Add Item</Trans>
+            </DialogTitle>
             <DialogDescription>
-              Enter a new item to add to your inventory.
+              <Trans>Enter a new item to add to your inventory.</Trans>
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-4 w-full">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="item-name">Name</Label>
+              <Label htmlFor="item-name">
+                <Trans>Name</Trans>
+              </Label>
               <Input
                 id="item-name"
-                placeholder="Item name"
+                placeholder={t`Item name`}
                 value={itemName}
                 onChange={(e) => setItemName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -85,10 +95,12 @@ export function InventoryCard({ className }: { className?: string }) {
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="item-description">Description (optional)</Label>
+              <Label htmlFor="item-description">
+                <Trans>Description (optional)</Trans>
+              </Label>
               <Input
                 id="item-description"
-                placeholder="Add context for the AI..."
+                placeholder={t`Add context for the AI...`}
                 value={itemDescription}
                 onChange={(e) => setItemDescription(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
@@ -97,11 +109,11 @@ export function InventoryCard({ className }: { className?: string }) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
-              Cancel
+              <Trans>Cancel</Trans>
             </Button>
             <Button onClick={handleSubmit} disabled={!itemName.trim()}>
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Add Item
+              <PlusIcon className="w-4 h-4 me-2" />
+              <Trans>Add Item</Trans>
             </Button>
           </DialogFooter>
         </DialogContent>

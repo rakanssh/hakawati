@@ -17,8 +17,10 @@ import {
   CONTINUE_AUTHOR_NOTE,
 } from "@/prompts";
 import { AlertTriangleIcon } from "lucide-react";
-
+import { Trans } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react/macro";
 export default function SettingsAdvanced() {
+  const { t } = useLingui();
   const {
     customGmPrompt,
     customStorytellerPrompt,
@@ -75,7 +77,9 @@ export default function SettingsAdvanced() {
     <div className="flex flex-col gap-4 max-w-full">
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <Label>System Prompts</Label>
+          <Label>
+            <Trans>System Prompts</Trans>
+          </Label>
           <Button
             variant="destructive"
             onClick={resetAllPromptsToDefault}
@@ -86,33 +90,41 @@ export default function SettingsAdvanced() {
               !useCustomContinueAuthorNote
             }
           >
-            Reset All to Default
+            <Trans>Reset to Default</Trans>
           </Button>
         </div>
         <Separator />
         <p className="text-sm text-muted-foreground mt-2">
-          Customize system prompts that control how the AI responds. Users with
-          default prompts will automatically receive updates when the app is
-          updated. Custom prompts will be preserved until you reset them.
+          <Trans>
+            Customize system prompts that control how the AI responds. Users
+            with default prompts will automatically receive updates when the app
+            is updated. Custom prompts will be preserved until you reset them.
+          </Trans>
         </p>
         <Accordion type="multiple" className="w-full">
           <AccordionItem value="gm-prompt">
-            <AccordionTrigger>GM System Prompt</AccordionTrigger>
+            <AccordionTrigger>
+              <Trans>GM System Prompt</Trans>
+            </AccordionTrigger>
             <AccordionContent>
               <div className="flex flex-col gap-3">
                 {" "}
                 <div className="flex items-center gap-2">
                   <p className="text-sm text-muted-foreground">
-                    This is the system prompt used when the game is in
-                    &quot;Game Master&quot; mode. The story description is
-                    appended to the prompt. (Two new lines, followed by
-                    &quot;The story is: &quot; and the description text.)
+                    <Trans>
+                      This is the system prompt used when the game is in
+                      &quot;Game Master&quot; mode. The story description is
+                      appended to the prompt. (Two new lines, followed by
+                      &quot;The story is: &quot; and the description text.)
+                    </Trans>
                     <br />
                     <b className="flex items-center gap-2">
                       <AlertTriangleIcon className="w-4 h-4 inline-block" />
-                      GM mode is still in development and is very sensitive to
-                      the system prompt.
-                    </b>{" "}
+                      <Trans>
+                        GM mode is still in development and is very sensitive to
+                        the system prompt.
+                      </Trans>
+                    </b>
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -122,7 +134,7 @@ export default function SettingsAdvanced() {
                     onCheckedChange={handleGmCheckChange}
                   />
                   <Label htmlFor="use-custom-gm" className="cursor-pointer">
-                    Use Custom Prompt
+                    <Trans>Use Custom Prompt</Trans>
                   </Label>
                 </div>
                 <Textarea
@@ -131,7 +143,7 @@ export default function SettingsAdvanced() {
                   disabled={!useCustomGmPrompt}
                   rows={12}
                   className="font-mono text-xs"
-                  placeholder="System prompt for Game Master mode..."
+                  placeholder={t`System prompt for Game Master mode...`}
                 />
                 <div className="flex justify-end">
                   <Button
@@ -140,7 +152,7 @@ export default function SettingsAdvanced() {
                     onClick={resetGmPrompt}
                     disabled={!useCustomGmPrompt}
                   >
-                    Reset to Default
+                    <Trans>Reset to Default</Trans>
                   </Button>
                 </div>
               </div>
@@ -148,15 +160,19 @@ export default function SettingsAdvanced() {
           </AccordionItem>
 
           <AccordionItem value="storyteller-prompt">
-            <AccordionTrigger>Storyteller System Prompt</AccordionTrigger>
+            <AccordionTrigger>
+              <Trans>Storyteller System Prompt</Trans>
+            </AccordionTrigger>
             <AccordionContent>
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <p className="text-sm text-muted-foreground">
-                    This is the system prompt used when the game is in
-                    &quot;Story Teller&quot; mode. The story description is
-                    appended to the prompt. (Two new lines, followed by
-                    &quot;The story is: &quot; and the description text.)
+                    <Trans>
+                      This is the system prompt used when the game is in
+                      &quot;Story Teller&quot; mode. The story description is
+                      appended to the prompt. (Two new lines, followed by
+                      &quot;The story is: &quot; and the description text.)
+                    </Trans>
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -191,7 +207,7 @@ export default function SettingsAdvanced() {
                     onClick={resetStorytellerPrompt}
                     disabled={!useCustomStorytellerPrompt}
                   >
-                    Reset to Default
+                    <Trans>Reset to Default</Trans>
                   </Button>
                 </div>
               </div>
@@ -199,13 +215,17 @@ export default function SettingsAdvanced() {
           </AccordionItem>
 
           <AccordionItem value="continue-prompt">
-            <AccordionTrigger>Continue System Prompt</AccordionTrigger>
+            <AccordionTrigger>
+              <Trans>Continue System Prompt</Trans>
+            </AccordionTrigger>
             <AccordionContent>
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <p className="text-sm text-muted-foreground">
-                    This is the user message that is sent to the AI when the
-                    continue button is clicked.
+                    <Trans>
+                      This is the user message that is sent to the AI when the
+                      continue button is clicked.
+                    </Trans>
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -218,7 +238,7 @@ export default function SettingsAdvanced() {
                     htmlFor="use-custom-continue"
                     className="cursor-pointer"
                   >
-                    Use Custom Prompt
+                    <Trans>Use Custom Prompt</Trans>
                   </Label>
                 </div>
                 <Textarea
@@ -231,7 +251,7 @@ export default function SettingsAdvanced() {
                   disabled={!useCustomContinuePrompt}
                   rows={6}
                   className="font-mono text-xs"
-                  placeholder="Prompt used when continuing the story..."
+                  placeholder={t`Prompt used when continuing the story...`}
                 />
                 <div className="flex justify-end">
                   <Button
@@ -240,7 +260,7 @@ export default function SettingsAdvanced() {
                     onClick={resetContinuePrompt}
                     disabled={!useCustomContinuePrompt}
                   >
-                    Reset to Default
+                    <Trans>Reset to Default</Trans>
                   </Button>
                 </div>
               </div>
@@ -248,13 +268,17 @@ export default function SettingsAdvanced() {
           </AccordionItem>
 
           <AccordionItem value="continue-author-note">
-            <AccordionTrigger>Continue Author Note</AccordionTrigger>
+            <AccordionTrigger>
+              <Trans>Continue Author Note</Trans>
+            </AccordionTrigger>
             <AccordionContent>
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <p className="text-sm text-muted-foreground">
-                    This is an extra author note that is injected early with
-                    other system prompts only during a <b>Continue</b> action.
+                    <Trans>
+                      This is an extra author note that is injected early with
+                      other system prompts only during a <b>Continue</b> action.
+                    </Trans>
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -267,7 +291,7 @@ export default function SettingsAdvanced() {
                     htmlFor="use-custom-continue-author"
                     className="cursor-pointer"
                   >
-                    Use Custom Prompt
+                    <Trans>Use Custom Prompt</Trans>
                   </Label>
                 </div>
                 <Textarea
@@ -280,7 +304,7 @@ export default function SettingsAdvanced() {
                   disabled={!useCustomContinueAuthorNote}
                   rows={8}
                   className="font-mono text-xs"
-                  placeholder="Author's note injected during continuation..."
+                  placeholder={t`Author's note injected during continue...`}
                 />
                 <div className="flex justify-end">
                   <Button
@@ -289,7 +313,7 @@ export default function SettingsAdvanced() {
                     onClick={resetContinueAuthorNote}
                     disabled={!useCustomContinueAuthorNote}
                   >
-                    Reset to Default
+                    <Trans>Reset to Default</Trans>
                   </Button>
                 </div>
               </div>

@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Pencil, Check, X, Trash2 } from "lucide-react";
 import type { Stat } from "@/types/stats.type";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 interface StatItemProps {
   stat: Stat;
@@ -12,6 +13,7 @@ interface StatItemProps {
 }
 
 export function StatItem({ stat, onUpdate, onRemove }: StatItemProps) {
+  const { t } = useLingui();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(stat.name);
   const [editValue, setEditValue] = useState(stat.value);
@@ -47,17 +49,21 @@ export function StatItem({ stat, onUpdate, onRemove }: StatItemProps) {
       {isEditing ? (
         <div className="flex flex-col gap-2">
           <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Name</span>
+            <span className="text-xs text-muted-foreground">
+              <Trans>Name</Trans>
+            </span>
             <Input
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              placeholder="Stat name"
+              placeholder={t`Stat name`}
               className="h-8 text-sm font-medium"
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground">Current</span>
+              <span className="text-xs text-muted-foreground">
+                <Trans>Current</Trans>
+              </span>
               <Input
                 type="number"
                 value={editValue}
@@ -66,7 +72,9 @@ export function StatItem({ stat, onUpdate, onRemove }: StatItemProps) {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground">Max</span>
+              <span className="text-xs text-muted-foreground">
+                <Trans>Max</Trans>
+              </span>
               <Input
                 type="number"
                 value={editMax}
@@ -76,22 +84,24 @@ export function StatItem({ stat, onUpdate, onRemove }: StatItemProps) {
             </div>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Description</span>
+            <span className="text-xs text-muted-foreground">
+              <Trans>Description</Trans>
+            </span>
             <Input
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
-              placeholder="Add context for the AI..."
+              placeholder={t`Add context for the AI...`}
               className="h-8 text-sm"
             />
           </div>
           <div className="flex justify-end gap-1">
             <Button variant="ghost" size="sm" onClick={handleCancel}>
-              <X className="h-3 w-3 mr-1" />
-              Cancel
+              <X className="h-3 w-3 me-1" />
+              <Trans>Cancel</Trans>
             </Button>
             <Button size="sm" onClick={handleSave} disabled={!editName.trim()}>
-              <Check className="h-3 w-3 mr-1" />
-              Save
+              <Check className="h-3 w-3 me-1" />
+              <Trans>Save</Trans>
             </Button>
           </div>
         </div>
@@ -102,7 +112,7 @@ export function StatItem({ stat, onUpdate, onRemove }: StatItemProps) {
               {stat.name}
             </span>
             <Progress value={percentage} className="flex-1 h-2" />
-            <span className="text-xs text-muted-foreground tabular-nums min-w-[4rem] text-right">
+            <span className="text-xs text-muted-foreground tabular-nums min-w-[4rem] text-end">
               {stat.value} / {stat.range[1]}
             </span>
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -125,7 +135,7 @@ export function StatItem({ stat, onUpdate, onRemove }: StatItemProps) {
             </div>
           </div>
           {stat.description && (
-            <span className="text-xs text-muted-foreground pl-1">
+            <span className="text-xs text-muted-foreground ps-1">
               {stat.description}
             </span>
           )}

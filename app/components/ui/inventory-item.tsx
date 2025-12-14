@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pencil, Check, X, Trash2 } from "lucide-react";
 import type { Item } from "@/types/item.type";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 interface InventoryItemProps {
   item: Item;
@@ -18,6 +19,7 @@ export function InventoryItem({
   onUpdate,
   onRemove,
 }: InventoryItemProps) {
+  const { t } = useLingui();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(item.name);
   const [editDescription, setEditDescription] = useState(
@@ -44,31 +46,35 @@ export function InventoryItem({
       {isEditing ? (
         <div className="flex flex-1 flex-col gap-2">
           <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Name</span>
+            <span className="text-xs text-muted-foreground">
+              <Trans>Name</Trans>
+            </span>
             <Input
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              placeholder="Item name"
+              placeholder={t`Item name`}
               className="h-8 text-sm"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">Description</span>
+            <span className="text-xs text-muted-foreground">
+              <Trans>Description</Trans>
+            </span>
             <Input
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
-              placeholder="Add context for the AI..."
+              placeholder={t`Add context for the AI...`}
               className="h-8 text-sm"
             />
           </div>
           <div className="flex justify-end gap-1">
             <Button variant="ghost" size="sm" onClick={handleCancel}>
-              <X className="h-3 w-3 mr-1" />
-              Cancel
+              <X className="h-3 w-3 me-1" />
+              <Trans>Cancel</Trans>
             </Button>
             <Button size="sm" onClick={handleSave} disabled={!editName.trim()}>
-              <Check className="h-3 w-3 mr-1" />
-              Save
+              <Check className="h-3 w-3 me-1" />
+              <Trans>Save</Trans>
             </Button>
           </div>
         </div>

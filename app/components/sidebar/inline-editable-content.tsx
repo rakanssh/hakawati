@@ -71,7 +71,7 @@ export function InlineEditableContent(props: InlineEditableContentProps) {
       suppressContentEditableWarning
       onBlur={finish}
       onKeyDown={onKeyDown}
-      className={`md:text-base whitespace-pre-wrap break-words outline-none ml-2 pt-2 ${className ?? ""}`}
+      className={`md:text-base whitespace-pre-wrap break-words outline-none ms-2 pt-2 ${className ?? ""}`}
       style={{ minHeight: 0, ...style }}
       role="textbox"
       aria-multiline="true"

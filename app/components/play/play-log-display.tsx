@@ -5,6 +5,7 @@ import { InlineEditableContent } from "@/components/sidebar";
 import { LogEntry, LogEntryRole } from "@/types/log.type";
 import { LogBlock } from "@/lib/play-utils";
 import { useSettingsStore } from "@/store";
+import { Trans } from "@lingui/react/macro";
 
 interface PlayLogDisplayProps {
   blocks: LogBlock[];
@@ -44,7 +45,9 @@ export function PlayLogDisplay({
       {loadingOlder && (
         <div className="flex items-center justify-center py-2 text-muted-foreground">
           <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-          <span className="text-sm">Loading older entries...</span>
+          <span className="text-sm">
+            <Trans>Loading older entries...</Trans>
+          </span>
         </div>
       )}
       {blocks.length > 0 ? (

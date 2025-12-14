@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useLingui } from "@lingui/react/macro";
+import { Trans } from "@lingui/react/macro";
 
 export type InventoryEditorProps = {
   items: string[];
@@ -17,10 +19,12 @@ export function InventoryEditor({
   onRemove,
 }: InventoryEditorProps) {
   const [newItem, setNewItem] = useState("");
-
+  const { t } = useLingui();
   return (
     <div className="flex flex-col gap-2">
-      <Label>Initial Inventory</Label>
+      <Label>
+        <Trans>Initial Inventory</Trans>
+      </Label>
       <div className="flex flex-col gap-2">
         {items.map((item, idx) => (
           <div key={`${item}-${idx}`} className="flex items-center gap-2">
@@ -34,13 +38,13 @@ export function InventoryEditor({
               onClick={() => onRemove(idx)}
               className="w-24"
             >
-              Remove
+              <Trans>Remove</Trans>
             </Button>
           </div>
         ))}
         <div className="flex items-center gap-2">
           <Input
-            placeholder="Add inventory item"
+            placeholder={t`Add inventory item`}
             value={newItem}
             onChange={(e) => setNewItem(e.target.value)}
             onKeyDown={(e) => {
@@ -58,7 +62,7 @@ export function InventoryEditor({
             }}
             className="w-24"
           >
-            Add Item
+            <Trans>Add Item</Trans>
           </Button>
         </div>
       </div>

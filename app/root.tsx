@@ -59,8 +59,8 @@ export default function AppShell() {
                 paddingBottom: showMobileBottomNav
                   ? "calc(3.5rem + env(safe-area-inset-bottom))"
                   : "env(safe-area-inset-bottom)",
-                paddingLeft: "env(safe-area-inset-left)",
-                paddingRight: "env(safe-area-inset-right)",
+                paddingInlineStart: "env(safe-area-inset-left)",
+                paddingInlineEnd: "env(safe-area-inset-right)",
               }
             : undefined
         }

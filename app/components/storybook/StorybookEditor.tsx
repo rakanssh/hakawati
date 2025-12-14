@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PlusIcon } from "lucide-react";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 export type StorybookEditorProps = {
   entries: StoryCard[];
@@ -41,20 +42,20 @@ type EntryFormData = {
   isPinned: boolean;
 };
 
-const CATEGORY_OPTIONS = [
-  { value: StorybookCategory.CHARACTER, label: "Character" },
-  { value: StorybookCategory.THING, label: "Thing" },
-  { value: StorybookCategory.PLACE, label: "Place" },
-  { value: StorybookCategory.CONCEPT, label: "Concept" },
-  { value: StorybookCategory.UNCATEGORIZED, label: "Uncategorized" },
-];
-
 export function StorybookEditor({
   entries,
   onAdd,
   onUpdate,
   onRemove,
 }: StorybookEditorProps): React.JSX.Element {
+  const { t } = useLingui();
+  const CATEGORY_OPTIONS = [
+    { value: StorybookCategory.CHARACTER, label: t`Character` },
+    { value: StorybookCategory.THING, label: t`Thing` },
+    { value: StorybookCategory.PLACE, label: t`Place` },
+    { value: StorybookCategory.CONCEPT, label: t`Concept` },
+    { value: StorybookCategory.UNCATEGORIZED, label: t`Uncategorized` },
+  ];
   const [selectedCategory, setSelectedCategory] =
     React.useState<StorybookCategory | null>(null);
   const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -150,9 +151,11 @@ export function StorybookEditor({
           selectedCategory={selectedCategory}
           onCategoryChange={setSelectedCategory}
         />
-        <Button onClick={() => handleOpenDialog()} aria-label="Add entry">
+        <Button onClick={() => handleOpenDialog()} aria-label={t`Add entry`}>
           <PlusIcon />
-          <span>Add</span>
+          <span>
+            <Trans>Add</Trans>
+          </span>
         </Button>
       </div>
 
@@ -172,9 +175,13 @@ export function StorybookEditor({
       ) : (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <p className="text-muted-foreground text-sm">
-            {selectedCategory
-              ? `No entries in ${selectedCategory} category`
-              : "No entries yet."}
+            {selectedCategory ? (
+              <Trans>
+                No entries in <param>{selectedCategory}</param> category
+              </Trans>
+            ) : (
+              <Trans>No entries yet.</Trans>
+            )}
           </p>
         </div>
       )}
@@ -184,46 +191,58 @@ export function StorybookEditor({
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingEntry ? "Edit Entry" : "Add Entry"}
+              {editingEntry ? (
+                <Trans>Edit Entry</Trans>
+              ) : (
+                <Trans>Add Entry</Trans>
+              )}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">
+                <Trans>Title</Trans>
+              </Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) =>
                   setFormData({ ...formData, title: e.target.value })
                 }
-                placeholder="Entry title"
+                placeholder={t`Entry title`}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="content">Content</Label>
+              <Label htmlFor="content">
+                <Trans>Content</Trans>
+              </Label>
               <Textarea
                 id="content"
                 value={formData.content}
                 onChange={(e) =>
                   setFormData({ ...formData, content: e.target.value })
                 }
-                placeholder="Entry content"
+                placeholder={t`Entry content`}
                 rows={6}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="triggers">Triggers (comma-separated)</Label>
+              <Label htmlFor="triggers">
+                <Trans>Triggers (comma-separated)</Trans>
+              </Label>
               <Input
                 id="triggers"
                 value={formData.triggers}
                 onChange={(e) =>
                   setFormData({ ...formData, triggers: e.target.value })
                 }
-                placeholder="trigger1, trigger2, trigger3"
+                placeholder={t`trigger1, trigger2, trigger3`}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category">
+                <Trans>Category</Trans>
+              </Label>
               <Select
                 value={formData.category}
                 onValueChange={(value) =>
@@ -248,10 +267,14 @@ export function StorybookEditor({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleCloseDialog}>
-              Cancel
+              <Trans>Cancel</Trans>
             </Button>
             <Button onClick={handleSubmit} disabled={!isFormValid}>
-              {editingEntry ? "Save Changes" : "Add Entry"}
+              {editingEntry ? (
+                <Trans>Save Changes</Trans>
+              ) : (
+                <Trans>Add Entry</Trans>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

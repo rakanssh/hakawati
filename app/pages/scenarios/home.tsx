@@ -35,8 +35,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 export default function ScenariosHome() {
+  const { t } = useLingui();
   const { items, loading, error, page, limit, total, setPage, remove } =
     useScenariosList();
   const navigate = useNavigate();
@@ -53,12 +55,14 @@ export default function ScenariosHome() {
             onClick={() => navigate({ to: "/" })}
             className="mt-1.5"
           >
-            <ArrowLeftIcon className="w-4 h-4" />
+            <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
           </Button>
           <div className="flex flex-col">
-            <Label className="text-xl">Scenarios</Label>
+            <Label className="text-xl">
+              <Trans>Scenarios</Trans>
+            </Label>
             <span className="text-sm text-muted-foreground">
-              Browse and manage your scenarios
+              <Trans>Browse and manage your scenarios</Trans>
             </span>
           </div>
         </div>
@@ -79,18 +83,24 @@ export default function ScenariosHome() {
               }
             }}
           >
-            Import
+            <Trans>Import</Trans>
           </Button>
           <Button onClick={() => navigate({ to: "/scenarios/new" })}>
-            Create
+            <Trans>Create</Trans>
           </Button>
         </div>
       </div>
 
       <Separator />
-      {loading && <div className="text-sm text-muted-foreground">Loading…</div>}
+      {loading && (
+        <div className="text-sm text-muted-foreground">
+          <Trans>Loading…</Trans>
+        </div>
+      )}
       {Boolean(error) && (
-        <div className="text-sm text-red-500">Failed to load scenarios.</div>
+        <div className="text-sm text-red-500">
+          <Trans>Failed to load scenarios.</Trans>
+        </div>
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {items.map(({ id, name, initialDescription, thumbnail, updatedAt }) => {
@@ -104,13 +114,13 @@ export default function ScenariosHome() {
                   {thumbnail ? (
                     <img
                       src={bytesToObjectUrl(thumbnail as unknown as Uint8Array)}
-                      alt={`${name} thumbnail`}
+                      alt={t`${name} thumbnail`}
                       className="h-48 w-full object-cover"
                     />
                   ) : (
                     <img
                       src={placeholderImage}
-                      alt={`${name} thumbnail`}
+                      alt={t`${name} thumbnail`}
                       className="h-48 w-full object-cover"
                     />
                   )}
@@ -121,7 +131,7 @@ export default function ScenariosHome() {
                           variant="secondary"
                           size="icon"
                           className="h-6 w-6 rounded-full pb-1.5 bg-accent/50"
-                          aria-label="Scenario actions"
+                          aria-label={t`Scenario actions`}
                         >
                           ...
                         </Button>
@@ -136,14 +146,16 @@ export default function ScenariosHome() {
                           onClick={() => navigate({ to: `/scenarios/${id}` })}
                           className="text-xs"
                         >
-                          <PencilIcon className="w-4 h-4 mr-2" /> Edit
+                          <PencilIcon className="w-4 h-4 me-2" />{" "}
+                          <Trans>Edit</Trans>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onSelect={(e) => e.preventDefault()}
                           onClick={() => exportById(id)}
                           className="text-xs"
                         >
-                          <ClipboardIcon className="w-4 h-4 mr-2" /> Export JSON
+                          <ClipboardIcon className="w-4 h-4 me-2" />{" "}
+                          <Trans>Export JSON</Trans>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onSelect={(e) => e.preventDefault()}
@@ -153,7 +165,8 @@ export default function ScenariosHome() {
                           variant="destructive"
                           className="text-xs"
                         >
-                          <TrashIcon className="w-4 h-4 mr-2" /> Delete
+                          <TrashIcon className="w-4 h-4 me-2" />{" "}
+                          <Trans>Delete</Trans>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -166,7 +179,9 @@ export default function ScenariosHome() {
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent side="top">
-                      Last updated: {formatExactDateTime(updatedAt)}
+                      <Trans>
+                        Last updated: {formatExactDateTime(updatedAt)}
+                      </Trans>
                     </TooltipContent>
                   </Tooltip>
                 </div>
@@ -185,7 +200,7 @@ export default function ScenariosHome() {
                   }}
                   className="w-full "
                 >
-                  New Tale
+                  <Trans>New Tale</Trans>
                 </Button>
               </CardContent>
             </Card>
@@ -199,17 +214,19 @@ export default function ScenariosHome() {
             disabled={page <= 1}
             onClick={() => setPage(Math.max(1, page - 1))}
           >
-            Prev
+            <Trans>Prev</Trans>
           </Button>
           <span className="text-sm text-muted-foreground">
-            Page {page} of {Math.max(1, Math.ceil(total / limit) || 1)}
+            <Trans>
+              Page {page} of {Math.max(1, Math.ceil(total / limit) || 1)}
+            </Trans>
           </span>
           <Button
             variant="secondary"
             disabled={page * limit >= total}
             onClick={() => setPage(page + 1)}
           >
-            Next
+            <Trans>Next</Trans>
           </Button>
         </div>
       )}

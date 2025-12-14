@@ -8,7 +8,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { DicesIcon, InfoIcon } from "lucide-react";
-
+import { Trans } from "@lingui/react/macro";
 export default function SettingsModel() {
   const {
     contextWindow,
@@ -43,17 +43,18 @@ export default function SettingsModel() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
           <Label>
-            Context Window
+            <Trans>Context Window</Trans>
             {modelContextLength > 0 &&
             modelContextLength < Number.MAX_SAFE_INTEGER
               ? ` (0 - ${Intl.NumberFormat().format(modelContextLength)})`
               : ""}
+
             <Tooltip>
               <TooltipTrigger>
                 <InfoIcon className="w-4 h-4" />
               </TooltipTrigger>
               <TooltipContent>
-                Maximum is determined by current model.
+                <Trans>Maximum is determined by current model.</Trans>
               </TooltipContent>
             </Tooltip>
           </Label>
@@ -71,7 +72,7 @@ export default function SettingsModel() {
         </div>
         <div className="flex flex-col gap-2">
           <Label>
-            Max Output Tokens
+            <Trans>Max Output Tokens</Trans>
             {modelContextLength > 0 &&
             modelContextLength < Number.MAX_SAFE_INTEGER
               ? ` (1 - ${Intl.NumberFormat().format(modelContextLength)})`
@@ -206,7 +207,7 @@ export default function SettingsModel() {
       </div>
 
       <Button variant="destructive" onClick={setToDefault}>
-        Reset to default
+        <Trans>Reset to Default</Trans>
       </Button>
     </div>
   );

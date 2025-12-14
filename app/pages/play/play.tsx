@@ -18,8 +18,10 @@ import { useStickToBottom } from "@/hooks/useStickToBottom";
 import { useZoom } from "@/hooks/useZoom";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { usePlaySession } from "@/hooks/usePlaySession";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 export default function Play() {
+  const { t } = useLingui();
   const {
     log,
     updateLogEntry,
@@ -157,7 +159,7 @@ export default function Play() {
       return (
         <div className="flex h-full items-center justify-center">
           <div className="text-sm text-muted-foreground animate-pulse">
-            Loading adventure...
+            <Trans>Loading adventure...</Trans>
           </div>
         </div>
       );
@@ -189,23 +191,25 @@ export default function Play() {
           onRetry={handleRetry}
         />
         {showZoomIndicator && (
-          <div className="pointer-events-none absolute top-4 right-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="pointer-events-none absolute top-4 end-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="rounded-md bg-background/95 px-4 py-2 shadow-lg border border-border backdrop-blur-sm">
               <div className="flex items-center gap-2 text-sm font-medium">
-                <span className="text-muted-foreground">Zoom:</span>
+                <span className="text-muted-foreground">
+                  <Trans>Zoom:</Trans>
+                </span>
                 <span className="font-mono">{Math.round(fontSize * 100)}%</span>
               </div>
             </div>
           </div>
         )}
         {!stickToBottom && !loading && (
-          <div className="absolute bottom-20 right-4 z-40 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="absolute bottom-20 end-4 z-40 animate-in fade-in slide-in-from-bottom-2 duration-200">
             <Button
               variant="secondary"
               size="icon"
               className="h-10 w-10 rounded-full shadow-lg border border-border"
               onClick={() => scrollToBottom()}
-              aria-label="Scroll to bottom"
+              aria-label={t`Scroll to bottom`}
             >
               <ArrowDownIcon className="h-4 w-4" />
             </Button>
@@ -234,7 +238,7 @@ export default function Play() {
           <AppSidebar
             style={
               isMobilePlatform
-                ? { paddingLeft: "env(safe-area-inset-left)" }
+                ? { paddingInlineStart: "env(safe-area-inset-left)" }
                 : undefined
             }
           />
@@ -242,7 +246,7 @@ export default function Play() {
             className="relative flex h-full flex-col overflow-hidden !rounded-none border-x"
             style={
               isMobilePlatform
-                ? { paddingRight: "env(safe-area-inset-right)" }
+                ? { paddingInlineEnd: "env(safe-area-inset-right)" }
                 : undefined
             }
           >
@@ -256,8 +260,8 @@ export default function Play() {
             isMobilePlatform
               ? {
                   height: "100svh",
-                  paddingLeft: "env(safe-area-inset-left)",
-                  paddingRight: "env(safe-area-inset-right)",
+                  paddingInlineStart: "env(safe-area-inset-left)",
+                  paddingInlineEnd: "env(safe-area-inset-right)",
                 }
               : { height: "calc(100vh - 2rem)" }
           }

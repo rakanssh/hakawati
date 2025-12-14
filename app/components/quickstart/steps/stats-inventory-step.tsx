@@ -9,6 +9,8 @@ import { ARCHETYPES } from "@/data/quickstart-presets";
 import { Plus, RotateCcw, BarChart3, Package } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { nanoid } from "nanoid";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useLingui as useLinguiCore } from "@lingui/react";
 
 interface StatsInventoryStepProps {
   stats: Stat[];
@@ -27,6 +29,8 @@ export function StatsInventoryStep({
   onStatsChange,
   onInventoryChange,
 }: StatsInventoryStepProps) {
+  const { t } = useLingui();
+  const { _: resolveMessage } = useLinguiCore();
   const [newStatName, setNewStatName] = useState("");
   const [newStatValue, setNewStatValue] = useState("50");
   const [newStatMax, setNewStatMax] = useState("100");
@@ -39,12 +43,21 @@ export function StatsInventoryStep({
         (a) => a.id === archetype,
       );
       if (archetypeData?.defaultStats) {
-        onStatsChange([...archetypeData.defaultStats]);
+        onStatsChange(
+          archetypeData.defaultStats.map((stat) => ({
+            name: resolveMessage(stat.name),
+            value: stat.value,
+            range: stat.range,
+            description: stat.description
+              ? resolveMessage(stat.description)
+              : undefined,
+          })),
+        );
       } else {
         onStatsChange([{ name: "HP", value: 100, range: [0, 100] }]);
       }
     }
-  }, [archetype, setting, stats.length, onStatsChange]);
+  }, [archetype, setting, stats.length, onStatsChange, resolveMessage]);
 
   useEffect(() => {
     if (inventory.length === 0) {
@@ -55,13 +68,15 @@ export function StatsInventoryStep({
         onInventoryChange(
           archetypeData.defaultInventory.map((item) => ({
             id: nanoid(12),
-            name: item.name,
-            description: item.description,
+            name: resolveMessage(item.name),
+            description: item.description
+              ? resolveMessage(item.description)
+              : undefined,
           })),
         );
       }
     }
-  }, [archetype, setting, inventory.length, onInventoryChange]);
+  }, [archetype, setting, inventory.length, onInventoryChange, resolveMessage]);
 
   const handleAddStat = () => {
     if (!newStatName.trim()) return;
@@ -126,14 +141,25 @@ export function StatsInventoryStep({
   const handleResetToDefaults = () => {
     const archetypeData = ARCHETYPES[setting]?.find((a) => a.id === archetype);
     if (archetypeData?.defaultStats) {
-      onStatsChange([...archetypeData.defaultStats]);
+      onStatsChange(
+        archetypeData.defaultStats.map((stat) => ({
+          name: resolveMessage(stat.name),
+          value: stat.value,
+          range: stat.range,
+          description: stat.description
+            ? resolveMessage(stat.description)
+            : undefined,
+        })),
+      );
     }
     if (archetypeData?.defaultInventory) {
       onInventoryChange(
         archetypeData.defaultInventory.map((item) => ({
           id: nanoid(12),
-          name: item.name,
-          description: item.description,
+          name: resolveMessage(item.name),
+          description: item.description
+            ? resolveMessage(item.description)
+            : undefined,
         })),
       );
     }
@@ -143,7 +169,7 @@ export function StatsInventoryStep({
     <div className="space-y-4 max-w-3xl mx-auto">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Configure your character&apos;s stats and inventory
+          <Trans>Configure your character&apos;s stats and inventory</Trans>
         </p>
         <Button
           variant="outline"
@@ -152,36 +178,44 @@ export function StatsInventoryStep({
           className="gap-2"
         >
           <RotateCcw className="w-4 h-4" />
-          Reset to Defaults
+          <Trans>Reset to Default</Trans>
         </Button>
       </div>
 
       <Tabs defaultValue="stats" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="stats">Stats</TabsTrigger>
-          <TabsTrigger value="inventory">Inventory</TabsTrigger>
+          <TabsTrigger value="stats">
+            <Trans>Stats</Trans>
+          </TabsTrigger>
+          <TabsTrigger value="inventory">
+            <Trans>Inventory</Trans>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="stats" className="space-y-4">
           <div className="flex items-center gap-2 mb-2">
             <BarChart3 className="h-4 w-4 text-primary" />
             <span className="text-xs text-muted-foreground">
-              {stats.length} {stats.length === 1 ? "stat" : "stats"}
+              {t`${stats.length} ${stats.length === 1 ? "stat" : "stats"}`}
             </span>
           </div>
 
           <div className="flex gap-2 mb-4 items-end">
             <div className="flex-1 flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground">Name</span>
+              <span className="text-xs text-muted-foreground">
+                <Trans>Name</Trans>
+              </span>
               <Input
-                placeholder="Stat name"
+                placeholder={t`Stat name`}
                 value={newStatName}
                 onChange={(e) => setNewStatName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground">Current</span>
+              <span className="text-xs text-muted-foreground">
+                <Trans>Current</Trans>
+              </span>
               <Input
                 type="number"
                 value={newStatValue}
@@ -190,7 +224,9 @@ export function StatsInventoryStep({
               />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground">Max</span>
+              <span className="text-xs text-muted-foreground">
+                <Trans>Max</Trans>
+              </span>
               <Input
                 type="number"
                 value={newStatMax}
@@ -211,9 +247,11 @@ export function StatsInventoryStep({
             {stats.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <BarChart3 className="h-10 w-10 text-muted-foreground/30 mb-2" />
-                <p className="text-sm text-muted-foreground">No stats yet</p>
+                <p className="text-sm text-muted-foreground">
+                  <Trans>No stats yet</Trans>
+                </p>
                 <p className="text-xs text-muted-foreground/70">
-                  Add a stat to track character attributes
+                  <Trans>Add a stat to track character attributes</Trans>
                 </p>
               </div>
             ) : (
@@ -233,15 +271,17 @@ export function StatsInventoryStep({
           <div className="flex items-center gap-2 mb-2">
             <Package className="h-4 w-4 text-primary" />
             <span className="text-xs text-muted-foreground">
-              {inventory.length} {inventory.length === 1 ? "item" : "items"}
+              {t`${inventory.length} ${inventory.length === 1 ? "item" : "items"}`}
             </span>
           </div>
 
           <div className="flex gap-2 mb-4 items-end">
             <div className="flex-1 flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground">Name</span>
+              <span className="text-xs text-muted-foreground">
+                <Trans>Name</Trans>
+              </span>
               <Input
-                placeholder="Add item..."
+                placeholder={t`Add item...`}
                 value={newItemName}
                 onChange={(e) => setNewItemName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
@@ -260,9 +300,11 @@ export function StatsInventoryStep({
             {inventory.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <Package className="h-10 w-10 text-muted-foreground/30 mb-2" />
-                <p className="text-sm text-muted-foreground">Inventory empty</p>
+                <p className="text-sm text-muted-foreground">
+                  <Trans>Inventory empty</Trans>
+                </p>
                 <p className="text-xs text-muted-foreground/70">
-                  Items collected will appear here
+                  <Trans>Items collected will appear here</Trans>
                 </p>
               </div>
             ) : (
