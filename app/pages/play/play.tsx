@@ -192,7 +192,7 @@ export default function Play() {
         />
         {showZoomIndicator && (
           <div className="pointer-events-none absolute top-4 end-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="rounded-md bg-background/95 px-4 py-2 shadow-lg border border-border backdrop-blur-sm">
+            <div className="rounded-xs bg-background/95 px-4 py-2 shadow-lg border border-border backdrop-blur-sm">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <span className="text-muted-foreground">
                   <Trans>Zoom:</Trans>

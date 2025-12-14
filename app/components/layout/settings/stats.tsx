@@ -42,7 +42,7 @@ export default function SettingsStats() {
             return (
               <div
                 key={stat.name}
-                className="group p-4 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
+                className="group p-4 rounded-xs border bg-muted/30 hover:bg-muted/50 transition-colors"
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <Input
@@ -108,7 +108,7 @@ export default function SettingsStats() {
         </div>
       )}
 
-      <div className="flex flex-col gap-2 p-3 rounded-lg border border-dashed">
+      <div className="flex flex-col gap-2 p-3 rounded-xs border border-dashed">
         <div className="flex items-center gap-2">
           <Input
             value={newStatName}

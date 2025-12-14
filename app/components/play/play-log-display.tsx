@@ -99,7 +99,7 @@ export function PlayLogDisplay({
               ) : (
                 block.entries.map((entry) =>
                   currentlyEditingLogId === entry.id ? (
-                    <div key={entry.id} className="bg-accent/50 rounded-md p-0">
+                    <div key={entry.id} className="bg-accent/50 rounded-xs p-0">
                       <InlineEditableContent
                         initialValue={entry.text}
                         onCommit={(next) => {
@@ -113,7 +113,7 @@ export function PlayLogDisplay({
                   ) : (
                     <div
                       key={entry.id}
-                      className={`whitespace-pre-wrap hover:bg-accent/50 rounded-md cursor-pointer ${
+                      className={`whitespace-pre-wrap hover:bg-accent/50 rounded-xs cursor-pointer ${
                         currentlyEditingLogId === entry.id ? "bg-accent" : ""
                       }`}
                       onClick={() => setCurrentlyEditingLogId(entry.id)}

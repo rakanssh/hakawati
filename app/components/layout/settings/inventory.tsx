@@ -42,7 +42,7 @@ export default function SettingsInventory() {
         </div>
       )}
 
-      <div className="flex items-center gap-2 p-3 rounded-lg border border-dashed">
+      <div className="flex items-center gap-2 p-3 rounded-xs border border-dashed">
         <Input
           value={newItemName}
           onChange={(e) => setNewItemName(e.target.value)}

@@ -20,7 +20,7 @@ function SquareCard({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card"
       className={cn(
-        "bg-card text-card-foreground flex flex-col gap-6 rounded-md border py-6 shadow-sm",
+        "bg-card text-card-foreground flex flex-col gap-6 rounded-xs border py-6 shadow-sm",
         className,
       )}
       {...props}

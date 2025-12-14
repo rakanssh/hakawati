@@ -9,7 +9,7 @@ export default function SettingsAbout() {
   return (
     <div className="flex h-full max-w-full flex-col gap-4">
       <div className="flex flex-col gap-4 pr-2">
-        <section className="flex flex-col gap-2 rounded-sm border border-border/60 bg-card/60 p-4">
+        <section className="flex flex-col gap-2 rounded-xs border border-border/60 bg-card/60 p-4">
           <Label>
             <Trans>License</Trans>
           </Label>
@@ -30,7 +30,7 @@ export default function SettingsAbout() {
           </a>
         </section>
 
-        <section className="flex flex-col gap-2 rounded-sm border border-border/60 bg-card/60 p-4">
+        <section className="flex flex-col gap-2 rounded-xs border border-border/60 bg-card/60 p-4">
           <Label>
             <Trans>Third-party dependencies</Trans>
           </Label>
@@ -42,7 +42,7 @@ export default function SettingsAbout() {
           </p>
         </section>
 
-        <section className="flex flex-col gap-2 rounded-sm border border-border/60 bg-card/60 p-4">
+        <section className="flex flex-col gap-2 rounded-xs border border-border/60 bg-card/60 p-4">
           <Label>
             <Trans>Credits</Trans>
           </Label>

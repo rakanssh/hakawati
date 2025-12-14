@@ -79,7 +79,7 @@ export default function SettingsUpdates() {
         );
       case "available":
         return (
-          <div className="flex flex-col gap-2 rounded-sm border border-border/60 bg-card/80 p-3">
+          <div className="flex flex-col gap-2 rounded-xs border border-border/60 bg-card/80 p-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <DownloadCloud className="size-4 text-primary" />
@@ -153,7 +153,7 @@ export default function SettingsUpdates() {
 
   return (
     <div className="flex flex-col gap-4 max-w-full">
-      <div className="flex flex-col gap-2 rounded-sm border border-border/60 bg-card/50 p-3">
+      <div className="flex flex-col gap-2 rounded-xs border border-border/60 bg-card/50 p-3">
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
             <span className="text-sm font-medium">
