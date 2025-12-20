@@ -83,7 +83,7 @@ msgstr "يستيقظ {characterName} ليجد شيئاً تغير في اللي�
 
 #: app/data/quickstart-presets.ts:354
 msgid "{characterName}'s {settingName} Adventure"
-msgstr "مغامرة {characterName} في {settingName}"
+msgstr "مغامرة {characterName} - {settingName}"
 
 #: app/data/quickstart-presets.ts:453
 msgid "{characterName}'s ship, station, or habitat picks up a signal that should not exist. It is old, far older than it should be, or it is coming from somewhere that should be empty. Someone has to investigate."
@@ -147,23 +147,23 @@ msgstr "حزمة صغيرة من أعواد البخور"
 
 #: app/data/quickstart-presets.ts:376
 msgid "a world of advanced technology where humanity has scattered across the stars. The frontier is vast, dangerous, and full of discovery."
-msgstr "عالم من التكنولوجيا المتقدمة حيث انتشرت البشرية عبر النجوم. الحدود شاسعة، وخطيرة، ومليئة بالاكتشافات."
+msgstr "عالم من التكنولوجيا المتقدمة حيث تشتتت البشرية بين النجوم. آفاقه شاسعة، محفوفة بالمخاطر، وحافلة بالاكتشافات."
 
 #: app/data/quickstart-presets.ts:374
 msgid "a world of shadows and secrets, where people mislead, conceal, and rationalize. Every locked door hides a motive. Every alibi has cracks. The truth waits beneath layers of story, excuse, and distraction, and those who dig too deep may not like what they find."
-msgstr "عالم من الظلال والأسرار، حيث يضلل الناس ويخفون ويبررون. كل باب مغلق يخفي دافعاً. كل حجة غياب بها شقوق. الحقيقة تنتظر تحت طبقات من القصص، والأعذار، والتشتيت، ومن يحفر بعمق قد لا يعجبه ما يجد."
+msgstr "عالم من الظلال والأسرار، حيث التضليل والكتمان والتبرير. خلف كل باب موصد دافع خفي، وفي كل ذريعة شقوق تتسع. الحقيقة تقبع تحت طبقات من الزيف والأعذار، وأولئك الذين ينبشون في الأعماق قد يندمون على ما يجدون."
 
 #: app/data/quickstart-presets.ts:375
 msgid "a world that ended three months ago. The virus claimed the cities first, too many people in too little space. Now the living dead move through the streets while the remaining few scavenge, survive, and wonder if humanity has any future at all."
-msgstr "عالم انتهى قبل ثلاثة أشهر. حصد الفيروس المدن أولاً. الآن يتحرك الموتى الأحياء عبر الشوارع بينما يبحث الناجون القلائل عن الطعام، ويتساءلون عما إذا كان للبشرية مستقبل."
+msgstr "عالم انتهى منذ ثلاثة أشهر. حصد الفيروس المدن أولاً لشدة اكتظاظها، والآن يجوب الموتى الأحياء الشوارع بينما القلة الباقية تقتات على ما تجد، تصارع للنجاة، وتتساءل إن كان للبشرية مستقبل أصلاً."
 
 #: app/data/quickstart-presets.ts:373
 msgid "a world where ancient magic stirs in forgotten places, kingdoms rise and fall by the sword, and prophecies shape the fate of mortals. Ancient beasts slumber in mountain keeps. Old gods whisper through sacred groves. The line between legend and reality blurs."
-msgstr "عالم يتحرك فيه السحر القديم في أماكن منسية، وتنهض الممالك وتسقط بالسيف، وتشكل النبوءات مصير البشر. ترقد الوحوش في الجبال، وتهمس الآلهة القديمة عبر البساتين. يطمس الخط بين الأسطورة والواقع."
+msgstr "عالم يستيقظ فيه السحر القديم في بقاع منسية، ممالك تُبنى وتندثر بحد السيف، ونبوءات تصوغ مصائر الفانين. وحوش عتيقة تغط في سبات عميق داخل حصون جبلية، وآلهة قديمة تهمس عبر البساتين المقدسة، حيث يتلاشى الخط الفاصل بين الأسطورة والواقع."
 
 #: app/data/quickstart-presets.ts:377
 msgid "a world where something is deeply wrong. It began as a feeling of being watched, dreams that feel too real, thoughts that do not fully feel like your own. Rational explanations are running out. What waits at the edge of perception is patient, and it is getting closer."
-msgstr "عالم حيث يوجد شيء خاطئ للغاية. بدأ كشعور بالمراقبة، وأحلام واقعية جداً، وأفكار غريبة. التفسيرات العقلانية تنفد. ما ينتظر عند حافة الإدراك صبور، ويقترب."
+msgstr "عالم فيه خطبٌ فادح. بدأ الأمر كشعور بأنك مراقب، ثم أحلام تبدو واقعية للغاية، وأفكار لا تبدو ملكك تماماً. التفسيرات العقلانية تتلاشى، وما ينتظر عند حافة الإدراك صبور... ويقترب أكثر فأكثر."
 
 #: app/components/layout/settings/settings-modal.tsx:25
 msgid "About"
@@ -320,7 +320,7 @@ msgstr "ابدأ عند عتبة: {characterName} على وشك عبور حدو�
 
 #: app/data/quickstart-presets.ts:437
 msgid "Begin in medias res, {characterName} is already in trouble. Something has gone wrong: a deal turned sour, a spell misfired, an old enemy resurfaced. Ground the opening in immediate tension and sensory detail. What does {characterName} see, hear, feel? What decision must they make right now?"
-msgstr "ابدأ في خضم الأحداث، {characterName} في ورطة. حدث خطأ ما: صفقة فسدت، تعويذة فشلت، عدو عاد. رسّخ الافتتاحية في توتر وتفاصيل حسية. ماذا يرى ويسمع ويشعر {characterName}؟ ما القرار الذي يجب اتخاذه الآن؟"
+msgstr "ابدأ من خضم الأحداث؛ {characterName} في ورطة بالفعل. حدث خطأ ما: صفقة ساءت، أو تعويذة أخطأت هدفها، أو عدو قديم عاد للظهور. ارسِ الافتتاحية في توتر فوري وتفاصيل حسية؛ ماذا يرى {characterName} ويسمع ويشعر؟ وما القرار المصيري الذي يجب اتخاذه الآن؟"
 
 #: app/data/quickstart-presets.ts:449
 msgid "Begin in the middle of a supply run gone sideways. {characterName} is somewhere they should not be, with less time than they thought they had. The exits are limited. The noise they just made was loud."
@@ -352,7 +352,7 @@ msgstr "تصفح وإدارة السيناريوهات"
 
 #: app/data/quickstart-presets.ts:324
 msgid "Build tension through atmosphere and unanswered questions. Focus on human motives, lies, and conflicting accounts. Plant clues naturally. Every character could be hiding something."
-msgstr "ابنِ التوتر من خلال الجو والأسئلة الغامضة. ركّز على الدوافع والأكاذيب. ازرع الأدلة بشكل طبيعي. كل شخصية قد تخفي شيئاً."
+msgstr "ابنِ التوتر عبر الأجواء والأسئلة الغامضة. ركز على الدوافع البشرية، والأكاذيب، والروايات المتضاربة. ازرع القرائن بعفوية، فكل شخصية قد تخفي سراً."
 
 #: app/data/quickstart-presets.ts:139
 #: app/data/quickstart-presets.ts:282
@@ -425,7 +425,7 @@ msgstr "اضغط على \"بداية سريعة\" للبدء باستخدام ا
 
 #: app/data/quickstart-presets.ts:406
 msgid "clinging to rationality like a life raft, even as the evidence mounts that the world does not quite match the rules you know"
-msgstr "تتشبث بالعقلانية كطوق نجاة، حتى مع تزايد الأدلة على أن العالم يخالف قواعدك"
+msgstr "يتشبث بالعقلانية كطوق نجاة، حتى مع تراكم الأدلة على أن العالم لا يخضع للقواعد التي ألفها"
 
 #: app/data/quickstart-presets.ts:205
 msgid "Combat Knife"
@@ -668,7 +668,7 @@ msgstr "جاري تحميل التحديث... ({0})"
 
 #: app/data/quickstart-presets.ts:323
 msgid "Draw from classic sword and sorcery. Magic should feel wondrous or dangerous, never mundane."
-msgstr "استوحِ من قصص السيف والسحر. يجب أن يبدو السحر عجيباً أو خطيراً، وليس عادياً."
+msgstr "استمد إلهامك من قصص السيف والسحر الكلاسيكية. يجب أن يبدو السحر عجيباً أو خطيراً، وليس عادياً أبداً."
 
 #: app/data/quickstart-presets.ts:389
 msgid "driven by an obsession with truth that has cost you sleep, relationships, and maybe your peace of mind"
@@ -708,7 +708,7 @@ msgstr "تعديل السيناريو"
 
 #: app/data/quickstart-presets.ts:325
 msgid "Emphasize survival horror. Resources are scarce. Trust is fragile. The world has ended and what remains is desperate, gritty, and human. Quiet moments matter as much as the horror."
-msgstr "أكّد على رعب البقاء. الموارد شحيحة والثقة هشة. انتهى العالم، وما تبقى يائس وقاسٍ. اللحظات الهادئة تهم بقدر الرعب."
+msgstr "ركز على رعب النجاة؛ حيث الموارد شحيحة والثقة هشة. لقد انتهى العالم، وما تبقى منه ليس سوى اليأس والقسوة والإنسانية الجريحة. اللحظات الهادئة تهم بقدر الرعب."
 
 #: app/data/quickstart-presets.ts:214
 msgid "Energy sidearm"
@@ -789,7 +789,7 @@ msgstr "خيال"
 
 #: app/data/quickstart-presets.ts:327
 msgid "Favor dread over shock. Build unease through atmosphere, wrongness, and the unknown or unknowable. Let the imagination do most of the work. Not everything needs to be explained."
-msgstr "فضّل الرعب النفسي على الصدمة. ابنِ القلق من خلال الجو والغموض. دع الخيال يعمل، فلا يحتاج كل شيء لتفسير."
+msgstr "غلِّب أجواء الرهبة على الصدمات المفاجئة. ابنِ شعوراً بالريب من خلال الأجواء، والخلل، والمجهول. اترك للخيال المساحة الأكبر، فليس كل شيء يحتاج إلى تفسير."
 
 #: app/data/quickstart-presets.ts:176
 msgid "First Aid Kit"
@@ -893,7 +893,7 @@ msgstr "اذهب إلى قسم API في لوحة التحكم"
 
 #: app/data/quickstart-presets.ts:326
 msgid "Ground the fantastic in plausible detail. Explore the human condition against the vastness of space or the weight of technological change."
-msgstr "رسّخ الخيال بتفاصيل واقعية. استكشف الحالة البشرية مقابل شساعة الفضاء أو التغيير التكنولوجي."
+msgstr "أرسِ الخيال في تفاصيل منطقية. استكشف الحالة البشرية في مواجهة شساعة الفضاء أو وطأة التغيير التكنولوجي."
 
 #: app/components/layout/settings/about.tsx:17
 msgid "Hakawati is distributed under the GNU General Public License v3."
@@ -1078,7 +1078,7 @@ msgstr "اجعل الفقرات قصيرة (1-4 جمل). تجنب الخطب ا�
 
 #: app/data/quickstart-presets.ts:317
 msgid "Keep the mood warm and hopeful even in danger. Humor can surface naturally but do not force jokes."
-msgstr "حافظ على الدفء والأمل حتى في الخطر. دع الفكاهة تظهر طبيعياً دون تكلف."
+msgstr "حافظ على جو من الدفء والأمل حتى في ظل الخطر. اترك مجالاً للفكاهة لتظهر بعفوية دون تكلف."
 
 #: app/data/quickstart-presets.ts:487
 msgid "Keep the opening tight and grounded. Limit humor. Let tension build in clear, steady steps."
@@ -1086,7 +1086,7 @@ msgstr "اجعل الافتتاحية محكمة وواقعية. قلل الفك
 
 #: app/data/quickstart-presets.ts:395
 msgid "keeping others alive in a world that wants everyone dead, rationing hope along with the antibiotics"
-msgstr "تبقي الآخرين أحياء في عالم قاتل، مقنناً الأمل مع المضادات الحيوية"
+msgstr "يبقي الآخرين على قيد الحياة في عالم يتربص بالجميع، يقتصد في الأمل كما يقتصد في المضادات الحيوية"
 
 #: app/components/layout/settings/game.tsx:73
 msgid "Language"
@@ -1113,7 +1113,7 @@ msgstr "آخر تحديث: {0}"
 
 #: app/data/quickstart-presets.ts:318
 msgid "Lean into absurdity, quick banter, and sharp timing. Play with expectations in a playful way."
-msgstr "مِل للعبثية والمزاح السريع. تلاعب بالتوقعات بمرح."
+msgstr "تبنَّ أسلوب العبث، والمساجلات السريعة، والدقة في التوقيت. تلاعب بالتوقعات بلمسة مرحة."
 
 #: app/components/quickstart/steps/description-style-step.tsx:76
 msgid "Leave characters, objects, and concepts to the story cards"
@@ -1247,7 +1247,7 @@ msgstr "لا يمكن التأكد من أن النموذج يدعم استخد�
 
 #: app/data/quickstart-presets.ts:386
 msgid "more at home in wild places than among crowded streets"
-msgstr "يألف البرية أكثر من الشوارع المزدحمة"
+msgstr "يجد أنسه في البراري والقفار أكثر مما يجد بين الشوارع المزدحمة"
 
 #: app/data/quickstart-presets.ts:399
 msgid "most comfortable at the helm of a ship, trusting your vessel and reflexes more than most people"
@@ -1351,11 +1351,11 @@ msgstr "ابدأ بوصول {characterName} لمكان هام: مدينة مشه
 
 #: app/data/quickstart-presets.ts:447
 msgid "Open on silence. The wrong kind of silence. {characterName} has not heard another human voice in three days. Start in the aftermath of a close call, adrenaline fading, hands still shaking, inventory one item shorter than it should be. The immediate question: where is safe to sleep tonight?"
-msgstr "ابدأ بصمت مريب. لم يسمع {characterName} صوتاً منذ 3 أيام. ابدأ بعد نجاة وشيكة، والأيدي ترتجف. السؤال الآن: أين المكان الآمن للنوم؟"
+msgstr "ابدأ بصمتٍ مريب؛ صمتٌ من النوع الذي لا يبشر بخير. لم يسمع {characterName} صوتاً منذ ثلاثة أيام. ابدأ في أعقاب مواجهة خطيرة؛ الأدرينالين يتلاشى، واليدان ترتجفان، والمتاع ينقصه غرض حيوي. السؤال الملح: أين الملاذ الآمن للنوم الليلة؟"
 
 #: app/data/quickstart-presets.ts:442
 msgid "Open on the crime scene, or what is left of it. {characterName} is late to the party. The police tape is already up, the obvious clues already catalogued. But there is something everyone else missed. What small wrongness catches {characterName}'s eye?"
-msgstr "ابدأ في مسرح الجريمة. {characterName} متأخر، والشرطة موجودة. لكن هناك شيئاً فات الجميع. ما الخطأ الصغير الذي لاحظه {characterName}؟"
+msgstr "ابدأ من مسرح الجريمة، أو ما تبقى منه. وصل {characterName} متأخراً بعد فوات الأوان؛ أشرطة الشرطة طوقت المكان، والأدلة الجلية جُمعت بالفعل، لكن ثمة تفصيلاً فات الجميع. ما الخلل الصغير الذي لفت انتباه {characterName}؟"
 
 #: app/pages/home/home.tsx:163
 msgid "Open Settings"
@@ -1696,7 +1696,7 @@ msgstr "جدي"
 
 #: app/data/quickstart-presets.ts:401
 msgid "serving as the sharp end of whatever corporate or colonial interest sends you into harm's way"
-msgstr "تخدم كأداة لمصالح الشركات أو الاستعمار التي ترسلك للخطر"
+msgstr "تعمل كنصلٍ حاد في يد القوى المؤسسية أو الاستعمارية، مستعداً لخوض غمار المخاطر التي تضعك فيها"
 
 #: app/components/layout/settings/api.tsx:110
 msgid "Set"
@@ -1874,7 +1874,7 @@ msgstr "فاجئني"
 
 #: app/data/quickstart-presets.ts:385
 msgid "surviving on wit, guile, and the understanding that rules are for people who cannot bend them"
-msgstr "تنجو بذكائك ومكرك وفهمك أن القواعد لمن لا يستطيع ثنيها"
+msgstr "ينجو بذكائه وحيلته، مدركاً أن القواعد وُجدت لمن يعجز عن تطويعها"
 
 #: app/data/quickstart-presets.ts:157
 msgid "Survivor"
@@ -2002,7 +2002,7 @@ msgstr "النبرة"
 
 #: app/data/quickstart-presets.ts:384
 msgid "touched by powers most fear to name, walking the knife's edge between knowledge and destruction"
-msgstr "لمستك قوى مخيفة، تمشي على حد السكين بين المعرفة والدمار"
+msgstr "لامسته قوى يتهيب الكثيرون مجرد تسميتها، يسير على حد السكين بين المعرفة والهلاك"
 
 #: app/data/quickstart-presets.ts:396
 msgid "trained for wars that seem small now, applying military discipline to an enemy that does not negotiate"
@@ -2010,7 +2010,7 @@ msgstr "مدرب لحروب تبدو صغيرة الآن، وتواجه عدوا
 
 #: app/data/quickstart-presets.ts:383
 msgid "trained in the art of war, carrying scars that tell stories and a blade that has tasted blood"
-msgstr "مدرب على الحرب، تحمل ندوباً تحكي قصصاً ونصلاً ذاق الدم"
+msgstr "خبير في فنون الحرب، يحمل ندوباً تروي قصصاً، ونصلاً ذاق طعم الدماء"
 
 #: app/data/quickstart-presets.ts:222
 msgid "Tricorder"
@@ -2147,10 +2147,10 @@ msgstr "يعمل مع أي API متوافق مع OpenAI (سحابي أو محل�
 
 #: app/data/quickstart-presets.ts:316
 msgid "Write with weight and consequence. Actions have repercussions. Death is real. Stakes matter."
-msgstr "اكتب بجدية وعواقب. للأفعال تداعيات، والموت حقيقي، والمخاطر مهمة."
+msgstr "اكتب بجدية ووقع عميق. للأفعال عواقب ملموسة. الموت حقيقة واقعة، والرهانات مصيرية."
 
 #. placeholder {0}: archetypeName.toLowerCase()
-#: app/data/quickstart-presets.ts:422
+#: app/data/quickstart-presets.ts:422ش
 msgid "You are {characterName}, a {0} {archetypeHook}. You exist in {worldDesc}."
 msgstr "أنت {characterName}، {0} {archetypeHook}. أنت موجود في {worldDesc}."
 
