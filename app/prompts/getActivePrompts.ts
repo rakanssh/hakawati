@@ -4,6 +4,7 @@ import {
   STORY_TELLER_SYSTEM_PROMPT,
   CONTINUE_SYSTEM_PROMPT,
   CONTINUE_AUTHOR_NOTE,
+  STORY_CARD_GENERATOR_PROMPT,
 } from "./system";
 
 export function getActiveGmPrompt(): string {
@@ -35,4 +36,12 @@ export function getActiveContinueAuthorNote(): string {
   return useCustomContinueAuthorNote && customContinueAuthorNote
     ? customContinueAuthorNote
     : CONTINUE_AUTHOR_NOTE;
+}
+
+export function getActiveStoryCardGeneratorPrompt(): string {
+  const { useCustomStoryCardGeneratorPrompt, customStoryCardGeneratorPrompt } =
+    useSettingsStore.getState();
+  return useCustomStoryCardGeneratorPrompt && customStoryCardGeneratorPrompt
+    ? customStoryCardGeneratorPrompt
+    : STORY_CARD_GENERATOR_PROMPT;
 }

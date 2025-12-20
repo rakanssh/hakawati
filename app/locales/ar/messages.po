@@ -176,7 +176,7 @@ msgstr "عن التطبيق"
 msgid "Act"
 msgstr "افعل"
 
-#: app/components/storybook/StorybookEditor.tsx:157
+#: app/components/storybook/StorybookEditor.tsx:205
 msgid "Add"
 msgstr "إضافة"
 
@@ -203,12 +203,12 @@ msgstr "أضف معلومات للنموذج..."
 msgid "Add credits to your account (To access non-free models)"
 msgstr "أضف أرصدة إلى حسابك (للوصول إلى النماذج غير المجانية)"
 
-#: app/components/storybook/StorybookEditor.tsx:154
+#: app/components/storybook/StorybookEditor.tsx:202
 msgid "Add entry"
 msgstr "إضافة مدخل"
 
-#: app/components/storybook/StorybookEditor.tsx:197
-#: app/components/storybook/StorybookEditor.tsx:276
+#: app/components/storybook/StorybookEditor.tsx:245
+#: app/components/storybook/StorybookEditor.tsx:345
 msgid "Add Entry"
 msgstr "إضافة مدخل"
 
@@ -301,9 +301,13 @@ msgstr "صوت:"
 msgid "Author Notes"
 msgstr "ملاحظات المؤلف"
 
-#: app/components/layout/settings/advanced.tsx:307
+#: app/components/layout/settings/advanced.tsx:320
 msgid "Author's note injected during continue..."
 msgstr "ملاحظة المؤلف المدرجة أثناء الاستمرار..."
+
+#: app/components/storybook/StorybookEditor.tsx:279
+msgid "Autofill"
+msgstr "تعبئة آلية"
 
 #: app/components/play/play-input-controls.tsx:158
 #: app/components/quickstart/quickstart-wizard.tsx:404
@@ -361,7 +365,7 @@ msgstr "كاميرا"
 
 #: app/components/sidebar/inventory-card.tsx:112
 #: app/components/sidebar/stats-card.tsx:202
-#: app/components/storybook/StorybookEditor.tsx:270
+#: app/components/storybook/StorybookEditor.tsx:339
 #: app/components/ui/inventory-item.tsx:73
 #: app/components/ui/stat-item.tsx:100
 msgid "Cancel"
@@ -375,13 +379,13 @@ msgstr "شموع"
 msgid "Canned Food"
 msgstr "طعام معلب"
 
-#: app/components/storybook/StorybookEditor.tsx:244
+#: app/components/storybook/StorybookEditor.tsx:313
 msgid "Category"
 msgstr "الفئة"
 
 #: app/components/layout/settings/settings-modal.tsx:29
 #: app/components/storybook/CategoryFilter.tsx:35
-#: app/components/storybook/StorybookEditor.tsx:53
+#: app/components/storybook/StorybookEditor.tsx:56
 #: app/components/storybook/StoryCard.tsx:43
 msgid "Character"
 msgstr "شخصية"
@@ -436,7 +440,7 @@ msgid "Comedic"
 msgstr "كوميدي"
 
 #: app/components/storybook/CategoryFilter.tsx:42
-#: app/components/storybook/StorybookEditor.tsx:56
+#: app/components/storybook/StorybookEditor.tsx:59
 #: app/components/storybook/StoryCard.tsx:49
 msgid "Concept"
 msgstr "مفهوم"
@@ -457,7 +461,7 @@ msgstr "اتصل بأي API آخر متوافق مع OpenAI. أدخل العنو
 msgid "Contains forbidden knowledge"
 msgstr "يحتوي على معرفة محرمة"
 
-#: app/components/storybook/StorybookEditor.tsx:217
+#: app/components/storybook/StorybookEditor.tsx:286
 msgid "Content"
 msgstr "المحتوى"
 
@@ -475,11 +479,11 @@ msgstr "نافذة السياق:"
 msgid "Continue"
 msgstr "استمرار"
 
-#: app/components/layout/settings/advanced.tsx:272
+#: app/components/layout/settings/advanced.tsx:285
 msgid "Continue Author Note"
 msgstr "ملاحظة المؤلف عند الاستمرار"
 
-#: app/components/layout/settings/advanced.tsx:219
+#: app/components/layout/settings/advanced.tsx:232
 msgid "Continue System Prompt"
 msgstr "موجّه النظام عند الاستمرار"
 
@@ -563,7 +567,7 @@ msgstr "نمط مخصص"
 msgid "Custom Setting"
 msgstr "بيئة مخصصة"
 
-#: app/components/layout/settings/advanced.tsx:98
+#: app/components/layout/settings/advanced.tsx:111
 msgid "Customize system prompts that control how the AI responds. Users with default prompts will automatically receive updates when the app is updated. Custom prompts will be preserved until you reset them."
 msgstr "تخصيص موجهات النظام التي تتحكم في استجابة الذكاء الاصطناعي. سيتلقى المستخدمون الذين يستخدمون الموجهات الافتراضية التحديثات تلقائياً عند تحديث التطبيق. سيتم الاحتفاظ بالموجهات المخصصة حتى تقوم بإعادة تعيينها."
 
@@ -698,7 +702,7 @@ msgstr "مثال: ستيم بانك، أوبرا الفضاء، إلخ."
 msgid "Edit"
 msgstr "تعديل"
 
-#: app/components/storybook/StorybookEditor.tsx:195
+#: app/components/storybook/StorybookEditor.tsx:243
 msgid "Edit Entry"
 msgstr "تعديل المدخل"
 
@@ -735,11 +739,11 @@ msgstr "أدخل مفتاح API الخاص بك (إذا كان مطلوباً)"
 msgid "Enter your character's name..."
 msgstr "أدخل اسم شخصيتك..."
 
-#: app/components/storybook/StorybookEditor.tsx:225
+#: app/components/storybook/StorybookEditor.tsx:294
 msgid "Entry content"
 msgstr "محتوى المدخل"
 
-#: app/components/storybook/StorybookEditor.tsx:212
+#: app/components/storybook/StorybookEditor.tsx:261
 msgid "Entry title"
 msgstr "عنوان المدخل"
 
@@ -858,11 +862,11 @@ msgstr "البدء"
 msgid "Give your character a name"
 msgstr "امنح شخصيتك اسماً"
 
-#: app/components/layout/settings/advanced.tsx:123
+#: app/components/layout/settings/advanced.tsx:136
 msgid "GM mode is still in development and is very sensitive to the system prompt."
 msgstr "وضع مدير اللعبة لا يزال قيد التطوير وهو حساس جداً لموجّه النظام."
 
-#: app/components/layout/settings/advanced.tsx:107
+#: app/components/layout/settings/advanced.tsx:120
 msgid "GM System Prompt"
 msgstr "موجّه النظام لمدير اللعبة"
 
@@ -1303,11 +1307,11 @@ msgstr "التالي"
 msgid "No description yet."
 msgstr "لا يوجد وصف بعد."
 
-#: app/components/storybook/StorybookEditor.tsx:179
+#: app/components/storybook/StorybookEditor.tsx:227
 msgid "No entries in <0>{selectedCategory}</0> category"
 msgstr "لا توجد مدخلات في فئة <0>{selectedCategory}</0>"
 
-#: app/components/storybook/StorybookEditor.tsx:183
+#: app/components/storybook/StorybookEditor.tsx:231
 msgid "No entries yet."
 msgstr "لا توجد مدخلات بعد."
 
@@ -1428,7 +1432,7 @@ msgid "Pistol"
 msgstr "مسدس"
 
 #: app/components/storybook/CategoryFilter.tsx:39
-#: app/components/storybook/StorybookEditor.tsx:55
+#: app/components/storybook/StorybookEditor.tsx:58
 #: app/components/storybook/StoryCard.tsx:47
 msgid "Place"
 msgstr "مكان"
@@ -1450,7 +1454,11 @@ msgstr "السابق"
 msgid "Privacy-focused provider with multiple models on offer. Account optional. Offers subscription plan with unlimited usage on some models."
 msgstr "مزود يركز على الخصوصية مع توفر نماذج متعددة. الحساب اختياري. يقدم خطة اشتراك مع استخدام غير محدود لبعض النماذج."
 
-#: app/components/layout/settings/advanced.tsx:254
+#: app/components/layout/settings/advanced.tsx:387
+msgid "Prompt for story card generation..."
+msgstr "موجّه لتوليد بطاقات القصة..."
+
+#: app/components/layout/settings/advanced.tsx:267
 msgid "Prompt used when continuing the story..."
 msgstr "الموجّه المستخدم عند استكمال القصة..."
 
@@ -1538,11 +1546,12 @@ msgstr "ملاحظات بحث"
 msgid "Reset"
 msgstr "إعادة تعيين"
 
-#: app/components/layout/settings/advanced.tsx:93
-#: app/components/layout/settings/advanced.tsx:155
-#: app/components/layout/settings/advanced.tsx:210
-#: app/components/layout/settings/advanced.tsx:263
-#: app/components/layout/settings/advanced.tsx:316
+#: app/components/layout/settings/advanced.tsx:106
+#: app/components/layout/settings/advanced.tsx:168
+#: app/components/layout/settings/advanced.tsx:223
+#: app/components/layout/settings/advanced.tsx:276
+#: app/components/layout/settings/advanced.tsx:329
+#: app/components/layout/settings/advanced.tsx:396
 #: app/components/layout/settings/model.tsx:210
 #: app/components/quickstart/steps/stats-inventory-step.tsx:181
 msgid "Reset to Default"
@@ -1593,7 +1602,7 @@ msgstr "حفط"
 msgid "Save as Scenario"
 msgstr "حفظ كسيناريو"
 
-#: app/components/storybook/StorybookEditor.tsx:274
+#: app/components/storybook/StorybookEditor.tsx:343
 msgid "Save Changes"
 msgstr "حفظ التغييرات"
 
@@ -1830,6 +1839,10 @@ msgstr "إيقاف التوليد (Esc)"
 msgid "Story"
 msgstr "قصة"
 
+#: app/components/layout/settings/advanced.tsx:338
+msgid "Story Card Generator Prompt"
+msgstr "موجّه النظام لمولد بطاقات القصة"
+
 #: app/components/layout/settings/settings-modal.tsx:34
 msgid "Story Cards"
 msgstr "بطاقات القصة"
@@ -1844,7 +1857,7 @@ msgstr "قصّاص"
 msgid "Story: Write a segment of text that the AI will treat as part of the story and continue from."
 msgstr "قصة: اكتب جزءاً من النص ليعتبره الكاتب جزءاً من القصة ويستمر بناءً عليه."
 
-#: app/components/layout/settings/advanced.tsx:164
+#: app/components/layout/settings/advanced.tsx:177
 msgid "Storyteller System Prompt"
 msgstr "موجّه النظام للقصّاص"
 
@@ -1884,11 +1897,15 @@ msgstr "ناجي"
 msgid "System"
 msgstr "النظام"
 
-#: app/components/layout/settings/advanced.tsx:146
+#: app/components/layout/settings/advanced.tsx:159
 msgid "System prompt for Game Master mode..."
 msgstr "موجّه النظام لوضع مدير اللعبة..."
 
-#: app/components/layout/settings/advanced.tsx:81
+#: app/components/layout/settings/advanced.tsx:214
+msgid "System prompt for Story Teller mode..."
+msgstr "موجّه النظام لوضع القصّاص..."
+
+#: app/components/layout/settings/advanced.tsx:93
 msgid "System Prompts"
 msgstr "موجهات النظام"
 
@@ -1937,6 +1954,10 @@ msgstr "يوجه أسلوب السرد كيفية سرد الذكاء الاصط
 msgid "The Official OpenAI API. Requires an OpenAI account with charged credits."
 msgstr "الـ API الرسمي لـ OpenAI. يتطلب حساب OpenAI مشحوناً بالرصيد."
 
+#: app/components/layout/settings/advanced.tsx:354
+msgid "The output of this prompt are parsed as JSON. Make sure to preserve the JSON format if you customize this prompt."
+msgstr "يتم تحليل مخرجات هذا الموجّه كـ JSON. تأكد من الحفاظ على تنسيق JSON إذا قمت بتخصيص هذا الموجّه."
+
 #: app/components/layout/settings/game.tsx:45
 msgid "Theme"
 msgstr "النسق"
@@ -1946,7 +1967,7 @@ msgid "These fields were generated based on your choices. You can modify them he
 msgstr "تم إنشاء هذه الحقول بناءً على اختياراتك. يمكنك تعديلها هنا أو من تبويب الحكاية في قائمة الإعدادات داخل اللعبة."
 
 #: app/components/storybook/CategoryFilter.tsx:38
-#: app/components/storybook/StorybookEditor.tsx:54
+#: app/components/storybook/StorybookEditor.tsx:57
 #: app/components/storybook/StoryCard.tsx:45
 msgid "Thing"
 msgstr "شيء"
@@ -1955,7 +1976,7 @@ msgstr "شيء"
 msgid "Third-party dependencies"
 msgstr "تبعيات الطرف الثالث"
 
-#: app/components/layout/settings/advanced.tsx:278
+#: app/components/layout/settings/advanced.tsx:291
 msgid "This is an extra author note that is injected early with other system prompts only during a <0>Continue</0> action."
 msgstr "هذه ملاحظة مؤلف إضافية يتم إدراجها مبكراً مع موجهات النظام الأخرى فقط أثناء إجراء <0>استمرار</0>."
 
@@ -1967,15 +1988,19 @@ msgstr "هكذا ستُعرف"
 msgid "This is the initial paragraph of story that the player will respond to. <0/> Useful for setting up the initial scene."
 msgstr "هذه هي الفقرة الأولية من القصة التي سيرد عليها اللاعب. <0/> مفيدة لإعداد المشهد الأولي."
 
-#: app/components/layout/settings/advanced.tsx:114
+#: app/components/layout/settings/advanced.tsx:344
+msgid "This is the system prompt used when auto-generating story cards. The AI is asked to output JSON with content, triggers, and category. The JSON is parsed and used to populate the new story card."
+msgstr "هذا هو موجّه النظام المستخدم عند توليد بطاقات القصة آلياً. يُطلب من الذكاء الاصطناعي إخراج JSON يحتوي على المحتوى والمحفزات والفئة. يتم تحليل الـ JSON واستخدامه لملء بطاقة القصة الجديدة."
+
+#: app/components/layout/settings/advanced.tsx:127
 msgid "This is the system prompt used when the game is in \"Game Master\" mode. The story description is appended to the prompt. (Two new lines, followed by \"The story is: \" and the description text.)"
 msgstr "هذا هو موجّه النظام المستخدم عندما تكون اللعبة في وضع \"مدير اللعبة\". يتم إلحاق وصف القصة بالموجّه. (سطرين جديدين، متبوعين بـ \"القصة هي: \" ونص الوصف.)"
 
-#: app/components/layout/settings/advanced.tsx:170
+#: app/components/layout/settings/advanced.tsx:183
 msgid "This is the system prompt used when the game is in \"Story Teller\" mode. The story description is appended to the prompt. (Two new lines, followed by \"The story is: \" and the description text.)"
 msgstr "هذا هو موجّه النظام المستخدم عندما تكون اللعبة في وضع \"القصّاص\". يتم إلحاق وصف القصة بالموجّه. (سطرين جديدين، متبوعين بـ \"القصة هي: \" ونص الوصف.)"
 
-#: app/components/layout/settings/advanced.tsx:225
+#: app/components/layout/settings/advanced.tsx:238
 msgid "This is the user message that is sent to the AI when the continue button is clicked."
 msgstr "هذه هي رسالة المستخدم التي يتم إرسالها إلى الذكاء الاصطناعي عند النقر على زر الاستمرار."
 
@@ -1992,7 +2017,7 @@ msgstr "صورة مصغرة (ينصح بـ WebP)"
 msgid "Tips"
 msgstr "نصائح"
 
-#: app/components/storybook/StorybookEditor.tsx:204
+#: app/components/storybook/StorybookEditor.tsx:252
 msgid "Title"
 msgstr "العنوان"
 
@@ -2016,11 +2041,11 @@ msgstr "خبير في فنون الحرب، يحمل ندوباً تروي قص�
 msgid "Tricorder"
 msgstr "ترايكوردر"
 
-#: app/components/storybook/StorybookEditor.tsx:239
+#: app/components/storybook/StorybookEditor.tsx:308
 msgid "trigger1, trigger2, trigger3"
 msgstr "محفز1، محفز2، محفز3"
 
-#: app/components/storybook/StorybookEditor.tsx:231
+#: app/components/storybook/StorybookEditor.tsx:300
 msgid "Triggers (comma-separated)"
 msgstr "المحفزات (مفصولة بفواصل)"
 
@@ -2051,7 +2076,7 @@ msgid "unable to let mysteries rest, even the ones that might be safer left buri
 msgstr "لا تترك الألغاز وشأنها، حتى تلك التي يفضل بقاؤها مدفونة"
 
 #: app/components/storybook/CategoryFilter.tsx:47
-#: app/components/storybook/StorybookEditor.tsx:57
+#: app/components/storybook/StorybookEditor.tsx:60
 #: app/components/storybook/StoryCard.tsx:51
 msgid "Uncategorized"
 msgstr "غير مصنف"
@@ -2090,9 +2115,11 @@ msgstr "تحديثات"
 msgid "Use"
 msgstr "استخدام"
 
-#: app/components/layout/settings/advanced.tsx:137
-#: app/components/layout/settings/advanced.tsx:241
-#: app/components/layout/settings/advanced.tsx:294
+#: app/components/layout/settings/advanced.tsx:150
+#: app/components/layout/settings/advanced.tsx:201
+#: app/components/layout/settings/advanced.tsx:254
+#: app/components/layout/settings/advanced.tsx:307
+#: app/components/layout/settings/advanced.tsx:372
 msgid "Use Custom Prompt"
 msgstr "استخدام موجّه مخصص"
 
@@ -2150,7 +2177,7 @@ msgid "Write with weight and consequence. Actions have repercussions. Death is r
 msgstr "اكتب بجدية ووقع عميق. للأفعال عواقب ملموسة. الموت حقيقة واقعة، والرهانات مصيرية."
 
 #. placeholder {0}: archetypeName.toLowerCase()
-#: app/data/quickstart-presets.ts:422ش
+#: app/data/quickstart-presets.ts:422
 msgid "You are {characterName}, a {0} {archetypeHook}. You exist in {worldDesc}."
 msgstr "أنت {characterName}، {0} {archetypeHook}. أنت موجود في {worldDesc}."
 

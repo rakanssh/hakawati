@@ -176,7 +176,7 @@ msgstr "About"
 msgid "Act"
 msgstr "Act"
 
-#: app/components/storybook/StorybookEditor.tsx:157
+#: app/components/storybook/StorybookEditor.tsx:205
 msgid "Add"
 msgstr "Add"
 
@@ -203,12 +203,12 @@ msgstr "Add context for the AI..."
 msgid "Add credits to your account (To access non-free models)"
 msgstr "Add credits to your account (To access non-free models)"
 
-#: app/components/storybook/StorybookEditor.tsx:154
+#: app/components/storybook/StorybookEditor.tsx:202
 msgid "Add entry"
 msgstr "Add entry"
 
-#: app/components/storybook/StorybookEditor.tsx:197
-#: app/components/storybook/StorybookEditor.tsx:276
+#: app/components/storybook/StorybookEditor.tsx:245
+#: app/components/storybook/StorybookEditor.tsx:345
 msgid "Add Entry"
 msgstr "Add Entry"
 
@@ -301,9 +301,13 @@ msgstr "Audio:"
 msgid "Author Notes"
 msgstr "Author Notes"
 
-#: app/components/layout/settings/advanced.tsx:307
+#: app/components/layout/settings/advanced.tsx:320
 msgid "Author's note injected during continue..."
 msgstr "Author's note injected during continue..."
+
+#: app/components/storybook/StorybookEditor.tsx:279
+msgid "Autofill"
+msgstr "Autofill"
 
 #: app/components/play/play-input-controls.tsx:158
 #: app/components/quickstart/quickstart-wizard.tsx:404
@@ -361,7 +365,7 @@ msgstr "Camera"
 
 #: app/components/sidebar/inventory-card.tsx:112
 #: app/components/sidebar/stats-card.tsx:202
-#: app/components/storybook/StorybookEditor.tsx:270
+#: app/components/storybook/StorybookEditor.tsx:339
 #: app/components/ui/inventory-item.tsx:73
 #: app/components/ui/stat-item.tsx:100
 msgid "Cancel"
@@ -375,13 +379,13 @@ msgstr "Candles"
 msgid "Canned Food"
 msgstr "Canned Food"
 
-#: app/components/storybook/StorybookEditor.tsx:244
+#: app/components/storybook/StorybookEditor.tsx:313
 msgid "Category"
 msgstr "Category"
 
 #: app/components/layout/settings/settings-modal.tsx:29
 #: app/components/storybook/CategoryFilter.tsx:35
-#: app/components/storybook/StorybookEditor.tsx:53
+#: app/components/storybook/StorybookEditor.tsx:56
 #: app/components/storybook/StoryCard.tsx:43
 msgid "Character"
 msgstr "Character"
@@ -436,7 +440,7 @@ msgid "Comedic"
 msgstr "Comedic"
 
 #: app/components/storybook/CategoryFilter.tsx:42
-#: app/components/storybook/StorybookEditor.tsx:56
+#: app/components/storybook/StorybookEditor.tsx:59
 #: app/components/storybook/StoryCard.tsx:49
 msgid "Concept"
 msgstr "Concept"
@@ -457,7 +461,7 @@ msgstr "Connect to any other OpenAI-compatible API. Enter the base URL and API k
 msgid "Contains forbidden knowledge"
 msgstr "Contains forbidden knowledge"
 
-#: app/components/storybook/StorybookEditor.tsx:217
+#: app/components/storybook/StorybookEditor.tsx:286
 msgid "Content"
 msgstr "Content"
 
@@ -475,11 +479,11 @@ msgstr "Context window:"
 msgid "Continue"
 msgstr "Continue"
 
-#: app/components/layout/settings/advanced.tsx:272
+#: app/components/layout/settings/advanced.tsx:285
 msgid "Continue Author Note"
 msgstr "Continue Author Note"
 
-#: app/components/layout/settings/advanced.tsx:219
+#: app/components/layout/settings/advanced.tsx:232
 msgid "Continue System Prompt"
 msgstr "Continue System Prompt"
 
@@ -563,7 +567,7 @@ msgstr "Custom Archetype"
 msgid "Custom Setting"
 msgstr "Custom Setting"
 
-#: app/components/layout/settings/advanced.tsx:98
+#: app/components/layout/settings/advanced.tsx:111
 msgid "Customize system prompts that control how the AI responds. Users with default prompts will automatically receive updates when the app is updated. Custom prompts will be preserved until you reset them."
 msgstr "Customize system prompts that control how the AI responds. Users with default prompts will automatically receive updates when the app is updated. Custom prompts will be preserved until you reset them."
 
@@ -698,7 +702,7 @@ msgstr "e.g., Steampunk, Space Opera, etc."
 msgid "Edit"
 msgstr "Edit"
 
-#: app/components/storybook/StorybookEditor.tsx:195
+#: app/components/storybook/StorybookEditor.tsx:243
 msgid "Edit Entry"
 msgstr "Edit Entry"
 
@@ -735,11 +739,11 @@ msgstr "Enter your API key (If required)"
 msgid "Enter your character's name..."
 msgstr "Enter your character's name..."
 
-#: app/components/storybook/StorybookEditor.tsx:225
+#: app/components/storybook/StorybookEditor.tsx:294
 msgid "Entry content"
 msgstr "Entry content"
 
-#: app/components/storybook/StorybookEditor.tsx:212
+#: app/components/storybook/StorybookEditor.tsx:261
 msgid "Entry title"
 msgstr "Entry title"
 
@@ -858,11 +862,11 @@ msgstr "Getting Started"
 msgid "Give your character a name"
 msgstr "Give your character a name"
 
-#: app/components/layout/settings/advanced.tsx:123
+#: app/components/layout/settings/advanced.tsx:136
 msgid "GM mode is still in development and is very sensitive to the system prompt."
 msgstr "GM mode is still in development and is very sensitive to the system prompt."
 
-#: app/components/layout/settings/advanced.tsx:107
+#: app/components/layout/settings/advanced.tsx:120
 msgid "GM System Prompt"
 msgstr "GM System Prompt"
 
@@ -1303,11 +1307,11 @@ msgstr "Next"
 msgid "No description yet."
 msgstr "No description yet."
 
-#: app/components/storybook/StorybookEditor.tsx:179
+#: app/components/storybook/StorybookEditor.tsx:227
 msgid "No entries in <0>{selectedCategory}</0> category"
 msgstr "No entries in <0>{selectedCategory}</0> category"
 
-#: app/components/storybook/StorybookEditor.tsx:183
+#: app/components/storybook/StorybookEditor.tsx:231
 msgid "No entries yet."
 msgstr "No entries yet."
 
@@ -1428,7 +1432,7 @@ msgid "Pistol"
 msgstr "Pistol"
 
 #: app/components/storybook/CategoryFilter.tsx:39
-#: app/components/storybook/StorybookEditor.tsx:55
+#: app/components/storybook/StorybookEditor.tsx:58
 #: app/components/storybook/StoryCard.tsx:47
 msgid "Place"
 msgstr "Place"
@@ -1450,7 +1454,11 @@ msgstr "Prev"
 msgid "Privacy-focused provider with multiple models on offer. Account optional. Offers subscription plan with unlimited usage on some models."
 msgstr "Privacy-focused provider with multiple models on offer. Account optional. Offers subscription plan with unlimited usage on some models."
 
-#: app/components/layout/settings/advanced.tsx:254
+#: app/components/layout/settings/advanced.tsx:387
+msgid "Prompt for story card generation..."
+msgstr "Prompt for story card generation..."
+
+#: app/components/layout/settings/advanced.tsx:267
 msgid "Prompt used when continuing the story..."
 msgstr "Prompt used when continuing the story..."
 
@@ -1538,11 +1546,12 @@ msgstr "Research Notes"
 msgid "Reset"
 msgstr "Reset"
 
-#: app/components/layout/settings/advanced.tsx:93
-#: app/components/layout/settings/advanced.tsx:155
-#: app/components/layout/settings/advanced.tsx:210
-#: app/components/layout/settings/advanced.tsx:263
-#: app/components/layout/settings/advanced.tsx:316
+#: app/components/layout/settings/advanced.tsx:106
+#: app/components/layout/settings/advanced.tsx:168
+#: app/components/layout/settings/advanced.tsx:223
+#: app/components/layout/settings/advanced.tsx:276
+#: app/components/layout/settings/advanced.tsx:329
+#: app/components/layout/settings/advanced.tsx:396
 #: app/components/layout/settings/model.tsx:210
 #: app/components/quickstart/steps/stats-inventory-step.tsx:181
 msgid "Reset to Default"
@@ -1593,7 +1602,7 @@ msgstr "Save"
 msgid "Save as Scenario"
 msgstr "Save as Scenario"
 
-#: app/components/storybook/StorybookEditor.tsx:274
+#: app/components/storybook/StorybookEditor.tsx:343
 msgid "Save Changes"
 msgstr "Save Changes"
 
@@ -1830,6 +1839,10 @@ msgstr "Stop generating (Esc)"
 msgid "Story"
 msgstr "Story"
 
+#: app/components/layout/settings/advanced.tsx:338
+msgid "Story Card Generator Prompt"
+msgstr "Story Card Generator Prompt"
+
 #: app/components/layout/settings/settings-modal.tsx:34
 msgid "Story Cards"
 msgstr "Story Cards"
@@ -1844,7 +1857,7 @@ msgstr "Story Teller"
 msgid "Story: Write a segment of text that the AI will treat as part of the story and continue from."
 msgstr "Story: Write a segment of text that the AI will treat as part of the story and continue from."
 
-#: app/components/layout/settings/advanced.tsx:164
+#: app/components/layout/settings/advanced.tsx:177
 msgid "Storyteller System Prompt"
 msgstr "Storyteller System Prompt"
 
@@ -1884,11 +1897,15 @@ msgstr "Survivor"
 msgid "System"
 msgstr "System"
 
-#: app/components/layout/settings/advanced.tsx:146
+#: app/components/layout/settings/advanced.tsx:159
 msgid "System prompt for Game Master mode..."
 msgstr "System prompt for Game Master mode..."
 
-#: app/components/layout/settings/advanced.tsx:81
+#: app/components/layout/settings/advanced.tsx:214
+msgid "System prompt for Story Teller mode..."
+msgstr "System prompt for Story Teller mode..."
+
+#: app/components/layout/settings/advanced.tsx:93
 msgid "System Prompts"
 msgstr "System Prompts"
 
@@ -1937,6 +1954,10 @@ msgstr "The narration style guides how the AI narrates and responds during gamep
 msgid "The Official OpenAI API. Requires an OpenAI account with charged credits."
 msgstr "The Official OpenAI API. Requires an OpenAI account with charged credits."
 
+#: app/components/layout/settings/advanced.tsx:354
+msgid "The output of this prompt are parsed as JSON. Make sure to preserve the JSON format if you customize this prompt."
+msgstr "The output of this prompt are parsed as JSON. Make sure to preserve the JSON format if you customize this prompt."
+
 #: app/components/layout/settings/game.tsx:45
 msgid "Theme"
 msgstr "Theme"
@@ -1946,7 +1967,7 @@ msgid "These fields were generated based on your choices. You can modify them he
 msgstr "These fields were generated based on your choices. You can modify them here or from the Tale tab in the settings menu in-game."
 
 #: app/components/storybook/CategoryFilter.tsx:38
-#: app/components/storybook/StorybookEditor.tsx:54
+#: app/components/storybook/StorybookEditor.tsx:57
 #: app/components/storybook/StoryCard.tsx:45
 msgid "Thing"
 msgstr "Thing"
@@ -1955,7 +1976,7 @@ msgstr "Thing"
 msgid "Third-party dependencies"
 msgstr "Third-party dependencies"
 
-#: app/components/layout/settings/advanced.tsx:278
+#: app/components/layout/settings/advanced.tsx:291
 msgid "This is an extra author note that is injected early with other system prompts only during a <0>Continue</0> action."
 msgstr "This is an extra author note that is injected early with other system prompts only during a <0>Continue</0> action."
 
@@ -1967,15 +1988,19 @@ msgstr "This is how you'll be known"
 msgid "This is the initial paragraph of story that the player will respond to. <0/> Useful for setting up the initial scene."
 msgstr "This is the initial paragraph of story that the player will respond to. <0/> Useful for setting up the initial scene."
 
-#: app/components/layout/settings/advanced.tsx:114
+#: app/components/layout/settings/advanced.tsx:344
+msgid "This is the system prompt used when auto-generating story cards. The AI is asked to output JSON with content, triggers, and category. The JSON is parsed and used to populate the new story card."
+msgstr "This is the system prompt used when auto-generating story cards. The AI is asked to output JSON with content, triggers, and category. The JSON is parsed and used to populate the new story card."
+
+#: app/components/layout/settings/advanced.tsx:127
 msgid "This is the system prompt used when the game is in \"Game Master\" mode. The story description is appended to the prompt. (Two new lines, followed by \"The story is: \" and the description text.)"
 msgstr "This is the system prompt used when the game is in \"Game Master\" mode. The story description is appended to the prompt. (Two new lines, followed by \"The story is: \" and the description text.)"
 
-#: app/components/layout/settings/advanced.tsx:170
+#: app/components/layout/settings/advanced.tsx:183
 msgid "This is the system prompt used when the game is in \"Story Teller\" mode. The story description is appended to the prompt. (Two new lines, followed by \"The story is: \" and the description text.)"
 msgstr "This is the system prompt used when the game is in \"Story Teller\" mode. The story description is appended to the prompt. (Two new lines, followed by \"The story is: \" and the description text.)"
 
-#: app/components/layout/settings/advanced.tsx:225
+#: app/components/layout/settings/advanced.tsx:238
 msgid "This is the user message that is sent to the AI when the continue button is clicked."
 msgstr "This is the user message that is sent to the AI when the continue button is clicked."
 
@@ -1992,7 +2017,7 @@ msgstr "Thumbnail (WebP recommended)"
 msgid "Tips"
 msgstr "Tips"
 
-#: app/components/storybook/StorybookEditor.tsx:204
+#: app/components/storybook/StorybookEditor.tsx:252
 msgid "Title"
 msgstr "Title"
 
@@ -2016,11 +2041,11 @@ msgstr "trained in the art of war, carrying scars that tell stories and a blade 
 msgid "Tricorder"
 msgstr "Tricorder"
 
-#: app/components/storybook/StorybookEditor.tsx:239
+#: app/components/storybook/StorybookEditor.tsx:308
 msgid "trigger1, trigger2, trigger3"
 msgstr "trigger1, trigger2, trigger3"
 
-#: app/components/storybook/StorybookEditor.tsx:231
+#: app/components/storybook/StorybookEditor.tsx:300
 msgid "Triggers (comma-separated)"
 msgstr "Triggers (comma-separated)"
 
@@ -2051,7 +2076,7 @@ msgid "unable to let mysteries rest, even the ones that might be safer left buri
 msgstr "unable to let mysteries rest, even the ones that might be safer left buried"
 
 #: app/components/storybook/CategoryFilter.tsx:47
-#: app/components/storybook/StorybookEditor.tsx:57
+#: app/components/storybook/StorybookEditor.tsx:60
 #: app/components/storybook/StoryCard.tsx:51
 msgid "Uncategorized"
 msgstr "Uncategorized"
@@ -2090,9 +2115,11 @@ msgstr "Updates"
 msgid "Use"
 msgstr "Use"
 
-#: app/components/layout/settings/advanced.tsx:137
-#: app/components/layout/settings/advanced.tsx:241
-#: app/components/layout/settings/advanced.tsx:294
+#: app/components/layout/settings/advanced.tsx:150
+#: app/components/layout/settings/advanced.tsx:201
+#: app/components/layout/settings/advanced.tsx:254
+#: app/components/layout/settings/advanced.tsx:307
+#: app/components/layout/settings/advanced.tsx:372
 msgid "Use Custom Prompt"
 msgstr "Use Custom Prompt"
 

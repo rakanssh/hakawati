@@ -60,10 +60,12 @@ export interface SettingsStoreType {
   customStorytellerPrompt?: string;
   customContinuePrompt?: string;
   customContinueAuthorNote?: string;
+  customStoryCardGeneratorPrompt?: string;
   useCustomGmPrompt: boolean;
   useCustomStorytellerPrompt: boolean;
   useCustomContinuePrompt: boolean;
   useCustomContinueAuthorNote: boolean;
+  useCustomStoryCardGeneratorPrompt: boolean;
 
   setActivePreset: (preset: ApiPreset) => void;
   setApiKey: (apiKey: string) => void;
@@ -92,14 +94,17 @@ export interface SettingsStoreType {
   setCustomStorytellerPrompt: (prompt: string) => void;
   setCustomContinuePrompt: (prompt: string) => void;
   setCustomContinueAuthorNote: (prompt: string) => void;
+  setCustomStoryCardGeneratorPrompt: (prompt: string) => void;
   setUseCustomGmPrompt: (use: boolean) => void;
   setUseCustomStorytellerPrompt: (use: boolean) => void;
   setUseCustomContinuePrompt: (use: boolean) => void;
   setUseCustomContinueAuthorNote: (use: boolean) => void;
+  setUseCustomStoryCardGeneratorPrompt: (use: boolean) => void;
   resetGmPrompt: () => void;
   resetStorytellerPrompt: () => void;
   resetContinuePrompt: () => void;
   resetContinueAuthorNote: () => void;
+  resetStoryCardGeneratorPrompt: () => void;
   resetAllPromptsToDefault: () => void;
 }
 
@@ -132,10 +137,12 @@ export const useSettingsStore = create<SettingsStoreType>()(
       customStorytellerPrompt: undefined,
       customContinuePrompt: undefined,
       customContinueAuthorNote: undefined,
+      customStoryCardGeneratorPrompt: undefined,
       useCustomGmPrompt: false,
       useCustomStorytellerPrompt: false,
       useCustomContinuePrompt: false,
       useCustomContinueAuthorNote: false,
+      useCustomStoryCardGeneratorPrompt: false,
 
       setActivePreset: (preset: ApiPreset) => {
         const profiles = get().profiles;
@@ -301,6 +308,8 @@ export const useSettingsStore = create<SettingsStoreType>()(
         set({ customContinuePrompt: prompt }),
       setCustomContinueAuthorNote: (prompt: string) =>
         set({ customContinueAuthorNote: prompt }),
+      setCustomStoryCardGeneratorPrompt: (prompt: string) =>
+        set({ customStoryCardGeneratorPrompt: prompt }),
       setUseCustomGmPrompt: (use: boolean) => set({ useCustomGmPrompt: use }),
       setUseCustomStorytellerPrompt: (use: boolean) =>
         set({ useCustomStorytellerPrompt: use }),
@@ -308,6 +317,8 @@ export const useSettingsStore = create<SettingsStoreType>()(
         set({ useCustomContinuePrompt: use }),
       setUseCustomContinueAuthorNote: (use: boolean) =>
         set({ useCustomContinueAuthorNote: use }),
+      setUseCustomStoryCardGeneratorPrompt: (use: boolean) =>
+        set({ useCustomStoryCardGeneratorPrompt: use }),
       resetGmPrompt: () =>
         set({ customGmPrompt: undefined, useCustomGmPrompt: false }),
       resetStorytellerPrompt: () =>
@@ -325,16 +336,23 @@ export const useSettingsStore = create<SettingsStoreType>()(
           customContinueAuthorNote: undefined,
           useCustomContinueAuthorNote: false,
         }),
+      resetStoryCardGeneratorPrompt: () =>
+        set({
+          customStoryCardGeneratorPrompt: undefined,
+          useCustomStoryCardGeneratorPrompt: false,
+        }),
       resetAllPromptsToDefault: () =>
         set({
           customGmPrompt: undefined,
           customStorytellerPrompt: undefined,
           customContinuePrompt: undefined,
           customContinueAuthorNote: undefined,
+          customStoryCardGeneratorPrompt: undefined,
           useCustomGmPrompt: false,
           useCustomStorytellerPrompt: false,
           useCustomContinuePrompt: false,
           useCustomContinueAuthorNote: false,
+          useCustomStoryCardGeneratorPrompt: false,
         }),
       setToDefault: () =>
         set({

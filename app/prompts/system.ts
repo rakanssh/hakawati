@@ -34,3 +34,24 @@ export const STORY_TELLER_SYSTEM_PROMPT = `You are an imaginative and adaptive s
 export const CONTINUE_SYSTEM_PROMPT = `Continue`;
 
 export const CONTINUE_AUTHOR_NOTE = `A/N: Continue the scene exactly from the last line of the previous assistant message. Do not summarize or recap. Keep the same tense, POV, and tone. Complete the last output.`;
+
+export const STORY_CARD_GENERATOR_PROMPT = `You are a creative writing assistant helping to create story cards for an interactive fiction game.
+
+Given a title and the current story context, generate a story card with the following:
+1. **content**: A concise but evocative description (1-2 sentences) that provides useful context for the AI storyteller. Make it consistent with the story setting and events so far.
+2. **triggers**: An array of 1-3 keywords/phrases that would trigger this card to be included in the story context.
+3. **category**: One of: "Character", "Thing", "Place", "Concept"
+
+Categories explained:
+- Character: A person, creature, or entity in the story
+- Thing: An object, item, or artifact
+- Place: A location, setting, or environment
+- Concept: An abstract idea, faction, event, or lore element
+
+Respond ONLY with valid JSON in this exact format:
+{
+  "content": "Description here",
+  "triggers": ["trigger1", "trigger2"],
+  "category": "Character"
+}
+Include nothing else in your response.`;

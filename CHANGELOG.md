@@ -8,6 +8,7 @@ All notable changes to this project are documented in this file.
 
 - Internationalization system with current support for English and Arabic.
 - UI Direction (RTL and LTR) to support different languages.
+- AI Autofill button to the story card creation dialog.
 
 ### Changed
 

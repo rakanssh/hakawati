@@ -24,7 +24,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { PlusIcon } from "lucide-react";
+import { Loader2, PlusIcon, Sparkles } from "lucide-react";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import { generateStoryCard } from "@/services/llm/storyCardGenerator";
+import { toast } from "sonner";
 import { Trans, useLingui } from "@lingui/react/macro";
 
 export type StorybookEditorProps = {
@@ -69,6 +72,9 @@ export function StorybookEditor({
     category: StorybookCategory.UNCATEGORIZED,
     isPinned: false,
   });
+  const [isGenerating, setIsGenerating] = React.useState(false);
+  const abortRef = React.useRef<AbortController | null>(null);
+  const model = useSettingsStore((s) => s.model);
 
   // Filter entries by selected category
   const filteredEntries = React.useMemo(() => {
@@ -109,6 +115,9 @@ export function StorybookEditor({
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingEntry(null);
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
   };
 
   const handleSubmit = () => {
@@ -140,6 +149,45 @@ export function StorybookEditor({
   const handlePin = (id: string, pinned: boolean) => {
     onUpdate(id, { isPinned: pinned });
   };
+
+  const handleAutofill = async () => {
+    if (!model || !formData.title.trim()) return;
+
+    // Abort any existing request
+    if (abortRef.current) {
+      abortRef.current.abort();
+    }
+    abortRef.current = new AbortController();
+
+    setIsGenerating(true);
+
+    try {
+      const result = await generateStoryCard(
+        formData.title.trim(),
+        model,
+        abortRef.current.signal,
+      );
+
+      setFormData((prev) => ({
+        ...prev,
+        content: result.content,
+        triggers: result.triggers.join(", "),
+        category: result.category,
+      }));
+    } catch (e) {
+      if (e instanceof Error && e.name === "AbortError") {
+        return; // Ignore abort errors
+      }
+      toast.error(
+        e instanceof Error ? e.message : "Failed to generate story card",
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const canAutofill =
+    !!model && formData.title.trim().length > 0 && !isGenerating;
 
   const isFormValid =
     formData.title.trim().length > 0 && formData.content.trim().length > 0;
@@ -203,14 +251,35 @@ export function StorybookEditor({
               <Label htmlFor="title">
                 <Trans>Title</Trans>
               </Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
-                placeholder={t`Entry title`}
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) =>
+                    setFormData({ ...formData, title: e.target.value })
+                  }
+                  placeholder={t`Entry title`}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleAutofill}
+                  disabled={!canAutofill}
+                  title={
+                    model ? "Generate content with AI" : "No model selected"
+                  }
+                >
+                  {isGenerating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  <span className="ml-1">
+                    <Trans>Autofill</Trans>
+                  </span>
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="content">

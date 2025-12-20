@@ -15,10 +15,10 @@ import {
   STORY_TELLER_SYSTEM_PROMPT,
   CONTINUE_SYSTEM_PROMPT,
   CONTINUE_AUTHOR_NOTE,
+  STORY_CARD_GENERATOR_PROMPT,
 } from "@/prompts";
 import { AlertTriangleIcon } from "lucide-react";
-import { Trans } from "@lingui/react/macro";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 export default function SettingsAdvanced() {
   const { t } = useLingui();
   const {
@@ -26,22 +26,27 @@ export default function SettingsAdvanced() {
     customStorytellerPrompt,
     customContinuePrompt,
     customContinueAuthorNote,
+    customStoryCardGeneratorPrompt,
     useCustomGmPrompt,
     useCustomStorytellerPrompt,
     useCustomContinuePrompt,
     useCustomContinueAuthorNote,
+    useCustomStoryCardGeneratorPrompt,
     setCustomGmPrompt,
     setCustomStorytellerPrompt,
     setCustomContinuePrompt,
     setCustomContinueAuthorNote,
+    setCustomStoryCardGeneratorPrompt,
     setUseCustomGmPrompt,
     setUseCustomStorytellerPrompt,
     setUseCustomContinuePrompt,
     setUseCustomContinueAuthorNote,
+    setUseCustomStoryCardGeneratorPrompt,
     resetGmPrompt,
     resetStorytellerPrompt,
     resetContinuePrompt,
     resetContinueAuthorNote,
+    resetStoryCardGeneratorPrompt,
     resetAllPromptsToDefault,
   } = useSettingsStore();
 
@@ -73,6 +78,13 @@ export default function SettingsAdvanced() {
     }
   };
 
+  const handleStoryCardGeneratorCheckChange = (checked: boolean) => {
+    setUseCustomStoryCardGeneratorPrompt(checked);
+    if (checked) {
+      setCustomStoryCardGeneratorPrompt(STORY_CARD_GENERATOR_PROMPT);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4 max-w-full">
       <div className="flex flex-col gap-2">
@@ -87,7 +99,8 @@ export default function SettingsAdvanced() {
               !useCustomGmPrompt &&
               !useCustomStorytellerPrompt &&
               !useCustomContinuePrompt &&
-              !useCustomContinueAuthorNote
+              !useCustomContinueAuthorNote &&
+              !useCustomStoryCardGeneratorPrompt
             }
           >
             <Trans>Reset to Default</Trans>
@@ -185,7 +198,7 @@ export default function SettingsAdvanced() {
                     htmlFor="use-custom-storyteller"
                     className="cursor-pointer"
                   >
-                    Use Custom Prompt
+                    <Trans>Use Custom Prompt</Trans>
                   </Label>
                 </div>
                 <Textarea
@@ -198,7 +211,7 @@ export default function SettingsAdvanced() {
                   disabled={!useCustomStorytellerPrompt}
                   rows={12}
                   className="font-mono text-xs"
-                  placeholder="System prompt for Story Teller mode..."
+                  placeholder={t`System prompt for Story Teller mode...`}
                 />
                 <div className="flex justify-end">
                   <Button
@@ -312,6 +325,73 @@ export default function SettingsAdvanced() {
                     size="sm"
                     onClick={resetContinueAuthorNote}
                     disabled={!useCustomContinueAuthorNote}
+                  >
+                    <Trans>Reset to Default</Trans>
+                  </Button>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="story-card-generator">
+            <AccordionTrigger>
+              <Trans>Story Card Generator Prompt</Trans>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm text-muted-foreground">
+                    <Trans>
+                      This is the system prompt used when auto-generating story
+                      cards. The AI is asked to output JSON with content,
+                      triggers, and category. The JSON is parsed and used to
+                      populate the new story card.
+                    </Trans>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <b className="flex items-center gap-2">
+                      <AlertTriangleIcon className="w-4 h-4 inline-block" />
+                      <Trans>
+                        The output of this prompt are parsed as JSON. Make sure
+                        to preserve the JSON format if you customize this
+                        prompt.
+                      </Trans>
+                    </b>{" "}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="use-custom-story-card-generator"
+                    checked={useCustomStoryCardGeneratorPrompt}
+                    onCheckedChange={handleStoryCardGeneratorCheckChange}
+                  />
+                  <Label
+                    htmlFor="use-custom-story-card-generator"
+                    className="cursor-pointer"
+                  >
+                    <Trans>Use Custom Prompt</Trans>
+                  </Label>
+                </div>
+                <Textarea
+                  value={
+                    useCustomStoryCardGeneratorPrompt
+                      ? customStoryCardGeneratorPrompt
+                      : STORY_CARD_GENERATOR_PROMPT
+                  }
+                  onChange={(e) =>
+                    setCustomStoryCardGeneratorPrompt(e.target.value)
+                  }
+                  disabled={!useCustomStoryCardGeneratorPrompt}
+                  rows={12}
+                  className="font-mono text-xs"
+                  placeholder={t`Prompt for story card generation...`}
+                />
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={resetStoryCardGeneratorPrompt}
+                    disabled={!useCustomStoryCardGeneratorPrompt}
                   >
                     <Trans>Reset to Default</Trans>
                   </Button>
