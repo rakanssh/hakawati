@@ -23,14 +23,15 @@ export function useLLMProviders() {
       abortControllerRef.current.abort();
     }
 
-    abortControllerRef.current = new AbortController();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     setLoading(true);
     setError(undefined);
 
     try {
-      const fetchedModels = await getModels(abortControllerRef.current.signal);
+      const fetchedModels = await getModels(controller.signal);
 
-      if (abortControllerRef.current?.signal.aborted) {
+      if (controller.signal.aborted) {
         return;
       }
 
@@ -47,12 +48,15 @@ export function useLLMProviders() {
         }
       }
     } catch (error) {
+      if (controller.signal.aborted) {
+        return;
+      }
+
       const errorMessage =
         error instanceof Error ? error.message : "Failed to fetch models";
 
       if (
         (error instanceof Error && error.name === "AbortError") ||
-        abortControllerRef.current?.signal.aborted ||
         errorMessage.toLowerCase().includes("cancelled")
       ) {
         return;
@@ -65,7 +69,7 @@ export function useLLMProviders() {
       });
       setModels([]);
     } finally {
-      if (!abortControllerRef.current?.signal.aborted) {
+      if (!controller.signal.aborted) {
         setLoading(false);
       }
     }

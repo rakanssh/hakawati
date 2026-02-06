@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [v0.12.2] - 2026-02-07
+
+### Fixed
+
+- Model selector not working.
+
 ## [v0.12.1] - 2026-02-07
 
 ### Removed
