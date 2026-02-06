@@ -3,9 +3,9 @@ import { createRoot } from "react-dom/client";
 import { I18nProvider } from "@lingui/react";
 import { i18n, loadLocale, type Locale } from "./i18n";
 import { AppRouter } from "./router";
-import { installDebugConsoleCapture } from "./lib/debug-console";
 
-installDebugConsoleCapture();
+// installDebugConsoleCapture();
+// TODO: Re-enable debug console when it's fixed
 
 // Load persisted language preference on startup
 const storedSettings = localStorage.getItem("settings");

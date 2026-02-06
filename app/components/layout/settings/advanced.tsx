@@ -43,8 +43,6 @@ export default function SettingsAdvanced() {
     setUseCustomContinuePrompt,
     setUseCustomContinueAuthorNote,
     setUseCustomStoryCardGeneratorPrompt,
-    debugConsoleEnabled,
-    setDebugConsoleEnabled,
     resetGmPrompt,
     resetStorytellerPrompt,
     resetContinuePrompt,
@@ -90,7 +88,7 @@ export default function SettingsAdvanced() {
 
   return (
     <div className="flex flex-col gap-4 max-w-full">
-      <div className="flex flex-col gap-2">
+      {/* <div className="flex flex-col gap-2">
         <Label>
           <Trans>Developer Console</Trans>
         </Label>
@@ -120,8 +118,8 @@ export default function SettingsAdvanced() {
           </Trans>
         </p>
         <Separator />
-      </div>
-
+      </div> */}
+      {/* TODO: Re-enable debug console when it's fixed */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <Label>

@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [v0.12.1] - 2026-02-07
+
+### Removed
+
+- Debug console (Causing freezes in production builds).
+
 ## [v0.12.0] - 2026-02-06
 
 ### Added

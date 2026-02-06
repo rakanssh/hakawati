@@ -388,6 +388,11 @@ export const useSettingsStore = create<SettingsStoreType>()(
     }),
     {
       name: "settings",
+      // Exclude debugConsoleEnabled from persistence - causes freeze in prod
+      partialize: (state) => {
+        const { debugConsoleEnabled: _, ...rest } = state;
+        return rest as SettingsStoreType;
+      },
       // Migration: merge defaults with persisted profiles to handle new presets
       migrate: (persistedState, _version) => {
         const state = persistedState as SettingsStoreType & {
@@ -433,7 +438,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
           profiles: mergedProfiles,
           textDirection: state.textDirection ?? "system",
           language: state.language ?? "en",
-          debugConsoleEnabled: state.debugConsoleEnabled ?? false,
+          debugConsoleEnabled: false, // causes freeze in prod
           thinkingVisibility,
         };
       },
