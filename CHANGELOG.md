@@ -8,6 +8,10 @@ All notable changes to this project are documented in this file.
 
 - Debug console to view logs/errors. Enable in advanced settings.
 
+### Fixed
+
+- Added missing DialogTitle and DialogDescription to modals.
+
 ## [v0.11.0] - 2025-12-20
 
 ### Added

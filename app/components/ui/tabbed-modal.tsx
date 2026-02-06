@@ -6,7 +6,12 @@ import {
   type ReactNode,
   type ReactElement,
 } from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
@@ -96,7 +101,8 @@ export function TabbedModal<TId extends string>({
         showCloseButton={!isMobileViewport}
         className="p-0 gap-0 w-[95vw] h-[90vh] sm:max-w-[1300px] sm:max-h-[900px] flex flex-col overflow-hidden min-h-0"
       >
-        <DialogTitle></DialogTitle>
+        <DialogTitle className="sr-only">{title}</DialogTitle>
+        <DialogDescription className="sr-only">{title}</DialogDescription>
         {/* Mobile: Dropdown selector */}
         <div className="md:hidden border-b px-4 py-3">
           <Select
