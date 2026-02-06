@@ -11,6 +11,7 @@ All notable changes to this project are documented in this file.
 ### Fixed
 
 - Added missing DialogTitle and DialogDescription to modals.
+- Zoom indicator not fading.
 
 ## [v0.11.0] - 2025-12-20
 

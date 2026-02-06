@@ -80,11 +80,12 @@ export default function Play() {
     },
   });
 
-  const { showIndicator: showZoomIndicator } = useZoom({
+  const { showIndicator: showZoomIndicator, isIndicatorVisible } = useZoom({
     zoom: fontSize,
     setZoom: setFontSize,
     step: 0.1,
     defaultZoom: 1,
+    fadeDuration: 250,
   });
 
   const autoSaveData = useMemo(
@@ -191,13 +192,14 @@ export default function Play() {
           onRetry={handleRetry}
         />
         {showZoomIndicator && (
-          <div className="pointer-events-none absolute top-4 end-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="rounded-xs bg-background/95 px-4 py-2 shadow-lg border border-border backdrop-blur-sm">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <span className="text-muted-foreground">
-                  <Trans>Zoom:</Trans>
-                </span>
-                <span className="font-mono">{Math.round(fontSize * 100)}%</span>
+          <div
+            className={`pointer-events-none absolute top-4 end-4 z-50 transition-opacity duration-[250ms] ${
+              isIndicatorVisible ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <div className="rounded-xs bg-background/95 px-2 py-1 shadow-lg border border-border backdrop-blur-sm">
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-300">
+                {Math.round(fontSize * 100)}%
               </div>
             </div>
           </div>

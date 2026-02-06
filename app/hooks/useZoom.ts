@@ -6,12 +6,14 @@ interface UseZoomOptions {
   step?: number;
   defaultZoom?: number;
   indicatorDuration?: number;
+  fadeDuration?: number;
   min?: number;
   max?: number;
 }
 
 interface UseZoomReturn {
   showIndicator: boolean;
+  isIndicatorVisible: boolean;
 }
 
 export function useZoom(options: UseZoomOptions): UseZoomReturn {
@@ -21,12 +23,17 @@ export function useZoom(options: UseZoomOptions): UseZoomReturn {
     step = 0.1,
     defaultZoom = 1,
     indicatorDuration = 1500,
+    fadeDuration = 250,
     min = 0.5,
     max = 3,
   } = options;
 
   const [showIndicator, setShowIndicator] = useState(false);
-  const indicatorTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [isIndicatorVisible, setIsIndicatorVisible] = useState(false);
+  const indicatorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const indicatorFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const clampZoom = useCallback(
     (value: number) => Math.min(max, Math.max(min, value)),
@@ -35,13 +42,22 @@ export function useZoom(options: UseZoomOptions): UseZoomReturn {
 
   const showIndicatorTemporarily = useCallback(() => {
     setShowIndicator(true);
+    setIsIndicatorVisible(true);
+
     if (indicatorTimerRef.current) {
       clearTimeout(indicatorTimerRef.current);
     }
+    if (indicatorFadeTimerRef.current) {
+      clearTimeout(indicatorFadeTimerRef.current);
+    }
+
     indicatorTimerRef.current = setTimeout(() => {
-      setShowIndicator(false);
+      setIsIndicatorVisible(false);
+      indicatorFadeTimerRef.current = setTimeout(() => {
+        setShowIndicator(false);
+      }, fadeDuration);
     }, indicatorDuration);
-  }, [indicatorDuration]);
+  }, [indicatorDuration, fadeDuration]);
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
@@ -77,11 +93,20 @@ export function useZoom(options: UseZoomOptions): UseZoomReturn {
     return () => {
       globalThis.removeEventListener("wheel", handleWheel);
       globalThis.removeEventListener("keydown", handleKeyDown);
-      if (indicatorTimerRef.current) {
-        clearTimeout(indicatorTimerRef.current);
-      }
     };
   }, [zoom, setZoom, step, defaultZoom, clampZoom, showIndicatorTemporarily]);
 
-  return { showIndicator };
+  useEffect(
+    () => () => {
+      if (indicatorTimerRef.current) {
+        clearTimeout(indicatorTimerRef.current);
+      }
+      if (indicatorFadeTimerRef.current) {
+        clearTimeout(indicatorFadeTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  return { showIndicator, isIndicatorVisible };
 }
