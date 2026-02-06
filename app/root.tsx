@@ -25,6 +25,7 @@ import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "./components/ui";
 import { Titlebar } from "./components/layout";
 import { MobileBottomNav } from "./components/layout/mobile-bottom-nav";
+import { DebugConsoleDock } from "./components/layout/debug-console-dock";
 import { isTauriEnvironment, useUpdateStore } from "./store/useUpdateStore";
 import { useDbReady } from "./hooks/useDbReady";
 import { useIsMobile } from "./hooks/useIsMobile";
@@ -49,36 +50,46 @@ export default function AppShell() {
 
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-      <Titlebar />
       <div
-        className={isMobilePlatform ? "" : "pt-8"}
+        className="flex h-screen flex-col overflow-hidden"
         style={
-          isMobilePlatform && !isPlayRoute
-            ? {
-                paddingTop: "env(safe-area-inset-top)",
-                paddingBottom: showMobileBottomNav
-                  ? "calc(3.5rem + env(safe-area-inset-bottom))"
-                  : "env(safe-area-inset-bottom)",
-                paddingInlineStart: "env(safe-area-inset-left)",
-                paddingInlineEnd: "env(safe-area-inset-right)",
-              }
+          isMobilePlatform
+            ? { height: "100dvh", minHeight: "100svh" }
             : undefined
         }
       >
-        {!dbReady && !dbError && (
-          <div className="flex items-center justify-center h-[calc(100vh-2.5rem)]">
-            <div className="text-muted-foreground">Initializing...</div>
-          </div>
-        )}
-        {dbError && (
-          <div className="flex items-center justify-center h-[calc(100vh-2.5rem)]">
-            <div className="text-destructive">Database error: {dbError}</div>
-          </div>
-        )}
-        {dbReady && <Outlet />}
+        <Titlebar />
+        <div
+          className={`min-h-0 flex-1 ${isPlayRoute ? "overflow-hidden" : "overflow-auto"} ${isMobilePlatform ? "" : "pt-8"}`}
+          style={
+            isMobilePlatform && !isPlayRoute
+              ? {
+                  paddingTop: "env(safe-area-inset-top)",
+                  paddingBottom: showMobileBottomNav
+                    ? "calc(3.5rem + env(safe-area-inset-bottom))"
+                    : "env(safe-area-inset-bottom)",
+                  paddingInlineStart: "env(safe-area-inset-left)",
+                  paddingInlineEnd: "env(safe-area-inset-right)",
+                }
+              : undefined
+          }
+        >
+          {!dbReady && !dbError && (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-muted-foreground">Initializing...</div>
+            </div>
+          )}
+          {dbError && (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-destructive">Database error: {dbError}</div>
+            </div>
+          )}
+          {dbReady && <Outlet />}
+        </div>
+        <MobileBottomNav />
+        <DebugConsoleDock />
+        <Toaster richColors expand position="top-right" />
       </div>
-      <MobileBottomNav />
-      <Toaster richColors expand position="top-right" />
     </ThemeProvider>
   );
 }

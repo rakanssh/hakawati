@@ -66,6 +66,7 @@ export interface SettingsStoreType {
   useCustomContinuePrompt: boolean;
   useCustomContinueAuthorNote: boolean;
   useCustomStoryCardGeneratorPrompt: boolean;
+  debugConsoleEnabled: boolean;
 
   setActivePreset: (preset: ApiPreset) => void;
   setApiKey: (apiKey: string) => void;
@@ -100,6 +101,7 @@ export interface SettingsStoreType {
   setUseCustomContinuePrompt: (use: boolean) => void;
   setUseCustomContinueAuthorNote: (use: boolean) => void;
   setUseCustomStoryCardGeneratorPrompt: (use: boolean) => void;
+  setDebugConsoleEnabled: (enabled: boolean) => void;
   resetGmPrompt: () => void;
   resetStorytellerPrompt: () => void;
   resetContinuePrompt: () => void;
@@ -143,6 +145,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
       useCustomContinuePrompt: false,
       useCustomContinueAuthorNote: false,
       useCustomStoryCardGeneratorPrompt: false,
+      debugConsoleEnabled: false,
 
       setActivePreset: (preset: ApiPreset) => {
         const profiles = get().profiles;
@@ -319,6 +322,8 @@ export const useSettingsStore = create<SettingsStoreType>()(
         set({ useCustomContinueAuthorNote: use }),
       setUseCustomStoryCardGeneratorPrompt: (use: boolean) =>
         set({ useCustomStoryCardGeneratorPrompt: use }),
+      setDebugConsoleEnabled: (enabled: boolean) =>
+        set({ debugConsoleEnabled: enabled }),
       resetGmPrompt: () =>
         set({ customGmPrompt: undefined, useCustomGmPrompt: false }),
       resetStorytellerPrompt: () =>
@@ -371,6 +376,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
           fontSize: 1,
           textDirection: "system",
           language: "en",
+          debugConsoleEnabled: false,
         }),
     }),
     {
@@ -414,6 +420,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
           profiles: mergedProfiles,
           textDirection: state.textDirection ?? "system",
           language: state.language ?? "en",
+          debugConsoleEnabled: state.debugConsoleEnabled ?? false,
         };
       },
       version: 1,

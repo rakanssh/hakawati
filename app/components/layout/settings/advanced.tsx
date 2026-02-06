@@ -19,6 +19,7 @@ import {
 } from "@/prompts";
 import { AlertTriangleIcon } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
+
 export default function SettingsAdvanced() {
   const { t } = useLingui();
   const {
@@ -42,6 +43,8 @@ export default function SettingsAdvanced() {
     setUseCustomContinuePrompt,
     setUseCustomContinueAuthorNote,
     setUseCustomStoryCardGeneratorPrompt,
+    debugConsoleEnabled,
+    setDebugConsoleEnabled,
     resetGmPrompt,
     resetStorytellerPrompt,
     resetContinuePrompt,
@@ -87,6 +90,38 @@ export default function SettingsAdvanced() {
 
   return (
     <div className="flex flex-col gap-4 max-w-full">
+      <div className="flex flex-col gap-2">
+        <Label>
+          <Trans>Developer Console</Trans>
+        </Label>
+        <p className="text-sm text-muted-foreground">
+          <Trans>
+            Capture and view frontend debug logs from console.debug,
+            console.info, console.log, console.warn, and console.error.
+          </Trans>
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="debug-console-enabled"
+              checked={debugConsoleEnabled}
+              onCheckedChange={(checked) =>
+                setDebugConsoleEnabled(checked === true)
+              }
+            />
+            <Label htmlFor="debug-console-enabled" className="cursor-pointer">
+              <Trans>Enable Debug Console</Trans>
+            </Label>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          <Trans>
+            Use the tab at the bottom of the app to expand or collapse it.
+          </Trans>
+        </p>
+        <Separator />
+      </div>
+
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <Label>

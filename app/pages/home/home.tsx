@@ -122,7 +122,7 @@ export default function Home() {
     }
   };
   return (
-    <main className="relative flex flex-col items-center justify-center h-[calc(100vh-2.5rem)]">
+    <main className="relative flex min-h-full flex-col items-center justify-center">
       <div className="absolute top-4 right-4">
         <Select value={language} onValueChange={handleLanguageChange}>
           <SelectTrigger className="w-auto gap-2 border-none bg-transparent hover:bg-accent/50 transition-colors">

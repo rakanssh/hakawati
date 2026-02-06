@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Debug console to view logs/errors. Enable in advanced settings.
+
 ## [v0.11.0] - 2025-12-20
 
 ### Added

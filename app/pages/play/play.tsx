@@ -229,11 +229,7 @@ export default function Play() {
         <SidebarProvider
           defaultOpen={true}
           className="min-h-0 h-full"
-          style={
-            isMobilePlatform
-              ? { height: "100svh" }
-              : { height: "calc(100vh - 2rem)" }
-          }
+          style={{ height: "100%" }}
         >
           <AppSidebar
             style={
@@ -255,15 +251,14 @@ export default function Play() {
         </SidebarProvider>
       ) : (
         <div
-          className="relative flex flex-col overflow-hidden h-full"
+          className="relative flex h-full flex-col overflow-hidden"
           style={
             isMobilePlatform
               ? {
-                  height: "100svh",
                   paddingInlineStart: "env(safe-area-inset-left)",
                   paddingInlineEnd: "env(safe-area-inset-right)",
                 }
-              : { height: "calc(100vh - 2rem)" }
+              : undefined
           }
         >
           {renderMainContent()}
