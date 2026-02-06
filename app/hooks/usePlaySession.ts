@@ -185,21 +185,23 @@ export function usePlaySession(
       }
 
       let storyContent = "";
+      let thinkingContent = "";
       let rafId: number | null = null;
-      const flushStory = () => {
+      const flushResponse = () => {
         rafId = null;
         updateLogEntry(gmResponseId, {
-          text: storyContent,
+          ...(storyContent.length > 0 ? { text: storyContent } : {}),
+          ...(thinkingContent ? { thinking: thinkingContent } : {}),
         });
       };
       const scheduleFlush = () => {
         if (rafId !== null) return;
         const raf = globalThis.requestAnimationFrame;
         if (typeof raf === "function") {
-          rafId = raf(() => flushStory());
+          rafId = raf(() => flushResponse());
         } else {
           // Fallback (non-browser/test env)
-          flushStory();
+          flushResponse();
         }
       };
 
@@ -207,6 +209,10 @@ export function usePlaySession(
         await send({ text: payloadText, mode }, model, {
           onStoryStream: (storyChunk) => {
             storyContent += storyChunk;
+            scheduleFlush();
+          },
+          onThinkingStream: (thinkingChunk) => {
+            thinkingContent += thinkingChunk;
             scheduleFlush();
           },
           onActionsReady: (actions) => {
@@ -230,6 +236,7 @@ export function usePlaySession(
             console.error("LLM Error:", error);
             updateLogEntry(gmResponseId, {
               error: error,
+              ...(thinkingContent ? { thinking: thinkingContent } : {}),
               ...(storyContent.length === 0
                 ? { text: "An error occurred while processing your request." }
                 : {}),
@@ -241,8 +248,11 @@ export function usePlaySession(
           const cancelRaf = globalThis.cancelAnimationFrame;
           if (typeof cancelRaf === "function") cancelRaf(rafId);
           rafId = null;
-          if (storyContent.length > 0) {
-            updateLogEntry(gmResponseId, { text: storyContent });
+          if (storyContent.length > 0 || thinkingContent.length > 0) {
+            updateLogEntry(gmResponseId, {
+              ...(storyContent.length > 0 ? { text: storyContent } : {}),
+              ...(thinkingContent ? { thinking: thinkingContent } : {}),
+            });
           }
         }
       }

@@ -1,6 +1,92 @@
 import { OutputDecoder, DecodedResponse } from "./decoders";
 import { StreamChunk, ToolCallDelta } from "./schema";
 
+const TEXT_VALUE_KEYS = [
+  "text",
+  "content",
+  "reasoning",
+  "reasoning_content",
+  "thinking",
+  "output_text",
+  "delta",
+] as const;
+
+function collectTextFragments(value: unknown, out: string[]): void {
+  if (typeof value === "string") {
+    out.push(value);
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectTextFragments(item, out);
+    }
+    return;
+  }
+
+  if (!value || typeof value !== "object") {
+    return;
+  }
+
+  const obj = value as Record<string, unknown>;
+  for (const key of TEXT_VALUE_KEYS) {
+    if (key in obj) {
+      collectTextFragments(obj[key], out);
+    }
+  }
+}
+
+function extractText(value: unknown): string {
+  const fragments: string[] = [];
+  collectTextFragments(value, fragments);
+  return fragments.join("");
+}
+
+function toStreamChunk(json: unknown): StreamChunk | null {
+  const delta = (json as { choices?: Array<{ delta?: unknown }> })?.choices?.[0]
+    ?.delta;
+  if (!delta || typeof delta !== "object") return null;
+
+  const deltaObj = delta as Record<string, unknown>;
+  const chunk: StreamChunk = {};
+
+  const content = extractText(deltaObj.content);
+  if (content) {
+    chunk.content = content;
+  }
+
+  const thinking = [
+    extractText(deltaObj.reasoning),
+    extractText(deltaObj.reasoning_content),
+    extractText(deltaObj.thinking),
+  ].join("");
+  if (thinking) {
+    chunk.thinking = thinking;
+  }
+
+  if (Array.isArray(deltaObj.tool_calls)) {
+    chunk.tool_calls = deltaObj.tool_calls.map((tc) => {
+      const tool = tc as ToolCallDelta;
+      return {
+        index: tool.index,
+        id: tool.id,
+        type: tool.type,
+        function: tool.function
+          ? {
+              name: tool.function.name,
+              arguments: tool.function.arguments,
+            }
+          : undefined,
+      };
+    });
+  }
+
+  if (chunk.content || chunk.thinking || chunk.tool_calls) {
+    return chunk;
+  }
+  return null;
+}
+
 /**
  * Parse OpenAI streaming response and yield chunks containing content and/or tool_calls
  */
@@ -25,30 +111,8 @@ export async function* parseOpenAIStream(
       if (payload === "[DONE]") return;
       try {
         const json = JSON.parse(payload);
-        const delta = json?.choices?.[0]?.delta;
-        if (!delta) continue;
-
-        const chunk: StreamChunk = {};
-
-        if (delta.content) {
-          chunk.content = delta.content;
-        }
-
-        if (delta.tool_calls && Array.isArray(delta.tool_calls)) {
-          chunk.tool_calls = delta.tool_calls.map((tc: ToolCallDelta) => ({
-            index: tc.index,
-            id: tc.id,
-            type: tc.type,
-            function: tc.function
-              ? {
-                  name: tc.function.name,
-                  arguments: tc.function.arguments,
-                }
-              : undefined,
-          }));
-        }
-
-        if (chunk.content || chunk.tool_calls) {
+        const chunk = toStreamChunk(json);
+        if (chunk) {
           yield chunk;
         }
       } catch {
@@ -63,31 +127,9 @@ export async function* parseOpenAIStream(
     if (payload !== "[DONE]") {
       try {
         const json = JSON.parse(payload);
-        const delta = json?.choices?.[0]?.delta;
-        if (delta) {
-          const chunk: StreamChunk = {};
-
-          if (delta.content) {
-            chunk.content = delta.content;
-          }
-
-          if (delta.tool_calls && Array.isArray(delta.tool_calls)) {
-            chunk.tool_calls = delta.tool_calls.map((tc: ToolCallDelta) => ({
-              index: tc.index,
-              id: tc.id,
-              type: tc.type,
-              function: tc.function
-                ? {
-                    name: tc.function.name,
-                    arguments: tc.function.arguments,
-                  }
-                : undefined,
-            }));
-          }
-
-          if (chunk.content || chunk.tool_calls) {
-            yield chunk;
-          }
+        const chunk = toStreamChunk(json);
+        if (chunk) {
+          yield chunk;
         }
       } catch {
         // ignore

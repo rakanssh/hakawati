@@ -20,6 +20,7 @@ export function useLLM() {
     model: LLMModel,
     callbacks: {
       onStoryStream: (storyChunk: string) => void;
+      onThinkingStream: (thinkingChunk: string) => void;
       onActionsReady: (actions: LLMAction[]) => void;
       onActionParseError: () => void;
       onError: (error: unknown) => void;
@@ -88,9 +89,12 @@ export function useLLM() {
           if ("actionParseError" in chunk && chunk.actionParseError) {
             callbacks.onActionParseError();
           } else {
-            const { story, actions } = chunk;
+            const { story, thinking, actions } = chunk;
             if (story) {
               callbacks.onStoryStream(story);
+            }
+            if (thinking) {
+              callbacks.onThinkingStream(thinking);
             }
             if (actions) {
               callbacks.onActionsReady(actions);
@@ -100,6 +104,9 @@ export function useLLM() {
       } else {
         if (res.content) {
           callbacks.onStoryStream(res.content);
+        }
+        if (res.thinking) {
+          callbacks.onThinkingStream(res.thinking);
         }
         if (res.tool_calls && res.tool_calls.length > 0) {
           const { convertToolCallsToActions } = await import(

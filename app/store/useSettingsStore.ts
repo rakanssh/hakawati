@@ -6,6 +6,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type TextDirection = "system" | "ltr" | "rtl";
+export type ThinkingVisibility = "all" | "latest" | "none";
 
 // Languages that require a RTL UI. Expand later.
 const RTL_LANGUAGES = new Set([
@@ -67,6 +68,7 @@ export interface SettingsStoreType {
   useCustomContinueAuthorNote: boolean;
   useCustomStoryCardGeneratorPrompt: boolean;
   debugConsoleEnabled: boolean;
+  thinkingVisibility: ThinkingVisibility;
 
   setActivePreset: (preset: ApiPreset) => void;
   setApiKey: (apiKey: string) => void;
@@ -102,6 +104,7 @@ export interface SettingsStoreType {
   setUseCustomContinueAuthorNote: (use: boolean) => void;
   setUseCustomStoryCardGeneratorPrompt: (use: boolean) => void;
   setDebugConsoleEnabled: (enabled: boolean) => void;
+  setThinkingVisibility: (visibility: ThinkingVisibility) => void;
   resetGmPrompt: () => void;
   resetStorytellerPrompt: () => void;
   resetContinuePrompt: () => void;
@@ -146,6 +149,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
       useCustomContinueAuthorNote: false,
       useCustomStoryCardGeneratorPrompt: false,
       debugConsoleEnabled: false,
+      thinkingVisibility: "all",
 
       setActivePreset: (preset: ApiPreset) => {
         const profiles = get().profiles;
@@ -324,6 +328,8 @@ export const useSettingsStore = create<SettingsStoreType>()(
         set({ useCustomStoryCardGeneratorPrompt: use }),
       setDebugConsoleEnabled: (enabled: boolean) =>
         set({ debugConsoleEnabled: enabled }),
+      setThinkingVisibility: (visibility: ThinkingVisibility) =>
+        set({ thinkingVisibility: visibility }),
       resetGmPrompt: () =>
         set({ customGmPrompt: undefined, useCustomGmPrompt: false }),
       resetStorytellerPrompt: () =>
@@ -377,6 +383,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
           textDirection: "system",
           language: "en",
           debugConsoleEnabled: false,
+          thinkingVisibility: "all",
         }),
     }),
     {
@@ -385,6 +392,8 @@ export const useSettingsStore = create<SettingsStoreType>()(
       migrate: (persistedState, _version) => {
         const state = persistedState as SettingsStoreType & {
           profiles?: Partial<Record<ApiPreset, ApiProfileSettings>>;
+          showThinkingInLog?: boolean;
+          thinkingVisibility?: ThinkingVisibility;
         };
 
         // Always start with fresh defaults, then merge persisted data
@@ -414,6 +423,10 @@ export const useSettingsStore = create<SettingsStoreType>()(
           }
         }
 
+        const thinkingVisibility: ThinkingVisibility =
+          state.thinkingVisibility ??
+          (state.showThinkingInLog === false ? "none" : "all");
+
         return {
           ...state,
           activePreset: state.activePreset ?? ApiPreset.GENERIC,
@@ -421,9 +434,10 @@ export const useSettingsStore = create<SettingsStoreType>()(
           textDirection: state.textDirection ?? "system",
           language: state.language ?? "en",
           debugConsoleEnabled: state.debugConsoleEnabled ?? false,
+          thinkingVisibility,
         };
       },
-      version: 1,
+      version: 2,
     },
   ),
 );

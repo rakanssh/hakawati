@@ -7,6 +7,7 @@ All notable changes to this project are documented in this file.
 ### Added
 
 - Debug console to view logs/errors. Enable in advanced settings.
+- Thinking section to log entries, showing the LLM's thought process if thinking is enabled.
 
 ### Fixed
 

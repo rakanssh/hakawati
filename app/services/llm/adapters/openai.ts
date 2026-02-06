@@ -61,8 +61,15 @@ export function OpenAiClient(apiKey?: string): LLMClient {
         } else {
           const json = await r.json();
           const message = json.choices[0].message;
+          const thinking =
+            (typeof message.reasoning === "string" && message.reasoning) ||
+            (typeof message.reasoning_content === "string" &&
+              message.reasoning_content) ||
+            (typeof message.thinking === "string" && message.thinking) ||
+            "";
           const response: ChatResponse = {
             content: message.content || "",
+            ...(thinking ? { thinking } : {}),
             raw: json,
             usage: json.usage,
           };

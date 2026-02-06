@@ -18,6 +18,7 @@ export type LogEntry = {
   role: LogEntryRole;
   mode?: LogEntryMode;
   text: string;
+  thinking?: string;
   isActionError?: boolean;
   actions?: LLMAction[];
   chainId?: string;

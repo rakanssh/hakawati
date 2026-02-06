@@ -9,7 +9,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useSettingsStore, type TextDirection } from "@/store/useSettingsStore";
+import {
+  useSettingsStore,
+  type TextDirection,
+  type ThinkingVisibility,
+} from "@/store/useSettingsStore";
 import { useTheme } from "@/components/theme-provider";
 import { FontSelector } from "./font-selector";
 import { type Locale, LOCALES, loadLocale } from "@/i18n";
@@ -26,6 +30,8 @@ export default function SettingsGame() {
     setTextDirection,
     language,
     setLanguage,
+    thinkingVisibility,
+    setThinkingVisibility,
   } = useSettingsStore();
 
   const handleLanguageChange = (value: string) => {
@@ -164,6 +170,39 @@ export default function SettingsGame() {
           <Trans>Font Family</Trans>
         </Label>
         <FontSelector />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label>
+          <Trans>Game Log</Trans>
+        </Label>
+        <Select
+          value={thinkingVisibility}
+          onValueChange={(value) =>
+            setThinkingVisibility(value as ThinkingVisibility)
+          }
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder={t`Select thinking visibility`} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              <Trans>All</Trans>
+            </SelectItem>
+            <SelectItem value="latest">
+              <Trans>Latest</Trans>
+            </SelectItem>
+            <SelectItem value="none">
+              <Trans>None</Trans>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <p className="text-sm text-muted-foreground">
+          <Trans>
+            Control thinking sections in the main game log: show all, only the
+            latest, or hide them.
+          </Trans>
+        </p>
       </div>
     </div>
   );

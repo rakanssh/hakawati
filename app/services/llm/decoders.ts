@@ -4,6 +4,7 @@ import { convertToolCallsToActions, ToolCall } from "./tools";
 
 export interface DecodedResponse {
   story?: string;
+  thinking?: string;
   actions?: LLMAction[];
   actionParseError?: boolean;
 }
@@ -92,6 +93,9 @@ export class ToolCallingDecoder implements OutputDecoder {
       if (chunk.content) {
         yield { story: chunk.content };
       }
+      if (chunk.thinking) {
+        yield { thinking: chunk.thinking };
+      }
 
       if (chunk.tool_calls) {
         for (const toolCallDelta of chunk.tool_calls) {
@@ -165,55 +169,83 @@ export class ToolCallingDecoder implements OutputDecoder {
  * Extracts content from chunks and decodes escape sequences
  */
 export class PlainTextDecoder implements OutputDecoder {
+  private decodeEscapedChunk(
+    carry: string,
+    text: string,
+  ): { output: string; nextCarry: string } {
+    const input = carry + text;
+    let i = 0;
+    let out = "";
+    while (i < input.length) {
+      const ch = input[i];
+      if (ch === "\\") {
+        const res = decodeJsonEscape(input, i);
+        if (res.incomplete) break; // keep incomplete sequence in carry
+        out += res.char ?? "";
+        i += res.advance ?? 2;
+      } else {
+        out += ch;
+        i++;
+      }
+    }
+    return { output: out, nextCarry: input.substring(i) };
+  }
+
+  private flushCarry(carry: string): string {
+    if (!carry) return "";
+    let i = 0;
+    let out = "";
+    while (i < carry.length) {
+      const ch = carry[i];
+      if (ch === "\\") {
+        const res = decodeJsonEscape(carry, i);
+        if (res.incomplete) {
+          out += "\\";
+          i += 1;
+        } else {
+          out += res.char ?? "";
+          i += res.advance ?? 2;
+        }
+      } else {
+        out += ch;
+        i++;
+      }
+    }
+    return out;
+  }
+
   async *decode(
     iterator: AsyncIterable<StreamChunk>,
   ): AsyncGenerator<Partial<DecodedResponse>> {
-    let carry = "";
+    let storyCarry = "";
+    let thinkingCarry = "";
+
     for await (const chunk of iterator) {
-      const text = chunk.content ?? "";
-      const input = carry + text;
-      let i = 0;
-      let out = "";
-      while (i < input.length) {
-        const ch = input[i];
-        if (ch === "\\") {
-          const res = decodeJsonEscape(input, i);
-          if (res.incomplete) break; // keep incomplete sequence in carry
-          out += res.char ?? "";
-          i += res.advance ?? 2;
-        } else {
-          out += ch;
-          i++;
+      if (chunk.content) {
+        const decoded = this.decodeEscapedChunk(storyCarry, chunk.content);
+        storyCarry = decoded.nextCarry;
+        if (decoded.output) {
+          yield { story: decoded.output };
         }
       }
-      if (out) {
-        yield { story: out };
+
+      if (chunk.thinking) {
+        const decoded = this.decodeEscapedChunk(thinkingCarry, chunk.thinking);
+        thinkingCarry = decoded.nextCarry;
+        if (decoded.output) {
+          yield { thinking: decoded.output };
+        }
       }
-      carry = input.substring(i);
     }
-    // Flush remaining carry
-    if (carry) {
-      let i = 0;
-      let out = "";
-      while (i < carry.length) {
-        const ch = carry[i];
-        if (ch === "\\") {
-          const res = decodeJsonEscape(carry, i);
-          if (res.incomplete) {
-            out += "\\";
-            i += 1;
-          } else {
-            out += res.char ?? "";
-            i += res.advance ?? 2;
-          }
-        } else {
-          out += ch;
-          i++;
-        }
-      }
-      if (out) {
-        yield { story: out };
-      }
+
+    const flushedStory = this.flushCarry(storyCarry);
+    if (flushedStory) {
+      yield { story: flushedStory };
+    }
+
+    const flushedThinking = this.flushCarry(thinkingCarry);
+    if (flushedThinking) {
+      yield { thinking: flushedThinking };
     }
   }
 }

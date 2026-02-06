@@ -45,11 +45,13 @@ export interface ToolCallDelta {
 
 export interface StreamChunk {
   content?: string;
+  thinking?: string;
   tool_calls?: ToolCallDelta[];
 }
 
 export interface ChatResponse {
   content: string;
+  thinking?: string;
   iterator?: AsyncGenerator<StreamChunk>;
   raw: unknown;
   usage: {
