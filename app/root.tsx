@@ -25,7 +25,6 @@ import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "./components/ui";
 import { Titlebar } from "./components/layout";
 import { MobileBottomNav } from "./components/layout/mobile-bottom-nav";
-// import { DebugConsoleDock } from "./components/layout/debug-console-dock";
 import { isTauriEnvironment, useUpdateStore } from "./store/useUpdateStore";
 import { useDbReady } from "./hooks/useDbReady";
 import { useIsMobile } from "./hooks/useIsMobile";
@@ -87,7 +86,6 @@ export default function AppShell() {
           {dbReady && <Outlet />}
         </div>
         <MobileBottomNav />
-        {/* <DebugConsoleDock /> TODO: Re-enable when fixed */}
         <Toaster richColors expand position="top-right" />
       </div>
     </ThemeProvider>

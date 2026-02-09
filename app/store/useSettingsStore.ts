@@ -67,7 +67,6 @@ export interface SettingsStoreType {
   useCustomContinuePrompt: boolean;
   useCustomContinueAuthorNote: boolean;
   useCustomStoryCardGeneratorPrompt: boolean;
-  debugConsoleEnabled: boolean;
   thinkingVisibility: ThinkingVisibility;
 
   setActivePreset: (preset: ApiPreset) => void;
@@ -103,7 +102,6 @@ export interface SettingsStoreType {
   setUseCustomContinuePrompt: (use: boolean) => void;
   setUseCustomContinueAuthorNote: (use: boolean) => void;
   setUseCustomStoryCardGeneratorPrompt: (use: boolean) => void;
-  setDebugConsoleEnabled: (enabled: boolean) => void;
   setThinkingVisibility: (visibility: ThinkingVisibility) => void;
   resetGmPrompt: () => void;
   resetStorytellerPrompt: () => void;
@@ -148,7 +146,6 @@ export const useSettingsStore = create<SettingsStoreType>()(
       useCustomContinuePrompt: false,
       useCustomContinueAuthorNote: false,
       useCustomStoryCardGeneratorPrompt: false,
-      debugConsoleEnabled: false,
       thinkingVisibility: "all",
 
       setActivePreset: (preset: ApiPreset) => {
@@ -326,8 +323,6 @@ export const useSettingsStore = create<SettingsStoreType>()(
         set({ useCustomContinueAuthorNote: use }),
       setUseCustomStoryCardGeneratorPrompt: (use: boolean) =>
         set({ useCustomStoryCardGeneratorPrompt: use }),
-      setDebugConsoleEnabled: (enabled: boolean) =>
-        set({ debugConsoleEnabled: enabled }),
       setThinkingVisibility: (visibility: ThinkingVisibility) =>
         set({ thinkingVisibility: visibility }),
       resetGmPrompt: () =>
@@ -382,17 +377,11 @@ export const useSettingsStore = create<SettingsStoreType>()(
           fontSize: 1,
           textDirection: "system",
           language: "en",
-          debugConsoleEnabled: false,
           thinkingVisibility: "all",
         }),
     }),
     {
       name: "settings",
-      // Exclude debugConsoleEnabled from persistence - causes freeze in prod
-      partialize: (state) => {
-        const { debugConsoleEnabled: _, ...rest } = state;
-        return rest as SettingsStoreType;
-      },
       // Migration: merge defaults with persisted profiles to handle new presets
       migrate: (persistedState, _version) => {
         const state = persistedState as SettingsStoreType & {
@@ -438,7 +427,6 @@ export const useSettingsStore = create<SettingsStoreType>()(
           profiles: mergedProfiles,
           textDirection: state.textDirection ?? "system",
           language: state.language ?? "en",
-          debugConsoleEnabled: false, // causes freeze in prod
           thinkingVisibility,
         };
       },

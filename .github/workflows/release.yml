@@ -111,4 +111,4 @@ jobs:
           releaseBody: ${{ steps.release_notes.outputs.release_body }}
           releaseDraft: true
           prerelease: false
-          args: ${{ matrix.args }}
+          args: "${{ matrix.args }} --locked"

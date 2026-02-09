@@ -73,6 +73,33 @@ export default function SettingsGame() {
         </Select>
       </div>
 
+      <div className="flex flex-col gap-2">
+        <Label>
+          <Trans>Thinking Visibility</Trans>
+        </Label>
+        <Select
+          value={thinkingVisibility}
+          onValueChange={(value) =>
+            setThinkingVisibility(value as ThinkingVisibility)
+          }
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder={t`Select thinking visibility`} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              <Trans>All</Trans>
+            </SelectItem>
+            <SelectItem value="latest">
+              <Trans>Latest</Trans>
+            </SelectItem>
+            <SelectItem value="none">
+              <Trans>None</Trans>
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
           <Label>
@@ -170,39 +197,6 @@ export default function SettingsGame() {
           <Trans>Font Family</Trans>
         </Label>
         <FontSelector />
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label>
-          <Trans>Game Log</Trans>
-        </Label>
-        <Select
-          value={thinkingVisibility}
-          onValueChange={(value) =>
-            setThinkingVisibility(value as ThinkingVisibility)
-          }
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder={t`Select thinking visibility`} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">
-              <Trans>All</Trans>
-            </SelectItem>
-            <SelectItem value="latest">
-              <Trans>Latest</Trans>
-            </SelectItem>
-            <SelectItem value="none">
-              <Trans>None</Trans>
-            </SelectItem>
-          </SelectContent>
-        </Select>
-        <p className="text-sm text-muted-foreground">
-          <Trans>
-            Control thinking sections in the main game log: show all, only the
-            latest, or hide them.
-          </Trans>
-        </p>
       </div>
     </div>
   );

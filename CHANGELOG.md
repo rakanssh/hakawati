@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Enabled dev tools in production builds.
+
+### Fixed
+
+- Model selector not working (Again).
+- Inconsistent builds.
+- Missing Arabic translations for thinking sections.
+
 ## [v0.12.2] - 2026-02-07
 
 ### Fixed

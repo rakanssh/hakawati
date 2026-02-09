@@ -10,7 +10,6 @@ pnpm-debug.log*
 .vite/
 
 src-tauri/target/
-src-tauri/Cargo.lock
 
 src-tauri/bundle/
 src-tauri/.cargo-vendor/
