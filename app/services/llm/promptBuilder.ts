@@ -9,75 +9,17 @@ import {
 import {
   getActiveGmPrompt,
   getActiveStorytellerPrompt,
-  getActiveContinuePrompt,
   getActiveContinueAuthorNote,
 } from "@/prompts";
-import { countMessageTokens } from "./tokenCounter";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useTaleStore } from "@/store/useTaleStore";
 import { GameMode, StoryCard, Item, ResponseMode } from "@/types";
 import { toast } from "sonner";
-
-function collectCardsForText(
-  text: string,
-  storyCards: StoryCard[],
-): StoryCard[] {
-  const matched: StoryCard[] = [];
-  const lcText = text.toLowerCase();
-  for (const card of storyCards) {
-    // Skip pinned cards (They're included regardless of matching)
-    if (card.isPinned) continue;
-
-    if (
-      card.triggers.some(
-        (trigger) => trigger && lcText.includes(trigger.toLowerCase()),
-      )
-    ) {
-      if (!matched.find((c) => c.id === card.id)) {
-        matched.push(card);
-      }
-    }
-  }
-  return matched;
-}
-
-function buildStoryBookPrompt(cards: StoryCard[]): string {
-  if (!cards || cards.length === 0) return "";
-  let out = "**StoryBook:**\n";
-  for (let i = 0; i < cards.length; i++) {
-    const c = cards[i];
-    out += `\n${i + 1}. ${c.title}\n${c.content}\n`;
-  }
-  return out;
-}
-
-function injectMode(text: string, mode?: LogEntryMode): string {
-  if (mode === LogEntryMode.DIRECT) return `[Director's Note: ${text}]`;
-  if (mode === LogEntryMode.STORY) return text;
-  if (mode === LogEntryMode.DO) return `Action: ${text}`;
-  if (mode === LogEntryMode.SAY) return `You say: "${text}"`;
-  if (mode === LogEntryMode.CONTINUE) {
-    return getActiveContinuePrompt();
-  }
-  return text;
-}
-
-/**
- * Get token count for a log entry, using cached value if available.
- * Caches the result in the entry's _tokenCount field for future use.
- */
-function getEntryTokens(entry: LogEntry): number {
-  if (entry._tokenCount !== undefined) {
-    return entry._tokenCount;
-  }
-
-  const content = injectMode(entry.text, entry.mode);
-  const tokens = countMessageTokens([{ role: "user", content }]);
-
-  entry._tokenCount = tokens;
-
-  return tokens;
-}
+import {
+  assembleContextMessages,
+  ensureDesiredLogEntriesLoaded,
+  injectMode,
+} from "./contextAssembly";
 
 interface BuildMessageParams {
   log: LogEntry[];
@@ -117,20 +59,10 @@ export async function buildMessage(
   );
   const completionMax = Math.max(0, settings.maxTokens);
   const promptBudget = Math.max(1, contextLimit - completionMax);
-  const messages: ChatMessage[] = [];
 
-  const DESIRED_ENTRIES = 100;
-  const store = useTaleStore.getState();
-
-  if (
-    store.log.length < DESIRED_ENTRIES &&
-    store.oldestLoadedIndex > 0 &&
-    store.totalLogCount > store.log.length
-  ) {
-    await store.ensureLogEntriesLoaded(DESIRED_ENTRIES);
-  }
-
-  const effectiveLogSource = useTaleStore.getState().log;
+  const effectiveLogSource = await ensureDesiredLogEntriesLoaded(
+    useTaleStore.getState,
+  );
 
   const formatStats = (stats: Stat[]) =>
     stats
@@ -164,10 +96,6 @@ export async function buildMessage(
       : getActiveStorytellerPrompt();
 
   const userMsg: ChatMessage = { role: "user", content: userMessage };
-
-  const tokenCountFor = (msgs: ChatMessage[]) => countMessageTokens(msgs);
-
-  // Build required meta messages in fixed priority order (without the current user message)
   const requiredMeta: ChatMessage[] = [
     {
       role: "system",
@@ -182,147 +110,34 @@ export async function buildMessage(
     });
   }
 
-  // For budgeting, the current user message is also required
-  const baseRequiredForCounting: ChatMessage[] = [...requiredMeta, userMsg];
-
-  // Check if required messages exceed the prompt budget
-  const requiredTokens = tokenCountFor(baseRequiredForCounting);
-  if (requiredTokens > promptBudget) {
-    toast.warning(
-      `Context limit exceeded. Required messages use ${requiredTokens} tokens but only ${promptBudget} are available.`,
-    );
-  }
-
-  // Filter out last user message from the expanded log
-  const effectiveLog = effectiveLogSource.filter(
-    (entry) =>
+  const assembled = assembleContextMessages({
+    log: effectiveLogSource,
+    storyCards,
+    requiredMeta,
+    userMessage: userMsg,
+    promptBudget,
+    includeLogEntry: (entry) =>
       entry.role !== LogEntryRole.PLAYER || entry.text !== lastMessage.text,
-  );
-
-  for (const entry of effectiveLog) {
-    getEntryTokens(entry);
-  }
-
-  // Merge consecutive GM entries by chainId
-  type Merged = { role: "user" | "assistant"; content: string };
-  type AssistantMerged = Merged & { __chainKey: string };
-  const mergedLog: Merged[] = [];
-  for (const entry of effectiveLog) {
-    const content = injectMode(entry.text, entry.mode);
-    if (entry.role === LogEntryRole.GM) {
-      const chainKey = entry.chainId ?? entry.id;
-      const last = mergedLog[mergedLog.length - 1] as
-        | AssistantMerged
-        | undefined;
-      if (last && last.role === "assistant" && last.__chainKey === chainKey) {
-        last.content += content;
-      } else {
-        const merged: AssistantMerged = {
-          role: "assistant",
-          content,
-          __chainKey: chainKey,
-        };
-        mergedLog.push(merged);
-      }
-    } else {
-      mergedLog.push({ role: "user", content });
-    }
-  }
-
-  // Always include pinned cards first
-  const pinnedCards = storyCards.filter((card) => card.isPinned);
-  const includedCardIds = new Set<string>(pinnedCards.map((c) => c.id));
-
-  // Check if base messages + pinned cards exceed budget
-  const pinnedContent = buildStoryBookPrompt(pinnedCards);
-  const pinnedMsg: ChatMessage | null = pinnedContent
-    ? { role: "system", content: pinnedContent }
-    : null;
-
-  const baseWithPinned = [...baseRequiredForCounting];
-  if (pinnedMsg) baseWithPinned.push(pinnedMsg);
-
-  const baseTokensWithPinned = tokenCountFor(baseWithPinned);
-  if (baseTokensWithPinned > promptBudget) {
-    toast.warning(
-      `Context limit exceeded. Required messages and pinned cards use ${baseTokensWithPinned} tokens but only ${promptBudget} are available.`,
-    );
-  }
-
-  // Build conversation history, adding triggered cards as we go
-  const selectedHistory: ChatMessage[] = [];
-  let hitTokenLimit = false;
-
-  for (let i = mergedLog.length - 1; i >= 0; i--) {
-    const msg = mergedLog[i];
-    // Skip empty GM responses
-    if (
-      msg.role === "assistant" &&
-      (msg.content === "..." || msg.content.trim() === "")
-    ) {
-      continue;
-    }
-
-    const chatMsg: ChatMessage = { role: msg.role, content: msg.content };
-
-    // Find cards triggered by this message (excluding already included ones)
-    const matched = collectCardsForText(msg.content, storyCards);
-    const newCards = matched.filter((c) => !includedCardIds.has(c.id));
-
-    // Build complete storybook with all cards (pinned + previously triggered + new)
-    const allIncludedCards = storyCards.filter((c) =>
-      includedCardIds.has(c.id),
-    );
-    const tentativeCards = [...allIncludedCards, ...newCards];
-    const tentativeContent = buildStoryBookPrompt(tentativeCards);
-    const tentativeStoryBookMsg: ChatMessage | null = tentativeContent
-      ? {
-          role: "system",
-          content: tentativeContent,
-        }
-      : null;
-
-    // Test token count: meta + storybook + history + this message + final user message
-    const msgsIfIncluded: ChatMessage[] = [...requiredMeta];
-    if (tentativeStoryBookMsg) {
-      msgsIfIncluded.push(tentativeStoryBookMsg);
-    }
-    msgsIfIncluded.push(...selectedHistory, chatMsg, userMsg);
-
-    const totalTokensIfIncluded = tokenCountFor(msgsIfIncluded);
-
-    if (totalTokensIfIncluded <= promptBudget) {
-      selectedHistory.unshift(chatMsg);
-      newCards.forEach((c) => includedCardIds.add(c.id));
-    } else {
-      hitTokenLimit = true;
-      break;
-    }
-  }
-
-  if (hitTokenLimit && selectedHistory.length === 0) {
-    toast.warning(
-      "No conversation history could be included due to token limits.",
-    );
-  }
-
-  // Prepare StoryBook system message for later inclusion
-  const includedCards = storyCards.filter((c) => includedCardIds.has(c.id));
-  const storyBookContentFinal = buildStoryBookPrompt(includedCards);
-  const storyBookMsgFinal: ChatMessage | null = storyBookContentFinal
-    ? { role: "system", content: storyBookContentFinal }
-    : null;
-
-  // Final assembly: meta, StoryBook (if any), history, then the current user message LAST
-  messages.length = 0;
-  messages.push(...requiredMeta);
-  if (storyBookMsgFinal) messages.push(storyBookMsgFinal);
-  messages.push(...selectedHistory);
-  messages.push(userMsg);
+    onRequiredTokensExceeded: (requiredTokens) => {
+      toast.warning(
+        `Context limit exceeded. Required messages use ${requiredTokens} tokens but only ${promptBudget} are available.`,
+      );
+    },
+    onRequiredWithPinnedExceeded: (requiredTokens) => {
+      toast.warning(
+        `Context limit exceeded. Required messages and pinned cards use ${requiredTokens} tokens but only ${promptBudget} are available.`,
+      );
+    },
+    onNoHistoryIncluded: () => {
+      toast.warning(
+        "No conversation history could be included due to token limits.",
+      );
+    },
+  });
 
   return {
     model: model.id,
-    messages,
+    messages: assembled.messages,
     stream: true,
     max_tokens: useSettingsStore.getState().maxTokens,
     options: params.options,

@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Made font size and type apply to thinking sections.
+
+### Changed
+
+- Various code cleaning/optimization
+
 ## [v0.12.3]
 
 ### Added

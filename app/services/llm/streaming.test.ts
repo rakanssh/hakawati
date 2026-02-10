@@ -51,6 +51,28 @@ describe("parseOpenAIStream", () => {
 
     expect(chunks).toEqual([{ content: "A" }, { thinking: "B" }]);
   });
+
+  it("does not leak reasoning fields into story extraction", async () => {
+    const stream = makeSseStream([
+      'data: {"choices":[{"delta":{"content":[{"type":"text","text":"A","reasoning":"leak"}]}}]}',
+      "data: [DONE]",
+    ]);
+
+    const chunks = await collect(parseOpenAIStream(stream));
+
+    expect(chunks).toEqual([{ content: "A" }]);
+  });
+
+  it("merges multiple thinking fields from a single delta", async () => {
+    const stream = makeSseStream([
+      'data: {"choices":[{"delta":{"reasoning":"Plan: ","reasoning_content":"check"}}]}',
+      "data: [DONE]",
+    ]);
+
+    const chunks = await collect(parseOpenAIStream(stream));
+
+    expect(chunks).toEqual([{ thinking: "Plan: check" }]);
+  });
 });
 
 describe("decoders", () => {

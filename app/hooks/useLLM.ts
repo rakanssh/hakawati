@@ -2,7 +2,6 @@ import { sendChat } from "@/services/llm";
 import { LLMAction, LLMModel } from "@/services/llm/schema";
 import { useTaleStore } from "@/store/useTaleStore";
 import { useRef, useState } from "react";
-import { parseStreamWithDecoder } from "@/services/llm/streaming";
 import { createDecoder } from "@/services/llm/decoders";
 import { buildMessage } from "@/services/llm/promptBuilder";
 import { useSettingsStore } from "@/store/useSettingsStore";
@@ -84,7 +83,7 @@ export function useLLM() {
 
       if (res.iterator) {
         const decoder = createDecoder(gameMode);
-        const stream = parseStreamWithDecoder(res.iterator, decoder);
+        const stream = decoder.decode(res.iterator);
         for await (const chunk of stream) {
           if ("actionParseError" in chunk && chunk.actionParseError) {
             callbacks.onActionParseError();

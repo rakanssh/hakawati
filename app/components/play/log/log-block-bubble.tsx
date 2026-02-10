@@ -135,7 +135,10 @@ export function LogBlockBubble({
                       </span>
                     </div>
                   )}
-                  <p className="whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-muted-foreground">
+                  <p
+                    className="whitespace-pre-wrap text-muted-foreground"
+                    style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
+                  >
                     {entry.text}
                   </p>
                 </div>
