@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [v0.12.5] - 2026-03-04
+
+### Fixed
+
+- Fixed error on custom archetype GM quickstart.
+
 ## [v0.12.4]
 
 ### Fixed

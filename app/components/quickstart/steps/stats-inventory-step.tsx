@@ -64,7 +64,10 @@ export function StatsInventoryStep({
       const archetypeData = ARCHETYPES[setting]?.find(
         (a) => a.id === archetype,
       );
-      if (archetypeData?.defaultInventory) {
+      if (
+        archetypeData?.defaultInventory &&
+        archetypeData.defaultInventory.length > 0
+      ) {
         onInventoryChange(
           archetypeData.defaultInventory.map((item) => ({
             id: nanoid(12),
