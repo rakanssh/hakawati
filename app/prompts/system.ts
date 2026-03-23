@@ -74,7 +74,8 @@ Given a user's description, generate a complete scenario as valid JSON with the 
       "id": "card1",
       "title": "Card Title",
       "triggers": ["keyword1", "keyword2"],
-      "content": "A concise description providing context for the storyteller (1-2 sentences)"
+      "content": "A concise description providing context for the storyteller (1-2 sentences)",
+      "category": "Character"
     }
   ],
   "openingText": "1-3 paragraphs of immersive opening narration that sets the scene"
@@ -84,7 +85,7 @@ Guidelines:
 - **initialGameMode**: Use "gm" for RPG-like scenarios with stats/inventory mechanics, "story_teller" for pure narrative experiences.
 - **initialStats**: Include 0-3 stats relevant to the scenario. Each stat needs a name, starting value, and [min, max] range.
 - **initialInventory**: Include 0-5 starting items appropriate to the scenario. 
-- **initialStoryCards**: Include 0-6 cards for key characters, places, items, or concepts. Each card needs an id (short unique string), title, trigger keywords, and content.
+- **initialStoryCards**: Include 0-6 cards for key characters, places, items, or concepts. Each card needs an id (short unique string), title, trigger keywords, content, and a category: one of "Character", "Thing", "Place", or "Concept".
 - **openingText**: Write vivid, immersive prose that drops the player into the scene. Do not include choices or meta-commentary.
 - **initialAuthorNote**: Brief guidance on the tone and instructions for the narrator.
 

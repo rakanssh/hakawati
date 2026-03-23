@@ -35,7 +35,15 @@ export async function generateScenario(
   }
 
   try {
-    const parsed = ScenarioExportDataV1Schema.parse(JSON.parse(jsonStr));
+    const raw = JSON.parse(jsonStr);
+    const parsed = ScenarioExportDataV1Schema.parse(raw);
+
+    const rawCards: Record<string, unknown>[] = Array.isArray(
+      raw.initialStoryCards,
+    )
+      ? raw.initialStoryCards
+      : [];
+    const validCategories = Object.values(StorybookCategory) as string[];
 
     const now = Date.now();
     const validGameModes = Object.values(GameMode) as string[];
@@ -54,16 +62,23 @@ export async function generateScenario(
         range: [s.range[0] ?? 0, s.range[1] ?? 100] as [number, number],
       })),
       initialInventory: parsed.initialInventory,
-      initialStoryCards: parsed.initialStoryCards.map((card) => ({
-        id: nanoid(12),
-        title: card.title,
-        triggers: card.triggers,
-        content: card.content,
-        category: StorybookCategory.UNCATEGORIZED,
-        isPinned: false,
-        createdAt: now,
-        updatedAt: now,
-      })),
+      initialStoryCards: parsed.initialStoryCards.map((card, i) => {
+        const rawCat = rawCards[i]?.category;
+        const category =
+          typeof rawCat === "string" && validCategories.includes(rawCat)
+            ? (rawCat as StorybookCategory)
+            : StorybookCategory.UNCATEGORIZED;
+        return {
+          id: nanoid(12),
+          title: card.title,
+          triggers: card.triggers,
+          content: card.content,
+          category,
+          isPinned: false,
+          createdAt: now,
+          updatedAt: now,
+        };
+      }),
       openingText: parsed.openingText,
       thumbnail: null,
     };
