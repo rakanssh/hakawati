@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Added AI scenario generation to the scenario management page.
+
 ## [v0.12.5] - 2026-03-04
 
 ### Fixed

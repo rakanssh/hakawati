@@ -56,8 +56,8 @@ msgstr "{0, plural, zero {# إحصائيات} one {إحصائية واحدة} tw
 #. placeholder {0}: stats.length
 #. placeholder {1}: inventory.length === 1 ? "item" : "items"
 #. placeholder {1}: stats.length === 1 ? "stat" : "stats"
-#: app/components/quickstart/steps/stats-inventory-step.tsx:199
-#: app/components/quickstart/steps/stats-inventory-step.tsx:274
+#: app/components/quickstart/steps/stats-inventory-step.tsx:202
+#: app/components/quickstart/steps/stats-inventory-step.tsx:277
 msgid "{0} {1}"
 msgstr "{0} {1}"
 
@@ -94,8 +94,8 @@ msgstr "تلتقط سفينة أو محطة أو مسكن {characterName} إشا
 msgid "{descriptionChars} characters • ~{descriptionTokens} tokens"
 msgstr "{descriptionChars} حرف • ~{descriptionTokens} رمز"
 
-#: app/pages/scenarios/home.tsx:117
-#: app/pages/scenarios/home.tsx:123
+#: app/pages/scenarios/home.tsx:125
+#: app/pages/scenarios/home.tsx:131
 #: app/pages/tales/home.tsx:111
 #: app/pages/tales/home.tsx:117
 msgid "{name} thumbnail"
@@ -181,7 +181,7 @@ msgid "Add"
 msgstr "إضافة"
 
 #: app/components/layout/settings/inventory-stats.tsx:170
-#: app/components/quickstart/steps/stats-inventory-step.tsx:254
+#: app/components/quickstart/steps/stats-inventory-step.tsx:257
 msgid "Add a stat to track character attributes"
 msgstr "أضف خاصية لتتبع سمات الشخصية"
 
@@ -227,7 +227,7 @@ msgid "Add Item"
 msgstr "إضافة شيء"
 
 #: app/components/layout/settings/inventory-stats.tsx:210
-#: app/components/quickstart/steps/stats-inventory-step.tsx:284
+#: app/components/quickstart/steps/stats-inventory-step.tsx:287
 msgid "Add item..."
 msgstr "إضافة شيء..."
 
@@ -257,7 +257,7 @@ msgstr "يدير الذكاء الاصطناعي اللعبة بالكامل: ي
 msgid "AI tells the story only: no inventory or stats are tracked, just narrative. Works with any model."
 msgstr "يسرد الذكاء الاصطناعي القصة فقط: لا يتم تتبع المخزون أو الخصائص، مجرد سرد. يعمل مع أي نموذج."
 
-#: app/components/layout/settings/game.tsx:190
+#: app/components/layout/settings/game.tsx:91
 #: app/components/storybook/CategoryFilter.tsx:32
 msgid "All"
 msgstr "الكل"
@@ -351,7 +351,7 @@ msgstr "أفضل مع نماذج أكثر قدرة. يتطلب دعم استدع
 msgid "Browse and load saved tales"
 msgstr "تصفح وتحميل الحكايات المحفوظة"
 
-#: app/pages/scenarios/home.tsx:65
+#: app/pages/scenarios/home.tsx:69
 msgid "Browse and manage your scenarios"
 msgstr "تصفح وإدارة السيناريوهات"
 
@@ -364,6 +364,7 @@ msgstr "ابنِ التوتر عبر الأجواء والأسئلة الغام�
 msgid "Camera"
 msgstr "كاميرا"
 
+#: app/components/scenario/GenerateScenarioDialog.tsx:104
 #: app/components/sidebar/inventory-card.tsx:112
 #: app/components/sidebar/stats-card.tsx:202
 #: app/components/storybook/StorybookEditor.tsx:339
@@ -450,7 +451,7 @@ msgstr "مفهوم"
 msgid "Configure your character"
 msgstr "اضبط الشخصية"
 
-#: app/components/quickstart/steps/stats-inventory-step.tsx:172
+#: app/components/quickstart/steps/stats-inventory-step.tsx:175
 msgid "Configure your character's stats and inventory"
 msgstr "تهيئة خصائص ومخزون شخصيتك"
 
@@ -501,7 +502,7 @@ msgstr "استمرار: متابعة القصة."
 msgid "Copy your API key and paste it here"
 msgstr "انسخ مفتاح API الخاص بك والصقه هنا"
 
-#: app/pages/scenarios/home.tsx:89
+#: app/pages/scenarios/home.tsx:94
 msgid "Create"
 msgstr "إنشاء"
 
@@ -534,7 +535,7 @@ msgid "Crowbar"
 msgstr "عتلة"
 
 #: app/components/layout/settings/inventory-stats.tsx:119
-#: app/components/quickstart/steps/stats-inventory-step.tsx:217
+#: app/components/quickstart/steps/stats-inventory-step.tsx:220
 #: app/components/ui/stat-item.tsx:65
 msgid "Current"
 msgstr "الحالي"
@@ -593,7 +594,7 @@ msgstr "داكن"
 msgid "Define your character"
 msgstr "عرف الشخصية"
 
-#: app/pages/scenarios/home.tsx:169
+#: app/pages/scenarios/home.tsx:177
 #: app/pages/tales/home.tsx:167
 msgid "Delete"
 msgstr "حذف"
@@ -601,6 +602,10 @@ msgstr "حذف"
 #: app/components/layout/settings/about.tsx:38
 msgid "Dependency licenses ship with the application. After installation, check the {LICENSES_FOLDER} directory for the generated reports."
 msgstr "تراخيص التبعيات تأتي مرفقة مع التطبيق. بعد التثبيت، تحقق من المجلد {LICENSES_FOLDER} للاطلاع على التقارير التي تم إنشاؤها."
+
+#: app/components/scenario/GenerateScenarioDialog.tsx:86
+msgid "Describe the scenario you want and your currently selected model will be prompted to generate a starter for you."
+msgstr "صف السيناريو الذي تريده وسيتم توليده لك."
 
 #: app/components/quickstart/steps/setting-step.tsx:91
 msgid "Describe the world"
@@ -704,7 +709,7 @@ msgstr "مثال: جندي، إلخ."
 msgid "e.g., Steampunk, Space Opera, etc."
 msgstr "مثال: ستيم بانك، أوبرا الفضاء، إلخ."
 
-#: app/pages/scenarios/home.tsx:150
+#: app/pages/scenarios/home.tsx:158
 msgid "Edit"
 msgstr "تعديل"
 
@@ -773,7 +778,7 @@ msgstr "طاقة سحرية قابلة للاستهلاك"
 msgid "EXPERIMENTAL"
 msgstr "تجريبي"
 
-#: app/pages/scenarios/home.tsx:158
+#: app/pages/scenarios/home.tsx:166
 msgid "Export JSON"
 msgstr "تصدير JSON"
 
@@ -781,11 +786,16 @@ msgstr "تصدير JSON"
 msgid "Failed to check for updates."
 msgstr "فشل التحقق من وجود تحديثات."
 
+#. placeholder {0}: e instanceof Error ? e.message : "Unknown error"
+#: app/components/scenario/GenerateScenarioDialog.tsx:58
+msgid "Failed to generate scenario: {0}"
+msgstr "فشل توليد السيناريو: {0}"
+
 #: app/store/useUpdateStore.ts:212
 msgid "Failed to install the update."
 msgstr "فشل تثبيت التحديث."
 
-#: app/pages/scenarios/home.tsx:102
+#: app/pages/scenarios/home.tsx:110
 msgid "Failed to load scenarios."
 msgstr "فشل تحميل السيناريوهات."
 
@@ -809,11 +819,11 @@ msgstr "حقيبة إسعافات"
 msgid "Flashlight"
 msgstr "مصباح يدوي"
 
-#: app/components/layout/settings/game.tsx:170
+#: app/components/layout/settings/game.tsx:197
 msgid "Font Family"
 msgstr "عائلة الخط"
 
-#: app/components/layout/settings/game.tsx:146
+#: app/components/layout/settings/game.tsx:173
 msgid "Font Size (0.75 - 2.0)"
 msgstr "حجم الخط (0.75 - 2.0)"
 
@@ -825,7 +835,7 @@ msgstr "تشق طريقك الخاص"
 msgid "Game"
 msgstr "اللعبة"
 
-#: app/components/layout/settings/game.tsx:155
+#: app/components/layout/settings/game.tsx:182
 msgid "Game log font size"
 msgstr "حجم الخط لسجل اللعبة"
 
@@ -843,9 +853,17 @@ msgstr "مدير اللعبة"
 msgid "Game Mode"
 msgstr "نوع اللعبة"
 
+#: app/components/scenario/GenerateScenarioDialog.tsx:114
+msgid "Generate"
+msgstr "توليد"
+
 #: app/data/api-presets.ts:69
 msgid "Generate an API key and paste it here"
 msgstr "قم بتوليد مفتاح API والصقه هنا"
+
+#: app/components/scenario/GenerateScenarioDialog.tsx:83
+msgid "Generate Scenario"
+msgstr "توليد سيناريو"
 
 #: app/data/api-presets.ts:92
 msgid "Generic OpenAI"
@@ -980,7 +998,7 @@ msgstr "إذا كانت الأداة تتطلب مصادقة (auth)، ابحث �
 msgid "Image:"
 msgstr "صور:"
 
-#: app/pages/scenarios/home.tsx:86
+#: app/pages/scenarios/home.tsx:90
 msgid "Import"
 msgstr "استيراد"
 
@@ -1046,13 +1064,13 @@ msgid "Instructions"
 msgstr "التعليمات"
 
 #: app/components/layout/settings/inventory-stats.tsx:196
-#: app/components/quickstart/steps/stats-inventory-step.tsx:191
+#: app/components/quickstart/steps/stats-inventory-step.tsx:194
 #: app/components/sidebar/inventory-card.tsx:50
 msgid "Inventory"
 msgstr "المخزون"
 
 #: app/components/layout/settings/inventory-stats.tsx:244
-#: app/components/quickstart/steps/stats-inventory-step.tsx:304
+#: app/components/quickstart/steps/stats-inventory-step.tsx:307
 msgid "Inventory empty"
 msgstr "المخزون فارغ"
 
@@ -1078,7 +1096,7 @@ msgid "Item name"
 msgstr "اسم الشيء"
 
 #: app/components/layout/settings/inventory-stats.tsx:247
-#: app/components/quickstart/steps/stats-inventory-step.tsx:307
+#: app/components/quickstart/steps/stats-inventory-step.tsx:310
 msgid "Items collected will appear here"
 msgstr "العناصر التي تم جمعها ستظهر هنا"
 
@@ -1102,11 +1120,11 @@ msgstr "اجعل الافتتاحية محكمة وواقعية. قلل الفك
 msgid "keeping others alive in a world that wants everyone dead, rationing hope along with the antibiotics"
 msgstr "يبقي الآخرين على قيد الحياة في عالم يتربص بالجميع، يقتصد في الأمل كما يقتصد في المضادات الحيوية"
 
-#: app/components/layout/settings/game.tsx:79
+#: app/components/layout/settings/game.tsx:106
 msgid "Language"
 msgstr "اللغة"
 
-#: app/components/layout/settings/game.tsx:107
+#: app/components/layout/settings/game.tsx:134
 msgid "Language Default"
 msgstr "حسب اللغة"
 
@@ -1121,11 +1139,11 @@ msgid "Last played: {0}"
 msgstr "آخر لعب: {0}"
 
 #. placeholder {0}: formatExactDateTime(updatedAt)
-#: app/pages/scenarios/home.tsx:182
+#: app/pages/scenarios/home.tsx:190
 msgid "Last updated: {0}"
 msgstr "آخر تحديث: {0}"
 
-#: app/components/layout/settings/game.tsx:193
+#: app/components/layout/settings/game.tsx:94
 msgid "Latest"
 msgstr "الأحدث"
 
@@ -1137,7 +1155,7 @@ msgstr "تبنَّ أسلوب العبث، والمساجلات السريعة،
 msgid "Leave characters, objects, and concepts to the story cards"
 msgstr "اترك الشخصيات والأشياء والمفاهيم لبطاقات القصة"
 
-#: app/components/layout/settings/game.tsx:110
+#: app/components/layout/settings/game.tsx:137
 msgid "Left to Right"
 msgstr "من اليسار إلى اليمين"
 
@@ -1170,7 +1188,7 @@ msgstr "جاري تحميل المدخلات القديمة..."
 msgid "Loading..."
 msgstr "جاري التحميل..."
 
-#: app/pages/scenarios/home.tsx:97
+#: app/pages/scenarios/home.tsx:105
 #: app/pages/tales/home.tsx:82
 msgid "Loading…"
 msgstr "جاري تحميل..."
@@ -1209,7 +1227,7 @@ msgid "Manual updates are only available in the desktop app."
 msgstr "التحديثات اليدوية متاحة فقط في نسخة الأجهزة المكتبية."
 
 #: app/components/layout/settings/inventory-stats.tsx:130
-#: app/components/quickstart/steps/stats-inventory-step.tsx:228
+#: app/components/quickstart/steps/stats-inventory-step.tsx:231
 #: app/components/scenario/StatsEditor.tsx:81
 #: app/components/ui/stat-item.tsx:76
 msgid "Max"
@@ -1285,8 +1303,8 @@ msgstr "غموض"
 
 #: app/components/layout/settings/inventory-stats.tsx:108
 #: app/components/layout/settings/inventory-stats.tsx:207
-#: app/components/quickstart/steps/stats-inventory-step.tsx:206
-#: app/components/quickstart/steps/stats-inventory-step.tsx:281
+#: app/components/quickstart/steps/stats-inventory-step.tsx:209
+#: app/components/quickstart/steps/stats-inventory-step.tsx:284
 #: app/components/scenario/ScenarioBasicsFields.tsx:43
 #: app/components/sidebar/inventory-card.tsx:86
 #: app/components/sidebar/stats-card.tsx:147
@@ -1307,15 +1325,19 @@ msgstr "NanoGPT"
 msgid "Narration Style (Optional)"
 msgstr "أسلوب السرد (اختياري)"
 
-#: app/pages/scenarios/home.tsx:203
+#: app/pages/scenarios/home.tsx:211
 msgid "New Tale"
 msgstr "حكاية جديدة"
 
 #: app/components/quickstart/quickstart-wizard.tsx:424
-#: app/pages/scenarios/home.tsx:229
+#: app/pages/scenarios/home.tsx:237
 #: app/pages/tales/home.tsx:230
 msgid "Next"
 msgstr "التالي"
+
+#: app/components/scenario/GenerateScenarioDialog.tsx:40
+msgid "No AI model selected"
+msgstr "لا يوجد نموذج ذكاء اصطناعي محدد"
 
 #: app/pages/home/home.tsx:179
 msgid "No description yet."
@@ -1338,11 +1360,11 @@ msgid "No stats or inventory tracking"
 msgstr "بدون تتبع الخصائص أو المخزون"
 
 #: app/components/layout/settings/inventory-stats.tsx:167
-#: app/components/quickstart/steps/stats-inventory-step.tsx:251
+#: app/components/quickstart/steps/stats-inventory-step.tsx:254
 msgid "No stats yet"
 msgstr "لا توجد خصائص بعد"
 
-#: app/components/layout/settings/game.tsx:196
+#: app/components/layout/settings/game.tsx:97
 msgid "None"
 msgstr "لا شيء"
 
@@ -1420,7 +1442,7 @@ msgid "Output (completion)"
 msgstr "المخرجات"
 
 #. placeholder {0}: Math.max(1, Math.ceil(total / limit) || 1)
-#: app/pages/scenarios/home.tsx:220
+#: app/pages/scenarios/home.tsx:228
 #: app/pages/tales/home.tsx:221
 msgid "Page {page} of {0}"
 msgstr "الصفحة {page} من {0}"
@@ -1463,7 +1485,7 @@ msgstr "سكين جيب"
 msgid "Power Armor"
 msgstr "درع آلي"
 
-#: app/pages/scenarios/home.tsx:217
+#: app/pages/scenarios/home.tsx:225
 #: app/pages/tales/home.tsx:218
 msgid "Prev"
 msgstr "السابق"
@@ -1559,8 +1581,8 @@ msgstr "إعادة الفحص"
 msgid "Research Notes"
 msgstr "ملاحظات بحث"
 
-#: app/components/layout/settings/game.tsx:139
-#: app/components/layout/settings/game.tsx:163
+#: app/components/layout/settings/game.tsx:166
+#: app/components/layout/settings/game.tsx:190
 msgid "Reset"
 msgstr "إعادة تعيين"
 
@@ -1571,7 +1593,7 @@ msgstr "إعادة تعيين"
 #: app/components/layout/settings/advanced.tsx:330
 #: app/components/layout/settings/advanced.tsx:397
 #: app/components/layout/settings/model.tsx:210
-#: app/components/quickstart/steps/stats-inventory-step.tsx:181
+#: app/components/quickstart/steps/stats-inventory-step.tsx:184
 msgid "Reset to Default"
 msgstr "استعادة الافتراضيات"
 
@@ -1591,7 +1613,7 @@ msgstr "إعادة المحاولة: أعد توليد الرسالة الأخي
 msgid "Revolver"
 msgstr "مسدس"
 
-#: app/components/layout/settings/game.tsx:113
+#: app/components/layout/settings/game.tsx:140
 msgid "Right to Left"
 msgstr "من اليمين إلى اليسار"
 
@@ -1651,13 +1673,13 @@ msgstr "جاري البحث..."
 msgid "Scenario"
 msgstr "سيناريو"
 
-#: app/pages/scenarios/home.tsx:134
+#: app/pages/scenarios/home.tsx:142
 msgid "Scenario actions"
 msgstr "إجراءات السيناريو"
 
 #: app/components/layout/header.tsx:12
 #: app/pages/home/home.tsx:209
-#: app/pages/scenarios/home.tsx:62
+#: app/pages/scenarios/home.tsx:66
 msgid "Scenarios"
 msgstr "سيناريوهات"
 
@@ -1705,11 +1727,11 @@ msgstr "اختر عالماً لقصتك"
 msgid "Select action mode"
 msgstr "اختر نوع الإجراء"
 
-#: app/components/layout/settings/game.tsx:103
+#: app/components/layout/settings/game.tsx:130
 msgid "Select direction"
 msgstr "اختر الاتجاه"
 
-#: app/components/layout/settings/game.tsx:83
+#: app/components/layout/settings/game.tsx:110
 msgid "Select language"
 msgstr "اختر اللغة"
 
@@ -1717,7 +1739,7 @@ msgstr "اختر اللغة"
 msgid "Select Model"
 msgstr "اختر النموذج"
 
-#: app/components/layout/settings/game.tsx:186
+#: app/components/layout/settings/game.tsx:87
 msgid "Select thinking visibility"
 msgstr "اختر عرض التفكير"
 
@@ -1815,14 +1837,14 @@ msgid "Starting download..."
 msgstr "جاري بدء التحميل..."
 
 #: app/components/layout/settings/inventory-stats.tsx:111
-#: app/components/quickstart/steps/stats-inventory-step.tsx:209
+#: app/components/quickstart/steps/stats-inventory-step.tsx:212
 #: app/components/sidebar/stats-card.tsx:151
 #: app/components/ui/stat-item.tsx:58
 msgid "Stat name"
 msgstr "اسم الخاصية"
 
 #: app/components/layout/settings/inventory-stats.tsx:97
-#: app/components/quickstart/steps/stats-inventory-step.tsx:188
+#: app/components/quickstart/steps/stats-inventory-step.tsx:191
 #: app/components/sidebar/stats-card.tsx:72
 msgid "Stats"
 msgstr "الخصائص"
@@ -1998,7 +2020,7 @@ msgstr "شيء"
 msgid "Thinking"
 msgstr "تفكير"
 
-#: app/components/layout/settings/game.tsx:177
+#: app/components/layout/settings/game.tsx:78
 msgid "Thinking Visibility"
 msgstr "إظهار التفكير"
 
@@ -2093,11 +2115,11 @@ msgstr "أدوار"
 msgid "Type actions, the AI continues. Available actions:"
 msgstr "أدخل إجراءات، ويستمر الكاتب. الإجراءات المتاحة:"
 
-#: app/components/layout/settings/game.tsx:96
+#: app/components/layout/settings/game.tsx:123
 msgid "UI Direction"
 msgstr "الاتجاه"
 
-#: app/components/layout/settings/game.tsx:122
+#: app/components/layout/settings/game.tsx:149
 msgid "UI Scale (0.8 - 1.5)"
 msgstr "مقياس الواجهة (0.8 - 1.5)"
 
@@ -2157,7 +2179,7 @@ msgstr "استخدام موجّه مخصص"
 msgid "Use the Rescan button to detect your server (This will only work if the server is running and accessible)"
 msgstr "استخدم زر إعادة الفحص لاكتشاف خادمك (سيعمل هذا فقط إذا كان الخادم قيد التشغيل ويمكن الوصول إليه)"
 
-#: app/components/layout/settings/game.tsx:131
+#: app/components/layout/settings/game.tsx:158
 msgid "User interface scale"
 msgstr "مقياس الواجهة"
 
