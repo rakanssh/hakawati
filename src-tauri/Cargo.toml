@@ -1,6 +1,6 @@
 [package]
 name = "hakawati"
-version = "0.12.6"
+version = "0.13.0"
 description = "AI-powered, text-based RPG client"
 authors = ["rakanssh"]
 edition = "2021"
