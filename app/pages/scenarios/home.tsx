@@ -26,6 +26,7 @@ import {
   PencilIcon,
   TrashIcon,
   ClipboardIcon,
+  Sparkles,
 } from "lucide-react";
 import placeholderImage from "@/assets/scen-ph.png";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,8 @@ import {
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { GenerateScenarioDialog } from "@/components/scenario";
+import { useState } from "react";
 
 export default function ScenariosHome() {
   const { t } = useLingui();
@@ -45,6 +48,7 @@ export default function ScenariosHome() {
   const { load: loadTale } = useLoadTale();
   const { exportById } = useScenariosExport();
   const { importFromClipboard } = useScenariosImport();
+  const [generateOpen, setGenerateOpen] = useState(false);
   return (
     <div className="mx-auto w-full max-w-screen-2xl py-5 flex flex-col gap-4 px-3">
       <div className="flex items-center justify-between">
@@ -85,8 +89,12 @@ export default function ScenariosHome() {
           >
             <Trans>Import</Trans>
           </Button>
+
           <Button onClick={() => navigate({ to: "/scenarios/new" })}>
             <Trans>Create</Trans>
+          </Button>
+          <Button onClick={() => setGenerateOpen(true)}>
+            <Sparkles className="w-4 h-4" />
           </Button>
         </div>
       </div>
@@ -230,6 +238,19 @@ export default function ScenariosHome() {
           </Button>
         </div>
       )}
+      <GenerateScenarioDialog
+        open={generateOpen}
+        onOpenChange={setGenerateOpen}
+        onGenerated={(scenario) => {
+          navigate({
+            to: "/scenarios/new",
+            state: (prev) => ({
+              ...(prev ?? {}),
+              importedScenario: scenario,
+            }),
+          });
+        }}
+      />
     </div>
   );
 }

@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [v0.12.6] - 2026-03-24
+
+### Added
+
+- Added AI scenario generation to the scenario management page.
+
+### Fixed
+
+- Fixed a race condition where stopping generation and immediately sending a new message could leave the input controls unlocked while the new request was still in progress.
+- Log blocks no longer recompute on every render.
+
 ## [v0.12.5] - 2026-03-04
 
 ### Fixed

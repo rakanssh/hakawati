@@ -29,6 +29,7 @@ export function useLLM() {
       abortRef.current.abort();
     }
     abortRef.current = new AbortController();
+    const controller = abortRef.current;
     setLoading(true);
 
     try {
@@ -121,7 +122,9 @@ export function useLLM() {
     } catch (e) {
       callbacks.onError(e);
     } finally {
-      setLoading(false);
+      if (abortRef.current === controller) {
+        setLoading(false);
+      }
     }
   };
 

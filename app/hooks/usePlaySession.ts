@@ -147,7 +147,6 @@ export function usePlaySession(
       if (mode === LogEntryMode.CONTINUE) {
         const currentLog = useTaleStore.getState().log;
         const lastGm = [...currentLog]
-          .slice()
           .reverse()
           .find((e) => e.role === LogEntryRole.GM);
         if (!lastGm) {

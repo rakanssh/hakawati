@@ -5,6 +5,7 @@ import {
   CONTINUE_SYSTEM_PROMPT,
   CONTINUE_AUTHOR_NOTE,
   STORY_CARD_GENERATOR_PROMPT,
+  SCENARIO_GENERATOR_PROMPT,
 } from "./system";
 
 export function getActiveGmPrompt(): string {
@@ -44,4 +45,8 @@ export function getActiveStoryCardGeneratorPrompt(): string {
   return useCustomStoryCardGeneratorPrompt && customStoryCardGeneratorPrompt
     ? customStoryCardGeneratorPrompt
     : STORY_CARD_GENERATOR_PROMPT;
+}
+
+export function getActiveScenarioGeneratorPrompt(): string {
+  return SCENARIO_GENERATOR_PROMPT;
 }
