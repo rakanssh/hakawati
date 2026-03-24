@@ -31,10 +31,11 @@ export default function Play() {
     stats,
     inventory,
     storyCards,
+    gameMode,
+    id: taleId,
   } = useTaleStore();
 
   const { fontSize, setFontSize, model } = useSettingsStore();
-  const { gameMode, id: taleId } = useTaleStore();
   const { isMobilePlatform } = useIsMobile();
   const { lastPlayedTaleId } = useLastPlayedStore();
   const { load, loading: isLoadingTale } = useLoadTale();
@@ -153,7 +154,7 @@ export default function Play() {
     }
   }, [log, loading, model, executeLlmSend, isLoadingTale]);
 
-  const blocks = groupLogEntriesIntoBlocks(log);
+  const blocks = useMemo(() => groupLogEntriesIntoBlocks(log), [log]);
 
   const renderMainContent = () => {
     if (isLoadingTale) {
