@@ -167,6 +167,7 @@ export type RemoteTale = {
   contentRev: number;
   metadataRev: number;
   turnCount: number;
+  entryCount?: number;
   updatedAt: string;
   lastEntryPreview: string | null;
 };
@@ -181,6 +182,7 @@ export type RemoteTalePackageResponse = {
   contentRev: number;
   metadataRev: number;
   turnCount: number;
+  entryCount?: number;
   package: SyncTalePackageV1;
   cover?: unknown;
 };
@@ -977,6 +979,7 @@ export async function replaceRemoteTalePackage(input: {
   localTaleId: string;
   idempotencyKey: string;
   capabilities?: SyncCapabilities;
+  forceReplace?: boolean;
 }): Promise<unknown> {
   const state = await getTaleSyncState({
     profileId: input.profile.id,
@@ -994,14 +997,21 @@ export async function replaceRemoteTalePackage(input: {
       localPackage: pkg,
       capabilities: input.capabilities,
     });
+    const body: {
+      package: SyncTalePackageV1;
+      confirmReplace: true;
+      baseContentRev?: number;
+    } = {
+      package: syncPackage,
+      confirmReplace: true,
+    };
+    if (!input.forceReplace) {
+      body.baseContentRev = contentRevNumber(state.contentRev);
+    }
     const result = bodyValue(
       await input.transport.put(
         `/v1/tales/${encodeURIComponent(state.remoteTaleId)}/package`,
-        {
-          package: syncPackage,
-          baseContentRev: contentRevNumber(state.contentRev),
-          confirmReplace: true,
-        },
+        body,
         { idempotencyKey: input.idempotencyKey },
       ),
     );

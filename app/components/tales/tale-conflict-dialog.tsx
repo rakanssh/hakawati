@@ -28,11 +28,13 @@ export function TaleConflictDialog({
   onResolve,
 }: TaleConflictDialogProps) {
   const { t } = useLingui();
-  const localTurnCount = item?.source === "local" ? item.localTale.logCount : 0;
+  const localEntryCount =
+    item?.source === "local" ? item.localTale.logCount : 0;
   const localUpdatedAt =
     item?.source === "local" ? item.localTale.updatedAt : 0;
   const remoteTale = item?.source === "local" ? item.sync?.remoteTale : null;
-  const remoteTurnCount = remoteTale?.turnCount ?? null;
+  const remoteEntryCount =
+    remoteTale?.entryCount ?? remoteTale?.turnCount ?? null;
   const remoteUpdatedAt = remoteTale
     ? Date.parse(remoteTale.updatedAt) || 0
     : 0;
@@ -70,12 +72,12 @@ export function TaleConflictDialog({
                   <Trans>Keep Cloud</Trans>
                 </div>
                 <div className="mt-1 text-sm font-normal text-muted-foreground">
-                  {remoteTurnCount === null ? (
-                    <Trans>Unknown turns</Trans>
+                  {remoteEntryCount === null ? (
+                    <Trans>Unknown entries</Trans>
                   ) : (
                     <Trans>
-                      {remoteTurnCount}{" "}
-                      {remoteTurnCount === 1 ? t`turn` : t`turns`}
+                      {remoteEntryCount}{" "}
+                      {remoteEntryCount === 1 ? t`entry` : t`entries`}
                     </Trans>
                   )}
                 </div>
@@ -99,7 +101,8 @@ export function TaleConflictDialog({
                 </div>
                 <div className="mt-1 text-sm font-normal text-muted-foreground">
                   <Trans>
-                    {localTurnCount} {localTurnCount === 1 ? t`turn` : t`turns`}
+                    {localEntryCount}{" "}
+                    {localEntryCount === 1 ? t`entry` : t`entries`}
                   </Trans>
                 </div>
                 <div className="mt-1 whitespace-normal text-xs font-normal text-muted-foreground">

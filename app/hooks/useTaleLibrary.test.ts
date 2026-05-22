@@ -392,6 +392,7 @@ describe("useTaleLibrary", () => {
       expect.objectContaining({
         localTaleId: "local-1",
         idempotencyKey: expect.stringMatching(/^conflict-local-1-/),
+        forceReplace: true,
       }),
     );
     expect(resolvedId).toBe("local-1");

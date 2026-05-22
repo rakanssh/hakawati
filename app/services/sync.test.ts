@@ -506,6 +506,50 @@ describe("sync transport", () => {
     );
   });
 
+  it("omits baseContentRev when force replacing a conflicted remote package", async () => {
+    taleRepo.exportTalePackage.mockResolvedValueOnce(samplePackage());
+    syncRepo.getTaleSyncState.mockResolvedValueOnce({
+      profileId: "cloud",
+      localTaleId: "local-tale",
+      remoteTaleId: "remote-tale",
+      contentRev: "12",
+      metadataRev: "3",
+      lastSyncedAt: 1,
+      pendingStatus: "conflict",
+      lastErrorCode: "remote_changed",
+    });
+    const transport = {
+      get: vi.fn().mockResolvedValue({ features: {} }),
+      post: vi.fn(),
+      put: vi.fn().mockResolvedValue({
+        id: "remote-tale",
+        contentRev: 13,
+        metadataRev: 4,
+      }),
+      patch: vi.fn(),
+      delete: vi.fn(),
+    };
+
+    await replaceRemoteTalePackage({
+      profile: {
+        id: "cloud",
+        baseUrl: "https://sync.example",
+        mode: "hosted",
+      },
+      transport,
+      localTaleId: "local-tale",
+      idempotencyKey: "idem-force-replace",
+      forceReplace: true,
+    });
+
+    const [, body] = transport.put.mock.calls[0];
+    expect(body).toMatchObject({
+      confirmReplace: true,
+      package: expect.any(Object),
+    });
+    expect(body).not.toHaveProperty("baseContentRev");
+  });
+
   it("pushes local turns after the remote turn count and stores returned revisions", async () => {
     taleRepo.exportTalePackage.mockResolvedValueOnce({
       ...samplePackage(),

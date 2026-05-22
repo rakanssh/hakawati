@@ -171,8 +171,8 @@ function TaleCard({
   const updatedAt = isRemote
     ? Date.parse(item.remoteTale.updatedAt) || 0
     : item.localTale.updatedAt;
-  const turnCount = isRemote
-    ? item.remoteTale.turnCount
+  const entryCount = isRemote
+    ? (item.remoteTale.entryCount ?? item.remoteTale.turnCount)
     : item.localTale.logCount;
   const thumbnail = isRemote ? null : item.localTale.thumbnail;
   const hasConflict =
@@ -231,7 +231,7 @@ function TaleCard({
           <div className="flex items-start gap-1.5">
             <h3 className="min-w-0 flex-1 truncate font-semibold">{title}</h3>
             <Badge variant="outline" className="shrink-0 text-[10px]">
-              {turnCount} {turnCount === 1 ? t`turn` : t`turns`}
+              {entryCount} {entryCount === 1 ? t`entry` : t`entries`}
             </Badge>
           </div>
           <p className="mt-1 line-clamp-2 min-h-10 text-sm text-muted-foreground">
@@ -1004,7 +1004,7 @@ export default function Home() {
                   {name || t`Untitled`}
                 </h2>
                 <Badge variant="outline" className="shrink-0 text-[10px]">
-                  {log.length} {log.length === 1 ? t`turn` : t`turns`}
+                  {log.length} {log.length === 1 ? t`entry` : t`entries`}
                 </Badge>
               </div>
               <p className="mt-0.5 truncate text-sm text-muted-foreground">

@@ -200,8 +200,8 @@ export default function TalesHome() {
           const updatedAt = isRemote
             ? Date.parse(item.remoteTale.updatedAt) || 0
             : item.localTale.updatedAt;
-          const logCount = isRemote
-            ? item.remoteTale.turnCount
+          const entryCount = isRemote
+            ? (item.remoteTale.entryCount ?? item.remoteTale.turnCount)
             : item.localTale.logCount;
           const hasConflict =
             item.source === "local" && item.sync?.status === "conflict";
@@ -287,8 +287,8 @@ export default function TalesHome() {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Badge className="absolute left-1 top-1 z-10 h-5 bg-accent/60 px-2 text-xs text-muted-foreground">
-                        {formatRelativeTime(updatedAt)} · {logCount}{" "}
-                        {logCount === 1 ? t`turn` : t`turns`}
+                        {formatRelativeTime(updatedAt)} · {entryCount}{" "}
+                        {entryCount === 1 ? t`entry` : t`entries`}
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent side="top">

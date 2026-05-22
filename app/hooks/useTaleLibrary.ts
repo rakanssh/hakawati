@@ -194,6 +194,7 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
           transport,
           localTaleId: item.localTale.id,
           idempotencyKey,
+          forceReplace: true,
         });
       } else {
         resolvedLocalTaleId = await keepBothTalePackage({
