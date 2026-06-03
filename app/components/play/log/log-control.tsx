@@ -8,16 +8,27 @@ import {
   UndoIcon,
   RedoIcon,
   RefreshCwIcon,
-  MoreHorizontal,
+  HistoryIcon,
+  MoreHorizontalIcon,
   SquareIcon,
 } from "lucide-react";
 import { useTaleStore } from "@/store/useTaleStore";
 import { useEffect } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+
 interface LogControlProps {
   className?: string;
+  groupClassName?: string;
+  buttonClassName?: string;
   handleRetry: () => void;
-  handleContinue: () => void;
   handleStop?: () => void;
   loading?: boolean;
   saving?: boolean;
@@ -25,9 +36,10 @@ interface LogControlProps {
 
 export function LogControl({
   className,
+  groupClassName,
+  buttonClassName,
   loading = false,
   handleRetry,
-  handleContinue,
   handleStop,
   saving = false,
 }: LogControlProps) {
@@ -91,92 +103,113 @@ export function LogControl({
 
   return (
     <div className={className}>
-      <div className="flex w-full flex-row gap-1">
+      <div className={cn("flex w-full flex-row gap-1", groupClassName)}>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className="h-10 flex-1 bg-card/70"
               variant="outline"
               size="icon"
-              onClick={undo}
-              disabled={loading || saving}
-              aria-label={t`Undo`}
-            >
-              <UndoIcon className="w-3.5 h-3.5 md:w-4 md:h-4 rtl:scale-x-[-1]" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top">
-            <Trans>Undo (Ctrl+Z)</Trans>
-          </TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="submit"
+              className={cn("!h-10 !w-10 bg-card/70", buttonClassName)}
               onClick={handleRetry}
               disabled={loading || saving}
-              variant="outline"
-              size="icon"
-              className="h-10 flex-1 bg-card/70"
               aria-label={t`Retry`}
             >
-              <RefreshCwIcon
-                strokeWidth={1.5}
-                className="w-3.5 h-3.5 md:w-4 md:h-4"
-              />
+              <RefreshCwIcon className="h-4 w-4" strokeWidth={1.5} />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
             <Trans>Retry (Ctrl+R)</Trans>
           </TooltipContent>
         </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              onClick={loading && handleStop ? handleStop : handleContinue}
-              disabled={loading ? !handleStop : saving}
-              variant="outline"
-              size="icon"
-              className="h-10 flex-1 bg-card/70"
-              aria-label={
-                loading && handleStop ? t`Stop generating` : t`Continue`
-              }
-            >
-              {loading && handleStop ? (
-                <SquareIcon className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              ) : (
-                <MoreHorizontal className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top">
-            {loading && handleStop ? (
-              <Trans>Stop generating (Esc)</Trans>
-            ) : (
-              <Trans>Continue</Trans>
-            )}
-          </TooltipContent>
-        </Tooltip>
 
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              className="h-10 flex-1 bg-card/70"
-              variant="outline"
-              size="icon"
-              onClick={redo}
-              disabled={loading || saving}
-              aria-label={t`Redo`}
-            >
-              <RedoIcon className="w-3.5 h-3.5 md:w-4 md:h-4 rtl:scale-x-[-1]" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top">
-            <Trans>Redo (Ctrl+Y)</Trans>
-          </TooltipContent>
-        </Tooltip>
+        <DropdownMenu>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={cn("!h-10 !w-10 bg-card/70", buttonClassName)}
+                  disabled={loading || saving}
+                  aria-label={t`History actions`}
+                >
+                  <HistoryIcon className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <Trans>History</Trans>
+            </TooltipContent>
+          </Tooltip>
+          <DropdownMenuContent align="end" side="top" className="min-w-40">
+            <DropdownMenuItem onClick={undo} disabled={loading || saving}>
+              <UndoIcon className="h-4 w-4 rtl:scale-x-[-1]" />
+              <Trans>Undo</Trans>
+              <DropdownMenuShortcut>⌘Z</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={redo} disabled={loading || saving}>
+              <RedoIcon className="h-4 w-4 rtl:scale-x-[-1]" />
+              <Trans>Redo</Trans>
+              <DropdownMenuShortcut>⇧⌘Z</DropdownMenuShortcut>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
+  );
+}
+
+interface ContinueControlProps {
+  onContinue: () => void;
+  onStop?: () => void;
+  loading?: boolean;
+  saving?: boolean;
+  className?: string;
+  showLabel?: boolean;
+}
+
+export function ContinueControl({
+  onContinue,
+  onStop,
+  loading = false,
+  saving = false,
+  className,
+  showLabel = false,
+}: ContinueControlProps) {
+  const { t } = useLingui();
+  const canStop = loading && !!onStop;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          onClick={canStop ? onStop : onContinue}
+          disabled={canStop ? false : saving || loading}
+          variant="outline"
+          size={showLabel ? "default" : "icon"}
+          className={className}
+          aria-label={canStop ? t`Stop generating` : t`Continue`}
+        >
+          {canStop ? (
+            <SquareIcon className="h-4 w-4" />
+          ) : (
+            <MoreHorizontalIcon className="h-4 w-4" />
+          )}
+          {showLabel && (
+            <span>
+              {canStop ? <Trans>Stop</Trans> : <Trans>Continue</Trans>}
+            </span>
+          )}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="top">
+        {canStop ? (
+          <Trans>Stop generating (Esc)</Trans>
+        ) : (
+          <Trans>Continue</Trans>
+        )}
+      </TooltipContent>
+    </Tooltip>
   );
 }
