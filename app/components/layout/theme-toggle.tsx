@@ -2,7 +2,7 @@ import {
   LeafIcon,
   MonitorIcon,
   MoonIcon,
-  RocketIcon,
+  SparklesIcon,
   SunIcon,
 } from "lucide-react";
 import { useTheme } from "../theme-provider";
@@ -25,8 +25,8 @@ function ThemeIcon({ icon }: { icon: ThemeDefinition["icon"] }) {
       return <MoonIcon className="h-4 w-4" />;
     case "leaf":
       return <LeafIcon className="h-4 w-4" />;
-    case "rocket":
-      return <RocketIcon className="h-4 w-4" />;
+    case "sparkles":
+      return <SparklesIcon className="h-4 w-4" />;
   }
 }
 
