@@ -206,7 +206,7 @@ export default function Play() {
           </div>
         )}
         {!stickToBottom && !loading && (
-          <div className="absolute bottom-20 end-4 z-40 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="absolute bottom-[calc(9rem+env(safe-area-inset-bottom))] end-4 z-40 animate-in fade-in slide-in-from-bottom-2 duration-200 md:bottom-36">
             <Button
               variant="secondary"
               size="icon"

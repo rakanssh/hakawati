@@ -19,14 +19,12 @@ import {
   BookIcon,
   MegaphoneIcon,
   SaveIcon,
-  ChevronLeftIcon,
-  ChevronDownIcon,
+  ChevronUpIcon,
   CheckIcon,
 } from "lucide-react";
 import { LogEntryMode } from "@/types/log.type";
 import { ContinueControl, LogControl } from "@/components/play/log";
 import { getPlaceholderMessage, Action } from "@/lib/play-utils";
-import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -64,23 +62,7 @@ export function PlayInputControls({
   onRetry,
 }: PlayInputControlsProps) {
   const { t } = useLingui();
-  const { isMobileViewport, isMobilePlatform } = useIsMobile();
-  const [isExpanded, setIsExpanded] = useState(!isMobileViewport);
-
-  useEffect(() => {
-    setIsExpanded(!isMobileViewport);
-  }, [isMobileViewport]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isExpanded && isMobileViewport) {
-        setIsExpanded(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isExpanded, isMobileViewport]);
+  const { isMobilePlatform } = useIsMobile();
 
   const getModeIcon = (mode: Action["type"] = action.type) => {
     switch (mode) {
@@ -114,10 +96,8 @@ export function PlayInputControls({
 
   const renderModeMenu = ({
     className,
-    compact = false,
   }: {
     className?: string;
-    compact?: boolean;
   } = {}) => (
     <DropdownMenu>
       <Tooltip>
@@ -127,8 +107,7 @@ export function PlayInputControls({
               type="button"
               variant="ghost"
               className={cn(
-                "!h-10 shrink-0 rounded-xs border border-border/70 bg-muted/25 px-3 text-foreground shadow-none hover:bg-muted/45",
-                compact ? "!w-12 px-0" : "min-w-24 justify-between",
+                "composer-command-button !h-10 !w-auto min-w-10 rounded-xs border border-input bg-background/75 px-3 text-foreground shadow-xs hover:border-ring/45 hover:bg-background",
                 className,
               )}
               aria-label={t`Select action mode`}
@@ -136,11 +115,11 @@ export function PlayInputControls({
             >
               <span className="flex items-center gap-2">
                 {getModeIcon()}
-                {!compact && <span>{getModeLabel()}</span>}
+                <span className="composer-command-label">{getModeLabel()}</span>
               </span>
-              {!compact && (
-                <ChevronDownIcon className="h-3.5 w-3.5 text-muted-foreground" />
-              )}
+              <span className="composer-command-select-affordance ms-auto flex items-center border-s border-border/70 ps-2 text-muted-foreground">
+                <ChevronUpIcon className="h-3.5 w-3.5" />
+              </span>
             </Button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
@@ -214,7 +193,7 @@ export function PlayInputControls({
         }
       }}
       rows={1}
-      className="max-h-[300px] min-h-12 flex-1 resize-none border-0 !bg-transparent px-3 py-3 text-sm shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:!bg-transparent"
+      className="max-h-[300px] min-h-12 resize-none border-0 !bg-transparent ps-3 pe-24 py-3 text-sm shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:!bg-transparent"
       aria-label={t`Enter your action`}
     />
   );
@@ -236,13 +215,10 @@ export function PlayInputControls({
     </Button>
   );
 
-  const renderComposer = (compactMode = false) => (
-    <div className="flex min-h-12 min-w-0 flex-1 items-end overflow-hidden rounded-xs border border-border/75 bg-card/85 shadow-xs transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18">
-      <div className="flex min-h-12 shrink-0 items-end border-e border-border/70 bg-muted/20 p-1">
-        {renderModeMenu({ compact: compactMode })}
-      </div>
+  const renderComposer = () => (
+    <div className="relative min-h-12 min-w-0 flex-1 overflow-hidden rounded-xs border border-border/75 bg-card/85 shadow-xs transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18">
       {renderTextArea()}
-      <div className="flex min-h-12 shrink-0 items-end gap-1 border-s border-border/70 bg-background/35 p-1">
+      <div className="absolute bottom-1.5 end-1.5 flex items-center gap-1">
         {renderDiceToggle()}
         {renderSubmitButton()}
       </div>
@@ -250,33 +226,33 @@ export function PlayInputControls({
   );
 
   const commandButtonClass =
-    "!h-10 !w-10 border-transparent bg-transparent shadow-none hover:border-border hover:bg-muted/45";
+    "composer-command-button !h-10 !w-auto min-w-10 flex-1 border-transparent bg-transparent px-3 shadow-none hover:border-border hover:bg-muted/45";
 
-  const renderCommandCluster = ({
-    showContinueLabel = false,
-  }: {
-    showContinueLabel?: boolean;
-  } = {}) => (
-    <div className="flex h-12 shrink-0 items-center gap-1 rounded-xs border border-border/70 bg-card/60 p-1 shadow-xs">
+  const renderCommandCluster = (className?: string) => (
+    <div
+      className={cn(
+        "composer-command-tier flex min-w-0 items-center gap-1 rounded-xs border border-border/70 bg-card/60 p-1 shadow-xs",
+        className,
+      )}
+    >
+      {renderModeMenu({ className: "flex-1 bg-background/45" })}
       <ContinueControl
         onContinue={onContinue}
         onStop={onStop}
         loading={loading}
         saving={saving}
-        showLabel={showContinueLabel}
-        className={cn(
-          "bg-background/60 shadow-none hover:bg-muted/55",
-          showContinueLabel ? "!h-10 px-3" : "!h-10 !w-10",
-        )}
+        showLabel
+        className="composer-command-button !h-10 !w-auto min-w-10 flex-1 bg-background/60 px-3 shadow-none hover:bg-muted/55"
       />
       <LogControl
         handleRetry={onRetry}
         handleStop={onStop}
         loading={loading}
         saving={saving}
-        className="shrink-0"
+        className="min-w-0 flex-[3_1_0]"
         groupClassName="gap-1"
         buttonClassName={commandButtonClass}
+        showLabels
       />
     </div>
   );
@@ -293,48 +269,9 @@ export function PlayInputControls({
           : undefined
       }
     >
-      {/* Mobile Collapsed State: One-line turn button plus commands */}
-      {!isExpanded && (
-        <div className="flex md:hidden w-full items-end gap-1">
-          <Button
-            className="!h-10 min-w-0 flex-1"
-            onClick={() => setIsExpanded(true)}
-            disabled={loading}
-            aria-label={t`Take a turn`}
-          >
-            <Trans>Take a Turn</Trans>
-          </Button>
-          {renderCommandCluster()}
-        </div>
-      )}
-
-      {/* Mobile Expanded State: Two Rows */}
-      {isExpanded && (
-        <div className="flex md:hidden flex-col gap-2 w-full">
-          {/* Top Row: Back */}
-          <div className="flex w-full items-center gap-1">
-            <Button
-              variant="outline"
-              size="default"
-              className="!h-10 shrink-0 bg-card/70"
-              onClick={() => setIsExpanded(false)}
-              aria-label={t`Go back`}
-            >
-              <ChevronLeftIcon className="w-4 h-4" />
-              <Trans>Back</Trans>
-            </Button>
-            <div className="min-w-0 flex-1" />
-            {renderCommandCluster()}
-          </div>
-
-          {renderComposer(true)}
-        </div>
-      )}
-
-      {/* Desktop: Single-row composer */}
-      <div className="hidden md:flex items-end gap-2">
-        {renderComposer(false)}
-        {renderCommandCluster({ showContinueLabel: true })}
+      <div className="flex w-full flex-col gap-2">
+        {renderCommandCluster("w-full")}
+        {renderComposer()}
       </div>
     </div>
   );

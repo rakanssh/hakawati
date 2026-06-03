@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Themes! With four options (Light, Dark, name pending, name pending)
+
+### Changed
+
+- Reworked bottom dock appearance.
+
 ## [v0.13.0] - 2026-03-24
 
 ### Added

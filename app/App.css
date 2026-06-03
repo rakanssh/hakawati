@@ -383,6 +383,31 @@ textarea::-webkit-scrollbar-thumb {
   background-clip: content-box;
 }
 
+.composer-command-tier {
+  container-type: inline-size;
+}
+
+.composer-command-label {
+  display: inline;
+}
+
+@container (max-width: 440px) {
+  .composer-command-button {
+    min-width: 2.5rem;
+    padding-inline: 0;
+  }
+
+  .composer-command-label {
+    display: none;
+  }
+
+  .composer-command-select-affordance {
+    margin-inline-start: 0.25rem;
+    border-inline-start: 0;
+    padding-inline-start: 0;
+  }
+}
+
 /* Tauri window drag helpers */
 .titlebar-drag {
   -webkit-app-region: drag;
