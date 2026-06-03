@@ -73,7 +73,7 @@ export function PlayLogDisplay({
                         }}
                         onCancel={() => setCurrentlyEditingLogId(null)}
                         variant="inline"
-                        className="bg-amber-300/10 py-0.5 border-b-1 border-b-amber-700/25"
+                        className="border-b-1 border-b-log-thinking/25 bg-log-thinking/10 py-0.5"
                         style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
                       />
                     ) : (

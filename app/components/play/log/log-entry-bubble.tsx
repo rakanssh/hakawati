@@ -13,7 +13,7 @@ export function LogEntryBubble({ entry }: LogEntryBubbleProps) {
 
   if (mode === LogEntryMode.SAY) {
     return (
-      <div className="flex items-center rounded-xs border-accent-foreground/50 py-1 bg-blue-300/15">
+      <div className="flex items-center rounded-xs border border-log-say/20 bg-log-say/15 py-1">
         <SpeechIcon className="inline w-4 h-4 me-2 text-muted-foreground ms-2 shrink-0" />
         <p
           className="inline whitespace-pre-wrap break-words me-1"
@@ -28,7 +28,7 @@ export function LogEntryBubble({ entry }: LogEntryBubbleProps) {
 
   if (mode === LogEntryMode.DO) {
     return (
-      <div className="flex items-center rounded-xs border-accent-foreground/50 py-1 bg-amber-300/15">
+      <div className="flex items-center rounded-xs border border-log-do/20 bg-log-do/15 py-1">
         <HandIcon className="inline w-4 h-4 me-2 text-muted-foreground ms-2 shrink-0" />
         <p
           className="inline whitespace-pre-wrap break-words me-1"
@@ -43,7 +43,7 @@ export function LogEntryBubble({ entry }: LogEntryBubbleProps) {
 
   if (mode === LogEntryMode.DIRECT) {
     return (
-      <div className="flex items-center rounded-xs border-accent-foreground/50 py-1 bg-green-300/15">
+      <div className="flex items-center rounded-xs border border-log-direct/20 bg-log-direct/15 py-1">
         <MegaphoneIcon className="inline w-4 h-4 me-2 text-muted-foreground ms-2 shrink-0" />
         <p
           className="inline whitespace-pre-wrap break-words me-1"

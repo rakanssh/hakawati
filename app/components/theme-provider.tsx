@@ -4,22 +4,33 @@ import {
   useSettingsStore,
   resolveTextDirection,
 } from "@/store/useSettingsStore";
-
-type Theme = "dark" | "light" | "system";
+import {
+  getResolvedThemeDefinition,
+  isThemeId,
+  resolveThemeId,
+  themeClassNames,
+  themeDefinitions,
+  type ResolvedThemeId,
+  type ThemeId,
+} from "@/lib/themes";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
-  defaultTheme?: Theme;
+  defaultTheme?: ThemeId;
   storageKey?: string;
 };
 
 type ThemeProviderState = {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
+  theme: ThemeId;
+  resolvedTheme: ResolvedThemeId;
+  themes: typeof themeDefinitions;
+  setTheme: (theme: ThemeId) => void;
 };
 
 const initialState: ThemeProviderState = {
   theme: "system",
+  resolvedTheme: "light",
+  themes: themeDefinitions,
   setTheme: () => null,
 };
 
@@ -41,31 +52,41 @@ export function ThemeProvider({
     [textDirection, language],
   );
 
-  const [theme, setTheme] = useState<Theme>(() => {
+  const [theme, setTheme] = useState<ThemeId>(() => {
     try {
-      return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+      const storedTheme = localStorage.getItem(storageKey);
+      return isThemeId(storedTheme) ? storedTheme : defaultTheme;
     } catch {
       return defaultTheme;
     }
   });
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedThemeId>(() =>
+    resolveThemeId(theme),
+  );
 
   useEffect(() => {
-    const root = window.document.documentElement;
+    const updateResolvedTheme = () => setResolvedTheme(resolveThemeId(theme));
+    updateResolvedTheme();
 
-    root.classList.remove("light", "dark");
-
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light";
-
-      root.classList.add(systemTheme);
+    if (theme !== "system" || typeof window.matchMedia !== "function") {
       return;
     }
 
-    root.classList.add(theme);
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    mediaQuery.addEventListener("change", updateResolvedTheme);
+    return () => mediaQuery.removeEventListener("change", updateResolvedTheme);
   }, [theme]);
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    const definition = getResolvedThemeDefinition(resolvedTheme);
+
+    root.classList.remove("light", "dark", ...themeClassNames);
+    root.classList.add(`theme-${resolvedTheme}`);
+    if (definition.baseMode === "dark") {
+      root.classList.add("dark");
+    }
+  }, [resolvedTheme]);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -84,7 +105,9 @@ export function ThemeProvider({
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
+    resolvedTheme,
+    themes: themeDefinitions,
+    setTheme: (theme: ThemeId) => {
       try {
         localStorage.setItem(storageKey, theme);
       } catch {

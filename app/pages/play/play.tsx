@@ -199,7 +199,7 @@ export default function Play() {
             }`}
           >
             <div className="rounded-xs bg-background/95 px-2 py-1 shadow-lg border border-border backdrop-blur-sm">
-              <div className="flex items-center gap-2 text-sm font-medium text-gray-300">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 {Math.round(fontSize * 100)}%
               </div>
             </div>

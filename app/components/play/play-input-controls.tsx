@@ -222,8 +222,8 @@ export function PlayInputControls({
                   className={cn(
                     "shrink-0 !h-10 !w-10",
                     action.isRolling
-                      ? "border-green-500/50 text-green-300/90 hover:text-green-300/90"
-                      : "text-muted-foreground hover:text-green-300/90",
+                      ? "border-success/50 text-success hover:text-success"
+                      : "text-muted-foreground hover:text-success",
                   )}
                   onClick={() =>
                     setAction({
@@ -294,8 +294,8 @@ export function PlayInputControls({
               className={cn(
                 "shrink-0 h-10 w-10",
                 action.isRolling
-                  ? "border-green-500/50 text-green-300/90 hover:text-green-300/90"
-                  : "text-muted-foreground hover:text-green-300/90",
+                  ? "border-success/50 text-success hover:text-success"
+                  : "text-muted-foreground hover:text-success",
               )}
               onClick={() =>
                 setAction({

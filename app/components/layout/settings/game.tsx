@@ -17,10 +17,11 @@ import {
 import { useTheme } from "@/components/theme-provider";
 import { FontSelector } from "./font-selector";
 import { type Locale, LOCALES, loadLocale } from "@/i18n";
+import type { ThemeId } from "@/lib/themes";
 
 export default function SettingsGame() {
   const { t } = useLingui();
-  const { theme, setTheme } = useTheme();
+  const { theme, themes, setTheme } = useTheme();
   const {
     uiScale,
     setUiScale,
@@ -52,23 +53,17 @@ export default function SettingsGame() {
         </Label>
         <Select
           value={theme}
-          onValueChange={(value) =>
-            setTheme(value as "light" | "dark" | "system")
-          }
+          onValueChange={(value) => setTheme(value as ThemeId)}
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder={t`Select a theme`} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="system">
-              <Trans>System</Trans>
-            </SelectItem>
-            <SelectItem value="light">
-              <Trans>Light</Trans>
-            </SelectItem>
-            <SelectItem value="dark">
-              <Trans>Dark</Trans>
-            </SelectItem>
+            {themes.map((item) => (
+              <SelectItem key={item.id} value={item.id}>
+                {item.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

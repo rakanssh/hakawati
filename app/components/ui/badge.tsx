@@ -14,14 +14,14 @@ const badgeVariants = cva(
         secondary:
           "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
         destructive:
-          "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+          "border-transparent bg-destructive text-destructive-foreground [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
           "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
         highlight:
-          "bg-primary/10 text-primary border-primary/40 shadow-[inset_0_0_0_1px_hsl(var(--primary)/.35)] [a&]:hover:bg-primary/15 dark:bg-primary/15",
+          "border-primary/40 bg-primary/10 text-primary shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--primary)_35%,transparent)] [a&]:hover:bg-primary/15 dark:bg-primary/15",
       },
       selected: {
-        true: "ring-2 ring-primary/50 shadow-[0_0_0_1px_hsl(var(--primary)/.35)] after:content-[''] after:absolute after:inset-0 after:rounded-[inherit] after:pointer-events-none after:bg-[radial-gradient(60%_60%_at_50%_50%,_hsl(var(--primary)/0.25)_0%,_transparent_66%)]",
+        true: "ring-2 ring-primary/50 shadow-[0_0_0_1px_color-mix(in_oklch,var(--primary)_35%,transparent)] after:content-[''] after:absolute after:inset-0 after:rounded-[inherit] after:pointer-events-none after:bg-primary/15",
         false: "",
       },
     },

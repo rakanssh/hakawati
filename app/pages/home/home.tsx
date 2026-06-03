@@ -175,7 +175,7 @@ export default function Home() {
                   </Badge>
                 </div>
                 <div className="mt-1.5">
-                  <p className="text-sm text-mutesd-foreground line-clamp-2">
+                  <p className="line-clamp-2 text-sm text-muted-foreground">
                     {(lastEntry?.text ?? description) || t`No description yet.`}
                   </p>
                 </div>

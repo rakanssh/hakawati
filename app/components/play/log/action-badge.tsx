@@ -5,8 +5,8 @@ import { LLMAction } from "@/services/llm/schema";
 export function ActionBadge({ action }: { action: LLMAction }) {
   if (action.type === "MODIFY_STAT" && action.payload.value! > 0) {
     return (
-      <Badge variant="outline" className="ms-2 border-green-300/15">
-        <ChartBarIcon className="w-4 h-4 me-2 text-green-300" />
+      <Badge variant="outline" className="ms-2 border-success/25">
+        <ChartBarIcon className="w-4 h-4 me-2 text-success" />
         <span>
           {action.payload.value} {action.payload.name}
         </span>
@@ -15,8 +15,8 @@ export function ActionBadge({ action }: { action: LLMAction }) {
   }
   if (action.type === "MODIFY_STAT" && action.payload.value! < 0) {
     return (
-      <Badge variant="outline" className="ms-2 border-red-300/15">
-        <ChartBarIcon className="w-4 h-4 me-2 text-red-300" />
+      <Badge variant="outline" className="ms-2 border-destructive/25">
+        <ChartBarIcon className="w-4 h-4 me-2 text-destructive" />
         <span>
           {action.payload.value} {action.payload.name}
         </span>
@@ -28,16 +28,16 @@ export function ActionBadge({ action }: { action: LLMAction }) {
   }
   if (action.type === "ADD_TO_INVENTORY") {
     return (
-      <Badge variant="outline" className="ms-2 border-green-300/15">
-        <ShoppingBagIcon className="w-4 h-4 me-2 text-green-300" />
+      <Badge variant="outline" className="ms-2 border-success/25">
+        <ShoppingBagIcon className="w-4 h-4 me-2 text-success" />
         <span>{action.payload.item}</span>
       </Badge>
     );
   }
   if (action.type === "REMOVE_FROM_INVENTORY") {
     return (
-      <Badge variant="outline" className="ms-2 border-red-300/15">
-        <Trash2Icon className="w-4 h-4 me-2 text-red-300" />
+      <Badge variant="outline" className="ms-2 border-destructive/25">
+        <Trash2Icon className="w-4 h-4 me-2 text-destructive" />
         <span>{action.payload.item}</span>
       </Badge>
     );

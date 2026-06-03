@@ -126,7 +126,7 @@ export function LogBlockBubble({
                 <div className="rounded-xs border border-border/70 bg-background/70 p-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)]">
                   {showThinkingLabels && (
                     <div className="mb-1 flex items-center">
-                      <span className="inline-flex items-center rounded-xs border border-amber-700/25 bg-amber-300/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-200">
+                      <span className="inline-flex items-center rounded-xs border border-log-thinking/25 bg-log-thinking/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-log-thinking-foreground">
                         {entry.chainIndex === 0 ? (
                           <Trans>Initial</Trans>
                         ) : (
