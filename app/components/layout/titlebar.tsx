@@ -6,6 +6,8 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import fez from "@/assets/fez-offwh-bg-sqc.svg";
 import { useIsMobile } from "@/hooks/useIsMobile";
 
+const titlebarButtonClass = "h-7 w-7 rounded-xs p-0";
+
 export function Titlebar() {
   const navigate = useNavigate();
   const routerState = useRouterState();
@@ -29,6 +31,7 @@ export function Titlebar() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      className={titlebarButtonClass}
                       onClick={() => navigate({ to: "/" })}
                     >
                       <HomeIcon className="" />
@@ -38,11 +41,11 @@ export function Titlebar() {
                 <TooltipContent side="top">Home</TooltipContent>
               </Tooltip>
               <span className="titlebar-no-drag pointer-events-auto">
-                <SettingsButton className="" />
+                <SettingsButton className={titlebarButtonClass} />
               </span>
               {isPlayRoute && (
                 <span className="titlebar-no-drag pointer-events-auto">
-                  <TaleSettingsButton className="" />
+                  <TaleSettingsButton className={titlebarButtonClass} />
                 </span>
               )}
             </>
