@@ -236,8 +236,8 @@ export async function getTales(
           THEN json_extract(log, '$[' || (json_array_length(log) - 1) || ']')
         ELSE NULL
       END AS last_log_entry
-    FROM tales 
-    ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    FROM tales
+    ORDER BY updated_at DESC LIMIT ? OFFSET ?`,
     [limit, (page - 1) * limit],
   );
   const countRows = await db.select<Array<{ count: number }>>(
