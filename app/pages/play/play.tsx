@@ -242,7 +242,7 @@ export default function Play() {
             }
           />
           <SidebarInset
-            className="relative flex h-full flex-col overflow-hidden !rounded-none border-x"
+            className="relative flex h-full flex-col overflow-hidden !rounded-none border-x bg-background/55 backdrop-blur-sm"
             style={
               isMobilePlatform
                 ? { paddingInlineEnd: "env(safe-area-inset-right)" }
@@ -254,7 +254,7 @@ export default function Play() {
         </SidebarProvider>
       ) : (
         <div
-          className="relative flex h-full flex-col overflow-hidden"
+          className="relative flex h-full flex-col overflow-hidden bg-background/55 backdrop-blur-sm"
           style={
             isMobilePlatform
               ? {

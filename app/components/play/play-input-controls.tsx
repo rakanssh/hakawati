@@ -111,8 +111,8 @@ export function PlayInputControls({
   return (
     <div
       className={cn(
-        "pointer-events-auto z-20 w-full border-t bg-accent",
-        isMobilePlatform ? "px-2 pt-2" : "p-2",
+        "pointer-events-auto z-20 w-full border-t bg-background/80 shadow-[0_-12px_32px_color-mix(in_oklch,var(--background)_55%,transparent)] backdrop-blur-xl",
+        isMobilePlatform ? "px-2 pt-2" : "p-3",
       )}
       style={
         isMobilePlatform
@@ -168,7 +168,7 @@ export function PlayInputControls({
               }
             >
               <SelectTrigger
-                className="flex-1 rounded-xs !h-10"
+                className="!h-10 flex-1 rounded-xs bg-card/70"
                 aria-label={t`Select action mode`}
               >
                 <SelectValue>
@@ -220,7 +220,7 @@ export function PlayInputControls({
                   variant={"outline"}
                   size="icon"
                   className={cn(
-                    "shrink-0 !h-10 !w-10",
+                    "h-10 w-10 shrink-0 bg-card/70",
                     action.isRolling
                       ? "border-success/50 text-success hover:text-success"
                       : "text-muted-foreground hover:text-success",
@@ -259,7 +259,7 @@ export function PlayInputControls({
                   }
                 }}
                 rows={1}
-                className="absolute inset-x-0 bottom-0 resize-none !bg-accent min-h-10"
+                className="absolute inset-x-0 bottom-0 min-h-10 resize-none !bg-card/80"
                 aria-label={t`Enter your action`}
               />
             </div>
@@ -269,7 +269,7 @@ export function PlayInputControls({
               onClick={primaryHandler}
               disabled={canStop ? false : saving || loading}
               size="icon"
-              className="w-10 h-10"
+              className="h-10 w-10"
               aria-label={canStop ? t`Stop generating` : t`Submit action`}
             >
               {canStop ? (
@@ -292,7 +292,7 @@ export function PlayInputControls({
               variant={"outline"}
               size="icon"
               className={cn(
-                "shrink-0 h-10 w-10",
+                "h-10 w-10 shrink-0 bg-card/70",
                 action.isRolling
                   ? "border-success/50 text-success hover:text-success"
                   : "text-muted-foreground hover:text-success",
@@ -324,7 +324,7 @@ export function PlayInputControls({
           }
         >
           <SelectTrigger
-            className="w-40 rounded-xs shrink-0 !h-10"
+            className="!h-10 w-40 shrink-0 rounded-xs bg-card/70"
             aria-label={t`Select action mode`}
           >
             <SelectValue>
@@ -384,7 +384,7 @@ export function PlayInputControls({
               }
             }}
             rows={1}
-            className="absolute inset-x-0 bottom-0 resize-none !bg-accent min-h-10"
+            className="absolute inset-x-0 bottom-0 min-h-10 resize-none !bg-card/80"
             aria-label={t`Enter your action`}
           />
         </div>

@@ -91,12 +91,12 @@ export function LogControl({
 
   return (
     <div className={className}>
-      <div className="flex flex-row gap-0 w-full">
+      <div className="flex w-full flex-row gap-1">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className="rounded-none !rounded-l-xs flex-1 h-10"
-              variant="default"
+              className="h-10 flex-1 bg-card/70"
+              variant="outline"
               size="icon"
               onClick={undo}
               disabled={loading || saving}
@@ -115,9 +115,9 @@ export function LogControl({
               type="submit"
               onClick={handleRetry}
               disabled={loading || saving}
-              variant="default"
+              variant="outline"
               size="icon"
-              className="rounded-none flex-1 h-10"
+              className="h-10 flex-1 bg-card/70"
               aria-label={t`Retry`}
             >
               <RefreshCwIcon
@@ -136,9 +136,9 @@ export function LogControl({
               type="button"
               onClick={loading && handleStop ? handleStop : handleContinue}
               disabled={loading ? !handleStop : saving}
-              variant="default"
+              variant="outline"
               size="icon"
-              className="rounded-none flex-1 h-10"
+              className="h-10 flex-1 bg-card/70"
               aria-label={
                 loading && handleStop ? t`Stop generating` : t`Continue`
               }
@@ -162,8 +162,8 @@ export function LogControl({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className="rounded-none !rounded-r-xs flex-1 h-10"
-              variant="default"
+              className="h-10 flex-1 bg-card/70"
+              variant="outline"
               size="icon"
               onClick={redo}
               disabled={loading || saving}

@@ -6,11 +6,15 @@ import { InventoryCard, StatsCard } from "@/components/sidebar";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar variant="inset" className="bg-background p-0" {...props}>
-      <SidebarContent className="flex flex-col gap-2 bg-background p-2 min-h-0">
-        <Separator className="flex-shrink-0" />
-        <InventoryCard className="mt-4 flex-shrink min-h-0 max-h-[40%]" />
-        <StatsCard className="flex-shrink min-h-0 flex-1" />
+    <Sidebar
+      variant="inset"
+      className="border-e border-sidebar-border/70 bg-sidebar/80 p-0 backdrop-blur-xl"
+      {...props}
+    >
+      <SidebarContent className="flex min-h-0 flex-col gap-3 bg-transparent p-3">
+        <Separator className="flex-shrink-0 bg-sidebar-border/70" />
+        <InventoryCard className="mt-3 min-h-0 max-h-[40%] flex-shrink" />
+        <StatsCard className="min-h-0 flex-1 flex-shrink" />
       </SidebarContent>
     </Sidebar>
   );
