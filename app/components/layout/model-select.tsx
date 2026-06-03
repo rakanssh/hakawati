@@ -34,7 +34,8 @@ export function ModelSelect() {
   const [open, setOpen] = useState(false);
   const { models, loading, refresh } = useLLMProviders();
   const { gameMode } = useTaleStore();
-  const { isMobile } = useIsMobile();
+  const { isCompactViewport, isMobilePlatform } = useIsMobile();
+  const useDrawer = isCompactViewport || isMobilePlatform;
   const { t } = useLingui();
   const anySupportsToolCalls = models.some((m) => m.supportsToolCalls);
 
@@ -48,7 +49,7 @@ export function ModelSelect() {
       setModel(model);
       setOpen(false);
     },
-    [setModel, gameMode],
+    [setModel, gameMode, t],
   );
 
   function toNumber(value: unknown): number | undefined {
@@ -119,7 +120,7 @@ export function ModelSelect() {
   }
 
   const modelList = (
-    <CommandList className={cn(isMobile && "max-h-[60vh]")}>
+    <CommandList className={cn(useDrawer && "max-h-[72dvh]")}>
       <CommandEmpty>No model found.</CommandEmpty>
       <CommandGroup>
         {models.map((m) => (
@@ -132,7 +133,7 @@ export function ModelSelect() {
             }}
             className={cn(
               "rounded-xs p-1 ml-0",
-              isMobile && "min-h-[44px] p-3",
+              useDrawer && "min-h-[44px] p-3",
               model?.name === m.name && "border-l-2 border-foreground",
             )}
           >
@@ -191,7 +192,7 @@ export function ModelSelect() {
     </div>
   );
 
-  if (isMobile) {
+  if (useDrawer) {
     return (
       <div className="flex flex-col gap-2">
         <div className="flex gap-2">
@@ -206,7 +207,7 @@ export function ModelSelect() {
               {loading ? t`Loading...` : (model?.name ?? t`Select a model`)}
               <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
-            <DrawerContent>
+            <DrawerContent className="min-h-[68dvh]">
               <DrawerHeader>
                 <DrawerTitle>
                   <Trans>Select Model</Trans>

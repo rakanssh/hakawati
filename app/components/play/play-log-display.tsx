@@ -42,7 +42,7 @@ export function PlayLogDisplay({
         { "--game-log-font-size": `${fontSize}rem` } as React.CSSProperties
       }
     >
-      <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-5 py-5 sm:px-8 lg:px-10">
+      <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-3 py-3 sm:px-5 sm:py-4 lg:px-7">
         {loadingOlder && (
           <div className="flex items-center justify-center py-2 text-muted-foreground">
             <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
@@ -58,7 +58,7 @@ export function PlayLogDisplay({
               isStreaming && isLastBlock && block.role === LogEntryRole.GM;
 
             return (
-              <div key={block.entries[0].id} className="py-2">
+              <div key={block.entries[0].id} className="py-1.5">
                 {block.role === LogEntryRole.GM ? (
                   <LogBlockBubble
                     block={block}

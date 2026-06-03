@@ -26,7 +26,7 @@ import { useTaleStore } from "@/store/useTaleStore";
 import { useState, useMemo, useEffect, useRef } from "react";
 import {
   SettingsModal,
-  type SettingsTabId,
+  type GlobalSettingsSectionId,
 } from "@/components/layout/settings";
 import { AlertTriangle, Globe } from "lucide-react";
 import { QuickstartWizard } from "@/components/quickstart";
@@ -54,7 +54,11 @@ export default function Home() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [quickstartOpen, setQuickstartOpen] = useState(false);
   const [whatsNewOpen, setWhatsNewOpen] = useState(false);
-  const nonPlayTabs: readonly SettingsTabId[] = ["game", "api", "model"];
+  const nonPlayTabs: readonly GlobalSettingsSectionId[] = [
+    "appearance",
+    "ai-setup",
+    "generation",
+  ];
   const { lastPlayedTaleId } = useLastPlayedStore();
   const { load } = useLoadTale();
   const hasLoadedRef = useRef(false);
@@ -320,7 +324,7 @@ export default function Home() {
       <SettingsModal
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
-        defaultTab="api"
+        defaultTab="ai-setup"
         visibleTabs={nonPlayTabs}
       />
       <QuickstartWizard

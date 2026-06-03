@@ -11,6 +11,7 @@ All notable changes to this project are documented in this file.
 ### Changed
 
 - Reworked bottom dock appearance.
+- Reworked settings appearance.
 
 ## [v0.13.0] - 2026-03-24
 
