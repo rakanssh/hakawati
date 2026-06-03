@@ -49,6 +49,19 @@ const ACTION_MODES = [
   LogEntryMode.DIRECT,
 ] as const;
 
+type InputActionMode = (typeof ACTION_MODES)[number];
+
+const ACTION_MODE_ICONS = {
+  [LogEntryMode.DO]: HandIcon,
+  [LogEntryMode.SAY]: SpeechIcon,
+  [LogEntryMode.STORY]: BookIcon,
+  [LogEntryMode.DIRECT]: MegaphoneIcon,
+} satisfies Record<InputActionMode, typeof HandIcon>;
+
+function isInputActionMode(mode: LogEntryMode): mode is InputActionMode {
+  return ACTION_MODES.includes(mode as InputActionMode);
+}
+
 export function PlayInputControls({
   action,
   setAction,
@@ -64,35 +77,23 @@ export function PlayInputControls({
   const { t } = useLingui();
   const { isMobilePlatform } = useIsMobile();
 
-  const getModeIcon = (mode: Action["type"] = action.type) => {
-    switch (mode) {
-      case LogEntryMode.DO:
-        return <HandIcon className="w-4 h-4" />;
-      case LogEntryMode.SAY:
-        return <SpeechIcon className="w-4 h-4" />;
-      case LogEntryMode.STORY:
-        return <BookIcon className="w-4 h-4" />;
-      case LogEntryMode.DIRECT:
-        return <MegaphoneIcon className="w-4 h-4" />;
-      default:
-        return <HandIcon className="w-4 h-4" />;
-    }
+  const currentActionMode = isInputActionMode(action.type)
+    ? action.type
+    : LogEntryMode.DO;
+
+  const actionModeLabels = {
+    [LogEntryMode.DO]: t`Act`,
+    [LogEntryMode.SAY]: t`Say`,
+    [LogEntryMode.STORY]: t`Story`,
+    [LogEntryMode.DIRECT]: t`Direct`,
+  } satisfies Record<InputActionMode, string>;
+
+  const renderModeIcon = (mode: InputActionMode) => {
+    const Icon = ACTION_MODE_ICONS[mode];
+    return <Icon className="w-4 h-4" />;
   };
 
-  const getModeLabel = (mode: Action["type"] = action.type) => {
-    switch (mode) {
-      case LogEntryMode.DO:
-        return t`Act`;
-      case LogEntryMode.SAY:
-        return t`Say`;
-      case LogEntryMode.STORY:
-        return t`Story`;
-      case LogEntryMode.DIRECT:
-        return t`Direct`;
-      default:
-        return t`Act`;
-    }
-  };
+  const currentActionLabel = actionModeLabels[currentActionMode];
 
   const renderModeMenu = ({
     className,
@@ -111,11 +112,13 @@ export function PlayInputControls({
                 className,
               )}
               aria-label={t`Select action mode`}
-              title={getModeLabel()}
+              title={currentActionLabel}
             >
               <span className="flex items-center gap-2">
-                {getModeIcon()}
-                <span className="composer-command-label">{getModeLabel()}</span>
+                {renderModeIcon(currentActionMode)}
+                <span className="composer-command-label">
+                  {currentActionLabel}
+                </span>
               </span>
               <span className="composer-command-select-affordance ms-auto flex items-center border-s border-border/70 ps-2 text-muted-foreground">
                 <ChevronUpIcon className="h-3.5 w-3.5" />
@@ -123,7 +126,7 @@ export function PlayInputControls({
             </Button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
-        <TooltipContent side="top">{getModeLabel()}</TooltipContent>
+        <TooltipContent side="top">{currentActionLabel}</TooltipContent>
       </Tooltip>
       <DropdownMenuContent align="start" side="top" className="min-w-36">
         {ACTION_MODES.map((mode) => (
@@ -139,8 +142,8 @@ export function PlayInputControls({
               action.type === mode && "bg-accent text-accent-foreground",
             )}
           >
-            {getModeIcon(mode)}
-            <span>{getModeLabel(mode)}</span>
+            {renderModeIcon(mode)}
+            <span>{actionModeLabels[mode]}</span>
             {action.type === mode && <CheckIcon className="ms-auto h-4 w-4" />}
           </DropdownMenuItem>
         ))}
@@ -225,9 +228,6 @@ export function PlayInputControls({
     </div>
   );
 
-  const commandButtonClass =
-    "composer-command-button !h-10 !w-auto min-w-10 flex-1 border-transparent bg-transparent px-3 shadow-none hover:border-border hover:bg-muted/45";
-
   const renderCommandCluster = (className?: string) => (
     <div
       className={cn(
@@ -241,7 +241,6 @@ export function PlayInputControls({
         onStop={onStop}
         loading={loading}
         saving={saving}
-        showLabel
         className="composer-command-button !h-10 !w-auto min-w-10 flex-1 bg-background/60 px-3 shadow-none hover:bg-muted/55"
       />
       <LogControl
@@ -249,10 +248,6 @@ export function PlayInputControls({
         handleStop={onStop}
         loading={loading}
         saving={saving}
-        className="min-w-0 flex-[3_1_0]"
-        groupClassName="gap-1"
-        buttonClassName={commandButtonClass}
-        showLabels
       />
     </div>
   );

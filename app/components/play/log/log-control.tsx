@@ -18,9 +18,6 @@ import { cn } from "@/lib/utils";
 
 interface LogControlProps {
   className?: string;
-  groupClassName?: string;
-  buttonClassName?: string;
-  showLabels?: boolean;
   handleRetry: () => void;
   handleStop?: () => void;
   loading?: boolean;
@@ -29,9 +26,6 @@ interface LogControlProps {
 
 export function LogControl({
   className,
-  groupClassName,
-  buttonClassName,
-  showLabels = false,
   loading = false,
   handleRetry,
   handleStop,
@@ -39,6 +33,8 @@ export function LogControl({
 }: LogControlProps) {
   const { t } = useLingui();
   const { undo, redo } = useTaleStore();
+  const commandButtonClass =
+    "composer-command-button !h-10 !w-auto min-w-10 flex-1 border-transparent bg-transparent px-3 shadow-none hover:border-border hover:bg-muted/45";
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -96,24 +92,22 @@ export function LogControl({
   }, [undo, redo, handleRetry, handleStop, loading, saving]);
 
   return (
-    <div className={className}>
-      <div className={cn("flex w-full flex-row gap-1", groupClassName)}>
+    <div className={cn("min-w-0 flex-[3_1_0]", className)}>
+      <div className="flex w-full flex-row gap-1">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="outline"
               size="icon"
-              className={cn("!h-10 min-w-10 bg-card/70", buttonClassName)}
+              className={cn("bg-card/70", commandButtonClass)}
               onClick={handleRetry}
               disabled={loading || saving}
               aria-label={t`Retry`}
             >
               <RefreshCwIcon className="h-4 w-4" strokeWidth={1.5} />
-              {showLabels && (
-                <span className="composer-command-label">
-                  <Trans>Retry</Trans>
-                </span>
-              )}
+              <span className="composer-command-label">
+                <Trans>Retry</Trans>
+              </span>
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
@@ -126,17 +120,15 @@ export function LogControl({
             <Button
               variant="outline"
               size="icon"
-              className={cn("!h-10 min-w-10 bg-card/70", buttonClassName)}
+              className={cn("bg-card/70", commandButtonClass)}
               onClick={undo}
               disabled={loading || saving}
               aria-label={t`Undo`}
             >
               <UndoIcon className="h-4 w-4 rtl:scale-x-[-1]" />
-              {showLabels && (
-                <span className="composer-command-label">
-                  <Trans>Undo</Trans>
-                </span>
-              )}
+              <span className="composer-command-label">
+                <Trans>Undo</Trans>
+              </span>
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
@@ -149,17 +141,15 @@ export function LogControl({
             <Button
               variant="outline"
               size="icon"
-              className={cn("!h-10 min-w-10 bg-card/70", buttonClassName)}
+              className={cn("bg-card/70", commandButtonClass)}
               onClick={redo}
               disabled={loading || saving}
               aria-label={t`Redo`}
             >
               <RedoIcon className="h-4 w-4 rtl:scale-x-[-1]" />
-              {showLabels && (
-                <span className="composer-command-label">
-                  <Trans>Redo</Trans>
-                </span>
-              )}
+              <span className="composer-command-label">
+                <Trans>Redo</Trans>
+              </span>
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
@@ -177,7 +167,6 @@ interface ContinueControlProps {
   loading?: boolean;
   saving?: boolean;
   className?: string;
-  showLabel?: boolean;
 }
 
 export function ContinueControl({
@@ -186,7 +175,6 @@ export function ContinueControl({
   loading = false,
   saving = false,
   className,
-  showLabel = false,
 }: ContinueControlProps) {
   const { t } = useLingui();
   const canStop = loading && !!onStop;
@@ -199,7 +187,7 @@ export function ContinueControl({
           onClick={canStop ? onStop : onContinue}
           disabled={canStop ? false : saving || loading}
           variant="outline"
-          size={showLabel ? "default" : "icon"}
+          size="default"
           className={className}
           aria-label={canStop ? t`Stop generating` : t`Continue`}
         >
@@ -208,11 +196,9 @@ export function ContinueControl({
           ) : (
             <MoreHorizontalIcon className="h-4 w-4" />
           )}
-          {showLabel && (
-            <span className="composer-command-label">
-              {canStop ? <Trans>Stop</Trans> : <Trans>Continue</Trans>}
-            </span>
-          )}
+          <span className="composer-command-label">
+            {canStop ? <Trans>Stop</Trans> : <Trans>Continue</Trans>}
+          </span>
         </Button>
       </TooltipTrigger>
       <TooltipContent side="top">

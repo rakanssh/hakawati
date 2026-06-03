@@ -219,7 +219,7 @@ export default function Play() {
           </div>
         )}
         <div className="pointer-events-none absolute inset-0">
-          <OutletWrapper />
+          <Outlet />
         </div>
       </div>
     );
@@ -269,8 +269,4 @@ export default function Play() {
       )}
     </>
   );
-}
-
-function OutletWrapper() {
-  return <Outlet />;
 }
