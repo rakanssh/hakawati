@@ -45,7 +45,10 @@ import {
 } from "@/lib/utils";
 import { initTaleFromScenario } from "@/services/scenario.service";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
-import { useSettingsStore } from "@/store/useSettingsStore";
+import {
+  isModelRoleConfigured,
+  useSettingsStore,
+} from "@/store/useSettingsStore";
 import { useTaleStore } from "@/store/useTaleStore";
 import { useUpdateStore } from "@/store/useUpdateStore";
 import { useVersionStore } from "@/store/useVersionStore";
@@ -234,7 +237,10 @@ function ScenarioCard({
 export default function Home() {
   const navigate = useNavigate();
   const { t } = useLingui();
-  const { model, openAiBaseUrl, language, setLanguage } = useSettingsStore();
+  const language = useSettingsStore((state) => state.language);
+  const setLanguage = useSettingsStore((state) => state.setLanguage);
+  const narratorConfig = useSettingsStore((state) => state.modelRoles.narrator);
+  const utilityConfig = useSettingsStore((state) => state.modelRoles.utility);
   const { name, description, log, id: currentTaleId } = useTaleStore();
   const { isMobilePlatform } = useIsMobile();
   const lastEntry = log.at(-1);
@@ -270,10 +276,12 @@ export default function Home() {
 
   const { hasIssues, issues } = useMemo(() => {
     const missing: string[] = [];
-    if (!openAiBaseUrl?.trim()) missing.push("API URL");
-    if (!model) missing.push("Model");
+    if (!narratorConfig.baseUrl?.trim()) missing.push("Narrator API URL");
+    if (!narratorConfig.model) missing.push("Narrator model");
     return { hasIssues: missing.length > 0, issues: missing };
-  }, [model, openAiBaseUrl]);
+  }, [narratorConfig]);
+
+  const utilityReady = isModelRoleConfigured(utilityConfig);
 
   const hasActiveGame = Boolean(name || description || log.length > 0);
   const canContinue = hasActiveGame && log.length > 0 && !hasIssues;
@@ -477,7 +485,10 @@ export default function Home() {
                       <Plus className="h-4 w-4" />
                       <Trans>New scenario</Trans>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setGenerateOpen(true)}>
+                    <DropdownMenuItem
+                      disabled={!utilityReady}
+                      onClick={() => setGenerateOpen(true)}
+                    >
                       <WandSparkles className="h-4 w-4" />
                       <Trans>Generate Scenario</Trans>
                     </DropdownMenuItem>

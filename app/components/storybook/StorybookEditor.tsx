@@ -25,7 +25,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, PlusIcon, Sparkles } from "lucide-react";
-import { useSettingsStore } from "@/store/useSettingsStore";
+import {
+  isModelRoleConfigured,
+  useSettingsStore,
+} from "@/store/useSettingsStore";
 import { generateStoryCard } from "@/services/llm/storyCardGenerator";
 import { toast } from "sonner";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -74,7 +77,7 @@ export function StorybookEditor({
   });
   const [isGenerating, setIsGenerating] = React.useState(false);
   const abortRef = React.useRef<AbortController | null>(null);
-  const model = useSettingsStore((s) => s.model);
+  const utilityConfig = useSettingsStore((s) => s.modelRoles.utility);
 
   // Filter entries by selected category
   const filteredEntries = React.useMemo(() => {
@@ -151,7 +154,11 @@ export function StorybookEditor({
   };
 
   const handleAutofill = async () => {
-    if (!model || !formData.title.trim()) return;
+    if (!formData.title.trim()) return;
+    if (!isModelRoleConfigured(utilityConfig)) {
+      toast.error("No utility model selected. Choose one in Settings.");
+      return;
+    }
 
     // Abort any existing request
     if (abortRef.current) {
@@ -164,7 +171,6 @@ export function StorybookEditor({
     try {
       const result = await generateStoryCard(
         formData.title.trim(),
-        model,
         abortRef.current.signal,
       );
 
@@ -187,7 +193,9 @@ export function StorybookEditor({
   };
 
   const canAutofill =
-    !!model && formData.title.trim().length > 0 && !isGenerating;
+    isModelRoleConfigured(utilityConfig) &&
+    formData.title.trim().length > 0 &&
+    !isGenerating;
 
   const isFormValid =
     formData.title.trim().length > 0 && formData.content.trim().length > 0;
@@ -267,7 +275,9 @@ export function StorybookEditor({
                   onClick={handleAutofill}
                   disabled={!canAutofill}
                   title={
-                    model ? "Generate content with AI" : "No model selected"
+                    isModelRoleConfigured(utilityConfig)
+                      ? "Generate content with AI"
+                      : "No utility model selected"
                   }
                 >
                   {isGenerating ? (

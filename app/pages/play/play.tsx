@@ -5,7 +5,10 @@ import { MobilePlayHeader } from "@/components/layout/mobile-play-header";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { ArrowDownIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useSettingsStore } from "@/store/useSettingsStore";
+import {
+  isModelRoleConfigured,
+  useSettingsStore,
+} from "@/store/useSettingsStore";
 import { GameMode, LogEntryMode, LogEntryRole } from "@/types";
 import { usePersistTale, useLoadTale } from "@/hooks/useGameSaves";
 import { toast } from "sonner";
@@ -35,7 +38,8 @@ export default function Play() {
     id: taleId,
   } = useTaleStore();
 
-  const { fontSize, setFontSize, model } = useSettingsStore();
+  const { fontSize, setFontSize } = useSettingsStore();
+  const narratorConfig = useSettingsStore((state) => state.modelRoles.narrator);
   const { isMobilePlatform } = useIsMobile();
   const { lastPlayedTaleId } = useLastPlayedStore();
   const { load, loading: isLoadingTale } = useLoadTale();
@@ -142,7 +146,14 @@ export default function Play() {
   }, [log, loading, stickToBottom, bottomRef]);
 
   useEffect(() => {
-    if (hasAutoSentRef.current || loading || !model || isLoadingTale) return;
+    if (
+      hasAutoSentRef.current ||
+      loading ||
+      !isModelRoleConfigured(narratorConfig) ||
+      isLoadingTale
+    ) {
+      return;
+    }
 
     if (log.length === 1 && log[0].role === LogEntryRole.PLAYER) {
       const firstEntry = log[0];
@@ -152,7 +163,7 @@ export default function Play() {
         firstEntry.mode ?? LogEntryMode.DIRECT,
       );
     }
-  }, [log, loading, model, executeLlmSend, isLoadingTale]);
+  }, [log, loading, narratorConfig, executeLlmSend, isLoadingTale]);
 
   const blocks = useMemo(() => groupLogEntriesIntoBlocks(log), [log]);
 

@@ -13,7 +13,29 @@ export enum ApiPreset {
   LOCAL = "local",
 }
 
+export type ModelRole =
+  | "narrator"
+  | "utility"
+  | "speechToText"
+  | "textToSpeech";
+
+export const MODEL_ROLES = [
+  "narrator",
+  "utility",
+  "speechToText",
+  "textToSpeech",
+] as const satisfies readonly ModelRole[];
+
 export interface ApiProfileSettings {
+  baseUrl: string;
+  apiKey: string;
+  model: LLMModel | undefined;
+}
+
+export interface ModelRoleSettings {
+  apiType: ApiType;
+  activePreset: ApiPreset;
+  profiles: Record<ApiPreset, ApiProfileSettings>;
   baseUrl: string;
   apiKey: string;
   model: LLMModel | undefined;

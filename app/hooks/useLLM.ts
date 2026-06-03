@@ -1,5 +1,5 @@
-import { sendChat } from "@/services/llm";
-import { LLMAction, LLMModel } from "@/services/llm/schema";
+import { resolveModelRole, sendRoleChat } from "@/services/llm";
+import { LLMAction } from "@/services/llm/schema";
 import { useTaleStore } from "@/store/useTaleStore";
 import { useRef, useState } from "react";
 import { createDecoder } from "@/services/llm/decoders";
@@ -16,7 +16,6 @@ export function useLLM() {
       text: string;
       mode: LogEntryMode;
     },
-    model: LLMModel,
     callbacks: {
       onStoryStream: (storyChunk: string) => void;
       onThinkingStream: (thinkingChunk: string) => void;
@@ -54,6 +53,7 @@ export function useLLM() {
         topA,
         seed,
       } = useSettingsStore.getState();
+      const { model, config } = resolveModelRole("narrator");
 
       const req = await buildMessage({
         log,
@@ -78,9 +78,9 @@ export function useLLM() {
         },
       });
       console.debug(
-        `Sending request to ${model.id} with game mode: ${gameMode} and API URL: ${useSettingsStore.getState().openAiBaseUrl}`,
+        `Sending request to ${model.id} with game mode: ${gameMode} and API URL: ${config.baseUrl}`,
       );
-      const res = await sendChat(req, abortRef.current?.signal);
+      const res = await sendRoleChat("narrator", req, abortRef.current?.signal);
 
       if (res.iterator) {
         const decoder = createDecoder(gameMode);

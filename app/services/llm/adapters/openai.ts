@@ -1,12 +1,17 @@
 import { ResponseMode } from "@/types/api.type";
 import { LLMClient, ChatRequest, ChatResponse, LLMModel } from "../schema";
 import { parseOpenAIStream } from "../streaming";
-import { useSettingsStore } from "@/store/useSettingsStore";
 import { fetch } from "@tauri-apps/plugin-http";
 import { GM_TOOLS, ToolCall } from "../tools";
-export function OpenAiClient(apiKey?: string): LLMClient {
-  const { openAiBaseUrl } = useSettingsStore.getState();
-  const base = openAiBaseUrl;
+
+export interface OpenAiConnection {
+  baseUrl: string;
+  apiKey?: string;
+}
+
+export function OpenAiClient(connection: OpenAiConnection): LLMClient {
+  const base = connection.baseUrl.replace(/\/$/, "");
+  const apiKey = connection.apiKey?.trim();
 
   async function chat(
     req: ChatRequest,

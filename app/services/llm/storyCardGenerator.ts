@@ -1,5 +1,5 @@
-import { sendChat } from "@/services/llm";
-import { ChatRequest, LLMModel } from "./schema";
+import { resolveModelRole, sendRoleChat } from "@/services/llm";
+import { ChatRequest } from "./schema";
 import { StorybookCategory } from "@/types/context.type";
 import { ResponseMode } from "@/types/api.type";
 import { buildContext } from "./contextBuilder";
@@ -13,9 +13,9 @@ export interface GeneratedStoryCard {
 
 export async function generateStoryCard(
   title: string,
-  model: LLMModel,
   signal?: AbortSignal,
 ): Promise<GeneratedStoryCard> {
+  const { model } = resolveModelRole("utility");
   const context = await buildContext({
     model,
     systemPrompt: getActiveStoryCardGeneratorPrompt(),
@@ -32,7 +32,7 @@ export async function generateStoryCard(
     responseMode: ResponseMode.FREE_FORM,
   };
 
-  const response = await sendChat(request, signal);
+  const response = await sendRoleChat("utility", request, signal);
 
   const content = response.content.trim();
 

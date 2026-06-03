@@ -2,7 +2,10 @@ import { useState, useCallback } from "react";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import { useTaleStore } from "@/store/useTaleStore";
-import { useSettingsStore } from "@/store/useSettingsStore";
+import {
+  isModelRoleConfigured,
+  useSettingsStore,
+} from "@/store/useSettingsStore";
 import { useLLM } from "@/hooks/useLLM";
 import { usePersistTale } from "@/hooks/useGameSaves";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
@@ -124,7 +127,8 @@ export function usePlaySession(
 
   const { send, loading, cancel } = useLLM();
   const { save, saving } = usePersistTale();
-  const { model, randomSeed } = useSettingsStore();
+  const narratorConfig = useSettingsStore((state) => state.modelRoles.narrator);
+  const randomSeed = useSettingsStore((state) => state.randomSeed);
 
   const { addLog, updateLogEntry, removeLastLogEntry } = useTaleStore();
 
@@ -137,9 +141,9 @@ export function usePlaySession(
 
   const executeLlmSend = useCallback(
     async (message: string, mode: LogEntryMode, append = false) => {
-      if (!model) {
-        console.error("LLM model not configured.");
-        toast.error("No model selected. Choose one in Settings.");
+      if (!isModelRoleConfigured(narratorConfig)) {
+        console.error("Narrator model not configured.");
+        toast.error("No narrator model selected. Choose one in Settings.");
         return;
       }
 
@@ -205,43 +209,46 @@ export function usePlaySession(
       };
 
       try {
-        await send({ text: payloadText, mode }, model, {
-          onStoryStream: (storyChunk) => {
-            storyContent += storyChunk;
-            scheduleFlush();
+        await send(
+          { text: payloadText, mode },
+          {
+            onStoryStream: (storyChunk) => {
+              storyContent += storyChunk;
+              scheduleFlush();
+            },
+            onThinkingStream: (thinkingChunk) => {
+              thinkingContent += thinkingChunk;
+              scheduleFlush();
+            },
+            onActionsReady: (actions) => {
+              console.debug(
+                `Processing received actions: ${JSON.stringify(actions)}`,
+              );
+              if (Array.isArray(actions)) {
+                updateLogEntry(gmResponseId, { actions });
+                processActions(actions);
+              }
+            },
+            onActionParseError: () => {
+              console.warn("Failed to parse actions from LLM response");
+              updateLogEntry(gmResponseId, {
+                isActionError: true,
+              });
+            },
+            onError: (error) => {
+              // Keep any partial text that streamed already.
+              if (isAbortError(error)) return;
+              console.error("LLM Error:", error);
+              updateLogEntry(gmResponseId, {
+                error: error,
+                ...(thinkingContent ? { thinking: thinkingContent } : {}),
+                ...(storyContent.length === 0
+                  ? { text: "An error occurred while processing your request." }
+                  : {}),
+              });
+            },
           },
-          onThinkingStream: (thinkingChunk) => {
-            thinkingContent += thinkingChunk;
-            scheduleFlush();
-          },
-          onActionsReady: (actions) => {
-            console.debug(
-              `Processing received actions: ${JSON.stringify(actions)}`,
-            );
-            if (Array.isArray(actions)) {
-              updateLogEntry(gmResponseId, { actions });
-              processActions(actions);
-            }
-          },
-          onActionParseError: () => {
-            console.warn("Failed to parse actions from LLM response");
-            updateLogEntry(gmResponseId, {
-              isActionError: true,
-            });
-          },
-          onError: (error) => {
-            // Keep any partial text that streamed already.
-            if (isAbortError(error)) return;
-            console.error("LLM Error:", error);
-            updateLogEntry(gmResponseId, {
-              error: error,
-              ...(thinkingContent ? { thinking: thinkingContent } : {}),
-              ...(storyContent.length === 0
-                ? { text: "An error occurred while processing your request." }
-                : {}),
-            });
-          },
-        });
+        );
       } finally {
         if (rafId !== null) {
           const cancelRaf = globalThis.cancelAnimationFrame;
@@ -264,7 +271,15 @@ export function usePlaySession(
         toast.error("Failed to save progress");
       }
     },
-    [model, addLog, updateLogEntry, save, taleId, send, onSaveComplete],
+    [
+      narratorConfig,
+      addLog,
+      updateLogEntry,
+      save,
+      taleId,
+      send,
+      onSaveComplete,
+    ],
   );
 
   const handleContinue = useCallback(() => {
@@ -280,8 +295,8 @@ export function usePlaySession(
   const handleSubmit = useCallback(async () => {
     if (!input.trim()) return;
     if (loading) return;
-    if (!model) {
-      toast.error("No model selected. Choose one in Settings.");
+    if (!isModelRoleConfigured(narratorConfig)) {
+      toast.error("No narrator model selected. Choose one in Settings.");
       return;
     }
 
@@ -312,7 +327,15 @@ export function usePlaySession(
       setInput("");
       void executeLlmSend(finalMessage, logMode);
     }
-  }, [input, model, loading, action, addLog, executeLlmSend, handleContinue]);
+  }, [
+    input,
+    narratorConfig,
+    loading,
+    action,
+    addLog,
+    executeLlmSend,
+    handleContinue,
+  ]);
 
   const handleRetry = useCallback(() => {
     if (loading) return;

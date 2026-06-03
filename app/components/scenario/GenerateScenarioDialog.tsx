@@ -10,7 +10,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
-import { useSettingsStore } from "@/store/useSettingsStore";
+import {
+  isModelRoleConfigured,
+  useSettingsStore,
+} from "@/store/useSettingsStore";
 import { generateScenario } from "@/services/llm/scenarioGenerator";
 import { toast } from "sonner";
 import type { Scenario } from "@/types/context.type";
@@ -31,24 +34,21 @@ export function GenerateScenarioDialog({
   const [prompt, setPrompt] = React.useState("");
   const [isGenerating, setIsGenerating] = React.useState(false);
   const abortRef = React.useRef<AbortController | null>(null);
-  const model = useSettingsStore((s) => s.model);
+  const utilityConfig = useSettingsStore((s) => s.modelRoles.utility);
 
-  const canGenerate = Boolean(model) && prompt.trim().length > 0;
+  const canGenerate =
+    isModelRoleConfigured(utilityConfig) && prompt.trim().length > 0;
 
   const handleGenerate = React.useCallback(async () => {
-    if (!model) {
-      toast.error(t`No AI model selected`);
+    if (!isModelRoleConfigured(utilityConfig)) {
+      toast.error(t`No utility model selected`);
       return;
     }
     const abort = new AbortController();
     abortRef.current = abort;
     setIsGenerating(true);
     try {
-      const scenario = await generateScenario(
-        prompt.trim(),
-        model,
-        abort.signal,
-      );
+      const scenario = await generateScenario(prompt.trim(), abort.signal);
       onGenerated(scenario);
       onOpenChange(false);
       setPrompt("");
@@ -61,7 +61,7 @@ export function GenerateScenarioDialog({
       setIsGenerating(false);
       abortRef.current = null;
     }
-  }, [model, prompt, onGenerated, onOpenChange, t]);
+  }, [utilityConfig, prompt, onGenerated, onOpenChange, t]);
 
   const handleClose = React.useCallback(
     (nextOpen: boolean) => {
@@ -84,8 +84,8 @@ export function GenerateScenarioDialog({
           </DialogTitle>
           <DialogDescription>
             <Trans>
-              Describe the scenario you want and your currently selected model
-              will be prompted to generate a starter for you.
+              Describe the scenario you want and your utility model will be
+              prompted to generate a starter for you.
             </Trans>
           </DialogDescription>
         </DialogHeader>
