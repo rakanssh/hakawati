@@ -6,7 +6,7 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
-- Themes! With four options (Light, Dark, name pending, name pending)
+- Themes! With four options (Light, Dark, Bamboo, name pending)
 
 ### Changed
 

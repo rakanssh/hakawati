@@ -1,11 +1,11 @@
-export type ResolvedThemeId = "light" | "dark" | "fantasy" | "scifi";
+export type ResolvedThemeId = "light" | "dark" | "bamboo" | "scifi";
 export type ThemeId = ResolvedThemeId | "system";
 export type ThemeBaseMode = "light" | "dark";
 
 export type ThemeDefinition = {
   id: ThemeId;
   label: string;
-  icon: "monitor" | "sun" | "moon" | "scroll" | "rocket";
+  icon: "monitor" | "sun" | "moon" | "leaf" | "rocket";
   baseMode?: ThemeBaseMode;
 };
 
@@ -28,9 +28,9 @@ export const themeDefinitions = [
     baseMode: "dark",
   },
   {
-    id: "fantasy",
-    label: "Fantasy",
-    icon: "scroll",
+    id: "bamboo",
+    label: "Bamboo",
+    icon: "leaf",
     baseMode: "light",
   },
   {
@@ -44,7 +44,7 @@ export const themeDefinitions = [
 export const resolvedThemeIds = [
   "light",
   "dark",
-  "fantasy",
+  "bamboo",
   "scifi",
 ] as const satisfies readonly ResolvedThemeId[];
 

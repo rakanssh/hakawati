@@ -214,7 +214,7 @@
   --story-uncategorized-foreground: oklch(0.74 0.018 248);
 }
 
-.theme-fantasy {
+.theme-bamboo {
   color-scheme: light;
   --app-background: oklch(0.875 0.025 88);
   --app-surface-gradient:
@@ -234,30 +234,35 @@
       transparent 60%
     );
   --app-texture-image:
-    linear-gradient(
-      35deg,
-      transparent 0 45%,
-      oklch(0.34 0.025 84 / 14%) 45% 46%,
-      transparent 46% 100%
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 18px,
+      oklch(0.3 0.032 92 / 18%) 18px 20px,
+      transparent 20px 38px,
+      oklch(0.54 0.04 110 / 12%) 38px 42px,
+      transparent 42px 72px
+    ),
+    repeating-linear-gradient(
+      88deg,
+      transparent 0 6px,
+      oklch(0.24 0.024 78 / 14%) 6px 7px,
+      transparent 7px 19px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 84px,
+      oklch(0.26 0.026 78 / 10%) 84px 86px,
+      oklch(0.58 0.04 112 / 8%) 86px 89px,
+      transparent 89px 176px
     ),
     linear-gradient(
-      145deg,
-      transparent 0 47%,
-      oklch(0.42 0.03 132 / 12%) 47% 48%,
-      transparent 48% 100%
-    ),
-    radial-gradient(
-      circle at 1px 1px,
-      oklch(0.28 0.022 70 / 20%) 0.6px,
-      transparent 0
-    ),
-    radial-gradient(
-      ellipse at center,
-      transparent 0 54%,
-      oklch(0.28 0.025 70 / 14%) 100%
+      90deg,
+      oklch(0.22 0.024 72 / 14%),
+      transparent 18% 82%,
+      oklch(0.25 0.024 72 / 12%)
     );
-  --app-texture-size: 46px 46px, 46px 46px, 8px 8px, 100% 100%;
-  --app-texture-opacity: 0.24;
+  --app-texture-size: 180px 100%, 72px 100%, 100% 176px, 100% 100%;
+  --app-texture-opacity: 0.38;
   --app-texture-blend-mode: multiply;
   --background: oklch(0.88 0.021 88);
   --foreground: oklch(0.22 0.024 78);
@@ -428,6 +433,29 @@
     z-index: 1;
     min-height: 100vh;
   }
+}
+
+.theme-bamboo .play-log-texture {
+  background-color: color-mix(in oklch, var(--background) 84%, transparent);
+  isolation: isolate;
+}
+
+.theme-bamboo .play-log-texture::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: var(--app-texture-image);
+  background-size: var(--app-texture-size);
+  mix-blend-mode: var(--app-texture-blend-mode);
+  opacity: calc(var(--app-texture-opacity) * 0.9);
+}
+
+.theme-bamboo .play-log-texture [data-slot="scroll-area-viewport"],
+.theme-bamboo .play-log-texture [data-slot="scroll-area-scrollbar"] {
+  position: relative;
+  z-index: 1;
 }
 
 /* Custom scrollbar styling to match shadcn ScrollArea */
