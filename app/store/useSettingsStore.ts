@@ -116,6 +116,22 @@ function narratorAliases(config: ModelRoleSettings) {
   };
 }
 
+function roleStatePatch(
+  state: SettingsStoreType,
+  role: ModelRole,
+  config: ModelRoleSettings,
+  extra?: Partial<SettingsStoreType>,
+): Partial<SettingsStoreType> {
+  return {
+    modelRoles: {
+      ...state.modelRoles,
+      [role]: config,
+    },
+    ...(role === "narrator" ? narratorAliases(config) : {}),
+    ...extra,
+  };
+}
+
 type PersistedSettingsState = Partial<SettingsStoreType> & {
   profiles?: Partial<Record<ApiPreset, ApiProfileSettings>>;
   modelRoles?: Partial<Record<ModelRole, Partial<ModelRoleSettings>>>;
@@ -213,7 +229,9 @@ export function migrateSettingsState(
 }
 
 export function isModelRoleConfigured(config: ModelRoleSettings): boolean {
-  return Boolean(config.baseUrl.trim() && config.model);
+  return Boolean(
+    config.apiType === ApiType.OPENAI && config.baseUrl.trim() && config.model,
+  );
 }
 
 export interface SettingsStoreType {
@@ -379,16 +397,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
             apiKey: profile.apiKey,
             model: profile.model,
           });
-          const nextState: Partial<SettingsStoreType> = {
-            modelRoles: {
-              ...state.modelRoles,
-              [role]: nextRole,
-            },
-          };
-          if (role === "narrator") {
-            Object.assign(nextState, narratorAliases(nextRole));
-          }
-          return nextState;
+          return roleStatePatch(state, role, nextRole);
         });
       },
 
@@ -397,16 +406,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
           const current =
             state.modelRoles[role] ?? createDefaultModelRoleSettings();
           const nextRole = syncActiveProfile({ ...current, apiKey });
-          const nextState: Partial<SettingsStoreType> = {
-            modelRoles: {
-              ...state.modelRoles,
-              [role]: nextRole,
-            },
-          };
-          if (role === "narrator") {
-            Object.assign(nextState, narratorAliases(nextRole));
-          }
-          return nextState;
+          return roleStatePatch(state, role, nextRole);
         });
       },
 
@@ -415,16 +415,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
           const current =
             state.modelRoles[role] ?? createDefaultModelRoleSettings();
           const nextRole = syncActiveProfile({ ...current, apiType });
-          const nextState: Partial<SettingsStoreType> = {
-            modelRoles: {
-              ...state.modelRoles,
-              [role]: nextRole,
-            },
-          };
-          if (role === "narrator") {
-            Object.assign(nextState, narratorAliases(nextRole));
-          }
-          return nextState;
+          return roleStatePatch(state, role, nextRole);
         });
       },
 
@@ -443,24 +434,15 @@ export const useSettingsStore = create<SettingsStoreType>()(
           const current =
             state.modelRoles[role] ?? createDefaultModelRoleSettings();
           const nextRole = syncActiveProfile({ ...current, model });
-          const nextState: Partial<SettingsStoreType> = {
-            modelRoles: {
-              ...state.modelRoles,
-              [role]: nextRole,
-            },
-          };
-
-          if (role === "narrator") {
-            const length = model?.contextLength ?? Number.MAX_SAFE_INTEGER;
-            Object.assign(nextState, {
-              ...narratorAliases(nextRole),
-              contextWindow: model
-                ? Math.min(state.contextWindow ?? 2048, length)
-                : state.contextWindow,
-            });
-          }
-
-          return nextState;
+          const length = model?.contextLength ?? Number.MAX_SAFE_INTEGER;
+          return roleStatePatch(
+            state,
+            role,
+            nextRole,
+            role === "narrator" && model
+              ? { contextWindow: Math.min(state.contextWindow ?? 2048, length) }
+              : undefined,
+          );
         });
       },
 
@@ -473,16 +455,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
             baseUrl,
             model: undefined,
           });
-          const nextState: Partial<SettingsStoreType> = {
-            modelRoles: {
-              ...state.modelRoles,
-              [role]: nextRole,
-            },
-          };
-          if (role === "narrator") {
-            Object.assign(nextState, narratorAliases(nextRole));
-          }
-          return nextState;
+          return roleStatePatch(state, role, nextRole);
         });
       },
 

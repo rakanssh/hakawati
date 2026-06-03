@@ -23,7 +23,7 @@ function getRoleConfig(role: ModelRole): ModelRoleSettings {
   return useSettingsStore.getState().modelRoles[role];
 }
 
-function getClient(role: ModelRole) {
+function assertRoleConfig(role: ModelRole): ModelRoleSettings {
   const config = getRoleConfig(role);
   if (!config?.baseUrl?.trim()) {
     throw new ModelRoleConfigurationError(
@@ -37,6 +37,12 @@ function getClient(role: ModelRole) {
       `Unsupported ${role} API type: ${config.apiType}.`,
     );
   }
+
+  return config;
+}
+
+function getClient(role: ModelRole) {
+  const config = assertRoleConfig(role);
   return OpenAiClient({
     baseUrl: config.baseUrl,
     apiKey: config.apiKey || undefined,
@@ -44,23 +50,11 @@ function getClient(role: ModelRole) {
 }
 
 export function resolveModelRole(role: ModelRole): ResolvedModelRole {
-  const config = getRoleConfig(role);
-  if (!config?.baseUrl?.trim()) {
-    throw new ModelRoleConfigurationError(
-      role,
-      `No ${role} API URL configured. Choose a provider in Settings.`,
-    );
-  }
+  const config = assertRoleConfig(role);
   if (!config.model) {
     throw new ModelRoleConfigurationError(
       role,
       `No ${role} model selected. Choose one in Settings.`,
-    );
-  }
-  if (config.apiType !== ApiType.OPENAI) {
-    throw new ModelRoleConfigurationError(
-      role,
-      `Unsupported ${role} API type: ${config.apiType}.`,
     );
   }
   return { role, config, model: config.model };
@@ -76,12 +70,4 @@ export async function sendRoleChat(
 
 export async function getRoleModels(role: ModelRole, signal?: AbortSignal) {
   return getClient(role).models(signal);
-}
-
-export async function sendChat(req: ChatRequest, signal?: AbortSignal) {
-  return sendRoleChat("narrator", req, signal);
-}
-
-export async function getModels(signal?: AbortSignal) {
-  return getRoleModels("narrator", signal);
 }
