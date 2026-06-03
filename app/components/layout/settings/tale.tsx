@@ -1,4 +1,3 @@
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -13,6 +12,11 @@ import { usePersistTale } from "@/hooks/useGameSaves";
 import { GameMode } from "@/types";
 import { BookIcon, SwordIcon } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import {
+  SettingsField,
+  SettingsPanel,
+  SettingsStack,
+} from "@/components/layout/settings/settings-layout";
 
 export default function SettingsTale() {
   const { t } = useLingui();
@@ -51,69 +55,90 @@ export default function SettingsTale() {
   }
 
   return (
-    <div className="flex flex-col gap-4 max-w-full">
-      <Label>
-        <Trans>Game Mode</Trans>
-      </Label>
-      <div className="flex flex-col gap-2">
-        <Select value={gameMode} onValueChange={handleGameModeChange}>
-          <SelectTrigger className="w-full sm:w-[240px]">
-            <SelectValue placeholder={t`Select a game mode`} />
-          </SelectTrigger>
-          <SelectContent>
-            {getGameModeOptions().map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                <div className="flex flex-row gap-2">
-                  {option.value === GameMode.GM && (
-                    <SwordIcon className="w-4 h-4" />
-                  )}
-                  {option.value === GameMode.STORY_TELLER && (
-                    <BookIcon className="w-4 h-4" />
-                  )}
-                  <span>{option.label}</span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <span className="text-sm text-muted-foreground">
-          {getGamemodeDescription(gameMode)}
-        </span>
-      </div>
+    <SettingsStack>
+      <SettingsPanel
+        title={<Trans>Tale mode</Trans>}
+        description={
+          <Trans>Choose how much control the AI has over this tale.</Trans>
+        }
+      >
+        <SettingsField
+          label={<Trans>Game Mode</Trans>}
+          description={getGamemodeDescription(gameMode)}
+        >
+          <Select value={gameMode} onValueChange={handleGameModeChange}>
+            <SelectTrigger className="w-full sm:w-[240px]">
+              <SelectValue placeholder={t`Select a game mode`} />
+            </SelectTrigger>
+            <SelectContent>
+              {getGameModeOptions().map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  <div className="flex flex-row gap-2">
+                    {option.value === GameMode.GM && (
+                      <SwordIcon className="w-4 h-4" />
+                    )}
+                    {option.value === GameMode.STORY_TELLER && (
+                      <BookIcon className="w-4 h-4" />
+                    )}
+                    <span>{option.label}</span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </SettingsField>
+      </SettingsPanel>
 
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <Label>
-            <Trans>Description</Trans>
-          </Label>
-          <span className="text-xs text-muted-foreground">
-            <Trans>
-              {descriptionChars} characters • ~{descriptionTokens} tokens
-            </Trans>
-          </span>
-        </div>
-        <Textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </div>
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <Label>
-            <Trans>Author Notes</Trans>
-          </Label>
-          <span className="text-xs text-muted-foreground">
-            <Trans>
-              {authorNoteChars} characters • ~{authorNoteTokens} tokens
-            </Trans>
-          </span>
-        </div>
-        <Textarea
-          value={authorNote}
-          onChange={(e) => setAuthorNote(e.target.value)}
-          rows={4}
-        />
-      </div>
-    </div>
+      <SettingsPanel
+        title={<Trans>Story context</Trans>}
+        description={
+          <Trans>
+            These notes guide the model while the current tale is running.
+          </Trans>
+        }
+      >
+        <SettingsField
+          label={
+            <div className="flex items-center justify-between gap-3">
+              <span>
+                <Trans>Description</Trans>
+              </span>
+              <span className="text-xs font-normal text-muted-foreground">
+                <Trans>
+                  {descriptionChars} characters • ~{descriptionTokens} tokens
+                </Trans>
+              </span>
+            </div>
+          }
+        >
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={6}
+          />
+        </SettingsField>
+
+        <SettingsField
+          label={
+            <div className="flex items-center justify-between gap-3">
+              <span>
+                <Trans>Author Notes</Trans>
+              </span>
+              <span className="text-xs font-normal text-muted-foreground">
+                <Trans>
+                  {authorNoteChars} characters • ~{authorNoteTokens} tokens
+                </Trans>
+              </span>
+            </div>
+          }
+        >
+          <Textarea
+            value={authorNote}
+            onChange={(e) => setAuthorNote(e.target.value)}
+            rows={5}
+          />
+        </SettingsField>
+      </SettingsPanel>
+    </SettingsStack>
   );
 }

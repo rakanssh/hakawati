@@ -28,7 +28,8 @@ export function ProviderHelpModal({ preset }: ProviderHelpModalProps) {
   const { t } = useLingui();
   const { _: resolveMessage } = useLinguiCore();
   const [open, setOpen] = useState(false);
-  const { isMobileViewport } = useIsMobile();
+  const { isCompactViewport, isMobilePlatform } = useIsMobile();
+  const useDrawer = isCompactViewport || isMobilePlatform;
 
   if (!preset.help) return null;
 
@@ -78,7 +79,7 @@ export function ProviderHelpModal({ preset }: ProviderHelpModalProps) {
     </div>
   );
 
-  if (isMobileViewport) {
+  if (useDrawer) {
     return (
       <>
         <Button
@@ -91,7 +92,7 @@ export function ProviderHelpModal({ preset }: ProviderHelpModalProps) {
           <Trans>Instructions</Trans>
         </Button>
         <Drawer open={open} onOpenChange={setOpen}>
-          <DrawerContent>
+          <DrawerContent className="min-h-[60dvh]">
             <DrawerHeader>
               <DrawerTitle>{label}</DrawerTitle>
               <DrawerDescription>{description}</DrawerDescription>

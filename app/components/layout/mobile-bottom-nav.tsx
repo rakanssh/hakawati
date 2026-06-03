@@ -7,7 +7,7 @@ import { QuickstartWizard } from "@/components/quickstart";
 import { Trans } from "@lingui/react/macro";
 import {
   SettingsModal,
-  type SettingsTabId,
+  type GlobalSettingsSectionId,
 } from "@/components/layout/settings";
 
 export function MobileBottomNav() {
@@ -17,7 +17,11 @@ export function MobileBottomNav() {
   const [quickstartOpen, setQuickstartOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  const nonPlayTabs: readonly SettingsTabId[] = ["game", "api", "model"];
+  const nonPlayTabs: readonly GlobalSettingsSectionId[] = [
+    "appearance",
+    "ai-setup",
+    "generation",
+  ];
 
   if (!isMobilePlatform) return null;
   if (routerState.location.pathname?.startsWith("/play")) return null;
@@ -78,7 +82,7 @@ export function MobileBottomNav() {
       <SettingsModal
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
-        defaultTab="api"
+        defaultTab="ai-setup"
         visibleTabs={nonPlayTabs}
       />
     </>

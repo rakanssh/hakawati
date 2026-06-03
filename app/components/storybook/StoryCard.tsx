@@ -18,15 +18,15 @@ export type StoryCardProps = {
 
 const CATEGORY_COLORS: Record<StorybookCategory, string> = {
   [StorybookCategory.CHARACTER]:
-    "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+    "bg-story-character/10 text-story-character-foreground border-story-character/20",
   [StorybookCategory.THING]:
-    "bg-green-500/10 text-green-700 dark:text-green-400",
+    "bg-story-thing/10 text-story-thing-foreground border-story-thing/20",
   [StorybookCategory.PLACE]:
-    "bg-purple-500/10 text-purple-700 dark:text-purple-400",
+    "bg-story-place/10 text-story-place-foreground border-story-place/20",
   [StorybookCategory.CONCEPT]:
-    "bg-orange-500/10 text-orange-700 dark:text-orange-400",
+    "bg-story-concept/10 text-story-concept-foreground border-story-concept/20",
   [StorybookCategory.UNCATEGORIZED]:
-    "bg-gray-500/10 text-gray-700 dark:text-gray-400",
+    "bg-story-uncategorized/10 text-story-uncategorized-foreground border-story-uncategorized/20",
 };
 
 export function StoryCard({

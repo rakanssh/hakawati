@@ -30,13 +30,13 @@ export function ErrorTooltip({ error }: ErrorTooltipProps) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-500/20 border border-red-500/30 cursor-help ml-1 shrink-0">
-          <InfoIcon className="w-2.5 h-2.5 text-red-500" />
+        <div className="ml-1 inline-flex h-4 w-4 shrink-0 cursor-help items-center justify-center rounded-full border border-destructive/30 bg-destructive/20">
+          <InfoIcon className="h-2.5 w-2.5 text-destructive" />
         </div>
       </TooltipTrigger>
       <TooltipContent
         side="top"
-        className="text-xs max-w-xs whitespace-pre-wrap break-words bg-red-900/90 text-red-100 border-red-700"
+        className="max-w-xs whitespace-pre-wrap break-words border-destructive/60 bg-popover text-xs text-popover-foreground"
       >
         <div className="font-semibold mb-1">Error Details:</div>
         <div>{formatError(error)}</div>

@@ -2,6 +2,19 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Themes! Added two new themes, Bamboo and Cosmos, built on light and dark backgrounds, respectively.
+
+### Changed
+
+- Reworked bottom dock appearance.
+- Reworked settings appearance.
+- Reworked home screen.
+- Adjusted theme colors.
+
 ## [v0.13.0] - 2026-03-24
 
 ### Added

@@ -83,7 +83,7 @@ export default function TalesHome() {
         </div>
       )}
       {Boolean(error) && (
-        <div className="text-sm text-red-500">
+        <div className="text-sm text-destructive">
           <Trans>Failed to load tales.</Trans>
         </div>
       )}

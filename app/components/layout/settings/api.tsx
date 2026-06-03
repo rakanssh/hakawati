@@ -1,4 +1,3 @@
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { ModelSelect } from "@/components/layout";
 import { useSettingsStore } from "@/store";
@@ -18,6 +17,11 @@ import { ProviderHelpModal } from "./provider-help-modal";
 import { Eye, EyeOff } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLingui as useLinguiCore } from "@lingui/react";
+import {
+  SettingsField,
+  SettingsPanel,
+  SettingsStack,
+} from "@/components/layout/settings/settings-layout";
 
 export default function SettingsApi() {
   const { t } = useLingui();
@@ -55,71 +59,77 @@ export default function SettingsApi() {
   }
 
   return (
-    <div className="flex flex-col gap-4 max-w-full">
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="flex flex-col gap-2 sm:col-span-1">
-          <Label>
-            <Trans>Provider</Trans>
-          </Label>
-          <Select
-            value={activePreset}
-            onValueChange={(value) => setActivePreset(value as ApiPreset)}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder={t`Select a provider`} />
-            </SelectTrigger>
-            <SelectContent>
-              {apiPresets.map((preset) => (
-                <SelectItem key={preset.id} value={preset.id}>
-                  {_(preset.label)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <SettingsStack>
+      <SettingsPanel
+        title={<Trans>Provider connection</Trans>}
+        description={
+          <Trans>
+            Choose where Hakawati sends AI requests and configure credentials.
+          </Trans>
+        }
+      >
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(220px,280px)_minmax(0,1fr)]">
+          <SettingsField label={<Trans>Provider</Trans>}>
+            <Select
+              value={activePreset}
+              onValueChange={(value) => setActivePreset(value as ApiPreset)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={t`Select a provider`} />
+              </SelectTrigger>
+              <SelectContent>
+                {apiPresets.map((preset) => (
+                  <SelectItem key={preset.id} value={preset.id}>
+                    {_(preset.label)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </SettingsField>
+          <SettingsField label={<Trans>Base URL</Trans>}>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                value={baseUrl}
+                onChange={(e) => setBaseUrl(e.target.value)}
+                onBlur={() => {
+                  if (
+                    isEditableUrl &&
+                    baseUrl.trim() !== openAiBaseUrl.trim()
+                  ) {
+                    handleUrlChange(baseUrl);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (isEditableUrl && e.key === "Enter") {
+                    handleUrlChange(baseUrl);
+                  }
+                }}
+                placeholder={isLocalPreset ? t`http://localhost:11434/v1` : ""}
+                disabled={!isEditableUrl}
+              />
+              {isEditableUrl && (
+                <Button
+                  variant="outline"
+                  onClick={() => handleUrlChange(baseUrl)}
+                  disabled={
+                    !baseUrl?.trim() || baseUrl.trim() === openAiBaseUrl.trim()
+                  }
+                  className="shrink-0"
+                >
+                  <Trans>Set</Trans>
+                </Button>
+              )}
+            </div>
+          </SettingsField>
         </div>
-        <div className="flex flex-col gap-2 sm:col-span-3">
-          <Label>
-            <Trans>Base URL</Trans>
-          </Label>
-          <div className="flex gap-2">
-            <Input
-              value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
-              onBlur={() => {
-                if (isEditableUrl && baseUrl.trim() !== openAiBaseUrl.trim()) {
-                  handleUrlChange(baseUrl);
-                }
-              }}
-              onKeyDown={(e) => {
-                if (isEditableUrl && e.key === "Enter") {
-                  handleUrlChange(baseUrl);
-                }
-              }}
-              placeholder={isLocalPreset ? t`http://localhost:11434/v1` : ""}
-              disabled={!isEditableUrl}
-            />
-            {isEditableUrl && (
-              <Button
-                variant="outline"
-                onClick={() => handleUrlChange(baseUrl)}
-                disabled={
-                  !baseUrl?.trim() || baseUrl.trim() === openAiBaseUrl.trim()
-                }
-                className="shrink-0"
-              >
-                <Trans>Set</Trans>
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
+      </SettingsPanel>
 
       {isLocalPreset && (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <Label>
-              <Trans>Local API Servers</Trans>
-            </Label>
+        <SettingsPanel
+          title={<Trans>Local API servers</Trans>}
+          description={<Trans>Discover local OpenAI-compatible servers.</Trans>}
+        >
+          <div className="flex items-center justify-end">
             <div className="flex gap-2">
               <Button
                 variant="outline"
@@ -165,48 +175,56 @@ export default function SettingsApi() {
               ))}
             </div>
           )}
-        </div>
+        </SettingsPanel>
       )}
 
-      <div className="flex flex-col gap-2">
-        <Label>
-          <Trans>API Key</Trans>
-        </Label>
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Input
-              type={showApiKey ? "text" : "password"}
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder={
-                isLocalPreset ? t`Optional for most local servers` : ""
-              }
-              className="pr-10"
-            />
-            <button
-              type="button"
-              onClick={() => setShowApiKey(!showApiKey)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label={showApiKey ? t`Hide API key` : t`Show API key`}
-            >
-              {showApiKey ? (
-                <EyeOff className="size-4" />
-              ) : (
-                <Eye className="size-4" />
-              )}
-            </button>
+      <SettingsPanel
+        title={<Trans>Credentials and model</Trans>}
+        description={
+          <Trans>Set the key and model used for AI generation.</Trans>
+        }
+      >
+        <SettingsField
+          label={<Trans>API Key</Trans>}
+          description={
+            isLocalPreset ? (
+              <Trans>Optional for most local servers.</Trans>
+            ) : undefined
+          }
+        >
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Input
+                type={showApiKey ? "text" : "password"}
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder={
+                  isLocalPreset ? t`Optional for most local servers` : ""
+                }
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey(!showApiKey)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label={showApiKey ? t`Hide API key` : t`Show API key`}
+              >
+                {showApiKey ? (
+                  <EyeOff className="size-4" />
+                ) : (
+                  <Eye className="size-4" />
+                )}
+              </button>
+            </div>
+            {apiPresetMap[activePreset]?.help && (
+              <ProviderHelpModal preset={apiPresetMap[activePreset]} />
+            )}
           </div>
-          {apiPresetMap[activePreset]?.help && (
-            <ProviderHelpModal preset={apiPresetMap[activePreset]} />
-          )}
-        </div>
-      </div>
-      <div className="flex flex-col gap-2">
-        <Label>
-          <Trans>Model</Trans>
-        </Label>
-        <ModelSelect />
-      </div>
-    </div>
+        </SettingsField>
+        <SettingsField label={<Trans>Model</Trans>}>
+          <ModelSelect />
+        </SettingsField>
+      </SettingsPanel>
+    </SettingsStack>
   );
 }

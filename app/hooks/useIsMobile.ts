@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
  * Breakpoint for mobile viewport detection (matches Tailwind's `md:` breakpoint)
  */
 const MOBILE_BREAKPOINT = 768;
+const COMPACT_BREAKPOINT = 640;
 
 export enum Platform {
   ANDROID = "android",
@@ -17,6 +18,8 @@ export enum Platform {
 export interface MobileDetection {
   /** True if viewport width is less than 768px */
   isMobileViewport: boolean;
+  /** True if viewport width is less than 640px */
+  isCompactViewport: boolean;
   /** True if running on Android or iOS (Tauri mobile build) */
   isMobilePlatform: boolean;
   /** True if either isMobileViewport OR isMobilePlatform */
@@ -57,12 +60,17 @@ export function useIsMobile(): MobileDetection {
     if (typeof window === "undefined") return false;
     return window.innerWidth < MOBILE_BREAKPOINT;
   });
+  const [isCompactViewport, setIsCompactViewport] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < COMPACT_BREAKPOINT;
+  });
 
   const [platform] = useState(() => detectPlatform());
 
   useEffect(() => {
     const handleResize = () => {
       setIsMobileViewport(window.innerWidth < MOBILE_BREAKPOINT);
+      setIsCompactViewport(window.innerWidth < COMPACT_BREAKPOINT);
     };
 
     window.addEventListener("resize", handleResize);
@@ -74,6 +82,7 @@ export function useIsMobile(): MobileDetection {
 
   return {
     isMobileViewport,
+    isCompactViewport,
     isMobilePlatform,
     isMobile,
     platform,

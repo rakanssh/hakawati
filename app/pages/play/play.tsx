@@ -199,14 +199,14 @@ export default function Play() {
             }`}
           >
             <div className="rounded-xs bg-background/95 px-2 py-1 shadow-lg border border-border backdrop-blur-sm">
-              <div className="flex items-center gap-2 text-sm font-medium text-gray-300">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 {Math.round(fontSize * 100)}%
               </div>
             </div>
           </div>
         )}
         {!stickToBottom && !loading && (
-          <div className="absolute bottom-20 end-4 z-40 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="absolute bottom-[calc(9rem+env(safe-area-inset-bottom))] end-4 z-40 animate-in fade-in slide-in-from-bottom-2 duration-200 md:bottom-36">
             <Button
               variant="secondary"
               size="icon"
@@ -219,7 +219,7 @@ export default function Play() {
           </div>
         )}
         <div className="pointer-events-none absolute inset-0">
-          <OutletWrapper />
+          <Outlet />
         </div>
       </div>
     );
@@ -242,7 +242,7 @@ export default function Play() {
             }
           />
           <SidebarInset
-            className="relative flex h-full flex-col overflow-hidden !rounded-none border-x"
+            className="relative flex h-full flex-col overflow-hidden !rounded-none border-x bg-background/55 backdrop-blur-sm"
             style={
               isMobilePlatform
                 ? { paddingInlineEnd: "env(safe-area-inset-right)" }
@@ -254,7 +254,7 @@ export default function Play() {
         </SidebarProvider>
       ) : (
         <div
-          className="relative flex h-full flex-col overflow-hidden"
+          className="relative flex h-full flex-col overflow-hidden bg-background/55 backdrop-blur-sm"
           style={
             isMobilePlatform
               ? {
@@ -269,8 +269,4 @@ export default function Play() {
       )}
     </>
   );
-}
-
-function OutletWrapper() {
-  return <Outlet />;
 }

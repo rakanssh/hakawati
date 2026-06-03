@@ -27,7 +27,8 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 export function FontSelector() {
   const { fontFamily, setFontFamily } = useSettingsStore();
   const [fontSelectOpen, setFontSelectOpen] = useState(false);
-  const { isMobile } = useIsMobile();
+  const { isCompactViewport, isMobilePlatform } = useIsMobile();
+  const useDrawer = isCompactViewport || isMobilePlatform;
 
   const currentFont = useMemo(() => {
     return (
@@ -36,7 +37,7 @@ export function FontSelector() {
   }, [fontFamily]);
 
   const fontList = (
-    <CommandList className={cn(isMobile && "max-h-[60vh]")}>
+    <CommandList className={cn(useDrawer && "max-h-[72dvh]")}>
       <CommandEmpty>No font found.</CommandEmpty>
       {fontPresets.map((font) => (
         <CommandItem
@@ -67,7 +68,7 @@ export function FontSelector() {
     </CommandList>
   );
 
-  if (isMobile) {
+  if (useDrawer) {
     return (
       <Drawer open={fontSelectOpen} onOpenChange={setFontSelectOpen}>
         <Button
@@ -82,7 +83,7 @@ export function FontSelector() {
           </span>
           <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
-        <DrawerContent>
+        <DrawerContent className="min-h-[60dvh]">
           <DrawerHeader>
             <DrawerTitle>Select Font</DrawerTitle>
           </DrawerHeader>

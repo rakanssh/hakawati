@@ -78,18 +78,13 @@ export function useStickToBottom(
     }
   }, [threshold, infiniteScroll, loadingOlder]);
 
-  const originalHandleScroll = handleScroll;
-  const handleScrollWithCleanup = useCallback(() => {
-    return originalHandleScroll();
-  }, [originalHandleScroll]);
-
   return {
     stickToBottom,
     setStickToBottom,
     viewportRef,
     bottomRef,
     scrollToBottom,
-    handleScroll: handleScrollWithCleanup,
+    handleScroll,
     loadingOlder,
   };
 }

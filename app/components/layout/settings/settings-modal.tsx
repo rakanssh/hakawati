@@ -1,4 +1,19 @@
-import { TabbedModal, type TabDefinition } from "@/components/ui/tabbed-modal";
+import {
+  Bot,
+  BookOpen,
+  DownloadCloud,
+  Info,
+  Library,
+  Palette,
+  SlidersHorizontal,
+  Sparkles,
+  UserRound,
+} from "lucide-react";
+import { Trans } from "@lingui/react/macro";
+import {
+  SettingsShell,
+  type SettingsSectionDefinition,
+} from "@/components/layout/settings/settings-shell";
 import { useUpdateStore } from "@/store/useUpdateStore";
 
 import SettingsGame from "@/components/layout/settings/game";
@@ -10,56 +25,134 @@ import SettingsAbout from "@/components/layout/settings/about";
 import SettingsTale from "@/components/layout/settings/tale";
 import SettingsStoryCards from "@/components/layout/settings/story-cards";
 import SettingsInventoryStats from "@/components/layout/settings/inventory-stats";
-import { Trans } from "@lingui/react/macro";
 
-const tabs = [
-  { id: "game", label: <Trans>Game</Trans>, component: SettingsGame },
-  { id: "api", label: <Trans>API</Trans>, component: SettingsApi },
-  { id: "model", label: <Trans>Model</Trans>, component: SettingsModel },
+const globalSections = [
   {
-    id: "advanced",
-    label: <Trans>Advanced</Trans>,
+    id: "appearance",
+    label: <Trans>Appearance</Trans>,
+    description: (
+      <Trans>Control the app theme, reading comfort, and language.</Trans>
+    ),
+    groupId: "app",
+    group: <Trans>App</Trans>,
+    icon: Palette,
+    component: SettingsGame,
+  },
+  {
+    id: "ai-setup",
+    label: <Trans>AI Setup</Trans>,
+    description: (
+      <Trans>Connect a provider, choose an endpoint, and pick a model.</Trans>
+    ),
+    groupId: "ai",
+    group: <Trans>AI</Trans>,
+    icon: Bot,
+    component: SettingsApi,
+  },
+  {
+    id: "generation",
+    label: <Trans>Generation</Trans>,
+    description: (
+      <Trans>Tune token budgets, sampling, and repeatable seeds.</Trans>
+    ),
+    groupId: "ai",
+    group: <Trans>AI</Trans>,
+    icon: SlidersHorizontal,
+    component: SettingsModel,
+  },
+  {
+    id: "prompting",
+    label: <Trans>Prompting</Trans>,
+    description: <Trans>Customize the system prompts used by Hakawati.</Trans>,
+    groupId: "ai",
+    group: <Trans>AI</Trans>,
+    icon: Sparkles,
     component: SettingsAdvanced,
   },
-  { id: "updates", label: <Trans>Updates</Trans>, component: SettingsUpdates },
-  { id: "about", label: <Trans>About</Trans>, component: SettingsAbout },
-  { id: "tale", label: <Trans>Tale</Trans>, component: SettingsTale },
   {
-    id: "inventory-stats",
+    id: "maintenance",
+    label: <Trans>Maintenance</Trans>,
+    description: <Trans>Check for app updates and install new versions.</Trans>,
+    groupId: "support",
+    group: <Trans>Support</Trans>,
+    icon: DownloadCloud,
+    component: SettingsUpdates,
+  },
+  {
+    id: "about",
+    label: <Trans>About</Trans>,
+    description: (
+      <Trans>Review license, dependency, and credit information.</Trans>
+    ),
+    groupId: "support",
+    group: <Trans>Support</Trans>,
+    icon: Info,
+    component: SettingsAbout,
+  },
+] as const satisfies readonly SettingsSectionDefinition[];
+
+const taleSections = [
+  {
+    id: "story",
+    label: <Trans>Story</Trans>,
+    description: (
+      <Trans>Adjust the active tale mode, setup, and author notes.</Trans>
+    ),
+    groupId: "tale",
+    group: <Trans>Tale</Trans>,
+    icon: BookOpen,
+    component: SettingsTale,
+  },
+  {
+    id: "character",
     label: <Trans>Character</Trans>,
+    description: <Trans>Manage the stats and inventory for this tale.</Trans>,
+    groupId: "tale",
+    group: <Trans>Tale</Trans>,
+    icon: UserRound,
     component: SettingsInventoryStats,
   },
   {
     id: "story-cards",
     label: <Trans>Story Cards</Trans>,
+    description: (
+      <Trans>
+        Maintain the people, places, things, and concepts in memory.
+      </Trans>
+    ),
+    groupId: "memory",
+    group: <Trans>Memory</Trans>,
+    icon: Library,
     component: SettingsStoryCards,
   },
-] as const satisfies readonly TabDefinition[];
+] as const satisfies readonly SettingsSectionDefinition[];
 
-type Tab = (typeof tabs)[number];
-export type SettingsTabId = Tab["id"];
+export type GlobalSettingsSectionId = (typeof globalSections)[number]["id"];
+export type TaleSettingsSectionId = (typeof taleSections)[number]["id"];
+export type SettingsTabId = GlobalSettingsSectionId | TaleSettingsSectionId;
 
-const DEFAULT_TAB: SettingsTabId = "game";
+const DEFAULT_GLOBAL_SECTION: GlobalSettingsSectionId = "appearance";
+const DEFAULT_TALE_SECTION: TaleSettingsSectionId = "story";
 
 interface SettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  defaultTab?: SettingsTabId;
-  visibleTabs?: readonly SettingsTabId[];
+  defaultTab?: GlobalSettingsSectionId;
+  visibleTabs?: readonly GlobalSettingsSectionId[];
 }
 
 export function SettingsModal({
   open,
   onOpenChange,
-  defaultTab = DEFAULT_TAB,
+  defaultTab = DEFAULT_GLOBAL_SECTION,
   visibleTabs,
 }: SettingsModalProps) {
   const hasUpdateNotification = useUpdateStore(
     (state) => state.hasNotification,
   );
 
-  const renderTabExtra = (tabId: SettingsTabId) => {
-    if (tabId === "updates" && hasUpdateNotification) {
+  const renderSectionExtra = (sectionId: GlobalSettingsSectionId) => {
+    if (sectionId === "maintenance" && hasUpdateNotification) {
       return (
         <span
           aria-hidden
@@ -71,14 +164,51 @@ export function SettingsModal({
   };
 
   return (
-    <TabbedModal
+    <SettingsShell
       open={open}
       onOpenChange={onOpenChange}
-      tabs={tabs}
-      defaultTab={defaultTab}
-      visibleTabs={visibleTabs}
+      sections={globalSections}
+      defaultSection={defaultTab}
+      visibleSections={visibleTabs}
       title={<Trans>Settings</Trans>}
-      renderTabExtra={renderTabExtra}
+      description={
+        <Trans>
+          Configure Hakawati, AI providers, generation behavior, and
+          maintenance.
+        </Trans>
+      }
+      renderSectionExtra={renderSectionExtra}
+    />
+  );
+}
+
+interface TaleSettingsModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  defaultTab?: TaleSettingsSectionId;
+  visibleTabs?: readonly TaleSettingsSectionId[];
+}
+
+export function TaleSettingsModal({
+  open,
+  onOpenChange,
+  defaultTab = DEFAULT_TALE_SECTION,
+  visibleTabs,
+}: TaleSettingsModalProps) {
+  return (
+    <SettingsShell
+      open={open}
+      onOpenChange={onOpenChange}
+      sections={taleSections}
+      defaultSection={defaultTab}
+      visibleSections={visibleTabs}
+      title={<Trans>Tale Settings</Trans>}
+      description={
+        <Trans>
+          Edit the active tale&apos;s story context, character state, and
+          memory.
+        </Trans>
+      }
     />
   );
 }

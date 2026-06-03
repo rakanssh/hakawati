@@ -1,7 +1,10 @@
 import { Button } from "../../ui/button";
 import { SettingsIcon } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
-import { SettingsModal, SettingsTabId } from "@/components/layout/settings";
+import {
+  SettingsModal,
+  type GlobalSettingsSectionId,
+} from "@/components/layout/settings";
 import { useUpdateStore } from "@/store/useUpdateStore";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
@@ -17,13 +20,13 @@ export function SettingsButton({
     (state) => state.hasNotification,
   );
 
-  const visibleTabs: readonly SettingsTabId[] = [
-    "game",
-    "api",
-    "model",
-    "updates",
+  const visibleTabs: readonly GlobalSettingsSectionId[] = [
+    "appearance",
+    "ai-setup",
+    "generation",
+    "prompting",
+    "maintenance",
     "about",
-    "advanced",
   ];
 
   // Close tooltip when dialog opens

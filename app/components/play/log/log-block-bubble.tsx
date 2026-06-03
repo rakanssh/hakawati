@@ -71,9 +71,9 @@ export function LogBlockBubble({
   }, [isStreaming, latestStreamingEntry?.text]);
 
   return (
-    <div className="flex flex-col items-start ml-2">
+    <div className="flex w-full flex-col items-start">
       <div
-        className="inline whitespace-pre-wrap break-words"
+        className="w-full whitespace-pre-wrap break-words font-normal leading-[1.72] tracking-normal text-foreground/95"
         style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
       >
         {block.entries.map((e) => {
@@ -101,7 +101,7 @@ export function LogBlockBubble({
           <CollapsibleTrigger asChild>
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
               aria-label="Toggle thinking output"
             >
               <BrainCircuitIcon className="h-3.5 w-3.5" />
@@ -120,13 +120,13 @@ export function LogBlockBubble({
               />
             </button>
           </CollapsibleTrigger>
-          <CollapsibleContent className="mt-1 flex w-full flex-col rounded-xs border border-muted/60 bg-muted/20 p-2">
+          <CollapsibleContent className="mt-2 flex w-full flex-col rounded-xs border border-border/60 bg-card/60 p-2.5 shadow-sm backdrop-blur-sm">
             {visibleThinkingEntries.map((entry, index) => (
               <Fragment key={entry.id}>
-                <div className="rounded-xs border border-border/70 bg-background/70 p-2 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)]">
+                <div className="rounded-xs border border-border/60 bg-background/50 p-2.5">
                   {showThinkingLabels && (
                     <div className="mb-1 flex items-center">
-                      <span className="inline-flex items-center rounded-xs border border-amber-700/25 bg-amber-300/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-200">
+                      <span className="inline-flex items-center rounded-xs border border-log-thinking/25 bg-log-thinking/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-log-thinking-foreground">
                         {entry.chainIndex === 0 ? (
                           <Trans>Initial</Trans>
                         ) : (

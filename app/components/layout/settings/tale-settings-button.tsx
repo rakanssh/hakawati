@@ -2,8 +2,8 @@ import { Button } from "../../ui/button";
 import { BookOpen } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import {
-  SettingsModal,
-  type SettingsTabId,
+  TaleSettingsModal,
+  type TaleSettingsSectionId,
 } from "@/components/layout/settings/settings-modal";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
@@ -19,10 +19,10 @@ export function TaleSettingsButton({
   const [tooltipOpen, setTooltipOpen] = useState(false);
   const gameMode = useTaleStore((s) => s.gameMode);
 
-  const visibleTabs = useMemo<SettingsTabId[]>(() => {
-    const tabs: SettingsTabId[] = ["tale", "story-cards"];
+  const visibleTabs = useMemo<TaleSettingsSectionId[]>(() => {
+    const tabs: TaleSettingsSectionId[] = ["story", "story-cards"];
     if (gameMode === GameMode.GM) {
-      tabs.unshift("inventory-stats");
+      tabs.splice(1, 0, "character");
     }
     return tabs;
   }, [gameMode]);
@@ -53,7 +53,7 @@ export function TaleSettingsButton({
         </TooltipContent>
       </Tooltip>
 
-      <SettingsModal
+      <TaleSettingsModal
         open={isOpen}
         onOpenChange={setIsOpen}
         visibleTabs={visibleTabs}

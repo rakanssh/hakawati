@@ -8,16 +8,17 @@ import {
   UndoIcon,
   RedoIcon,
   RefreshCwIcon,
-  MoreHorizontal,
+  MoreHorizontalIcon,
   SquareIcon,
 } from "lucide-react";
 import { useTaleStore } from "@/store/useTaleStore";
 import { useEffect } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { cn } from "@/lib/utils";
+
 interface LogControlProps {
   className?: string;
   handleRetry: () => void;
-  handleContinue: () => void;
   handleStop?: () => void;
   loading?: boolean;
   saving?: boolean;
@@ -27,12 +28,13 @@ export function LogControl({
   className,
   loading = false,
   handleRetry,
-  handleContinue,
   handleStop,
   saving = false,
 }: LogControlProps) {
   const { t } = useLingui();
   const { undo, redo } = useTaleStore();
+  const commandButtonClass =
+    "composer-command-button !h-10 !w-auto min-w-10 flex-1 border-transparent bg-transparent px-3 shadow-none hover:border-border hover:bg-muted/45";
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -90,86 +92,64 @@ export function LogControl({
   }, [undo, redo, handleRetry, handleStop, loading, saving]);
 
   return (
-    <div className={className}>
-      <div className="flex flex-row gap-0 w-full">
+    <div className={cn("min-w-0 flex-[3_1_0]", className)}>
+      <div className="flex w-full flex-row gap-1">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className="rounded-none !rounded-l-xs flex-1 h-10"
-              variant="default"
+              variant="outline"
               size="icon"
-              onClick={undo}
-              disabled={loading || saving}
-              aria-label={t`Undo`}
-            >
-              <UndoIcon className="w-3.5 h-3.5 md:w-4 md:h-4 rtl:scale-x-[-1]" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top">
-            <Trans>Undo (Ctrl+Z)</Trans>
-          </TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="submit"
+              className={cn("bg-card/70", commandButtonClass)}
               onClick={handleRetry}
               disabled={loading || saving}
-              variant="default"
-              size="icon"
-              className="rounded-none flex-1 h-10"
               aria-label={t`Retry`}
             >
-              <RefreshCwIcon
-                strokeWidth={1.5}
-                className="w-3.5 h-3.5 md:w-4 md:h-4"
-              />
+              <RefreshCwIcon className="h-4 w-4" strokeWidth={1.5} />
+              <span className="composer-command-label">
+                <Trans>Retry</Trans>
+              </span>
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
             <Trans>Retry (Ctrl+R)</Trans>
           </TooltipContent>
         </Tooltip>
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              type="button"
-              onClick={loading && handleStop ? handleStop : handleContinue}
-              disabled={loading ? !handleStop : saving}
-              variant="default"
+              variant="outline"
               size="icon"
-              className="rounded-none flex-1 h-10"
-              aria-label={
-                loading && handleStop ? t`Stop generating` : t`Continue`
-              }
+              className={cn("bg-card/70", commandButtonClass)}
+              onClick={undo}
+              disabled={loading || saving}
+              aria-label={t`Undo`}
             >
-              {loading && handleStop ? (
-                <SquareIcon className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              ) : (
-                <MoreHorizontal className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              )}
+              <UndoIcon className="h-4 w-4 rtl:scale-x-[-1]" />
+              <span className="composer-command-label">
+                <Trans>Undo</Trans>
+              </span>
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
-            {loading && handleStop ? (
-              <Trans>Stop generating (Esc)</Trans>
-            ) : (
-              <Trans>Continue</Trans>
-            )}
+            <Trans>Undo (Ctrl+Z)</Trans>
           </TooltipContent>
         </Tooltip>
 
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              className="rounded-none !rounded-r-xs flex-1 h-10"
-              variant="default"
+              variant="outline"
               size="icon"
+              className={cn("bg-card/70", commandButtonClass)}
               onClick={redo}
               disabled={loading || saving}
               aria-label={t`Redo`}
             >
-              <RedoIcon className="w-3.5 h-3.5 md:w-4 md:h-4 rtl:scale-x-[-1]" />
+              <RedoIcon className="h-4 w-4 rtl:scale-x-[-1]" />
+              <span className="composer-command-label">
+                <Trans>Redo</Trans>
+              </span>
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
@@ -178,5 +158,56 @@ export function LogControl({
         </Tooltip>
       </div>
     </div>
+  );
+}
+
+interface ContinueControlProps {
+  onContinue: () => void;
+  onStop?: () => void;
+  loading?: boolean;
+  saving?: boolean;
+  className?: string;
+}
+
+export function ContinueControl({
+  onContinue,
+  onStop,
+  loading = false,
+  saving = false,
+  className,
+}: ContinueControlProps) {
+  const { t } = useLingui();
+  const canStop = loading && !!onStop;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          onClick={canStop ? onStop : onContinue}
+          disabled={canStop ? false : saving || loading}
+          variant="outline"
+          size="default"
+          className={className}
+          aria-label={canStop ? t`Stop generating` : t`Continue`}
+        >
+          {canStop ? (
+            <SquareIcon className="h-4 w-4" />
+          ) : (
+            <MoreHorizontalIcon className="h-4 w-4" />
+          )}
+          <span className="composer-command-label">
+            {canStop ? <Trans>Stop</Trans> : <Trans>Continue</Trans>}
+          </span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="top">
+        {canStop ? (
+          <Trans>Stop generating (Esc)</Trans>
+        ) : (
+          <Trans>Continue</Trans>
+        )}
+      </TooltipContent>
+    </Tooltip>
   );
 }
