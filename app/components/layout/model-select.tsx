@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { GameMode, ModelRole } from "@/types";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { getModelMetaLabels } from "./model-select-meta";
 
 interface ModelSelectProps {
   role?: ModelRole;
@@ -53,43 +54,8 @@ export function ModelSelect({ role = "narrator" }: ModelSelectProps) {
     [setRoleModel, role, gameMode, t],
   );
 
-  function toNumber(value: unknown): number | undefined {
-    if (value === null || value === undefined) return undefined;
-    const n = typeof value === "string" ? parseFloat(value) : (value as number);
-    return Number.isFinite(n) ? (n as number) : undefined;
-  }
-
-  function formatUSD(value?: number, opts?: Intl.NumberFormatOptions) {
-    if (value === undefined) return "—";
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 6,
-      ...opts,
-    }).format(value);
-  }
-
-  function formatPerMillionUSDFromPerToken(value: unknown) {
-    const v = toNumber(value);
-    return formatUSD(v !== undefined ? v * 1000000 : undefined, {
-      maximumFractionDigits: 3,
-    });
-  }
-
   function modelMeta(m: LLMModel): string[] {
-    const meta: string[] = [];
-    if (m.contextLength !== undefined) {
-      meta.push(`${m.contextLength.toLocaleString()} tk`);
-    }
-    if (m.pricing?.prompt !== undefined) {
-      meta.push(`In ${formatPerMillionUSDFromPerToken(m.pricing.prompt)}/M`);
-    }
-    if (m.pricing?.completion !== undefined) {
-      meta.push(
-        `Out ${formatPerMillionUSDFromPerToken(m.pricing.completion)}/M`,
-      );
-    }
-    return meta;
+    return getModelMetaLabels(m, role);
   }
 
   function SelectedModelLabel() {
