@@ -4,6 +4,7 @@ import { LogEntryBubble, LogBlockBubble } from "@/components/play/log";
 import { InlineEditableContent } from "@/components/sidebar";
 import { LogEntry, LogEntryRole } from "@/types/log.type";
 import {
+  getLatestGmEntryId,
   getLogBlockNarrationItem,
   getStoryEntryNarrationItem,
   LogBlock,
@@ -11,6 +12,7 @@ import {
 } from "@/lib/play-utils";
 import { useSettingsStore } from "@/store";
 import { Trans } from "@lingui/react/macro";
+import { cn } from "@/lib/utils";
 
 interface PlayLogDisplayProps {
   blocks: LogBlock[];
@@ -42,6 +44,7 @@ export function PlayLogDisplay({
   narration,
 }: PlayLogDisplayProps) {
   const fontSize = useSettingsStore((state) => state.fontSize);
+  const latestGmEntryId = getLatestGmEntryId(blocks);
 
   return (
     <ScrollArea
@@ -86,8 +89,13 @@ export function PlayLogDisplay({
                     isStreaming={isStreamingBlock}
                     onEditStart={(entryId) => setCurrentlyEditingLogId(entryId)}
                     narration={blockNarration}
-                    renderEntry={(entry, onClick) =>
-                      currentlyEditingLogId === entry.id ? (
+                    renderEntry={(entry, onClick) => {
+                      const isEditing = currentlyEditingLogId === entry.id;
+                      const isLatestGmEntry = latestGmEntryId === entry.id;
+                      const underlineClass =
+                        "underline decoration-muted-foreground/35 underline-offset-4";
+
+                      return isEditing ? (
                         <InlineEditableContent
                           initialValue={entry.text}
                           onCommit={(next) => {
@@ -96,14 +104,20 @@ export function PlayLogDisplay({
                           }}
                           onCancel={() => setCurrentlyEditingLogId(null)}
                           variant="inline"
-                          className="border-b-1 border-b-log-thinking/25 bg-log-thinking/10 py-0.5"
+                          className={cn(
+                            "bg-log-thinking/10 py-0.5",
+                            underlineClass,
+                          )}
                           style={{
                             fontSize: "var(--game-log-font-size, 1rem)",
                           }}
                         />
                       ) : (
                         <span
-                          className="cursor-pointer"
+                          className={cn(
+                            "cursor-pointer",
+                            isLatestGmEntry && underlineClass,
+                          )}
                           onClick={onClick}
                           role="button"
                           tabIndex={0}
@@ -120,8 +134,8 @@ export function PlayLogDisplay({
                         >
                           {entry.text}
                         </span>
-                      )
-                    }
+                      );
+                    }}
                   />
                 ) : (
                   block.entries.map((entry) => {

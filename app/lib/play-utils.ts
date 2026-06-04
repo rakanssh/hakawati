@@ -63,6 +63,15 @@ export function groupLogEntriesIntoBlocks(log: LogEntry[]): LogBlock[] {
   return result;
 }
 
+export function getLatestGmEntryId(blocks: LogBlock[]): string | null {
+  for (let index = blocks.length - 1; index >= 0; index -= 1) {
+    const block = blocks[index];
+    if (block.role !== LogEntryRole.GM) continue;
+    return block.entries.at(-1)?.id ?? null;
+  }
+  return null;
+}
+
 export function getLogBlockNarrationItem(
   block: LogBlock,
 ): NarrationItem | null {
