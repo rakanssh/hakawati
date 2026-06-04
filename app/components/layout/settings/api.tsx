@@ -3,7 +3,7 @@ import { HelpTooltip } from "@/components/ui/help-tooltip";
 import { ModelSelect } from "@/components/layout";
 import { useSettingsStore } from "@/store";
 import { ApiPreset, ModelRole } from "@/types/api.type";
-import { apiPresets, apiPresetMap } from "@/data/api-presets";
+import { apiPresetMap, getApiPresetsForRole } from "@/data/api-presets";
 import {
   Select,
   SelectContent,
@@ -77,6 +77,10 @@ function RoleApiSettings({ role }: { role: ModelRole }) {
   const isLocalPreset = roleConfig.activePreset === ApiPreset.LOCAL;
   const isEditableUrl =
     apiPresetMap[roleConfig.activePreset]?.editableUrl ?? false;
+  const roleApiPresets = getApiPresetsForRole(role);
+  const activePresetAllowed = roleApiPresets.some(
+    (preset) => preset.id === roleConfig.activePreset,
+  );
   const titleWithHelp = (
     <span className="inline-flex items-center gap-2 text-foreground">
       <RoleTitle role={role} />
@@ -101,6 +105,12 @@ function RoleApiSettings({ role }: { role: ModelRole }) {
     }
   }, [isLocalPreset, roleConfig.apiType, scan, scanning, servers.length]);
 
+  useEffect(() => {
+    if (!activePresetAllowed) {
+      setRoleActivePreset(role, ApiPreset.GENERIC);
+    }
+  }, [activePresetAllowed, role, setRoleActivePreset]);
+
   function handleUrlChange(newUrl: string) {
     setRoleBaseUrl(role, newUrl);
   }
@@ -119,7 +129,7 @@ function RoleApiSettings({ role }: { role: ModelRole }) {
               <SelectValue placeholder={t`Select a provider`} />
             </SelectTrigger>
             <SelectContent>
-              {apiPresets.map((preset) => (
+              {roleApiPresets.map((preset) => (
                 <SelectItem key={preset.id} value={preset.id}>
                   {_(preset.label)}
                 </SelectItem>
