@@ -426,7 +426,7 @@ export function PlayInputControls({
         onStop={onStop}
         loading={loading}
         saving={saving}
-        className="composer-command-button !h-10 !w-auto min-w-10 flex-1 bg-background/60 px-3 shadow-none hover:bg-muted/55"
+        className="composer-command-button !h-10 !w-auto min-w-10 flex-1 border-transparent bg-transparent px-3 shadow-none hover:border-border hover:bg-muted/45"
       />
       <LogControl
         handleRetry={onRetry}
