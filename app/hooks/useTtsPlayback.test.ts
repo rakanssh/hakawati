@@ -17,15 +17,28 @@ vi.mock("@/services/llm", () => ({
 
 class MockAudio {
   static instances: MockAudio[] = [];
+  static clampCurrentTimeToDuration = false;
 
   src = "";
-  currentTime = 0;
   duration = 12;
   ended = false;
   listeners = new Map<string, Set<() => void>>();
+  private currentTimeValue = 0;
 
   constructor() {
     MockAudio.instances.push(this);
+  }
+
+  get currentTime() {
+    return this.currentTimeValue;
+  }
+
+  set currentTime(value: number) {
+    if (MockAudio.clampCurrentTimeToDuration && this.duration > 0) {
+      this.currentTimeValue = Math.min(Math.max(0, value), this.duration);
+      return;
+    }
+    this.currentTimeValue = value;
   }
 
   play = vi.fn(async () => {
@@ -110,6 +123,7 @@ describe("useTtsPlayback", () => {
       audio: new Blob(["audio"], { type: "audio/mpeg" }),
     });
     MockAudio.instances = [];
+    MockAudio.clampCurrentTimeToDuration = false;
     clearTtsSessionCache();
     vi.stubGlobal("Audio", MockAudio);
     vi.stubGlobal("URL", {
@@ -232,6 +246,162 @@ describe("useTtsPlayback", () => {
 
     expect(harness.controls.currentTime).toBeGreaterThanOrEqual(5);
     expect(harness.controls.duration).toBeGreaterThanOrEqual(5);
+
+    harness.cleanup();
+    vi.useRealTimers();
+  });
+
+  it("keeps learned duration when replaying cached audio", async () => {
+    const harness = renderPlaybackHarness();
+    const audio = MockAudio.instances[0];
+    audio.duration = 4;
+
+    act(() => {
+      harness.controls.playNow({ id: "story-1", text: "The door opens." });
+    });
+    await flushPromises();
+    await flushPromises();
+
+    act(() => {
+      audio.currentTime = 60;
+      audio.dispatch("timeupdate");
+    });
+
+    expect(harness.controls.duration).toBe(60);
+
+    act(() => {
+      audio.currentTime = 0;
+      harness.controls.playNow({ id: "story-1", text: "The door opens." });
+    });
+    await flushPromises();
+    await flushPromises();
+
+    expect(synthesizeNarrationMock).toHaveBeenCalledTimes(1);
+    expect(harness.controls.currentTime).toBeLessThan(0.5);
+    expect(harness.controls.duration).toBe(60);
+
+    harness.cleanup();
+  });
+
+  it("seeks cached audio using learned duration instead of bad metadata", async () => {
+    const harness = renderPlaybackHarness();
+    const audio = MockAudio.instances[0];
+    audio.duration = 4;
+
+    act(() => {
+      harness.controls.playNow({ id: "story-1", text: "The door opens." });
+    });
+    await flushPromises();
+    await flushPromises();
+
+    act(() => {
+      audio.currentTime = 60;
+      audio.dispatch("timeupdate");
+    });
+    act(() => {
+      audio.currentTime = 0;
+      harness.controls.playNow({ id: "story-1", text: "The door opens." });
+    });
+    await flushPromises();
+    await flushPromises();
+
+    act(() => {
+      harness.controls.seek(30);
+    });
+
+    expect(audio.currentTime).toBe(30);
+    expect(harness.controls.currentTime).toBe(30);
+    expect(harness.controls.duration).toBe(60);
+
+    harness.cleanup();
+  });
+
+  it("normalizes synthesized audio so native seeking is not clamped to bad metadata", async () => {
+    const decodedDuration = 28;
+    const sampleRate = 100;
+    const sampleCount = decodedDuration * sampleRate;
+    const decodedChannel = new Float32Array(sampleCount);
+    const decodeAudioDataMock = vi.fn(async () => ({
+      duration: decodedDuration,
+      length: sampleCount,
+      numberOfChannels: 1,
+      sampleRate,
+      getChannelData: () => decodedChannel,
+    }));
+    const closeMock = vi.fn(async () => undefined);
+    const AudioContextMock = vi.fn(() => ({
+      decodeAudioData: decodeAudioDataMock,
+      close: closeMock,
+    }));
+    vi.stubGlobal("AudioContext", AudioContextMock);
+    Object.defineProperty(globalThis, "AudioContext", {
+      configurable: true,
+      value: AudioContextMock,
+    });
+    Object.defineProperty(window, "AudioContext", {
+      configurable: true,
+      value: AudioContextMock,
+    });
+
+    MockAudio.clampCurrentTimeToDuration = true;
+    const harness = renderPlaybackHarness();
+    const audio = MockAudio.instances[0];
+    audio.duration = 4;
+
+    act(() => {
+      harness.controls.playNow({ id: "story-1", text: "The door opens." });
+    });
+    await flushPromises();
+    await flushPromises();
+    await flushPromises();
+
+    const normalizedAudio = vi.mocked(URL.createObjectURL).mock.calls[0][0];
+    expect(normalizedAudio).toBeInstanceOf(Blob);
+    expect((normalizedAudio as Blob).type).toBe("audio/wav");
+    expect(harness.controls.duration).toBe(decodedDuration);
+
+    audio.duration = decodedDuration;
+    act(() => {
+      harness.controls.seek(20);
+    });
+
+    expect(audio.currentTime).toBe(20);
+    expect(harness.controls.currentTime).toBe(20);
+    expect(decodeAudioDataMock).toHaveBeenCalledTimes(1);
+    expect(closeMock).toHaveBeenCalledTimes(1);
+
+    harness.cleanup();
+  });
+
+  it("restarts wall-clock progress from a backward seek target", async () => {
+    vi.useFakeTimers();
+    const harness = renderPlaybackHarness();
+    const audio = MockAudio.instances[0];
+    audio.duration = 4;
+    audio.currentTime = 4;
+
+    act(() => {
+      harness.controls.playNow({ id: "story-1", text: "The door opens." });
+    });
+    await flushPromises();
+    await flushPromises();
+
+    act(() => {
+      vi.advanceTimersByTime(60000);
+    });
+    expect(harness.controls.currentTime).toBeGreaterThanOrEqual(60);
+
+    act(() => {
+      harness.controls.seek(10);
+    });
+    expect(harness.controls.currentTime).toBe(10);
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(harness.controls.currentTime).toBeGreaterThanOrEqual(11);
+    expect(harness.controls.currentTime).toBeLessThan(20);
 
     harness.cleanup();
     vi.useRealTimers();

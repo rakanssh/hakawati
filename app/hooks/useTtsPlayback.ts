@@ -14,7 +14,12 @@ interface UseTtsPlaybackParams {
   onError: (error: unknown) => void;
 }
 
-const sessionAudioCache = new Map<string, Blob>();
+interface CachedNarrationAudio {
+  audio: Blob;
+  duration: number;
+}
+
+const sessionAudioCache = new Map<string, CachedNarrationAudio>();
 
 interface PlaybackState {
   status: TtsPlaybackStatus;
@@ -65,6 +70,89 @@ function isAbortError(error: unknown): boolean {
   return typeof error === "string" && /abort|cancel/i.test(error);
 }
 
+async function createSeekableAudio(audio: Blob): Promise<CachedNarrationAudio> {
+  const globalAudioContext =
+    "AudioContext" in globalThis ? globalThis.AudioContext : undefined;
+  const AudioContextConstructor = globalAudioContext
+    ? globalAudioContext
+    : typeof window !== "undefined"
+      ? (
+          window as Window &
+            typeof globalThis & { webkitAudioContext?: typeof AudioContext }
+        ).webkitAudioContext
+      : undefined;
+
+  if (!AudioContextConstructor || typeof audio.arrayBuffer !== "function") {
+    return { audio, duration: 0 };
+  }
+
+  let context: AudioContext | null = null;
+  try {
+    context = new AudioContextConstructor();
+    const buffer = await context.decodeAudioData(await audio.arrayBuffer());
+    const duration =
+      Number.isFinite(buffer.duration) && buffer.duration > 0
+        ? buffer.duration
+        : 0;
+    if (duration <= 0) {
+      return { audio, duration: 0 };
+    }
+    return {
+      audio: encodeAudioBufferAsWav(buffer),
+      duration,
+    };
+  } catch {
+    return { audio, duration: 0 };
+  } finally {
+    await context?.close().catch(() => undefined);
+  }
+}
+
+function encodeAudioBufferAsWav(buffer: AudioBuffer): Blob {
+  const channelCount = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const sampleCount = buffer.length;
+  const bytesPerSample = 2;
+  const blockAlign = channelCount * bytesPerSample;
+  const dataSize = sampleCount * blockAlign;
+  const wav = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(wav);
+
+  writeAscii(view, 0, "RIFF");
+  view.setUint32(4, 36 + dataSize, true);
+  writeAscii(view, 8, "WAVE");
+  writeAscii(view, 12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, channelCount, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * blockAlign, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, bytesPerSample * 8, true);
+  writeAscii(view, 36, "data");
+  view.setUint32(40, dataSize, true);
+
+  const channels = Array.from({ length: channelCount }, (_, channel) =>
+    buffer.getChannelData(channel),
+  );
+  let offset = 44;
+  for (let sample = 0; sample < sampleCount; sample += 1) {
+    for (let channel = 0; channel < channelCount; channel += 1) {
+      const value = Math.max(-1, Math.min(1, channels[channel][sample] ?? 0));
+      view.setInt16(offset, value < 0 ? value * 0x8000 : value * 0x7fff, true);
+      offset += bytesPerSample;
+    }
+  }
+
+  return new Blob([wav], { type: "audio/wav" });
+}
+
+function writeAscii(view: DataView, offset: number, value: string) {
+  for (let i = 0; i < value.length; i += 1) {
+    view.setUint8(offset + i, value.charCodeAt(i));
+  }
+}
+
 export function clearTtsSessionCache() {
   sessionAudioCache.clear();
 }
@@ -77,6 +165,8 @@ export function useTtsPlayback({ taleId, onError }: UseTtsPlaybackParams) {
   const progressIntervalRef = useRef<number | null>(null);
   const playbackStartedAtRef = useRef<number | null>(null);
   const playbackStartedOffsetRef = useRef(0);
+  const pendingPlaybackStartOffsetRef = useRef<number | null>(null);
+  const currentCacheKeyRef = useRef<string | null>(null);
   const mountedRef = useRef(false);
   const [state, setState] = useState<PlaybackState>(initialPlaybackState);
   const [queueLength, setQueueLength] = useState(0);
@@ -85,6 +175,20 @@ export function useTtsPlayback({ taleId, onError }: UseTtsPlaybackParams) {
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
+
+  const setPlaybackState = useCallback(
+    (
+      nextState: PlaybackState | ((current: PlaybackState) => PlaybackState),
+    ) => {
+      setState((current) => {
+        const next =
+          typeof nextState === "function" ? nextState(current) : nextState;
+        stateRef.current = next;
+        return next;
+      });
+    },
+    [],
+  );
 
   const releaseObjectUrl = useCallback(() => {
     if (objectUrlRef.current) {
@@ -112,6 +216,15 @@ export function useTtsPlayback({ taleId, onError }: UseTtsPlaybackParams) {
     playbackStartedOffsetRef.current = 0;
   }, []);
 
+  const rememberCachedDuration = useCallback((duration: number) => {
+    if (!Number.isFinite(duration) || duration <= 0) return;
+    const cacheKey = currentCacheKeyRef.current;
+    if (!cacheKey) return;
+    const cached = sessionAudioCache.get(cacheKey);
+    if (!cached || cached.duration >= duration) return;
+    cached.duration = duration;
+  }, []);
+
   const updatePlaybackProgress = useCallback(() => {
     const startedAt = playbackStartedAtRef.current;
     if (startedAt === null) return;
@@ -120,7 +233,7 @@ export function useTtsPlayback({ taleId, onError }: UseTtsPlaybackParams) {
       playbackStartedOffsetRef.current + (nowMs() - startedAt) / 1000;
     const audio = audioRef.current;
 
-    setState((current) => {
+    setPlaybackState((current) => {
       if (!current.current || current.status !== "playing") return current;
       const mediaTime =
         audio && Number.isFinite(audio.currentTime) && audio.currentTime > 0
@@ -131,38 +244,44 @@ export function useTtsPlayback({ taleId, onError }: UseTtsPlaybackParams) {
         mediaTime,
         estimatedTime,
       );
+      const duration = audio
+        ? getUsableDuration(audio, current.duration, currentTime)
+        : Math.max(current.duration, currentTime);
+      rememberCachedDuration(duration);
       return {
         ...current,
         currentTime,
-        duration: audio
-          ? getUsableDuration(audio, current.duration, currentTime)
-          : Math.max(current.duration, currentTime),
+        duration,
       };
     });
-  }, []);
+  }, [rememberCachedDuration, setPlaybackState]);
 
-  const startProgressTimer = useCallback(() => {
-    const currentState = stateRef.current;
-    playbackStartedOffsetRef.current = currentState.currentTime;
-    playbackStartedAtRef.current = nowMs();
-    if (progressIntervalRef.current === null) {
-      progressIntervalRef.current = window.setInterval(
-        updatePlaybackProgress,
-        250,
-      );
-    }
-    updatePlaybackProgress();
-  }, [updatePlaybackProgress]);
+  const startProgressTimer = useCallback(
+    (offset?: number) => {
+      playbackStartedOffsetRef.current = offset ?? stateRef.current.currentTime;
+      playbackStartedAtRef.current = nowMs();
+      if (progressIntervalRef.current === null) {
+        progressIntervalRef.current = window.setInterval(
+          updatePlaybackProgress,
+          250,
+        );
+      }
+      updatePlaybackProgress();
+    },
+    [updatePlaybackProgress],
+  );
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
     queueRef.current = [];
     setQueueLength(0);
+    pendingPlaybackStartOffsetRef.current = null;
+    currentCacheKeyRef.current = null;
     stopProgressTimer();
     resetAudio();
-    setState(initialPlaybackState);
-  }, [resetAudio, stopProgressTimer]);
+    setPlaybackState(initialPlaybackState);
+  }, [resetAudio, setPlaybackState, stopProgressTimer]);
 
   const playItemRef = useRef<(item: TtsPlaybackItem) => void>(() => undefined);
 
@@ -173,8 +292,9 @@ export function useTtsPlayback({ taleId, onError }: UseTtsPlaybackParams) {
       playItemRef.current(next);
       return;
     }
-    setState(initialPlaybackState);
-  }, []);
+    currentCacheKeyRef.current = null;
+    setPlaybackState(initialPlaybackState);
+  }, [setPlaybackState]);
 
   useEffect(() => {
     const audio = new Audio();
@@ -182,33 +302,55 @@ export function useTtsPlayback({ taleId, onError }: UseTtsPlaybackParams) {
     mountedRef.current = true;
 
     const handleTimeUpdate = () => {
-      setState((current) => ({
-        ...current,
-        currentTime: Math.max(current.currentTime, audio.currentTime || 0),
-        duration: getUsableDuration(audio, current.duration),
-      }));
-    };
-    const handleLoadedMetadata = () => {
-      setState((current) => ({
-        ...current,
-        duration: getUsableDuration(audio, current.duration),
-      }));
-    };
-    const handlePlay = () => {
-      setState((current) => {
-        if (!current.current) return current;
+      setPlaybackState((current) => {
         const currentTime = Math.max(
           current.currentTime,
           audio.currentTime || 0,
         );
+        const duration = getUsableDuration(audio, current.duration);
+        rememberCachedDuration(duration);
+        return {
+          ...current,
+          currentTime,
+          duration,
+        };
+      });
+    };
+    const handleLoadedMetadata = () => {
+      setPlaybackState((current) => {
+        const duration = getUsableDuration(audio, current.duration);
+        rememberCachedDuration(duration);
+        return {
+          ...current,
+          duration,
+        };
+      });
+    };
+    const handlePlay = () => {
+      const pendingStartOffset = pendingPlaybackStartOffsetRef.current;
+      pendingPlaybackStartOffsetRef.current = null;
+      const mediaTime =
+        Number.isFinite(audio.currentTime) && audio.currentTime > 0
+          ? audio.currentTime
+          : 0;
+      const progressOffset =
+        pendingStartOffset !== null
+          ? Math.max(pendingStartOffset, mediaTime)
+          : Math.max(stateRef.current.currentTime, mediaTime);
+      setPlaybackState((current) => {
+        if (!current.current) return current;
+        const currentTime =
+          pendingStartOffset !== null
+            ? progressOffset
+            : Math.max(current.currentTime, mediaTime);
         return { ...current, status: "playing", currentTime };
       });
-      startProgressTimer();
+      startProgressTimer(progressOffset);
     };
     const handlePause = () => {
       if (audio.ended) return;
       stopProgressTimer();
-      setState((current) =>
+      setPlaybackState((current) =>
         current.current && current.status === "playing"
           ? { ...current, status: "paused" }
           : current,
@@ -239,7 +381,9 @@ export function useTtsPlayback({ taleId, onError }: UseTtsPlaybackParams) {
     };
   }, [
     playQueued,
+    rememberCachedDuration,
     releaseObjectUrl,
+    setPlaybackState,
     startProgressTimer,
     stop,
     stopProgressTimer,
@@ -252,10 +396,12 @@ export function useTtsPlayback({ taleId, onError }: UseTtsPlaybackParams) {
 
       abortRef.current?.abort();
       stopProgressTimer();
+      pendingPlaybackStartOffsetRef.current = null;
+      currentCacheKeyRef.current = null;
       const abort = new AbortController();
       abortRef.current = abort;
       resetAudio();
-      setState({
+      setPlaybackState({
         status: "loading",
         current: { ...item, text: cleanText },
         loadingItemId: item.id,
@@ -266,21 +412,33 @@ export function useTtsPlayback({ taleId, onError }: UseTtsPlaybackParams) {
       void (async () => {
         try {
           const cacheKey = getNarrationCacheKey(cleanText);
-          let audio = sessionAudioCache.get(cacheKey);
-          if (!audio) {
-            audio = (await synthesizeNarration(cleanText, abort.signal)).audio;
-            sessionAudioCache.set(cacheKey, audio);
+          let cached = sessionAudioCache.get(cacheKey);
+          if (!cached) {
+            const synthesized = await synthesizeNarration(
+              cleanText,
+              abort.signal,
+            );
+            cached = await createSeekableAudio(synthesized.audio);
+            sessionAudioCache.set(cacheKey, cached);
           }
           if (abort.signal.aborted || !mountedRef.current) return;
 
-          const objectUrl = URL.createObjectURL(audio);
+          currentCacheKeyRef.current = cacheKey;
+          setPlaybackState((current) =>
+            current.current?.id === item.id
+              ? { ...current, duration: cached.duration }
+              : current,
+          );
+
+          const objectUrl = URL.createObjectURL(cached.audio);
           objectUrlRef.current = objectUrl;
           const player = audioRef.current;
           if (!player) return;
           player.src = objectUrl;
+          pendingPlaybackStartOffsetRef.current = 0;
           await player.play();
           if (!abort.signal.aborted && mountedRef.current) {
-            setState((current) => ({
+            setPlaybackState((current) => ({
               ...current,
               status: "playing",
               loadingItemId: null,
@@ -295,7 +453,7 @@ export function useTtsPlayback({ taleId, onError }: UseTtsPlaybackParams) {
           if (abortRef.current === abort) {
             abortRef.current = null;
           }
-          setState((current) =>
+          setPlaybackState((current) =>
             current.loadingItemId === item.id
               ? { ...current, loadingItemId: null }
               : current,
@@ -303,7 +461,7 @@ export function useTtsPlayback({ taleId, onError }: UseTtsPlaybackParams) {
         }
       })();
     },
-    [onError, playQueued, resetAudio, stopProgressTimer],
+    [onError, playQueued, resetAudio, setPlaybackState, stopProgressTimer],
   );
 
   useEffect(() => {
@@ -346,19 +504,31 @@ export function useTtsPlayback({ taleId, onError }: UseTtsPlaybackParams) {
     void audioRef.current?.play().catch(onError);
   }, [onError]);
 
-  const seek = useCallback((seconds: number) => {
-    const audio = audioRef.current;
-    if (!audio || !Number.isFinite(seconds)) return;
-    const nextTime = Math.max(0, seconds);
-    audio.currentTime = Math.min(nextTime, audio.duration || nextTime);
-    playbackStartedOffsetRef.current = nextTime;
-    playbackStartedAtRef.current = nowMs();
-    setState((current) => ({
-      ...current,
-      currentTime: nextTime,
-      duration: Math.max(current.duration, nextTime),
-    }));
-  }, []);
+  const seek = useCallback(
+    (seconds: number) => {
+      const audio = audioRef.current;
+      if (!audio || !Number.isFinite(seconds)) return;
+      const requestedTime = Math.max(0, seconds);
+      const effectiveDuration = stateRef.current.duration;
+      const nextTime =
+        effectiveDuration > 0
+          ? Math.min(requestedTime, effectiveDuration)
+          : requestedTime;
+      audio.currentTime = nextTime;
+      playbackStartedOffsetRef.current = nextTime;
+      playbackStartedAtRef.current = nowMs();
+      setPlaybackState((current) => {
+        const duration = Math.max(current.duration, nextTime);
+        rememberCachedDuration(duration);
+        return {
+          ...current,
+          currentTime: nextTime,
+          duration,
+        };
+      });
+    },
+    [rememberCachedDuration, setPlaybackState],
+  );
 
   return {
     ...state,
