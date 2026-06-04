@@ -1,3 +1,5 @@
+mod speech_recorder;
+
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -7,7 +9,7 @@ fn greet(name: &str) -> String {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     use tauri::Manager;
-    use tauri_plugin_sql::{ Migration, MigrationKind };
+    use tauri_plugin_sql::{Migration, MigrationKind};
 
     let builder = tauri::Builder::default();
 
@@ -16,7 +18,11 @@ pub fn run() {
 
         std::fs::create_dir_all(&app_data_dir)?;
 
-        let db_name = if cfg!(debug_assertions) { "hakawati-dev.db" } else { "hakawati.db" };
+        let db_name = if cfg!(debug_assertions) {
+            "hakawati-dev.db"
+        } else {
+            "hakawati.db"
+        };
         let db_path = app_data_dir.join(db_name);
         let db_url = format!("sqlite:{}", db_path.to_string_lossy());
 
@@ -32,12 +38,14 @@ pub fn run() {
                 description: "create_tales_table",
                 sql: include_str!("../migrations/002_create_tales.sql"),
                 kind: MigrationKind::Up,
-            }
+            },
         ];
 
-        app
-            .handle()
-            .plugin(tauri_plugin_sql::Builder::new().add_migrations(&db_url, migrations).build())?;
+        app.handle().plugin(
+            tauri_plugin_sql::Builder::new()
+                .add_migrations(&db_url, migrations)
+                .build(),
+        )?;
 
         Ok(())
     });
@@ -53,7 +61,14 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_process::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .manage(speech_recorder::SpeechRecorderState::default())
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            speech_recorder::start_speech_recording,
+            speech_recorder::stop_speech_recording,
+            speech_recorder::get_speech_recording_level,
+            speech_recorder::cancel_speech_recording
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

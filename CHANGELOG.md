@@ -7,6 +7,7 @@ All notable changes to this project are documented in this file.
 ### Added
 
 - Themes! Added two new themes, Bamboo and Cosmos, built on light and dark backgrounds, respectively.
+- Speech-To-Text and Text-To-Speech with initial support for open-ai-style endpoints and providers.
 
 ### Changed
 
@@ -14,6 +15,7 @@ All notable changes to this project are documented in this file.
 - Reworked settings appearance.
 - Reworked home screen.
 - Adjusted theme colors.
+- Reworked model selection, splitting utility from narrator models.
 
 ## [v0.13.0] - 2026-03-24
 

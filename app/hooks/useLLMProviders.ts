@@ -1,18 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getModels } from "@/services/llm";
+import { getRoleModels } from "@/services/llm";
 import { LLMModel } from "@/services/llm/schema";
 import { useSettingsStore } from "@/store";
+import { ModelRole } from "@/types";
 import { toast } from "sonner";
 
-export function useLLMProviders() {
+export function useLLMProviders(role: ModelRole = "narrator") {
   const [models, setModels] = useState<LLMModel[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
-  const { openAiBaseUrl, setModel } = useSettingsStore();
+  const roleConfig = useSettingsStore((state) => state.modelRoles[role]);
+  const setRoleModel = useSettingsStore((state) => state.setRoleModel);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const baseUrl = roleConfig?.baseUrl ?? "";
 
   const fetchModels = useCallback(async () => {
-    if (!openAiBaseUrl || openAiBaseUrl.trim() === "") {
+    if (!baseUrl || baseUrl.trim() === "") {
       setModels([]);
       setError(undefined);
       setLoading(false);
@@ -29,7 +32,7 @@ export function useLLMProviders() {
     setError(undefined);
 
     try {
-      const fetchedModels = await getModels(controller.signal);
+      const fetchedModels = await getRoleModels(role, controller.signal);
 
       if (controller.signal.aborted) {
         return;
@@ -39,12 +42,12 @@ export function useLLMProviders() {
       setError(undefined);
 
       if (fetchedModels.length > 0) {
-        const currentModel = useSettingsStore.getState().model;
+        const currentModel = useSettingsStore.getState().modelRoles[role].model;
         if (
           !currentModel ||
           !fetchedModels.find((m) => m.id === currentModel.id)
         ) {
-          setModel(fetchedModels[0]);
+          setRoleModel(role, fetchedModels[0]);
         }
       }
     } catch (error) {
@@ -73,7 +76,7 @@ export function useLLMProviders() {
         setLoading(false);
       }
     }
-  }, [setModel, openAiBaseUrl]);
+  }, [baseUrl, role, setRoleModel]);
 
   const refresh = useCallback(() => {
     fetchModels();
@@ -87,7 +90,7 @@ export function useLLMProviders() {
         abortControllerRef.current.abort();
       }
     };
-  }, [openAiBaseUrl, fetchModels]);
+  }, [baseUrl, fetchModels]);
 
   return { models, loading, error, refresh };
 }

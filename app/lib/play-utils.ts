@@ -33,6 +33,12 @@ export interface LogBlock {
   entries: LogEntry[];
 }
 
+export interface NarrationItem {
+  id: string;
+  text: string;
+  label: string;
+}
+
 export function groupLogEntriesIntoBlocks(log: LogEntry[]): LogBlock[] {
   const result: LogBlock[] = [];
   for (const entry of log) {
@@ -55,4 +61,49 @@ export function groupLogEntriesIntoBlocks(log: LogEntry[]): LogBlock[] {
     }
   }
   return result;
+}
+
+export function getLogBlockNarrationItem(
+  block: LogBlock,
+): NarrationItem | null {
+  if (block.role !== LogEntryRole.GM) return null;
+  const text = block.entries
+    .map((entry) => entry.text)
+    .join("")
+    .trim();
+  if (!text) return null;
+  return {
+    id: `gm:${block.chainId ?? block.entries[0].id}`,
+    text,
+    label: "Story narration",
+  };
+}
+
+export function getStoryEntryNarrationItem(
+  entry: LogEntry,
+  idPrefix = "entry",
+): NarrationItem | null {
+  const text = entry.text.trim();
+  if (!text) return null;
+  const isStoryEntry =
+    entry.role === LogEntryRole.PLAYER && entry.mode === LogEntryMode.STORY;
+  if (!isStoryEntry) return null;
+  return {
+    id: `${idPrefix}:${entry.id}`,
+    text,
+    label: "Story input",
+  };
+}
+
+export function getAutoNarrationItem(entry: LogEntry): NarrationItem | null {
+  const text = entry.text.trim();
+  if (!text) return null;
+  if (entry.role === LogEntryRole.GM) {
+    return {
+      id: `auto:${entry.id}`,
+      text,
+      label: "Story narration",
+    };
+  }
+  return getStoryEntryNarrationItem(entry, "auto");
 }

@@ -1,6 +1,7 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Button } from "@/components/ui/button";
 import { NumberInput } from "@/components/ui";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -37,6 +38,8 @@ export default function SettingsGame() {
     setLanguage,
     thinkingVisibility,
     setThinkingVisibility,
+    autoNarrate,
+    setAutoNarrate,
   } = useSettingsStore();
 
   const handleLanguageChange = (value: string) => {
@@ -200,6 +203,23 @@ export default function SettingsGame() {
               </SelectItem>
             </SelectContent>
           </Select>
+        </SettingsField>
+        <SettingsField
+          label={<Trans>Auto-narrate</Trans>}
+          description={
+            <Trans>
+              Automatically play new story narration after it finishes
+              generating.
+            </Trans>
+          }
+        >
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox
+              checked={autoNarrate}
+              onCheckedChange={(checked) => setAutoNarrate(checked === true)}
+            />
+            <Trans>Read new narration aloud</Trans>
+          </label>
         </SettingsField>
       </SettingsPanel>
     </SettingsStack>

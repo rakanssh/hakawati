@@ -65,6 +65,38 @@ export interface ChatResponse {
 export interface LLMClient {
   chat(request: ChatRequest, signal?: AbortSignal): Promise<ChatResponse>;
   models(signal?: AbortSignal): Promise<LLMModel[]>;
+  transcribeAudio(
+    request: AudioTranscriptionRequest,
+    signal?: AbortSignal,
+  ): Promise<AudioTranscriptionResponse>;
+  synthesizeSpeech(
+    request: AudioSpeechRequest,
+    signal?: AbortSignal,
+  ): Promise<AudioSpeechResponse>;
+}
+
+export interface AudioTranscriptionRequest {
+  model: string;
+  file: Blob;
+  filename?: string;
+  response_format?: "json";
+}
+
+export interface AudioTranscriptionResponse {
+  text: string;
+  raw: unknown;
+}
+
+export interface AudioSpeechRequest {
+  model: string;
+  input: string;
+  voice: string;
+  response_format?: "mp3";
+}
+
+export interface AudioSpeechResponse {
+  audio: Blob;
+  raw: Response;
 }
 
 /**
@@ -85,6 +117,7 @@ export interface LLMModel {
   pricing?: ModelPricing;
   supportsResponseFormat?: boolean;
   supportsToolCalls?: boolean;
+  supportedVoices?: string[];
 }
 
 /**

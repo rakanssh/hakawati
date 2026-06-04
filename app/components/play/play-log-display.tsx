@@ -3,7 +3,12 @@ import { Loader2Icon } from "lucide-react";
 import { LogEntryBubble, LogBlockBubble } from "@/components/play/log";
 import { InlineEditableContent } from "@/components/sidebar";
 import { LogEntry, LogEntryRole } from "@/types/log.type";
-import { LogBlock } from "@/lib/play-utils";
+import {
+  getLogBlockNarrationItem,
+  getStoryEntryNarrationItem,
+  LogBlock,
+  NarrationItem,
+} from "@/lib/play-utils";
 import { useSettingsStore } from "@/store";
 import { Trans } from "@lingui/react/macro";
 
@@ -17,6 +22,11 @@ interface PlayLogDisplayProps {
   viewportRef: React.RefObject<HTMLDivElement | null>;
   bottomRef: React.RefObject<HTMLDivElement | null>;
   onViewportScroll: () => void;
+  narration?: {
+    activeItemId: string | null;
+    loadingItemId: string | null;
+    onNarrate: (item: NarrationItem) => void;
+  };
 }
 
 export function PlayLogDisplay({
@@ -29,6 +39,7 @@ export function PlayLogDisplay({
   viewportRef,
   bottomRef,
   onViewportScroll,
+  narration,
 }: PlayLogDisplayProps) {
   const fontSize = useSettingsStore((state) => state.fontSize);
 
@@ -56,6 +67,16 @@ export function PlayLogDisplay({
             const isLastBlock = blockIndex === blocks.length - 1;
             const isStreamingBlock =
               isStreaming && isLastBlock && block.role === LogEntryRole.GM;
+            const blockNarrationItem = getLogBlockNarrationItem(block);
+            const blockNarration =
+              narration && blockNarrationItem
+                ? {
+                    isLoading:
+                      narration.loadingItemId === blockNarrationItem.id,
+                    isActive: narration.activeItemId === blockNarrationItem.id,
+                    onNarrate: () => narration.onNarrate(blockNarrationItem),
+                  }
+                : undefined;
 
             return (
               <div key={block.entries[0].id} className="py-1.5">
@@ -64,6 +85,7 @@ export function PlayLogDisplay({
                     block={block}
                     isStreaming={isStreamingBlock}
                     onEditStart={(entryId) => setCurrentlyEditingLogId(entryId)}
+                    narration={blockNarration}
                     renderEntry={(entry, onClick) =>
                       currentlyEditingLogId === entry.id ? (
                         <InlineEditableContent
@@ -104,6 +126,8 @@ export function PlayLogDisplay({
                 ) : (
                   block.entries.map((entry) => {
                     const isEditing = currentlyEditingLogId === entry.id;
+                    const entryNarrationItem =
+                      getStoryEntryNarrationItem(entry);
 
                     return (
                       <div
@@ -131,6 +155,20 @@ export function PlayLogDisplay({
                       >
                         <LogEntryBubble
                           entry={entry}
+                          narration={
+                            narration && entryNarrationItem
+                              ? {
+                                  isLoading:
+                                    narration.loadingItemId ===
+                                    entryNarrationItem.id,
+                                  isActive:
+                                    narration.activeItemId ===
+                                    entryNarrationItem.id,
+                                  onNarrate: () =>
+                                    narration.onNarrate(entryNarrationItem),
+                                }
+                              : undefined
+                          }
                           content={
                             isEditing ? (
                               <InlineEditableContent

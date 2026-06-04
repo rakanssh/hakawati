@@ -1,5 +1,5 @@
-import { sendChat } from "@/services/llm";
-import type { ChatRequest, ChatMessage, LLMModel } from "./schema";
+import { resolveModelRole, sendRoleChat } from "@/services/llm";
+import type { ChatRequest, ChatMessage } from "./schema";
 import { ResponseMode } from "@/types/api.type";
 import { ScenarioExportDataV1Schema } from "@/types/export.type";
 import { getActiveScenarioGeneratorPrompt } from "@/prompts";
@@ -9,9 +9,9 @@ import type { Scenario } from "@/types/context.type";
 
 export async function generateScenario(
   userPrompt: string,
-  model: LLMModel,
   signal?: AbortSignal,
 ): Promise<Scenario> {
+  const { model } = resolveModelRole("utility");
   const messages: ChatMessage[] = [
     { role: "system", content: getActiveScenarioGeneratorPrompt() },
     { role: "user", content: userPrompt },
@@ -25,7 +25,7 @@ export async function generateScenario(
     responseMode: ResponseMode.FREE_FORM,
   };
 
-  const response = await sendChat(request, signal);
+  const response = await sendRoleChat("utility", request, signal);
   const content = response.content.trim();
 
   let jsonStr = content;

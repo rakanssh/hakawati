@@ -1,8 +1,9 @@
 import { Input } from "@/components/ui/input";
+import { HelpTooltip } from "@/components/ui/help-tooltip";
 import { ModelSelect } from "@/components/layout";
 import { useSettingsStore } from "@/store";
-import { ApiPreset, ApiType } from "@/types/api.type";
-import { apiPresets, apiPresetMap } from "@/data/api-presets";
+import { ApiPreset, ModelRole } from "@/types/api.type";
+import { apiPresetMap, getApiPresetsForRole } from "@/data/api-presets";
 import {
   Select,
   SelectContent,
@@ -23,122 +24,173 @@ import {
   SettingsStack,
 } from "@/components/layout/settings/settings-layout";
 
-export default function SettingsApi() {
+function RoleTitle({ role }: { role: ModelRole }) {
+  switch (role) {
+    case "narrator":
+      return <Trans>Narrator</Trans>;
+    case "utility":
+      return <Trans>Utility</Trans>;
+    case "speechToText":
+      return <Trans>Speech to Text</Trans>;
+    case "textToSpeech":
+      return <Trans>Text to Speech</Trans>;
+  }
+}
+
+function RoleHelp({ role }: { role: ModelRole }) {
+  switch (role) {
+    case "narrator":
+      return <Trans>This model is used to generate story.</Trans>;
+    case "utility":
+      return (
+        <Trans>
+          This model is used for miscellaneous actions like generating scenarios
+          and story cards.
+        </Trans>
+      );
+    case "speechToText":
+      return (
+        <Trans>
+          This model transcribes recorded speech into text for the input box.
+        </Trans>
+      );
+    case "textToSpeech":
+      return <Trans>This model will be used for spoken narration.</Trans>;
+  }
+}
+
+function RoleApiSettings({ role }: { role: ModelRole }) {
   const { t } = useLingui();
   const { _ } = useLinguiCore();
-  const {
-    apiKey,
-    setApiKey,
-    apiType,
-    activePreset,
-    setActivePreset,
-    openAiBaseUrl,
-    setOpenAiBaseUrl,
-    setModel,
-  } = useSettingsStore();
-  const [baseUrl, setBaseUrl] = useState(openAiBaseUrl);
+  const roleConfig = useSettingsStore((state) => state.modelRoles[role]);
+  const setRoleActivePreset = useSettingsStore(
+    (state) => state.setRoleActivePreset,
+  );
+  const setRoleApiKey = useSettingsStore((state) => state.setRoleApiKey);
+  const setRoleBaseUrl = useSettingsStore((state) => state.setRoleBaseUrl);
+  const setRoleVoice = useSettingsStore((state) => state.setRoleVoice);
+  const [baseUrl, setBaseUrl] = useState(roleConfig.baseUrl);
   const [showApiKey, setShowApiKey] = useState(false);
-  const { servers, scanning, error, scan } = useLocalServerDiscovery(apiType);
+  const { servers, scanning, error, scan } = useLocalServerDiscovery(
+    roleConfig.apiType,
+  );
 
-  const isLocalPreset = activePreset === ApiPreset.LOCAL;
-  const isEditableUrl = apiPresetMap[activePreset]?.editableUrl ?? false;
+  const isLocalPreset = roleConfig.activePreset === ApiPreset.LOCAL;
+  const isEditableUrl =
+    apiPresetMap[roleConfig.activePreset]?.editableUrl ?? false;
+  const roleApiPresets = getApiPresetsForRole(role);
+  const activePresetAllowed = roleApiPresets.some(
+    (preset) => preset.id === roleConfig.activePreset,
+  );
+  const titleWithHelp = (
+    <span className="inline-flex items-center gap-2 text-foreground">
+      <RoleTitle role={role} />
+      <HelpTooltip>
+        <RoleHelp role={role} />
+      </HelpTooltip>
+    </span>
+  );
+  const supportedVoices = roleConfig.model?.supportedVoices ?? [];
+  const voiceListId = `tts-voices-${role}`;
 
   useEffect(() => {
-    setBaseUrl(openAiBaseUrl);
-  }, [openAiBaseUrl]);
+    setBaseUrl(roleConfig.baseUrl);
+  }, [roleConfig.baseUrl]);
 
   useEffect(() => {
-    if (isLocalPreset && apiType === ApiType.OPENAI && servers.length === 0) {
+    if (
+      isLocalPreset &&
+      roleConfig.apiType &&
+      servers.length === 0 &&
+      !scanning
+    ) {
       scan();
     }
-  }, [isLocalPreset, apiType, scan, servers.length]);
+  }, [isLocalPreset, roleConfig.apiType, scan, scanning, servers.length]);
+
+  useEffect(() => {
+    if (!activePresetAllowed) {
+      setRoleActivePreset(role, ApiPreset.GENERIC);
+    }
+  }, [activePresetAllowed, role, setRoleActivePreset]);
 
   function handleUrlChange(newUrl: string) {
-    setOpenAiBaseUrl(newUrl);
-    setModel(undefined);
+    setRoleBaseUrl(role, newUrl);
   }
 
   return (
-    <SettingsStack>
-      <SettingsPanel
-        title={<Trans>Provider connection</Trans>}
-        description={
-          <Trans>
-            Choose where Hakawati sends AI requests and configure credentials.
-          </Trans>
-        }
-      >
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(220px,280px)_minmax(0,1fr)]">
-          <SettingsField label={<Trans>Provider</Trans>}>
-            <Select
-              value={activePreset}
-              onValueChange={(value) => setActivePreset(value as ApiPreset)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={t`Select a provider`} />
-              </SelectTrigger>
-              <SelectContent>
-                {apiPresets.map((preset) => (
-                  <SelectItem key={preset.id} value={preset.id}>
-                    {_(preset.label)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </SettingsField>
-          <SettingsField label={<Trans>Base URL</Trans>}>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <Input
-                value={baseUrl}
-                onChange={(e) => setBaseUrl(e.target.value)}
-                onBlur={() => {
-                  if (
-                    isEditableUrl &&
-                    baseUrl.trim() !== openAiBaseUrl.trim()
-                  ) {
-                    handleUrlChange(baseUrl);
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (isEditableUrl && e.key === "Enter") {
-                    handleUrlChange(baseUrl);
-                  }
-                }}
-                placeholder={isLocalPreset ? t`http://localhost:11434/v1` : ""}
-                disabled={!isEditableUrl}
-              />
-              {isEditableUrl && (
-                <Button
-                  variant="outline"
-                  onClick={() => handleUrlChange(baseUrl)}
-                  disabled={
-                    !baseUrl?.trim() || baseUrl.trim() === openAiBaseUrl.trim()
-                  }
-                  className="shrink-0"
-                >
-                  <Trans>Set</Trans>
-                </Button>
-              )}
-            </div>
-          </SettingsField>
-        </div>
-      </SettingsPanel>
-
-      {isLocalPreset && (
-        <SettingsPanel
-          title={<Trans>Local API servers</Trans>}
-          description={<Trans>Discover local OpenAI-compatible servers.</Trans>}
-        >
-          <div className="flex items-center justify-end">
-            <div className="flex gap-2">
+    <SettingsPanel title={titleWithHelp}>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(220px,280px)_minmax(0,1fr)]">
+        <SettingsField label={<Trans>Provider</Trans>}>
+          <Select
+            value={roleConfig.activePreset}
+            onValueChange={(value) =>
+              setRoleActivePreset(role, value as ApiPreset)
+            }
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={t`Select a provider`} />
+            </SelectTrigger>
+            <SelectContent>
+              {roleApiPresets.map((preset) => (
+                <SelectItem key={preset.id} value={preset.id}>
+                  {_(preset.label)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </SettingsField>
+        <SettingsField label={<Trans>Base URL</Trans>}>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              onBlur={() => {
+                if (
+                  isEditableUrl &&
+                  baseUrl.trim() !== roleConfig.baseUrl.trim()
+                ) {
+                  handleUrlChange(baseUrl);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (isEditableUrl && e.key === "Enter") {
+                  handleUrlChange(baseUrl);
+                }
+              }}
+              placeholder={isLocalPreset ? t`http://localhost:11434/v1` : ""}
+              disabled={!isEditableUrl}
+            />
+            {isEditableUrl && (
               <Button
                 variant="outline"
-                onClick={() => scan()}
-                disabled={scanning}
+                onClick={() => handleUrlChange(baseUrl)}
+                disabled={
+                  !baseUrl?.trim() ||
+                  baseUrl.trim() === roleConfig.baseUrl.trim()
+                }
+                className="shrink-0"
               >
-                {scanning ? <Trans>Scanning...</Trans> : <Trans>Rescan</Trans>}
+                <Trans>Set</Trans>
               </Button>
-            </div>
+            )}
+          </div>
+        </SettingsField>
+      </div>
+
+      {isLocalPreset && (
+        <div className="flex flex-col gap-3 rounded-xs border border-border/70 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm font-medium">
+              <Trans>Local API servers</Trans>
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => scan()}
+              disabled={scanning}
+            >
+              {scanning ? <Trans>Scanning...</Trans> : <Trans>Rescan</Trans>}
+            </Button>
           </div>
           {!!error && <span className="text-xs text-destructive">{error}</span>}
           {scanning && servers.length === 0 && (
@@ -158,16 +210,17 @@ export default function SettingsApi() {
                   key={s.baseUrl}
                   className="flex items-center justify-between rounded-xs border p-2"
                 >
-                  <div className="flex flex-col">
-                    <span className="text-sm">{s.label}</span>
-                    <span className="text-xs text-muted-foreground">
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate text-sm">{s.label}</span>
+                    <span className="break-all text-xs text-muted-foreground">
                       {s.baseUrl} {s.requiresAuth ? t`(auth required)` : ""}
                     </span>
                   </div>
                   <Button
                     variant="outline"
                     onClick={() => handleUrlChange(s.baseUrl)}
-                    disabled={openAiBaseUrl.trim() === s.baseUrl.trim()}
+                    disabled={roleConfig.baseUrl.trim() === s.baseUrl.trim()}
+                    className="shrink-0"
                   >
                     <Trans>Use</Trans>
                   </Button>
@@ -175,15 +228,10 @@ export default function SettingsApi() {
               ))}
             </div>
           )}
-        </SettingsPanel>
+        </div>
       )}
 
-      <SettingsPanel
-        title={<Trans>Credentials and model</Trans>}
-        description={
-          <Trans>Set the key and model used for AI generation.</Trans>
-        }
-      >
+      <div className="flex flex-col gap-4">
         <SettingsField
           label={<Trans>API Key</Trans>}
           description={
@@ -196,8 +244,8 @@ export default function SettingsApi() {
             <div className="relative flex-1">
               <Input
                 type={showApiKey ? "text" : "password"}
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
+                value={roleConfig.apiKey}
+                onChange={(e) => setRoleApiKey(role, e.target.value)}
                 placeholder={
                   isLocalPreset ? t`Optional for most local servers` : ""
                 }
@@ -206,7 +254,7 @@ export default function SettingsApi() {
               <button
                 type="button"
                 onClick={() => setShowApiKey(!showApiKey)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
                 aria-label={showApiKey ? t`Hide API key` : t`Show API key`}
               >
                 {showApiKey ? (
@@ -216,15 +264,60 @@ export default function SettingsApi() {
                 )}
               </button>
             </div>
-            {apiPresetMap[activePreset]?.help && (
-              <ProviderHelpModal preset={apiPresetMap[activePreset]} />
+            {apiPresetMap[roleConfig.activePreset]?.help && (
+              <ProviderHelpModal
+                preset={apiPresetMap[roleConfig.activePreset]}
+              />
             )}
           </div>
         </SettingsField>
         <SettingsField label={<Trans>Model</Trans>}>
-          <ModelSelect />
+          <ModelSelect role={role} />
         </SettingsField>
-      </SettingsPanel>
+        {role === "textToSpeech" && (
+          <SettingsField
+            label={<Trans>Voice</Trans>}
+            description={
+              supportedVoices.length > 0 ? (
+                <Trans>
+                  This model publishes supported voices. Pick one from the
+                  suggestions.
+                </Trans>
+              ) : (
+                <Trans>
+                  Provider voice id for speech generation. OpenAI-compatible
+                  providers commonly support alloy.
+                </Trans>
+              )
+            }
+          >
+            <Input
+              list={supportedVoices.length > 0 ? voiceListId : undefined}
+              value={roleConfig.voice ?? ""}
+              onChange={(e) => setRoleVoice(role, e.target.value)}
+              placeholder={t`alloy`}
+            />
+            {supportedVoices.length > 0 && (
+              <datalist id={voiceListId}>
+                {supportedVoices.map((voice) => (
+                  <option key={voice} value={voice} />
+                ))}
+              </datalist>
+            )}
+          </SettingsField>
+        )}
+      </div>
+    </SettingsPanel>
+  );
+}
+
+export default function SettingsApi() {
+  return (
+    <SettingsStack>
+      <RoleApiSettings role="narrator" />
+      <RoleApiSettings role="utility" />
+      <RoleApiSettings role="speechToText" />
+      <RoleApiSettings role="textToSpeech" />
     </SettingsStack>
   );
 }

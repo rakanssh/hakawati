@@ -1,12 +1,21 @@
 import { createDefaultProfiles } from "@/data/api-presets";
 import { LLMModel } from "@/services/llm/schema";
-import { ApiPreset, ApiProfileSettings, ApiType } from "@/types";
+import {
+  ApiPreset,
+  ApiProfileSettings,
+  ApiType,
+  MODEL_ROLES,
+  ModelRole,
+  ModelRoleSettings,
+} from "@/types";
 import type { Locale } from "@/i18n";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type TextDirection = "system" | "ltr" | "rtl";
 export type ThinkingVisibility = "all" | "latest" | "none";
+
+export const DEFAULT_TTS_VOICE = "alloy";
 
 // Languages that require a RTL UI. Expand later.
 const RTL_LANGUAGES = new Set([
@@ -28,16 +37,231 @@ export function resolveTextDirection(
   return RTL_LANGUAGES.has(primaryLang) ? "rtl" : "ltr";
 }
 
+function cloneProfiles(
+  profiles: Record<ApiPreset, ApiProfileSettings>,
+): Record<ApiPreset, ApiProfileSettings> {
+  return Object.fromEntries(
+    Object.entries(profiles).map(([preset, profile]) => [
+      preset,
+      { ...profile },
+    ]),
+  ) as Record<ApiPreset, ApiProfileSettings>;
+}
+
+function mergeProfiles(
+  profiles?: Partial<Record<ApiPreset, ApiProfileSettings>>,
+): Record<ApiPreset, ApiProfileSettings> {
+  const defaults = createDefaultProfiles();
+  const merged = { ...defaults };
+
+  for (const key of Object.keys(profiles ?? {}) as ApiPreset[]) {
+    const profile = profiles?.[key];
+    if (profile) {
+      merged[key] = {
+        ...defaults[key],
+        ...profile,
+      };
+    }
+  }
+
+  return merged;
+}
+
+export function createDefaultModelRoleSettings(
+  activePreset: ApiPreset = ApiPreset.GENERIC,
+  role?: ModelRole,
+): ModelRoleSettings {
+  const profiles = createDefaultProfiles();
+  const profile = profiles[activePreset];
+  return {
+    apiType: ApiType.OPENAI,
+    activePreset,
+    profiles,
+    baseUrl: profile.baseUrl,
+    apiKey: profile.apiKey,
+    model: profile.model,
+    ...(role === "textToSpeech" ? { voice: DEFAULT_TTS_VOICE } : {}),
+  };
+}
+
+export function createDefaultModelRoles(): Record<
+  ModelRole,
+  ModelRoleSettings
+> {
+  return Object.fromEntries(
+    MODEL_ROLES.map((role) => [
+      role,
+      createDefaultModelRoleSettings(undefined, role),
+    ]),
+  ) as Record<ModelRole, ModelRoleSettings>;
+}
+
+function syncActiveProfile(config: ModelRoleSettings): ModelRoleSettings {
+  return {
+    ...config,
+    profiles: {
+      ...config.profiles,
+      [config.activePreset]: {
+        ...config.profiles[config.activePreset],
+        baseUrl: config.baseUrl,
+        apiKey: config.apiKey,
+        model: config.model,
+      },
+    },
+  };
+}
+
+function narratorAliases(config: ModelRoleSettings) {
+  return {
+    activePreset: config.activePreset,
+    profiles: config.profiles,
+    apiKey: config.apiKey,
+    apiType: config.apiType,
+    model: config.model,
+    openAiBaseUrl: config.baseUrl,
+    modelContextLength: config.model?.contextLength ?? 0,
+  };
+}
+
+function roleStatePatch(
+  state: SettingsStoreType,
+  role: ModelRole,
+  config: ModelRoleSettings,
+  extra?: Partial<SettingsStoreType>,
+): Partial<SettingsStoreType> {
+  return {
+    modelRoles: {
+      ...state.modelRoles,
+      [role]: config,
+    },
+    ...(role === "narrator" ? narratorAliases(config) : {}),
+    ...extra,
+  };
+}
+
+type PersistedSettingsState = Partial<SettingsStoreType> & {
+  profiles?: Partial<Record<ApiPreset, ApiProfileSettings>>;
+  modelRoles?: Partial<Record<ModelRole, Partial<ModelRoleSettings>>>;
+  showThinkingInLog?: boolean;
+  thinkingVisibility?: ThinkingVisibility;
+  autoNarrate?: boolean;
+};
+
+function normalizeRoleSettings(
+  input?: Partial<ModelRoleSettings>,
+  fallback?: ModelRoleSettings,
+  role?: ModelRole,
+): ModelRoleSettings {
+  const activePreset =
+    input?.activePreset ?? fallback?.activePreset ?? ApiPreset.GENERIC;
+  const profiles = mergeProfiles(input?.profiles ?? fallback?.profiles);
+  const activeProfile =
+    profiles[activePreset] ?? createDefaultProfiles()[activePreset];
+  const config: ModelRoleSettings = {
+    apiType: input?.apiType ?? fallback?.apiType ?? ApiType.OPENAI,
+    activePreset,
+    profiles,
+    baseUrl: input?.baseUrl ?? fallback?.baseUrl ?? activeProfile.baseUrl,
+    apiKey: input?.apiKey ?? fallback?.apiKey ?? activeProfile.apiKey,
+    model: input?.model ?? fallback?.model ?? activeProfile.model,
+    ...(role === "textToSpeech"
+      ? { voice: input?.voice ?? fallback?.voice ?? DEFAULT_TTS_VOICE }
+      : {}),
+  };
+
+  return syncActiveProfile(config);
+}
+
+function createLegacyRoleSettings(
+  state: PersistedSettingsState,
+): ModelRoleSettings {
+  const activePreset = state.activePreset ?? ApiPreset.GENERIC;
+  const profiles = mergeProfiles(state.profiles);
+
+  if (!state.profiles && (state.apiKey || state.openAiBaseUrl || state.model)) {
+    profiles[ApiPreset.GENERIC] = {
+      ...profiles[ApiPreset.GENERIC],
+      baseUrl: state.openAiBaseUrl || "",
+      apiKey: state.apiKey || "",
+      model: state.model,
+    };
+  }
+
+  const activeProfile = profiles[activePreset] ?? profiles[ApiPreset.GENERIC];
+  return syncActiveProfile({
+    apiType: state.apiType ?? ApiType.OPENAI,
+    activePreset,
+    profiles,
+    baseUrl: state.openAiBaseUrl ?? activeProfile.baseUrl,
+    apiKey: state.apiKey ?? activeProfile.apiKey,
+    model: state.model ?? activeProfile.model,
+  });
+}
+
+export function migrateSettingsState(
+  persistedState: unknown,
+): SettingsStoreType {
+  const state = (persistedState ?? {}) as PersistedSettingsState;
+  const defaultRoles = createDefaultModelRoles();
+  const legacyRole = createLegacyRoleSettings(state);
+
+  const modelRoles = state.modelRoles
+    ? (Object.fromEntries(
+        MODEL_ROLES.map((role) => [
+          role,
+          normalizeRoleSettings(
+            state.modelRoles?.[role],
+            role === "narrator" ? legacyRole : defaultRoles[role],
+            role,
+          ),
+        ]),
+      ) as Record<ModelRole, ModelRoleSettings>)
+    : ({
+        narrator: normalizeRoleSettings(legacyRole, undefined, "narrator"),
+        utility: normalizeRoleSettings(
+          {
+            ...legacyRole,
+            profiles: cloneProfiles(legacyRole.profiles),
+          },
+          undefined,
+          "utility",
+        ),
+        speechToText: defaultRoles.speechToText,
+        textToSpeech: defaultRoles.textToSpeech,
+      } satisfies Record<ModelRole, ModelRoleSettings>);
+
+  const narrator = modelRoles.narrator;
+  const thinkingVisibility: ThinkingVisibility =
+    state.thinkingVisibility ??
+    (state.showThinkingInLog === false ? "none" : "all");
+
+  return {
+    ...state,
+    ...narratorAliases(narrator),
+    modelRoles,
+    textDirection: state.textDirection ?? "system",
+    language: state.language ?? "en",
+    thinkingVisibility,
+    autoNarrate: state.autoNarrate ?? false,
+  } as SettingsStoreType;
+}
+
+export function isModelRoleConfigured(config: ModelRoleSettings): boolean {
+  return Boolean(
+    config.apiType === ApiType.OPENAI && config.baseUrl.trim() && config.model,
+  );
+}
+
 export interface SettingsStoreType {
-  // Profile-based settings
+  // Narrator aliases retained for backward compatibility.
   activePreset: ApiPreset;
   profiles: Record<ApiPreset, ApiProfileSettings>;
-
-  // Derived from active profile (for backward compatibility)
   apiKey: string;
   apiType: ApiType;
   model: LLMModel | undefined;
   openAiBaseUrl: string;
+
+  modelRoles: Record<ModelRole, ModelRoleSettings>;
 
   // Global settings
   contextWindow: number;
@@ -68,6 +292,7 @@ export interface SettingsStoreType {
   useCustomContinueAuthorNote: boolean;
   useCustomStoryCardGeneratorPrompt: boolean;
   thinkingVisibility: ThinkingVisibility;
+  autoNarrate: boolean;
 
   setActivePreset: (preset: ApiPreset) => void;
   setApiKey: (apiKey: string) => void;
@@ -75,6 +300,12 @@ export interface SettingsStoreType {
   setModel: (model: LLMModel | undefined) => void;
   setContextWindow: (contextWindow: number) => void;
   setOpenAiBaseUrl: (openAiBaseUrl: string) => void;
+  setRoleActivePreset: (role: ModelRole, preset: ApiPreset) => void;
+  setRoleApiKey: (role: ModelRole, apiKey: string) => void;
+  setRoleApiType: (role: ModelRole, apiType: ApiType) => void;
+  setRoleModel: (role: ModelRole, model: LLMModel | undefined) => void;
+  setRoleBaseUrl: (role: ModelRole, baseUrl: string) => void;
+  setRoleVoice: (role: ModelRole, voice: string) => void;
   setMaxTokens: (maxTokens: number) => void;
   setTemperature: (temperature: number | null) => void;
   setTopP: (topP: number | null) => void;
@@ -103,6 +334,7 @@ export interface SettingsStoreType {
   setUseCustomContinueAuthorNote: (use: boolean) => void;
   setUseCustomStoryCardGeneratorPrompt: (use: boolean) => void;
   setThinkingVisibility: (visibility: ThinkingVisibility) => void;
+  setAutoNarrate: (autoNarrate: boolean) => void;
   resetGmPrompt: () => void;
   resetStorytellerPrompt: () => void;
   resetContinuePrompt: () => void;
@@ -112,19 +344,19 @@ export interface SettingsStoreType {
 }
 
 const defaultProfiles = createDefaultProfiles();
+const defaultModelRoles = createDefaultModelRoles();
 
 export const useSettingsStore = create<SettingsStoreType>()(
   persist<SettingsStoreType>(
     (set, get) => ({
-      // Profile-based settings
+      // Narrator aliases retained for backward compatibility.
       activePreset: ApiPreset.GENERIC,
       profiles: defaultProfiles,
-
-      // Derived from active profile
       apiKey: "",
       apiType: ApiType.OPENAI,
       model: undefined,
       openAiBaseUrl: "",
+      modelRoles: defaultModelRoles,
 
       // Global settings
       contextWindow: 10000,
@@ -147,71 +379,18 @@ export const useSettingsStore = create<SettingsStoreType>()(
       useCustomContinueAuthorNote: false,
       useCustomStoryCardGeneratorPrompt: false,
       thinkingVisibility: "all",
+      autoNarrate: false,
 
-      setActivePreset: (preset: ApiPreset) => {
-        const profiles = get().profiles;
-        // Fallback to defaults if preset is missing (e.g., newly added preset)
-        const defaults = createDefaultProfiles();
-        const profile = profiles[preset] ?? defaults[preset];
-        set({
-          activePreset: preset,
-          apiKey: profile.apiKey,
-          openAiBaseUrl: profile.baseUrl,
-          model: profile.model,
-          modelContextLength: profile.model?.contextLength ?? 0,
-          // Ensure the profile exists in storage
-          profiles: profiles[preset]
-            ? profiles
-            : { ...profiles, [preset]: profile },
-        });
-      },
+      setActivePreset: (preset: ApiPreset) =>
+        get().setRoleActivePreset("narrator", preset),
 
-      setApiKey: (apiKey: string) => {
-        const activePreset = get().activePreset;
-        const profiles = get().profiles;
-        set({
-          apiKey,
-          profiles: {
-            ...profiles,
-            [activePreset]: {
-              ...profiles[activePreset],
-              apiKey,
-            },
-          },
-        });
-      },
+      setApiKey: (apiKey: string) => get().setRoleApiKey("narrator", apiKey),
 
-      setApiType: (apiType: ApiType) => set({ apiType }),
+      setApiType: (apiType: ApiType) =>
+        get().setRoleApiType("narrator", apiType),
 
-      setModel: (model: LLMModel | undefined) => {
-        const activePreset = get().activePreset;
-        const profiles = get().profiles;
-
-        if (model) {
-          console.debug(
-            `Setting model: ${model.name} with context window: ${model.contextLength ?? "unknown"}.`,
-          );
-          const length = model.contextLength ?? Number.MAX_SAFE_INTEGER;
-          set({
-            contextWindow: Math.min(get().contextWindow ?? 2048, length),
-            modelContextLength: length,
-          });
-          console.debug(`Setting context window: ${get().contextWindow}`);
-        } else {
-          console.debug("Clearing model selection");
-        }
-
-        set({
-          model,
-          profiles: {
-            ...profiles,
-            [activePreset]: {
-              ...profiles[activePreset],
-              model,
-            },
-          },
-        });
-      },
+      setModel: (model: LLMModel | undefined) =>
+        get().setRoleModel("narrator", model),
 
       setContextWindow: (contextWindow: number) =>
         set({
@@ -221,18 +400,93 @@ export const useSettingsStore = create<SettingsStoreType>()(
               : contextWindow,
         }),
 
-      setOpenAiBaseUrl: (openAiBaseUrl: string) => {
-        const activePreset = get().activePreset;
-        const profiles = get().profiles;
-        set({
-          openAiBaseUrl,
-          profiles: {
-            ...profiles,
-            [activePreset]: {
-              ...profiles[activePreset],
-              baseUrl: openAiBaseUrl,
-            },
-          },
+      setOpenAiBaseUrl: (openAiBaseUrl: string) =>
+        get().setRoleBaseUrl("narrator", openAiBaseUrl),
+
+      setRoleActivePreset: (role: ModelRole, preset: ApiPreset) => {
+        set((state) => {
+          const current =
+            state.modelRoles[role] ?? createDefaultModelRoleSettings();
+          const defaults = createDefaultProfiles();
+          const profile = current.profiles[preset] ?? defaults[preset];
+          const nextRole = syncActiveProfile({
+            ...current,
+            activePreset: preset,
+            profiles: current.profiles[preset]
+              ? current.profiles
+              : { ...current.profiles, [preset]: profile },
+            baseUrl: profile.baseUrl,
+            apiKey: profile.apiKey,
+            model: profile.model,
+          });
+          return roleStatePatch(state, role, nextRole);
+        });
+      },
+
+      setRoleApiKey: (role: ModelRole, apiKey: string) => {
+        set((state) => {
+          const current =
+            state.modelRoles[role] ?? createDefaultModelRoleSettings();
+          const nextRole = syncActiveProfile({ ...current, apiKey });
+          return roleStatePatch(state, role, nextRole);
+        });
+      },
+
+      setRoleApiType: (role: ModelRole, apiType: ApiType) => {
+        set((state) => {
+          const current =
+            state.modelRoles[role] ?? createDefaultModelRoleSettings();
+          const nextRole = syncActiveProfile({ ...current, apiType });
+          return roleStatePatch(state, role, nextRole);
+        });
+      },
+
+      setRoleModel: (role: ModelRole, model: LLMModel | undefined) => {
+        if (model) {
+          console.debug(
+            `Setting ${role} model: ${model.name} with context window: ${
+              model.contextLength ?? "unknown"
+            }.`,
+          );
+        } else {
+          console.debug(`Clearing ${role} model selection`);
+        }
+
+        set((state) => {
+          const current =
+            state.modelRoles[role] ?? createDefaultModelRoleSettings();
+          const nextRole = syncActiveProfile({ ...current, model });
+          const length = model?.contextLength ?? Number.MAX_SAFE_INTEGER;
+          return roleStatePatch(
+            state,
+            role,
+            nextRole,
+            role === "narrator" && model
+              ? { contextWindow: Math.min(state.contextWindow ?? 2048, length) }
+              : undefined,
+          );
+        });
+      },
+
+      setRoleBaseUrl: (role: ModelRole, baseUrl: string) => {
+        set((state) => {
+          const current =
+            state.modelRoles[role] ?? createDefaultModelRoleSettings();
+          const nextRole = syncActiveProfile({
+            ...current,
+            baseUrl,
+            model: undefined,
+          });
+          return roleStatePatch(state, role, nextRole);
+        });
+      },
+
+      setRoleVoice: (role: ModelRole, voice: string) => {
+        set((state) => {
+          const current =
+            state.modelRoles[role] ?? createDefaultModelRoleSettings();
+          const nextRole = syncActiveProfile({ ...current, voice });
+          return roleStatePatch(state, role, nextRole);
         });
       },
 
@@ -325,6 +579,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
         set({ useCustomStoryCardGeneratorPrompt: use }),
       setThinkingVisibility: (visibility: ThinkingVisibility) =>
         set({ thinkingVisibility: visibility }),
+      setAutoNarrate: (autoNarrate: boolean) => set({ autoNarrate }),
       resetGmPrompt: () =>
         set({ customGmPrompt: undefined, useCustomGmPrompt: false }),
       resetStorytellerPrompt: () =>
@@ -378,59 +633,13 @@ export const useSettingsStore = create<SettingsStoreType>()(
           textDirection: "system",
           language: "en",
           thinkingVisibility: "all",
+          autoNarrate: false,
         }),
     }),
     {
       name: "settings",
-      // Migration: merge defaults with persisted profiles to handle new presets
-      migrate: (persistedState, _version) => {
-        const state = persistedState as SettingsStoreType & {
-          profiles?: Partial<Record<ApiPreset, ApiProfileSettings>>;
-          showThinkingInLog?: boolean;
-          thinkingVisibility?: ThinkingVisibility;
-        };
-
-        // Always start with fresh defaults, then merge persisted data
-        const defaults = createDefaultProfiles();
-        const persistedProfiles = state.profiles ?? {};
-
-        // Handle legacy flat settings (pre-profiles era)
-        if (
-          !state.profiles &&
-          (state.apiKey || state.openAiBaseUrl || state.model)
-        ) {
-          defaults[ApiPreset.GENERIC] = {
-            baseUrl: state.openAiBaseUrl || "",
-            apiKey: state.apiKey || "",
-            model: state.model,
-          };
-        }
-
-        // Merge: defaults first, then persisted values take precedence
-        const mergedProfiles = { ...defaults };
-        for (const key of Object.keys(persistedProfiles) as ApiPreset[]) {
-          if (persistedProfiles[key]) {
-            mergedProfiles[key] = {
-              ...defaults[key],
-              ...persistedProfiles[key],
-            };
-          }
-        }
-
-        const thinkingVisibility: ThinkingVisibility =
-          state.thinkingVisibility ??
-          (state.showThinkingInLog === false ? "none" : "all");
-
-        return {
-          ...state,
-          activePreset: state.activePreset ?? ApiPreset.GENERIC,
-          profiles: mergedProfiles,
-          textDirection: state.textDirection ?? "system",
-          language: state.language ?? "en",
-          thinkingVisibility,
-        };
-      },
-      version: 2,
+      migrate: migrateSettingsState,
+      version: 3,
     },
   ),
 );

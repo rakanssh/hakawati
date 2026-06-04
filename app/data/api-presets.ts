@@ -1,4 +1,4 @@
-import { ApiPreset, ApiProfileSettings } from "@/types";
+import { ApiPreset, ApiProfileSettings, ModelRole } from "@/types";
 import { msg } from "@lingui/core/macro";
 import { MessageDescriptor } from "@lingui/core";
 
@@ -118,6 +118,21 @@ export const apiPresets: ApiPresetConfig[] = [
     },
   },
 ];
+
+const audioModelPresets = new Set<ApiPreset>([
+  ApiPreset.OPENROUTER,
+  ApiPreset.OPENAI,
+  ApiPreset.GENERIC,
+  ApiPreset.LOCAL,
+]);
+
+export function getApiPresetsForRole(role: ModelRole): ApiPresetConfig[] {
+  if (role !== "speechToText" && role !== "textToSpeech") {
+    return apiPresets;
+  }
+
+  return apiPresets.filter((preset) => audioModelPresets.has(preset.id));
+}
 
 /** Map of preset ID to config for quick lookup */
 export const apiPresetMap = Object.fromEntries(
