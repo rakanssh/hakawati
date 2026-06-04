@@ -65,7 +65,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             greet,
             speech_recorder::start_speech_recording,
-            speech_recorder::stop_speech_recording
+            speech_recorder::stop_speech_recording,
+            speech_recorder::get_speech_recording_level,
+            speech_recorder::cancel_speech_recording
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

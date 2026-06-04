@@ -23,6 +23,8 @@ import {
   CheckIcon,
   Loader2Icon,
   MicIcon,
+  ArrowUpIcon,
+  XIcon,
 } from "lucide-react";
 import { LogEntryMode } from "@/types/log.type";
 import { ContinueControl, LogControl } from "@/components/play/log";
@@ -35,7 +37,13 @@ import {
 } from "@/hooks/useSpeechRecorder";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { toast } from "sonner";
-import type { Dispatch, SetStateAction } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 
 interface PlayInputControlsProps {
   action: Action;
@@ -65,6 +73,59 @@ const ACTION_MODE_ICONS = {
   [LogEntryMode.STORY]: BookIcon,
   [LogEntryMode.DIRECT]: MegaphoneIcon,
 } satisfies Record<InputActionMode, typeof HandIcon>;
+
+const WAVEFORM_BAR_COUNT = 44;
+
+function formatRecordingTime(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+}
+
+function amplifyWaveformLevel(level: number): number {
+  const clampedLevel = Math.min(1, Math.max(0, level));
+  return Math.min(1, Math.pow(clampedLevel, 0.75) * 1.25);
+}
+
+function RecordingWaveform({ level }: { level: number }) {
+  const levelRef = useRef(level);
+  const [bars, setBars] = useState(() =>
+    Array.from({ length: WAVEFORM_BAR_COUNT }, () => 0),
+  );
+
+  useEffect(() => {
+    levelRef.current = level;
+  }, [level]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setBars((currentBars) => [
+        ...currentBars.slice(1),
+        amplifyWaveformLevel(levelRef.current),
+      ]);
+    }, 100);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  return (
+    <div
+      className="flex h-8 min-w-0 flex-1 items-center gap-0.5 overflow-hidden"
+      aria-hidden="true"
+    >
+      {bars.map((barLevel, index) => (
+        <span
+          key={index}
+          className="w-1 shrink-0 rounded-full bg-primary/75 transition-[height,opacity] duration-100"
+          style={{
+            height: `${Math.round(4 + barLevel * 26)}px`,
+            opacity: 0.35 + barLevel * 0.65,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 
 function isInputActionMode(mode: LogEntryMode): mode is InputActionMode {
   return ACTION_MODES.includes(mode as InputActionMode);
@@ -114,6 +175,7 @@ export function PlayInputControls({
   };
 
   const currentActionLabel = actionModeLabels[currentActionMode];
+  const composerControlsLocked = speechRecorder.status !== "idle";
 
   const renderModeMenu = ({
     className,
@@ -263,6 +325,57 @@ export function PlayInputControls({
     />
   );
 
+  const renderRecordingComposer = () => (
+    <div className="flex min-h-12 min-w-0 items-center gap-3 px-3 py-2">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="!h-9 !w-9 shrink-0 border border-destructive/35 bg-transparent text-destructive shadow-none hover:border-destructive/55 hover:bg-destructive/10 hover:text-destructive"
+            onClick={speechRecorder.cancel}
+            aria-label={t`Cancel recording`}
+          >
+            <XIcon className="h-4 w-4" strokeWidth={1.5} />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top">
+          <Trans>Cancel recording</Trans>
+        </TooltipContent>
+      </Tooltip>
+      <span className="w-11 shrink-0 font-mono text-sm tabular-nums text-primary">
+        {formatRecordingTime(speechRecorder.elapsedSeconds)}
+      </span>
+      <RecordingWaveform level={speechRecorder.level} />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            size="icon"
+            className="!h-9 !w-9 shrink-0 bg-primary text-primary-foreground shadow-none hover:bg-primary/90"
+            onClick={speechRecorder.stop}
+            aria-label={t`Stop and transcribe`}
+          >
+            <ArrowUpIcon className="h-4 w-4" strokeWidth={1.8} />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top">
+          <Trans>Stop and transcribe</Trans>
+        </TooltipContent>
+      </Tooltip>
+    </div>
+  );
+
+  const renderTranscribingComposer = () => (
+    <div className="flex min-h-12 min-w-0 items-center gap-3 px-3 py-2 text-sm text-muted-foreground">
+      <Loader2Icon className="h-4 w-4 shrink-0 animate-spin" />
+      <span className="truncate">
+        <Trans>Transcribing...</Trans>
+      </span>
+    </div>
+  );
+
   const renderSubmitButton = (className?: string) => (
     <Button
       type="submit"
@@ -282,12 +395,20 @@ export function PlayInputControls({
 
   const renderComposer = () => (
     <div className="relative min-h-12 min-w-0 flex-1 overflow-hidden rounded-xs border border-border/75 bg-card/85 shadow-xs transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18">
-      {renderTextArea()}
-      <div className="absolute bottom-1.5 end-1.5 flex items-center gap-1">
-        {renderSpeechButton()}
-        {renderDiceToggle()}
-        {renderSubmitButton()}
-      </div>
+      {speechRecorder.isRecording ? (
+        renderRecordingComposer()
+      ) : speechRecorder.isTranscribing ? (
+        renderTranscribingComposer()
+      ) : (
+        <>
+          {renderTextArea()}
+          <div className="absolute bottom-1.5 end-1.5 flex items-center gap-1">
+            {renderSpeechButton()}
+            {renderDiceToggle()}
+            {renderSubmitButton()}
+          </div>
+        </>
+      )}
     </div>
   );
 
@@ -295,6 +416,7 @@ export function PlayInputControls({
     <div
       className={cn(
         "composer-command-tier flex min-w-0 items-center gap-1 rounded-xs border border-border/70 bg-card/60 p-1 shadow-xs",
+        composerControlsLocked && "pointer-events-none opacity-60",
         className,
       )}
     >

@@ -14,6 +14,10 @@ interface NativeSpeechRecording {
   dataBase64: string;
 }
 
+interface NativeSpeechLevel {
+  level: number;
+}
+
 export function normalizeMicrophoneError(error: unknown): Error {
   if (typeof error === "string") {
     return new Error(error);
@@ -51,8 +55,48 @@ export function useSpeechRecorder({
   onError,
 }: UseSpeechRecorderParams) {
   const [status, setStatus] = useState<SpeechRecorderStatus>("idle");
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [level, setLevel] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
   const isRecordingRef = useRef(false);
+  const startedAtRef = useRef<number | null>(null);
+  const pollIntervalRef = useRef<number | null>(null);
+
+  const stopRecordingStats = useCallback(() => {
+    if (pollIntervalRef.current !== null) {
+      window.clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
+    startedAtRef.current = null;
+    setElapsedSeconds(0);
+    setLevel(0);
+  }, []);
+
+  const pollRecordingStats = useCallback(() => {
+    if (!isRecordingRef.current) return;
+
+    if (startedAtRef.current !== null) {
+      setElapsedSeconds(
+        Math.max(0, Math.floor((Date.now() - startedAtRef.current) / 1000)),
+      );
+    }
+
+    void invoke<NativeSpeechLevel>("get_speech_recording_level")
+      .then((recordingLevel) => {
+        if (!isRecordingRef.current) return;
+        setLevel(Math.min(1, Math.max(0, recordingLevel.level)));
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const startRecordingStats = useCallback(() => {
+    stopRecordingStats();
+    startedAtRef.current = Date.now();
+    setElapsedSeconds(0);
+    setLevel(0);
+    pollRecordingStats();
+    pollIntervalRef.current = window.setInterval(pollRecordingStats, 100);
+  }, [pollRecordingStats, stopRecordingStats]);
 
   const transcribe = useCallback(
     async (audio: Blob) => {
@@ -76,21 +120,24 @@ export function useSpeechRecorder({
     try {
       await invoke("start_speech_recording");
       isRecordingRef.current = true;
+      startRecordingStats();
       setStatus("recording");
     } catch (error) {
       isRecordingRef.current = false;
+      stopRecordingStats();
       setStatus("idle");
       onError(normalizeMicrophoneError(error));
     }
-  }, [onError, status]);
+  }, [onError, startRecordingStats, status, stopRecordingStats]);
 
   const stop = useCallback(() => {
     if (status !== "recording") return;
 
+    isRecordingRef.current = false;
+    stopRecordingStats();
     setStatus("transcribing");
     void invoke<NativeSpeechRecording>("stop_speech_recording")
       .then((recording) => {
-        isRecordingRef.current = false;
         return transcribe(nativeRecordingToBlob(recording));
       })
       .catch((error) => {
@@ -103,7 +150,18 @@ export function useSpeechRecorder({
         isRecordingRef.current = false;
         setStatus("idle");
       });
-  }, [onError, status, transcribe]);
+  }, [onError, status, stopRecordingStats, transcribe]);
+
+  const cancel = useCallback(() => {
+    if (status !== "recording") return;
+
+    stopRecordingStats();
+    isRecordingRef.current = false;
+    setStatus("idle");
+    void invoke("cancel_speech_recording").catch((error) => {
+      onError(normalizeMicrophoneError(error));
+    });
+  }, [onError, status, stopRecordingStats]);
 
   const toggle = useCallback(() => {
     if (status === "recording") {
@@ -120,17 +178,21 @@ export function useSpeechRecorder({
       abortRef.current?.abort();
       if (isRecordingRef.current) {
         isRecordingRef.current = false;
-        void invoke("stop_speech_recording").catch(() => undefined);
+        stopRecordingStats();
+        void invoke("cancel_speech_recording").catch(() => undefined);
       }
     };
-  }, []);
+  }, [stopRecordingStats]);
 
   return {
     status,
+    elapsedSeconds,
+    level,
     isRecording: status === "recording",
     isTranscribing: status === "transcribing",
     start,
     stop,
+    cancel,
     toggle,
   };
 }

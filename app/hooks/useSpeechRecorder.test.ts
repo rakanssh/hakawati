@@ -69,6 +69,28 @@ async function flushPromises() {
   });
 }
 
+function mockNativeRecorder({
+  level = 0.4,
+  stopRecording = { mimeType: "audio/wav", dataBase64: "YXVkaW8=" },
+}: {
+  level?: number;
+  stopRecording?: { mimeType: string; dataBase64: string };
+} = {}) {
+  invokeMock.mockImplementation((command: string) => {
+    switch (command) {
+      case "start_speech_recording":
+      case "cancel_speech_recording":
+        return Promise.resolve(undefined);
+      case "get_speech_recording_level":
+        return Promise.resolve({ level });
+      case "stop_speech_recording":
+        return Promise.resolve(stopRecording);
+      default:
+        return Promise.reject(new Error(`Unexpected command: ${command}`));
+    }
+  });
+}
+
 beforeEach(() => {
   (
     globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
@@ -114,9 +136,7 @@ describe("useSpeechRecorder", () => {
   it("starts and stops native recording, then emits transcript", async () => {
     const onTranscript = vi.fn();
     const onError = vi.fn();
-    invokeMock
-      .mockResolvedValueOnce(undefined)
-      .mockResolvedValueOnce({ mimeType: "audio/wav", dataBase64: "YXVkaW8=" });
+    mockNativeRecorder();
     transcribeSpeechMock.mockResolvedValue({ text: "open sesame" });
     const harness = renderRecorderHarness({ onTranscript, onError });
 
@@ -131,8 +151,8 @@ describe("useSpeechRecorder", () => {
     await flushPromises();
     await flushPromises();
 
-    expect(invokeMock).toHaveBeenNthCalledWith(1, "start_speech_recording");
-    expect(invokeMock).toHaveBeenNthCalledWith(2, "stop_speech_recording");
+    expect(invokeMock).toHaveBeenCalledWith("start_speech_recording");
+    expect(invokeMock).toHaveBeenCalledWith("stop_speech_recording");
     expect(transcribeSpeechMock).toHaveBeenCalledWith(
       expect.any(Blob),
       expect.any(AbortSignal),
@@ -146,9 +166,16 @@ describe("useSpeechRecorder", () => {
   it("leaves transcript unchanged and reports stop failures", async () => {
     const onTranscript = vi.fn();
     const onError = vi.fn();
-    invokeMock
-      .mockResolvedValueOnce(undefined)
-      .mockRejectedValueOnce("Could not stop microphone recording.");
+    invokeMock.mockImplementation((command: string) => {
+      if (command === "start_speech_recording") return Promise.resolve();
+      if (command === "get_speech_recording_level") {
+        return Promise.resolve({ level: 0 });
+      }
+      if (command === "stop_speech_recording") {
+        return Promise.reject("Could not stop microphone recording.");
+      }
+      return Promise.reject(new Error(`Unexpected command: ${command}`));
+    });
     const harness = renderRecorderHarness({ onTranscript, onError });
 
     await act(async () => {
@@ -166,6 +193,52 @@ describe("useSpeechRecorder", () => {
         message: "Could not stop microphone recording.",
       }),
     );
+
+    harness.cleanup();
+  });
+
+  it("exposes elapsed time and live recording level", async () => {
+    vi.useFakeTimers();
+    const onTranscript = vi.fn();
+    const onError = vi.fn();
+    mockNativeRecorder({ level: 0.75 });
+    const harness = renderRecorderHarness({ onTranscript, onError });
+
+    await act(async () => {
+      await harness.controls.start();
+    });
+    await flushPromises();
+
+    expect(harness.controls.level).toBe(0.75);
+
+    await act(async () => {
+      vi.advanceTimersByTime(1100);
+    });
+
+    expect(harness.controls.elapsedSeconds).toBe(1);
+
+    harness.cleanup();
+    vi.useRealTimers();
+  });
+
+  it("cancels native recording without transcribing", async () => {
+    const onTranscript = vi.fn();
+    const onError = vi.fn();
+    mockNativeRecorder();
+    const harness = renderRecorderHarness({ onTranscript, onError });
+
+    await act(async () => {
+      await harness.controls.start();
+    });
+    act(() => {
+      harness.controls.cancel();
+    });
+    await flushPromises();
+
+    expect(invokeMock).toHaveBeenCalledWith("cancel_speech_recording");
+    expect(transcribeSpeechMock).not.toHaveBeenCalled();
+    expect(onTranscript).not.toHaveBeenCalled();
+    expect(onError).not.toHaveBeenCalled();
 
     harness.cleanup();
   });
