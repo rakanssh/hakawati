@@ -15,6 +15,8 @@ import { persist } from "zustand/middleware";
 export type TextDirection = "system" | "ltr" | "rtl";
 export type ThinkingVisibility = "all" | "latest" | "none";
 
+export const DEFAULT_TTS_VOICE = "alloy";
+
 // Languages that require a RTL UI. Expand later.
 const RTL_LANGUAGES = new Set([
   "ar", // Arabic
@@ -67,6 +69,7 @@ function mergeProfiles(
 
 export function createDefaultModelRoleSettings(
   activePreset: ApiPreset = ApiPreset.GENERIC,
+  role?: ModelRole,
 ): ModelRoleSettings {
   const profiles = createDefaultProfiles();
   const profile = profiles[activePreset];
@@ -77,6 +80,7 @@ export function createDefaultModelRoleSettings(
     baseUrl: profile.baseUrl,
     apiKey: profile.apiKey,
     model: profile.model,
+    ...(role === "textToSpeech" ? { voice: DEFAULT_TTS_VOICE } : {}),
   };
 }
 
@@ -85,7 +89,10 @@ export function createDefaultModelRoles(): Record<
   ModelRoleSettings
 > {
   return Object.fromEntries(
-    MODEL_ROLES.map((role) => [role, createDefaultModelRoleSettings()]),
+    MODEL_ROLES.map((role) => [
+      role,
+      createDefaultModelRoleSettings(undefined, role),
+    ]),
   ) as Record<ModelRole, ModelRoleSettings>;
 }
 
@@ -137,11 +144,13 @@ type PersistedSettingsState = Partial<SettingsStoreType> & {
   modelRoles?: Partial<Record<ModelRole, Partial<ModelRoleSettings>>>;
   showThinkingInLog?: boolean;
   thinkingVisibility?: ThinkingVisibility;
+  autoNarrate?: boolean;
 };
 
 function normalizeRoleSettings(
   input?: Partial<ModelRoleSettings>,
   fallback?: ModelRoleSettings,
+  role?: ModelRole,
 ): ModelRoleSettings {
   const activePreset =
     input?.activePreset ?? fallback?.activePreset ?? ApiPreset.GENERIC;
@@ -155,6 +164,9 @@ function normalizeRoleSettings(
     baseUrl: input?.baseUrl ?? fallback?.baseUrl ?? activeProfile.baseUrl,
     apiKey: input?.apiKey ?? fallback?.apiKey ?? activeProfile.apiKey,
     model: input?.model ?? fallback?.model ?? activeProfile.model,
+    ...(role === "textToSpeech"
+      ? { voice: input?.voice ?? fallback?.voice ?? DEFAULT_TTS_VOICE }
+      : {}),
   };
 
   return syncActiveProfile(config);
@@ -200,15 +212,20 @@ export function migrateSettingsState(
           normalizeRoleSettings(
             state.modelRoles?.[role],
             role === "narrator" ? legacyRole : defaultRoles[role],
+            role,
           ),
         ]),
       ) as Record<ModelRole, ModelRoleSettings>)
     : ({
-        narrator: normalizeRoleSettings(legacyRole),
-        utility: normalizeRoleSettings({
-          ...legacyRole,
-          profiles: cloneProfiles(legacyRole.profiles),
-        }),
+        narrator: normalizeRoleSettings(legacyRole, undefined, "narrator"),
+        utility: normalizeRoleSettings(
+          {
+            ...legacyRole,
+            profiles: cloneProfiles(legacyRole.profiles),
+          },
+          undefined,
+          "utility",
+        ),
         speechToText: defaultRoles.speechToText,
         textToSpeech: defaultRoles.textToSpeech,
       } satisfies Record<ModelRole, ModelRoleSettings>);
@@ -225,6 +242,7 @@ export function migrateSettingsState(
     textDirection: state.textDirection ?? "system",
     language: state.language ?? "en",
     thinkingVisibility,
+    autoNarrate: state.autoNarrate ?? false,
   } as SettingsStoreType;
 }
 
@@ -274,6 +292,7 @@ export interface SettingsStoreType {
   useCustomContinueAuthorNote: boolean;
   useCustomStoryCardGeneratorPrompt: boolean;
   thinkingVisibility: ThinkingVisibility;
+  autoNarrate: boolean;
 
   setActivePreset: (preset: ApiPreset) => void;
   setApiKey: (apiKey: string) => void;
@@ -286,6 +305,7 @@ export interface SettingsStoreType {
   setRoleApiType: (role: ModelRole, apiType: ApiType) => void;
   setRoleModel: (role: ModelRole, model: LLMModel | undefined) => void;
   setRoleBaseUrl: (role: ModelRole, baseUrl: string) => void;
+  setRoleVoice: (role: ModelRole, voice: string) => void;
   setMaxTokens: (maxTokens: number) => void;
   setTemperature: (temperature: number | null) => void;
   setTopP: (topP: number | null) => void;
@@ -314,6 +334,7 @@ export interface SettingsStoreType {
   setUseCustomContinueAuthorNote: (use: boolean) => void;
   setUseCustomStoryCardGeneratorPrompt: (use: boolean) => void;
   setThinkingVisibility: (visibility: ThinkingVisibility) => void;
+  setAutoNarrate: (autoNarrate: boolean) => void;
   resetGmPrompt: () => void;
   resetStorytellerPrompt: () => void;
   resetContinuePrompt: () => void;
@@ -358,6 +379,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
       useCustomContinueAuthorNote: false,
       useCustomStoryCardGeneratorPrompt: false,
       thinkingVisibility: "all",
+      autoNarrate: false,
 
       setActivePreset: (preset: ApiPreset) =>
         get().setRoleActivePreset("narrator", preset),
@@ -459,6 +481,15 @@ export const useSettingsStore = create<SettingsStoreType>()(
         });
       },
 
+      setRoleVoice: (role: ModelRole, voice: string) => {
+        set((state) => {
+          const current =
+            state.modelRoles[role] ?? createDefaultModelRoleSettings();
+          const nextRole = syncActiveProfile({ ...current, voice });
+          return roleStatePatch(state, role, nextRole);
+        });
+      },
+
       setMaxTokens: (maxTokens: number) =>
         set({
           maxTokens:
@@ -548,6 +579,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
         set({ useCustomStoryCardGeneratorPrompt: use }),
       setThinkingVisibility: (visibility: ThinkingVisibility) =>
         set({ thinkingVisibility: visibility }),
+      setAutoNarrate: (autoNarrate: boolean) => set({ autoNarrate }),
       resetGmPrompt: () =>
         set({ customGmPrompt: undefined, useCustomGmPrompt: false }),
       resetStorytellerPrompt: () =>
@@ -601,6 +633,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
           textDirection: "system",
           language: "en",
           thinkingVisibility: "all",
+          autoNarrate: false,
         }),
     }),
     {

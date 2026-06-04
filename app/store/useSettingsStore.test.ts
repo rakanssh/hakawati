@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ApiPreset, MODEL_ROLES } from "@/types";
 import type { LLMModel } from "@/services/llm/schema";
 import {
+  DEFAULT_TTS_VOICE,
   isModelRoleConfigured,
   migrateSettingsState,
 } from "./useSettingsStore";
@@ -64,5 +65,7 @@ describe("useSettingsStore migration", () => {
     );
     expect(migrated.modelRoles.speechToText).toBeDefined();
     expect(migrated.modelRoles.textToSpeech).toBeDefined();
+    expect(migrated.modelRoles.textToSpeech.voice).toBe(DEFAULT_TTS_VOICE);
+    expect(migrated.autoNarrate).toBe(false);
   });
 });

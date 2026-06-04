@@ -7,7 +7,7 @@ All notable changes to this project are documented in this file.
 ### Added
 
 - Themes! Added two new themes, Bamboo and Cosmos, built on light and dark backgrounds, respectively.
-- Speech-To-Text input and model support.
+- Speech-To-Text and Text-To-Speech with initial support for open-ai-style endpoints and providers.
 
 ### Changed
 

@@ -39,6 +39,7 @@ export interface ModelRoleSettings {
   baseUrl: string;
   apiKey: string;
   model: LLMModel | undefined;
+  voice?: string;
 }
 
 export enum ResponseMode {

@@ -1,4 +1,4 @@
-import { useSettingsStore } from "@/store/useSettingsStore";
+import { DEFAULT_TTS_VOICE, useSettingsStore } from "@/store/useSettingsStore";
 import { OpenAiClient } from "./adapters/openai";
 import { ChatRequest, LLMModel } from "./schema";
 import { ApiType, ModelRole, ModelRoleSettings } from "@/types";
@@ -81,6 +81,46 @@ export async function transcribeSpeech(audio: Blob, signal?: AbortSignal) {
       file: audio,
       filename: "speech.wav",
       response_format: "json",
+    },
+    signal,
+  );
+}
+
+function resolveTextToSpeechVoice(config: ModelRoleSettings): string {
+  const voice = (config.voice ?? DEFAULT_TTS_VOICE).trim();
+  if (!voice) {
+    throw new ModelRoleConfigurationError(
+      "textToSpeech",
+      "No textToSpeech voice configured. Enter a voice in Settings.",
+    );
+  }
+  return voice;
+}
+
+export function getNarrationCacheKey(text: string) {
+  const { config, model } = resolveModelRole("textToSpeech");
+  return JSON.stringify({
+    text,
+    baseUrl: config.baseUrl.trim(),
+    model: model.id,
+    voice: resolveTextToSpeechVoice(config),
+    responseFormat: "mp3",
+  });
+}
+
+export async function synthesizeNarration(text: string, signal?: AbortSignal) {
+  const cleanText = text.trim();
+  if (!cleanText) {
+    throw new Error("No narration text provided.");
+  }
+
+  const { config, model } = resolveModelRole("textToSpeech");
+  return getClient("textToSpeech").synthesizeSpeech(
+    {
+      model: model.id,
+      input: cleanText,
+      voice: resolveTextToSpeechVoice(config),
+      response_format: "mp3",
     },
     signal,
   );

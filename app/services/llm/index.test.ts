@@ -6,7 +6,12 @@ import {
   useSettingsStore,
 } from "@/store/useSettingsStore";
 import { generateScenario } from "./scenarioGenerator";
-import { getRoleModels, sendRoleChat, transcribeSpeech } from ".";
+import {
+  getRoleModels,
+  sendRoleChat,
+  synthesizeNarration,
+  transcribeSpeech,
+} from ".";
 
 const { fetchMock } = vi.hoisted(() => ({
   fetchMock: vi.fn(),
@@ -36,10 +41,37 @@ const speechToTextModel: LLMModel = {
   name: "Whisper Model",
 };
 
+const textToSpeechModel: LLMModel = {
+  id: "tts-model",
+  name: "TTS Model",
+};
+
 function responseJson(json: unknown) {
   return {
     ok: true,
     body: null,
+    json: async () => json,
+    text: async () => JSON.stringify(json),
+  };
+}
+
+function responseAudio(audio = "audio") {
+  return {
+    ok: true,
+    body: null,
+    headers: new Headers({ "content-type": "audio/mpeg" }),
+    json: async () => ({}),
+    text: async () => audio,
+    arrayBuffer: async () => new TextEncoder().encode(audio).buffer,
+  };
+}
+
+function responseError(status: number, json: unknown) {
+  return {
+    ok: false,
+    status,
+    statusText: "Bad Request",
+    headers: new Headers({ "content-type": "application/json" }),
     json: async () => json,
     text: async () => JSON.stringify(json),
   };
@@ -64,6 +96,13 @@ function setConfiguredRoles() {
     baseUrl: "https://speech.example/v1",
     apiKey: "speech-key",
     model: speechToTextModel,
+  };
+  modelRoles.textToSpeech = {
+    ...modelRoles.textToSpeech,
+    baseUrl: "https://tts.example/v1",
+    apiKey: "tts-key",
+    model: textToSpeechModel,
+    voice: "narrator-voice",
   };
   useSettingsStore.setState({ modelRoles });
 }
@@ -152,6 +191,45 @@ describe("role-aware LLM service", () => {
     expect(models[0]).toMatchObject({
       id: "openai/whisper-1",
       name: "OpenAI: Whisper",
+    });
+  });
+
+  it("fetches OpenRouter text-to-speech models with the speech modality filter", async () => {
+    const modelRoles = createDefaultModelRoles();
+    modelRoles.textToSpeech = {
+      ...modelRoles.textToSpeech,
+      baseUrl: "https://openrouter.ai/api/v1",
+      apiKey: "openrouter-key",
+      model: textToSpeechModel,
+    };
+    useSettingsStore.setState({ modelRoles });
+    fetchMock.mockResolvedValue(
+      responseJson({
+        data: [
+          {
+            id: "google/gemini-3.1-flash-tts-preview",
+            name: "Google: Gemini TTS",
+            supported_voices: ["Kore", "Puck"],
+          },
+        ],
+      }),
+    );
+
+    const models = await getRoleModels("textToSpeech");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://openrouter.ai/api/v1/models?output_modalities=speech",
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({
+          Authorization: "Bearer openrouter-key",
+        }),
+      }),
+    );
+    expect(models[0]).toMatchObject({
+      id: "google/gemini-3.1-flash-tts-preview",
+      name: "Google: Gemini TTS",
+      supportedVoices: ["Kore", "Puck"],
     });
   });
 
@@ -254,5 +332,92 @@ describe("role-aware LLM service", () => {
     await expect(
       transcribeSpeech(new Blob(["audio"], { type: "audio/webm" })),
     ).rejects.toThrow(/no text/i);
+  });
+
+  it("sends speech synthesis requests to the text-to-speech endpoint", async () => {
+    fetchMock.mockResolvedValue(responseAudio("spoken"));
+
+    const result = await synthesizeNarration("The door opens.");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://tts.example/v1/audio/speech",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          Authorization: "Bearer tts-key",
+          "Content-Type": "application/json",
+        }),
+      }),
+    );
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
+      model: "tts-model",
+      input: "The door opens.",
+      voice: "narrator-voice",
+      response_format: "mp3",
+    });
+    expect(result.audio).toBeInstanceOf(Blob);
+    expect(result.audio.type).toBe("audio/mpeg");
+  });
+
+  it("rejects speech synthesis when the text-to-speech role is missing", async () => {
+    const modelRoles = createDefaultModelRoles();
+    modelRoles.narrator = {
+      ...modelRoles.narrator,
+      baseUrl: "https://narrator.example/v1",
+      apiKey: "narrator-key",
+      model: narratorModel,
+    };
+    useSettingsStore.setState({ modelRoles });
+
+    await expect(synthesizeNarration("Speak this.")).rejects.toThrow(
+      /textToSpeech API URL/,
+    );
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects speech synthesis when the text-to-speech voice is blank", async () => {
+    const modelRoles = createDefaultModelRoles();
+    modelRoles.textToSpeech = {
+      ...modelRoles.textToSpeech,
+      baseUrl: "https://tts.example/v1",
+      apiKey: "tts-key",
+      model: textToSpeechModel,
+      voice: "   ",
+    };
+    useSettingsStore.setState({ modelRoles });
+
+    await expect(synthesizeNarration("Speak this.")).rejects.toThrow(/voice/);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("surfaces speech synthesis provider error messages", async () => {
+    fetchMock.mockResolvedValue(
+      responseError(400, {
+        error: {
+          message: "Voice is not available for this model.",
+        },
+      }),
+    );
+
+    await expect(synthesizeNarration("Speak this.")).rejects.toThrow(
+      /Voice is not available/,
+    );
+  });
+
+  it("surfaces OpenRouter raw provider metadata for speech synthesis errors", async () => {
+    fetchMock.mockResolvedValue(
+      responseError(400, {
+        error: {
+          message: "Provider returned 400",
+          metadata: {
+            raw: "voice alloy is not supported by this model",
+          },
+        },
+      }),
+    );
+
+    await expect(synthesizeNarration("Speak this.")).rejects.toThrow(
+      /voice alloy is not supported/,
+    );
   });
 });

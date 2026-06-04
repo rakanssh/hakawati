@@ -68,6 +68,7 @@ function RoleApiSettings({ role }: { role: ModelRole }) {
   );
   const setRoleApiKey = useSettingsStore((state) => state.setRoleApiKey);
   const setRoleBaseUrl = useSettingsStore((state) => state.setRoleBaseUrl);
+  const setRoleVoice = useSettingsStore((state) => state.setRoleVoice);
   const [baseUrl, setBaseUrl] = useState(roleConfig.baseUrl);
   const [showApiKey, setShowApiKey] = useState(false);
   const { servers, scanning, error, scan } = useLocalServerDiscovery(
@@ -89,6 +90,8 @@ function RoleApiSettings({ role }: { role: ModelRole }) {
       </HelpTooltip>
     </span>
   );
+  const supportedVoices = roleConfig.model?.supportedVoices ?? [];
+  const voiceListId = `tts-voices-${role}`;
 
   useEffect(() => {
     setBaseUrl(roleConfig.baseUrl);
@@ -271,6 +274,38 @@ function RoleApiSettings({ role }: { role: ModelRole }) {
         <SettingsField label={<Trans>Model</Trans>}>
           <ModelSelect role={role} />
         </SettingsField>
+        {role === "textToSpeech" && (
+          <SettingsField
+            label={<Trans>Voice</Trans>}
+            description={
+              supportedVoices.length > 0 ? (
+                <Trans>
+                  This model publishes supported voices. Pick one from the
+                  suggestions.
+                </Trans>
+              ) : (
+                <Trans>
+                  Provider voice id for speech generation. OpenAI-compatible
+                  providers commonly support alloy.
+                </Trans>
+              )
+            }
+          >
+            <Input
+              list={supportedVoices.length > 0 ? voiceListId : undefined}
+              value={roleConfig.voice ?? ""}
+              onChange={(e) => setRoleVoice(role, e.target.value)}
+              placeholder={t`alloy`}
+            />
+            {supportedVoices.length > 0 && (
+              <datalist id={voiceListId}>
+                {supportedVoices.map((voice) => (
+                  <option key={voice} value={voice} />
+                ))}
+              </datalist>
+            )}
+          </SettingsField>
+        )}
       </div>
     </SettingsPanel>
   );
@@ -282,6 +317,7 @@ export default function SettingsApi() {
       <RoleApiSettings role="narrator" />
       <RoleApiSettings role="utility" />
       <RoleApiSettings role="speechToText" />
+      <RoleApiSettings role="textToSpeech" />
     </SettingsStack>
   );
 }

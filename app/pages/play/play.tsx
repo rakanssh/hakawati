@@ -12,8 +12,15 @@ import {
 import { GameMode, LogEntryMode, LogEntryRole } from "@/types";
 import { usePersistTale, useLoadTale } from "@/hooks/useGameSaves";
 import { toast } from "sonner";
-import { PlayInputControls, PlayLogDisplay } from "@/components/play";
-import { groupLogEntriesIntoBlocks } from "@/lib/play-utils";
+import {
+  PlayInputControls,
+  PlayLogDisplay,
+  TtsPlayer,
+} from "@/components/play";
+import {
+  getAutoNarrationItem,
+  groupLogEntriesIntoBlocks,
+} from "@/lib/play-utils";
 import { Outlet } from "@tanstack/react-router";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
@@ -21,6 +28,7 @@ import { useStickToBottom } from "@/hooks/useStickToBottom";
 import { useZoom } from "@/hooks/useZoom";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { usePlaySession } from "@/hooks/usePlaySession";
+import { useTtsPlayback } from "@/hooks/useTtsPlayback";
 import { Trans, useLingui } from "@lingui/react/macro";
 
 export default function Play() {
@@ -40,6 +48,7 @@ export default function Play() {
 
   const { fontSize, setFontSize } = useSettingsStore();
   const narratorConfig = useSettingsStore((state) => state.modelRoles.narrator);
+  const autoNarrate = useSettingsStore((state) => state.autoNarrate);
   const { isMobilePlatform } = useIsMobile();
   const { lastPlayedTaleId } = useLastPlayedStore();
   const { load, loading: isLoadingTale } = useLoadTale();
@@ -51,6 +60,8 @@ export default function Play() {
 
   const lastTaleIdRef = useRef(taleId);
   const hasAutoSentRef = useRef(false);
+  const autoNarratedEntryIdsRef = useRef<Set<string>>(new Set());
+  const autoNarrationInitializedRef = useRef(false);
 
   const {
     input,
@@ -65,6 +76,18 @@ export default function Play() {
     handleStop,
     executeLlmSend,
   } = usePlaySession();
+
+  const ttsPlayback = useTtsPlayback({
+    taleId,
+    onError: (error) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : t`Failed to generate narration audio.`;
+      toast.error(message);
+    },
+  });
+  const enqueueNarration = ttsPlayback.enqueue;
 
   const {
     stickToBottom,
@@ -125,6 +148,8 @@ export default function Play() {
   useEffect(() => {
     if (lastTaleIdRef.current !== taleId) {
       hasAutoSentRef.current = false;
+      autoNarratedEntryIdsRef.current = new Set();
+      autoNarrationInitializedRef.current = false;
       lastTaleIdRef.current = taleId;
     }
 
@@ -167,6 +192,31 @@ export default function Play() {
 
   const blocks = useMemo(() => groupLogEntriesIntoBlocks(log), [log]);
 
+  useEffect(() => {
+    if (loading || isLoadingTale) return;
+
+    const narratableEntries = log
+      .map((entry) => ({ entry, item: getAutoNarrationItem(entry) }))
+      .filter((candidate) => candidate.item !== null);
+
+    if (!autoNarrationInitializedRef.current) {
+      narratableEntries.forEach(({ entry }) =>
+        autoNarratedEntryIdsRef.current.add(entry.id),
+      );
+      autoNarrationInitializedRef.current = true;
+      return;
+    }
+
+    for (const { entry, item } of narratableEntries) {
+      if (autoNarratedEntryIdsRef.current.has(entry.id)) continue;
+      autoNarratedEntryIdsRef.current.add(entry.id);
+      if (!autoNarrate) continue;
+      if (!item) continue;
+
+      enqueueNarration(item);
+    }
+  }, [autoNarrate, enqueueNarration, isLoadingTale, loading, log]);
+
   const renderMainContent = () => {
     if (isLoadingTale) {
       return (
@@ -190,6 +240,11 @@ export default function Play() {
           viewportRef={viewportRef}
           bottomRef={bottomRef}
           onViewportScroll={handleScroll}
+          narration={{
+            activeItemId: ttsPlayback.activeItemId,
+            loadingItemId: ttsPlayback.loadingItemId,
+            onNarrate: ttsPlayback.playNow,
+          }}
         />
         <PlayInputControls
           action={action}
@@ -202,6 +257,16 @@ export default function Play() {
           saving={saving}
           onContinue={handleContinue}
           onRetry={handleRetry}
+        />
+        <TtsPlayer
+          visible={ttsPlayback.isVisible}
+          status={ttsPlayback.status}
+          currentTime={ttsPlayback.currentTime}
+          duration={ttsPlayback.duration}
+          onPause={ttsPlayback.pause}
+          onResume={ttsPlayback.resume}
+          onSeek={ttsPlayback.seek}
+          onStop={ttsPlayback.stop}
         />
         {showZoomIndicator && (
           <div

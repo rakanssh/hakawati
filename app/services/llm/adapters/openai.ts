@@ -2,6 +2,8 @@ import { ResponseMode } from "@/types/api.type";
 import {
   AudioTranscriptionRequest,
   AudioTranscriptionResponse,
+  AudioSpeechRequest,
+  AudioSpeechResponse,
   LLMClient,
   ChatRequest,
   ChatResponse,
@@ -117,7 +119,9 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
     const modelPath =
       isOpenRouter && connection.role === "speechToText"
         ? "/models?output_modalities=transcription"
-        : "/models";
+        : isOpenRouter && connection.role === "textToSpeech"
+          ? "/models?output_modalities=speech"
+          : "/models";
     console.debug(`Fetching models from ${base}${modelPath}`);
     const headers: HeadersInit = {
       "HTTP-Referer": "https://github.com/rakanssh/hakawati",
@@ -168,6 +172,11 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
         supportsResponseFormat:
           supportedParameters?.includes("response_format"),
         supportsToolCalls,
+        supportedVoices: Array.isArray(model.supported_voices)
+          ? model.supported_voices.filter(
+              (voice: unknown): voice is string => typeof voice === "string",
+            )
+          : undefined,
       } satisfies LLMModel;
     });
   }
@@ -251,7 +260,46 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
     return { text, raw: json };
   }
 
-  return { chat, models, transcribeAudio };
+  async function synthesizeSpeech(
+    req: AudioSpeechRequest,
+    signal?: AbortSignal,
+  ): Promise<AudioSpeechResponse> {
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://github.com/rakanssh/hakawati",
+      "X-Title": "Hakawati",
+      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+    };
+
+    const r = await fetch(`${base}/audio/speech`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: req.model,
+        input: req.input,
+        voice: req.voice,
+        response_format: req.response_format ?? "mp3",
+      }),
+      signal,
+    });
+
+    if (!r.ok) {
+      throw new Error(await readErrorMessage(r, "Speech synthesis failed"));
+    }
+
+    const buffer = await r.arrayBuffer();
+    if (buffer.byteLength === 0) {
+      throw new Error("Speech synthesis returned no audio.");
+    }
+    const contentType = r.headers.get("content-type") || "audio/mpeg";
+
+    return {
+      audio: new Blob([buffer], { type: contentType }),
+      raw: r,
+    };
+  }
+
+  return { chat, models, transcribeAudio, synthesizeSpeech };
 }
 
 function audioFormatFromBlob(blob: Blob): string {
@@ -312,4 +360,51 @@ function readBlobWithFileReader(blob: Blob): Promise<ArrayBuffer> {
       reject(reader.error ?? new Error("Could not read audio data."));
     reader.readAsArrayBuffer(blob);
   });
+}
+
+async function readErrorMessage(
+  response: Response,
+  fallback: string,
+): Promise<string> {
+  const text = await response.text().catch(() => "");
+  if (text.trim()) {
+    try {
+      const json = JSON.parse(text) as unknown;
+      const message = extractErrorMessage(json);
+      if (message) return message;
+    } catch {
+      return text;
+    }
+    return text;
+  }
+
+  const generationId = response.headers.get("x-generation-id");
+  return [
+    fallback,
+    `(${response.status} ${response.statusText || "Error"})`,
+    generationId ? `generation ${generationId}` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function extractErrorMessage(value: unknown): string | null {
+  if (!value || typeof value !== "object") return null;
+  const obj = value as Record<string, unknown>;
+  const error = obj.error;
+  if (typeof error === "string") return error;
+  if (error && typeof error === "object") {
+    const errorObj = error as Record<string, unknown>;
+    const metadata = errorObj.metadata;
+    if (metadata && typeof metadata === "object") {
+      const metadataObj = metadata as Record<string, unknown>;
+      if (typeof metadataObj.raw === "string") return metadataObj.raw;
+    }
+    if (typeof errorObj.message === "string") return errorObj.message;
+    if (typeof errorObj.detail === "string") return errorObj.detail;
+    if (typeof errorObj.code === "string") return errorObj.code;
+  }
+  if (typeof obj.message === "string") return obj.message;
+  if (typeof obj.detail === "string") return obj.detail;
+  return null;
 }
