@@ -89,7 +89,7 @@ function Shelf({ title, action, children }: ShelfProps) {
           {action}
         </div>
       </div>
-      <div className="-mx-3 flex snap-x gap-2 overflow-x-auto px-3 pb-1.5 sm:mx-0 sm:px-0 lg:gap-3">
+      <div className="flex snap-x gap-2 overflow-x-auto px-2 pb-1.5 sm:px-0 lg:gap-3">
         {children}
       </div>
     </section>
@@ -98,7 +98,7 @@ function Shelf({ title, action, children }: ShelfProps) {
 
 function ShelfState({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-32 w-[76vw] max-w-72 shrink-0 snap-start items-center justify-center border border-dashed border-border/80 bg-card/35 p-3 text-center text-sm text-muted-foreground sm:w-64 lg:w-72">
+    <div className="flex min-h-28 w-[60vw] max-w-56 shrink-0 snap-start items-center justify-center border border-dashed border-border/80 bg-card/35 p-2.5 text-center text-sm text-muted-foreground sm:min-h-32 sm:w-60 sm:max-w-64 sm:p-3 lg:w-64">
       {children}
     </div>
   );
@@ -115,7 +115,7 @@ function PreviewImage({
     <img
       src={thumbnail ? bytesToObjectUrl(thumbnail) : placeholderImage}
       alt={alt}
-      className="h-24 w-full object-cover sm:h-28"
+      className="h-20 w-full object-cover sm:h-28"
     />
   );
 }
@@ -134,7 +134,7 @@ function TaleCard({
   const { t } = useLingui();
 
   return (
-    <Card className="w-[76vw] max-w-72 shrink-0 snap-start gap-0 overflow-hidden py-0 sm:w-64 lg:w-72">
+    <Card className="w-[60vw] max-w-56 shrink-0 snap-start gap-0 overflow-hidden py-0 sm:w-60 sm:max-w-64 lg:w-64">
       <CardHeader className="p-0">
         <div className="relative">
           <PreviewImage thumbnail={tale.thumbnail} alt={t`${tale.name} tale`} />
@@ -150,7 +150,7 @@ function TaleCard({
           </Tooltip>
         </div>
       </CardHeader>
-      <CardContent className="flex min-h-32 flex-col gap-2 p-2.5">
+      <CardContent className="flex min-h-28 flex-col gap-1.5 p-2 sm:min-h-32 sm:gap-2 sm:p-2.5">
         <div className="min-w-0">
           <div className="flex items-start gap-1.5">
             <h3 className="min-w-0 flex-1 truncate font-semibold">
@@ -193,7 +193,7 @@ function ScenarioCard({
   const { t } = useLingui();
 
   return (
-    <Card className="w-[76vw] max-w-72 shrink-0 snap-start gap-0 overflow-hidden py-0 sm:w-64 lg:w-72">
+    <Card className="w-[60vw] max-w-56 shrink-0 snap-start gap-0 overflow-hidden py-0 sm:w-60 sm:max-w-64 lg:w-64">
       <CardHeader className="p-0">
         <div className="relative">
           <PreviewImage
@@ -214,7 +214,7 @@ function ScenarioCard({
           </Tooltip>
         </div>
       </CardHeader>
-      <CardContent className="flex min-h-32 flex-col gap-2 p-2.5">
+      <CardContent className="flex min-h-28 flex-col gap-1.5 p-2 sm:min-h-32 sm:gap-2 sm:p-2.5">
         <div className="min-w-0">
           <h3 className="truncate font-semibold">{scenario.name}</h3>
           <p className="mt-1 line-clamp-2 min-h-10 text-sm text-muted-foreground">
