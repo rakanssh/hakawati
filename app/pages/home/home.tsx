@@ -606,36 +606,6 @@ export default function Home() {
               </ul>
             </AccordionContent>
           </AccordionItem>
-
-          <AccordionItem value="llms">
-            <AccordionTrigger>
-              <Trans>Supported Providers</Trans>
-            </AccordionTrigger>
-            <AccordionContent>
-              <ul className="list-disc space-y-1 pl-4 text-sm">
-                <li>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="font-bold underline">
-                        <Trans>OpenAI-compatible</Trans>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <Trans>
-                        Works with any OpenAI-compatible API (cloud or local).
-                      </Trans>
-                    </TooltipContent>
-                  </Tooltip>
-                </li>
-                <li>
-                  <Trans>Examples (cloud): OpenRouter, OpenAI.</Trans>
-                </li>
-                <li>
-                  <Trans>Examples (local): Ollama, LocalAI, LLM Studio.</Trans>
-                </li>
-              </ul>
-            </AccordionContent>
-          </AccordionItem>
         </Accordion>
       </div>
 
