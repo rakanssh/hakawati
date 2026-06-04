@@ -1,4 +1,9 @@
-import { useState, useCallback } from "react";
+import {
+  useState,
+  useCallback,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import { useTaleStore } from "@/store/useTaleStore";
@@ -18,7 +23,7 @@ interface UsePlaySessionOptions {
 
 interface UsePlaySessionReturn {
   input: string;
-  setInput: (value: string) => void;
+  setInput: Dispatch<SetStateAction<string>>;
   action: Action;
   setAction: (action: Action) => void;
   loading: boolean;

@@ -1,17 +1,33 @@
 import { ResponseMode } from "@/types/api.type";
-import { LLMClient, ChatRequest, ChatResponse, LLMModel } from "../schema";
+import {
+  AudioTranscriptionRequest,
+  AudioTranscriptionResponse,
+  LLMClient,
+  ChatRequest,
+  ChatResponse,
+  LLMModel,
+} from "../schema";
 import { parseOpenAIStream } from "../streaming";
 import { fetch } from "@tauri-apps/plugin-http";
 import { GM_TOOLS, ToolCall } from "../tools";
+import { ModelRole } from "@/types";
 
 export interface OpenAiConnection {
   baseUrl: string;
   apiKey?: string;
+  role?: ModelRole;
 }
 
 export function OpenAiClient(connection: OpenAiConnection): LLMClient {
   const base = connection.baseUrl.replace(/\/$/, "");
   const apiKey = connection.apiKey?.trim();
+  const isOpenRouter = (() => {
+    try {
+      return new URL(base).hostname === "openrouter.ai";
+    } catch {
+      return false;
+    }
+  })();
 
   async function chat(
     req: ChatRequest,
@@ -98,13 +114,17 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
   }
 
   async function models(signal?: AbortSignal): Promise<LLMModel[]> {
-    console.debug(`Fetching models from ${base}/models`);
+    const modelPath =
+      isOpenRouter && connection.role === "speechToText"
+        ? "/models?output_modalities=transcription"
+        : "/models";
+    console.debug(`Fetching models from ${base}${modelPath}`);
     const headers: HeadersInit = {
       "HTTP-Referer": "https://github.com/rakanssh/hakawati",
       "X-Title": "Hakawati",
       ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
     };
-    const r = await fetch(`${base}/models`, {
+    const r = await fetch(`${base}${modelPath}`, {
       method: "GET",
       headers,
       signal,
@@ -112,12 +132,11 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
     if (!r.ok) {
       const errorText = await r.text().catch(() => "");
       console.error(`Models fetch failed (${r.status}):`, errorText);
-      console.error("Request URL:", `${base}/models`);
+      console.error("Request URL:", `${base}${modelPath}`);
       console.error("Request headers:", headers);
       throw new Error(errorText || `Failed to fetch models (${r.status})`);
     }
     const json = await r.json();
-    console.log(json);
     // Allow providers that return minimal model info
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data: any[] = Array.isArray(json?.data)
@@ -152,5 +171,145 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
       } satisfies LLMModel;
     });
   }
-  return { chat, models };
+
+  async function transcribeAudio(
+    req: AudioTranscriptionRequest,
+    signal?: AbortSignal,
+  ): Promise<AudioTranscriptionResponse> {
+    if (isOpenRouter) {
+      return transcribeOpenRouterAudio(req, signal);
+    }
+
+    const form = new FormData();
+    form.append("file", req.file, req.filename ?? "speech.webm");
+    form.append("model", req.model);
+    form.append("response_format", req.response_format ?? "json");
+
+    const headers: HeadersInit = {
+      "HTTP-Referer": "https://github.com/rakanssh/hakawati",
+      "X-Title": "Hakawati",
+      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+    };
+
+    const r = await fetch(`${base}/audio/transcriptions`, {
+      method: "POST",
+      headers,
+      body: form,
+      signal,
+    });
+
+    if (!r.ok) {
+      throw new Error(await r.text());
+    }
+
+    const json = await r.json();
+    const text = typeof json?.text === "string" ? json.text.trim() : "";
+    if (!text) {
+      throw new Error("Transcription returned no text.");
+    }
+
+    return { text, raw: json };
+  }
+
+  async function transcribeOpenRouterAudio(
+    req: AudioTranscriptionRequest,
+    signal?: AbortSignal,
+  ): Promise<AudioTranscriptionResponse> {
+    const format = audioFormatFromBlob(req.file);
+    const body = {
+      model: req.model,
+      input_audio: {
+        data: await blobToBase64(req.file),
+        format,
+      },
+    };
+
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://github.com/rakanssh/hakawati",
+      "X-Title": "Hakawati",
+      ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+    };
+
+    const r = await fetch(`${base}/audio/transcriptions`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+      signal,
+    });
+
+    if (!r.ok) {
+      throw new Error(await r.text());
+    }
+
+    const json = await r.json();
+    const text = typeof json?.text === "string" ? json.text.trim() : "";
+    if (!text) {
+      throw new Error("Transcription returned no text.");
+    }
+
+    return { text, raw: json };
+  }
+
+  return { chat, models, transcribeAudio };
+}
+
+function audioFormatFromBlob(blob: Blob): string {
+  const mime = blob.type.split(";")[0].toLowerCase();
+  switch (mime) {
+    case "audio/wav":
+    case "audio/wave":
+    case "audio/x-wav":
+      return "wav";
+    case "audio/mpeg":
+    case "audio/mp3":
+      return "mp3";
+    case "audio/flac":
+      return "flac";
+    case "audio/mp4":
+    case "audio/m4a":
+      return "m4a";
+    case "audio/ogg":
+      return "ogg";
+    case "audio/aac":
+      return "aac";
+    case "audio/webm":
+    default:
+      return "webm";
+  }
+}
+
+async function blobToBase64(blob: Blob): Promise<string> {
+  const readableBlob = blob as Blob & {
+    arrayBuffer?: () => Promise<ArrayBuffer>;
+  };
+  const buffer =
+    typeof readableBlob.arrayBuffer === "function"
+      ? await readableBlob.arrayBuffer()
+      : typeof FileReader !== "undefined"
+        ? await readBlobWithFileReader(blob)
+        : await new Response(blob).arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
+}
+
+function readBlobWithFileReader(blob: Blob): Promise<ArrayBuffer> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (reader.result instanceof ArrayBuffer) {
+        resolve(reader.result);
+      } else {
+        reject(new Error("Could not read audio data."));
+      }
+    };
+    reader.onerror = () =>
+      reject(reader.error ?? new Error("Could not read audio data."));
+    reader.readAsArrayBuffer(blob);
+  });
 }

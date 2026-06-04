@@ -46,6 +46,7 @@ function getClient(role: ModelRole) {
   return OpenAiClient({
     baseUrl: config.baseUrl,
     apiKey: config.apiKey || undefined,
+    role,
   });
 }
 
@@ -70,4 +71,17 @@ export async function sendRoleChat(
 
 export async function getRoleModels(role: ModelRole, signal?: AbortSignal) {
   return getClient(role).models(signal);
+}
+
+export async function transcribeSpeech(audio: Blob, signal?: AbortSignal) {
+  const { model } = resolveModelRole("speechToText");
+  return getClient("speechToText").transcribeAudio(
+    {
+      model: model.id,
+      file: audio,
+      filename: "speech.wav",
+      response_format: "json",
+    },
+    signal,
+  );
 }

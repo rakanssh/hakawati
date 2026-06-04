@@ -24,6 +24,41 @@ import {
   SettingsStack,
 } from "@/components/layout/settings/settings-layout";
 
+function RoleTitle({ role }: { role: ModelRole }) {
+  switch (role) {
+    case "narrator":
+      return <Trans>Narrator</Trans>;
+    case "utility":
+      return <Trans>Utility</Trans>;
+    case "speechToText":
+      return <Trans>Speech to Text</Trans>;
+    case "textToSpeech":
+      return <Trans>Text to Speech</Trans>;
+  }
+}
+
+function RoleHelp({ role }: { role: ModelRole }) {
+  switch (role) {
+    case "narrator":
+      return <Trans>This model is used to generate story.</Trans>;
+    case "utility":
+      return (
+        <Trans>
+          This model is used for miscellaneous actions like generating scenarios
+          and story cards.
+        </Trans>
+      );
+    case "speechToText":
+      return (
+        <Trans>
+          This model transcribes recorded speech into text for the input box.
+        </Trans>
+      );
+    case "textToSpeech":
+      return <Trans>This model will be used for spoken narration.</Trans>;
+  }
+}
+
 function RoleApiSettings({ role }: { role: ModelRole }) {
   const { t } = useLingui();
   const { _ } = useLinguiCore();
@@ -42,19 +77,11 @@ function RoleApiSettings({ role }: { role: ModelRole }) {
   const isLocalPreset = roleConfig.activePreset === ApiPreset.LOCAL;
   const isEditableUrl =
     apiPresetMap[roleConfig.activePreset]?.editableUrl ?? false;
-  const title = role === "narrator" ? t`Narrator` : t`Utility`;
   const titleWithHelp = (
-    <span className="inline-flex items-center gap-2">
-      {title}
+    <span className="inline-flex items-center gap-2 text-foreground">
+      <RoleTitle role={role} />
       <HelpTooltip>
-        {role === "narrator" ? (
-          <Trans>This model is used to generate story.</Trans>
-        ) : (
-          <Trans>
-            This model is used for miscellaneous actions like generating
-            scenarios and story cards.
-          </Trans>
-        )}
+        <RoleHelp role={role} />
       </HelpTooltip>
     </span>
   );
@@ -244,6 +271,7 @@ export default function SettingsApi() {
     <SettingsStack>
       <RoleApiSettings role="narrator" />
       <RoleApiSettings role="utility" />
+      <RoleApiSettings role="speechToText" />
     </SettingsStack>
   );
 }

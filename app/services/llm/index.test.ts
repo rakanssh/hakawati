@@ -6,7 +6,7 @@ import {
   useSettingsStore,
 } from "@/store/useSettingsStore";
 import { generateScenario } from "./scenarioGenerator";
-import { getRoleModels, sendRoleChat } from ".";
+import { getRoleModels, sendRoleChat, transcribeSpeech } from ".";
 
 const { fetchMock } = vi.hoisted(() => ({
   fetchMock: vi.fn(),
@@ -31,6 +31,11 @@ const utilityModel: LLMModel = {
   name: "Utility Model",
 };
 
+const speechToTextModel: LLMModel = {
+  id: "whisper-model",
+  name: "Whisper Model",
+};
+
 function responseJson(json: unknown) {
   return {
     ok: true,
@@ -53,6 +58,12 @@ function setConfiguredRoles() {
     baseUrl: "https://utility.example/v1",
     apiKey: "utility-key",
     model: utilityModel,
+  };
+  modelRoles.speechToText = {
+    ...modelRoles.speechToText,
+    baseUrl: "https://speech.example/v1",
+    apiKey: "speech-key",
+    model: speechToTextModel,
   };
   useSettingsStore.setState({ modelRoles });
 }
@@ -112,6 +123,38 @@ describe("role-aware LLM service", () => {
     expect(models[0]).toMatchObject({ id: "utility-a", name: "Utility A" });
   });
 
+  it("fetches OpenRouter speech-to-text models with the transcription modality filter", async () => {
+    const modelRoles = createDefaultModelRoles();
+    modelRoles.speechToText = {
+      ...modelRoles.speechToText,
+      baseUrl: "https://openrouter.ai/api/v1",
+      apiKey: "openrouter-key",
+      model: speechToTextModel,
+    };
+    useSettingsStore.setState({ modelRoles });
+    fetchMock.mockResolvedValue(
+      responseJson({
+        data: [{ id: "openai/whisper-1", name: "OpenAI: Whisper" }],
+      }),
+    );
+
+    const models = await getRoleModels("speechToText");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://openrouter.ai/api/v1/models?output_modalities=transcription",
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({
+          Authorization: "Bearer openrouter-key",
+        }),
+      }),
+    );
+    expect(models[0]).toMatchObject({
+      id: "openai/whisper-1",
+      name: "OpenAI: Whisper",
+    });
+  });
+
   it("rejects utility generation when the utility role is missing", async () => {
     const modelRoles = createDefaultModelRoles();
     modelRoles.narrator = {
@@ -126,5 +169,90 @@ describe("role-aware LLM service", () => {
       /utility API URL/,
     );
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("sends transcription requests to the speech-to-text endpoint", async () => {
+    fetchMock.mockResolvedValue(responseJson({ text: "open the door" }));
+
+    const result = await transcribeSpeech(
+      new Blob(["audio"], { type: "audio/webm" }),
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://speech.example/v1/audio/transcriptions",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          Authorization: "Bearer speech-key",
+        }),
+      }),
+    );
+
+    const body = fetchMock.mock.calls[0][1].body as FormData;
+    expect(body.get("model")).toBe("whisper-model");
+    expect(body.get("response_format")).toBe("json");
+    expect(body.get("file")).toBeInstanceOf(Blob);
+    expect(result.text).toBe("open the door");
+  });
+
+  it("sends OpenRouter transcription requests as base64 JSON", async () => {
+    const modelRoles = createDefaultModelRoles();
+    modelRoles.speechToText = {
+      ...modelRoles.speechToText,
+      baseUrl: "https://openrouter.ai/api/v1",
+      apiKey: "openrouter-key",
+      model: { id: "openai/whisper-large-v3", name: "Whisper Large V3" },
+    };
+    useSettingsStore.setState({ modelRoles });
+    fetchMock.mockResolvedValue(responseJson({ text: "speak friend" }));
+
+    const result = await transcribeSpeech(
+      new Blob(["audio"], { type: "audio/webm;codecs=opus" }),
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://openrouter.ai/api/v1/audio/transcriptions",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          Authorization: "Bearer openrouter-key",
+          "Content-Type": "application/json",
+        }),
+      }),
+    );
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body).toEqual({
+      model: "openai/whisper-large-v3",
+      input_audio: {
+        data: "YXVkaW8=",
+        format: "webm",
+      },
+    });
+    expect(result.text).toBe("speak friend");
+  });
+
+  it("rejects transcription when the speech-to-text role is missing", async () => {
+    const modelRoles = createDefaultModelRoles();
+    modelRoles.narrator = {
+      ...modelRoles.narrator,
+      baseUrl: "https://narrator.example/v1",
+      apiKey: "narrator-key",
+      model: narratorModel,
+    };
+    useSettingsStore.setState({ modelRoles });
+
+    await expect(
+      transcribeSpeech(new Blob(["audio"], { type: "audio/webm" })),
+    ).rejects.toThrow(/speechToText API URL/);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects empty transcription responses", async () => {
+    fetchMock.mockResolvedValue(responseJson({ text: "   " }));
+
+    await expect(
+      transcribeSpeech(new Blob(["audio"], { type: "audio/webm" })),
+    ).rejects.toThrow(/no text/i);
   });
 });

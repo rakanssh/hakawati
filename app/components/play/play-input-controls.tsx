@@ -21,19 +21,27 @@ import {
   SaveIcon,
   ChevronUpIcon,
   CheckIcon,
+  Loader2Icon,
+  MicIcon,
 } from "lucide-react";
 import { LogEntryMode } from "@/types/log.type";
 import { ContinueControl, LogControl } from "@/components/play/log";
 import { getPlaceholderMessage, Action } from "@/lib/play-utils";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import {
+  appendTranscriptToInput,
+  useSpeechRecorder,
+} from "@/hooks/useSpeechRecorder";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { toast } from "sonner";
+import type { Dispatch, SetStateAction } from "react";
 
 interface PlayInputControlsProps {
   action: Action;
   setAction: (action: Action) => void;
   input: string;
-  setInput: (input: string) => void;
+  setInput: Dispatch<SetStateAction<string>>;
   onSubmit: () => void;
   onStop?: () => void;
   loading: boolean;
@@ -76,6 +84,18 @@ export function PlayInputControls({
 }: PlayInputControlsProps) {
   const { t } = useLingui();
   const { isMobilePlatform } = useIsMobile();
+  const speechRecorder = useSpeechRecorder({
+    onTranscript: (text) => {
+      setInput((current) => appendTranscriptToInput(current, text));
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : t`Failed to transcribe speech.`;
+      toast.error(message);
+    },
+  });
 
   const currentActionMode = isInputActionMode(action.type)
     ? action.type
@@ -183,6 +203,48 @@ export function PlayInputControls({
     </Tooltip>
   );
 
+  const renderSpeechButton = (className?: string) => {
+    const isRecording = speechRecorder.status === "recording";
+    const isTranscribing = speechRecorder.status === "transcribing";
+    const label = isRecording
+      ? t`Stop recording`
+      : isTranscribing
+        ? t`Transcribing...`
+        : t`Record speech`;
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "!h-9 !w-9 shrink-0 border shadow-none",
+              isRecording
+                ? "border-destructive/45 bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive"
+                : "border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-muted/45 hover:text-foreground",
+              className,
+            )}
+            onClick={speechRecorder.toggle}
+            disabled={(loading || saving || isTranscribing) && !isRecording}
+            aria-label={label}
+          >
+            {isTranscribing ? (
+              <Loader2Icon className="h-4 w-4 animate-spin" />
+            ) : (
+              <MicIcon
+                strokeWidth={1.5}
+                className={cn(isRecording && "animate-pulse")}
+              />
+            )}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="top">{label}</TooltipContent>
+      </Tooltip>
+    );
+  };
+
   const renderTextArea = () => (
     <Textarea
       placeholder={t(getPlaceholderMessage(action))}
@@ -196,7 +258,7 @@ export function PlayInputControls({
         }
       }}
       rows={1}
-      className="max-h-[300px] min-h-12 resize-none border-0 !bg-transparent ps-3 pe-24 py-3 text-sm shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:!bg-transparent"
+      className="max-h-[300px] min-h-12 resize-none border-0 !bg-transparent ps-3 pe-36 py-3 text-sm shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:!bg-transparent"
       aria-label={t`Enter your action`}
     />
   );
@@ -222,6 +284,7 @@ export function PlayInputControls({
     <div className="relative min-h-12 min-w-0 flex-1 overflow-hidden rounded-xs border border-border/75 bg-card/85 shadow-xs transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18">
       {renderTextArea()}
       <div className="absolute bottom-1.5 end-1.5 flex items-center gap-1">
+        {renderSpeechButton()}
         {renderDiceToggle()}
         {renderSubmitButton()}
       </div>
