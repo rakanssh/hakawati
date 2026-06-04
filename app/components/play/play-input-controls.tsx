@@ -157,6 +157,27 @@ export function PlayInputControls({
       toast.error(message);
     },
   });
+  const cancelSpeechRecording = speechRecorder.cancel;
+  const isSpeechRecording = speechRecorder.isRecording;
+
+  useEffect(() => {
+    if (!isSpeechRecording) return;
+
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      cancelSpeechRecording();
+    };
+
+    globalThis.addEventListener("keydown", handleEscapeKey, { capture: true });
+    return () => {
+      globalThis.removeEventListener("keydown", handleEscapeKey, {
+        capture: true,
+      });
+    };
+  }, [cancelSpeechRecording, isSpeechRecording]);
 
   const currentActionMode = isInputActionMode(action.type)
     ? action.type
