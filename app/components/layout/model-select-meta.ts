@@ -7,6 +7,11 @@ function toNumber(value: unknown): number | undefined {
   return Number.isFinite(n) ? (n as number) : undefined;
 }
 
+function toNonNegativeNumber(value: unknown): number | undefined {
+  const n = toNumber(value);
+  return n !== undefined && n >= 0 ? n : undefined;
+}
+
 function formatUSD(value?: number, opts?: Intl.NumberFormatOptions) {
   if (value === undefined) return "—";
   return new Intl.NumberFormat(undefined, {
@@ -18,7 +23,7 @@ function formatUSD(value?: number, opts?: Intl.NumberFormatOptions) {
 }
 
 function formatPerMillionUSDFromPerToken(value: unknown) {
-  const v = toNumber(value);
+  const v = toNonNegativeNumber(value);
   return formatUSD(v !== undefined ? v * 1000000 : undefined, {
     maximumFractionDigits: 3,
   });
@@ -29,8 +34,8 @@ function isLikelyAudioUnitPriced(role: ModelRole, model: LLMModel) {
     return false;
   }
 
-  const prompt = toNumber(model.pricing?.prompt);
-  const completion = toNumber(model.pricing?.completion);
+  const prompt = toNonNegativeNumber(model.pricing?.prompt);
+  const completion = toNonNegativeNumber(model.pricing?.completion);
 
   return (
     prompt !== undefined &&
@@ -48,18 +53,21 @@ export function getModelMetaLabels(m: LLMModel, role: ModelRole): string[] {
 
   if (isLikelyAudioUnitPriced(role, m)) {
     meta.push(
-      `Audio ${formatUSD(toNumber(m.pricing?.prompt), {
+      `Audio ${formatUSD(toNonNegativeNumber(m.pricing?.prompt), {
         maximumFractionDigits: 6,
       })}`,
     );
     return meta;
   }
 
-  if (m.pricing?.prompt !== undefined) {
-    meta.push(`In ${formatPerMillionUSDFromPerToken(m.pricing.prompt)}/M`);
+  const prompt = toNonNegativeNumber(m.pricing?.prompt);
+  const completion = toNonNegativeNumber(m.pricing?.completion);
+
+  if (prompt !== undefined) {
+    meta.push(`In ${formatPerMillionUSDFromPerToken(prompt)}/M`);
   }
-  if (m.pricing?.completion !== undefined) {
-    meta.push(`Out ${formatPerMillionUSDFromPerToken(m.pricing.completion)}/M`);
+  if (completion !== undefined) {
+    meta.push(`Out ${formatPerMillionUSDFromPerToken(completion)}/M`);
   }
   return meta;
 }

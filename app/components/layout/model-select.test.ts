@@ -40,4 +40,21 @@ describe("getModelMetaLabels", () => {
       "Out $10.00/M",
     ]);
   });
+
+  it("ignores negative pricing sentinels from provider metadata", () => {
+    const model: LLMModel = {
+      id: "openrouter/pareto-code",
+      name: "Pareto Code Router",
+      contextLength: 2000000,
+      pricing: {
+        prompt: -1,
+        completion: -1,
+        request: 0,
+        image: 0,
+        audio: 0,
+      },
+    };
+
+    expect(getModelMetaLabels(model, "utility")).toEqual(["2,000,000 tk"]);
+  });
 });
