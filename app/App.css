@@ -88,6 +88,11 @@
   --app-texture-size: 18px 18px;
   --app-texture-opacity: 0.08;
   --app-texture-blend-mode: normal;
+  --play-log-background: transparent;
+  --play-log-overlay-image: none;
+  --play-log-overlay-size: auto;
+  --play-log-overlay-opacity: 0;
+  --play-log-overlay-blend-mode: normal;
   --background: oklch(0.976 0.005 80);
   --foreground: oklch(0.235 0.014 248);
   --card: oklch(0.998 0.002 80);
@@ -163,6 +168,11 @@
   --app-texture-size: 20px 20px;
   --app-texture-opacity: 0.06;
   --app-texture-blend-mode: screen;
+  --play-log-background: transparent;
+  --play-log-overlay-image: none;
+  --play-log-overlay-size: auto;
+  --play-log-overlay-opacity: 0;
+  --play-log-overlay-blend-mode: normal;
   --background: oklch(0.158 0.008 260);
   --foreground: oklch(0.91 0.01 265);
   --card: oklch(0.202 0.01 260);
@@ -264,6 +274,15 @@
   --app-texture-size: 180px 100%, 72px 100%, 100% 176px, 100% 100%;
   --app-texture-opacity: 0.38;
   --app-texture-blend-mode: multiply;
+  --play-log-background: color-mix(
+    in oklch,
+    var(--background) 84%,
+    transparent
+  );
+  --play-log-overlay-image: var(--app-texture-image);
+  --play-log-overlay-size: var(--app-texture-size);
+  --play-log-overlay-opacity: calc(var(--app-texture-opacity) * 0.9);
+  --play-log-overlay-blend-mode: var(--app-texture-blend-mode);
   --background: oklch(0.88 0.021 88);
   --foreground: oklch(0.22 0.024 78);
   --card: oklch(0.935 0.018 88);
@@ -321,12 +340,12 @@
   --app-surface-gradient:
     radial-gradient(
       1040px 690px at 18% 6%,
-      oklch(0.58 0.105 316 / 14%),
+      oklch(38.453% 0.16731 313.685 / 0.14),
       transparent 62%
     ),
     radial-gradient(
       780px 480px at 46% 24%,
-      oklch(0.62 0.09 306 / 8%),
+      oklch(0.59 0.09 306 / 8%),
       transparent 70%
     ),
     radial-gradient(
@@ -339,21 +358,19 @@
       oklch(0.3 0.048 260 / 14%),
       transparent 73%
     );
-  --app-texture-image:
-    radial-gradient(
-      circle at 2px 2px,
-      oklch(0.92 0.032 282 / 18%) 0.55px,
-      transparent 0
-    ),
-    radial-gradient(
-      circle at 18px 11px,
-      oklch(0.82 0.066 325 / 14%) 0.5px,
-      transparent 0
-    ),
-    radial-gradient(ellipse at center, transparent, oklch(0.04 0.012 285 / 18%));
-  --app-texture-size: 31px 31px, 47px 47px, 100% 100%;
-  --app-texture-opacity: 0.28;
-  --app-texture-blend-mode: screen;
+  --app-texture-image: none;
+  --app-texture-size: auto;
+  --app-texture-opacity: 0;
+  --app-texture-blend-mode: normal;
+  --play-log-background: color-mix(
+    in oklch,
+    var(--background) 78%,
+    transparent
+  );
+  --play-log-overlay-image: var(--app-surface-gradient);
+  --play-log-overlay-size: auto;
+  --play-log-overlay-opacity: 1;
+  --play-log-overlay-blend-mode: screen;
   --background: oklch(0.118 0.016 282);
   --foreground: oklch(0.9 0.014 270);
   --card: oklch(0.17 0.02 282);
@@ -439,63 +456,25 @@
   }
 }
 
-.theme-bamboo .play-log-texture {
-  background-color: color-mix(in oklch, var(--background) 84%, transparent);
+.play-log-texture {
+  background-color: var(--play-log-background);
   isolation: isolate;
 }
 
-.theme-bamboo .play-log-texture::before {
+.play-log-texture::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-image: var(--app-texture-image);
-  background-size: var(--app-texture-size);
-  mix-blend-mode: var(--app-texture-blend-mode);
-  opacity: calc(var(--app-texture-opacity) * 0.9);
+  background-image: var(--play-log-overlay-image);
+  background-size: var(--play-log-overlay-size);
+  mix-blend-mode: var(--play-log-overlay-blend-mode);
+  opacity: var(--play-log-overlay-opacity);
 }
 
-.theme-bamboo .play-log-texture [data-slot="scroll-area-viewport"],
-.theme-bamboo .play-log-texture [data-slot="scroll-area-scrollbar"] {
-  position: relative;
-  z-index: 1;
-}
-
-.theme-cosmos .play-log-texture {
-  background-color: color-mix(in oklch, var(--background) 78%, transparent);
-  isolation: isolate;
-}
-
-.theme-cosmos .play-log-texture::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image:
-    radial-gradient(
-      860px 520px at 24% 12%,
-      oklch(0.58 0.105 316 / 24%),
-      transparent 64%
-    ),
-    radial-gradient(
-      700px 440px at 62% 32%,
-      oklch(0.62 0.09 306 / 14%),
-      transparent 72%
-    ),
-    var(--app-texture-image);
-  background-size:
-    100% 100%,
-    100% 100%,
-    var(--app-texture-size);
-  background-repeat: no-repeat, no-repeat, repeat, repeat, no-repeat;
-  mix-blend-mode: screen;
-  opacity: calc(var(--app-texture-opacity) * 1.25);
-}
-
-.theme-cosmos .play-log-texture [data-slot="scroll-area-viewport"],
-.theme-cosmos .play-log-texture [data-slot="scroll-area-scrollbar"] {
+.play-log-texture [data-slot="scroll-area-viewport"],
+.play-log-texture [data-slot="scroll-area-scrollbar"] {
   position: relative;
   z-index: 1;
 }
