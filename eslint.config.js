@@ -5,11 +5,19 @@ import reactPlugin from "eslint-plugin-react";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
 
 export default tseslint.config(
+  {
+    ignores: [
+      "build/**",
+      "dist/**",
+      "node_modules/**",
+      "src-tauri/**",
+      "scripts/**/*.cjs",
+    ],
+  },
   eslint.configs.recommended, // ESLint's recommended rules
   ...tseslint.configs.recommended, // TypeScript-ESLint's recommended rules
   {
     files: ["**/*.{js,jsx,ts,tsx}"], // Apply to JS, JSX, TS, TSX files
-    ignores: ["dist/**", "src-tauri/**", "**/target/**", "**/node_modules/**"],
     plugins: {
       react: reactPlugin,
       "react-hooks": reactHooksPlugin,

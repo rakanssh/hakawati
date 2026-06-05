@@ -15,6 +15,10 @@ All notable changes to this project are documented in this file.
 
 - Adjusted theme colors.
 
+### Fixed
+
+- Cleaned up prompt metadata formatting and empty GM state context.
+
 ## [v0.13.0] - 2026-03-24
 
 ### Added

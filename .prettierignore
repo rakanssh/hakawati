@@ -1,5 +1,7 @@
+build
 dist
+.kiro
 node_modules
+src-tauri/about.hbs
 src-tauri/target
 src-tauri/gen
-

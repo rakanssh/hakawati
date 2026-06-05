@@ -19,6 +19,10 @@ interface CachedNarrationAudio {
   duration: number;
 }
 
+type AudioContextFactory =
+  | (new (contextOptions?: AudioContextOptions) => AudioContext)
+  | ((contextOptions?: AudioContextOptions) => AudioContext);
+
 const sessionAudioCache = new Map<string, CachedNarrationAudio>();
 
 interface PlaybackState {
@@ -70,26 +74,71 @@ function isAbortError(error: unknown): boolean {
   return typeof error === "string" && /abort|cancel/i.test(error);
 }
 
+async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
+  if (typeof blob.arrayBuffer === "function") {
+    return blob.arrayBuffer();
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      if (reader.result instanceof ArrayBuffer) {
+        resolve(reader.result);
+        return;
+      }
+      reject(new Error("Could not read synthesized audio."));
+    });
+    reader.addEventListener("error", () => {
+      reject(reader.error ?? new Error("Could not read synthesized audio."));
+    });
+    reader.readAsArrayBuffer(blob);
+  });
+}
+
 async function createSeekableAudio(audio: Blob): Promise<CachedNarrationAudio> {
-  const globalAudioContext =
-    "AudioContext" in globalThis ? globalThis.AudioContext : undefined;
-  const AudioContextConstructor = globalAudioContext
-    ? globalAudioContext
-    : typeof window !== "undefined"
+  const globalAudioContext: AudioContextFactory | undefined =
+    "AudioContext" in globalThis
+      ? (globalThis.AudioContext as AudioContextFactory | undefined)
+      : undefined;
+  const windowAudioContext: AudioContextFactory | undefined =
+    typeof window !== "undefined"
+      ? ((window as Window & typeof globalThis).AudioContext as
+          | AudioContextFactory
+          | undefined)
+      : undefined;
+  const webkitAudioContext: AudioContextFactory | undefined =
+    typeof window !== "undefined"
       ? (
           window as Window &
-            typeof globalThis & { webkitAudioContext?: typeof AudioContext }
+            typeof globalThis & {
+              webkitAudioContext?: AudioContextFactory;
+            }
         ).webkitAudioContext
       : undefined;
+  const AudioContextConstructor = globalAudioContext
+    ? globalAudioContext
+    : (windowAudioContext ?? webkitAudioContext);
 
-  if (!AudioContextConstructor || typeof audio.arrayBuffer !== "function") {
+  if (!AudioContextConstructor) {
     return { audio, duration: 0 };
   }
 
   let context: AudioContext | null = null;
   try {
-    context = new AudioContextConstructor();
-    const buffer = await context.decodeAudioData(await audio.arrayBuffer());
+    try {
+      context = new (AudioContextConstructor as new (
+        contextOptions?: AudioContextOptions,
+      ) => AudioContext)();
+    } catch {
+      context = (
+        AudioContextConstructor as (
+          contextOptions?: AudioContextOptions,
+        ) => AudioContext
+      )();
+    }
+    const buffer = await context.decodeAudioData(
+      await blobToArrayBuffer(audio),
+    );
     const duration =
       Number.isFinite(buffer.duration) && buffer.duration > 0
         ? buffer.duration

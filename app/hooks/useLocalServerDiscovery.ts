@@ -69,7 +69,7 @@ async function probeOpenAICompatible(
         requiresAuth: true,
       };
     }
-  } catch (error) {
+  } catch {
     return null;
   }
   return null;

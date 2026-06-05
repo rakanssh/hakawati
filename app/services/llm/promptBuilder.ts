@@ -78,12 +78,17 @@ export async function buildMessage(
       .map((i) => (i.description ? `${i.name}: ${i.description}` : i.name))
       .join("\n  ");
 
+  const statsBlock =
+    stats.length === 0 ? "- Stats: []" : `- Stats:\n  ${formatStats(stats)}`;
+  const inventoryBlock =
+    inventory.length === 0
+      ? "- Inventory: []"
+      : `- Inventory:\n  ${formatInventory(inventory)}`;
+
   const gameState = `
 **Game State:**
-- Stats:
-  ${formatStats(stats)}
-- Inventory:
-  ${formatInventory(inventory)}
+${statsBlock}
+${inventoryBlock}
 `;
   const userMessageContent = injectMode(lastMessage.text, lastMessage.mode);
   const userMessage =
@@ -99,9 +104,10 @@ export async function buildMessage(
   const requiredMeta: ChatMessage[] = [
     {
       role: "system",
-      content: `${systemPrompt} - ${description ? "\n\nThe story is: " + description : ""}`,
+      content: systemPrompt,
     },
   ];
+  if (description) requiredMeta.push({ role: "system", content: description });
   if (authorNote) requiredMeta.push({ role: "system", content: authorNote });
   if (lastMessage.mode === LogEntryMode.CONTINUE) {
     requiredMeta.push({
