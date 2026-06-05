@@ -8,6 +8,13 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 
 const titlebarButtonClass = "h-7 w-7 rounded-xs p-0";
 
+async function getAppWindow() {
+  const { getCurrentWebviewWindow } = await import(
+    "@tauri-apps/api/webviewWindow"
+  );
+  return getCurrentWebviewWindow();
+}
+
 export function Titlebar() {
   const navigate = useNavigate();
   const routerState = useRouterState();
@@ -18,35 +25,29 @@ export function Titlebar() {
   return (
     <div
       dir="ltr"
-      data-tauri-drag-region
-      className="titlebar-drag fixed top-0 left-0 right-0 z-50 h-8 bg-background border-b"
+      className="fixed top-0 left-0 right-0 z-50 h-8 bg-background border-b"
     >
-      <div className="grid grid-cols-3 items-center h-full px-2 select-none pointer-events-none">
-        <div className="flex items-center gap-1">
+      <div data-tauri-drag-region className="titlebar-drag absolute inset-0" />
+      <div className="relative grid grid-cols-3 items-center h-full px-2 select-none pointer-events-none">
+        <div className="titlebar-no-drag pointer-events-auto flex items-center gap-1">
           {isShowButtons && (
             <>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="titlebar-no-drag pointer-events-auto">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={titlebarButtonClass}
-                      onClick={() => navigate({ to: "/" })}
-                    >
-                      <HomeIcon className="" />
-                    </Button>
-                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={titlebarButtonClass}
+                    onClick={() => navigate({ to: "/" })}
+                  >
+                    <HomeIcon className="" />
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent side="top">Home</TooltipContent>
               </Tooltip>
-              <span className="titlebar-no-drag pointer-events-auto">
-                <SettingsButton className={titlebarButtonClass} />
-              </span>
+              <SettingsButton className={titlebarButtonClass} />
               {isPlayRoute && (
-                <span className="titlebar-no-drag pointer-events-auto">
-                  <TaleSettingsButton className={titlebarButtonClass} />
-                </span>
+                <TaleSettingsButton className={titlebarButtonClass} />
               )}
             </>
           )}
@@ -66,10 +67,8 @@ export function Titlebar() {
             className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-foreground/10 text-foreground/80 hover:text-foreground"
             onClick={async () => {
               if (typeof window === "undefined") return;
-              const { getCurrentWebviewWindow } = await import(
-                "@tauri-apps/api/webviewWindow"
-              );
-              await getCurrentWebviewWindow().minimize();
+              const appWindow = await getAppWindow();
+              await appWindow.minimize();
             }}
           >
             <MinusIcon className="w-4 h-4" />
@@ -79,10 +78,7 @@ export function Titlebar() {
             className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-foreground/10 text-foreground/80 hover:text-foreground"
             onClick={async () => {
               if (typeof window === "undefined") return;
-              const { getCurrentWebviewWindow } = await import(
-                "@tauri-apps/api/webviewWindow"
-              );
-              const appWindow = getCurrentWebviewWindow();
+              const appWindow = await getAppWindow();
               const isMax = await appWindow.isMaximized();
               if (isMax) {
                 await appWindow.unmaximize();
@@ -98,10 +94,8 @@ export function Titlebar() {
             className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-foreground/10 text-foreground/80 hover:text-foreground"
             onClick={async () => {
               if (typeof window === "undefined") return;
-              const { getCurrentWebviewWindow } = await import(
-                "@tauri-apps/api/webviewWindow"
-              );
-              await getCurrentWebviewWindow().close();
+              const appWindow = await getAppWindow();
+              await appWindow.close();
             }}
           >
             <XIcon className="w-4 h-4" />
