@@ -18,6 +18,8 @@ interface NativeSpeechLevel {
   level: number;
 }
 
+const RECORDING_STATS_POLL_INTERVAL_MS = 50;
+
 export function normalizeMicrophoneError(error: unknown): Error {
   if (typeof error === "string") {
     return new Error(error);
@@ -95,7 +97,10 @@ export function useSpeechRecorder({
     setElapsedSeconds(0);
     setLevel(0);
     pollRecordingStats();
-    pollIntervalRef.current = window.setInterval(pollRecordingStats, 100);
+    pollIntervalRef.current = window.setInterval(
+      pollRecordingStats,
+      RECORDING_STATS_POLL_INTERVAL_MS,
+    );
   }, [pollRecordingStats, stopRecordingStats]);
 
   const transcribe = useCallback(

@@ -220,7 +220,7 @@ mod desktop {
 
     pub(crate) fn smooth_level(previous: f32, current: f32) -> f32 {
         let current = current.clamp(0.0, 1.0);
-        let smoothing = if current > previous { 0.45 } else { 0.18 };
+        let smoothing = if current > previous { 0.72 } else { 0.34 };
         (previous + (current - previous) * smoothing).clamp(0.0, 1.0)
     }
 

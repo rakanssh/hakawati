@@ -75,7 +75,13 @@ const ACTION_MODE_ICONS = {
   [LogEntryMode.DIRECT]: MegaphoneIcon,
 } satisfies Record<InputActionMode, typeof HandIcon>;
 
-const WAVEFORM_BAR_COUNT = 44;
+const WAVEFORM_INITIAL_BAR_COUNT = 96;
+const WAVEFORM_MIN_BAR_COUNT = 44;
+const WAVEFORM_MAX_BAR_COUNT = 260;
+const WAVEFORM_BAR_SLOT_WIDTH = 4;
+const WAVEFORM_UPDATE_INTERVAL_MS = 55;
+const WAVEFORM_NOISE_FLOOR = 0.008;
+const WAVEFORM_INPUT_GAIN = 9.5;
 
 function formatRecordingTime(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
@@ -85,13 +91,38 @@ function formatRecordingTime(seconds: number): string {
 
 function amplifyWaveformLevel(level: number): number {
   const clampedLevel = Math.min(1, Math.max(0, level));
-  return Math.min(1, Math.pow(clampedLevel, 0.75) * 1.25);
+  const normalizedLevel =
+    (clampedLevel - WAVEFORM_NOISE_FLOOR) / (1 - WAVEFORM_NOISE_FLOOR);
+
+  if (normalizedLevel <= 0) return 0;
+
+  return Math.min(1, Math.pow(normalizedLevel * WAVEFORM_INPUT_GAIN, 0.65));
+}
+
+function getWaveformBarCount(width: number): number {
+  if (!Number.isFinite(width) || width <= 0) return WAVEFORM_INITIAL_BAR_COUNT;
+
+  return Math.min(
+    WAVEFORM_MAX_BAR_COUNT,
+    Math.max(
+      WAVEFORM_MIN_BAR_COUNT,
+      Math.floor(width / WAVEFORM_BAR_SLOT_WIDTH),
+    ),
+  );
+}
+
+function resizeWaveformBars(bars: number[], count: number): number[] {
+  if (bars.length === count) return bars;
+  if (bars.length > count) return bars.slice(bars.length - count);
+
+  return [...Array.from({ length: count - bars.length }, () => 0), ...bars];
 }
 
 function RecordingWaveform({ level }: { level: number }) {
+  const waveformRef = useRef<HTMLDivElement | null>(null);
   const levelRef = useRef(level);
   const [bars, setBars] = useState(() =>
-    Array.from({ length: WAVEFORM_BAR_COUNT }, () => 0),
+    Array.from({ length: WAVEFORM_INITIAL_BAR_COUNT }, () => 0),
   );
 
   useEffect(() => {
@@ -104,23 +135,46 @@ function RecordingWaveform({ level }: { level: number }) {
         ...currentBars.slice(1),
         amplifyWaveformLevel(levelRef.current),
       ]);
-    }, 100);
+    }, WAVEFORM_UPDATE_INTERVAL_MS);
 
     return () => window.clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const waveformElement = waveformRef.current;
+    if (!waveformElement) return;
+
+    const syncBarCount = (width = waveformElement.clientWidth) => {
+      setBars((currentBars) =>
+        resizeWaveformBars(currentBars, getWaveformBarCount(width)),
+      );
+    };
+
+    syncBarCount();
+
+    if (!("ResizeObserver" in window)) return;
+
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      syncBarCount(entry.contentRect.width);
+    });
+
+    resizeObserver.observe(waveformElement);
+    return () => resizeObserver.disconnect();
+  }, []);
+
   return (
     <div
-      className="flex h-8 min-w-0 flex-1 items-center gap-0.5 overflow-hidden"
+      ref={waveformRef}
+      className="flex h-10 min-w-0 flex-1 items-center gap-0.5 overflow-hidden"
       aria-hidden="true"
     >
       {bars.map((barLevel, index) => (
         <span
           key={index}
-          className="w-1 shrink-0 rounded-full bg-primary/75 transition-[height,opacity] duration-100"
+          className="w-[2px] shrink-0 rounded-full bg-primary/90"
           style={{
-            height: `${Math.round(4 + barLevel * 26)}px`,
-            opacity: 0.35 + barLevel * 0.65,
+            height: `${Math.round(3 + barLevel * 31)}px`,
+            opacity: 0.48 + barLevel * 0.52,
           }}
         />
       ))}
