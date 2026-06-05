@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Tooltip,
   TooltipContent,
@@ -89,9 +90,11 @@ function Shelf({ title, action, children }: ShelfProps) {
           {action}
         </div>
       </div>
-      <div className="flex snap-x gap-2 overflow-x-auto px-2 pb-1.5 sm:px-0 lg:gap-3">
-        {children}
-      </div>
+      <ScrollArea scrollbars="horizontal" className="w-full">
+        <div className="flex snap-x gap-2 px-2 pb-3 sm:px-0 lg:gap-3">
+          {children}
+        </div>
+      </ScrollArea>
     </section>
   );
 }
