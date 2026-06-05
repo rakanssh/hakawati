@@ -28,7 +28,13 @@ import {
   SquareIcon,
 } from "lucide-react";
 import { LogEntryMode } from "@/types/log.type";
-import { ContinueControl, LogControl } from "@/components/play/log";
+import {
+  ContinueControl,
+  RedoControl,
+  RetryControl,
+  UndoControl,
+  useLogControlShortcuts,
+} from "@/components/play/log";
 import { getPlaceholderMessage, Action } from "@/lib/play-utils";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -253,6 +259,16 @@ export function PlayInputControls({
   const currentActionLabel = actionModeLabels[currentActionMode];
   const composerControlsLocked = speechRecorder.status !== "idle";
   const canStopGeneration = loading && !!onStop;
+  const quietIconButtonClass =
+    "composer-command-button !h-10 !w-10 min-w-10 border border-transparent bg-transparent p-0 text-muted-foreground shadow-none hover:border-transparent hover:bg-muted/35 hover:text-foreground md:!h-9 md:!w-9";
+  const subtleActionSelectorClass =
+    "composer-command-button !h-10 !w-auto min-w-10 rounded-xs border border-transparent bg-transparent px-2 text-muted-foreground shadow-none hover:border-border/70 hover:bg-muted/35 hover:text-foreground focus-visible:border-ring/55 md:!h-9";
+  useLogControlShortcuts({
+    handleRetry: onRetry,
+    handleStop: onStop,
+    loading,
+    saving,
+  });
 
   const renderModeMenu = ({
     className,
@@ -266,20 +282,14 @@ export function PlayInputControls({
             <Button
               type="button"
               variant="ghost"
-              className={cn(
-                "composer-command-button !h-10 !w-auto min-w-10 rounded-xs border border-input bg-background/75 px-3 text-foreground shadow-xs hover:border-ring/45 hover:bg-background",
-                className,
-              )}
+              className={cn(subtleActionSelectorClass, className)}
               aria-label={t`Select action mode`}
               title={currentActionLabel}
             >
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5">
                 {renderModeIcon(currentActionMode)}
-                <span className="composer-command-label">
-                  {currentActionLabel}
-                </span>
               </span>
-              <span className="composer-command-select-affordance ms-auto flex items-center border-s border-border/70 ps-2 text-muted-foreground">
+              <span className="composer-command-select-affordance flex items-center text-muted-foreground">
                 <ChevronUpIcon className="h-3.5 w-3.5" />
               </span>
             </Button>
@@ -318,7 +328,7 @@ export function PlayInputControls({
           variant="ghost"
           size="icon"
           className={cn(
-            "!h-9 !w-9 shrink-0 border shadow-none",
+            "!h-10 !w-10 shrink-0 border shadow-none md:!h-9 md:!w-9",
             action.isRolling
               ? "border-success/45 bg-success/10 text-success hover:bg-success/15 hover:text-success"
               : "border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-muted/45 hover:text-foreground",
@@ -359,7 +369,7 @@ export function PlayInputControls({
             variant="ghost"
             size="icon"
             className={cn(
-              "!h-9 !w-9 shrink-0 border shadow-none",
+              "!h-10 !w-10 shrink-0 border shadow-none md:!h-9 md:!w-9",
               isRecording
                 ? "border-destructive/45 bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive"
                 : "border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-muted/45 hover:text-foreground",
@@ -397,7 +407,7 @@ export function PlayInputControls({
         }
       }}
       rows={1}
-      className="max-h-[300px] min-h-12 resize-none border-0 !bg-transparent ps-3 pe-36 py-3 text-sm shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:!bg-transparent"
+      className="max-h-[240px] min-h-10 resize-none border-0 !bg-transparent px-2 py-2.5 text-sm shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:!bg-transparent md:py-2"
       aria-label={t`Enter your action`}
     />
   );
@@ -459,7 +469,7 @@ export function PlayInputControls({
       onClick={canStopGeneration ? onStop : onSubmit}
       disabled={saving || (loading && !canStopGeneration)}
       size="icon"
-      className={cn("!h-9 !w-9 shrink-0", className)}
+      className={cn("!h-10 !w-10 shrink-0 md:!h-9 md:!w-9", className)}
       aria-label={canStopGeneration ? t`Stop generating` : t`Submit action`}
     >
       {canStopGeneration ? (
@@ -472,54 +482,100 @@ export function PlayInputControls({
     </Button>
   );
 
-  const renderComposer = () => (
-    <div className="relative min-h-12 min-w-0 flex-1 overflow-hidden rounded-xs border border-border/75 bg-card/85 shadow-xs transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18">
+  const renderInputSurface = () => (
+    <div className="min-h-14 min-w-0 overflow-hidden rounded-xs border border-border/75 bg-card/90 p-1.5 shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18">
       {speechRecorder.isRecording ? (
-        renderRecordingComposer()
+        <div className="min-w-0 flex-1">{renderRecordingComposer()}</div>
       ) : speechRecorder.isTranscribing ? (
-        renderTranscribingComposer()
+        <div className="min-w-0 flex-1">{renderTranscribingComposer()}</div>
       ) : (
-        <>
-          {renderTextArea()}
-          <div className="absolute bottom-1.5 end-1.5 flex items-center gap-1">
-            {renderSpeechButton()}
-            {renderDiceToggle()}
-            {renderSubmitButton()}
+        <div className="flex min-w-0 flex-col gap-1">
+          <div className="min-w-0">
+            <div className="min-w-0 flex-1">{renderTextArea()}</div>
           </div>
-        </>
+          <div className="flex min-w-0 items-center justify-between gap-1.5">
+            {renderModifierControls("min-w-0")}
+            <div className="flex min-w-0 items-center justify-end gap-1.5">
+              {renderHistoryControls()}
+              <span className="h-5 w-px shrink-0 bg-border/45" />
+              {renderGenerationControls()}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
 
-  const renderCommandCluster = (className?: string) => (
+  const renderModifierControls = (className?: string) => (
     <div
       className={cn(
-        "composer-command-tier flex min-w-0 items-center gap-1 rounded-xs border border-border/70 bg-card/60 p-1 shadow-xs",
+        "flex shrink-0 items-center gap-0.5 md:gap-1",
         composerControlsLocked && "pointer-events-none opacity-60",
         className,
       )}
     >
-      {renderModeMenu({ className: "flex-1 bg-background/45" })}
+      {renderModeMenu()}
+      {renderDiceToggle()}
+      {renderSpeechButton()}
+    </div>
+  );
+
+  const renderHistoryControls = (className?: string) => (
+    <div
+      className={cn(
+        "flex shrink-0 items-center justify-center gap-0 md:gap-0.5",
+        composerControlsLocked && "pointer-events-none opacity-60",
+        className,
+      )}
+    >
+      <UndoControl
+        loading={loading}
+        saving={saving}
+        className={quietIconButtonClass}
+      />
+      <RetryControl
+        handleRetry={onRetry}
+        loading={loading}
+        saving={saving}
+        className={quietIconButtonClass}
+      />
+      <RedoControl
+        loading={loading}
+        saving={saving}
+        className={quietIconButtonClass}
+      />
+    </div>
+  );
+
+  const renderGenerationControls = (className?: string) => (
+    <div
+      className={cn(
+        "flex shrink-0 items-center justify-end gap-0.5 md:gap-1",
+        composerControlsLocked && "pointer-events-none opacity-60",
+        className,
+      )}
+    >
       <ContinueControl
         onContinue={onContinue}
         onStop={onStop}
         loading={loading}
         saving={saving}
-        className="composer-command-button !h-10 !w-auto min-w-10 flex-1 border-transparent bg-transparent px-3 shadow-none hover:border-border hover:bg-muted/45"
+        className={quietIconButtonClass}
       />
-      <LogControl
-        handleRetry={onRetry}
-        handleStop={onStop}
-        loading={loading}
-        saving={saving}
-      />
+      {renderSubmitButton()}
+    </div>
+  );
+
+  const renderComposer = () => (
+    <div className="composer-command-tier mx-auto w-full max-w-5xl">
+      {renderInputSurface()}
     </div>
   );
 
   return (
     <div
       className={cn(
-        "pointer-events-auto z-20 w-full border-t bg-background/80 shadow-[0_-12px_32px_color-mix(in_oklch,var(--background)_55%,transparent)] backdrop-blur-xl",
+        "pointer-events-auto z-20 w-full",
         isMobilePlatform ? "px-2 pt-2" : "p-3",
       )}
       style={
@@ -528,10 +584,7 @@ export function PlayInputControls({
           : undefined
       }
     >
-      <div className="flex w-full flex-col gap-2">
-        {renderCommandCluster("w-full")}
-        {renderComposer()}
-      </div>
+      {renderComposer()}
     </div>
   );
 }

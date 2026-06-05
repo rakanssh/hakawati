@@ -512,7 +512,6 @@ textarea::-webkit-scrollbar-thumb {
   }
 
   .composer-command-select-affordance {
-    margin-inline-start: 0.25rem;
     border-inline-start: 0;
     padding-inline-start: 0;
   }
