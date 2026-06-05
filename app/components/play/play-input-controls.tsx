@@ -25,6 +25,7 @@ import {
   MicIcon,
   ArrowUpIcon,
   XIcon,
+  SquareIcon,
 } from "lucide-react";
 import { LogEntryMode } from "@/types/log.type";
 import { ContinueControl, LogControl } from "@/components/play/log";
@@ -197,6 +198,7 @@ export function PlayInputControls({
 
   const currentActionLabel = actionModeLabels[currentActionMode];
   const composerControlsLocked = speechRecorder.status !== "idle";
+  const canStopGeneration = loading && !!onStop;
 
   const renderModeMenu = ({
     className,
@@ -399,14 +401,16 @@ export function PlayInputControls({
 
   const renderSubmitButton = (className?: string) => (
     <Button
-      type="submit"
-      onClick={onSubmit}
-      disabled={saving || loading}
+      type={canStopGeneration ? "button" : "submit"}
+      onClick={canStopGeneration ? onStop : onSubmit}
+      disabled={saving || (loading && !canStopGeneration)}
       size="icon"
       className={cn("!h-9 !w-9 shrink-0", className)}
-      aria-label={t`Submit action`}
+      aria-label={canStopGeneration ? t`Stop generating` : t`Submit action`}
     >
-      {saving ? (
+      {canStopGeneration ? (
+        <SquareIcon className="w-4 h-4" />
+      ) : saving ? (
         <SaveIcon className="w-4 h-4 animate-spin" />
       ) : (
         <SendIcon className="w-4 h-4" />
