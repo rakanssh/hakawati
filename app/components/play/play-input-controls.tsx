@@ -262,7 +262,9 @@ export function PlayInputControls({
   const quietIconButtonClass =
     "composer-command-button !h-10 !w-10 min-w-10 border border-transparent bg-transparent p-0 text-muted-foreground shadow-none hover:border-transparent hover:bg-muted/35 hover:text-foreground md:!h-9 md:!w-9";
   const subtleActionSelectorClass =
-    "composer-command-button !h-10 !w-auto min-w-10 rounded-xs border border-transparent bg-transparent px-2 text-muted-foreground shadow-none hover:border-border/70 hover:bg-muted/35 hover:text-foreground focus-visible:border-ring/55 md:!h-9";
+    "composer-command-button composer-command-selector !h-10 !w-auto min-w-10 gap-1.5 rounded-xs border border-transparent bg-transparent px-2.5 text-muted-foreground shadow-none hover:border-border/70 hover:bg-muted/35 hover:text-foreground focus-visible:border-ring/55 md:!h-9 md:px-2";
+  const composerSurfaceClass =
+    "flex min-h-[6.25rem] min-w-0 overflow-hidden rounded-xs border border-border/75 bg-background p-1.5 shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18 md:min-h-[6rem]";
   useLogControlShortcuts({
     handleRetry: onRetry,
     handleStop: onStop,
@@ -413,7 +415,7 @@ export function PlayInputControls({
   );
 
   const renderRecordingComposer = () => (
-    <div className="flex min-h-12 min-w-0 items-center gap-3 px-3 py-2">
+    <div className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -455,7 +457,7 @@ export function PlayInputControls({
   );
 
   const renderTranscribingComposer = () => (
-    <div className="flex min-h-12 min-w-0 items-center gap-3 px-3 py-2 text-sm text-muted-foreground">
+    <div className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-sm text-muted-foreground">
       <Loader2Icon className="h-4 w-4 shrink-0 animate-spin" />
       <span className="truncate">
         <Trans>Transcribing...</Trans>
@@ -483,13 +485,13 @@ export function PlayInputControls({
   );
 
   const renderInputSurface = () => (
-    <div className="min-h-14 min-w-0 overflow-hidden rounded-xs border border-border/75 bg-card/90 p-1.5 shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18">
+    <div className={composerSurfaceClass}>
       {speechRecorder.isRecording ? (
-        <div className="min-w-0 flex-1">{renderRecordingComposer()}</div>
+        renderRecordingComposer()
       ) : speechRecorder.isTranscribing ? (
-        <div className="min-w-0 flex-1">{renderTranscribingComposer()}</div>
+        renderTranscribingComposer()
       ) : (
-        <div className="flex min-w-0 flex-col gap-1">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="min-w-0">
             <div className="min-w-0 flex-1">{renderTextArea()}</div>
           </div>

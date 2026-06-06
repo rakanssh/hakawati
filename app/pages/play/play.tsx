@@ -229,7 +229,7 @@ export default function Play() {
     }
 
     return (
-      <div className="relative grid h-full grid-rows-[1fr_auto]">
+      <div className="play-log-texture relative grid h-full grid-rows-[1fr_auto]">
         <PlayLogDisplay
           blocks={blocks}
           loadingOlder={loadingOlder}
@@ -318,7 +318,7 @@ export default function Play() {
             }
           />
           <SidebarInset
-            className="relative flex h-full flex-col overflow-hidden !rounded-none border-x bg-background/55 backdrop-blur-sm"
+            className="relative flex h-full flex-col overflow-hidden !rounded-none border-x bg-transparent"
             style={
               isMobilePlatform
                 ? { paddingInlineEnd: "env(safe-area-inset-right)" }
@@ -330,7 +330,7 @@ export default function Play() {
         </SidebarProvider>
       ) : (
         <div
-          className="relative flex h-full flex-col overflow-hidden bg-background/55 backdrop-blur-sm"
+          className="relative flex h-full flex-col overflow-hidden bg-transparent"
           style={
             isMobilePlatform
               ? {

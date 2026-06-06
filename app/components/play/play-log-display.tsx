@@ -48,7 +48,7 @@ export function PlayLogDisplay({
 
   return (
     <ScrollArea
-      className="play-log-texture min-h-0 w-full"
+      className="min-h-0 w-full"
       viewportRef={viewportRef}
       onViewportScroll={onViewportScroll}
       viewportClassName="!flex !flex-col"
