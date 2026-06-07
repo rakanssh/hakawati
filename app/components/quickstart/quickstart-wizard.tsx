@@ -9,33 +9,33 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import {
   GameModeStep,
   SettingStep,
   ArchetypeStep,
   CharacterNameStep,
   ToneStep,
-  DescriptionStyleStep,
-  StatsInventoryStep,
+  OptionalDetailsStep,
 } from "./steps";
 import { GameMode } from "@/types";
-import { Stat } from "@/types/stats.type";
-import type { Item } from "@/types/item.type";
-import {
-  generateAuthorNote,
-  generateDescription,
-  generateTaleName,
-  generateOpeningPrompt,
-  ARCHETYPES,
-} from "@/data/quickstart-presets";
+import { ARCHETYPES, SETTINGS, TONES } from "@/data/quickstart-presets";
 import { useTaleStore } from "@/store/useTaleStore";
 import { initTale } from "@/services/tale.service";
-import { LogEntryMode, LogEntryRole } from "@/types/log.type";
+import { LogEntryRole } from "@/types/log.type";
 import { nanoid } from "nanoid";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLingui as useLinguiCore } from "@lingui/react";
+import { toast } from "sonner";
+import {
+  isModelRoleConfigured,
+  useSettingsStore,
+} from "@/store/useSettingsStore";
+import {
+  generateQuickstartTale,
+  QUICKSTART_AUTHOR_NOTE,
+} from "@/services/llm/quickstartTaleGenerator";
 
 export interface QuickstartState {
   gameMode: GameMode;
@@ -45,10 +45,8 @@ export interface QuickstartState {
   customArchetype: string;
   characterName: string;
   tone: string;
-  description: string;
-  authorNote: string;
-  stats: Stat[];
-  inventory: Item[];
+  customTone: string;
+  extraDetails: string;
 }
 
 interface QuickstartWizardProps {
@@ -65,8 +63,11 @@ export function QuickstartWizard({
   const { _ } = useLinguiCore();
   const taleStore = useTaleStore();
   const { setLastPlayedTaleId } = useLastPlayedStore();
+  const utilityConfig = useSettingsStore((s) => s.modelRoles.utility);
 
   const [currentStep, setCurrentStep] = useState(0);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
   const [state, setState] = useState<QuickstartState>({
     gameMode: GameMode.STORY_TELLER,
     setting: "fantasy",
@@ -75,10 +76,8 @@ export function QuickstartWizard({
     customArchetype: "",
     characterName: "",
     tone: "serious",
-    description: "",
-    authorNote: "",
-    stats: [],
-    inventory: [],
+    customTone: "",
+    extraDetails: "",
   });
 
   const updateState = (updates: Partial<QuickstartState>) => {
@@ -92,6 +91,51 @@ export function QuickstartWizard({
       handleNextRef.current();
     }
   }, []);
+
+  const resetState = useCallback(() => {
+    setCurrentStep(0);
+    setIsGenerating(false);
+    abortRef.current = null;
+    setState({
+      gameMode: GameMode.STORY_TELLER,
+      setting: "fantasy",
+      customSetting: "",
+      archetype: "warrior",
+      customArchetype: "",
+      characterName: "",
+      tone: "serious",
+      customTone: "",
+      extraDetails: "",
+    });
+  }, []);
+
+  const selectedSetting = SETTINGS.find(
+    (setting) => setting.id === state.setting,
+  );
+  const selectedWorld =
+    state.setting === "custom"
+      ? state.customSetting.trim()
+      : selectedSetting
+        ? _(selectedSetting.name)
+        : state.setting;
+
+  const selectedArchetypeOption = ARCHETYPES[state.setting]?.find(
+    (archetype) => archetype.id === state.archetype,
+  );
+  const selectedArchetype =
+    state.archetype === "custom-archetype"
+      ? state.customArchetype.trim()
+      : selectedArchetypeOption
+        ? _(selectedArchetypeOption.name)
+        : state.archetype;
+
+  const selectedToneOption = TONES.find((tone) => tone.id === state.tone);
+  const selectedTone =
+    state.tone === "custom-tone"
+      ? state.customTone.trim()
+      : selectedToneOption
+        ? _(selectedToneOption.name)
+        : state.tone;
 
   const steps = [
     {
@@ -113,11 +157,16 @@ export function QuickstartWizard({
           value={state.setting}
           customValue={state.customSetting}
           onChange={(setting: string) => {
-            updateState({ setting });
             const archetypes = ARCHETYPES[setting];
-            if (archetypes && archetypes.length > 0) {
-              updateState({ archetype: archetypes[0].id });
-            }
+            updateState({
+              setting,
+              archetype:
+                setting === "custom"
+                  ? "custom-archetype"
+                  : archetypes?.[0]?.id || "custom-archetype",
+              customArchetype:
+                setting === "custom" ? state.customArchetype : "",
+            });
           }}
           onCustomChange={(customSetting: string) =>
             updateState({ customSetting })
@@ -129,6 +178,17 @@ export function QuickstartWizard({
         state.setting !== "custom" || state.customSetting.trim().length > 0,
     },
     {
+      title: t`Character Name`,
+      description: t`Name your hero`,
+      component: (
+        <CharacterNameStep
+          value={state.characterName}
+          onChange={(characterName: string) => updateState({ characterName })}
+        />
+      ),
+      canProgress: state.characterName.trim().length > 0,
+    },
+    {
       title: t`Archetype`,
       description: t`Define your character`,
       component: (
@@ -136,7 +196,6 @@ export function QuickstartWizard({
           setting={state.setting}
           value={state.archetype}
           customValue={state.customArchetype}
-          gameMode={state.gameMode}
           onChange={(archetype: string) => {
             updateState({ archetype });
           }}
@@ -151,79 +210,32 @@ export function QuickstartWizard({
         state.customArchetype.trim().length > 0,
     },
     {
-      title: t`Character Name`,
-      description: t`Name your hero`,
-      component: (
-        <CharacterNameStep
-          value={state.characterName}
-          onChange={(characterName: string) => updateState({ characterName })}
-        />
-      ),
-      canProgress: state.characterName.trim().length > 0,
-    },
-    {
       title: t`Tone`,
       description: t`Set the atmosphere`,
       component: (
         <ToneStep
           value={state.tone}
+          customValue={state.customTone}
           onChange={(tone: string) => updateState({ tone })}
+          onCustomChange={(customTone: string) => updateState({ customTone })}
           onNext={handleNext}
         />
       ),
-      canProgress: true,
+      canProgress:
+        state.tone !== "custom-tone" || state.customTone.trim().length > 0,
     },
     {
-      title: t`Description & Style`,
-      description: t`Customize your scenario and narration style`,
+      title: t`Optional Details`,
+      description: t`Add anything special`,
       component: (
-        <DescriptionStyleStep
-          description={
-            state.description ||
-            generateDescription(
-              state.characterName,
-              state.archetype === "custom-archetype"
-                ? state.customArchetype
-                : state.archetype,
-              state.setting === "custom" ? state.customSetting : state.setting,
-              state.tone,
-              _,
-            )
-          }
-          style={
-            state.authorNote ||
-            generateAuthorNote(
-              state.setting === "custom" ? state.customSetting : state.setting,
-              state.tone,
-            )
-          }
-          onDescriptionChange={(description: string) =>
-            updateState({ description })
-          }
-          onStyleChange={(authorNote: string) => updateState({ authorNote })}
+        <OptionalDetailsStep
+          value={state.extraDetails}
+          onChange={(extraDetails: string) => updateState({ extraDetails })}
         />
       ),
       canProgress: true,
     },
   ];
-
-  if (state.gameMode === GameMode.GM) {
-    steps.push({
-      title: t`Stats & Inventory`,
-      description: t`Configure your character`,
-      component: (
-        <StatsInventoryStep
-          stats={state.stats}
-          inventory={state.inventory}
-          archetype={state.archetype}
-          setting={state.setting}
-          onStatsChange={(stats: Stat[]) => updateState({ stats })}
-          onInventoryChange={(inventory: Item[]) => updateState({ inventory })}
-        />
-      ),
-      canProgress: state.stats.length > 0,
-    });
-  }
 
   // Set up the actual handleNext implementation now that steps is defined
   useEffect(() => {
@@ -248,75 +260,46 @@ export function QuickstartWizard({
   }, [isFirstStep]);
 
   const handleComplete = useCallback(async () => {
-    const finalAuthorNote =
-      state.authorNote ||
-      generateAuthorNote(
-        state.setting === "custom" ? state.customSetting : state.setting,
-        state.tone,
-      );
-
-    const taleName = generateTaleName(state.characterName, state.setting, _);
-    const taleDescription =
-      state.description ||
-      generateDescription(
-        state.characterName,
-        state.archetype === "custom-archetype"
-          ? state.customArchetype
-          : state.archetype,
-        state.setting === "custom" ? state.customSetting : state.setting,
-        state.tone,
-        _,
-      );
-
-    let finalStats = state.stats;
-    let finalInventory = state.inventory;
-
-    if (state.gameMode === GameMode.GM && finalStats.length === 0) {
-      const archetypeData = ARCHETYPES[state.setting]?.find(
-        (a) => a.id === state.archetype,
-      );
-      finalStats = (archetypeData?.defaultStats || []).map((stat) => ({
-        name: _(stat.name),
-        value: stat.value,
-        range: stat.range,
-        description: stat.description ? _(stat.description) : undefined,
-      }));
-      if (finalStats.length === 0) {
-        finalStats = [{ name: "HP", value: 100, range: [0, 100] }];
-      }
-      finalInventory = (archetypeData?.defaultInventory || []).map((item) => ({
-        id: nanoid(12),
-        name: _(item.name),
-        description: item.description ? _(item.description) : undefined,
-      }));
+    if (!isModelRoleConfigured(utilityConfig)) {
+      toast.error(t`No utility model selected`);
+      return;
     }
 
-    const openingPrompt = generateOpeningPrompt(
-      state.characterName,
-      state.archetype === "custom-archetype"
-        ? state.customArchetype
-        : state.archetype,
-      state.setting === "custom" ? state.customSetting : state.setting,
-    );
-
-    const initialLogEntry = {
-      id: nanoid(),
-      role: LogEntryRole.PLAYER,
-      mode: LogEntryMode.DIRECT,
-      text: openingPrompt,
-    };
+    const abort = new AbortController();
+    abortRef.current = abort;
+    setIsGenerating(true);
 
     try {
+      const generated = await generateQuickstartTale(
+        {
+          gameMode: state.gameMode,
+          world: selectedWorld,
+          characterName: state.characterName.trim(),
+          archetype: selectedArchetype,
+          tone: selectedTone,
+          extraDetails: state.extraDetails,
+        },
+        abort.signal,
+      );
+
       const taleId = await initTale({
-        name: taleName,
-        description: taleDescription,
+        name: generated.name,
+        description: generated.description,
         thumbnail: null,
-        authorNote: finalAuthorNote,
-        storyCards: [],
+        authorNote: QUICKSTART_AUTHOR_NOTE,
+        storyCards: generated.storyCards,
         scenarioId: undefined,
-        stats: finalStats,
-        inventory: finalInventory,
-        log: [initialLogEntry],
+        stats: generated.stats,
+        inventory: generated.inventory,
+        log: generated.openingText
+          ? [
+              {
+                id: nanoid(12),
+                role: LogEntryRole.GM,
+                text: generated.openingText,
+              },
+            ]
+          : [],
         gameMode: state.gameMode,
         undoStack: [],
       });
@@ -327,12 +310,41 @@ export function QuickstartWizard({
       onOpenChange(false);
       navigate({ to: "/play" });
     } catch (error) {
-      console.error("Failed to save tale:", error);
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+      console.error("Failed to generate quickstart tale:", error);
+      toast.error(
+        t`Failed to generate tale: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    } finally {
+      setIsGenerating(false);
+      abortRef.current = null;
     }
-  }, [state, taleStore, onOpenChange, navigate, setLastPlayedTaleId, _]);
+  }, [
+    utilityConfig,
+    t,
+    state.gameMode,
+    state.characterName,
+    state.extraDetails,
+    selectedWorld,
+    selectedArchetype,
+    selectedTone,
+    taleStore,
+    setLastPlayedTaleId,
+    onOpenChange,
+    navigate,
+  ]);
 
   const handleKeyPress = useCallback(
     (event: KeyboardEvent) => {
+      if (
+        event.target instanceof HTMLTextAreaElement ||
+        event.target instanceof HTMLButtonElement ||
+        isGenerating
+      ) {
+        return;
+      }
       if (event.key === "Enter" && currentStepData.canProgress) {
         if (isLastStep) {
           handleComplete();
@@ -341,7 +353,13 @@ export function QuickstartWizard({
         }
       }
     },
-    [currentStepData.canProgress, isLastStep, handleComplete, handleNext],
+    [
+      currentStepData.canProgress,
+      isLastStep,
+      handleComplete,
+      handleNext,
+      isGenerating,
+    ],
   );
 
   useEffect(() => {
@@ -351,26 +369,16 @@ export function QuickstartWizard({
     }
   }, [open, handleKeyPress]);
 
-  const handleClose = () => {
-    setCurrentStep(0);
-    setState({
-      gameMode: GameMode.GM,
-      setting: "fantasy",
-      customSetting: "",
-      archetype: "warrior",
-      customArchetype: "",
-      characterName: "",
-      tone: "serious",
-      description: "",
-      authorNote: "",
-      stats: [],
-      inventory: [],
-    });
-    onOpenChange(false);
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      abortRef.current?.abort();
+      resetState();
+    }
+    onOpenChange(nextOpen);
   };
 
   return (
-    <Drawer open={open} onOpenChange={handleClose}>
+    <Drawer open={open} onOpenChange={handleOpenChange}>
       <DrawerContent className="!h-[96vh] !mt-4">
         <div className="flex flex-col h-full overflow-hidden">
           <DrawerHeader className="border-b shrink-0">
@@ -398,7 +406,7 @@ export function QuickstartWizard({
             <Button
               variant="outline"
               onClick={handleBack}
-              disabled={isFirstStep}
+              disabled={isFirstStep || isGenerating}
             >
               <ChevronLeft className="w-4 h-4 mr-1 rtl:rotate-180" />
               <Trans>Back</Trans>
@@ -411,15 +419,22 @@ export function QuickstartWizard({
             {isLastStep ? (
               <Button
                 onClick={handleComplete}
-                disabled={!currentStepData.canProgress}
+                disabled={!currentStepData.canProgress || isGenerating}
                 className="bg-primary"
               >
-                <Trans>Start Adventure</Trans>
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                    <Trans>Generating</Trans>
+                  </>
+                ) : (
+                  <Trans>Generate Tale</Trans>
+                )}
               </Button>
             ) : (
               <Button
                 onClick={handleNext}
-                disabled={!currentStepData.canProgress}
+                disabled={!currentStepData.canProgress || isGenerating}
               >
                 <Trans>Next</Trans>
                 <ChevronRight className="w-4 h-4 ml-1 rtl:rotate-180" />

@@ -4,16 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Shuffle } from "lucide-react";
-import { GameMode } from "@/types";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { msg } from "@lingui/core/macro";
-import { useLingui as useLinguiCore } from "@lingui/react";
 
 interface ArchetypeStepProps {
   setting: string;
   value: string;
   customValue: string;
-  gameMode: GameMode;
   onChange: (value: string) => void;
   onCustomChange: (value: string) => void;
   onNext?: () => void;
@@ -23,23 +20,17 @@ export function ArchetypeStep({
   setting,
   value,
   customValue,
-  gameMode,
   onChange,
   onCustomChange,
   onNext,
 }: ArchetypeStepProps) {
   const { t } = useLingui();
-  const { _: resolveMessage } = useLinguiCore();
   const baseArchetypes = ARCHETYPES[setting] || ARCHETYPES.custom;
 
   const customArchetype = {
     id: "custom-archetype",
     name: msg`Custom`,
     description: "Define your own unique character archetype",
-    defaultStats: [
-      { name: msg`HP`, value: 100, range: [0, 100] as [number, number] },
-    ],
-    defaultInventory: [],
   };
 
   const archetypes = [
@@ -94,39 +85,6 @@ export function ArchetypeStep({
             >
               <CardContent className="p-4">
                 <h3 className="font-semibold mb-1">{t(archetype.name)}</h3>
-
-                {gameMode === GameMode.GM &&
-                  archetype.defaultStats &&
-                  archetype.defaultStats.length > 0 && (
-                    <>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        <p className="text-xs text-muted-foreground">
-                          <Trans>Stats:</Trans>
-                        </p>
-                        {archetype.defaultStats.slice(0, 3).map((stat) => (
-                          <span
-                            key={resolveMessage(stat.name)}
-                            className="text-xs px-2 py-0.5 rounded-full bg-muted"
-                          >
-                            {resolveMessage(stat.name)}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        <p className="text-xs text-muted-foreground">
-                          <Trans>Inventory:</Trans>
-                        </p>
-                        {archetype.defaultInventory?.slice(0, 3).map((item) => (
-                          <span
-                            key={resolveMessage(item.name)}
-                            className="text-xs px-2 py-0.5 rounded-full bg-muted"
-                          >
-                            {resolveMessage(item.name)}
-                          </span>
-                        ))}
-                      </div>
-                    </>
-                  )}
               </CardContent>
             </Card>
           );

@@ -6,6 +6,7 @@ import {
   CONTINUE_AUTHOR_NOTE,
   STORY_CARD_GENERATOR_PROMPT,
   SCENARIO_GENERATOR_PROMPT,
+  QUICKSTART_TALE_GENERATOR_PROMPT,
 } from "./system";
 
 export function getActiveGmPrompt(): string {
@@ -49,4 +50,8 @@ export function getActiveStoryCardGeneratorPrompt(): string {
 
 export function getActiveScenarioGeneratorPrompt(): string {
   return SCENARIO_GENERATOR_PROMPT;
+}
+
+export function getActiveQuickstartTaleGeneratorPrompt(): string {
+  return QUICKSTART_TALE_GENERATOR_PROMPT;
 }

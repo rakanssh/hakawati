@@ -1,20 +1,31 @@
 import { TONES, getRandomElement } from "@/data/quickstart-presets";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Shuffle } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 
 interface ToneStepProps {
   value: string;
+  customValue: string;
   onChange: (value: string) => void;
+  onCustomChange: (value: string) => void;
   onNext?: () => void;
 }
 
-export function ToneStep({ value, onChange, onNext }: ToneStepProps) {
+export function ToneStep({
+  value,
+  customValue,
+  onChange,
+  onCustomChange,
+  onNext,
+}: ToneStepProps) {
   const { t } = useLingui();
 
   const handleSurpriseMe = () => {
-    const randomTone = getRandomElement(TONES);
+    const presetTones = TONES.filter((tone) => tone.id !== "custom-tone");
+    const randomTone = getRandomElement(presetTones);
     onChange(randomTone.id);
     if (onNext) {
       onNext();
@@ -58,6 +69,24 @@ export function ToneStep({ value, onChange, onNext }: ToneStepProps) {
           );
         })}
       </div>
+
+      {value === "custom-tone" && (
+        <div className="space-y-2 pt-4 border-t">
+          <Label htmlFor="custom-tone">
+            <Trans>Custom Tone</Trans>
+          </Label>
+          <Input
+            id="custom-tone"
+            placeholder={t`e.g., eerie but hopeful, mythic and intimate...`}
+            value={customValue}
+            onChange={(e) => onCustomChange(e.target.value)}
+            autoFocus
+          />
+          <p className="text-xs text-muted-foreground">
+            <Trans>Describe the feeling you want the tale to have</Trans>
+          </p>
+        </div>
+      )}
 
       <div className="pt-4 border-t">
         <p className="text-xs text-muted-foreground">
