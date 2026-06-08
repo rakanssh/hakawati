@@ -14,20 +14,20 @@ msgstr ""
 "Plural-Forms: \n"
 
 #: app/data/quickstart-presets.ts:476
-msgid " {characterName} has a rational explanation ready. It is not fitting the facts as neatly as it should."
-msgstr " جهّز {characterName} تفسيراً منطقياً. لكنه لا يتناسب مع الحقائق بدقة كما ينبغي."
+#~ msgid " {characterName} has a rational explanation ready. It is not fitting the facts as neatly as it should."
+#~ msgstr " جهّز {characterName} تفسيراً منطقياً. لكنه لا يتناسب مع الحقائق بدقة كما ينبغي."
 
 #: app/data/quickstart-presets.ts:477
-msgid " {characterName} recognizes something in this situation, something from their studies that they hoped would stay theoretical."
-msgstr " يدرك {characterName} شيئاً في هذا الموقف، شيئاً من دراساته كان يأمل أن يظل نظرياً."
+#~ msgid " {characterName} recognizes something in this situation, something from their studies that they hoped would stay theoretical."
+#~ msgstr " يدرك {characterName} شيئاً في هذا الموقف، شيئاً من دراساته كان يأمل أن يظل نظرياً."
 
 #: app/data/quickstart-presets.ts:473
-msgid " {characterName}'s instincts are focused on what can be gained and what it will cost."
-msgstr " تركز غرائز {characterName} على المكاسب والتكلفة."
+#~ msgid " {characterName}'s instincts are focused on what can be gained and what it will cost."
+#~ msgstr " تركز غرائز {characterName} على المكاسب والتكلفة."
 
 #: app/data/quickstart-presets.ts:472
-msgid " The arcane leaves traces. Let {characterName} sense something others would overlook."
-msgstr " يترك الغموض آثاراً. دع {characterName} يشعر بشيء قد يغفله الآخرون."
+#~ msgid " The arcane leaves traces. Let {characterName} sense something others would overlook."
+#~ msgstr " يترك الغموض آثاراً. دع {characterName} يشعر بشيء قد يغفله الآخرون."
 
 #: app/lib/play-utils.ts:18
 msgid "..."
@@ -52,22 +52,18 @@ msgstr "{0, plural, zero {# عناصر} one {عنصر واحد} two {عنصرا�
 msgid "{0, plural, one {# stat} other {# stats}}"
 msgstr "{0, plural, zero {# إحصائيات} one {إحصائية واحدة} two {إحصائيتان} few {# إحصائيات} many {# إحصائية} other {# إحصائية}}"
 
-#. placeholder {0}: inventory.length
-#. placeholder {0}: stats.length
-#. placeholder {1}: inventory.length === 1 ? "item" : "items"
-#. placeholder {1}: stats.length === 1 ? "stat" : "stats"
 #: app/components/quickstart/steps/stats-inventory-step.tsx:202
 #: app/components/quickstart/steps/stats-inventory-step.tsx:277
-msgid "{0} {1}"
-msgstr "{0} {1}"
+#~ msgid "{0} {1}"
+#~ msgstr "{0} {1}"
 
 #. placeholder {0}: scenario.name
-#: app/pages/home/home.tsx:204
+#: app/pages/home/home.tsx:203
 msgid "{0} scenario"
 msgstr "سيناريو {0}"
 
 #. placeholder {0}: tale.name
-#: app/pages/home/home.tsx:143
+#: app/pages/home/home.tsx:142
 msgid "{0} tale"
 msgstr "حكاية {0}"
 
@@ -76,31 +72,30 @@ msgid "{authorNoteChars} characters • ~{authorNoteTokens} tokens"
 msgstr "{authorNoteChars} حرف • ~{authorNoteTokens} رمز"
 
 #: app/data/quickstart-presets.ts:448
-msgid "{characterName} has found signs of other survivors, a campfire still warm, a message painted on a wall, tire tracks in the mud. Following these signs will be a risk. Ignoring them might be worse."
-msgstr "وجد {characterName} علامات لناجين آخرين: نار مخيم ما زالت دافئة، رسالة مرسومة على جدار، آثار إطارات في الوحل. اتباع هذه العلامات مخاطرة، لكن تجاهلها قد يكون أسوأ."
+#~ msgid "{characterName} has found signs of other survivors, a campfire still warm, a message painted on a wall, tire tracks in the mud. Following these signs will be a risk. Ignoring them might be worse."
+#~ msgstr "وجد {characterName} علامات لناجين آخرين: نار مخيم ما زالت دافئة، رسالة مرسومة على جدار، آثار إطارات في الوحل. اتباع هذه العلامات مخاطرة، لكن تجاهلها قد يكون أسوأ."
 
 #: app/data/quickstart-presets.ts:458
-msgid "{characterName} has returned to somewhere they have history with, an old family home, a town they left, a place from a memory they would rather not examine. Something drew them back. Something has been waiting."
-msgstr "عاد {characterName} إلى مكان له تاريخ معه: منزل عائلة قديم، بلدة غادرها، مكان من ذكرى يفضل عدم نبشها. شيء ما جذبه للعودة. شيء ما كان ينتظر."
+#~ msgid "{characterName} has returned to somewhere they have history with, an old family home, a town they left, a place from a memory they would rather not examine. Something drew them back. Something has been waiting."
+#~ msgstr "عاد {characterName} إلى مكان له تاريخ معه: منزل عائلة قديم، بلدة غادرها، مكان من ذكرى يفضل عدم نبشها. شيء ما جذبه للعودة. شيء ما كان ينتظر."
 
 #: app/data/quickstart-presets.ts:444
-msgid "{characterName} is following up on something that should be routine, a background check, a missing pet, paperwork for an insurance claim. The first person they talk to is nervous. Too nervous. Then they stop talking at all."
-msgstr "يتابع {characterName} أمراً روتينياً: فحص خلفية، حيوان أليف مفقود، أوراق لمطالبة تأمين. الشخص الأول الذي يتحدث معه متوتر. متوتر جداً. ثم يتوقف عن الحديث تماماً."
+#~ msgid "{characterName} is following up on something that should be routine, a background check, a missing pet, paperwork for an insurance claim. The first person they talk to is nervous. Too nervous. Then they stop talking at all."
+#~ msgstr "يتابع {characterName} أمراً روتينياً: فحص خلفية، حيوان أليف مفقود، أوراق لمطالبة تأمين. الشخص الأول الذي يتحدث معه متوتر. متوتر جداً. ثم يتوقف عن الحديث تماماً."
 
 #: app/data/quickstart-presets.ts:439
-msgid "{characterName} wakes to find something has changed overnight, a symbol burned into their door, a letter from someone long dead, a new scar they do not remember getting. Start with this mystery and the immediate question: what happens now?"
-msgstr "يستيقظ {characterName} ليجد شيئاً تغير في الليل: رمز حُرق على بابه، رسالة من شخص ميت منذ زمن، ندبة جديدة لا يتذكرها. ابدأ بهذا اللغز والسؤال الفوري: ماذا سيحدث الآن؟"
+#~ msgid "{characterName} wakes to find something has changed overnight, a symbol burned into their door, a letter from someone long dead, a new scar they do not remember getting. Start with this mystery and the immediate question: what happens now?"
+#~ msgstr "يستيقظ {characterName} ليجد شيئاً تغير في الليل: رمز حُرق على بابه، رسالة من شخص ميت منذ زمن، ندبة جديدة لا يتذكرها. ابدأ بهذا اللغز والسؤال الفوري: ماذا سيحدث الآن؟"
 
 #: app/data/quickstart-presets.ts:354
-msgid "{characterName}'s {settingName} Adventure"
-msgstr "مغامرة {characterName} - {settingName}"
+#~ msgid "{characterName}'s {settingName} Adventure"
+#~ msgstr "مغامرة {characterName} - {settingName}"
 
 #: app/data/quickstart-presets.ts:453
-msgid "{characterName}'s ship, station, or habitat picks up a signal that should not exist. It is old, far older than it should be, or it is coming from somewhere that should be empty. Someone has to investigate."
-msgstr "تلتقط سفينة أو محطة أو مسكن {characterName} إشارة لا ينبغي أن توجد. إنها قديمة، أقدم مما ينبغي، أو قادمة من مكان يفترض أن يكون فارغاً. شخص ما يجب أن يحقق."
+#~ msgid "{characterName}'s ship, station, or habitat picks up a signal that should not exist. It is old, far older than it should be, or it is coming from somewhere that should be empty. Someone has to investigate."
+#~ msgstr "تلتقط سفينة أو محطة أو مسكن {characterName} إشارة لا ينبغي أن توجد. إنها قديمة، أقدم مما ينبغي، أو قادمة من مكان يفترض أن يكون فارغاً. شخص ما يجب أن يحقق."
 
 #: app/components/layout/settings/tale.tsx:107
-#: app/components/quickstart/steps/description-style-step.tsx:43
 msgid "{descriptionChars} characters • ~{descriptionTokens} tokens"
 msgstr "{descriptionChars} حرف • ~{descriptionTokens} رمز"
 
@@ -112,8 +107,8 @@ msgid "{name} thumbnail"
 msgstr "صورة مصغرة لـ {name}"
 
 #: app/components/quickstart/steps/description-style-step.tsx:92
-msgid "{styleChars} characters • ~{styleTokens} tokens"
-msgstr "{styleChars} حرف • ~{styleTokens} رمز"
+#~ msgid "{styleChars} characters • ~{styleTokens} tokens"
+#~ msgstr "{styleChars} حرف • ~{styleTokens} رمز"
 
 #: app/components/layout/settings/about.tsx:50
 msgid "© 2025 Rakan AlShammari"
@@ -136,8 +131,8 @@ msgid "🎲 You..."
 msgstr "🎲 افعل..."
 
 #: app/components/quickstart/steps/tone-step.tsx:64
-msgid "💡 Tip: You can always adjust the tone later by editing the author note"
-msgstr "💡 نصيحة: يمكنك دائماً تعديل النبرة لاحقاً عن طريق تحرير ملاحظة المؤلف"
+#~ msgid "💡 Tip: You can always adjust the tone later by editing the author note"
+#~ msgstr "💡 نصيحة: يمكنك دائماً تعديل النبرة لاحقاً عن طريق تحرير ملاحظة المؤلف"
 
 #: app/components/sidebar/stats-card.tsx:167
 msgid "0"
@@ -148,38 +143,38 @@ msgid "100"
 msgstr "100"
 
 #: app/data/quickstart-presets.ts:378
-msgid "a setting defined by the theme you provided, grounded in the tone and situations common to that type of story."
-msgstr "بيئة محددة بالموضوع الذي قدمته، مرتكزة على النغمة والمواقف الشائعة لهذا النوع من القصص."
+#~ msgid "a setting defined by the theme you provided, grounded in the tone and situations common to that type of story."
+#~ msgstr "بيئة محددة بالموضوع الذي قدمته، مرتكزة على النغمة والمواقف الشائعة لهذا النوع من القصص."
 
 #: app/data/quickstart-presets.ts:149
-msgid "A small bundle of incense sticks"
-msgstr "حزمة صغيرة من أعواد البخور"
+#~ msgid "A small bundle of incense sticks"
+#~ msgstr "حزمة صغيرة من أعواد البخور"
 
 #: app/data/quickstart-presets.ts:376
-msgid "a world of advanced technology where humanity has scattered across the stars. The frontier is vast, dangerous, and full of discovery."
-msgstr "عالم من التكنولوجيا المتقدمة حيث تشتتت البشرية بين النجوم. آفاقه شاسعة، محفوفة بالمخاطر، وحافلة بالاكتشافات."
+#~ msgid "a world of advanced technology where humanity has scattered across the stars. The frontier is vast, dangerous, and full of discovery."
+#~ msgstr "عالم من التكنولوجيا المتقدمة حيث تشتتت البشرية بين النجوم. آفاقه شاسعة، محفوفة بالمخاطر، وحافلة بالاكتشافات."
 
 #: app/data/quickstart-presets.ts:374
-msgid "a world of shadows and secrets, where people mislead, conceal, and rationalize. Every locked door hides a motive. Every alibi has cracks. The truth waits beneath layers of story, excuse, and distraction, and those who dig too deep may not like what they find."
-msgstr "عالم من الظلال والأسرار، حيث التضليل والكتمان والتبرير. خلف كل باب موصد دافع خفي، وفي كل ذريعة شقوق تتسع. الحقيقة تقبع تحت طبقات من الزيف والأعذار، وأولئك الذين ينبشون في الأعماق قد يندمون على ما يجدون."
+#~ msgid "a world of shadows and secrets, where people mislead, conceal, and rationalize. Every locked door hides a motive. Every alibi has cracks. The truth waits beneath layers of story, excuse, and distraction, and those who dig too deep may not like what they find."
+#~ msgstr "عالم من الظلال والأسرار، حيث التضليل والكتمان والتبرير. خلف كل باب موصد دافع خفي، وفي كل ذريعة شقوق تتسع. الحقيقة تقبع تحت طبقات من الزيف والأعذار، وأولئك الذين ينبشون في الأعماق قد يندمون على ما يجدون."
 
 #: app/data/quickstart-presets.ts:375
-msgid "a world that ended three months ago. The virus claimed the cities first, too many people in too little space. Now the living dead move through the streets while the remaining few scavenge, survive, and wonder if humanity has any future at all."
-msgstr "عالم انتهى منذ ثلاثة أشهر. حصد الفيروس المدن أولاً لشدة اكتظاظها، والآن يجوب الموتى الأحياء الشوارع بينما القلة الباقية تقتات على ما تجد، تصارع للنجاة، وتتساءل إن كان للبشرية مستقبل أصلاً."
+#~ msgid "a world that ended three months ago. The virus claimed the cities first, too many people in too little space. Now the living dead move through the streets while the remaining few scavenge, survive, and wonder if humanity has any future at all."
+#~ msgstr "عالم انتهى منذ ثلاثة أشهر. حصد الفيروس المدن أولاً لشدة اكتظاظها، والآن يجوب الموتى الأحياء الشوارع بينما القلة الباقية تقتات على ما تجد، تصارع للنجاة، وتتساءل إن كان للبشرية مستقبل أصلاً."
 
 #: app/data/quickstart-presets.ts:373
-msgid "a world where ancient magic stirs in forgotten places, kingdoms rise and fall by the sword, and prophecies shape the fate of mortals. Ancient beasts slumber in mountain keeps. Old gods whisper through sacred groves. The line between legend and reality blurs."
-msgstr "عالم يستيقظ فيه السحر القديم في بقاع منسية، ممالك تُبنى وتندثر بحد السيف، ونبوءات تصوغ مصائر الفانين. وحوش عتيقة تغط في سبات عميق داخل حصون جبلية، وآلهة قديمة تهمس عبر البساتين المقدسة، حيث يتلاشى الخط الفاصل بين الأسطورة والواقع."
+#~ msgid "a world where ancient magic stirs in forgotten places, kingdoms rise and fall by the sword, and prophecies shape the fate of mortals. Ancient beasts slumber in mountain keeps. Old gods whisper through sacred groves. The line between legend and reality blurs."
+#~ msgstr "عالم يستيقظ فيه السحر القديم في بقاع منسية، ممالك تُبنى وتندثر بحد السيف، ونبوءات تصوغ مصائر الفانين. وحوش عتيقة تغط في سبات عميق داخل حصون جبلية، وآلهة قديمة تهمس عبر البساتين المقدسة، حيث يتلاشى الخط الفاصل بين الأسطورة والواقع."
 
 #: app/data/quickstart-presets.ts:377
-msgid "a world where something is deeply wrong. It began as a feeling of being watched, dreams that feel too real, thoughts that do not fully feel like your own. Rational explanations are running out. What waits at the edge of perception is patient, and it is getting closer."
-msgstr "عالم فيه خطبٌ فادح. بدأ الأمر كشعور بأنك مراقب، ثم أحلام تبدو واقعية للغاية، وأفكار لا تبدو ملكك تماماً. التفسيرات العقلانية تتلاشى، وما ينتظر عند حافة الإدراك صبور... ويقترب أكثر فأكثر."
+#~ msgid "a world where something is deeply wrong. It began as a feeling of being watched, dreams that feel too real, thoughts that do not fully feel like your own. Rational explanations are running out. What waits at the edge of perception is patient, and it is getting closer."
+#~ msgstr "عالم فيه خطبٌ فادح. بدأ الأمر كشعور بأنك مراقب، ثم أحلام تبدو واقعية للغاية، وأفكار لا تبدو ملكك تماماً. التفسيرات العقلانية تتلاشى، وما ينتظر عند حافة الإدراك صبور... ويقترب أكثر فأكثر."
 
 #: app/components/layout/settings/settings-modal.tsx:83
 msgid "About"
 msgstr "عن التطبيق"
 
-#: app/components/play/play-input-controls.tsx:188
+#: app/components/play/play-input-controls.tsx:258
 msgid "Act"
 msgstr "افعل"
 
@@ -188,7 +183,6 @@ msgid "Add"
 msgstr "إضافة"
 
 #: app/components/layout/settings/inventory-stats.tsx:170
-#: app/components/quickstart/steps/stats-inventory-step.tsx:257
 msgid "Add a stat to track character attributes"
 msgstr "أضف خاصية لتتبع سمات الشخصية"
 
@@ -234,7 +228,6 @@ msgid "Add Item"
 msgstr "إضافة شيء"
 
 #: app/components/layout/settings/inventory-stats.tsx:210
-#: app/components/quickstart/steps/stats-inventory-step.tsx:287
 msgid "Add item..."
 msgstr "إضافة شيء..."
 
@@ -249,8 +242,8 @@ msgid "Add stat name"
 msgstr "أضف اسم الخاصية"
 
 #: app/data/quickstart-presets.ts:337
-msgid "Address the player directly in second person. Write in present tense. Show, do not simply tell. Use concrete sensory details over abstract descriptions. Vary sentence rhythm. Short, sharp lines for tension. Longer, flowing passages for atmosphere. Avoid acting on behalf of the player."
-msgstr "خاطب اللاعب مباشرة بضمير المخاطب. اكتب بصيغة المضارع. أظهر ولا تخبر فقط. استخدم تفاصيل حسية ملموسة. نوّع إيقاع الجمل: قصيرة وحادة للتوتر، وطويلة وانسيابية للجو. تجنب التصرف نيابة عن اللاعب."
+#~ msgid "Address the player directly in second person. Write in present tense. Show, do not simply tell. Use concrete sensory details over abstract descriptions. Vary sentence rhythm. Short, sharp lines for tension. Longer, flowing passages for atmosphere. Avoid acting on behalf of the player."
+#~ msgstr "خاطب اللاعب مباشرة بضمير المخاطب. اكتب بصيغة المضارع. أظهر ولا تخبر فقط. استخدم تفاصيل حسية ملموسة. نوّع إيقاع الجمل: قصيرة وحادة للتوتر، وطويلة وانسيابية للجو. تجنب التصرف نيابة عن اللاعب."
 
 #: app/components/layout/settings/game.tsx:121
 msgid "Adjust interface density, story text size, and font choice."
@@ -292,20 +285,24 @@ msgid "All"
 msgstr "الكل"
 
 #: app/data/quickstart-presets.ts:488
-msgid "Allow small moments of warmth or levity to color the scene, even if danger is present."
-msgstr "اسمح للحظات صغيرة من الدفء أو الخفة أن تلون المشهد، حتى في وجود الخطر."
+#~ msgid "Allow small moments of warmth or levity to color the scene, even if danger is present."
+#~ msgstr "اسمح للحظات صغيرة من الدفء أو الخفة أن تلون المشهد، حتى في وجود الخطر."
 
 #: app/components/layout/settings/api.tsx:298
 msgid "alloy"
 msgstr "alloy"
 
 #: app/data/quickstart-presets.ts:267
-msgid "Amulet"
-msgstr "تميمة"
+#~ msgid "Amulet"
+#~ msgstr "تميمة"
 
 #: app/data/quickstart-presets.ts:263
-msgid "Ancient Tome"
-msgstr "مجلد قديم"
+#~ msgid "Ancient Tome"
+#~ msgstr "مجلد قديم"
+
+#: app/components/quickstart/quickstart-wizard.tsx:457
+msgid "Anything else before the tale begins?"
+msgstr "هل هناك أي شيء آخر قبل بدء الحكاية؟"
 
 #: app/components/layout/settings/api.tsx:236
 msgid "API Key"
@@ -320,12 +317,12 @@ msgid "Appearance"
 msgstr "المظهر"
 
 #: app/components/quickstart/quickstart-wizard.tsx:132
-msgid "Archetype"
-msgstr "الشخصية"
+#~ msgid "Archetype"
+#~ msgstr "الشخصية"
 
 #: app/data/quickstart-presets.ts:400
-msgid "assigned to the edge of known space, more interested in unknown phenomena than in safety protocols"
-msgstr "مُعيّن على حافة الفضاء المعروف، مهتم بالظواهر المجهولة أكثر من بروتوكولات السلامة"
+#~ msgid "assigned to the edge of known space, more interested in unknown phenomena than in safety protocols"
+#~ msgstr "مُعيّن على حافة الفضاء المعروف، مهتم بالظواهر المجهولة أكثر من بروتوكولات السلامة"
 
 #: app/components/layout/settings/tale.tsx:125
 msgid "Author Notes"
@@ -347,7 +344,7 @@ msgstr "تعبئة آلية"
 msgid "Automatically play new story narration after it finishes generating."
 msgstr "تشغيل سرد القصة الجديد تلقائياً بعد انتهاء توليده."
 
-#: app/components/quickstart/quickstart-wizard.tsx:404
+#: app/components/quickstart/quickstart-wizard.tsx:648
 msgid "Back"
 msgstr "السابق"
 
@@ -356,30 +353,30 @@ msgid "Base URL"
 msgstr "العنوان الأساسي"
 
 #: app/data/quickstart-presets.ts:454
-msgid "Begin at a threshold: {characterName} is about to cross a border, make a deal, or open a door that cannot easily be closed again. Something has brought them to this moment. Something is waiting on the other side."
-msgstr "ابدأ عند عتبة: {characterName} على وشك عبور حدود، أو عقد صفقة، أو فتح باب لا يمكن إغلاقه بسهولة. شيء ما جلبه إلى هذه اللحظة، وشيء ما ينتظر في الجانب الآخر."
+#~ msgid "Begin at a threshold: {characterName} is about to cross a border, make a deal, or open a door that cannot easily be closed again. Something has brought them to this moment. Something is waiting on the other side."
+#~ msgstr "ابدأ عند عتبة: {characterName} على وشك عبور حدود، أو عقد صفقة، أو فتح باب لا يمكن إغلاقه بسهولة. شيء ما جلبه إلى هذه اللحظة، وشيء ما ينتظر في الجانب الآخر."
 
 #: app/data/quickstart-presets.ts:437
-msgid "Begin in medias res, {characterName} is already in trouble. Something has gone wrong: a deal turned sour, a spell misfired, an old enemy resurfaced. Ground the opening in immediate tension and sensory detail. What does {characterName} see, hear, feel? What decision must they make right now?"
-msgstr "ابدأ من خضم الأحداث؛ {characterName} في ورطة بالفعل. حدث خطأ ما: صفقة ساءت، أو تعويذة أخطأت هدفها، أو عدو قديم عاد للظهور. ارسِ الافتتاحية في توتر فوري وتفاصيل حسية؛ ماذا يرى {characterName} ويسمع ويشعر؟ وما القرار المصيري الذي يجب اتخاذه الآن؟"
+#~ msgid "Begin in medias res, {characterName} is already in trouble. Something has gone wrong: a deal turned sour, a spell misfired, an old enemy resurfaced. Ground the opening in immediate tension and sensory detail. What does {characterName} see, hear, feel? What decision must they make right now?"
+#~ msgstr "ابدأ من خضم الأحداث؛ {characterName} في ورطة بالفعل. حدث خطأ ما: صفقة ساءت، أو تعويذة أخطأت هدفها، أو عدو قديم عاد للظهور. ارسِ الافتتاحية في توتر فوري وتفاصيل حسية؛ ماذا يرى {characterName} ويسمع ويشعر؟ وما القرار المصيري الذي يجب اتخاذه الآن؟"
 
 #: app/data/quickstart-presets.ts:449
-msgid "Begin in the middle of a supply run gone sideways. {characterName} is somewhere they should not be, with less time than they thought they had. The exits are limited. The noise they just made was loud."
-msgstr "ابدأ في منتصف عملية جلب إمدادات فاشلة. {characterName} في مكان لا ينبغي أن يكون فيه، مع وقت قليل. المخارج محدودة، والضجيج الذي أحدثه كان عالياً."
+#~ msgid "Begin in the middle of a supply run gone sideways. {characterName} is somewhere they should not be, with less time than they thought they had. The exits are limited. The noise they just made was loud."
+#~ msgstr "ابدأ في منتصف عملية جلب إمدادات فاشلة. {characterName} في مكان لا ينبغي أن يكون فيه، مع وقت قليل. المخارج محدودة، والضجيج الذي أحدثه كان عالياً."
 
 #: app/data/quickstart-presets.ts:462
-msgid "Begin with {characterName} at a crossroads, literal or figurative. A decision must be made and there is no clear right or wrong option. Ground the opening in sensory detail and immediate stakes."
-msgstr "ابدأ مع {characterName} عند مفترق طرق. يجب اتخاذ قرار دون خيار واضح. رسّخ الافتتاحية في تفاصيل حسية ومخاطر فورية."
+#~ msgid "Begin with {characterName} at a crossroads, literal or figurative. A decision must be made and there is no clear right or wrong option. Ground the opening in sensory detail and immediate stakes."
+#~ msgstr "ابدأ مع {characterName} عند مفترق طرق. يجب اتخاذ قرار دون خيار واضح. رسّخ الافتتاحية في تفاصيل حسية ومخاطر فورية."
 
 #: app/data/quickstart-presets.ts:443
-msgid "Begin with {characterName} getting a call, a letter, or a visitor they did not expect. Someone needs help with something they refuse to explain over the phone. The address is in a part of town where {characterName} does not usually do business."
-msgstr "ابدأ بتلقي {characterName} مكالمة أو رسالة أو زائر غير متوقع. شخص يحتاج مساعدة في أمر غامض. العنوان في منطقة لا يذهب إليها {characterName} عادة."
+#~ msgid "Begin with {characterName} getting a call, a letter, or a visitor they did not expect. Someone needs help with something they refuse to explain over the phone. The address is in a part of town where {characterName} does not usually do business."
+#~ msgstr "ابدأ بتلقي {characterName} مكالمة أو رسالة أو زائر غير متوقع. شخص يحتاج مساعدة في أمر غامض. العنوان في منطقة لا يذهب إليها {characterName} عادة."
 
 #: app/data/quickstart-presets.ts:459
-msgid "Begin with {characterName} waking from a dream they cannot quite remember, with the heavy sense that something followed them back. The day starts normally enough. It does not stay that way."
-msgstr "ابدأ باستيقاظ {characterName} من حلم لا يتذكره، مع شعور بأن شيئاً ما تبعه. يبدأ اليوم بشكل طبيعي، لكنه لا يبقى كذلك."
+#~ msgid "Begin with {characterName} waking from a dream they cannot quite remember, with the heavy sense that something followed them back. The day starts normally enough. It does not stay that way."
+#~ msgstr "ابدأ باستيقاظ {characterName} من حلم لا يتذكره، مع شعور بأن شيئاً ما تبعه. يبدأ اليوم بشكل طبيعي، لكنه لا يبقى كذلك."
 
-#: app/components/quickstart/steps/game-mode-step.tsx:33
+#: app/components/quickstart/steps/game-mode-step.tsx:30
 msgid "Best with more capable models. Requires tool calling."
 msgstr "أفضل مع نماذج أكثر قدرة. يتطلب دعم استدعاء الأدوات."
 
@@ -392,13 +389,13 @@ msgid "Browse and manage your scenarios"
 msgstr "تصفح وإدارة السيناريوهات"
 
 #: app/data/quickstart-presets.ts:324
-msgid "Build tension through atmosphere and unanswered questions. Focus on human motives, lies, and conflicting accounts. Plant clues naturally. Every character could be hiding something."
-msgstr "ابنِ التوتر عبر الأجواء والأسئلة الغامضة. ركز على الدوافع البشرية، والأكاذيب، والروايات المتضاربة. ازرع القرائن بعفوية، فكل شخصية قد تخفي سراً."
+#~ msgid "Build tension through atmosphere and unanswered questions. Focus on human motives, lies, and conflicting accounts. Plant clues naturally. Every character could be hiding something."
+#~ msgstr "ابنِ التوتر عبر الأجواء والأسئلة الغامضة. ركز على الدوافع البشرية، والأكاذيب، والروايات المتضاربة. ازرع القرائن بعفوية، فكل شخصية قد تخفي سراً."
 
 #: app/data/quickstart-presets.ts:139
 #: app/data/quickstart-presets.ts:282
-msgid "Camera"
-msgstr "كاميرا"
+#~ msgid "Camera"
+#~ msgstr "كاميرا"
 
 #: app/components/scenario/GenerateScenarioDialog.tsx:104
 #: app/components/sidebar/inventory-card.tsx:112
@@ -409,38 +406,38 @@ msgstr "كاميرا"
 msgid "Cancel"
 msgstr "إلغاء"
 
-#: app/components/play/play-input-controls.tsx:361
-#: app/components/play/play-input-controls.tsx:367
+#: app/components/play/play-input-controls.tsx:438
+#: app/components/play/play-input-controls.tsx:444
 msgid "Cancel recording"
 msgstr "إلغاء التسجيل"
 
 #: app/data/quickstart-presets.ts:266
-msgid "Candles"
-msgstr "شموع"
+#~ msgid "Candles"
+#~ msgstr "شموع"
 
 #: app/data/quickstart-presets.ts:175
-msgid "Canned Food"
-msgstr "طعام معلب"
+#~ msgid "Canned Food"
+#~ msgstr "طعام معلب"
 
 #: app/components/storybook/StorybookEditor.tsx:323
 msgid "Category"
 msgstr "الفئة"
 
 #: app/components/layout/settings/settings-modal.tsx:108
+#: app/components/quickstart/quickstart-wizard.tsx:396
 #: app/components/storybook/CategoryFilter.tsx:35
 #: app/components/storybook/StorybookEditor.tsx:59
 #: app/components/storybook/StoryCard.tsx:43
 msgid "Character"
 msgstr "شخصية"
 
-#: app/components/quickstart/quickstart-wizard.tsx:154
-#: app/components/quickstart/steps/character-name-step.tsx:20
+#: app/components/quickstart/quickstart-wizard.tsx:423
 msgid "Character Name"
 msgstr "اسم الشخصية"
 
 #: app/data/quickstart-presets.ts:390
-msgid "chasing the story others avoid, knowing that the best headlines come with the biggest risks"
-msgstr "تطارد القصة التي يتجنبها الآخرون، عالماً أن أفضل العناوين تأتي مع أكبر المخاطر"
+#~ msgid "chasing the story others avoid, knowing that the best headlines come with the biggest risks"
+#~ msgstr "تطارد القصة التي يتجنبها الآخرون، عالماً أن أفضل العناوين تأتي مع أكبر المخاطر"
 
 #: app/components/layout/settings/settings-modal.tsx:75
 msgid "Check for app updates and install new versions."
@@ -466,35 +463,43 @@ msgstr "اختر مدى تحكم الذكاء الاصطناعي في هذه ا�
 msgid "Choose how much model reasoning appears in the log."
 msgstr "اختر مقدار تفكير النموذج الذي يظهر في السجل."
 
+#: app/components/quickstart/quickstart-wizard.tsx:364
+msgid "Choose the mode that fits the kind of tale you want to generate."
+msgstr "اختر الوضع الذي يناسب نوع الحكاية التي تريد توليدها."
+
 #: app/components/quickstart/steps/archetype-step.tsx:67
-msgid "Choose your character archetype"
-msgstr "اختر نمط شخصيتك"
+#~ msgid "Choose your character archetype"
+#~ msgstr "اختر نمط شخصيتك"
 
 #: app/components/quickstart/steps/game-mode-step.tsx:41
-msgid "Choose your game mode"
-msgstr "اختر نوع اللعبة"
+#~ msgid "Choose your game mode"
+#~ msgstr "اختر نوع اللعبة"
 
 #: app/components/quickstart/quickstart-wizard.tsx:99
-msgid "Choose your play style"
-msgstr "اختر نوع اللعبة"
+#~ msgid "Choose your play style"
+#~ msgstr "اختر نوع اللعبة"
 
-#: app/pages/home/home.tsx:556
+#: app/components/quickstart/quickstart-wizard.tsx:107
+msgid "Clear input"
+msgstr "مسح الإدخال"
+
+#: app/pages/home/home.tsx:554
 msgid "Click \"Quickstart\" to jump right in with a guided wizard, or"
 msgstr "اضغط على \"بداية سريعة\" للبدء باستخدام المعالج، أو"
 
 #: app/data/quickstart-presets.ts:406
-msgid "clinging to rationality like a life raft, even as the evidence mounts that the world does not quite match the rules you know"
-msgstr "يتشبث بالعقلانية كطوق نجاة، حتى مع تراكم الأدلة على أن العالم لا يخضع للقواعد التي ألفها"
+#~ msgid "clinging to rationality like a life raft, even as the evidence mounts that the world does not quite match the rules you know"
+#~ msgstr "يتشبث بالعقلانية كطوق نجاة، حتى مع تراكم الأدلة على أن العالم لا يخضع للقواعد التي ألفها"
 
 #: app/components/play/tts-player.tsx:88
 msgid "Close narration player"
 msgstr "إغلاق مشغل السرد"
 
 #: app/data/quickstart-presets.ts:205
-msgid "Combat Knife"
-msgstr "سكين قتال"
+#~ msgid "Combat Knife"
+#~ msgstr "سكين قتال"
 
-#: app/data/quickstart-presets.ts:306
+#: app/data/quickstart-presets.ts:73
 msgid "Comedic"
 msgstr "كوميدي"
 
@@ -509,12 +514,12 @@ msgid "Configure Hakawati, AI providers, generation behavior, and maintenance."
 msgstr "تهيئة حكواتي، ومزودي الذكاء الاصطناعي، وسلوك التوليد، والصيانة."
 
 #: app/components/quickstart/quickstart-wizard.tsx:213
-msgid "Configure your character"
-msgstr "اضبط الشخصية"
+#~ msgid "Configure your character"
+#~ msgstr "اضبط الشخصية"
 
 #: app/components/quickstart/steps/stats-inventory-step.tsx:175
-msgid "Configure your character's stats and inventory"
-msgstr "تهيئة خصائص ومخزون شخصيتك"
+#~ msgid "Configure your character's stats and inventory"
+#~ msgstr "تهيئة خصائص ومخزون شخصيتك"
 
 #: app/components/layout/settings/settings-modal.tsx:45
 msgid "Connect a provider, choose an endpoint, and pick a model."
@@ -525,8 +530,8 @@ msgid "Connect to any other OpenAI-compatible API. Enter the base URL and API ke
 msgstr "اتصل بأي API آخر متوافق مع OpenAI. أدخل العنوان الأساسي (Base URL) ومفتاح API الخاص بمزود الخدمة."
 
 #: app/data/quickstart-presets.ts:264
-msgid "Contains forbidden knowledge"
-msgstr "يحتوي على معرفة محرمة"
+#~ msgid "Contains forbidden knowledge"
+#~ msgstr "يحتوي على معرفة محرمة"
 
 #: app/components/storybook/StorybookEditor.tsx:296
 msgid "Content"
@@ -549,10 +554,9 @@ msgstr "مساعدة بشأن نافذة السياق"
 msgid "Continuation {0}"
 msgstr "تكملة {0}"
 
-#: app/components/play/log/log-control.tsx:192
-#: app/components/play/log/log-control.tsx:200
-#: app/components/play/log/log-control.tsx:208
-#: app/pages/home/home.tsx:645
+#: app/components/play/log/log-control.tsx:290
+#: app/components/play/log/log-control.tsx:303
+#: app/pages/home/home.tsx:643
 msgid "Continue"
 msgstr "استمرار"
 
@@ -564,7 +568,7 @@ msgstr "ملاحظة المؤلف عند الاستمرار"
 msgid "Continue System Prompt"
 msgstr "موجّه النظام عند الاستمرار"
 
-#: app/pages/home/home.tsx:593
+#: app/pages/home/home.tsx:591
 msgid "Continue: Continue the story."
 msgstr "استمرار: متابعة القصة."
 
@@ -596,11 +600,15 @@ msgstr "أنشئ مفتاحاً سرياً (Secret Key) جديداً والصق�
 msgid "Create a new stat with initial and maximum values."
 msgstr "إنشاء خاصية جديدة مع قيمة ابتدائية وقيمة قصوى."
 
+#: app/components/quickstart/quickstart-wizard.tsx:611
+msgid "Create a tale with a guided setup"
+msgstr "أنشئ حكاية بإعداد موجّه"
+
 #: app/data/api-presets.ts:83
 msgid "Create an OpenAI account"
 msgstr "أنشئ حساب OpenAI"
 
-#: app/pages/home/home.tsx:480
+#: app/pages/home/home.tsx:478
 #: app/pages/scenarios/create.tsx:51
 msgid "Create Scenario"
 msgstr "إنشاء سيناريو"
@@ -610,11 +618,10 @@ msgid "Credits"
 msgstr "المساهمون"
 
 #: app/data/quickstart-presets.ts:174
-msgid "Crowbar"
-msgstr "عتلة"
+#~ msgid "Crowbar"
+#~ msgstr "عتلة"
 
 #: app/components/layout/settings/inventory-stats.tsx:119
-#: app/components/quickstart/steps/stats-inventory-step.tsx:220
 #: app/components/ui/stat-item.tsx:65
 msgid "Current"
 msgstr "الحالي"
@@ -623,8 +630,8 @@ msgstr "الحالي"
 #: app/data/quickstart-presets.ts:118
 #: app/data/quickstart-presets.ts:164
 #: app/data/quickstart-presets.ts:202
-msgid "Current energy"
-msgstr "الطاقة الحالية"
+#~ msgid "Current energy"
+#~ msgstr "الطاقة الحالية"
 
 #: app/components/sidebar/stats-card.tsx:162
 msgid "Current Value"
@@ -636,22 +643,22 @@ msgid "Current version: {0}"
 msgstr "الإصدار الحالي: {0}"
 
 #: app/data/quickstart-presets.ts:391
-msgid "cursed, or gifted, with glimpses beyond the veil, never certain if what you see is truth or madness"
-msgstr "ملعون أو موهوب بلمحات مما وراء الحجاب، غير متأكد إن كان ما تراه حقيقة أم جنوناً"
+#~ msgid "cursed, or gifted, with glimpses beyond the veil, never certain if what you see is truth or madness"
+#~ msgstr "ملعون أو موهوب بلمحات مما وراء الحجاب، غير متأكد إن كان ما تراه حقيقة أم جنوناً"
 
 #: app/components/quickstart/steps/archetype-step.tsx:37
 #: app/data/quickstart-presets.ts:62
 #: app/data/quickstart-presets.ts:288
-msgid "Custom"
-msgstr "مخصص"
+#~ msgid "Custom"
+#~ msgstr "مخصص"
 
 #: app/components/quickstart/steps/archetype-step.tsx:139
-msgid "Custom Archetype"
-msgstr "نمط مخصص"
+#~ msgid "Custom Archetype"
+#~ msgstr "نمط مخصص"
 
 #: app/components/quickstart/steps/setting-step.tsx:81
-msgid "Custom Setting"
-msgstr "بيئة مخصصة"
+#~ msgid "Custom Setting"
+#~ msgstr "بيئة مخصصة"
 
 #: app/components/layout/settings/advanced.tsx:112
 msgid "Customize system prompts that control how the AI responds. Users with default prompts will automatically receive updates when the app is updated. Custom prompts will be preserved until you reset them."
@@ -662,16 +669,16 @@ msgid "Customize the system prompts used by Hakawati."
 msgstr "تخصيص موجهات النظام المستخدمة في حكواتي."
 
 #: app/components/quickstart/quickstart-wizard.tsx:178
-msgid "Customize your scenario and narration style"
-msgstr "اضبط السيناريو واسلوب الكتابة"
+#~ msgid "Customize your scenario and narration style"
+#~ msgstr "اضبط السيناريو واسلوب الكتابة"
 
 #: app/data/quickstart-presets.ts:107
-msgid "Dagger"
-msgstr "خنجر"
+#~ msgid "Dagger"
+#~ msgstr "خنجر"
 
 #: app/components/quickstart/quickstart-wizard.tsx:133
-msgid "Define your character"
-msgstr "عرف الشخصية"
+#~ msgid "Define your character"
+#~ msgstr "عرف الشخصية"
 
 #: app/pages/scenarios/home.tsx:177
 #: app/pages/tales/home.tsx:167
@@ -687,19 +694,26 @@ msgid "Describe the scenario you want and your utility model will be prompted to
 msgstr "صف السيناريو الذي تريده وسيُطلب من نموذج المساعدة توليد بداية لك."
 
 #: app/components/quickstart/steps/setting-step.tsx:91
-msgid "Describe the world"
-msgstr "صف العالم"
+#~ msgid "Describe the world"
+#~ msgstr "صف العالم"
 
 #: app/components/quickstart/steps/description-style-step.tsx:70
-msgid "Describe the world and setting"
-msgstr "صف العالم والبيئة"
+#~ msgid "Describe the world and setting"
+#~ msgstr "صف العالم والبيئة"
+
+#: app/components/quickstart/quickstart-wizard.tsx:383
+msgid "Describe the world..."
+msgstr "صف العالم..."
+
+#: app/components/quickstart/quickstart-wizard.tsx:403
+msgid "Describe your character archetype..."
+msgstr "صف نمط شخصيتك..."
 
 #: app/components/quickstart/steps/archetype-step.tsx:149
-msgid "Describe your character's role"
-msgstr "صف دور شخصيتك"
+#~ msgid "Describe your character's role"
+#~ msgstr "صف دور شخصيتك"
 
 #: app/components/layout/settings/tale.tsx:104
-#: app/components/quickstart/steps/description-style-step.tsx:40
 #: app/components/ui/inventory-item.tsx:61
 #: app/components/ui/stat-item.tsx:88
 msgid "Description"
@@ -714,26 +728,30 @@ msgid "Description (optional)"
 msgstr "الوصف (اختياري)"
 
 #: app/components/quickstart/quickstart-wizard.tsx:177
-msgid "Description & Style"
-msgstr "الوصف والأسلوب"
+#~ msgid "Description & Style"
+#~ msgstr "الوصف والأسلوب"
 
 #: app/components/layout/settings/updates.tsx:146
 msgid "Desktop-only feature."
 msgstr "ميزة لسطح المكتب فقط."
 
+#: app/components/quickstart/quickstart-wizard.tsx:456
+msgid "Details (Optional)"
+msgstr "تفاصيل (اختياري)"
+
 #: app/components/layout/settings/updates.tsx:163
 msgid "Detecting..."
 msgstr "جاري الاكتشاف..."
 
-#: app/data/quickstart-presets.ts:131
+#: app/data/quickstart-presets.ts:41
 msgid "Detective"
 msgstr "محقّق"
 
-#: app/components/play/play-input-controls.tsx:191
+#: app/components/play/play-input-controls.tsx:261
 msgid "Direct"
 msgstr "اخراج"
 
-#: app/pages/home/home.tsx:587
+#: app/pages/home/home.tsx:585
 msgid "Direct: An out of character note telling the AI to do something."
 msgstr "اخراج: ملاحظة لتوجيه الكاتب."
 
@@ -741,7 +759,7 @@ msgstr "اخراج: ملاحظة لتوجيه الكاتب."
 msgid "Director's Note..."
 msgstr "ملاحظة المخرج..."
 
-#: app/pages/home/home.tsx:575
+#: app/pages/home/home.tsx:573
 msgid "Do: Act in the story."
 msgstr "افعل: قم بفعل ما."
 
@@ -759,32 +777,36 @@ msgid "Downloading update... ({0})"
 msgstr "جاري تحميل التحديث... ({0})"
 
 #: app/data/quickstart-presets.ts:323
-msgid "Draw from classic sword and sorcery. Magic should feel wondrous or dangerous, never mundane."
-msgstr "استمد إلهامك من قصص السيف والسحر الكلاسيكية. يجب أن يبدو السحر عجيباً أو خطيراً، وليس عادياً أبداً."
+#~ msgid "Draw from classic sword and sorcery. Magic should feel wondrous or dangerous, never mundane."
+#~ msgstr "استمد إلهامك من قصص السيف والسحر الكلاسيكية. يجب أن يبدو السحر عجيباً أو خطيراً، وليس عادياً أبداً."
 
 #: app/data/quickstart-presets.ts:389
-msgid "driven by an obsession with truth that has cost you sleep, relationships, and maybe your peace of mind"
-msgstr "مدفوع بهوس الحقيقة الذي كلفك النوم والعلاقات وربما راحة بالك"
+#~ msgid "driven by an obsession with truth that has cost you sleep, relationships, and maybe your peace of mind"
+#~ msgstr "مدفوع بهوس الحقيقة الذي كلفك النوم والعلاقات وربما راحة بالك"
 
 #: app/data/quickstart-presets.ts:463
-msgid "Drop into the middle of a conversation already in progress. {characterName} is trying to get something and the other party suddenly raises the stakes with a condition or threat. Let the surroundings say as much about the world as the dialogue does."
-msgstr "ابدأ في منتصف محادثة. {characterName} يحاول الحصول على شيء والطرف الآخر يرفع المخاطر. دع المحيط يتحدث عن العالم بقدر الحوار."
+#~ msgid "Drop into the middle of a conversation already in progress. {characterName} is trying to get something and the other party suddenly raises the stakes with a condition or threat. Let the surroundings say as much about the world as the dialogue does."
+#~ msgstr "ابدأ في منتصف محادثة. {characterName} يحاول الحصول على شيء والطرف الآخر يرفع المخاطر. دع المحيط يتحدث عن العالم بقدر الحوار."
 
 #: app/components/quickstart/steps/description-style-step.tsx:50
-msgid "e.g., A mysterious adventure in a forgotten temple..."
-msgstr "مثال: مغامرة غامضة في معبد منسي..."
+#~ msgid "e.g., A mysterious adventure in a forgotten temple..."
+#~ msgstr "مثال: مغامرة غامضة في معبد منسي..."
 
 #: app/components/quickstart/steps/description-style-step.tsx:99
-msgid "e.g., Respond in the second person. Keep responses concise..."
-msgstr "مثال: رد بصيغة المخاطب. اجعل الردود موجزة..."
+#~ msgid "e.g., Respond in the second person. Keep responses concise..."
+#~ msgstr "مثال: رد بصيغة المخاطب. اجعل الردود موجزة..."
 
 #: app/components/quickstart/steps/archetype-step.tsx:143
-msgid "e.g., Soldier, Sapient Potato, etc."
-msgstr "مثال: جندي، إلخ."
+#~ msgid "e.g., Soldier, Sapient Potato, etc."
+#~ msgstr "مثال: جندي، إلخ."
+
+#: app/components/quickstart/quickstart-wizard.tsx:225
+msgid "e.g., Start during a festival, include a lost sibling, avoid grim endings..."
+msgstr "مثال: ابدأ أثناء مهرجان، أو ضمّن شقيقاً مفقوداً، أو تجنب النهايات القاتمة..."
 
 #: app/components/quickstart/steps/setting-step.tsx:85
-msgid "e.g., Steampunk, Space Opera, etc."
-msgstr "مثال: ستيم بانك، أوبرا الفضاء، إلخ."
+#~ msgid "e.g., Steampunk, Space Opera, etc."
+#~ msgstr "مثال: ستيم بانك، أوبرا الفضاء، إلخ."
 
 #: app/pages/scenarios/home.tsx:158
 msgid "Edit"
@@ -803,12 +825,12 @@ msgid "Edit the active tale's story context, character state, and memory."
 msgstr "تعديل سياق قصة الحكاية النشطة، وحالة الشخصية، والذاكرة."
 
 #: app/data/quickstart-presets.ts:325
-msgid "Emphasize survival horror. Resources are scarce. Trust is fragile. The world has ended and what remains is desperate, gritty, and human. Quiet moments matter as much as the horror."
-msgstr "ركز على رعب النجاة؛ حيث الموارد شحيحة والثقة هشة. لقد انتهى العالم، وما تبقى منه ليس سوى اليأس والقسوة والإنسانية الجريحة. اللحظات الهادئة تهم بقدر الرعب."
+#~ msgid "Emphasize survival horror. Resources are scarce. Trust is fragile. The world has ended and what remains is desperate, gritty, and human. Quiet moments matter as much as the horror."
+#~ msgstr "ركز على رعب النجاة؛ حيث الموارد شحيحة والثقة هشة. لقد انتهى العالم، وما تبقى منه ليس سوى اليأس والقسوة والإنسانية الجريحة. اللحظات الهادئة تهم بقدر الرعب."
 
 #: app/data/quickstart-presets.ts:214
-msgid "Energy sidearm"
-msgstr "سلاح طاقة جانبي"
+#~ msgid "Energy sidearm"
+#~ msgstr "سلاح طاقة جانبي"
 
 #: app/components/sidebar/inventory-card.tsx:80
 msgid "Enter a new item to add to your inventory."
@@ -823,7 +845,7 @@ msgstr "أدخل معرف النموذج يدوياً"
 msgid "Enter the base URL in the URL field"
 msgstr "أدخل العنوان الأساسي (Base URL) في حقل الرابط"
 
-#: app/components/play/play-input-controls.tsx:347
+#: app/components/play/play-input-controls.tsx:424
 msgid "Enter your action"
 msgstr "أدخل إجراءك"
 
@@ -831,7 +853,7 @@ msgstr "أدخل إجراءك"
 msgid "Enter your API key (If required)"
 msgstr "أدخل مفتاح API الخاص بك (إذا كان مطلوباً)"
 
-#: app/components/quickstart/steps/character-name-step.tsx:24
+#: app/components/quickstart/quickstart-wizard.tsx:203
 msgid "Enter your character's name..."
 msgstr "أدخل اسم شخصيتك..."
 
@@ -844,14 +866,14 @@ msgid "Entry title"
 msgstr "عنوان المدخل"
 
 #: app/data/quickstart-presets.ts:233
-msgid "Exosuit with enhanced protection"
-msgstr "بدلة خارجية بحماية معززة"
+#~ msgid "Exosuit with enhanced protection"
+#~ msgstr "بدلة خارجية بحماية معززة"
 
 #: app/data/quickstart-presets.ts:95
-msgid "Expendable magical energy"
-msgstr "طاقة سحرية قابلة للاستهلاك"
+#~ msgid "Expendable magical energy"
+#~ msgstr "طاقة سحرية قابلة للاستهلاك"
 
-#: app/components/quickstart/steps/game-mode-step.tsx:60
+#: app/components/quickstart/steps/game-mode-step.tsx:55
 msgid "EXPERIMENTAL"
 msgstr "تجريبي"
 
@@ -863,7 +885,7 @@ msgstr "تصدير JSON"
 msgid "Failed to check for updates."
 msgstr "فشل التحقق من وجود تحديثات."
 
-#: app/pages/play/play.tsx:86
+#: app/pages/play/play.tsx:87
 msgid "Failed to generate narration audio."
 msgstr "فشل توليد الصوت للسرد."
 
@@ -872,41 +894,46 @@ msgstr "فشل توليد الصوت للسرد."
 msgid "Failed to generate scenario: {0}"
 msgstr "فشل توليد السيناريو: {0}"
 
+#. placeholder {0}: error instanceof Error ? error.message : "Unknown error"
+#: app/components/quickstart/quickstart-wizard.tsx:547
+msgid "Failed to generate tale: {0}"
+msgstr "فشل توليد الحكاية: {0}"
+
 #: app/store/useUpdateStore.ts:212
 msgid "Failed to install the update."
 msgstr "فشل تثبيت التحديث."
 
-#: app/pages/home/home.tsx:317
-#: app/pages/home/home.tsx:518
+#: app/pages/home/home.tsx:315
+#: app/pages/home/home.tsx:516
 #: app/pages/scenarios/home.tsx:110
 msgid "Failed to load scenarios."
 msgstr "فشل تحميل السيناريوهات."
 
-#: app/pages/home/home.tsx:304
-#: app/pages/home/home.tsx:455
+#: app/pages/home/home.tsx:302
+#: app/pages/home/home.tsx:453
 #: app/pages/tales/home.tsx:87
 msgid "Failed to load tales."
 msgstr "فشل تحميل الحكايات."
 
-#: app/components/play/play-input-controls.tsx:157
+#: app/components/play/play-input-controls.tsx:227
 msgid "Failed to transcribe speech."
 msgstr "فشل تحويل الكلام إلى نص."
 
-#: app/data/quickstart-presets.ts:37
+#: app/data/quickstart-presets.ts:12
 msgid "Fantasy"
 msgstr "خيال"
 
 #: app/data/quickstart-presets.ts:327
-msgid "Favor dread over shock. Build unease through atmosphere, wrongness, and the unknown or unknowable. Let the imagination do most of the work. Not everything needs to be explained."
-msgstr "غلِّب أجواء الرهبة على الصدمات المفاجئة. ابنِ شعوراً بالريب من خلال الأجواء، والخلل، والمجهول. اترك للخيال المساحة الأكبر، فليس كل شيء يحتاج إلى تفسير."
+#~ msgid "Favor dread over shock. Build unease through atmosphere, wrongness, and the unknown or unknowable. Let the imagination do most of the work. Not everything needs to be explained."
+#~ msgstr "غلِّب أجواء الرهبة على الصدمات المفاجئة. ابنِ شعوراً بالريب من خلال الأجواء، والخلل، والمجهول. اترك للخيال المساحة الأكبر، فليس كل شيء يحتاج إلى تفسير."
 
 #: app/data/quickstart-presets.ts:176
-msgid "First Aid Kit"
-msgstr "حقيبة إسعافات"
+#~ msgid "First Aid Kit"
+#~ msgstr "حقيبة إسعافات"
 
 #: app/data/quickstart-presets.ts:244
-msgid "Flashlight"
-msgstr "مصباح يدوي"
+#~ msgid "Flashlight"
+#~ msgstr "مصباح يدوي"
 
 #: app/components/layout/settings/game.tsx:170
 msgid "Font Family"
@@ -917,8 +944,8 @@ msgid "Font Size (0.75 - 2.0)"
 msgstr "حجم الخط (0.75 - 2.0)"
 
 #: app/data/quickstart-presets.ts:409
-msgid "forging your own path"
-msgstr "تشق طريقك الخاص"
+#~ msgid "forging your own path"
+#~ msgstr "تشق طريقك الخاص"
 
 #: app/components/layout/settings/model.tsx:218
 #: app/components/layout/settings/model.tsx:226
@@ -934,12 +961,12 @@ msgstr "حجم الخط لسجل اللعبة"
 msgid "Game Master"
 msgstr "مدير اللعبة"
 
-#: app/components/quickstart/steps/game-mode-step.tsx:27
+#: app/components/quickstart/steps/game-mode-step.tsx:25
 msgid "Game Master (GM)"
 msgstr "مدير اللعبة"
 
 #: app/components/layout/settings/tale.tsx:66
-#: app/components/quickstart/quickstart-wizard.tsx:98
+#: app/components/quickstart/quickstart-wizard.tsx:362
 msgid "Game Mode"
 msgstr "نوع اللعبة"
 
@@ -952,9 +979,17 @@ msgid "Generate an API key and paste it here"
 msgstr "قم بتوليد مفتاح API والصقه هنا"
 
 #: app/components/scenario/GenerateScenarioDialog.tsx:83
-#: app/pages/home/home.tsx:496
+#: app/pages/home/home.tsx:494
 msgid "Generate Scenario"
 msgstr "توليد سيناريو"
+
+#: app/components/quickstart/quickstart-wizard.tsx:669
+msgid "Generate Tale"
+msgstr "توليد الحكاية"
+
+#: app/components/quickstart/quickstart-wizard.tsx:667
+msgid "Generating"
+msgstr "جاري التوليد"
 
 #: app/components/layout/settings/settings-modal.tsx:54
 msgid "Generation"
@@ -978,8 +1013,8 @@ msgid "Getting Started"
 msgstr "البدء"
 
 #: app/components/quickstart/steps/character-name-step.tsx:15
-msgid "Give your character a name"
-msgstr "امنح شخصيتك اسماً"
+#~ msgid "Give your character a name"
+#~ msgstr "امنح شخصيتك اسماً"
 
 #: app/components/layout/settings/advanced.tsx:137
 msgid "GM mode is still in development and is very sensitive to the system prompt."
@@ -993,11 +1028,11 @@ msgstr "موجّه النظام لمدير اللعبة"
 msgid "Go to API Keys in the dashboard"
 msgstr "اذهب إلى API Keys في لوحة التحكم"
 
-#: app/pages/home/home.tsx:562
+#: app/pages/home/home.tsx:560
 msgid "Go to Scenarios → Create or Import from Clipboard."
 msgstr "انتقل إلى السيناريوهات → إنشاء أو استيراد."
 
-#: app/pages/home/home.tsx:567
+#: app/pages/home/home.tsx:565
 msgid "Go to Scenarios → New Tale."
 msgstr "انتقل إلى السيناريوهات → حكاية جديدة."
 
@@ -1011,8 +1046,8 @@ msgid "Go to the API section in the dashboard"
 msgstr "اذهب إلى قسم API في لوحة التحكم"
 
 #: app/data/quickstart-presets.ts:326
-msgid "Ground the fantastic in plausible detail. Explore the human condition against the vastness of space or the weight of technological change."
-msgstr "أرسِ الخيال في تفاصيل منطقية. استكشف الحالة البشرية في مواجهة شساعة الفضاء أو وطأة التغيير التكنولوجي."
+#~ msgid "Ground the fantastic in plausible detail. Explore the human condition against the vastness of space or the weight of technological change."
+#~ msgstr "أرسِ الخيال في تفاصيل منطقية. استكشف الحالة البشرية في مواجهة شساعة الفضاء أو وطأة التغيير التكنولوجي."
 
 #: app/components/layout/settings/about.tsx:17
 msgid "Hakawati is distributed under the GNU General Public License v3."
@@ -1024,16 +1059,16 @@ msgid "Hakawati is up to date."
 msgstr "تطبيق حكواتي محدّث."
 
 #: app/data/quickstart-presets.ts:222
-msgid "Handheld scanner"
-msgstr "ماسح محمول"
+#~ msgid "Handheld scanner"
+#~ msgstr "ماسح محمول"
 
 #: app/data/quickstart-presets.ts:394
-msgid "having made it this far on instinct and luck, knowing both can run out"
-msgstr "وصلت إلى هنا بالغريزة والحظ، عالماً أنهما قد ينفدان"
+#~ msgid "having made it this far on instinct and luck, knowing both can run out"
+#~ msgstr "وصلت إلى هنا بالغريزة والحظ، عالماً أنهما قد ينفدان"
 
 #: app/data/quickstart-presets.ts:405
-msgid "having peered behind the curtain and seen what waits there, knowing too much to ever feel safe again"
-msgstr "نظرت خلف الستار ورأيت ما ينتظر، فعرفت أكثر مما ينبغي لتشعر بالأمان"
+#~ msgid "having peered behind the curtain and seen what waits there, knowing too much to ever feel safe again"
+#~ msgstr "نظرت خلف الستار ورأيت ما ينتظر، فعرفت أكثر مما ينبغي لتشعر بالأمان"
 
 #: app/components/layout/settings/provider-help-modal.tsx:90
 #: app/components/layout/settings/provider-help-modal.tsx:114
@@ -1048,11 +1083,15 @@ msgstr "إخفاء مفتاح API"
 msgid "Higher values make responses less predictable."
 msgstr "القيم الأعلى تجعل الاستجابات أقل قابلية للتنبؤ."
 
-#: app/data/quickstart-presets.ts:57
+#: app/data/quickstart-presets.ts:28
 msgid "Horror"
 msgstr "رعب"
 
-#: app/pages/home/home.tsx:543
+#: app/components/quickstart/quickstart-wizard.tsx:363
+msgid "How do you want to play?"
+msgstr "كيف تريد اللعب؟"
+
+#: app/pages/home/home.tsx:541
 msgid "How to play"
 msgstr "كيفية اللعب"
 
@@ -1074,16 +1113,16 @@ msgstr "كيفية اللعب"
 #: app/data/quickstart-presets.ts:253
 #: app/data/quickstart-presets.ts:274
 #: app/data/quickstart-presets.ts:289
-msgid "HP"
-msgstr "صحة"
+#~ msgid "HP"
+#~ msgstr "صحة"
 
 #: app/components/layout/settings/api.tsx:161
 msgid "http://localhost:11434/v1"
 msgstr "http://localhost:11434/v1"
 
 #: app/data/quickstart-presets.ts:124
-msgid "Hunting Knife"
-msgstr "سكين صيد"
+#~ msgid "Hunting Knife"
+#~ msgstr "سكين صيد"
 
 #: app/data/api-presets.ts:114
 msgid "If the tool requires auth, look up how to generate a key (Ollama requires this)"
@@ -1093,17 +1132,17 @@ msgstr "إذا كانت الأداة تتطلب مصادقة (auth)، ابحث �
 msgid "Import"
 msgstr "استيراد"
 
-#: app/pages/home/home.tsx:604
+#: app/pages/home/home.tsx:602
 msgid "In Game Master mode, the AI keeps track of stats and inventory."
 msgstr "في وضع مدير اللعبة، يتتبع الكاتب الخصائص والمخزون."
 
 #: app/data/quickstart-presets.ts:148
-msgid "Incense"
-msgstr "بخور"
+#~ msgid "Incense"
+#~ msgstr "بخور"
 
 #: app/components/quickstart/steps/description-style-step.tsx:125
-msgid "Include special narrative instructions"
-msgstr "تضمين تعليمات سردية خاصة"
+#~ msgid "Include special narrative instructions"
+#~ msgstr "تضمين تعليمات سردية خاصة"
 
 #: app/components/play/log/log-block-bubble.tsx:190
 msgid "Initial"
@@ -1151,31 +1190,29 @@ msgid "Instructions"
 msgstr "التعليمات"
 
 #: app/components/layout/settings/inventory-stats.tsx:196
-#: app/components/quickstart/steps/stats-inventory-step.tsx:194
 #: app/components/sidebar/inventory-card.tsx:50
 msgid "Inventory"
 msgstr "المخزون"
 
 #: app/components/layout/settings/inventory-stats.tsx:244
-#: app/components/quickstart/steps/stats-inventory-step.tsx:307
 msgid "Inventory empty"
 msgstr "المخزون فارغ"
 
 #: app/components/quickstart/steps/archetype-step.tsx:117
-msgid "Inventory:"
-msgstr "المخزون:"
+#~ msgid "Inventory:"
+#~ msgstr "المخزون:"
 
-#: app/data/quickstart-presets.ts:241
+#: app/data/quickstart-presets.ts:56
 msgid "Investigator"
 msgstr "محقّق"
 
 #: app/data/quickstart-presets.ts:489
-msgid "Invite playful exaggeration, awkward situations, and clever asides, but keep the scene moving."
-msgstr "ادعُ للمبالغة المرحة والمواقف المحرجة، لكن حافظ على تحرك المشهد."
+#~ msgid "Invite playful exaggeration, awkward situations, and clever asides, but keep the scene moving."
+#~ msgstr "ادعُ للمبالغة المرحة والمواقف المحرجة، لكن حافظ على تحرك المشهد."
 
 #: app/data/quickstart-presets.ts:82
-msgid "Iron Sword"
-msgstr "سيف حديدي"
+#~ msgid "Iron Sword"
+#~ msgstr "سيف حديدي"
 
 #: app/components/sidebar/inventory-card.tsx:90
 #: app/components/ui/inventory-item.tsx:55
@@ -1183,29 +1220,28 @@ msgid "Item name"
 msgstr "اسم الشيء"
 
 #: app/components/layout/settings/inventory-stats.tsx:247
-#: app/components/quickstart/steps/stats-inventory-step.tsx:310
 msgid "Items collected will appear here"
 msgstr "العناصر التي تم جمعها ستظهر هنا"
 
-#: app/data/quickstart-presets.ts:137
+#: app/data/quickstart-presets.ts:42
 msgid "Journalist"
 msgstr "صحفي"
 
 #: app/data/quickstart-presets.ts:338
-msgid "Keep paragraphs short, between one and four sentences. Avoid long uninterrupted speeches and do not jump the story forward too quickly between beats."
-msgstr "اجعل الفقرات قصيرة (1-4 جمل). تجنب الخطب الطويلة ولا تقفز بالقصة بسرعة."
+#~ msgid "Keep paragraphs short, between one and four sentences. Avoid long uninterrupted speeches and do not jump the story forward too quickly between beats."
+#~ msgstr "اجعل الفقرات قصيرة (1-4 جمل). تجنب الخطب الطويلة ولا تقفز بالقصة بسرعة."
 
 #: app/data/quickstart-presets.ts:317
-msgid "Keep the mood warm and hopeful even in danger. Humor can surface naturally but do not force jokes."
-msgstr "حافظ على جو من الدفء والأمل حتى في ظل الخطر. اترك مجالاً للفكاهة لتظهر بعفوية دون تكلف."
+#~ msgid "Keep the mood warm and hopeful even in danger. Humor can surface naturally but do not force jokes."
+#~ msgstr "حافظ على جو من الدفء والأمل حتى في ظل الخطر. اترك مجالاً للفكاهة لتظهر بعفوية دون تكلف."
 
 #: app/data/quickstart-presets.ts:487
-msgid "Keep the opening tight and grounded. Limit humor. Let tension build in clear, steady steps."
-msgstr "اجعل الافتتاحية محكمة وواقعية. قلل الفكاهة ودع التوتر يبنى بثبات."
+#~ msgid "Keep the opening tight and grounded. Limit humor. Let tension build in clear, steady steps."
+#~ msgstr "اجعل الافتتاحية محكمة وواقعية. قلل الفكاهة ودع التوتر يبنى بثبات."
 
 #: app/data/quickstart-presets.ts:395
-msgid "keeping others alive in a world that wants everyone dead, rationing hope along with the antibiotics"
-msgstr "يبقي الآخرين على قيد الحياة في عالم يتربص بالجميع، يقتصد في الأمل كما يقتصد في المضادات الحيوية"
+#~ msgid "keeping others alive in a world that wants everyone dead, rationing hope along with the antibiotics"
+#~ msgstr "يبقي الآخرين على قيد الحياة في عالم يتربص بالجميع، يقتصد في الأمل كما يقتصد في المضادات الحيوية"
 
 #: app/components/layout/settings/game.tsx:78
 msgid "Language"
@@ -1222,14 +1258,14 @@ msgstr "آخر تحقق: {0}"
 
 #. placeholder {0}: formatExactDateTime(tale.updatedAt)
 #. placeholder {0}: formatExactDateTime(updatedAt)
-#: app/pages/home/home.tsx:151
+#: app/pages/home/home.tsx:150
 #: app/pages/tales/home.tsx:179
 msgid "Last played: {0}"
 msgstr "آخر لعب: {0}"
 
 #. placeholder {0}: formatExactDateTime(scenario.updatedAt)
 #. placeholder {0}: formatExactDateTime(updatedAt)
-#: app/pages/home/home.tsx:213
+#: app/pages/home/home.tsx:212
 #: app/pages/scenarios/home.tsx:190
 msgid "Last updated: {0}"
 msgstr "آخر تحديث: {0}"
@@ -1238,21 +1274,21 @@ msgstr "آخر تحديث: {0}"
 msgid "Latest"
 msgstr "الأحدث"
 
-#: app/pages/home/home.tsx:475
+#: app/pages/home/home.tsx:473
 msgid "Latest Scenarios"
 msgstr "أحدث السيناريوهات"
 
-#: app/pages/home/home.tsx:426
+#: app/pages/home/home.tsx:434
 msgid "Latest Tales"
 msgstr "أحدث الحكايات"
 
 #: app/data/quickstart-presets.ts:318
-msgid "Lean into absurdity, quick banter, and sharp timing. Play with expectations in a playful way."
-msgstr "تبنَّ أسلوب العبث، والمساجلات السريعة، والدقة في التوقيت. تلاعب بالتوقعات بلمسة مرحة."
+#~ msgid "Lean into absurdity, quick banter, and sharp timing. Play with expectations in a playful way."
+#~ msgstr "تبنَّ أسلوب العبث، والمساجلات السريعة، والدقة في التوقيت. تلاعب بالتوقعات بلمسة مرحة."
 
 #: app/components/quickstart/steps/description-style-step.tsx:76
-msgid "Leave characters, objects, and concepts to the story cards"
-msgstr "اترك الشخصيات والأشياء والمفاهيم لبطاقات القصة"
+#~ msgid "Leave characters, objects, and concepts to the story cards"
+#~ msgstr "اترك الشخصيات والأشياء والمفاهيم لبطاقات القصة"
 
 #: app/components/layout/settings/model.tsx:181
 msgid "Leave these empty to let the selected provider use its defaults."
@@ -1266,20 +1302,20 @@ msgstr "من اليسار إلى اليمين"
 msgid "License"
 msgstr "الرخصة"
 
-#: app/data/quickstart-presets.ts:302
+#: app/data/quickstart-presets.ts:69
 msgid "Light-Hearted"
 msgstr "مرح"
 
-#: app/pages/home/home.tsx:178
+#: app/pages/home/home.tsx:177
 #: app/pages/tales/home.tsx:204
 msgid "Load Tale"
 msgstr "تحميل الحكاية"
 
-#: app/pages/play/play.tsx:225
+#: app/pages/play/play.tsx:226
 msgid "Loading adventure..."
 msgstr "جاري تحميل المغامرة..."
 
-#: app/components/play/play-log-display.tsx:64
+#: app/components/play/play-log-display.tsx:67
 msgid "Loading older entries..."
 msgstr "جاري تحميل المدخلات القديمة..."
 
@@ -1287,8 +1323,8 @@ msgstr "جاري تحميل المدخلات القديمة..."
 msgid "Loading..."
 msgstr "جاري التحميل..."
 
-#: app/pages/home/home.tsx:450
-#: app/pages/home/home.tsx:513
+#: app/pages/home/home.tsx:448
+#: app/pages/home/home.tsx:511
 #: app/pages/scenarios/home.tsx:105
 #: app/pages/tales/home.tsx:82
 msgid "Loading…"
@@ -1303,18 +1339,18 @@ msgid "Local API servers"
 msgstr "خوادم API المحلية"
 
 #: app/data/quickstart-presets.ts:107
-msgid "Lockpick Set"
-msgstr "أدوات فتح الأقفال"
+#~ msgid "Lockpick Set"
+#~ msgstr "أدوات فتح الأقفال"
 
 #: app/data/quickstart-presets.ts:122
-msgid "Longbow"
-msgstr "قوس طويل"
+#~ msgid "Longbow"
+#~ msgstr "قوس طويل"
 
 #: app/components/layout/settings/game.tsx:54
 msgid "Look and language"
 msgstr "المظهر واللغة"
 
-#: app/data/quickstart-presets.ts:88
+#: app/data/quickstart-presets.ts:36
 msgid "Mage"
 msgstr "ساحر"
 
@@ -1327,12 +1363,12 @@ msgid "Maintenance"
 msgstr "الصيانة"
 
 #: app/data/quickstart-presets.ts:92
-msgid "Mana"
-msgstr "منا"
+#~ msgid "Mana"
+#~ msgstr "منا"
 
 #: app/data/quickstart-presets.ts:100
-msgid "Mana Potion"
-msgstr "جرعة منا"
+#~ msgid "Mana Potion"
+#~ msgstr "جرعة منا"
 
 #: app/components/layout/settings/settings-modal.tsx:109
 msgid "Manage the stats and inventory for this tale."
@@ -1344,7 +1380,6 @@ msgid "Manual updates are only available in the desktop app."
 msgstr "التحديثات اليدوية متاحة فقط في نسخة الأجهزة المكتبية."
 
 #: app/components/layout/settings/inventory-stats.tsx:130
-#: app/components/quickstart/steps/stats-inventory-step.tsx:231
 #: app/components/scenario/StatsEditor.tsx:81
 #: app/components/ui/stat-item.tsx:76
 msgid "Max"
@@ -1366,13 +1401,13 @@ msgstr "يتم تحديد الحد الأقصى بواسطة النموذج ال
 msgid "Maximum Value"
 msgstr "القيمة القصوى"
 
-#: app/data/quickstart-presets.ts:181
+#: app/data/quickstart-presets.ts:47
 msgid "Medic"
 msgstr "مسعف"
 
 #: app/data/quickstart-presets.ts:191
-msgid "Medkit"
-msgstr "عدة طبية"
+#~ msgid "Medkit"
+#~ msgstr "عدة طبية"
 
 #: app/components/layout/settings/settings-modal.tsx:124
 msgid "Memory"
@@ -1380,17 +1415,17 @@ msgstr "الذاكرة"
 
 #: app/data/quickstart-presets.ts:258
 #: app/data/quickstart-presets.ts:279
-msgid "Mental stability"
-msgstr "الاستقرار العقلي"
+#~ msgid "Mental stability"
+#~ msgstr "الاستقرار العقلي"
 
 #: app/data/quickstart-presets.ts:170
 #: app/data/quickstart-presets.ts:188
-msgid "Mental strain"
-msgstr "إجهاد عقلي"
+#~ msgid "Mental strain"
+#~ msgstr "إجهاد عقلي"
 
 #: app/components/quickstart/steps/description-style-step.tsx:73
-msgid "Mention the main theme or premise"
-msgstr "اذكر الموضوع الرئيسي أو الفكرة الأساسية"
+#~ msgid "Mention the main theme or premise"
+#~ msgstr "اذكر الموضوع الرئيسي أو الفكرة الأساسية"
 
 #: app/components/layout/settings/model.tsx:257
 #: app/components/layout/settings/model.tsx:265
@@ -1398,7 +1433,7 @@ msgid "Min P"
 msgstr "Min P"
 
 #. placeholder {0}: issues.join(", ")
-#: app/pages/home/home.tsx:412
+#: app/pages/home/home.tsx:420
 msgid "Missing settings: {0}. Configure your API in Settings."
 msgstr "الإعدادات المفقودة: {0}. قم بتعيين API في الإعدادات."
 
@@ -1411,25 +1446,23 @@ msgid "Model cannot be confirmed to support tool calling. GM mode may not work p
 msgstr "لا يمكن التأكد من أن النموذج يدعم استخدام الأدوات. قد لا يعمل وضع مدير اللعبة بشكل صحيح."
 
 #: app/data/quickstart-presets.ts:386
-msgid "more at home in wild places than among crowded streets"
-msgstr "يجد أنسه في البراري والقفار أكثر مما يجد بين الشوارع المزدحمة"
+#~ msgid "more at home in wild places than among crowded streets"
+#~ msgstr "يجد أنسه في البراري والقفار أكثر مما يجد بين الشوارع المزدحمة"
 
 #: app/data/quickstart-presets.ts:399
-msgid "most comfortable at the helm of a ship, trusting your vessel and reflexes more than most people"
-msgstr "يرتاح عند دفة السفينة، واثقاً بمركبه وردود فعله أكثر من الناس"
+#~ msgid "most comfortable at the helm of a ship, trusting your vessel and reflexes more than most people"
+#~ msgstr "يرتاح عند دفة السفينة، واثقاً بمركبه وردود فعله أكثر من الناس"
 
 #: app/data/api-presets.ts:28
 msgid "Multi-provider AI gateway with access to hundreds of models from major and minor providers. Pay-as-you-go pricing. Generous free tier after charging once."
 msgstr "بوابة ذكاء اصطناعي متعددة المزودين تتيح الوصول إلى مئات النماذج من مزودين كبار وصغار. تسعير بنظام الدفع حسب الاستخدام (Pay-as-you-go). باقة مجانية سخية بعد الشحن مرة واحدة."
 
-#: app/data/quickstart-presets.ts:42
+#: app/data/quickstart-presets.ts:16
 msgid "Mystery"
 msgstr "غموض"
 
 #: app/components/layout/settings/inventory-stats.tsx:108
 #: app/components/layout/settings/inventory-stats.tsx:207
-#: app/components/quickstart/steps/stats-inventory-step.tsx:209
-#: app/components/quickstart/steps/stats-inventory-step.tsx:284
 #: app/components/scenario/ScenarioBasicsFields.tsx:43
 #: app/components/sidebar/inventory-card.tsx:86
 #: app/components/sidebar/stats-card.tsx:147
@@ -1439,8 +1472,8 @@ msgid "Name"
 msgstr "الاسم"
 
 #: app/components/quickstart/quickstart-wizard.tsx:155
-msgid "Name your hero"
-msgstr "اسم شخصيتك"
+#~ msgid "Name your hero"
+#~ msgstr "اسم شخصيتك"
 
 #: app/data/api-presets.ts:41
 msgid "NanoGPT"
@@ -1452,31 +1485,31 @@ msgid "Narrate section"
 msgstr "سرد القسم"
 
 #: app/components/quickstart/steps/description-style-step.tsx:89
-msgid "Narration Style (Optional)"
-msgstr "أسلوب السرد (اختياري)"
+#~ msgid "Narration Style (Optional)"
+#~ msgstr "أسلوب السرد (اختياري)"
 
 #: app/components/layout/settings/api.tsx:30
 msgid "Narrator"
 msgstr "الراوي"
 
-#: app/pages/home/home.tsx:489
+#: app/pages/home/home.tsx:487
 msgid "New scenario"
 msgstr "سيناريو جديد"
 
-#: app/pages/home/home.tsx:233
+#: app/pages/home/home.tsx:232
 #: app/pages/scenarios/home.tsx:211
 msgid "New Tale"
 msgstr "حكاية جديدة"
 
-#: app/components/quickstart/quickstart-wizard.tsx:424
+#: app/components/quickstart/quickstart-wizard.tsx:672
 #: app/pages/scenarios/home.tsx:237
 #: app/pages/tales/home.tsx:230
 msgid "Next"
 msgstr "التالي"
 
-#: app/pages/home/home.tsx:169
-#: app/pages/home/home.tsx:224
-#: app/pages/home/home.tsx:636
+#: app/pages/home/home.tsx:168
+#: app/pages/home/home.tsx:223
+#: app/pages/home/home.tsx:634
 msgid "No description yet."
 msgstr "لا يوجد وصف بعد."
 
@@ -1492,23 +1525,23 @@ msgstr "لا توجد مدخلات بعد."
 msgid "No local servers found."
 msgstr "لا يوجد خوادم محلية."
 
-#: app/pages/home/home.tsx:525
+#: app/pages/home/home.tsx:523
 msgid "No scenarios yet."
 msgstr "لا توجد سيناريوهات بعد."
 
-#: app/components/quickstart/steps/game-mode-step.tsx:21
+#: app/components/quickstart/steps/game-mode-step.tsx:19
 msgid "No stats or inventory tracking"
 msgstr "بدون تتبع الخصائص أو المخزون"
 
 #: app/components/layout/settings/inventory-stats.tsx:167
-#: app/components/quickstart/steps/stats-inventory-step.tsx:254
 msgid "No stats yet"
 msgstr "لا توجد خصائص بعد"
 
-#: app/pages/home/home.tsx:460
+#: app/pages/home/home.tsx:458
 msgid "No tales yet."
 msgstr "لا توجد حكايات بعد."
 
+#: app/components/quickstart/quickstart-wizard.tsx:495
 #: app/components/scenario/GenerateScenarioDialog.tsx:44
 msgid "No utility model selected"
 msgstr "لم يتم تحديد نموذج مساعدة"
@@ -1518,53 +1551,53 @@ msgid "None"
 msgstr "لا شيء"
 
 #: app/data/quickstart-presets.ts:133
-msgid "Notebook"
-msgstr "دفتر ملاحظات"
+#~ msgid "Notebook"
+#~ msgstr "دفتر ملاحظات"
 
 #: app/data/quickstart-presets.ts:310
-msgid "Nothing Specific"
-msgstr "لا شيء محدد"
+#~ msgid "Nothing Specific"
+#~ msgstr "لا شيء محدد"
 
 #: app/components/sidebar/inventory-card.tsx:67
 #: app/components/sidebar/stats-card.tsx:81
 msgid "Nothing..."
 msgstr "لا شيء..."
 
-#: app/data/quickstart-presets.ts:251
+#: app/data/quickstart-presets.ts:57
 msgid "Occultist"
 msgstr "عالم غيبيات"
 
 #: app/data/quickstart-presets.ts:245
-msgid "Old Diary"
-msgstr "مذكرات قديمة"
+#~ msgid "Old Diary"
+#~ msgstr "مذكرات قديمة"
 
 #: app/data/quickstart-presets.ts:438
-msgid "Open on {characterName} arriving somewhere significant, a city they have heard stories about, ruins that should not exist, or a place from their past they swore never to return to. The location should feel alive with history and danger. Something is already not quite right."
-msgstr "ابدأ بوصول {characterName} لمكان هام: مدينة مشهورة، أطلال غامضة، أو مكان من الماضي. يجب أن يضج المكان بالتاريخ والخطر. شيء ما غير صحيح."
+#~ msgid "Open on {characterName} arriving somewhere significant, a city they have heard stories about, ruins that should not exist, or a place from their past they swore never to return to. The location should feel alive with history and danger. Something is already not quite right."
+#~ msgstr "ابدأ بوصول {characterName} لمكان هام: مدينة مشهورة، أطلال غامضة، أو مكان من الماضي. يجب أن يضج المكان بالتاريخ والخطر. شيء ما غير صحيح."
 
 #: app/data/quickstart-presets.ts:447
-msgid "Open on silence. The wrong kind of silence. {characterName} has not heard another human voice in three days. Start in the aftermath of a close call, adrenaline fading, hands still shaking, inventory one item shorter than it should be. The immediate question: where is safe to sleep tonight?"
-msgstr "ابدأ بصمتٍ مريب؛ صمتٌ من النوع الذي لا يبشر بخير. لم يسمع {characterName} صوتاً منذ ثلاثة أيام. ابدأ في أعقاب مواجهة خطيرة؛ الأدرينالين يتلاشى، واليدان ترتجفان، والمتاع ينقصه غرض حيوي. السؤال الملح: أين الملاذ الآمن للنوم الليلة؟"
+#~ msgid "Open on silence. The wrong kind of silence. {characterName} has not heard another human voice in three days. Start in the aftermath of a close call, adrenaline fading, hands still shaking, inventory one item shorter than it should be. The immediate question: where is safe to sleep tonight?"
+#~ msgstr "ابدأ بصمتٍ مريب؛ صمتٌ من النوع الذي لا يبشر بخير. لم يسمع {characterName} صوتاً منذ ثلاثة أيام. ابدأ في أعقاب مواجهة خطيرة؛ الأدرينالين يتلاشى، واليدان ترتجفان، والمتاع ينقصه غرض حيوي. السؤال الملح: أين الملاذ الآمن للنوم الليلة؟"
 
 #: app/data/quickstart-presets.ts:442
-msgid "Open on the crime scene, or what is left of it. {characterName} is late to the party. The police tape is already up, the obvious clues already catalogued. But there is something everyone else missed. What small wrongness catches {characterName}'s eye?"
-msgstr "ابدأ من مسرح الجريمة، أو ما تبقى منه. وصل {characterName} متأخراً بعد فوات الأوان؛ أشرطة الشرطة طوقت المكان، والأدلة الجلية جُمعت بالفعل، لكن ثمة تفصيلاً فات الجميع. ما الخلل الصغير الذي لفت انتباه {characterName}؟"
+#~ msgid "Open on the crime scene, or what is left of it. {characterName} is late to the party. The police tape is already up, the obvious clues already catalogued. But there is something everyone else missed. What small wrongness catches {characterName}'s eye?"
+#~ msgstr "ابدأ من مسرح الجريمة، أو ما تبقى منه. وصل {characterName} متأخراً بعد فوات الأوان؛ أشرطة الشرطة طوقت المكان، والأدلة الجلية جُمعت بالفعل، لكن ثمة تفصيلاً فات الجميع. ما الخلل الصغير الذي لفت انتباه {characterName}؟"
 
-#: app/pages/home/home.tsx:419
+#: app/pages/home/home.tsx:427
 msgid "Open Settings"
 msgstr "فتح الإعدادات"
 
-#: app/pages/home/home.tsx:548
+#: app/pages/home/home.tsx:546
 msgid "Open Settings → set API URL/key and pick a model."
 msgstr "فتح الإعدادات → ضبط عنوان API/مفتاح واختيار نموذج."
 
 #: app/data/quickstart-presets.ts:452
-msgid "Open with a system failure, something critical that should not be able to fail. {characterName} is the first one to realize something is wrong, or the last one standing who can do something about it. The clock is already ticking."
-msgstr "ابدأ بفشل نظام حيوي. {characterName} أول من يدرك الخطأ أو آخر من يمكنه إصلاحه. الوقت ينفد."
+#~ msgid "Open with a system failure, something critical that should not be able to fail. {characterName} is the first one to realize something is wrong, or the last one standing who can do something about it. The clock is already ticking."
+#~ msgstr "ابدأ بفشل نظام حيوي. {characterName} أول من يدرك الخطأ أو آخر من يمكنه إصلاحه. الوقت ينفد."
 
 #: app/data/quickstart-presets.ts:457
-msgid "Open with the first wrong thing, small and dismissible, the kind of detail a rational person explains away. A door that was closed. A photograph with someone extra in the frame. A sound that does not repeat when listened for. {characterName} almost manages to forget it. Almost."
-msgstr "ابدأ بتفصيل خاطئ صغير يمكن تجاهله: باب مغلق، شخص إضافي في صورة، صوت غريب. يكاد {characterName} ينساه. يكاد."
+#~ msgid "Open with the first wrong thing, small and dismissible, the kind of detail a rational person explains away. A door that was closed. A photograph with someone extra in the frame. A sound that does not repeat when listened for. {characterName} almost manages to forget it. Almost."
+#~ msgstr "ابدأ بتفصيل خاطئ صغير يمكن تجاهله: باب مغلق، شخص إضافي في صورة، صوت غريب. يكاد {characterName} ينساه. يكاد."
 
 #: app/data/api-presets.ts:75
 msgid "OpenAI"
@@ -1586,6 +1619,22 @@ msgstr "اختياري لمعظم الخوادم المحلية"
 msgid "Optional for most local servers."
 msgstr "اختياري لمعظم الخوادم المحلية."
 
+#: app/components/quickstart/quickstart-wizard.tsx:442
+msgid "Optional tone preference..."
+msgstr "تفضيل اختياري للنبرة..."
+
+#: app/components/quickstart/quickstart-wizard.tsx:437
+msgid "Optional. Leave this blank if you do not want to specify a tone."
+msgstr "اختياري. اتركه فارغاً إذا كنت لا تريد تحديد نبرة معينة."
+
+#: app/components/quickstart/quickstart-wizard.tsx:458
+msgid "Optional. Leave this blank to let the tale fill in the gaps."
+msgstr "اختياري. اتركه فارغاً لتدع الحكاية تملأ الفجوات."
+
+#: app/components/quickstart/quickstart-wizard.tsx:152
+msgid "Or choose one of these options."
+msgstr "أو اختر أحد هذه الخيارات."
+
 #. placeholder {0}: Math.max(1, Math.ceil(total / limit) || 1)
 #: app/pages/scenarios/home.tsx:228
 #: app/pages/tales/home.tsx:221
@@ -1593,8 +1642,8 @@ msgid "Page {page} of {0}"
 msgstr "الصفحة {page} من {0}"
 
 #: app/data/quickstart-presets.ts:191
-msgid "Painkillers"
-msgstr "مسكنات"
+#~ msgid "Painkillers"
+#~ msgstr "مسكنات"
 
 #: app/components/play/tts-player.tsx:52
 msgid "Pause narration"
@@ -1605,20 +1654,20 @@ msgid "Pay-as-you-go Privacy-focused provider with multiple models on offer."
 msgstr "مزود يركز على الخصوصية بنظام الدفع حسب الاستخدام، مع توفر نماذج متعددة."
 
 #: app/data/quickstart-presets.ts:214
-msgid "Phaser"
-msgstr "مسدس طاقة"
+#~ msgid "Phaser"
+#~ msgstr "مسدس طاقة"
 
 #: app/components/quickstart/quickstart-wizard.tsx:110
-msgid "Pick your world"
-msgstr "اختر عالمك"
+#~ msgid "Pick your world"
+#~ msgstr "اختر عالمك"
 
-#: app/data/quickstart-presets.ts:211
+#: app/data/quickstart-presets.ts:51
 msgid "Pilot"
 msgstr "طيار"
 
 #: app/data/quickstart-presets.ts:205
-msgid "Pistol"
-msgstr "مسدس"
+#~ msgid "Pistol"
+#~ msgstr "مسدس"
 
 #: app/components/storybook/CategoryFilter.tsx:39
 #: app/components/storybook/StorybookEditor.tsx:61
@@ -1631,12 +1680,12 @@ msgid "Play narration"
 msgstr "تشغيل السرد"
 
 #: app/data/quickstart-presets.ts:246
-msgid "Pocket Knife"
-msgstr "سكين جيب"
+#~ msgid "Pocket Knife"
+#~ msgstr "سكين جيب"
 
 #: app/data/quickstart-presets.ts:232
-msgid "Power Armor"
-msgstr "درع آلي"
+#~ msgid "Power Armor"
+#~ msgstr "درع آلي"
 
 #: app/components/layout/settings/model.tsx:231
 #: app/components/layout/settings/model.tsx:239
@@ -1665,8 +1714,8 @@ msgid "Prompting"
 msgstr "الموجّهات"
 
 #: app/data/quickstart-presets.ts:267
-msgid "Protective charm"
-msgstr "تعويذة حماية"
+#~ msgid "Protective charm"
+#~ msgstr "تعويذة حماية"
 
 #: app/components/layout/settings/api.tsx:124
 msgid "Provider"
@@ -1687,7 +1736,7 @@ msgstr "الافتراضي للمزود"
 msgid "Provider voice id for speech generation. OpenAI-compatible providers commonly support alloy."
 msgstr "معرف صوت المزود لتوليد الكلام. تدعم المزودات المتوافقة مع OpenAI عادةً صوت alloy."
 
-#: app/data/quickstart-presets.ts:143
+#: app/data/quickstart-presets.ts:43
 msgid "Psychic"
 msgstr "وسيط روحي"
 
@@ -1697,36 +1746,37 @@ msgid "Published {0}"
 msgstr "نُشر في {0}"
 
 #: app/data/quickstart-presets.ts:230
-msgid "Pulse Rifle"
-msgstr "بندقية نبضية"
+#~ msgid "Pulse Rifle"
+#~ msgstr "بندقية نبضية"
 
-#: app/components/quickstart/steps/game-mode-step.tsx:17
+#: app/components/quickstart/steps/game-mode-step.tsx:16
 msgid "Pure narrative freedom without game mechanics"
 msgstr "قصة فقط، بدون تتبع الخصائص أو المخزون"
 
-#: app/components/quickstart/steps/game-mode-step.tsx:20
+#: app/components/quickstart/steps/game-mode-step.tsx:18
 msgid "Pure storytelling"
 msgstr "قصة فقط"
 
-#: app/pages/home/home.tsx:554
+#: app/pages/home/home.tsx:552
 msgid "Quick Start:"
 msgstr "بداية سريعة:"
 
-#: app/components/layout/mobile-bottom-nav.tsx:60
-#: app/pages/home/home.tsx:435
+#: app/components/layout/mobile-bottom-nav.tsx:61
+#: app/components/quickstart/quickstart-wizard.tsx:608
+#: app/pages/home/home.tsx:389
 msgid "Quickstart"
 msgstr "بداية سريعة"
 
 #: app/data/quickstart-presets.ts:123
-msgid "Quiver"
-msgstr "جعبة"
+#~ msgid "Quiver"
+#~ msgstr "جعبة"
 
 #: app/components/layout/settings/model.tsx:163
 #: app/components/layout/settings/model.tsx:170
 msgid "Randomize seed"
 msgstr "عشوائية البذرة"
 
-#: app/data/quickstart-presets.ts:111
+#: app/data/quickstart-presets.ts:38
 msgid "Ranger"
 msgstr "حارس"
 
@@ -1738,20 +1788,19 @@ msgstr "قراءة السرد الجديد بصوت عالٍ"
 msgid "Reading comfort"
 msgstr "راحة القراءة"
 
-#: app/components/play/play-input-controls.tsx:298
+#: app/components/play/play-input-controls.tsx:375
 msgid "Record speech"
 msgstr "تسجيل الكلام"
 
 #: app/data/quickstart-presets.ts:139
-msgid "Recorder"
-msgstr "مسجل"
+#~ msgid "Recorder"
+#~ msgstr "مسجل"
 
-#: app/components/play/log/log-control.tsx:147
-#: app/components/play/log/log-control.tsx:151
+#: app/components/play/log/log-control.tsx:196
 msgid "Redo"
 msgstr "إعادة"
 
-#: app/components/play/log/log-control.tsx:156
+#: app/components/play/log/log-control.tsx:202
 msgid "Redo (Ctrl+Y)"
 msgstr "إعادة (Ctrl+Y)"
 
@@ -1774,8 +1823,8 @@ msgid "Rescan"
 msgstr "إعادة الفحص"
 
 #: app/data/quickstart-presets.ts:282
-msgid "Research Notes"
-msgstr "ملاحظات بحث"
+#~ msgid "Research Notes"
+#~ msgstr "ملاحظات بحث"
 
 #: app/components/layout/settings/game.tsx:143
 #: app/components/layout/settings/game.tsx:164
@@ -1792,20 +1841,18 @@ msgstr "إعادة تعيين إعدادات التوليد"
 #: app/components/layout/settings/advanced.tsx:277
 #: app/components/layout/settings/advanced.tsx:330
 #: app/components/layout/settings/advanced.tsx:397
-#: app/components/quickstart/steps/stats-inventory-step.tsx:184
 msgid "Reset to Default"
 msgstr "استعادة الافتراضيات"
 
-#: app/components/play/log/log-control.tsx:105
-#: app/components/play/log/log-control.tsx:109
+#: app/components/play/log/log-control.tsx:121
 msgid "Retry"
 msgstr "إعادة المحاولة"
 
-#: app/components/play/log/log-control.tsx:114
+#: app/components/play/log/log-control.tsx:127
 msgid "Retry (Ctrl+R)"
 msgstr "إعادة المحاولة (Ctrl+R)"
 
-#: app/pages/home/home.tsx:596
+#: app/pages/home/home.tsx:594
 msgid "Retry: Retry the last message. Can only be done if the last message is by the AI."
 msgstr "إعادة المحاولة: أعد توليد الرسالة الأخيرة. متاح فقط إذا كانت الرسالة الأخيرة من الكاتب."
 
@@ -1818,26 +1865,26 @@ msgid "Review license, dependency, and credit information."
 msgstr "مراجعة معلومات الترخيص والتبعيات والمساهمين."
 
 #: app/data/quickstart-presets.ts:133
-msgid "Revolver"
-msgstr "مسدس"
+#~ msgid "Revolver"
+#~ msgstr "مسدس"
 
 #: app/components/layout/settings/game.tsx:110
 msgid "Right to Left"
 msgstr "من اليمين إلى اليسار"
 
-#: app/data/quickstart-presets.ts:105
+#: app/data/quickstart-presets.ts:37
 msgid "Rogue"
 msgstr "لص"
 
-#: app/components/play/play-input-controls.tsx:280
-#: app/components/play/play-input-controls.tsx:286
+#: app/components/play/play-input-controls.tsx:357
+#: app/components/play/play-input-controls.tsx:363
 msgid "Roll a dice"
 msgstr "رمي النرد"
 
 #: app/data/quickstart-presets.ts:255
 #: app/data/quickstart-presets.ts:276
-msgid "Sanity"
-msgstr "عقل"
+#~ msgid "Sanity"
+#~ msgstr "عقل"
 
 #: app/components/ui/inventory-item.tsx:77
 #: app/components/ui/stat-item.tsx:104
@@ -1857,11 +1904,11 @@ msgstr "حفظ التغييرات"
 msgid "Save Scenario"
 msgstr "حفظ السيناريو"
 
-#: app/components/play/play-input-controls.tsx:189
+#: app/components/play/play-input-controls.tsx:259
 msgid "Say"
 msgstr "قل"
 
-#: app/pages/home/home.tsx:578
+#: app/pages/home/home.tsx:576
 msgid "Say: Speak something out loud."
 msgstr "قل: قل شيئاً."
 
@@ -1886,15 +1933,15 @@ msgstr "إجراءات السيناريو"
 msgid "Scenarios"
 msgstr "سيناريوهات"
 
-#: app/data/quickstart-presets.ts:52
+#: app/data/quickstart-presets.ts:24
 msgid "Sci-Fi"
 msgstr "خيال علمي"
 
-#: app/data/quickstart-presets.ts:219
+#: app/data/quickstart-presets.ts:52
 msgid "Scientist"
 msgstr "عالم"
 
-#: app/pages/play/play.tsx:291
+#: app/pages/play/play.tsx:293
 msgid "Scroll to bottom"
 msgstr "التمرير إلى الأسفل"
 
@@ -1930,10 +1977,10 @@ msgid "Select a theme"
 msgstr "اختر النسق"
 
 #: app/components/quickstart/steps/setting-step.tsx:39
-msgid "Select a world for your story"
-msgstr "اختر عالماً لقصتك"
+#~ msgid "Select a world for your story"
+#~ msgstr "اختر عالماً لقصتك"
 
-#: app/components/play/play-input-controls.tsx:219
+#: app/components/play/play-input-controls.tsx:299
 msgid "Select action mode"
 msgstr "اختر نوع الإجراء"
 
@@ -1953,13 +2000,13 @@ msgstr "اختر النموذج"
 msgid "Select thinking visibility"
 msgstr "اختر عرض التفكير"
 
-#: app/data/quickstart-presets.ts:298
+#: app/data/quickstart-presets.ts:65
 msgid "Serious"
 msgstr "جدي"
 
 #: app/data/quickstart-presets.ts:401
-msgid "serving as the sharp end of whatever corporate or colonial interest sends you into harm's way"
-msgstr "تعمل كنصلٍ حاد في يد القوى المؤسسية أو الاستعمارية، مستعداً لخوض غمار المخاطر التي تضعك فيها"
+#~ msgid "serving as the sharp end of whatever corporate or colonial interest sends you into harm's way"
+#~ msgstr "تعمل كنصلٍ حاد في يد القوى المؤسسية أو الاستعمارية، مستعداً لخوض غمار المخاطر التي تضعك فيها"
 
 #: app/components/layout/model-select.tsx:209
 #: app/components/layout/model-select.tsx:278
@@ -1968,12 +2015,12 @@ msgid "Set"
 msgstr "ضبط"
 
 #: app/components/quickstart/quickstart-wizard.tsx:166
-msgid "Set the atmosphere"
-msgstr "حدد جو القصة"
+#~ msgid "Set the atmosphere"
+#~ msgstr "حدد جو القصة"
 
 #: app/components/quickstart/steps/tone-step.tsx:28
-msgid "Set the narrative tone for your story"
-msgstr "حدد النبرة السردية لقصتك"
+#~ msgid "Set the narrative tone for your story"
+#~ msgstr "حدد النبرة السردية لقصتك"
 
 #: app/components/layout/settings/model.tsx:65
 msgid "Set the token budget and creativity controls used for new AI responses."
@@ -1984,19 +2031,19 @@ msgid "Set the visual style, language, and reading direction."
 msgstr "ضبط النمط المرئي واللغة واتجاه القراءة."
 
 #: app/components/quickstart/steps/description-style-step.tsx:122
-msgid "Set tone and pacing preferences"
-msgstr "حدد تفضيلات النبرة والإيقاع"
+#~ msgid "Set tone and pacing preferences"
+#~ msgstr "حدد تفضيلات النبرة والإيقاع"
 
 #: app/components/quickstart/quickstart-wizard.tsx:109
-msgid "Setting"
-msgstr "الإعدادات"
+#~ msgid "Setting"
+#~ msgstr "الإعدادات"
 
 #: app/components/layout/settings/settings-button.tsx:86
 #: app/components/layout/settings/settings-modal.tsx:173
 msgid "Settings"
 msgstr "الإعدادات"
 
-#: app/pages/home/home.tsx:409
+#: app/pages/home/home.tsx:417
 msgid "Setup required"
 msgstr "يجب إعداد التطبيق"
 
@@ -2021,11 +2068,11 @@ msgstr "سجل للحصول على حساب في OpenRouter"
 msgid "Sign up for an account at Venice AI"
 msgstr "سجل للحصول على حساب في Venice AI"
 
-#: app/data/quickstart-presets.ts:272
+#: app/data/quickstart-presets.ts:58
 msgid "Skeptic"
 msgstr "متشكك"
 
-#: app/data/quickstart-presets.ts:195
+#: app/data/quickstart-presets.ts:48
 msgid "Soldier"
 msgstr "جندي"
 
@@ -2033,13 +2080,13 @@ msgstr "جندي"
 msgid "Something went wrong."
 msgstr "حدث خطأ ما."
 
-#: app/data/quickstart-presets.ts:227
+#: app/data/quickstart-presets.ts:53
 msgid "Space Marine"
 msgstr "جندي فضاء"
 
 #: app/components/quickstart/steps/description-style-step.tsx:119
-msgid "Specify perspective (first/second person)"
-msgstr "حدد المنظور (المتكلم/المخاطب)"
+#~ msgid "Specify perspective (first/second person)"
+#~ msgstr "حدد المنظور (المتكلم/المخاطب)"
 
 #: app/components/layout/settings/api.tsx:34
 msgid "Speech to Text"
@@ -2049,12 +2096,12 @@ msgstr "تحويل الكلام إلى نص"
 #: app/data/quickstart-presets.ts:115
 #: app/data/quickstart-presets.ts:161
 #: app/data/quickstart-presets.ts:199
-msgid "Stamina"
-msgstr "طاقة"
+#~ msgid "Stamina"
+#~ msgstr "طاقة"
 
 #: app/components/quickstart/quickstart-wizard.tsx:417
-msgid "Start Adventure"
-msgstr "ابدأ المغامرة"
+#~ msgid "Start Adventure"
+#~ msgstr "ابدأ المغامرة"
 
 #: app/data/api-presets.ts:115
 msgid "Start the server (Different tools have different ways to start the server, look up your tool's documentation)"
@@ -2065,60 +2112,56 @@ msgid "Starting download..."
 msgstr "جاري بدء التحميل..."
 
 #: app/components/layout/settings/inventory-stats.tsx:111
-#: app/components/quickstart/steps/stats-inventory-step.tsx:212
 #: app/components/sidebar/stats-card.tsx:151
 #: app/components/ui/stat-item.tsx:58
 msgid "Stat name"
 msgstr "اسم الخاصية"
 
 #: app/components/layout/settings/inventory-stats.tsx:97
-#: app/components/quickstart/steps/stats-inventory-step.tsx:191
 #: app/components/sidebar/stats-card.tsx:72
 msgid "Stats"
 msgstr "الخصائص"
 
 #: app/components/quickstart/quickstart-wizard.tsx:212
-msgid "Stats & Inventory"
-msgstr "الخصائص والمخزون"
+#~ msgid "Stats & Inventory"
+#~ msgstr "الخصائص والمخزون"
 
-#: app/components/quickstart/steps/game-mode-step.tsx:31
+#: app/components/quickstart/steps/game-mode-step.tsx:28
 msgid "Stats and inventory tracking"
 msgstr "تتبع الخصائص والمخزون"
 
 #: app/components/quickstart/steps/archetype-step.tsx:104
-msgid "Stats:"
-msgstr "الخصائص:"
+#~ msgid "Stats:"
+#~ msgstr "الخصائص:"
 
-#. placeholder {0}: currentStep + 1
-#. placeholder {1}: steps.length
 #: app/components/quickstart/quickstart-wizard.tsx:407
-msgid "Step {0} of {1}"
-msgstr "الخطوة {0} من {1}"
+#~ msgid "Step {0} of {1}"
+#~ msgstr "الخطوة {0} من {1}"
 
 #: app/components/play/log/log-control.tsx:200
-msgid "Stop"
-msgstr "إيقاف"
+#~ msgid "Stop"
+#~ msgstr "إيقاف"
 
-#: app/components/play/play-input-controls.tsx:381
-#: app/components/play/play-input-controls.tsx:387
+#: app/components/play/play-input-controls.tsx:458
+#: app/components/play/play-input-controls.tsx:464
 msgid "Stop and transcribe"
 msgstr "إيقاف وتحويل الكلام لنص"
 
-#: app/components/play/log/log-control.tsx:192
-#: app/components/play/play-input-controls.tsx:409
+#: app/components/play/log/log-control.tsx:290
+#: app/components/play/play-input-controls.tsx:486
 msgid "Stop generating"
 msgstr "إيقاف التوليد"
 
-#: app/components/play/log/log-control.tsx:206
+#: app/components/play/log/log-control.tsx:301
 msgid "Stop generating (Esc)"
 msgstr "إيقاف التوليد (Esc)"
 
-#: app/components/play/play-input-controls.tsx:295
+#: app/components/play/play-input-controls.tsx:372
 msgid "Stop recording"
 msgstr "إيقاف التسجيل"
 
 #: app/components/layout/settings/settings-modal.tsx:97
-#: app/components/play/play-input-controls.tsx:190
+#: app/components/play/play-input-controls.tsx:260
 msgid "Story"
 msgstr "قصة"
 
@@ -2135,12 +2178,12 @@ msgid "Story context"
 msgstr "سياق القصة"
 
 #: app/components/layout/settings/tale.tsx:52
-#: app/components/quickstart/steps/game-mode-step.tsx:16
+#: app/components/quickstart/steps/game-mode-step.tsx:15
 #: app/components/scenario/GameModeField.tsx:22
 msgid "Story Teller"
 msgstr "قصّاص"
 
-#: app/pages/home/home.tsx:581
+#: app/pages/home/home.tsx:579
 msgid "Story: Write a segment of text that the AI will treat as part of the story and continue from."
 msgstr "قصة: اكتب جزءاً من النص ليعتبره الكاتب جزءاً من القصة ويستمر بناءً عليه."
 
@@ -2150,14 +2193,14 @@ msgstr "موجّه النظام للقصّاص"
 
 #: app/data/quickstart-presets.ts:167
 #: app/data/quickstart-presets.ts:185
-msgid "Stress"
-msgstr "ضغط"
+#~ msgid "Stress"
+#~ msgstr "ضغط"
 
-#: app/components/quickstart/steps/game-mode-step.tsx:32
+#: app/components/quickstart/steps/game-mode-step.tsx:29
 msgid "Structured gameplay"
 msgstr "لعبة منظمة"
 
-#: app/components/play/play-input-controls.tsx:409
+#: app/components/play/play-input-controls.tsx:486
 msgid "Submit action"
 msgstr "إرسال الإجراء"
 
@@ -2166,17 +2209,15 @@ msgstr "إرسال الإجراء"
 msgid "Support"
 msgstr "الدعم"
 
-#: app/components/quickstart/steps/archetype-step.tsx:77
-#: app/components/quickstart/steps/setting-step.tsx:48
-#: app/components/quickstart/steps/tone-step.tsx:37
+#: app/components/quickstart/quickstart-wizard.tsx:161
 msgid "Surprise Me"
 msgstr "فاجئني"
 
 #: app/data/quickstart-presets.ts:385
-msgid "surviving on wit, guile, and the understanding that rules are for people who cannot bend them"
-msgstr "ينجو بذكائه وحيلته، مدركاً أن القواعد وُجدت لمن يعجز عن تطويعها"
+#~ msgid "surviving on wit, guile, and the understanding that rules are for people who cannot bend them"
+#~ msgstr "ينجو بذكائه وحيلته، مدركاً أن القواعد وُجدت لمن يعجز عن تطويعها"
 
-#: app/data/quickstart-presets.ts:157
+#: app/data/quickstart-presets.ts:46
 msgid "Survivor"
 msgstr "ناجي"
 
@@ -2216,8 +2257,8 @@ msgid "Tales"
 msgstr "حكايات"
 
 #: app/data/quickstart-presets.ts:146
-msgid "Tarot Cards"
-msgstr "بطاقات تارو"
+#~ msgid "Tarot Cards"
+#~ msgstr "بطاقات تارو"
 
 #: app/components/layout/settings/model.tsx:125
 #: app/components/layout/settings/model.tsx:137
@@ -2228,17 +2269,17 @@ msgstr "درجة الحرارة"
 msgid "Text to Speech"
 msgstr "تحويل النص إلى كلام"
 
-#: app/components/quickstart/steps/game-mode-step.tsx:28
+#: app/components/quickstart/steps/game-mode-step.tsx:26
 msgid "The AI acts as a Game Master, tracking stats and inventory"
 msgstr "الكاتب يتصرف كمدير اللعبة، ويتتبع الخصائص والمخزون"
 
 #: app/components/quickstart/steps/description-style-step.tsx:60
-msgid "The description provides context about your scenario's setting, theme, and premise."
-msgstr "يوفر الوصف سياقاً حول بيئة السيناريو الخاص بك، وموضوعه، وفكرته."
+#~ msgid "The description provides context about your scenario's setting, theme, and premise."
+#~ msgstr "يوفر الوصف سياقاً حول بيئة السيناريو الخاص بك، وموضوعه، وفكرته."
 
 #: app/components/quickstart/steps/description-style-step.tsx:109
-msgid "The narration style guides how the AI narrates and responds during gameplay."
-msgstr "يوجه أسلوب السرد كيفية سرد الذكاء الاصطناعي واستجابته أثناء اللعب."
+#~ msgid "The narration style guides how the AI narrates and responds during gameplay."
+#~ msgstr "يوجه أسلوب السرد كيفية سرد الذكاء الاصطناعي واستجابته أثناء اللعب."
 
 #: app/data/api-presets.ts:79
 msgid "The Official OpenAI API. Requires an OpenAI account with charged credits."
@@ -2253,8 +2294,8 @@ msgid "Theme"
 msgstr "النسق"
 
 #: app/components/quickstart/steps/description-style-step.tsx:28
-msgid "These fields were generated based on your choices. You can modify them here or from the Tale tab in the settings menu in-game."
-msgstr "تم إنشاء هذه الحقول بناءً على اختياراتك. يمكنك تعديلها هنا أو من تبويب الحكاية في قائمة الإعدادات داخل اللعبة."
+#~ msgid "These fields were generated based on your choices. You can modify them here or from the Tale tab in the settings menu in-game."
+#~ msgstr "تم إنشاء هذه الحقول بناءً على اختياراتك. يمكنك تعديلها هنا أو من تبويب الحكاية في قائمة الإعدادات داخل اللعبة."
 
 #: app/components/layout/settings/tale.tsx:95
 msgid "These notes guide the model while the current tale is running."
@@ -2283,12 +2324,16 @@ msgid "This is an extra author note that is injected early with other system pro
 msgstr "هذه ملاحظة مؤلف إضافية يتم إدراجها مبكراً مع موجهات النظام الأخرى فقط أثناء إجراء <0>استمرار</0>."
 
 #: app/components/quickstart/steps/character-name-step.tsx:31
-msgid "This is how you'll be known"
-msgstr "هكذا ستُعرف"
+#~ msgid "This is how you'll be known"
+#~ msgstr "هكذا ستُعرف"
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:94
 msgid "This is the initial paragraph of story that the player will respond to. <0/> Useful for setting up the initial scene."
 msgstr "هذه هي الفقرة الأولية من القصة التي سيرد عليها اللاعب. <0/> مفيدة لإعداد المشهد الأولي."
+
+#: app/components/quickstart/quickstart-wizard.tsx:425
+msgid "This is the player character the tale will address directly."
+msgstr "هذه هي الشخصية التي ستخاطبها الحكاية مباشرة."
 
 #: app/components/layout/settings/advanced.tsx:345
 msgid "This is the system prompt used when auto-generating story cards. The AI is asked to output JSON with content, triggers, and category. The JSON is parsed and used to populate the new story card."
@@ -2336,16 +2381,20 @@ msgstr "صورة مصغرة (ينصح بـ WebP)"
 
 #: app/components/quickstart/steps/description-style-step.tsx:66
 #: app/components/quickstart/steps/description-style-step.tsx:115
-msgid "Tips"
-msgstr "نصائح"
+#~ msgid "Tips"
+#~ msgstr "نصائح"
 
 #: app/components/storybook/StorybookEditor.tsx:260
 msgid "Title"
 msgstr "العنوان"
 
 #: app/components/quickstart/quickstart-wizard.tsx:165
-msgid "Tone"
-msgstr "النبرة"
+#~ msgid "Tone"
+#~ msgstr "النبرة"
+
+#: app/components/quickstart/quickstart-wizard.tsx:435
+msgid "Tone (Optional)"
+msgstr "النبرة (اختياري)"
 
 #: app/components/layout/settings/model.tsx:270
 #: app/components/layout/settings/model.tsx:278
@@ -2363,25 +2412,25 @@ msgid "Top P"
 msgstr "Top P"
 
 #: app/data/quickstart-presets.ts:384
-msgid "touched by powers most fear to name, walking the knife's edge between knowledge and destruction"
-msgstr "لامسته قوى يتهيب الكثيرون مجرد تسميتها، يسير على حد السكين بين المعرفة والهلاك"
+#~ msgid "touched by powers most fear to name, walking the knife's edge between knowledge and destruction"
+#~ msgstr "لامسته قوى يتهيب الكثيرون مجرد تسميتها، يسير على حد السكين بين المعرفة والهلاك"
 
 #: app/data/quickstart-presets.ts:396
-msgid "trained for wars that seem small now, applying military discipline to an enemy that does not negotiate"
-msgstr "مدرب لحروب تبدو صغيرة الآن، وتواجه عدواً لا يتفاوض"
+#~ msgid "trained for wars that seem small now, applying military discipline to an enemy that does not negotiate"
+#~ msgstr "مدرب لحروب تبدو صغيرة الآن، وتواجه عدواً لا يتفاوض"
 
 #: app/data/quickstart-presets.ts:383
-msgid "trained in the art of war, carrying scars that tell stories and a blade that has tasted blood"
-msgstr "خبير في فنون الحرب، يحمل ندوباً تروي قصصاً، ونصلاً ذاق طعم الدماء"
+#~ msgid "trained in the art of war, carrying scars that tell stories and a blade that has tasted blood"
+#~ msgstr "خبير في فنون الحرب، يحمل ندوباً تروي قصصاً، ونصلاً ذاق طعم الدماء"
 
-#: app/components/play/play-input-controls.tsx:297
-#: app/components/play/play-input-controls.tsx:397
+#: app/components/play/play-input-controls.tsx:374
+#: app/components/play/play-input-controls.tsx:474
 msgid "Transcribing..."
 msgstr "جاري تحويل الكلام إلى نص..."
 
 #: app/data/quickstart-presets.ts:222
-msgid "Tricorder"
-msgstr "ترايكوردر"
+#~ msgid "Tricorder"
+#~ msgstr "ترايكوردر"
 
 #: app/components/storybook/StorybookEditor.tsx:318
 msgid "trigger1, trigger2, trigger3"
@@ -2395,21 +2444,29 @@ msgstr "المحفزات (مفصولة بفواصل)"
 msgid "Tune token budgets, sampling, and repeatable seeds."
 msgstr "ضبط ميزانيات الرموز، وأخذ العينات، والبذور القابلة للتكرار."
 
-#: app/pages/home/home.tsx:163
-#: app/pages/home/home.tsx:632
+#: app/pages/home/home.tsx:162
+#: app/pages/home/home.tsx:630
 #: app/pages/tales/home.tsx:190
 msgid "turn"
 msgstr "دور"
 
-#: app/pages/home/home.tsx:163
-#: app/pages/home/home.tsx:632
+#: app/pages/home/home.tsx:162
+#: app/pages/home/home.tsx:630
 #: app/pages/tales/home.tsx:190
 msgid "turns"
 msgstr "أدوار"
 
-#: app/pages/home/home.tsx:570
+#: app/components/quickstart/quickstart-wizard.tsx:398
+msgid "Type a role or pick an archetype suggested by the selected world."
+msgstr "اكتب دوراً أو اختر نمطاً مقترحاً من العالم المحدد."
+
+#: app/pages/home/home.tsx:568
 msgid "Type actions, the AI continues. Available actions:"
 msgstr "أدخل إجراءات، ويستمر الكاتب. الإجراءات المتاحة:"
+
+#: app/components/quickstart/quickstart-wizard.tsx:378
+msgid "Type your own world, or start from one of the suggestions below."
+msgstr "اكتب عالمك الخاص، أو ابدأ بأحد الاقتراحات أدناه."
 
 #: app/components/layout/settings/game.tsx:92
 msgid "UI Direction"
@@ -2420,8 +2477,8 @@ msgid "UI Scale (0.8 - 1.5)"
 msgstr "مقياس الواجهة (0.8 - 1.5)"
 
 #: app/data/quickstart-presets.ts:404
-msgid "unable to let mysteries rest, even the ones that might be safer left buried"
-msgstr "لا تترك الألغاز وشأنها، حتى تلك التي يفضل بقاؤها مدفونة"
+#~ msgid "unable to let mysteries rest, even the ones that might be safer left buried"
+#~ msgstr "لا تترك الألغاز وشأنها، حتى تلك التي يفضل بقاؤها مدفونة"
 
 #: app/components/storybook/CategoryFilter.tsx:47
 #: app/components/storybook/StorybookEditor.tsx:63
@@ -2429,16 +2486,15 @@ msgstr "لا تترك الألغاز وشأنها، حتى تلك التي يف�
 msgid "Uncategorized"
 msgstr "غير مصنف"
 
-#: app/components/play/log/log-control.tsx:126
-#: app/components/play/log/log-control.tsx:130
+#: app/components/play/log/log-control.tsx:163
 msgid "Undo"
 msgstr "تراجع"
 
-#: app/components/play/log/log-control.tsx:135
+#: app/components/play/log/log-control.tsx:169
 msgid "Undo (Ctrl+Z)"
 msgstr "تراجع (Ctrl+Z)"
 
-#: app/pages/home/home.tsx:629
+#: app/pages/home/home.tsx:627
 msgid "Untitled"
 msgstr "بدون عنوان"
 
@@ -2488,8 +2544,8 @@ msgstr "القيمة"
 msgid "Venice AI"
 msgstr "Venice AI"
 
-#: app/pages/home/home.tsx:442
-#: app/pages/home/home.tsx:505
+#: app/pages/home/home.tsx:441
+#: app/pages/home/home.tsx:503
 msgid "View all"
 msgstr "عرض الكل"
 
@@ -2505,35 +2561,54 @@ msgstr "قم بزيارة NanoGPT (الحساب اختياري)"
 msgid "Voice"
 msgstr "الصوت"
 
-#: app/data/quickstart-presets.ts:71
+#: app/data/quickstart-presets.ts:35
 msgid "Warrior"
 msgstr "محارب"
 
 #: app/components/quickstart/steps/description-style-step.tsx:57
 #: app/components/quickstart/steps/description-style-step.tsx:106
-msgid "What is this?"
-msgstr "ما هذا؟"
+#~ msgid "What is this?"
+#~ msgstr "ما هذا؟"
+
+#: app/components/quickstart/quickstart-wizard.tsx:424
+msgid "What is your character's name?"
+msgstr "ما اسم شخصيتك؟"
+
+#: app/components/quickstart/quickstart-wizard.tsx:436
+msgid "What should the tale feel like?"
+msgstr "كيف تريد أن يكون شعور الحكاية؟"
+
+#: app/components/quickstart/quickstart-wizard.tsx:377
+msgid "What world should the tale begin in?"
+msgstr "في أي عالم يجب أن تبدأ الحكاية؟"
+
+#: app/components/quickstart/quickstart-wizard.tsx:397
+msgid "Who are you in this world?"
+msgstr "من أنت في هذا العالم؟"
 
 #: app/data/quickstart-presets.ts:83
-msgid "Wooden Shield"
-msgstr "درع خشبي"
+#~ msgid "Wooden Shield"
+#~ msgstr "درع خشبي"
 
 #: app/data/quickstart-presets.ts:99
-msgid "Wooden Staff"
-msgstr "عصا خشبية"
+#~ msgid "Wooden Staff"
+#~ msgstr "عصا خشبية"
 
-#: app/components/quickstart/steps/game-mode-step.tsx:22
+#: app/components/quickstart/steps/game-mode-step.tsx:20
 msgid "Works with all models"
 msgstr "يعمل مع جميع النماذج"
 
-#: app/data/quickstart-presets.ts:316
-msgid "Write with weight and consequence. Actions have repercussions. Death is real. Stakes matter."
-msgstr "اكتب بجدية ووقع عميق. للأفعال عواقب ملموسة. الموت حقيقة واقعة، والرهانات مصيرية."
+#: app/components/quickstart/quickstart-wizard.tsx:376
+msgid "World"
+msgstr "العالم"
 
-#. placeholder {0}: archetypeName.toLowerCase()
+#: app/data/quickstart-presets.ts:316
+#~ msgid "Write with weight and consequence. Actions have repercussions. Death is real. Stakes matter."
+#~ msgstr "اكتب بجدية ووقع عميق. للأفعال عواقب ملموسة. الموت حقيقة واقعة، والرهانات مصيرية."
+
 #: app/data/quickstart-presets.ts:422
-msgid "You are {characterName}, a {0} {archetypeHook}. You exist in {worldDesc}."
-msgstr "أنت {characterName}، {0} {archetypeHook}. أنت موجود في {worldDesc}."
+#~ msgid "You are {characterName}, a {0} {archetypeHook}. You exist in {worldDesc}."
+#~ msgstr "أنت {characterName}، {0} {archetypeHook}. أنت موجود في {worldDesc}."
 
 #: app/lib/play-utils.ts:15
 msgid "You say..."
@@ -2543,6 +2618,6 @@ msgstr "قل..."
 msgid "You..."
 msgstr "افعل..."
 
-#: app/data/quickstart-presets.ts:47
+#: app/data/quickstart-presets.ts:20
 msgid "Zombies"
 msgstr "زومبي"
