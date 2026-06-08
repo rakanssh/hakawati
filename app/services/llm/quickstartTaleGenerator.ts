@@ -21,7 +21,7 @@ export type QuickstartTaleAnswers = {
   world: string;
   characterName: string;
   archetype: string;
-  tone: string;
+  tone?: string;
   extraDetails?: string;
 };
 
@@ -75,8 +75,12 @@ export function buildQuickstartTalePrompt(
     `World: ${answers.world}`,
     `Player character name: ${answers.characterName}`,
     `Player character archetype: ${answers.archetype}`,
-    `Narrative tone: ${answers.tone}`,
   ];
+
+  const tone = answers.tone?.trim();
+  if (tone) {
+    parts.push(`Narrative tone: ${tone}`);
+  }
 
   const extraDetails = answers.extraDetails?.trim();
   if (extraDetails) {

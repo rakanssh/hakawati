@@ -71,6 +71,15 @@ describe("quickstart tale generator", () => {
     expect(prompt).not.toContain("Additional user details:");
   });
 
+  it("omits narrative tone when the optional tone is blank", () => {
+    const prompt = buildQuickstartTalePrompt({
+      ...baseAnswers,
+      tone: "",
+    });
+
+    expect(prompt).not.toContain("Narrative tone:");
+  });
+
   it("generates and normalizes a GM tale from valid JSON", async () => {
     sendRoleChatMock.mockResolvedValue({
       content: JSON.stringify({

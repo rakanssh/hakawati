@@ -4,17 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Home,
-  Loader2,
-  Shuffle,
-  Sparkles,
-} from "lucide-react";
 import { GameModeStep } from "./steps";
 import { GameMode } from "@/types";
-import { ARCHETYPES, SETTINGS, TONES } from "@/data/quickstart-presets";
+import {
+  QUICKSTART_ARCHETYPE_OPTIONS,
+  QUICKSTART_TONE_OPTIONS,
+  QUICKSTART_WORLD_OPTIONS,
+} from "@/data/quickstart-presets";
 import { useTaleStore } from "@/store/useTaleStore";
 import { initTale } from "@/services/tale.service";
 import { LogEntryRole } from "@/types/log.type";
@@ -47,10 +43,10 @@ export interface QuickstartState {
 type Suggestion = {
   id: string;
   label: string;
-  icon?: string;
 };
 
 type StepData = {
+  id: QuickstartStepId;
   title: string;
   question: string;
   hint: string;
@@ -58,11 +54,61 @@ type StepData = {
   canProgress: boolean;
 };
 
+const QUICKSTART_STEP_IDS = [
+  "game-mode",
+  "world",
+  "archetype",
+  "character-name",
+  "tone",
+  "details",
+] as const;
+
+type QuickstartStepId = (typeof QUICKSTART_STEP_IDS)[number];
+
 function optionPanelClass(isSelected: boolean) {
   return cn(
     "group flex min-h-12 items-center gap-3 rounded-xs border bg-card/55 px-3 py-2.5 text-start shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/55 hover:bg-card/80 hover:shadow-md focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none",
     isSelected &&
       "border-primary bg-primary/10 text-foreground ring-2 ring-primary/35",
+  );
+}
+
+function ClearableInput({
+  id,
+  value,
+  placeholder,
+  onValueChange,
+}: {
+  id: string;
+  value: string;
+  placeholder: string;
+  onValueChange: (value: string) => void;
+}) {
+  const { t } = useLingui();
+
+  return (
+    <div className="relative">
+      <Input
+        id={id}
+        value={value}
+        onChange={(event) => onValueChange(event.target.value)}
+        placeholder={placeholder}
+        className="h-14 rounded-xs border-border/75 bg-background/70 px-14 text-center text-lg shadow-lg shadow-background/20 backdrop-blur-sm md:text-xl"
+        autoFocus
+      />
+      {value && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-label={t`Clear input`}
+          className="absolute end-1.5 top-1/2 h-10 w-10 -translate-y-1/2 rounded-xs px-0 text-base font-semibold leading-none text-muted-foreground hover:text-foreground"
+          onClick={() => onValueChange("")}
+        >
+          X
+        </Button>
+      )}
+    </div>
   );
 }
 
@@ -89,13 +135,11 @@ function SuggestedInput({
 }) {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
-      <Input
+      <ClearableInput
         id={id}
         value={value}
-        onChange={(event) => onValueChange(event.target.value)}
         placeholder={placeholder}
-        className="h-14 rounded-xs border-border/75 bg-background/70 px-4 text-center text-lg shadow-lg shadow-background/20 backdrop-blur-sm md:text-xl"
-        autoFocus
+        onValueChange={onValueChange}
       />
 
       {suggestions.length > 0 && (
@@ -111,7 +155,6 @@ function SuggestedInput({
                 className="h-8 shrink-0 gap-1.5 rounded-xs px-2 text-muted-foreground hover:text-foreground"
                 onClick={onSurprise}
               >
-                <Shuffle className="h-3.5 w-3.5" />
                 <Trans>Surprise Me</Trans>
               </Button>
             )}
@@ -127,11 +170,6 @@ function SuggestedInput({
                   className={optionPanelClass(isSelected)}
                   onClick={() => onSuggestionSelect(suggestion)}
                 >
-                  {suggestion.icon && (
-                    <span className="text-xl leading-none">
-                      {suggestion.icon}
-                    </span>
-                  )}
                   <span className="min-w-0 truncate font-medium">
                     {suggestion.label}
                   </span>
@@ -156,13 +194,11 @@ function CharacterNameQuestion({
 
   return (
     <div className="mx-auto w-full max-w-2xl">
-      <Input
+      <ClearableInput
         id="character-name"
         value={value}
-        onChange={(event) => onChange(event.target.value)}
         placeholder={t`Enter your character's name...`}
-        className="h-14 rounded-xs border-border/75 bg-background/70 px-4 text-center text-lg shadow-lg shadow-background/20 backdrop-blur-sm md:text-xl"
-        autoFocus
+        onValueChange={onChange}
       />
     </div>
   );
@@ -198,102 +234,128 @@ export function QuickstartPage() {
   const { setLastPlayedTaleId } = useLastPlayedStore();
   const utilityConfig = useSettingsStore((s) => s.modelRoles.utility);
 
-  const defaultWorld = useMemo(() => {
-    const world = SETTINGS.find((setting) => setting.id === "fantasy");
-    return world ? _(world.name) : "Fantasy";
-  }, [_]);
-  const defaultArchetype = useMemo(() => {
-    const archetype = ARCHETYPES.fantasy?.find((item) => item.id === "warrior");
-    return archetype ? _(archetype.name) : "Warrior";
-  }, [_]);
-  const defaultTone = useMemo(() => {
-    const tone = TONES.find((item) => item.id === "serious");
-    return tone ? _(tone.name) : "Serious";
-  }, [_]);
-
   const [currentStep, setCurrentStep] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const [state, setState] = useState<QuickstartState>({
     gameMode: GameMode.STORY_TELLER,
-    selectedWorldId: "fantasy",
-    world: defaultWorld,
-    selectedArchetypeId: "warrior",
-    archetype: defaultArchetype,
+    selectedWorldId: null,
+    world: "",
+    selectedArchetypeId: null,
+    archetype: "",
     characterName: "",
-    selectedToneId: "serious",
-    tone: defaultTone,
+    selectedToneId: null,
+    tone: "",
     extraDetails: "",
   });
 
-  const updateState = (updates: Partial<QuickstartState>) => {
+  const updateState = useCallback((updates: Partial<QuickstartState>) => {
     setState((prev) => ({ ...prev, ...updates }));
-  };
+  }, []);
 
   const worldSuggestions = useMemo<Suggestion[]>(
     () =>
-      SETTINGS.filter((setting) => setting.id !== "custom").map((setting) => ({
-        id: setting.id,
-        label: _(setting.name),
-        icon: setting.icon,
+      QUICKSTART_WORLD_OPTIONS.map((world) => ({
+        id: world.id,
+        label: _(world.name),
       })),
     [_],
   );
 
   const archetypeSuggestions = useMemo<Suggestion[]>(() => {
     if (!state.selectedWorldId) return [];
-    return (ARCHETYPES[state.selectedWorldId] || [])
-      .filter((archetype) => archetype.id !== "custom-archetype")
-      .map((archetype) => ({
+    return (QUICKSTART_ARCHETYPE_OPTIONS[state.selectedWorldId] || []).map(
+      (archetype) => ({
         id: archetype.id,
         label: _(archetype.name),
-      }));
+      }),
+    );
   }, [_, state.selectedWorldId]);
 
   const toneSuggestions = useMemo<Suggestion[]>(
     () =>
-      TONES.filter((tone) => tone.id !== "custom-tone").map((tone) => ({
+      QUICKSTART_TONE_OPTIONS.map((tone) => ({
         id: tone.id,
         label: _(tone.name),
       })),
     [_],
   );
 
-  const selectWorld = useCallback(
+  const handleWorldSelect = useCallback(
     (suggestion: Suggestion) => {
-      const nextArchetypes = ARCHETYPES[suggestion.id] || [];
-      const nextArchetype = nextArchetypes.find(
-        (archetype) => archetype.id !== "custom-archetype",
-      );
       updateState({
         selectedWorldId: suggestion.id,
         world: suggestion.label,
-        selectedArchetypeId: nextArchetype?.id ?? null,
-        archetype: nextArchetype ? _(nextArchetype.name) : "",
+        selectedArchetypeId: null,
+        archetype: "",
       });
     },
-    [_],
+    [updateState],
   );
 
-  const handleWorldInput = (world: string) => {
-    updateState({
-      world,
-      selectedWorldId: null,
-      selectedArchetypeId: null,
-      archetype: "",
-    });
-  };
+  const handleWorldInput = useCallback(
+    (world: string) => {
+      updateState({
+        world,
+        selectedWorldId: null,
+        selectedArchetypeId: null,
+        archetype: "",
+      });
+    },
+    [updateState],
+  );
 
-  const selectRandom = (
-    suggestions: Suggestion[],
-    select: (item: Suggestion) => void,
-  ) => {
-    if (suggestions.length === 0) return;
-    select(suggestions[Math.floor(Math.random() * suggestions.length)]);
-  };
+  const handleArchetypeInput = useCallback(
+    (archetype: string) => {
+      updateState({ archetype, selectedArchetypeId: null });
+    },
+    [updateState],
+  );
 
-  const steps: StepData[] = [
-    {
+  const handleArchetypeSelect = useCallback(
+    (suggestion: Suggestion) => {
+      updateState({
+        archetype: suggestion.label,
+        selectedArchetypeId: suggestion.id,
+      });
+    },
+    [updateState],
+  );
+
+  const handleToneInput = useCallback(
+    (tone: string) => {
+      updateState({ tone, selectedToneId: null });
+    },
+    [updateState],
+  );
+
+  const handleToneSelect = useCallback(
+    (suggestion: Suggestion) => {
+      updateState({
+        tone: suggestion.label,
+        selectedToneId: suggestion.id,
+      });
+    },
+    [updateState],
+  );
+
+  const advanceStep = useCallback(() => {
+    setCurrentStep((prev) =>
+      Math.min(prev + 1, QUICKSTART_STEP_IDS.length - 1),
+    );
+  }, []);
+
+  const selectRandomAndContinue = useCallback(
+    (suggestions: Suggestion[], select: (item: Suggestion) => void) => {
+      if (suggestions.length === 0) return;
+      select(suggestions[Math.floor(Math.random() * suggestions.length)]);
+      advanceStep();
+    },
+    [advanceStep],
+  );
+
+  const stepsById = {
+    "game-mode": {
       title: t`Game Mode`,
       question: t`How do you want to play?`,
       hint: t`Choose the mode that fits the kind of tale you want to generate.`,
@@ -307,7 +369,7 @@ export function QuickstartPage() {
       ),
       canProgress: true,
     },
-    {
+    world: {
       title: t`World`,
       question: t`What world should the tale begin in?`,
       hint: t`Type your own world, or start from one of the suggestions below.`,
@@ -319,25 +381,15 @@ export function QuickstartPage() {
           suggestions={worldSuggestions}
           selectedId={state.selectedWorldId}
           onValueChange={handleWorldInput}
-          onSuggestionSelect={selectWorld}
-          onSurprise={() => selectRandom(worldSuggestions, selectWorld)}
+          onSuggestionSelect={handleWorldSelect}
+          onSurprise={() =>
+            selectRandomAndContinue(worldSuggestions, handleWorldSelect)
+          }
         />
       ),
       canProgress: state.world.trim().length > 0,
     },
-    {
-      title: t`Character Name`,
-      question: t`What is your character's name?`,
-      hint: t`This is the player character the tale will address directly.`,
-      component: (
-        <CharacterNameQuestion
-          value={state.characterName}
-          onChange={(characterName) => updateState({ characterName })}
-        />
-      ),
-      canProgress: state.characterName.trim().length > 0,
-    },
-    {
+    archetype: {
       title: t`Character`,
       question: t`Who are you in this world?`,
       hint: t`Type a role or pick an archetype suggested by the selected world.`,
@@ -349,23 +401,14 @@ export function QuickstartPage() {
           suggestions={archetypeSuggestions}
           selectedId={state.selectedArchetypeId}
           optionColumns="sm:grid-cols-2 lg:grid-cols-3"
-          onValueChange={(archetype) =>
-            updateState({ archetype, selectedArchetypeId: null })
-          }
-          onSuggestionSelect={(suggestion) =>
-            updateState({
-              archetype: suggestion.label,
-              selectedArchetypeId: suggestion.id,
-            })
-          }
+          onValueChange={handleArchetypeInput}
+          onSuggestionSelect={handleArchetypeSelect}
           onSurprise={
             archetypeSuggestions.length > 0
               ? () =>
-                  selectRandom(archetypeSuggestions, (suggestion) =>
-                    updateState({
-                      archetype: suggestion.label,
-                      selectedArchetypeId: suggestion.id,
-                    }),
+                  selectRandomAndContinue(
+                    archetypeSuggestions,
+                    handleArchetypeSelect,
                   )
               : undefined
           }
@@ -373,41 +416,43 @@ export function QuickstartPage() {
       ),
       canProgress: state.archetype.trim().length > 0,
     },
-    {
-      title: t`Tone`,
+    "character-name": {
+      title: t`Character Name`,
+      question: t`What is your character's name?`,
+      hint: t`This is the player character the tale will address directly.`,
+      component: (
+        <CharacterNameQuestion
+          value={state.characterName}
+          onChange={(characterName) => updateState({ characterName })}
+        />
+      ),
+      canProgress: state.characterName.trim().length > 0,
+    },
+    tone: {
+      title: t`Tone (Optional)`,
       question: t`What should the tale feel like?`,
-      hint: t`Type a tone, or choose one of the quick tone presets.`,
+      hint: t`Optional. Leave this blank if you do not want to specify a tone.`,
       component: (
         <SuggestedInput
           id="quickstart-tone"
           value={state.tone}
-          placeholder={t`Describe the narrative tone...`}
+          placeholder={t`Optional tone preference...`}
           suggestions={toneSuggestions}
           selectedId={state.selectedToneId}
           optionColumns="sm:grid-cols-2"
-          onValueChange={(tone) => updateState({ tone, selectedToneId: null })}
-          onSuggestionSelect={(suggestion) =>
-            updateState({
-              tone: suggestion.label,
-              selectedToneId: suggestion.id,
-            })
-          }
+          onValueChange={handleToneInput}
+          onSuggestionSelect={handleToneSelect}
           onSurprise={() =>
-            selectRandom(toneSuggestions, (suggestion) =>
-              updateState({
-                tone: suggestion.label,
-                selectedToneId: suggestion.id,
-              }),
-            )
+            selectRandomAndContinue(toneSuggestions, handleToneSelect)
           }
         />
       ),
-      canProgress: state.tone.trim().length > 0,
+      canProgress: true,
     },
-    {
-      title: t`Details`,
+    details: {
+      title: t`Details (Optional)`,
       question: t`Anything else before the tale begins?`,
-      hint: t`Optional details can guide the opening, relationships, themes, or boundaries.`,
+      hint: t`Optional. Leave this blank to let the tale fill in the gaps.`,
       component: (
         <OptionalDetailsQuestion
           value={state.extraDetails}
@@ -416,11 +461,16 @@ export function QuickstartPage() {
       ),
       canProgress: true,
     },
-  ];
+  } satisfies Record<QuickstartStepId, Omit<StepData, "id">>;
+
+  const steps = QUICKSTART_STEP_IDS.map((id) => ({
+    id,
+    ...stepsById[id],
+  }));
 
   const currentStepData = steps[currentStep];
   const isFirstStep = currentStep === 0;
-  const isLastStep = currentStep === steps.length - 1;
+  const isLastStep = currentStep === QUICKSTART_STEP_IDS.length - 1;
 
   const handleBack = useCallback(() => {
     if (!isFirstStep) {
@@ -429,8 +479,8 @@ export function QuickstartPage() {
   }, [isFirstStep]);
 
   const handleNext = useCallback(() => {
-    setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
-  }, [steps.length]);
+    advanceStep();
+  }, [advanceStep]);
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();
@@ -550,25 +600,8 @@ export function QuickstartPage() {
               onClick={handleCancel}
               disabled={isGenerating}
             >
-              <Home className="h-4 w-4" />
               <Trans>Home</Trans>
             </Button>
-            <div className="hidden min-w-0 flex-1 items-center gap-1 sm:flex">
-              {steps.map((step, index) => (
-                <div
-                  key={step.title}
-                  className={cn(
-                    "h-1.5 flex-1 rounded-xs transition-all duration-300",
-                    index <= currentStep ? "bg-primary" : "bg-muted",
-                  )}
-                />
-              ))}
-            </div>
-            <div className="rounded-xs border border-border/60 bg-background/60 px-2.5 py-1 text-xs text-muted-foreground">
-              <Trans>
-                Step {currentStep + 1} of {steps.length}
-              </Trans>
-            </div>
           </div>
         </header>
 
@@ -578,8 +611,7 @@ export function QuickstartPage() {
             className="flex w-full flex-col items-center gap-8 animate-in fade-in slide-in-from-bottom-2 duration-300"
           >
             <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center">
-              <div className="inline-flex items-center gap-2 rounded-xs border border-border/60 bg-background/55 px-3 py-1 text-xs font-medium uppercase text-muted-foreground shadow-sm backdrop-blur">
-                <Sparkles className="h-3.5 w-3.5" />
+              <div className="inline-flex items-center rounded-xs border border-border/60 bg-background/55 px-3 py-1 text-xs font-medium uppercase text-muted-foreground shadow-sm backdrop-blur">
                 {currentStepData.title}
               </div>
               <h1 className="text-balance text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
@@ -602,13 +634,12 @@ export function QuickstartPage() {
               disabled={isFirstStep || isGenerating}
               className="rounded-xs"
             >
-              <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
               <Trans>Back</Trans>
             </Button>
-            <div className="flex min-w-0 flex-1 items-center justify-center gap-1 sm:hidden">
+            <div className="flex min-w-0 flex-1 items-center justify-center gap-1">
               {steps.map((step, index) => (
                 <div
-                  key={step.title}
+                  key={step.id}
                   className={cn(
                     "h-1.5 flex-1 rounded-xs transition-all duration-300",
                     index <= currentStep ? "bg-primary" : "bg-muted",
@@ -622,16 +653,12 @@ export function QuickstartPage() {
               className="min-w-32 rounded-xs"
             >
               {isGenerating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <Trans>Generating</Trans>
-                </>
+                <Trans>Generating</Trans>
               ) : isLastStep ? (
                 <Trans>Generate Tale</Trans>
               ) : (
                 <>
                   <Trans>Next</Trans>
-                  <ChevronRight className="h-4 w-4 rtl:rotate-180" />
                 </>
               )}
             </Button>
@@ -641,5 +668,3 @@ export function QuickstartPage() {
     </main>
   );
 }
-
-export const QuickstartWizard = QuickstartPage;

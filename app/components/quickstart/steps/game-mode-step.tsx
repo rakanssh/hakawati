@@ -1,5 +1,4 @@
 import { GameMode } from "@/types";
-import { Swords, BookOpen } from "lucide-react";
 import { useLingui } from "@lingui/react/macro";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +14,6 @@ export function GameModeStep({ value, onChange }: GameModeStepProps) {
       id: GameMode.STORY_TELLER,
       name: t`Story Teller`,
       description: t`Pure narrative freedom without game mechanics`,
-      icon: BookOpen,
       features: [
         t`Pure storytelling`,
         t`No stats or inventory tracking`,
@@ -26,7 +24,6 @@ export function GameModeStep({ value, onChange }: GameModeStepProps) {
       id: GameMode.GM,
       name: t`Game Master (GM)`,
       description: t`The AI acts as a Game Master, tracking stats and inventory`,
-      icon: Swords,
       features: [
         t`Stats and inventory tracking`,
         t`Structured gameplay`,
@@ -39,7 +36,6 @@ export function GameModeStep({ value, onChange }: GameModeStepProps) {
     <div className="space-y-3">
       <div className="grid gap-4 md:grid-cols-2">
         {modes.map((mode) => {
-          const Icon = mode.icon;
           const isSelected = value === mode.id;
           return (
             <button
@@ -60,27 +56,17 @@ export function GameModeStep({ value, onChange }: GameModeStepProps) {
                   </div>
                 </div>
               )}
-              <div className="flex items-start gap-3">
-                <Icon
-                  className={`w-8 h-8 shrink-0 ${isSelected ? "text-primary" : "text-muted-foreground"}`}
-                />
-                <div className="flex-1">
-                  <h3 className="font-semibold mb-1">{mode.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    {mode.description}
-                  </p>
-                  <ul className="space-y-1">
-                    {mode.features.map((feature, idx) => (
-                      <li key={idx} className="text-xs flex items-center gap-2">
-                        <span
-                          className={`w-1 h-1 rounded-full ${isSelected ? "bg-primary" : "bg-muted-foreground"}`}
-                        />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+              <h3 className="font-semibold mb-1">{mode.name}</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                {mode.description}
+              </p>
+              <ul className="space-y-1">
+                {mode.features.map((feature, idx) => (
+                  <li key={idx} className="text-xs text-muted-foreground">
+                    {feature}
+                  </li>
+                ))}
+              </ul>
             </button>
           );
         })}
