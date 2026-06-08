@@ -36,8 +36,11 @@ export default function AppShell() {
   const { isMobilePlatform } = useIsMobile();
   const routerState = useRouterState();
 
-  const isPlayRoute = routerState.location.pathname?.startsWith("/play");
-  const showMobileBottomNav = isMobilePlatform && !isPlayRoute;
+  const pathname = routerState.location.pathname;
+  const isPlayRoute = pathname?.startsWith("/play");
+  const isQuickstartRoute = pathname?.startsWith("/quickstart");
+  const showMobileBottomNav =
+    isMobilePlatform && !isPlayRoute && !isQuickstartRoute;
 
   useEffect(() => {
     if (hasRunRef.current) return;

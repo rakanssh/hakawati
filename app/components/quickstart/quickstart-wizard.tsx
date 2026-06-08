@@ -1,245 +1,476 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import {
-  GameModeStep,
-  SettingStep,
-  ArchetypeStep,
-  CharacterNameStep,
-  ToneStep,
-  DescriptionStyleStep,
-  StatsInventoryStep,
-} from "./steps";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { GameModeStep } from "./steps";
 import { GameMode } from "@/types";
-import { Stat } from "@/types/stats.type";
-import type { Item } from "@/types/item.type";
 import {
-  generateAuthorNote,
-  generateDescription,
-  generateTaleName,
-  generateOpeningPrompt,
-  ARCHETYPES,
+  QUICKSTART_ARCHETYPE_OPTIONS,
+  QUICKSTART_TONE_OPTIONS,
+  QUICKSTART_WORLD_OPTIONS,
 } from "@/data/quickstart-presets";
 import { useTaleStore } from "@/store/useTaleStore";
 import { initTale } from "@/services/tale.service";
-import { LogEntryMode, LogEntryRole } from "@/types/log.type";
+import { LogEntryRole } from "@/types/log.type";
 import { nanoid } from "nanoid";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLingui as useLinguiCore } from "@lingui/react";
+import { toast } from "sonner";
+import {
+  isModelRoleConfigured,
+  useSettingsStore,
+} from "@/store/useSettingsStore";
+import {
+  generateQuickstartTale,
+  QUICKSTART_AUTHOR_NOTE,
+} from "@/services/llm/quickstartTaleGenerator";
 
 export interface QuickstartState {
   gameMode: GameMode;
-  setting: string;
-  customSetting: string;
+  selectedWorldId: string | null;
+  world: string;
+  selectedArchetypeId: string | null;
   archetype: string;
-  customArchetype: string;
   characterName: string;
+  selectedToneId: string | null;
   tone: string;
-  description: string;
-  authorNote: string;
-  stats: Stat[];
-  inventory: Item[];
+  extraDetails: string;
 }
 
-interface QuickstartWizardProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+type Suggestion = {
+  id: string;
+  label: string;
+};
+
+type StepData = {
+  id: QuickstartStepId;
+  title: string;
+  question: string;
+  hint: string;
+  component: React.ReactNode;
+  canProgress: boolean;
+};
+
+const QUICKSTART_STEP_IDS = [
+  "game-mode",
+  "world",
+  "archetype",
+  "character-name",
+  "tone",
+  "details",
+] as const;
+
+type QuickstartStepId = (typeof QUICKSTART_STEP_IDS)[number];
+
+function optionPanelClass(isSelected: boolean) {
+  return cn(
+    "group flex min-h-12 items-center gap-3 rounded-xs border bg-card/55 px-3 py-2.5 text-start shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/55 hover:bg-card/80 hover:shadow-md focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none",
+    isSelected &&
+      "border-primary bg-primary/10 text-foreground ring-2 ring-primary/35",
+  );
 }
 
-export function QuickstartWizard({
-  open,
-  onOpenChange,
-}: QuickstartWizardProps) {
+function ClearableInput({
+  id,
+  value,
+  placeholder,
+  onValueChange,
+}: {
+  id: string;
+  value: string;
+  placeholder: string;
+  onValueChange: (value: string) => void;
+}) {
+  const { t } = useLingui();
+
+  return (
+    <div className="relative">
+      <Input
+        id={id}
+        value={value}
+        onChange={(event) => onValueChange(event.target.value)}
+        placeholder={placeholder}
+        className="h-14 rounded-xs border-border/75 bg-background/70 px-14 text-center text-lg shadow-lg shadow-background/20 backdrop-blur-sm md:text-xl"
+        autoFocus
+      />
+      {value && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          aria-label={t`Clear input`}
+          className="absolute end-1.5 top-1/2 h-10 w-10 -translate-y-1/2 rounded-xs px-0 text-base font-semibold leading-none text-muted-foreground hover:text-foreground"
+          onClick={() => onValueChange("")}
+        >
+          X
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function SuggestedInput({
+  id,
+  value,
+  placeholder,
+  suggestions,
+  selectedId,
+  optionColumns = "sm:grid-cols-2 lg:grid-cols-3",
+  onValueChange,
+  onSuggestionSelect,
+  onSurprise,
+}: {
+  id: string;
+  value: string;
+  placeholder: string;
+  suggestions: Suggestion[];
+  selectedId: string | null;
+  optionColumns?: string;
+  onValueChange: (value: string) => void;
+  onSuggestionSelect: (suggestion: Suggestion) => void;
+  onSurprise?: () => void;
+}) {
+  return (
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
+      <ClearableInput
+        id={id}
+        value={value}
+        placeholder={placeholder}
+        onValueChange={onValueChange}
+      />
+
+      {suggestions.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
+            <span>
+              <Trans>Or choose one of these options.</Trans>
+            </span>
+            {onSurprise && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 shrink-0 gap-1.5 rounded-xs px-2 text-muted-foreground hover:text-foreground"
+                onClick={onSurprise}
+              >
+                <Trans>Surprise Me</Trans>
+              </Button>
+            )}
+          </div>
+
+          <div className={cn("grid gap-2.5", optionColumns)}>
+            {suggestions.map((suggestion) => {
+              const isSelected = selectedId === suggestion.id;
+              return (
+                <button
+                  key={suggestion.id}
+                  type="button"
+                  className={optionPanelClass(isSelected)}
+                  onClick={() => onSuggestionSelect(suggestion)}
+                >
+                  <span className="min-w-0 truncate font-medium">
+                    {suggestion.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CharacterNameQuestion({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const { t } = useLingui();
+
+  return (
+    <div className="mx-auto w-full max-w-2xl">
+      <ClearableInput
+        id="character-name"
+        value={value}
+        placeholder={t`Enter your character's name...`}
+        onValueChange={onChange}
+      />
+    </div>
+  );
+}
+
+function OptionalDetailsQuestion({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const { t } = useLingui();
+
+  return (
+    <div className="mx-auto w-full max-w-3xl">
+      <Textarea
+        id="quickstart-extra-details"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={t`e.g., Start during a festival, include a lost sibling, avoid grim endings...`}
+        className="min-h-[180px] resize-none rounded-xs border-border/75 bg-background/70 p-4 text-base shadow-lg shadow-background/20 backdrop-blur-sm md:text-lg"
+      />
+    </div>
+  );
+}
+
+export function QuickstartPage() {
   const navigate = useNavigate();
   const { t } = useLingui();
   const { _ } = useLinguiCore();
   const taleStore = useTaleStore();
   const { setLastPlayedTaleId } = useLastPlayedStore();
+  const utilityConfig = useSettingsStore((s) => s.modelRoles.utility);
 
   const [currentStep, setCurrentStep] = useState(0);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
   const [state, setState] = useState<QuickstartState>({
     gameMode: GameMode.STORY_TELLER,
-    setting: "fantasy",
-    customSetting: "",
-    archetype: "warrior",
-    customArchetype: "",
+    selectedWorldId: null,
+    world: "",
+    selectedArchetypeId: null,
+    archetype: "",
     characterName: "",
-    tone: "serious",
-    description: "",
-    authorNote: "",
-    stats: [],
-    inventory: [],
+    selectedToneId: null,
+    tone: "",
+    extraDetails: "",
   });
 
-  const updateState = (updates: Partial<QuickstartState>) => {
+  const updateState = useCallback((updates: Partial<QuickstartState>) => {
     setState((prev) => ({ ...prev, ...updates }));
-  };
-
-  const handleNextRef = useRef<(() => void) | null>(null);
-
-  const handleNext = useCallback(() => {
-    if (handleNextRef.current) {
-      handleNextRef.current();
-    }
   }, []);
 
-  const steps = [
-    {
+  const worldSuggestions = useMemo<Suggestion[]>(
+    () =>
+      QUICKSTART_WORLD_OPTIONS.map((world) => ({
+        id: world.id,
+        label: _(world.name),
+      })),
+    [_],
+  );
+
+  const archetypeSuggestions = useMemo<Suggestion[]>(() => {
+    if (!state.selectedWorldId) return [];
+    return (QUICKSTART_ARCHETYPE_OPTIONS[state.selectedWorldId] || []).map(
+      (archetype) => ({
+        id: archetype.id,
+        label: _(archetype.name),
+      }),
+    );
+  }, [_, state.selectedWorldId]);
+
+  const toneSuggestions = useMemo<Suggestion[]>(
+    () =>
+      QUICKSTART_TONE_OPTIONS.map((tone) => ({
+        id: tone.id,
+        label: _(tone.name),
+      })),
+    [_],
+  );
+
+  const handleWorldSelect = useCallback(
+    (suggestion: Suggestion) => {
+      updateState({
+        selectedWorldId: suggestion.id,
+        world: suggestion.label,
+        selectedArchetypeId: null,
+        archetype: "",
+      });
+    },
+    [updateState],
+  );
+
+  const handleWorldInput = useCallback(
+    (world: string) => {
+      updateState({
+        world,
+        selectedWorldId: null,
+        selectedArchetypeId: null,
+        archetype: "",
+      });
+    },
+    [updateState],
+  );
+
+  const handleArchetypeInput = useCallback(
+    (archetype: string) => {
+      updateState({ archetype, selectedArchetypeId: null });
+    },
+    [updateState],
+  );
+
+  const handleArchetypeSelect = useCallback(
+    (suggestion: Suggestion) => {
+      updateState({
+        archetype: suggestion.label,
+        selectedArchetypeId: suggestion.id,
+      });
+    },
+    [updateState],
+  );
+
+  const handleToneInput = useCallback(
+    (tone: string) => {
+      updateState({ tone, selectedToneId: null });
+    },
+    [updateState],
+  );
+
+  const handleToneSelect = useCallback(
+    (suggestion: Suggestion) => {
+      updateState({
+        tone: suggestion.label,
+        selectedToneId: suggestion.id,
+      });
+    },
+    [updateState],
+  );
+
+  const advanceStep = useCallback(() => {
+    setCurrentStep((prev) =>
+      Math.min(prev + 1, QUICKSTART_STEP_IDS.length - 1),
+    );
+  }, []);
+
+  const selectRandomAndContinue = useCallback(
+    (suggestions: Suggestion[], select: (item: Suggestion) => void) => {
+      if (suggestions.length === 0) return;
+      select(suggestions[Math.floor(Math.random() * suggestions.length)]);
+      advanceStep();
+    },
+    [advanceStep],
+  );
+
+  const stepsById = {
+    "game-mode": {
       title: t`Game Mode`,
-      description: t`Choose your play style`,
+      question: t`How do you want to play?`,
+      hint: t`Choose the mode that fits the kind of tale you want to generate.`,
       component: (
-        <GameModeStep
-          value={state.gameMode}
-          onChange={(gameMode) => updateState({ gameMode })}
-        />
+        <div className="mx-auto w-full max-w-3xl">
+          <GameModeStep
+            value={state.gameMode}
+            onChange={(gameMode) => updateState({ gameMode })}
+          />
+        </div>
       ),
       canProgress: true,
     },
-    {
-      title: t`Setting`,
-      description: t`Pick your world`,
+    world: {
+      title: t`World`,
+      question: t`What world should the tale begin in?`,
+      hint: t`Type your own world, or start from one of the suggestions below.`,
       component: (
-        <SettingStep
-          value={state.setting}
-          customValue={state.customSetting}
-          onChange={(setting: string) => {
-            updateState({ setting });
-            const archetypes = ARCHETYPES[setting];
-            if (archetypes && archetypes.length > 0) {
-              updateState({ archetype: archetypes[0].id });
-            }
-          }}
-          onCustomChange={(customSetting: string) =>
-            updateState({ customSetting })
+        <SuggestedInput
+          id="quickstart-world"
+          value={state.world}
+          placeholder={t`Describe the world...`}
+          suggestions={worldSuggestions}
+          selectedId={state.selectedWorldId}
+          onValueChange={handleWorldInput}
+          onSuggestionSelect={handleWorldSelect}
+          onSurprise={() =>
+            selectRandomAndContinue(worldSuggestions, handleWorldSelect)
           }
-          onNext={handleNext}
         />
       ),
-      canProgress:
-        state.setting !== "custom" || state.customSetting.trim().length > 0,
+      canProgress: state.world.trim().length > 0,
     },
-    {
-      title: t`Archetype`,
-      description: t`Define your character`,
+    archetype: {
+      title: t`Character`,
+      question: t`Who are you in this world?`,
+      hint: t`Type a role or pick an archetype suggested by the selected world.`,
       component: (
-        <ArchetypeStep
-          setting={state.setting}
+        <SuggestedInput
+          id="quickstart-archetype"
           value={state.archetype}
-          customValue={state.customArchetype}
-          gameMode={state.gameMode}
-          onChange={(archetype: string) => {
-            updateState({ archetype });
-          }}
-          onCustomChange={(customArchetype: string) =>
-            updateState({ customArchetype })
+          placeholder={t`Describe your character archetype...`}
+          suggestions={archetypeSuggestions}
+          selectedId={state.selectedArchetypeId}
+          optionColumns="sm:grid-cols-2 lg:grid-cols-3"
+          onValueChange={handleArchetypeInput}
+          onSuggestionSelect={handleArchetypeSelect}
+          onSurprise={
+            archetypeSuggestions.length > 0
+              ? () =>
+                  selectRandomAndContinue(
+                    archetypeSuggestions,
+                    handleArchetypeSelect,
+                  )
+              : undefined
           }
-          onNext={handleNext}
         />
       ),
-      canProgress:
-        state.archetype !== "custom-archetype" ||
-        state.customArchetype.trim().length > 0,
+      canProgress: state.archetype.trim().length > 0,
     },
-    {
+    "character-name": {
       title: t`Character Name`,
-      description: t`Name your hero`,
+      question: t`What is your character's name?`,
+      hint: t`This is the player character the tale will address directly.`,
       component: (
-        <CharacterNameStep
+        <CharacterNameQuestion
           value={state.characterName}
-          onChange={(characterName: string) => updateState({ characterName })}
+          onChange={(characterName) => updateState({ characterName })}
         />
       ),
       canProgress: state.characterName.trim().length > 0,
     },
-    {
-      title: t`Tone`,
-      description: t`Set the atmosphere`,
+    tone: {
+      title: t`Tone (Optional)`,
+      question: t`What should the tale feel like?`,
+      hint: t`Optional. Leave this blank if you do not want to specify a tone.`,
       component: (
-        <ToneStep
+        <SuggestedInput
+          id="quickstart-tone"
           value={state.tone}
-          onChange={(tone: string) => updateState({ tone })}
-          onNext={handleNext}
+          placeholder={t`Optional tone preference...`}
+          suggestions={toneSuggestions}
+          selectedId={state.selectedToneId}
+          optionColumns="sm:grid-cols-2"
+          onValueChange={handleToneInput}
+          onSuggestionSelect={handleToneSelect}
+          onSurprise={() =>
+            selectRandomAndContinue(toneSuggestions, handleToneSelect)
+          }
         />
       ),
       canProgress: true,
     },
-    {
-      title: t`Description & Style`,
-      description: t`Customize your scenario and narration style`,
+    details: {
+      title: t`Details (Optional)`,
+      question: t`Anything else before the tale begins?`,
+      hint: t`Optional. Leave this blank to let the tale fill in the gaps.`,
       component: (
-        <DescriptionStyleStep
-          description={
-            state.description ||
-            generateDescription(
-              state.characterName,
-              state.archetype === "custom-archetype"
-                ? state.customArchetype
-                : state.archetype,
-              state.setting === "custom" ? state.customSetting : state.setting,
-              state.tone,
-              _,
-            )
-          }
-          style={
-            state.authorNote ||
-            generateAuthorNote(
-              state.setting === "custom" ? state.customSetting : state.setting,
-              state.tone,
-            )
-          }
-          onDescriptionChange={(description: string) =>
-            updateState({ description })
-          }
-          onStyleChange={(authorNote: string) => updateState({ authorNote })}
+        <OptionalDetailsQuestion
+          value={state.extraDetails}
+          onChange={(extraDetails) => updateState({ extraDetails })}
         />
       ),
       canProgress: true,
     },
-  ];
+  } satisfies Record<QuickstartStepId, Omit<StepData, "id">>;
 
-  if (state.gameMode === GameMode.GM) {
-    steps.push({
-      title: t`Stats & Inventory`,
-      description: t`Configure your character`,
-      component: (
-        <StatsInventoryStep
-          stats={state.stats}
-          inventory={state.inventory}
-          archetype={state.archetype}
-          setting={state.setting}
-          onStatsChange={(stats: Stat[]) => updateState({ stats })}
-          onInventoryChange={(inventory: Item[]) => updateState({ inventory })}
-        />
-      ),
-      canProgress: state.stats.length > 0,
-    });
-  }
-
-  // Set up the actual handleNext implementation now that steps is defined
-  useEffect(() => {
-    handleNextRef.current = () => {
-      setCurrentStep((prev) => {
-        if (prev < steps.length - 1) {
-          return prev + 1;
-        }
-        return prev;
-      });
-    };
-  }, [steps.length]);
+  const steps = QUICKSTART_STEP_IDS.map((id) => ({
+    id,
+    ...stepsById[id],
+  }));
 
   const currentStepData = steps[currentStep];
   const isFirstStep = currentStep === 0;
-  const isLastStep = currentStep === steps.length - 1;
+  const isLastStep = currentStep === QUICKSTART_STEP_IDS.length - 1;
 
   const handleBack = useCallback(() => {
     if (!isFirstStep) {
@@ -247,187 +478,193 @@ export function QuickstartWizard({
     }
   }, [isFirstStep]);
 
+  const handleNext = useCallback(() => {
+    advanceStep();
+  }, [advanceStep]);
+
+  const handleCancel = useCallback(() => {
+    abortRef.current?.abort();
+    navigate({ to: "/" });
+  }, [navigate]);
+
   const handleComplete = useCallback(async () => {
-    const finalAuthorNote =
-      state.authorNote ||
-      generateAuthorNote(
-        state.setting === "custom" ? state.customSetting : state.setting,
-        state.tone,
-      );
-
-    const taleName = generateTaleName(state.characterName, state.setting, _);
-    const taleDescription =
-      state.description ||
-      generateDescription(
-        state.characterName,
-        state.archetype === "custom-archetype"
-          ? state.customArchetype
-          : state.archetype,
-        state.setting === "custom" ? state.customSetting : state.setting,
-        state.tone,
-        _,
-      );
-
-    let finalStats = state.stats;
-    let finalInventory = state.inventory;
-
-    if (state.gameMode === GameMode.GM && finalStats.length === 0) {
-      const archetypeData = ARCHETYPES[state.setting]?.find(
-        (a) => a.id === state.archetype,
-      );
-      finalStats = (archetypeData?.defaultStats || []).map((stat) => ({
-        name: _(stat.name),
-        value: stat.value,
-        range: stat.range,
-        description: stat.description ? _(stat.description) : undefined,
-      }));
-      if (finalStats.length === 0) {
-        finalStats = [{ name: "HP", value: 100, range: [0, 100] }];
-      }
-      finalInventory = (archetypeData?.defaultInventory || []).map((item) => ({
-        id: nanoid(12),
-        name: _(item.name),
-        description: item.description ? _(item.description) : undefined,
-      }));
+    if (!isModelRoleConfigured(utilityConfig)) {
+      toast.error(t`No utility model selected`);
+      return;
     }
 
-    const openingPrompt = generateOpeningPrompt(
-      state.characterName,
-      state.archetype === "custom-archetype"
-        ? state.customArchetype
-        : state.archetype,
-      state.setting === "custom" ? state.customSetting : state.setting,
-    );
-
-    const initialLogEntry = {
-      id: nanoid(),
-      role: LogEntryRole.PLAYER,
-      mode: LogEntryMode.DIRECT,
-      text: openingPrompt,
-    };
+    const abort = new AbortController();
+    abortRef.current = abort;
+    setIsGenerating(true);
 
     try {
+      const generated = await generateQuickstartTale(
+        {
+          gameMode: state.gameMode,
+          world: state.world.trim(),
+          characterName: state.characterName.trim(),
+          archetype: state.archetype.trim(),
+          tone: state.tone.trim(),
+          extraDetails: state.extraDetails,
+        },
+        abort.signal,
+      );
+
       const taleId = await initTale({
-        name: taleName,
-        description: taleDescription,
+        name: generated.name,
+        description: generated.description,
         thumbnail: null,
-        authorNote: finalAuthorNote,
-        storyCards: [],
+        authorNote: QUICKSTART_AUTHOR_NOTE,
+        storyCards: generated.storyCards,
         scenarioId: undefined,
-        stats: finalStats,
-        inventory: finalInventory,
-        log: [initialLogEntry],
+        stats: generated.stats,
+        inventory: generated.inventory,
+        log: generated.openingText
+          ? [
+              {
+                id: nanoid(12),
+                role: LogEntryRole.GM,
+                text: generated.openingText,
+              },
+            ]
+          : [],
         gameMode: state.gameMode,
         undoStack: [],
       });
 
       taleStore.resetAllState();
       setLastPlayedTaleId(taleId);
-
-      onOpenChange(false);
       navigate({ to: "/play" });
     } catch (error) {
-      console.error("Failed to save tale:", error);
-    }
-  }, [state, taleStore, onOpenChange, navigate, setLastPlayedTaleId, _]);
-
-  const handleKeyPress = useCallback(
-    (event: KeyboardEvent) => {
-      if (event.key === "Enter" && currentStepData.canProgress) {
-        if (isLastStep) {
-          handleComplete();
-        } else {
-          handleNext();
-        }
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
       }
-    },
-    [currentStepData.canProgress, isLastStep, handleComplete, handleNext],
-  );
+      console.error("Failed to generate quickstart tale:", error);
+      toast.error(
+        t`Failed to generate tale: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    } finally {
+      setIsGenerating(false);
+      abortRef.current = null;
+    }
+  }, [utilityConfig, t, state, taleStore, setLastPlayedTaleId, navigate]);
+
+  const handlePrimaryAction = useCallback(() => {
+    if (!currentStepData.canProgress || isGenerating) return;
+    if (isLastStep) {
+      void handleComplete();
+    } else {
+      handleNext();
+    }
+  }, [
+    currentStepData.canProgress,
+    handleComplete,
+    handleNext,
+    isGenerating,
+    isLastStep,
+  ]);
 
   useEffect(() => {
-    if (open) {
-      document.addEventListener("keydown", handleKeyPress);
-      return () => document.removeEventListener("keydown", handleKeyPress);
-    }
-  }, [open, handleKeyPress]);
+    const handleKeyPress = (event: KeyboardEvent) => {
+      if (
+        event.target instanceof HTMLTextAreaElement ||
+        event.target instanceof HTMLButtonElement ||
+        isGenerating
+      ) {
+        return;
+      }
+      if (event.key === "Enter") {
+        handlePrimaryAction();
+      }
+    };
 
-  const handleClose = () => {
-    setCurrentStep(0);
-    setState({
-      gameMode: GameMode.GM,
-      setting: "fantasy",
-      customSetting: "",
-      archetype: "warrior",
-      customArchetype: "",
-      characterName: "",
-      tone: "serious",
-      description: "",
-      authorNote: "",
-      stats: [],
-      inventory: [],
-    });
-    onOpenChange(false);
-  };
+    document.addEventListener("keydown", handleKeyPress);
+    return () => document.removeEventListener("keydown", handleKeyPress);
+  }, [handlePrimaryAction, isGenerating]);
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   return (
-    <Drawer open={open} onOpenChange={handleClose}>
-      <DrawerContent className="!h-[96vh] !mt-4">
-        <div className="flex flex-col h-full overflow-hidden">
-          <DrawerHeader className="border-b shrink-0">
-            <div className="flex items-center gap-2">
-              <DrawerTitle>{currentStepData.title}</DrawerTitle>
-            </div>
-            <DrawerDescription>{currentStepData.description}</DrawerDescription>
-            <div className="flex gap-1 mt-4">
-              {steps.map((step, index) => (
-                <div
-                  key={step.title}
-                  className={`h-1 flex-1 rounded-full transition-colors ${
-                    index <= currentStep ? "bg-primary" : "bg-muted"
-                  }`}
-                />
-              ))}
-            </div>
-          </DrawerHeader>
+    <main className="relative flex min-h-full flex-col overflow-hidden">
+      <div className="mx-auto flex min-h-full w-full max-w-screen-xl flex-1 flex-col px-3 py-4 sm:px-5 lg:px-8">
+        <header className="animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center justify-between gap-3 rounded-xs border border-border/70 bg-card/60 p-2.5 shadow-lg shadow-background/20 backdrop-blur">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 rounded-xs"
+              onClick={handleCancel}
+              disabled={isGenerating}
+            >
+              <Trans>Home</Trans>
+            </Button>
+          </div>
+        </header>
 
-          <ScrollArea className="flex-1 min-h-0">
-            <div className="p-6">{currentStepData.component}</div>
-          </ScrollArea>
+        <section className="flex flex-1 items-center justify-center py-8 sm:py-10">
+          <div
+            key={currentStep}
+            className="flex w-full flex-col items-center gap-8 animate-in fade-in slide-in-from-bottom-2 duration-300"
+          >
+            <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center">
+              <div className="inline-flex items-center rounded-xs border border-border/60 bg-background/55 px-3 py-1 text-xs font-medium uppercase text-muted-foreground shadow-sm backdrop-blur">
+                {currentStepData.title}
+              </div>
+              <h1 className="text-balance text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
+                {currentStepData.question}
+              </h1>
+              <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
+                {currentStepData.hint}
+              </p>
+            </div>
 
-          <div className="border-t p-4 flex justify-between gap-2 shrink-0">
+            <div className="w-full">{currentStepData.component}</div>
+          </div>
+        </section>
+
+        <footer className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="flex items-center justify-between gap-3 rounded-xs border border-border/70 bg-card/60 p-2.5 shadow-lg shadow-background/20 backdrop-blur">
             <Button
               variant="outline"
               onClick={handleBack}
-              disabled={isFirstStep}
+              disabled={isFirstStep || isGenerating}
+              className="rounded-xs"
             >
-              <ChevronLeft className="w-4 h-4 mr-1 rtl:rotate-180" />
               <Trans>Back</Trans>
             </Button>
-            <div className="text-sm text-muted-foreground self-center">
-              <Trans>
-                Step {currentStep + 1} of {steps.length}
-              </Trans>
+            <div className="flex min-w-0 flex-1 items-center justify-center gap-1">
+              {steps.map((step, index) => (
+                <div
+                  key={step.id}
+                  className={cn(
+                    "h-1.5 flex-1 rounded-xs transition-all duration-300",
+                    index <= currentStep ? "bg-primary" : "bg-muted",
+                  )}
+                />
+              ))}
             </div>
-            {isLastStep ? (
-              <Button
-                onClick={handleComplete}
-                disabled={!currentStepData.canProgress}
-                className="bg-primary"
-              >
-                <Trans>Start Adventure</Trans>
-              </Button>
-            ) : (
-              <Button
-                onClick={handleNext}
-                disabled={!currentStepData.canProgress}
-              >
-                <Trans>Next</Trans>
-                <ChevronRight className="w-4 h-4 ml-1 rtl:rotate-180" />
-              </Button>
-            )}
+            <Button
+              onClick={handlePrimaryAction}
+              disabled={!currentStepData.canProgress || isGenerating}
+              className="min-w-32 rounded-xs"
+            >
+              {isGenerating ? (
+                <Trans>Generating</Trans>
+              ) : isLastStep ? (
+                <Trans>Generate Tale</Trans>
+              ) : (
+                <>
+                  <Trans>Next</Trans>
+                </>
+              )}
+            </Button>
           </div>
-        </div>
-      </DrawerContent>
-    </Drawer>
+        </footer>
+      </div>
+    </main>
   );
 }

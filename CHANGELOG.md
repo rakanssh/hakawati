@@ -8,6 +8,7 @@ All notable changes to this project are documented in this file.
 
 - Themes! Added two new themes, Bamboo and Cosmos, built on light and dark backgrounds, respectively.
 - Speech-To-Text and Text-To-Speech with initial support for open-ai-style endpoints and providers.
+- AI-Powered Quickstart! Quickstart now asks you a few questions and then uses the utility model to generate your tale.
 - UI rework including home, play page, and settings.
 - Support for Utility models separate from narrator models (for generating scenarios and story cards).
 
