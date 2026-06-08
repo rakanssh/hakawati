@@ -45,6 +45,9 @@ export function PlayLogDisplay({
 }: PlayLogDisplayProps) {
   const fontSize = useSettingsStore((state) => state.fontSize);
   const latestGmEntryId = getLatestGmEntryId(blocks);
+  const editingSelectionClass = "rounded-[0.2rem] bg-primary/20 py-0.5";
+  const latestHighlightClass =
+    "underline decoration-dotted decoration-primary/55 decoration-2 underline-offset-4";
 
   return (
     <ScrollArea
@@ -56,7 +59,7 @@ export function PlayLogDisplay({
         { "--game-log-font-size": `${fontSize}rem` } as React.CSSProperties
       }
     >
-      <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-3 pb-3 pt-8 sm:px-5 sm:pb-4 sm:pt-10 lg:px-7">
+      <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-3 pt-8 sm:px-5 sm:pt-10 lg:px-7">
         {loadingOlder && (
           <div className="flex items-center justify-center py-2 text-muted-foreground">
             <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
@@ -92,8 +95,6 @@ export function PlayLogDisplay({
                     renderEntry={(entry, onClick) => {
                       const isEditing = currentlyEditingLogId === entry.id;
                       const isLatestGmEntry = latestGmEntryId === entry.id;
-                      const underlineClass =
-                        "underline decoration-muted-foreground/35 underline-offset-4";
 
                       return isEditing ? (
                         <InlineEditableContent
@@ -104,10 +105,7 @@ export function PlayLogDisplay({
                           }}
                           onCancel={() => setCurrentlyEditingLogId(null)}
                           variant="inline"
-                          className={cn(
-                            "bg-log-thinking/10 py-0.5",
-                            underlineClass,
-                          )}
+                          className={editingSelectionClass}
                           style={{
                             fontSize: "var(--game-log-font-size, 1rem)",
                           }}
@@ -116,7 +114,7 @@ export function PlayLogDisplay({
                         <span
                           className={cn(
                             "cursor-pointer",
-                            isLatestGmEntry && underlineClass,
+                            isLatestGmEntry && latestHighlightClass,
                           )}
                           onClick={onClick}
                           role="button"
@@ -146,11 +144,10 @@ export function PlayLogDisplay({
                     return (
                       <div
                         key={entry.id}
-                        className={`rounded-xs whitespace-pre-wrap transition-colors ${
-                          isEditing
-                            ? "bg-accent/20"
-                            : "cursor-pointer hover:bg-accent/20"
-                        }`}
+                        className={cn(
+                          "rounded-xs whitespace-pre-wrap transition-colors",
+                          !isEditing && "cursor-pointer hover:bg-accent/20",
+                        )}
                         onClick={
                           isEditing
                             ? undefined
@@ -193,7 +190,10 @@ export function PlayLogDisplay({
                                 }}
                                 onCancel={() => setCurrentlyEditingLogId(null)}
                                 variant="inline"
-                                className="m-0 inline p-0 align-baseline text-inherit [line-height:inherit]"
+                                className={cn(
+                                  "m-0 inline p-0 align-baseline text-inherit [line-height:inherit]",
+                                  editingSelectionClass,
+                                )}
                                 style={{
                                   fontSize: "var(--game-log-font-size, 1rem)",
                                 }}

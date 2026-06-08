@@ -272,7 +272,7 @@ export function PlayInputControls({
   const subtleActionSelectorClass =
     "composer-command-button composer-command-selector !h-10 !w-auto min-w-10 gap-1.5 rounded-xs border border-transparent bg-transparent px-2.5 text-muted-foreground shadow-none hover:border-border/70 hover:bg-muted/35 hover:text-foreground focus-visible:border-ring/55 md:!h-9 md:px-2";
   const composerSurfaceClass =
-    "flex min-h-[6.25rem] min-w-0 overflow-hidden rounded-xs border border-border/75 bg-background p-1.5 shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18 md:min-h-[6rem]";
+    "flex min-h-[6.25rem] min-w-0 overflow-hidden rounded-xs border border-border/75 bg-[var(--composer-background)] p-1.5 shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18 md:min-h-[6rem]";
   useLogControlShortcuts({
     handleRetry: onRetry,
     handleStop: onStop,
@@ -504,11 +504,13 @@ export function PlayInputControls({
             <div className="min-w-0 flex-1">{renderTextArea()}</div>
           </div>
           <div className="flex min-w-0 items-center justify-between gap-1.5">
-            {renderModifierControls("min-w-0")}
-            <div className="flex min-w-0 items-center justify-end gap-1.5">
+            <div className="flex min-w-0 items-center gap-1.5">
+              {renderModifierControls("min-w-0")}
               {renderHistoryControls()}
-              <span className="h-5 w-px shrink-0 bg-border/45" />
               {renderGenerationControls()}
+            </div>
+            <div className="flex min-w-0 items-center justify-end gap-1.5">
+              {renderSubmitControls()}
             </div>
           </div>
         </div>
@@ -526,7 +528,6 @@ export function PlayInputControls({
     >
       {renderModeMenu()}
       {renderDiceToggle()}
-      {renderSpeechButton()}
     </div>
   );
 
@@ -572,7 +573,19 @@ export function PlayInputControls({
         saving={saving}
         className={quietIconButtonClass}
       />
-      {renderSubmitButton()}
+    </div>
+  );
+
+  const renderSubmitControls = (className?: string) => (
+    <div
+      className={cn(
+        "flex shrink-0 items-center justify-end gap-0",
+        composerControlsLocked && "pointer-events-none opacity-60",
+        className,
+      )}
+    >
+      {renderSpeechButton("rounded-e-none")}
+      {renderSubmitButton("rounded-s-none")}
     </div>
   );
 

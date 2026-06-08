@@ -93,6 +93,11 @@
   --play-log-overlay-size: auto;
   --play-log-overlay-opacity: 0;
   --play-log-overlay-blend-mode: normal;
+  --composer-background: color-mix(
+    in oklch,
+    var(--background) 94%,
+    var(--foreground)
+  );
   --background: oklch(0.976 0.005 80);
   --foreground: oklch(0.235 0.014 248);
   --card: oklch(0.998 0.002 80);
