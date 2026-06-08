@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GameMode, StorybookCategory } from "@/types/context.type";
+import { QUICKSTART_TALE_GENERATOR_PROMPT } from "@/prompts/system";
 import {
   buildQuickstartTalePrompt,
   generateQuickstartTale,
@@ -63,6 +64,42 @@ describe("quickstart tale generator", () => {
     );
     expect(prompt).toContain(QUICKSTART_AUTHOR_NOTE);
     expect(prompt).toContain("do not include an authorNote field");
+    expect(prompt).toContain("description is saved as persistent AI context");
+    expect(prompt).toContain(
+      "openingText is saved as the first visible tale entry",
+    );
+    expect(prompt).toContain(
+      "The user will not review the generated setup before play begins.",
+    );
+  });
+
+  it("describes quickstart output fields by runtime use", () => {
+    expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain(
+      "Durable AI-facing scenario context",
+    );
+    expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain(
+      "persistent internal context for future model turns",
+    );
+    expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain(
+      "not as player-facing promotional copy",
+    );
+    expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain(
+      "The first visible tale entry",
+    );
+    expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain(
+      "Story card content must name the card's subject directly",
+    );
+    expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain(
+      "Do not decide what the player character does, says, feels, believes, or chooses",
+    );
+
+    const forbiddenProductNamePattern = new RegExp(
+      ["AI", "\\s*", "Dungeon"].join(""),
+      "i",
+    );
+    expect(QUICKSTART_TALE_GENERATOR_PROMPT).not.toMatch(
+      forbiddenProductNamePattern,
+    );
   });
 
   it("omits optional details when none are provided", () => {
@@ -122,6 +159,10 @@ describe("quickstart tale generator", () => {
       }),
       undefined,
     );
+    expect(sendRoleChatMock.mock.calls[0][1].messages[0]).toMatchObject({
+      role: "system",
+      content: QUICKSTART_TALE_GENERATOR_PROMPT,
+    });
     expect(result).toMatchObject({
       name: "Ash Over Moonwell",
       description: "Mira stands at the edge of a wounded kingdom.",

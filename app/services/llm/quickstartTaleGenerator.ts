@@ -89,7 +89,12 @@ export function buildQuickstartTalePrompt(
 
   parts.push(
     "",
-    "The saved tale will use this fixed author note. Follow it when writing the description and opening, but do not include an authorNote field in the JSON:",
+    "Runtime use of generated fields:",
+    "- description is saved as persistent AI context for future turns.",
+    "- openingText is saved as the first visible tale entry and starts play immediately.",
+    "- The user will not review the generated setup before play begins.",
+    "",
+    "The saved tale will use this fixed author note. Follow it when writing the description and openingText, but do not include an authorNote field in the JSON:",
     QUICKSTART_AUTHOR_NOTE,
   );
 
