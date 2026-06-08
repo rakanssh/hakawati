@@ -63,6 +63,7 @@ interface PlayInputControlsProps {
   saving: boolean;
   onContinue: () => void;
   onRetry: () => void;
+  onUndo: () => void;
 }
 
 const ACTION_MODES = [
@@ -211,6 +212,7 @@ export function PlayInputControls({
   saving,
   onContinue,
   onRetry,
+  onUndo,
 }: PlayInputControlsProps) {
   const { t } = useLingui();
   const { isMobilePlatform } = useIsMobile();
@@ -274,6 +276,7 @@ export function PlayInputControls({
   const composerSurfaceClass =
     "flex min-h-[6.25rem] min-w-0 overflow-hidden rounded-xs border border-border/75 bg-[var(--composer-background)] p-1.5 shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18 md:min-h-[6rem]";
   useLogControlShortcuts({
+    handleUndo: onUndo,
     handleRetry: onRetry,
     handleStop: onStop,
     loading,
@@ -540,6 +543,7 @@ export function PlayInputControls({
       )}
     >
       <UndoControl
+        handleUndo={onUndo}
         loading={loading}
         saving={saving}
         className={quietIconButtonClass}

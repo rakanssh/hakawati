@@ -17,6 +17,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { cn } from "@/lib/utils";
 
 interface LogControlShortcutProps {
+  handleUndo?: () => void;
   handleRetry: () => void;
   handleStop?: () => void;
   loading?: boolean;
@@ -25,11 +26,13 @@ interface LogControlShortcutProps {
 
 export function useLogControlShortcuts({
   loading = false,
+  handleUndo,
   handleRetry,
   handleStop,
   saving = false,
 }: LogControlShortcutProps) {
   const { undo, redo } = useTaleStore();
+  const effectiveUndo = handleUndo ?? undo;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -57,7 +60,7 @@ export function useLogControlShortcuts({
       if (e.key === "z" && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
         e.preventDefault();
         if (!loading && !saving) {
-          undo();
+          effectiveUndo();
         }
       }
 
@@ -84,7 +87,7 @@ export function useLogControlShortcuts({
       globalThis.removeEventListener("keydown", handleKeyDown, {
         capture: true,
       });
-  }, [undo, redo, handleRetry, handleStop, loading, saving]);
+  }, [effectiveUndo, redo, handleRetry, handleStop, loading, saving]);
 }
 
 interface RetryControlProps {
@@ -129,17 +132,20 @@ export function RetryControl({
 
 interface HistoryControlButtonProps {
   className?: string;
+  handleUndo?: () => void;
   loading?: boolean;
   saving?: boolean;
 }
 
 export function UndoControl({
   className,
+  handleUndo,
   loading = false,
   saving = false,
 }: HistoryControlButtonProps) {
   const { t } = useLingui();
   const { undo } = useTaleStore();
+  const effectiveUndo = handleUndo ?? undo;
 
   return (
     <Tooltip>
@@ -152,7 +158,7 @@ export function UndoControl({
             "!h-10 !w-10 border border-transparent bg-transparent p-0 text-muted-foreground shadow-none hover:border-border hover:bg-muted/45 hover:text-foreground md:!h-9 md:!w-9",
             className,
           )}
-          onClick={undo}
+          onClick={effectiveUndo}
           disabled={loading || saving}
           aria-label={t`Undo`}
         >
@@ -201,12 +207,13 @@ export function RedoControl({
 
 export function HistoryControls({
   className,
+  handleUndo,
   loading = false,
   saving = false,
 }: HistoryControlButtonProps) {
   return (
     <div className={cn("flex items-center gap-1", className)}>
-      <UndoControl loading={loading} saving={saving} />
+      <UndoControl handleUndo={handleUndo} loading={loading} saving={saving} />
       <RedoControl loading={loading} saving={saving} />
     </div>
   );
@@ -219,11 +226,18 @@ interface LogControlProps extends LogControlShortcutProps {
 export function LogControl({
   className,
   loading = false,
+  handleUndo,
   handleRetry,
   handleStop,
   saving = false,
 }: LogControlProps) {
-  useLogControlShortcuts({ handleRetry, handleStop, loading, saving });
+  useLogControlShortcuts({
+    handleUndo,
+    handleRetry,
+    handleStop,
+    loading,
+    saving,
+  });
 
   return (
     <div className={cn("min-w-0 flex-[3_1_0]", className)}>
@@ -235,6 +249,7 @@ export function LogControl({
           className="flex-1 bg-card/70"
         />
         <HistoryControls
+          handleUndo={handleUndo}
           loading={loading}
           saving={saving}
           className="rounded-xs bg-card/70"

@@ -31,6 +31,7 @@ interface UsePlaySessionReturn {
   handleSubmit: () => Promise<void>;
   handleContinue: () => void;
   handleRetry: () => void;
+  handleUndo: () => void;
   handleStop: () => void;
   executeLlmSend: (
     message: string,
@@ -117,6 +118,21 @@ function processActions(actions: LLMAction[]): void {
         console.warn("Unknown action type:", action.type);
     }
   }
+}
+
+type RestorableActionMode =
+  | LogEntryMode.DO
+  | LogEntryMode.SAY
+  | LogEntryMode.DIRECT;
+
+function isRestorableActionMode(
+  mode?: LogEntryMode,
+): mode is RestorableActionMode {
+  return (
+    mode === LogEntryMode.DO ||
+    mode === LogEntryMode.SAY ||
+    mode === LogEntryMode.DIRECT
+  );
 }
 
 export function usePlaySession(
@@ -370,6 +386,30 @@ export function usePlaySession(
     console.warn("Cannot retry, log state is not as expected.");
   }, [loading, executeLlmSend, removeLastLogEntry, randomSeed]);
 
+  const handleUndo = useCallback(() => {
+    if (loading || saving) return;
+
+    const lastEntry = useTaleStore.getState().log.at(-1);
+    if (!lastEntry) return;
+
+    useTaleStore.getState().undo();
+
+    if (lastEntry.role !== LogEntryRole.PLAYER) {
+      setInput("");
+      return;
+    }
+
+    setInput(lastEntry.text);
+
+    const restoredMode = lastEntry.mode;
+    if (isRestorableActionMode(restoredMode)) {
+      setAction((currentAction) => ({
+        ...currentAction,
+        type: restoredMode,
+      }));
+    }
+  }, [loading, saving]);
+
   return {
     input,
     setInput,
@@ -380,6 +420,7 @@ export function usePlaySession(
     handleSubmit,
     handleContinue,
     handleRetry,
+    handleUndo,
     handleStop,
     executeLlmSend,
   };

@@ -73,6 +73,7 @@ export default function Play() {
     handleSubmit,
     handleContinue,
     handleRetry,
+    handleUndo,
     handleStop,
     executeLlmSend,
   } = usePlaySession();
@@ -257,6 +258,7 @@ export default function Play() {
           saving={saving}
           onContinue={handleContinue}
           onRetry={handleRetry}
+          onUndo={handleUndo}
         />
         <TtsPlayer
           visible={ttsPlayback.isVisible}
