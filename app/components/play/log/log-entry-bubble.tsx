@@ -73,6 +73,12 @@ export function LogEntryBubble({
   const { text, mode, actions, error } = entry;
   const hasError = error !== undefined;
   const body = content ?? text;
+  const actionIconClass = "me-2 mt-[0.3125em] inline h-[1em] w-[1em] shrink-0";
+  const actionTextClass =
+    "me-1 inline whitespace-pre-wrap break-words font-normal leading-relaxed text-foreground/90";
+  const logFontSizeStyle = {
+    fontSize: "var(--game-log-font-size, 1rem)",
+  };
   const footer =
     narration || (actions && actions.length > 0) ? (
       <div className="mt-2 flex flex-wrap items-center gap-1">
@@ -86,14 +92,9 @@ export function LogEntryBubble({
   if (mode === LogEntryMode.SAY) {
     return (
       <div className="rounded-xs border border-l-2 border-border/60 border-l-log-say/55 bg-card/65 px-3 py-2 shadow-sm backdrop-blur-sm">
-        <div className="flex items-start">
-          <SpeechIcon className="me-2 mt-1 inline h-4 w-4 shrink-0 text-log-say" />
-          <p
-            className="me-1 inline whitespace-pre-wrap break-words font-normal leading-relaxed text-foreground/90"
-            style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
-          >
-            {body}
-          </p>
+        <div className="flex items-start" style={logFontSizeStyle}>
+          <SpeechIcon className={cn(actionIconClass, "text-log-say")} />
+          <p className={actionTextClass}>{body}</p>
           {hasError && <ErrorTooltip error={error} />}
         </div>
         {footer}
@@ -104,14 +105,9 @@ export function LogEntryBubble({
   if (mode === LogEntryMode.DO) {
     return (
       <div className="rounded-xs border border-l-2 border-border/60 border-l-log-do/55 bg-card/65 px-3 py-2 shadow-sm backdrop-blur-sm">
-        <div className="flex items-start">
-          <HandIcon className="me-2 mt-1 inline h-4 w-4 shrink-0 text-log-do" />
-          <p
-            className="me-1 inline whitespace-pre-wrap break-words font-normal leading-relaxed text-foreground/90"
-            style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
-          >
-            {body}
-          </p>
+        <div className="flex items-start" style={logFontSizeStyle}>
+          <HandIcon className={cn(actionIconClass, "text-log-do")} />
+          <p className={actionTextClass}>{body}</p>
           {hasError && <ErrorTooltip error={error} />}
         </div>
         {footer}
@@ -122,14 +118,9 @@ export function LogEntryBubble({
   if (mode === LogEntryMode.DIRECT) {
     return (
       <div className="rounded-xs border border-l-2 border-border/60 border-l-log-direct/55 bg-card/65 px-3 py-2 shadow-sm backdrop-blur-sm">
-        <div className="flex items-start">
-          <MegaphoneIcon className="me-2 mt-1 inline h-4 w-4 shrink-0 text-log-direct" />
-          <p
-            className="me-1 inline whitespace-pre-wrap break-words font-normal leading-relaxed text-foreground/90"
-            style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
-          >
-            {body}
-          </p>
+        <div className="flex items-start" style={logFontSizeStyle}>
+          <MegaphoneIcon className={cn(actionIconClass, "text-log-direct")} />
+          <p className={actionTextClass}>{body}</p>
           {hasError && <ErrorTooltip error={error} />}
         </div>
         {footer}
