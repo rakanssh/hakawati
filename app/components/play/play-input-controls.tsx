@@ -81,13 +81,17 @@ const ACTION_MODE_ICONS = {
   [LogEntryMode.DIRECT]: MegaphoneIcon,
 } satisfies Record<InputActionMode, typeof HandIcon>;
 
-const WAVEFORM_INITIAL_BAR_COUNT = 96;
-const WAVEFORM_MIN_BAR_COUNT = 44;
-const WAVEFORM_MAX_BAR_COUNT = 260;
-const WAVEFORM_BAR_SLOT_WIDTH = 4;
+const WAVEFORM_MAX_FITTED_BAR_COUNT = 260;
+const WAVEFORM_BAR_WIDTH_PX = 2;
+const WAVEFORM_BAR_GAP_PX = 2;
+const WAVEFORM_BAR_SLOT_WIDTH_PX = WAVEFORM_BAR_WIDTH_PX + WAVEFORM_BAR_GAP_PX;
 const WAVEFORM_UPDATE_INTERVAL_MS = 55;
 const WAVEFORM_NOISE_FLOOR = 0.008;
 const WAVEFORM_INPUT_GAIN = 9.5;
+const WAVEFORM_MIN_HEIGHT_PX = 3;
+const WAVEFORM_HEIGHT_RANGE_PX = 31;
+const WAVEFORM_MIN_OPACITY = 0.48;
+const WAVEFORM_OPACITY_RANGE = 0.52;
 
 function formatRecordingTime(seconds: number): string {
   const minutes = Math.floor(seconds / 60);
@@ -105,31 +109,28 @@ function amplifyWaveformLevel(level: number): number {
   return Math.min(1, Math.pow(normalizedLevel * WAVEFORM_INPUT_GAIN, 0.65));
 }
 
-function getWaveformBarCount(width: number): number {
-  if (!Number.isFinite(width) || width <= 0) return WAVEFORM_INITIAL_BAR_COUNT;
+function getFittedWaveformBarCount(width: number): number {
+  if (!Number.isFinite(width) || width <= 0) return 0;
 
   return Math.min(
-    WAVEFORM_MAX_BAR_COUNT,
-    Math.max(
-      WAVEFORM_MIN_BAR_COUNT,
-      Math.floor(width / WAVEFORM_BAR_SLOT_WIDTH),
-    ),
+    WAVEFORM_MAX_FITTED_BAR_COUNT,
+    Math.floor((width + WAVEFORM_BAR_GAP_PX) / WAVEFORM_BAR_SLOT_WIDTH_PX),
   );
 }
 
-function resizeWaveformBars(bars: number[], count: number): number[] {
-  if (bars.length === count) return bars;
-  if (bars.length > count) return bars.slice(bars.length - count);
+function appendWaveformBar(bars: number[], nextLevel: number): number[] {
+  if (bars.length === 0) return bars;
+  return [...bars.slice(1), nextLevel];
+}
 
-  return [...Array.from({ length: count - bars.length }, () => 0), ...bars];
+function createEmptyWaveformBars(count: number): number[] {
+  return Array.from({ length: count }, () => 0);
 }
 
 function RecordingWaveform({ level }: { level: number }) {
   const waveformRef = useRef<HTMLDivElement | null>(null);
   const levelRef = useRef(level);
-  const [bars, setBars] = useState(() =>
-    Array.from({ length: WAVEFORM_INITIAL_BAR_COUNT }, () => 0),
-  );
+  const [bars, setBars] = useState<number[]>([]);
 
   useEffect(() => {
     levelRef.current = level;
@@ -137,10 +138,9 @@ function RecordingWaveform({ level }: { level: number }) {
 
   useEffect(() => {
     const interval = window.setInterval(() => {
-      setBars((currentBars) => [
-        ...currentBars.slice(1),
-        amplifyWaveformLevel(levelRef.current),
-      ]);
+      setBars((currentBars) =>
+        appendWaveformBar(currentBars, amplifyWaveformLevel(levelRef.current)),
+      );
     }, WAVEFORM_UPDATE_INTERVAL_MS);
 
     return () => window.clearInterval(interval);
@@ -151,8 +151,11 @@ function RecordingWaveform({ level }: { level: number }) {
     if (!waveformElement) return;
 
     const syncBarCount = (width = waveformElement.clientWidth) => {
+      const barCount = getFittedWaveformBarCount(width);
       setBars((currentBars) =>
-        resizeWaveformBars(currentBars, getWaveformBarCount(width)),
+        currentBars.length === barCount
+          ? currentBars
+          : createEmptyWaveformBars(barCount),
       );
     };
 
@@ -171,16 +174,21 @@ function RecordingWaveform({ level }: { level: number }) {
   return (
     <div
       ref={waveformRef}
-      className="flex h-10 min-w-0 flex-1 items-center gap-0.5 overflow-hidden"
+      dir="ltr"
+      className="flex h-10 min-w-0 flex-1 items-center overflow-hidden"
+      style={{ gap: `${WAVEFORM_BAR_GAP_PX}px` }}
       aria-hidden="true"
     >
       {bars.map((barLevel, index) => (
         <span
           key={index}
-          className="w-[2px] shrink-0 rounded-full bg-primary/90"
+          className="shrink-0 rounded-full bg-primary/90"
           style={{
-            height: `${Math.round(3 + barLevel * 31)}px`,
-            opacity: 0.48 + barLevel * 0.52,
+            width: `${WAVEFORM_BAR_WIDTH_PX}px`,
+            height: `${Math.round(
+              WAVEFORM_MIN_HEIGHT_PX + barLevel * WAVEFORM_HEIGHT_RANGE_PX,
+            )}px`,
+            opacity: WAVEFORM_MIN_OPACITY + barLevel * WAVEFORM_OPACITY_RANGE,
           }}
         />
       ))}
