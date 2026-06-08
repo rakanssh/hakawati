@@ -31,7 +31,6 @@ import {
   SettingsModal,
   type GlobalSettingsSectionId,
 } from "@/components/layout/settings";
-import { QuickstartWizard } from "@/components/quickstart";
 import { WhatsNewModal } from "@/components/layout";
 import placeholderImage from "@/assets/scen-ph.png";
 import { useLoadTale } from "@/hooks/useGameSaves";
@@ -248,7 +247,6 @@ export default function Home() {
   const { isMobilePlatform } = useIsMobile();
   const lastEntry = log.at(-1);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [quickstartOpen, setQuickstartOpen] = useState(false);
   const [generateOpen, setGenerateOpen] = useState(false);
   const [whatsNewOpen, setWhatsNewOpen] = useState(false);
   const [loadingTaleId, setLoadingTaleId] = useState<string | null>(null);
@@ -428,7 +426,7 @@ export default function Home() {
               <>
                 <Button
                   size="sm"
-                  onClick={() => setQuickstartOpen(true)}
+                  onClick={() => navigate({ to: "/quickstart" })}
                   disabled={hasIssues}
                 >
                   <Sparkles />
@@ -653,10 +651,6 @@ export default function Home() {
         onOpenChange={setSettingsOpen}
         defaultTab="ai-setup"
         visibleTabs={nonPlayTabs}
-      />
-      <QuickstartWizard
-        open={quickstartOpen}
-        onOpenChange={setQuickstartOpen}
       />
       <GenerateScenarioDialog
         open={generateOpen}

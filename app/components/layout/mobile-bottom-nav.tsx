@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useState } from "react";
-import { QuickstartWizard } from "@/components/quickstart";
 import { Trans } from "@lingui/react/macro";
 import {
   SettingsModal,
@@ -14,8 +13,8 @@ export function MobileBottomNav() {
   const navigate = useNavigate();
   const routerState = useRouterState();
   const { isMobilePlatform } = useIsMobile();
-  const [quickstartOpen, setQuickstartOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const pathname = routerState.location.pathname;
 
   const nonPlayTabs: readonly GlobalSettingsSectionId[] = [
     "appearance",
@@ -24,7 +23,9 @@ export function MobileBottomNav() {
   ];
 
   if (!isMobilePlatform) return null;
-  if (routerState.location.pathname?.startsWith("/play")) return null;
+  if (pathname?.startsWith("/play") || pathname?.startsWith("/quickstart")) {
+    return null;
+  }
 
   return (
     <>
@@ -52,8 +53,8 @@ export function MobileBottomNav() {
             <Button
               variant="default"
               size="sm"
-              onClick={() => setQuickstartOpen(true)}
-              className="flex items-center gap-1.5 h-9 px-3 rounded-full"
+              onClick={() => navigate({ to: "/quickstart" })}
+              className="flex items-center gap-1.5 h-9 px-3 rounded-xs"
             >
               <Sparkles className="w-4 h-4" />
               <span className="text-xs">
@@ -75,10 +76,6 @@ export function MobileBottomNav() {
         </div>
       </div>
 
-      <QuickstartWizard
-        open={quickstartOpen}
-        onOpenChange={setQuickstartOpen}
-      />
       <SettingsModal
         open={settingsOpen}
         onOpenChange={setSettingsOpen}

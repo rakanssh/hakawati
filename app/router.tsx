@@ -13,6 +13,7 @@ import ScenariosHome from "./pages/scenarios/home";
 import ScenarioCreate from "./pages/scenarios/create.tsx";
 import ScenarioEdit from "./pages/scenarios/edit.tsx";
 import TalesHome from "./pages/tales/home";
+import { QuickstartPage } from "./components/quickstart";
 
 const RootRoute = createRootRoute({ component: () => <AppShell /> });
 
@@ -40,6 +41,11 @@ const routeTree = RootRoute.addChildren([
     getParentRoute: () => RootRoute,
     path: "tales",
     component: TalesHome,
+  }),
+  createRoute({
+    getParentRoute: () => RootRoute,
+    path: "quickstart",
+    component: QuickstartPage,
   }),
   createRoute({
     getParentRoute: () => RootRoute,
