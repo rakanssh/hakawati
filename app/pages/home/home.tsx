@@ -369,7 +369,7 @@ export default function Home() {
         <Globe className="h-4 w-4 text-muted-foreground" />
         <SelectValue />
       </SelectTrigger>
-      <SelectContent align="end">
+      <SelectContent align="start">
         {Object.entries(LOCALES).map(([code, localeName]) => (
           <SelectItem key={code} value={code}>
             {localeName}
@@ -379,12 +379,19 @@ export default function Home() {
     </Select>
   );
 
+  const quickstartControl = (
+    <Button
+      size="sm"
+      onClick={() => navigate({ to: "/quickstart" })}
+      disabled={hasIssues}
+    >
+      <Sparkles />
+      <Trans>Quickstart</Trans>
+    </Button>
+  );
+
   return (
     <main className="relative min-h-full overflow-x-hidden">
-      {!hasIssues && (
-        <div className="absolute right-3 top-3 z-20">{languageControl}</div>
-      )}
-
       <div
         className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5 px-3 py-4 sm:px-4 lg:px-6"
         style={
@@ -397,7 +404,10 @@ export default function Home() {
             : undefined
         }
       >
-        {hasIssues && <div className="flex justify-end">{languageControl}</div>}
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">{languageControl}</div>
+          <div className="shrink-0">{quickstartControl}</div>
+        </div>
 
         {hasIssues && (
           <div className="flex flex-col gap-2 border border-destructive/40 bg-destructive/10 p-2.5 text-destructive sm:flex-row sm:items-center">
@@ -419,28 +429,18 @@ export default function Home() {
           </div>
         )}
 
-        <div className={`flex flex-col gap-5 ${hasIssues ? "" : "pt-12"}`}>
+        <div className="flex flex-col gap-5">
           <Shelf
             title={<Trans>Latest Tales</Trans>}
             action={
-              <>
-                <Button
-                  size="sm"
-                  onClick={() => navigate({ to: "/quickstart" })}
-                  disabled={hasIssues}
-                >
-                  <Sparkles />
-                  <Trans>Quickstart</Trans>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate({ to: "/tales" })}
-                >
-                  <Trans>View all</Trans>
-                  <ChevronRight className="rtl:rotate-180" />
-                </Button>
-              </>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate({ to: "/tales" })}
+              >
+                <Trans>View all</Trans>
+                <ChevronRight className="rtl:rotate-180" />
+              </Button>
             }
           >
             {tales.loading && (

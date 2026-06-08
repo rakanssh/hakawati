@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { GameModeStep } from "./steps";
@@ -27,6 +29,7 @@ import {
   generateQuickstartTale,
   QUICKSTART_AUTHOR_NOTE,
 } from "@/services/llm/quickstartTaleGenerator";
+import { ArrowLeftIcon } from "lucide-react";
 
 export interface QuickstartState {
   gameMode: GameMode;
@@ -590,80 +593,89 @@ export function QuickstartPage() {
 
   return (
     <main className="relative flex min-h-full flex-col overflow-hidden">
-      <div className="mx-auto flex min-h-full w-full max-w-screen-xl flex-1 flex-col px-3 py-4 sm:px-5 lg:px-8">
-        <header className="animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="flex items-center justify-between gap-3 rounded-xs border border-border/70 bg-card/60 p-2.5 shadow-lg shadow-background/20 backdrop-blur">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 rounded-xs"
-              onClick={handleCancel}
-              disabled={isGenerating}
-            >
-              <Trans>Home</Trans>
-            </Button>
+      <div className="mx-auto flex min-h-full w-full max-w-screen-2xl flex-1 flex-col gap-4 px-3 py-5">
+        <header className="flex gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <Button
+            variant="default"
+            onClick={handleCancel}
+            disabled={isGenerating}
+            className="mt-1.5"
+          >
+            <ArrowLeftIcon className="h-4 w-4 rtl:rotate-180" />
+          </Button>
+          <div className="flex flex-col">
+            <Label className="text-xl">
+              <Trans>Quickstart</Trans>
+            </Label>
+            <span className="text-sm text-muted-foreground">
+              <Trans>Create a tale with a guided setup</Trans>
+            </span>
           </div>
         </header>
 
-        <section className="flex flex-1 items-center justify-center py-8 sm:py-10">
-          <div
-            key={currentStep}
-            className="flex w-full flex-col items-center gap-8 animate-in fade-in slide-in-from-bottom-2 duration-300"
-          >
-            <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center">
-              <div className="inline-flex items-center rounded-xs border border-border/60 bg-background/55 px-3 py-1 text-xs font-medium uppercase text-muted-foreground shadow-sm backdrop-blur">
-                {currentStepData.title}
+        <Separator />
+
+        <div className="flex min-h-0 flex-1 flex-col">
+          <section className="flex flex-1 items-center justify-center py-4 sm:py-8">
+            <div
+              key={currentStep}
+              className="flex w-full flex-col items-center gap-8 animate-in fade-in slide-in-from-bottom-2 duration-300"
+            >
+              <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center">
+                <div className="inline-flex items-center rounded-xs border border-border/60 bg-background/55 px-3 py-1 text-xs font-medium uppercase text-muted-foreground shadow-sm backdrop-blur">
+                  {currentStepData.title}
+                </div>
+                <h1 className="text-balance text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
+                  {currentStepData.question}
+                </h1>
+                <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
+                  {currentStepData.hint}
+                </p>
               </div>
-              <h1 className="text-balance text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
-                {currentStepData.question}
-              </h1>
-              <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
-                {currentStepData.hint}
-              </p>
-            </div>
 
-            <div className="w-full">{currentStepData.component}</div>
-          </div>
-        </section>
-
-        <footer className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-          <div className="flex items-center justify-between gap-3 rounded-xs border border-border/70 bg-card/60 p-2.5 shadow-lg shadow-background/20 backdrop-blur">
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              disabled={isFirstStep || isGenerating}
-              className="rounded-xs"
-            >
-              <Trans>Back</Trans>
-            </Button>
-            <div className="flex min-w-0 flex-1 items-center justify-center gap-1">
-              {steps.map((step, index) => (
-                <div
-                  key={step.id}
-                  className={cn(
-                    "h-1.5 flex-1 rounded-xs transition-all duration-300",
-                    index <= currentStep ? "bg-primary" : "bg-muted",
-                  )}
-                />
-              ))}
+              <div className="w-full">{currentStepData.component}</div>
             </div>
-            <Button
-              onClick={handlePrimaryAction}
-              disabled={!currentStepData.canProgress || isGenerating}
-              className="min-w-32 rounded-xs"
-            >
-              {isGenerating ? (
-                <Trans>Generating</Trans>
-              ) : isLastStep ? (
-                <Trans>Generate Tale</Trans>
-              ) : (
-                <>
-                  <Trans>Next</Trans>
-                </>
-              )}
-            </Button>
-          </div>
-        </footer>
+          </section>
+
+          <footer className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="flex items-center justify-between gap-3 rounded-xs border border-border/70 bg-card/60 p-2.5 shadow-lg shadow-background/20 backdrop-blur">
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                disabled={isFirstStep || isGenerating}
+                className="rounded-xs"
+              >
+                <Trans>Back</Trans>
+              </Button>
+              <div className="flex min-w-0 flex-1 items-center justify-center gap-1">
+                {steps.map((step, index) => (
+                  <div
+                    key={step.id}
+                    className={cn(
+                      "h-1.5 flex-1 rounded-xs transition-all duration-300",
+                      index <= currentStep ? "bg-primary" : "bg-muted",
+                    )}
+                  />
+                ))}
+              </div>
+              <Button
+                onClick={handlePrimaryAction}
+                disabled={!currentStepData.canProgress || isGenerating}
+                className="min-w-32 rounded-xs"
+              >
+                {isGenerating ? (
+                  <Trans>Generating</Trans>
+                ) : isLastStep ? (
+                  <Trans>Generate Tale</Trans>
+                ) : (
+                  <>
+                    <Trans>Next</Trans>
+                  </>
+                )}
+              </Button>
+            </div>
+          </footer>
+        </div>
       </div>
     </main>
   );
