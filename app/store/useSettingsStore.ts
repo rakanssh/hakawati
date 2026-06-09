@@ -145,6 +145,7 @@ type PersistedSettingsState = Partial<SettingsStoreType> & {
   showThinkingInLog?: boolean;
   thinkingVisibility?: ThinkingVisibility;
   autoNarrate?: boolean;
+  highlightLatestSection?: boolean;
 };
 
 function normalizeRoleSettings(
@@ -243,6 +244,7 @@ export function migrateSettingsState(
     language: state.language ?? "en",
     thinkingVisibility,
     autoNarrate: state.autoNarrate ?? false,
+    highlightLatestSection: state.highlightLatestSection ?? true,
   } as SettingsStoreType;
 }
 
@@ -293,6 +295,7 @@ export interface SettingsStoreType {
   useCustomStoryCardGeneratorPrompt: boolean;
   thinkingVisibility: ThinkingVisibility;
   autoNarrate: boolean;
+  highlightLatestSection: boolean;
 
   setActivePreset: (preset: ApiPreset) => void;
   setApiKey: (apiKey: string) => void;
@@ -335,6 +338,7 @@ export interface SettingsStoreType {
   setUseCustomStoryCardGeneratorPrompt: (use: boolean) => void;
   setThinkingVisibility: (visibility: ThinkingVisibility) => void;
   setAutoNarrate: (autoNarrate: boolean) => void;
+  setHighlightLatestSection: (highlight: boolean) => void;
   resetGmPrompt: () => void;
   resetStorytellerPrompt: () => void;
   resetContinuePrompt: () => void;
@@ -380,6 +384,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
       useCustomStoryCardGeneratorPrompt: false,
       thinkingVisibility: "all",
       autoNarrate: false,
+      highlightLatestSection: true,
 
       setActivePreset: (preset: ApiPreset) =>
         get().setRoleActivePreset("narrator", preset),
@@ -580,6 +585,8 @@ export const useSettingsStore = create<SettingsStoreType>()(
       setThinkingVisibility: (visibility: ThinkingVisibility) =>
         set({ thinkingVisibility: visibility }),
       setAutoNarrate: (autoNarrate: boolean) => set({ autoNarrate }),
+      setHighlightLatestSection: (highlight: boolean) =>
+        set({ highlightLatestSection: highlight }),
       resetGmPrompt: () =>
         set({ customGmPrompt: undefined, useCustomGmPrompt: false }),
       resetStorytellerPrompt: () =>
@@ -634,6 +641,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
           language: "en",
           thinkingVisibility: "all",
           autoNarrate: false,
+          highlightLatestSection: true,
         }),
     }),
     {

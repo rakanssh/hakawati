@@ -67,5 +67,6 @@ describe("useSettingsStore migration", () => {
     expect(migrated.modelRoles.textToSpeech).toBeDefined();
     expect(migrated.modelRoles.textToSpeech.voice).toBe(DEFAULT_TTS_VOICE);
     expect(migrated.autoNarrate).toBe(false);
+    expect(migrated.highlightLatestSection).toBe(true);
   });
 });

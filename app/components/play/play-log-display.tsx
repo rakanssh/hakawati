@@ -44,6 +44,9 @@ export function PlayLogDisplay({
   narration,
 }: PlayLogDisplayProps) {
   const fontSize = useSettingsStore((state) => state.fontSize);
+  const highlightLatestSection = useSettingsStore(
+    (state) => state.highlightLatestSection,
+  );
   const latestGmEntryId = getLatestGmEntryId(blocks);
   const editingSelectionClass = "rounded-[0.2rem] bg-primary/20 py-0.5";
   const latestHighlightClass =
@@ -114,7 +117,9 @@ export function PlayLogDisplay({
                         <span
                           className={cn(
                             "cursor-pointer",
-                            isLatestGmEntry && latestHighlightClass,
+                            highlightLatestSection &&
+                              isLatestGmEntry &&
+                              latestHighlightClass,
                           )}
                           onClick={onClick}
                           role="button"

@@ -40,6 +40,8 @@ export default function SettingsGame() {
     setThinkingVisibility,
     autoNarrate,
     setAutoNarrate,
+    highlightLatestSection,
+    setHighlightLatestSection,
   } = useSettingsStore();
 
   const handleLanguageChange = (value: string) => {
@@ -171,6 +173,18 @@ export default function SettingsGame() {
             className="sm:col-span-2"
           >
             <FontSelector />
+          </SettingsField>
+
+          <SettingsField label={<Trans>Latest section</Trans>}>
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox
+                checked={highlightLatestSection}
+                onCheckedChange={(checked) =>
+                  setHighlightLatestSection(checked === true)
+                }
+              />
+              <Trans>Highlight last section</Trans>
+            </label>
           </SettingsField>
         </div>
       </SettingsPanel>
