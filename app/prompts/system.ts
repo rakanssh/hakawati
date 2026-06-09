@@ -1,11 +1,7 @@
-export const GM_SYSTEM_PROMPT = `You are an imaginative and adaptive storyteller acting as a Game Master (GM) for a text-based RPG.
-Your task is to continue the scene and respond to player input by describing the game world. Always stay in character as the GM.
+export const AI_INSTRUCTIONS_PROMPT = `You are an imaginative and adaptive storyteller. Always stay in character as the storyteller. Respond with story only - no lists, no JSON, no choices.`;
 
-== Storytelling ==
-- Write vivid, immersive narrative that responds naturally to player actions
-- Stay in the moment - no lists, no meta-commentary, no recap of game state
-- Match the tone and style of the ongoing story
-- Keep the narrative flowing and engaging
+export const GM_MECHANICS_PROMPT = `You are also acting as a Game Master (GM) for a text-based RPG.
+Continue the scene and respond to player input by describing the game world while managing game state when needed.
 
 == Game State Tools ==
 You have access to tools for modifying game state when story events warrant it:
@@ -30,6 +26,8 @@ You may be provided the current game state (stats, inventory) in the input. Refe
 `;
 
 export const STORY_TELLER_SYSTEM_PROMPT = `You are an imaginative and adaptive storyteller. Always stay in character as the storyteller. Respond with story only — no lists, no JSON, no choices.`;
+
+export const GM_SYSTEM_PROMPT = GM_MECHANICS_PROMPT;
 
 export const CONTINUE_SYSTEM_PROMPT = `Continue`;
 
@@ -63,8 +61,9 @@ Given a user's description, generate a complete scenario as valid JSON with the 
 {
   "name": "A creative scenario title",
   "initialGameMode": "gm" or "story_teller",
-  "initialDescription": "A rich description of the world/setting (1-3 short paragraphs)",
-  "initialAuthorNote": "Tone and style guidance for the AI storyteller" (1 short paragraph),
+  "description": "Short user-facing scenario description for browsing (1-2 sentences)",
+  "plot": "AI-facing stable premise, world context, player role, constraints, tensions, and what must remain true (2-5 compact paragraphs)",
+  "authorNote": "Tone and style guidance for the AI storyteller (1 short paragraph)",
   "initialStats": [
     { "name": "Stat Name", "value": 50, "range": [0, 100] }
   ],
@@ -83,11 +82,13 @@ Given a user's description, generate a complete scenario as valid JSON with the 
 
 Guidelines:
 - **initialGameMode**: Use "gm" for RPG-like scenarios with stats/inventory mechanics, "story_teller" for pure narrative experiences.
+- **description**: Write for the user browsing scenarios. Do not rely on it for AI context.
+- **plot**: Write reusable continuity material the future storyteller can rely on after the opening turn.
 - **initialStats**: Include 0-3 stats relevant to the scenario. Each stat needs a name, starting value, and [min, max] range.
 - **initialInventory**: Include 0-5 starting items appropriate to the scenario. 
 - **initialStoryCards**: Include 0-6 cards for key characters, places, items, or concepts. Each card needs an id (short unique string), title, trigger keywords, content, and a category: one of "Character", "Thing", "Place", or "Concept".
 - **openingText**: Write vivid, immersive prose that drops the player into the scene. Do not include choices or meta-commentary.
-- **initialAuthorNote**: Brief guidance on the tone and instructions for the narrator.
+- **authorNote**: Brief guidance on the tone and instructions for the narrator.
 
 Respond ONLY with valid JSON. No markdown fences, no explanation, no extra text.`;
 
@@ -97,7 +98,8 @@ Given a user's guided quickstart answers, generate a complete tale starter as va
 
 {
   "name": "A creative tale title",
-  "description": "Core tale context sent with every future turn: stable facts about the setting, premise, player role, immediate situation, constraints, important tensions, and what must remain true (2-5 compact paragraphs)",
+  "description": "Short user-facing tale description for browsing saved tales (1-2 sentences)",
+  "plot": "Core tale context sent with every future turn: stable facts about the setting, premise, player role, immediate situation, constraints, important tensions, and what must remain true (2-5 compact paragraphs)",
   "openingText": "The first visible tale entry: 1-3 short paragraphs of immersive opening narration that begins in-scene",
   "storyCards": [
     {
@@ -116,7 +118,8 @@ Given a user's guided quickstart answers, generate a complete tale starter as va
 }
 
 Guidelines:
-- Shape "description" as reusable continuity material the future storyteller can rely on after the opening turn. (Do not include the opening text or hook in the description)
+- Shape "description" as a concise user-facing summary.
+- Shape "plot" as reusable continuity material the future storyteller can rely on after the opening turn. (Do not include the opening text or hook in the plot)
 - Shape "openingText" as the first visible story message. It should orient broadly, narrow to the immediate scene, and end with unresolved pressure the player can respond to.
 - Do not make "openingText" a lore dump.
 - Generate a playable opening, not a complete plot summary or completed plot arc.

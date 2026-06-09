@@ -1,5 +1,12 @@
 import { getDb } from "@/services/db";
-import { Scenario, ScenarioHead, GameMode } from "@/types/context.type";
+import { normalizePromptComponents } from "@/lib/prompt-components";
+import {
+  Scenario,
+  ScenarioHead,
+  GameMode,
+  PromptComponent,
+  PromptComponentType,
+} from "@/types/context.type";
 import { ScenarioRow, PaginatedResponse } from "@/types/db.type";
 import { v4 as uuidv4 } from "uuid"; // TODO: replace with nanoid
 
@@ -23,35 +30,77 @@ function toUint8Array(value: unknown): Uint8Array | null {
 }
 
 function toRow(id: string, s: Scenario, ts: number): ScenarioRow {
+  const opening =
+    s.components.find(
+      (component) => component.type === PromptComponentType.OPENING,
+    )?.content ?? "";
+  const authorNote =
+    s.components.find(
+      (component) => component.type === PromptComponentType.AUTHOR_NOTE,
+    )?.content ?? "";
   return {
     id,
     name: s.name,
     initial_game_mode: s.initialGameMode,
-    initial_description: s.initialDescription,
-    initial_author_note: s.initialAuthorNote,
+    initial_description: s.description,
+    initial_author_note: authorNote,
     initial_stats: JSON.stringify(s.initialStats),
     initial_inventory: JSON.stringify(s.initialInventory),
     initial_story_cards: JSON.stringify(s.initialStoryCards),
+    components: JSON.stringify(s.components),
     thumbnail_data: s.thumbnail ?? null,
-    opening_text: s.openingText ?? "",
+    opening_text: opening,
     created_at: ts,
     updated_at: ts,
   };
 }
 
+function parseJsonValue<T>(value: string | null | undefined): T | null {
+  if (!value) return null;
+  try {
+    return JSON.parse(value) as T;
+  } catch (_error) {
+    return null;
+  }
+}
+
 function fromRow(r: ScenarioRow): Scenario {
+  const legacyComponents = [
+    {
+      id: "legacy-plot",
+      type: PromptComponentType.PLOT,
+      content: r.initial_description,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    },
+    {
+      id: "legacy-author-note",
+      type: PromptComponentType.AUTHOR_NOTE,
+      content: r.initial_author_note,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    },
+    {
+      id: "legacy-opening",
+      type: PromptComponentType.OPENING,
+      content: r.opening_text ?? "",
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    },
+  ];
+  const components =
+    parseJsonValue<PromptComponent[]>(r.components) ?? legacyComponents;
   return {
     id: r.id,
     name: r.name,
     initialGameMode:
       r.initial_game_mode === GameMode.GM ? GameMode.GM : GameMode.STORY_TELLER,
-    initialDescription: r.initial_description,
-    initialAuthorNote: r.initial_author_note,
+    description: r.initial_description,
+    components: normalizePromptComponents(components),
     initialStats: JSON.parse(r.initial_stats),
     initialInventory: JSON.parse(r.initial_inventory),
     initialStoryCards: JSON.parse(r.initial_story_cards),
     thumbnail: toUint8Array(r.thumbnail_data ?? null),
-    openingText: r.opening_text ?? "",
   };
 }
 
@@ -64,8 +113,8 @@ export async function upsertScenario(
   const scenarioId = id ?? uuidv4();
   const row = toRow(scenarioId, input, now);
   await db.execute(
-    `INSERT INTO scenarios (id, name, initial_game_mode, initial_description, initial_author_note, initial_stats, initial_inventory, initial_story_cards, thumbnail_data, opening_text, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO scenarios (id, name, initial_game_mode, initial_description, initial_author_note, initial_stats, initial_inventory, initial_story_cards, components, thumbnail_data, opening_text, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
        name=excluded.name,
        initial_game_mode=excluded.initial_game_mode,
@@ -74,6 +123,7 @@ export async function upsertScenario(
        initial_stats=excluded.initial_stats,
        initial_inventory=excluded.initial_inventory,
        initial_story_cards=excluded.initial_story_cards,
+       components=excluded.components,
        thumbnail_data=excluded.thumbnail_data,
        opening_text=excluded.opening_text,
        updated_at=excluded.updated_at`,
@@ -86,6 +136,7 @@ export async function upsertScenario(
       row.initial_stats,
       row.initial_inventory,
       row.initial_story_cards,
+      row.components ?? "[]",
       row.thumbnail_data ?? null,
       row.opening_text ?? "",
       row.created_at,
@@ -158,7 +209,7 @@ export async function getScenarios(
         r.initial_game_mode === GameMode.GM
           ? GameMode.GM
           : GameMode.STORY_TELLER,
-      initialDescription: r.initial_description,
+      description: r.initial_description,
       updatedAt: r.updated_at,
       thumbnail: toUint8Array(r.thumbnail_data ?? null),
     })),
@@ -194,7 +245,7 @@ export async function getScenarioHead(
       rows[0].initial_game_mode === GameMode.GM
         ? GameMode.GM
         : GameMode.STORY_TELLER,
-    initialDescription: rows[0].initial_description,
+    description: rows[0].initial_description,
     updatedAt: rows[0].updated_at,
     thumbnail: toUint8Array(rows[0].thumbnail_data ?? null),
   };

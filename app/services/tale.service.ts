@@ -10,7 +10,13 @@ import {
 import { saveScenario } from "@/services/scenario.service";
 import { PaginatedResponse } from "@/types/db.type";
 import { createTaleDTO, TaleHead, updateTaleDTO } from "@/types/tale.type";
-import { StoryCard, StorybookCategory, Scenario } from "@/types/context.type";
+import {
+  PromptComponentType,
+  StoryCard,
+  StorybookCategory,
+  Scenario,
+} from "@/types/context.type";
+import { normalizePromptComponents } from "@/lib/prompt-components";
 
 /**
  * Normalizes a story card by applying default values for missing fields.
@@ -35,7 +41,7 @@ export async function initTale(tale: createTaleDTO): Promise<string> {
     name: tale.name,
     description: tale.description,
     thumbnail: tale.thumbnail,
-    authorNote: tale.authorNote,
+    components: normalizePromptComponents(tale.components),
     storyCards: tale.storyCards,
     stats: tale.stats,
     inventory: tale.inventory,
@@ -88,7 +94,7 @@ export async function persistCurrentTale({
     id,
     name: tale.name,
     description: tale.description,
-    authorNote: tale.authorNote,
+    components: normalizePromptComponents(tale.components),
     storyCards: tale.storyCards,
     stats: tale.stats,
     inventory: tale.inventory,
@@ -110,6 +116,7 @@ export async function getTaleById(taleId: string) {
 
   return {
     ...tale,
+    components: normalizePromptComponents(tale.components),
     storyCards: tale.storyCards.map(normalizeStoryCard),
     log: tale.log.slice(startIndex),
     totalLogCount: totalCount,
@@ -145,13 +152,16 @@ export async function saveAsScenario(taleId: string): Promise<string> {
     id: "",
     name: tale.name,
     initialGameMode: tale.gameMode,
-    initialDescription: tale.description,
-    initialAuthorNote: tale.authorNote,
+    description: tale.description,
+    components: normalizePromptComponents(
+      tale.components.filter(
+        (component) => component.type !== PromptComponentType.OPENING,
+      ),
+    ),
     initialStats: tale.stats,
     initialInventory: tale.inventory.map((item) => item.name),
     initialStoryCards: tale.storyCards.map(normalizeStoryCard),
     thumbnail: tale.thumbnail,
-    openingText: "",
   };
 
   const scenarioId = await saveScenario(scenario);

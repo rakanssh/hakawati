@@ -1,8 +1,14 @@
 import {
   Scenario,
+  PromptComponentType,
   StoryCardInput,
   StorybookCategory,
 } from "@/types/context.type";
+import {
+  createPromptComponent,
+  normalizePromptComponents,
+  SCENARIO_COMPONENT_TYPES,
+} from "@/lib/prompt-components";
 import { nanoid } from "nanoid";
 
 export function useScenarioForm(
@@ -125,6 +131,40 @@ export function useScenarioForm(
     }));
   };
 
+  const addComponent = (type: PromptComponentType) => {
+    if (
+      !SCENARIO_COMPONENT_TYPES.includes(type) ||
+      scenario.components.some((component) => component.type === type)
+    ) {
+      return;
+    }
+    setScenario((prev) => ({
+      ...prev,
+      components: normalizePromptComponents(
+        [...prev.components, createPromptComponent(type)],
+        SCENARIO_COMPONENT_TYPES,
+      ),
+    }));
+  };
+
+  const updateComponent = (id: string, content: string) => {
+    setScenario((prev) => ({
+      ...prev,
+      components: prev.components.map((component) =>
+        component.id === id
+          ? { ...component, content, updatedAt: Date.now() }
+          : component,
+      ),
+    }));
+  };
+
+  const removeComponent = (id: string) => {
+    setScenario((prev) => ({
+      ...prev,
+      components: prev.components.filter((component) => component.id !== id),
+    }));
+  };
+
   return {
     addStat,
     updateStat,
@@ -135,5 +175,8 @@ export function useScenarioForm(
     addStoryCard,
     updateStoryCard,
     removeStoryCard,
+    addComponent,
+    updateComponent,
+    removeComponent,
   } as const;
 }

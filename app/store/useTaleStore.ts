@@ -1,4 +1,10 @@
 import { GameMode, Item, LogEntry, StoryCard, StoryCardInput } from "@/types";
+import { PromptComponent, PromptComponentType } from "@/types/context.type";
+import {
+  createPromptComponent,
+  normalizePromptComponents,
+  TALE_COMPONENT_TYPES,
+} from "@/lib/prompt-components";
 import { Stat } from "@/types/stats.type";
 import { nanoid } from "nanoid";
 import { v4 as uuidv4 } from "uuid";
@@ -22,7 +28,7 @@ export interface TaleStoreType {
   undoStack: LogEntry[];
   storyCards: StoryCard[];
   description: string;
-  authorNote: string;
+  components: PromptComponent[];
   // Windowing
   totalLogCount: number;
   oldestLoadedIndex: number;
@@ -30,7 +36,10 @@ export interface TaleStoreType {
   isLoadingOlderEntries: boolean;
   setName: (name: string) => void;
   setDescription: (description: string) => void;
-  setAuthorNote: (authorNote: string) => void;
+  setComponents: (components: PromptComponent[]) => void;
+  addComponent: (type: PromptComponentType) => void;
+  updateComponent: (id: string, content: string) => void;
+  removeComponent: (id: string) => void;
   setStoryCards: (storyCards: StoryCard[]) => void;
   addStoryCard: (input: StoryCardInput) => void;
   updateStoryCard: (id: string, updates: Partial<StoryCard>) => void;
@@ -196,7 +205,7 @@ export const useTaleStore = create<TaleStoreType>()((set) => ({
   gameMode: GameMode.STORY_TELLER,
   name: "",
   description: "",
-  authorNote: "",
+  components: [],
   storyCards: [],
   totalLogCount: 0,
   oldestLoadedIndex: 0,
@@ -205,7 +214,36 @@ export const useTaleStore = create<TaleStoreType>()((set) => ({
   setId: (id: string) => set({ id }),
   setName: (name: string) => set({ name }),
   setDescription: (description: string) => set({ description }),
-  setAuthorNote: (authorNote: string) => set({ authorNote }),
+  setComponents: (components: PromptComponent[]) =>
+    set({
+      components: normalizePromptComponents(components, TALE_COMPONENT_TYPES),
+    }),
+  addComponent: (type: PromptComponentType) =>
+    set((state) => {
+      if (
+        !(TALE_COMPONENT_TYPES as readonly PromptComponentType[]).includes(
+          type,
+        ) ||
+        state.components.some((component) => component.type === type)
+      ) {
+        return {};
+      }
+      return {
+        components: [...state.components, createPromptComponent(type)],
+      };
+    }),
+  updateComponent: (id: string, content: string) =>
+    set((state) => ({
+      components: state.components.map((component) =>
+        component.id === id
+          ? { ...component, content, updatedAt: Date.now() }
+          : component,
+      ),
+    })),
+  removeComponent: (id: string) =>
+    set((state) => ({
+      components: state.components.filter((component) => component.id !== id),
+    })),
   setStoryCards: (storyCards: StoryCard[]) => set({ storyCards }),
   addStoryCard: (input: StoryCardInput) =>
     set((state) => {

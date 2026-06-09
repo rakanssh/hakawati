@@ -29,6 +29,8 @@ import {
   generateQuickstartTale,
   QUICKSTART_AUTHOR_NOTE,
 } from "@/services/llm/quickstartTaleGenerator";
+import { createPromptComponent } from "@/lib/prompt-components";
+import { PromptComponentType } from "@/types/context.type";
 import { ArrowLeftIcon } from "lucide-react";
 
 export interface QuickstartState {
@@ -517,7 +519,13 @@ export function QuickstartPage() {
         name: generated.name,
         description: generated.description,
         thumbnail: null,
-        authorNote: QUICKSTART_AUTHOR_NOTE,
+        components: [
+          createPromptComponent(PromptComponentType.PLOT, generated.plot),
+          createPromptComponent(
+            PromptComponentType.AUTHOR_NOTE,
+            QUICKSTART_AUTHOR_NOTE,
+          ),
+        ],
         storyCards: generated.storyCards,
         scenarioId: undefined,
         stats: generated.stats,

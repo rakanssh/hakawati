@@ -28,6 +28,7 @@ export type QuickstartTaleAnswers = {
 export type GeneratedQuickstartTale = {
   name: string;
   description: string;
+  plot: string;
   openingText: string;
   storyCards: StoryCard[];
   stats: Stat[];
@@ -59,6 +60,7 @@ const QuickstartInventoryItemSchema = z.union([
 const QuickstartTaleResponseSchema = z.object({
   name: z.string(),
   description: z.string(),
+  plot: z.string().optional(),
   openingText: z.string(),
   storyCards: z.array(QuickstartStoryCardSchema).default([]),
   stats: z.array(QuickstartStatSchema).default([]),
@@ -90,11 +92,12 @@ export function buildQuickstartTalePrompt(
   parts.push(
     "",
     "Runtime use of generated fields:",
-    "- description is saved as the tale's persistent story context and sent to the model on future turns.",
+    "- description is saved as a user-facing tale description for browsing saved tales. It is not sent to the model.",
+    "- plot is saved as the tale's persistent story context and sent to the model on future turns.",
     "- openingText is saved as the first visible tale entry and starts play immediately.",
     "- The user will not review the generated setup before play begins.",
     "",
-    "The saved tale will use this fixed author note. Follow it when writing the description and openingText, but do not include an authorNote field in the JSON:",
+    "The saved tale will use this fixed author note. Follow it when writing the plot and openingText, but do not include an authorNote field in the JSON:",
     QUICKSTART_AUTHOR_NOTE,
   );
 
@@ -186,6 +189,7 @@ export async function generateQuickstartTale(
     return {
       name: parsed.name,
       description: parsed.description,
+      plot: parsed.plot ?? parsed.description,
       openingText: parsed.openingText,
       storyCards: normalizeStoryCards(parsed.storyCards),
       stats: isGm ? normalizeStats(parsed.stats) : [],

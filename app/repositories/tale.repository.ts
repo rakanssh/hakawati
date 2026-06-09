@@ -1,18 +1,28 @@
 import { getDb } from "@/services/db";
 import { Tale, TaleHead } from "@/types/tale.type";
 import { LogEntry } from "@/types/log.type";
-import { GameMode } from "@/types/context.type";
+import { normalizePromptComponents } from "@/lib/prompt-components";
+import {
+  GameMode,
+  PromptComponent,
+  PromptComponentType,
+} from "@/types/context.type";
 import { PaginatedResponse, TaleRow } from "@/types/db.type";
 import { getScenario, getScenarioHead } from "./scenario.repository";
 import { v4 as uuidv4 } from "uuid";
 
 function toRow(s: Tale): TaleRow {
+  const authorNote =
+    s.components.find(
+      (component) => component.type === PromptComponentType.AUTHOR_NOTE,
+    )?.content ?? "";
   return {
     id: s.id,
     name: s.name,
     description: s.description,
     thumbnail_data: s.thumbnail ?? null,
-    author_note: s.authorNote,
+    author_note: authorNote,
+    components: JSON.stringify(s.components),
     story_cards: JSON.stringify(s.storyCards),
     scenario_id: s.scenarioId ?? null,
     stats: JSON.stringify(s.stats),
@@ -54,12 +64,30 @@ function parseJsonValue<T>(value: string | null | undefined): T | null {
 }
 
 function fromRow(r: TaleRow): Tale {
+  const legacyComponents = [
+    {
+      id: "legacy-plot",
+      type: PromptComponentType.PLOT,
+      content: r.description,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    },
+    {
+      id: "legacy-author-note",
+      type: PromptComponentType.AUTHOR_NOTE,
+      content: r.author_note,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    },
+  ];
+  const components =
+    parseJsonValue<PromptComponent[]>(r.components) ?? legacyComponents;
   return {
     id: r.id,
     name: r.name,
     description: r.description,
     thumbnail: toUint8Array(r.thumbnail_data ?? null),
-    authorNote: r.author_note,
+    components: normalizePromptComponents(components),
     storyCards: JSON.parse(r.story_cards),
     scenarioId: r.scenario_id ?? undefined,
     stats: JSON.parse(r.stats),
@@ -81,7 +109,7 @@ export async function createTale(input: {
   name: Tale["name"];
   description: Tale["description"];
   thumbnail?: Uint8Array | null;
-  authorNote: Tale["authorNote"];
+  components: Tale["components"];
   storyCards: Tale["storyCards"];
   stats: Tale["stats"];
   inventory: Tale["inventory"];
@@ -103,7 +131,7 @@ export async function createTale(input: {
     name: input.name,
     description: input.description,
     thumbnail: input.thumbnail ?? null,
-    authorNote: input.authorNote,
+    components: input.components,
     storyCards: input.storyCards,
     scenarioId: scenarioId ?? undefined,
     stats: input.stats,
@@ -116,14 +144,15 @@ export async function createTale(input: {
   });
 
   await db.execute(
-    `INSERT INTO tales (id, name, description, thumbnail_data, author_note, story_cards, scenario_id, stats, inventory, log, game_mode, undo_stack, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO tales (id, name, description, thumbnail_data, author_note, components, story_cards, scenario_id, stats, inventory, log, game_mode, undo_stack, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       row.id,
       row.name,
       row.description,
       row.thumbnail_data ?? null,
       row.author_note,
+      row.components ?? "[]",
       row.story_cards,
       row.scenario_id,
       row.stats,
@@ -143,7 +172,7 @@ export async function updateTale(input: {
   id: string;
   name: Tale["name"];
   description: Tale["description"];
-  authorNote: Tale["authorNote"];
+  components: Tale["components"];
   storyCards: Tale["storyCards"];
   stats: Tale["stats"];
   inventory: Tale["inventory"];
@@ -159,6 +188,7 @@ export async function updateTale(input: {
        name = ?,
        description = ?,
        author_note = ?,
+       components = ?,
        story_cards = ?,
        stats = ?,
        inventory = ?,
@@ -170,7 +200,10 @@ export async function updateTale(input: {
     [
       input.name,
       input.description,
-      input.authorNote,
+      input.components.find(
+        (component) => component.type === PromptComponentType.AUTHOR_NOTE,
+      )?.content ?? "",
+      JSON.stringify(input.components),
       JSON.stringify(input.storyCards),
       JSON.stringify(input.stats),
       JSON.stringify(input.inventory),

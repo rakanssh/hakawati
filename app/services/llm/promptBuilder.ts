@@ -11,9 +11,17 @@ import {
   getActiveStorytellerPrompt,
   getActiveContinueAuthorNote,
 } from "@/prompts";
+import { getPromptComponentContent } from "@/lib/prompt-components";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useTaleStore } from "@/store/useTaleStore";
-import { GameMode, StoryCard, Item, ResponseMode } from "@/types";
+import {
+  GameMode,
+  PromptComponent,
+  PromptComponentType,
+  StoryCard,
+  Item,
+  ResponseMode,
+} from "@/types";
 import { toast } from "sonner";
 import {
   assembleContextMessages,
@@ -29,8 +37,9 @@ interface BuildMessageParams {
     text: string;
     mode: LogEntryMode;
   };
-  description: string;
-  authorNote: string;
+  description?: string;
+  authorNote?: string;
+  components?: PromptComponent[];
   storyCards: StoryCard[];
   model: LLMModel;
   options?: ChatRequestOptions;
@@ -47,8 +56,7 @@ export async function buildMessage(
     lastMessage,
     storyCards,
     model,
-    description,
-    authorNote,
+    components = [],
     gameMode,
   } = params;
 
@@ -101,18 +109,39 @@ ${inventoryBlock}
       : getActiveStorytellerPrompt();
 
   const userMsg: ChatMessage = { role: "user", content: userMessage };
+  const aiInstructions =
+    getPromptComponentContent(
+      components,
+      PromptComponentType.AI_INSTRUCTIONS,
+    ) || getActiveStorytellerPrompt();
+  const plot = getPromptComponentContent(components, PromptComponentType.PLOT);
+  const authorNote = getPromptComponentContent(
+    components,
+    PromptComponentType.AUTHOR_NOTE,
+  );
   const requiredMeta: ChatMessage[] = [
     {
       role: "system",
-      content: systemPrompt,
+      content: aiInstructions,
     },
   ];
-  if (description) requiredMeta.push({ role: "system", content: description });
-  if (authorNote) requiredMeta.push({ role: "system", content: authorNote });
-  if (lastMessage.mode === LogEntryMode.CONTINUE) {
-    requiredMeta.push({
+  if (gameMode === GameMode.GM) {
+    requiredMeta.push({ role: "system", content: systemPrompt });
+  }
+  if (plot) {
+    requiredMeta.push({ role: "system", content: `**Plot:**\n${plot}` });
+  }
+  const lateMeta: ChatMessage[] = [];
+  if (authorNote) {
+    lateMeta.push({
       role: "system",
-      content: getActiveContinueAuthorNote(),
+      content: `**Author's Note:**\n${authorNote}`,
+    });
+  }
+  if (lastMessage.mode === LogEntryMode.CONTINUE) {
+    lateMeta.push({
+      role: "system",
+      content: `**Continue Note:**\n${getActiveContinueAuthorNote()}`,
     });
   }
 
@@ -120,6 +149,7 @@ ${inventoryBlock}
     log: effectiveLogSource,
     storyCards,
     requiredMeta,
+    lateMeta,
     userMessage: userMsg,
     promptBudget,
     includeLogEntry: (entry) =>

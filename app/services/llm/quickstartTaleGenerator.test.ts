@@ -65,8 +65,9 @@ describe("quickstart tale generator", () => {
     expect(prompt).toContain(QUICKSTART_AUTHOR_NOTE);
     expect(prompt).toContain("do not include an authorNote field");
     expect(prompt).toContain(
-      "description is saved as the tale's persistent story context",
+      "plot is saved as the tale's persistent story context",
     );
+    expect(prompt).toContain("description is saved as a user-facing tale");
     expect(prompt).toContain(
       "openingText is saved as the first visible tale entry",
     );

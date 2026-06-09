@@ -111,7 +111,7 @@ export default function ScenariosHome() {
         </div>
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {items.map(({ id, name, initialDescription, thumbnail, updatedAt }) => {
+        {items.map(({ id, name, description, thumbnail, updatedAt }) => {
           return (
             <Card
               key={id}
@@ -198,7 +198,7 @@ export default function ScenariosHome() {
                 <span className="font-bold">{name}</span>
                 <div className="flex items-center gap-2"></div>
                 <p className="line-clamp-3 text-sm text-muted-foreground h-16 rounded-xs">
-                  {initialDescription}
+                  {description}
                 </p>
                 <Button
                   onClick={async () => {

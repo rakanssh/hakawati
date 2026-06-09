@@ -1,11 +1,41 @@
 import { resolveModelRole, sendRoleChat } from "@/services/llm";
 import type { ChatRequest, ChatMessage } from "./schema";
 import { ResponseMode } from "@/types/api.type";
-import { ScenarioExportDataV1Schema } from "@/types/export.type";
 import { getActiveScenarioGeneratorPrompt } from "@/prompts";
 import { nanoid } from "nanoid";
-import { GameMode, StorybookCategory } from "@/types/context.type";
+import {
+  GameMode,
+  PromptComponentType,
+  StorybookCategory,
+} from "@/types/context.type";
 import type { Scenario } from "@/types/context.type";
+import { createPromptComponent } from "@/lib/prompt-components";
+import { z } from "zod";
+
+const GeneratedScenarioSchema = z.object({
+  name: z.string(),
+  initialGameMode: z.string(),
+  description: z.string(),
+  plot: z.string(),
+  authorNote: z.string().optional().default(""),
+  openingText: z.string().optional().default(""),
+  initialStats: z.array(
+    z.object({
+      name: z.string(),
+      value: z.number(),
+      range: z.array(z.number()),
+    }),
+  ),
+  initialInventory: z.array(z.string()),
+  initialStoryCards: z.array(
+    z.object({
+      title: z.string(),
+      triggers: z.array(z.string()),
+      content: z.string(),
+      category: z.string().optional(),
+    }),
+  ),
+});
 
 export async function generateScenario(
   userPrompt: string,
@@ -36,7 +66,7 @@ export async function generateScenario(
 
   try {
     const raw = JSON.parse(jsonStr);
-    const parsed = ScenarioExportDataV1Schema.parse(raw);
+    const parsed = GeneratedScenarioSchema.parse(raw);
 
     const rawCards: Record<string, unknown>[] = Array.isArray(
       raw.initialStoryCards,
@@ -55,8 +85,15 @@ export async function generateScenario(
       id: "",
       name: parsed.name,
       initialGameMode: gameMode,
-      initialDescription: parsed.initialDescription,
-      initialAuthorNote: parsed.initialAuthorNote,
+      description: parsed.description,
+      components: [
+        createPromptComponent(PromptComponentType.PLOT, parsed.plot),
+        createPromptComponent(
+          PromptComponentType.AUTHOR_NOTE,
+          parsed.authorNote,
+        ),
+        createPromptComponent(PromptComponentType.OPENING, parsed.openingText),
+      ],
       initialStats: parsed.initialStats.map((s) => ({
         ...s,
         range: [s.range[0] ?? 0, s.range[1] ?? 100] as [number, number],
@@ -79,7 +116,6 @@ export async function generateScenario(
           updatedAt: now,
         };
       }),
-      openingText: parsed.openingText,
       thumbnail: null,
     };
 

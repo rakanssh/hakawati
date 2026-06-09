@@ -3,33 +3,24 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { bytesToObjectUrl } from "@/lib/utils";
 import { useMemo } from "react";
-import { HelpTooltip } from "../ui/help-tooltip";
 import { Trans } from "@lingui/react/macro";
 
 export type ScenarioBasicsFieldsProps = {
   name: string;
   thumbnail?: Uint8Array | null;
-  initialDescription: string;
-  initialAuthorNote: string;
-  openingText: string;
+  description: string;
   onNameChange: (name: string) => void;
   onThumbnailChange: (bytes: Uint8Array | null) => void;
-  onInitialDescriptionChange: (text: string) => void;
-  onInitialAuthorNoteChange: (text: string) => void;
-  onOpeningTextChange: (text: string) => void;
+  onDescriptionChange: (text: string) => void;
 };
 
 export function ScenarioBasicsFields({
   name,
   thumbnail,
-  initialDescription,
-  initialAuthorNote,
-  openingText,
+  description,
   onNameChange,
   onThumbnailChange,
-  onInitialDescriptionChange,
-  onInitialAuthorNoteChange,
-  onOpeningTextChange,
+  onDescriptionChange,
 }: ScenarioBasicsFieldsProps) {
   const previewUrl = useMemo(
     () => bytesToObjectUrl(thumbnail ?? null),
@@ -68,39 +59,11 @@ export function ScenarioBasicsFields({
       </div>
       <div className="flex flex-col gap-2">
         <Label>
-          <Trans>Initial Description</Trans>
+          <Trans>Description</Trans>
         </Label>
         <Textarea
-          value={initialDescription}
-          onChange={(e) => onInitialDescriptionChange(e.target.value)}
-        />
-      </div>
-      <div className="flex flex-col gap-2">
-        <Label>
-          <Trans>Initial Author Notes</Trans>
-        </Label>
-        <Textarea
-          value={initialAuthorNote}
-          onChange={(e) => onInitialAuthorNoteChange(e.target.value)}
-        />
-      </div>
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-1">
-          <Label>
-            <Trans>Opening Text</Trans>
-          </Label>
-          <HelpTooltip>
-            <span>
-              <Trans>
-                This is the initial paragraph of story that the player will
-                respond to. <br /> Useful for setting up the initial scene.
-              </Trans>
-            </span>
-          </HelpTooltip>
-        </div>
-        <Textarea
-          value={openingText}
-          onChange={(e) => onOpeningTextChange(e.target.value)}
+          value={description}
+          onChange={(e) => onDescriptionChange(e.target.value)}
         />
       </div>
     </div>

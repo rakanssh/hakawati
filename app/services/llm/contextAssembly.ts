@@ -23,6 +23,7 @@ export interface AssembleContextMessagesParams {
   log: LogEntry[];
   storyCards: StoryCard[];
   requiredMeta: ChatMessage[];
+  lateMeta?: ChatMessage[];
   userMessage: ChatMessage;
   promptBudget: number;
   includeLogEntry?: (entry: LogEntry) => boolean;
@@ -144,6 +145,7 @@ export function assembleContextMessages(
     log,
     storyCards,
     requiredMeta,
+    lateMeta = [],
     userMessage,
     promptBudget,
     includeLogEntry,
@@ -154,7 +156,7 @@ export function assembleContextMessages(
 
   const tokenCountFor = (messages: ChatMessage[]) =>
     countMessageTokens(messages);
-  const baseRequired = [...requiredMeta, userMessage];
+  const baseRequired = [...requiredMeta, ...lateMeta, userMessage];
   const requiredTokens = tokenCountFor(baseRequired);
   if (requiredTokens > promptBudget) {
     onRequiredTokensExceeded?.(requiredTokens);
@@ -217,7 +219,12 @@ export function assembleContextMessages(
         content: tentativeStoryBookContent,
       });
     }
-    messagesIfIncluded.push(...selectedHistory, chatMessage, userMessage);
+    messagesIfIncluded.push(
+      ...selectedHistory,
+      chatMessage,
+      ...lateMeta,
+      userMessage,
+    );
 
     const totalTokens = tokenCountFor(messagesIfIncluded);
     if (totalTokens <= promptBudget) {
@@ -243,6 +250,7 @@ export function assembleContextMessages(
     messages.push({ role: "system", content: storyBookContent });
   }
   messages.push(...selectedHistory);
+  messages.push(...lateMeta);
   messages.push(userMessage);
 
   return {

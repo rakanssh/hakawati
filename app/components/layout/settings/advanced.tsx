@@ -11,8 +11,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
+  AI_INSTRUCTIONS_PROMPT,
   GM_SYSTEM_PROMPT,
-  STORY_TELLER_SYSTEM_PROMPT,
   CONTINUE_SYSTEM_PROMPT,
   CONTINUE_AUTHOR_NOTE,
   STORY_CARD_GENERATOR_PROMPT,
@@ -61,7 +61,7 @@ export default function SettingsAdvanced() {
   const handleStorytellerCheckChange = (checked: boolean) => {
     setUseCustomStorytellerPrompt(checked);
     if (checked) {
-      setCustomStorytellerPrompt(STORY_TELLER_SYSTEM_PROMPT);
+      setCustomStorytellerPrompt(AI_INSTRUCTIONS_PROMPT);
     }
   };
 
@@ -118,7 +118,7 @@ export default function SettingsAdvanced() {
         <Accordion type="multiple" className="w-full">
           <AccordionItem value="gm-prompt">
             <AccordionTrigger>
-              <Trans>GM System Prompt</Trans>
+              <Trans>GM Mechanics Prompt</Trans>
             </AccordionTrigger>
             <AccordionContent>
               <div className="flex flex-col gap-3">
@@ -126,10 +126,8 @@ export default function SettingsAdvanced() {
                 <div className="flex items-center gap-2">
                   <p className="text-sm text-muted-foreground">
                     <Trans>
-                      This is the system prompt used when the game is in
-                      &quot;Game Master&quot; mode. The story description is
-                      appended to the prompt. (Two new lines, followed by
-                      &quot;The story is: &quot; and the description text.)
+                      This prompt is added in &quot;Game Master&quot; mode to
+                      explain game state tools and GM-specific behavior.
                     </Trans>
                     <br />
                     <b className="flex items-center gap-2">
@@ -175,17 +173,16 @@ export default function SettingsAdvanced() {
 
           <AccordionItem value="storyteller-prompt">
             <AccordionTrigger>
-              <Trans>Storyteller System Prompt</Trans>
+              <Trans>Default AI Instructions</Trans>
             </AccordionTrigger>
             <AccordionContent>
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <p className="text-sm text-muted-foreground">
                     <Trans>
-                      This is the system prompt used when the game is in
-                      &quot;Story Teller&quot; mode. The story description is
-                      appended to the prompt. (Two new lines, followed by
-                      &quot;The story is: &quot; and the description text.)
+                      These are the default AI instructions used by tales and
+                      scenarios that do not define their own AI Instructions
+                      component.
                     </Trans>
                   </p>
                 </div>
@@ -206,13 +203,13 @@ export default function SettingsAdvanced() {
                   value={
                     useCustomStorytellerPrompt
                       ? customStorytellerPrompt
-                      : STORY_TELLER_SYSTEM_PROMPT
+                      : AI_INSTRUCTIONS_PROMPT
                   }
                   onChange={(e) => setCustomStorytellerPrompt(e.target.value)}
                   disabled={!useCustomStorytellerPrompt}
                   rows={12}
                   className="font-mono text-xs"
-                  placeholder={t`System prompt for Story Teller mode...`}
+                  placeholder={t`Default AI instructions...`}
                 />
                 <div className="flex justify-end">
                   <Button

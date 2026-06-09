@@ -6,6 +6,13 @@ import {
   getScenarios,
 } from "@/repositories/scenario.repository";
 import {
+  getPromptComponentContent,
+  normalizePromptComponents,
+  TALE_COMPONENT_TYPES,
+} from "@/lib/prompt-components";
+import {
+  GameMode,
+  PromptComponentType,
   Scenario,
   ScenarioHead,
   StoryCard,
@@ -14,8 +21,8 @@ import {
 import { initTale } from "./tale.service";
 import { nanoid } from "nanoid";
 import { PaginatedResponse } from "@/types/db.type";
-import type { ScenarioExportV1 } from "@/types/export.type";
-import { ScenarioV1Schema } from "@/types/export.type";
+import type { ScenarioExportV1, ScenarioExportV2 } from "@/types/export.type";
+import { ScenarioV1Schema, ScenarioV2Schema } from "@/types/export.type";
 import { LogEntryRole } from "@/types/log.type";
 
 /**
@@ -43,13 +50,15 @@ export async function saveScenario(
     id: scenario.id,
     name: (scenario.name ?? "").trim() || "Untitled Scenario",
     initialGameMode: scenario.initialGameMode,
-    initialDescription: scenario.initialDescription ?? "",
-    initialAuthorNote: scenario.initialAuthorNote ?? "",
+    description: scenario.description ?? "",
+    components: normalizePromptComponents(
+      scenario.components,
+      Object.values(PromptComponentType),
+    ),
     initialStats: scenario.initialStats ?? [],
     initialInventory: scenario.initialInventory ?? [],
     initialStoryCards: scenario.initialStoryCards ?? [],
     thumbnail: scenario.thumbnail ?? null,
-    openingText: scenario.openingText ?? "",
   };
   return upsertScenario(normalized, id);
 }
@@ -98,22 +107,32 @@ export async function initTaleFromScenario(
 ): Promise<string> {
   const scenario = await getScenario(scenarioId);
   if (!scenario) throw new Error("Scenario not found");
+  const components = normalizePromptComponents(
+    scenario.components.filter(
+      (component) => component.type !== PromptComponentType.OPENING,
+    ),
+    TALE_COMPONENT_TYPES,
+  );
+  const openingText = getPromptComponentContent(
+    scenario.components,
+    PromptComponentType.OPENING,
+  );
   // Copy scenario thumbnail into tale at creation time
   return initTale({
     scenarioId,
     thumbnail: scenario.thumbnail ?? null,
-    authorNote: scenario.initialAuthorNote ?? "",
+    components,
     storyCards: scenario.initialStoryCards.map(normalizeStoryCard),
     stats: scenario.initialStats,
     inventory: scenario.initialInventory.map((name) => ({
       id: nanoid(12),
       name,
     })),
-    log: scenario.openingText
+    log: openingText
       ? [
           {
             id: nanoid(12),
-            text: scenario.openingText,
+            text: openingText,
             role: LogEntryRole.GM,
           },
         ]
@@ -121,32 +140,84 @@ export async function initTaleFromScenario(
     gameMode: scenario.initialGameMode,
     undoStack: [],
     name: scenario.name,
-    description: scenario.initialDescription,
+    description: scenario.description,
   });
 }
 
-export function buildScenarioExportV1(scenario: Scenario): ScenarioExportV1 {
+export function buildScenarioExportV2(scenario: Scenario): ScenarioExportV2 {
   const { thumbnail: _omitThumbnail, ...rest } = scenario;
   return {
     type: "hakawati.scenario",
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     data: rest,
   };
 }
 
-export function serializeScenarioExportV1(scenario: Scenario): string {
-  const payload = buildScenarioExportV1(scenario);
+export function serializeScenarioExportV2(scenario: Scenario): string {
+  const payload = buildScenarioExportV2(scenario);
   console.debug("Serialized scenario", payload);
   return JSON.stringify(payload, null, 2);
 }
 
-export function deserializeScenarioExportV1(json: string): Scenario {
-  const payload = ScenarioV1Schema.parse(JSON.parse(json) as ScenarioExportV1);
+export function deserializeScenarioExport(json: string): Scenario {
+  const raw = JSON.parse(json);
+  if (raw?.version === 2) {
+    const payload = ScenarioV2Schema.parse(raw as ScenarioExportV2);
+    const scenario = payload.data as Scenario;
+    return {
+      ...scenario,
+      components: normalizePromptComponents(scenario.components),
+      initialStoryCards: scenario.initialStoryCards.map(normalizeStoryCard),
+    };
+  }
+
+  const payload = ScenarioV1Schema.parse(raw as ScenarioExportV1);
   console.debug("Deserialized scenario", payload);
-  const scenario = payload.data as Scenario;
+  const data = payload.data;
+  const gameMode =
+    data.initialGameMode === GameMode.GM ? GameMode.GM : GameMode.STORY_TELLER;
   return {
-    ...scenario,
-    initialStoryCards: scenario.initialStoryCards.map(normalizeStoryCard),
+    id: data.id ?? "",
+    name: data.name,
+    initialGameMode: gameMode,
+    description: data.initialDescription,
+    components: normalizePromptComponents([
+      {
+        id: nanoid(12),
+        type: PromptComponentType.PLOT,
+        content: data.initialDescription,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+      {
+        id: nanoid(12),
+        type: PromptComponentType.AUTHOR_NOTE,
+        content: data.initialAuthorNote,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+      {
+        id: nanoid(12),
+        type: PromptComponentType.OPENING,
+        content: data.openingText,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      },
+    ]),
+    initialStats: data.initialStats.map((stat) => ({
+      ...stat,
+      range: [stat.range[0] ?? 0, stat.range[1] ?? 100] as [number, number],
+    })),
+    initialInventory: data.initialInventory,
+    initialStoryCards: data.initialStoryCards.map((card) =>
+      normalizeStoryCard({
+        ...card,
+        category: StorybookCategory.UNCATEGORIZED,
+        isPinned: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      }),
+    ),
   };
 }

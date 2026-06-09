@@ -10,6 +10,8 @@ import { useTaleStore } from "@/store/useTaleStore";
 import { countTokens } from "@/services/llm/tokenCounter";
 import { usePersistTale } from "@/hooks/useGameSaves";
 import { GameMode } from "@/types";
+import { PromptComponentsEditor } from "@/components/prompt-components/PromptComponentsEditor";
+import { TALE_COMPONENT_TYPES } from "@/lib/prompt-components";
 import { BookIcon, SwordIcon } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
@@ -22,9 +24,11 @@ export default function SettingsTale() {
   const { t } = useLingui();
   const {
     description,
-    authorNote,
+    components,
     setDescription,
-    setAuthorNote,
+    addComponent,
+    updateComponent,
+    removeComponent,
     gameMode,
     setGameMode,
     id,
@@ -33,11 +37,9 @@ export default function SettingsTale() {
 
   const descriptionChars = description.length;
   const descriptionTokens = countTokens(description);
-  const authorNoteChars = authorNote.length;
-  const authorNoteTokens = countTokens(authorNote);
 
-  const getGamemodeDescription = (gameMode: GameMode) => {
-    if (gameMode === GameMode.GM)
+  const getGamemodeDescription = (mode: GameMode) => {
+    if (mode === GameMode.GM)
       return t`AI runs the full game: it tells the story, manages inventory, and updates stats. Best with smarter models. Requires tool calling to be supported by the model.`;
     return t`AI tells the story only: no inventory or stats are tracked, just narrative. Works with any model.`;
   };
@@ -90,10 +92,11 @@ export default function SettingsTale() {
       </SettingsPanel>
 
       <SettingsPanel
-        title={<Trans>Story context</Trans>}
+        title={<Trans>Tale description</Trans>}
         description={
           <Trans>
-            These notes guide the model while the current tale is running.
+            This description is shown in your tale library. AI-facing context
+            lives in components below.
           </Trans>
         }
       >
@@ -113,31 +116,26 @@ export default function SettingsTale() {
         >
           <Textarea
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={(event) => setDescription(event.target.value)}
             rows={6}
           />
         </SettingsField>
+      </SettingsPanel>
 
-        <SettingsField
-          label={
-            <div className="flex items-center justify-between gap-3">
-              <span>
-                <Trans>Author Notes</Trans>
-              </span>
-              <span className="text-xs font-normal text-muted-foreground">
-                <Trans>
-                  {authorNoteChars} characters • ~{authorNoteTokens} tokens
-                </Trans>
-              </span>
-            </div>
-          }
-        >
-          <Textarea
-            value={authorNote}
-            onChange={(e) => setAuthorNote(e.target.value)}
-            rows={5}
-          />
-        </SettingsField>
+      <SettingsPanel
+        title={<Trans>AI Components</Trans>}
+        description={
+          <Trans>These optional components guide the model during play.</Trans>
+        }
+      >
+        <PromptComponentsEditor
+          components={components}
+          allowedTypes={TALE_COMPONENT_TYPES}
+          gameMode={gameMode}
+          onAdd={addComponent}
+          onUpdate={updateComponent}
+          onRemove={removeComponent}
+        />
       </SettingsPanel>
     </SettingsStack>
   );
