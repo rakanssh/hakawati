@@ -91,20 +91,12 @@ export default function SettingsTale() {
         </SettingsField>
       </SettingsPanel>
 
-      <SettingsPanel
-        title={<Trans>Tale description</Trans>}
-        description={
-          <Trans>
-            This description is shown in your tale library. AI-facing context
-            lives in components below.
-          </Trans>
-        }
-      >
+      <SettingsPanel title={<Trans>Description</Trans>}>
         <SettingsField
           label={
             <div className="flex items-center justify-between gap-3">
               <span>
-                <Trans>Description</Trans>
+                <Trans>Library summary</Trans>
               </span>
               <span className="text-xs font-normal text-muted-foreground">
                 <Trans>
@@ -112,6 +104,11 @@ export default function SettingsTale() {
                 </Trans>
               </span>
             </div>
+          }
+          description={
+            <Trans>
+              A short library-facing summary. It is not sent to the AI.
+            </Trans>
           }
         >
           <Textarea
@@ -122,16 +119,15 @@ export default function SettingsTale() {
         </SettingsField>
       </SettingsPanel>
 
-      <SettingsPanel
-        title={<Trans>AI Components</Trans>}
-        description={
-          <Trans>These optional components guide the model during play.</Trans>
-        }
-      >
+      <SettingsPanel title={<Trans>AI Components</Trans>}>
         <PromptComponentsEditor
           components={components}
           allowedTypes={TALE_COMPONENT_TYPES}
           gameMode={gameMode}
+          showTitle={false}
+          description={
+            <Trans>These optional components are sent to the AI.</Trans>
+          }
           onAdd={addComponent}
           onUpdate={updateComponent}
           onRemove={removeComponent}

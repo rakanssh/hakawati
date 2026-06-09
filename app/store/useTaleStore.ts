@@ -10,6 +10,7 @@ import { nanoid } from "nanoid";
 import { v4 as uuidv4 } from "uuid";
 import { toast } from "sonner";
 import { getLogEntries } from "@/repositories/tale.repository";
+import { getActiveStorytellerPrompt } from "@/prompts";
 
 import { create } from "zustand";
 
@@ -228,8 +229,12 @@ export const useTaleStore = create<TaleStoreType>()((set) => ({
       ) {
         return {};
       }
+      const content =
+        type === PromptComponentType.AI_INSTRUCTIONS
+          ? getActiveStorytellerPrompt()
+          : "";
       return {
-        components: [...state.components, createPromptComponent(type)],
+        components: [...state.components, createPromptComponent(type, content)],
       };
     }),
   updateComponent: (id: string, content: string) =>

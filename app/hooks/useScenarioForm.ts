@@ -9,6 +9,7 @@ import {
   normalizePromptComponents,
   SCENARIO_COMPONENT_TYPES,
 } from "@/lib/prompt-components";
+import { getActiveStorytellerPrompt } from "@/prompts";
 import { nanoid } from "nanoid";
 
 export function useScenarioForm(
@@ -138,10 +139,14 @@ export function useScenarioForm(
     ) {
       return;
     }
+    const content =
+      type === PromptComponentType.AI_INSTRUCTIONS
+        ? getActiveStorytellerPrompt()
+        : "";
     setScenario((prev) => ({
       ...prev,
       components: normalizePromptComponents(
-        [...prev.components, createPromptComponent(type)],
+        [...prev.components, createPromptComponent(type, content)],
         SCENARIO_COMPONENT_TYPES,
       ),
     }));

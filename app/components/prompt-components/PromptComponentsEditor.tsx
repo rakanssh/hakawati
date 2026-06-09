@@ -15,6 +15,7 @@ import {
 } from "@/types/context.type";
 import { PlusIcon, TrashIcon } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
 
 const COMPONENT_LABELS: Record<PromptComponentType, string> = {
   [PromptComponentType.AI_INSTRUCTIONS]: "AI Instructions",
@@ -45,6 +46,8 @@ type PromptComponentsEditorProps = {
   components: PromptComponent[];
   allowedTypes: readonly PromptComponentType[];
   gameMode?: GameMode;
+  showTitle?: boolean;
+  description?: ReactNode;
   onAdd: (type: PromptComponentType) => void;
   onUpdate: (id: string, content: string) => void;
   onRemove: (id: string) => void;
@@ -54,6 +57,8 @@ export function PromptComponentsEditor({
   components,
   allowedTypes,
   gameMode,
+  showTitle = true,
+  description,
   onAdd,
   onUpdate,
   onRemove,
@@ -70,14 +75,15 @@ export function PromptComponentsEditor({
     <div className="flex flex-col gap-4">
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <Label className="text-base">
-            <Trans>AI Components</Trans>
-          </Label>
+          {showTitle && (
+            <Label className="text-base">
+              <Trans>AI Components</Trans>
+            </Label>
+          )}
           <p className="text-sm text-muted-foreground">
-            <Trans>
-              These optional components are sent to the AI. The description is
-              only shown to you.
-            </Trans>
+            {description ?? (
+              <Trans>These optional components are sent to the AI.</Trans>
+            )}
           </p>
           {gameMode === GameMode.GM && (
             <p className="text-xs text-muted-foreground">

@@ -61,6 +61,11 @@ export function ScenarioBasicsFields({
         <Label>
           <Trans>Description</Trans>
         </Label>
+        <p className="text-sm text-muted-foreground">
+          <Trans>
+            A short library-facing summary. It is not sent to the AI.
+          </Trans>
+        </p>
         <Textarea
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
