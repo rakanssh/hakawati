@@ -1,8 +1,4 @@
-import {
-  GameMode,
-  PromptComponent,
-  PromptComponentType,
-} from "@/types/context.type";
+import { PromptComponent, PromptComponentType } from "@/types/context.type";
 import { nanoid } from "nanoid";
 
 export const TALE_COMPONENT_TYPES = [
@@ -50,24 +46,28 @@ export function normalizePromptComponents(
 ): PromptComponent[] {
   const now = Date.now();
   const seen = new Set<PromptComponentType>();
-  return (components ?? [])
-    .filter((component): component is PromptComponent =>
-      Boolean(
-        component &&
-          allowedTypes.includes(component.type) &&
-          !seen.has(component.type),
-      ),
-    )
-    .map((component) => {
-      seen.add(component.type);
-      return {
-        id: component.id || nanoid(12),
-        type: component.type,
-        content: component.content ?? "",
-        createdAt: component.createdAt || now,
-        updatedAt: component.updatedAt || now,
-      };
+
+  const normalized: PromptComponent[] = [];
+  for (const component of components ?? []) {
+    if (
+      !component ||
+      !allowedTypes.includes(component.type) ||
+      seen.has(component.type)
+    ) {
+      continue;
+    }
+
+    seen.add(component.type);
+    normalized.push({
+      id: component.id || nanoid(12),
+      type: component.type,
+      content: component.content ?? "",
+      createdAt: component.createdAt || now,
+      updatedAt: component.updatedAt || now,
     });
+  }
+
+  return normalized;
 }
 
 export function legacyComponentsFromText(input: {
@@ -91,12 +91,4 @@ export function legacyComponentsFromText(input: {
   }
 
   return components;
-}
-
-export function getDefaultInstructionsForMode(
-  gameMode: GameMode,
-  getStorytellerPrompt: () => string,
-  getGmPrompt: () => string,
-): string {
-  return gameMode === GameMode.GM ? getGmPrompt() : getStorytellerPrompt();
 }

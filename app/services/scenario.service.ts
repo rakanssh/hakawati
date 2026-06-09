@@ -10,12 +10,12 @@ import {
   normalizePromptComponents,
   TALE_COMPONENT_TYPES,
 } from "@/lib/prompt-components";
+import { normalizeStoryCard } from "@/lib/story-card-utils";
 import {
   GameMode,
   PromptComponentType,
   Scenario,
   ScenarioHead,
-  StoryCard,
   StorybookCategory,
 } from "@/types/context.type";
 import { initTale } from "./tale.service";
@@ -24,23 +24,6 @@ import { PaginatedResponse } from "@/types/db.type";
 import type { ScenarioExportV1, ScenarioExportV2 } from "@/types/export.type";
 import { ScenarioV1Schema, ScenarioV2Schema } from "@/types/export.type";
 import { LogEntryRole } from "@/types/log.type";
-
-/**
- * Normalizes a story card by applying default values for missing fields.
- */
-function normalizeStoryCard(card: StoryCard): StoryCard {
-  const now = Date.now();
-  return {
-    id: card.id,
-    title: card.title,
-    triggers: card.triggers || [],
-    content: card.content,
-    category: card.category || StorybookCategory.UNCATEGORIZED,
-    isPinned: card.isPinned || false,
-    createdAt: card.createdAt || now,
-    updatedAt: card.updatedAt || now,
-  };
-}
 
 export async function saveScenario(
   scenario: Scenario,
@@ -74,7 +57,7 @@ export async function getScenarioById(id: string): Promise<Scenario | null> {
 }
 
 export async function createScenario(scenario: Scenario): Promise<string> {
-  return upsertScenario(scenario);
+  return saveScenario(scenario);
 }
 
 export async function listAllScenarios(): Promise<
@@ -156,7 +139,6 @@ export function buildScenarioExportV2(scenario: Scenario): ScenarioExportV2 {
 
 export function serializeScenarioExportV2(scenario: Scenario): string {
   const payload = buildScenarioExportV2(scenario);
-  console.debug("Serialized scenario", payload);
   return JSON.stringify(payload, null, 2);
 }
 
@@ -173,7 +155,6 @@ export function deserializeScenarioExport(json: string): Scenario {
   }
 
   const payload = ScenarioV1Schema.parse(raw as ScenarioExportV1);
-  console.debug("Deserialized scenario", payload);
   const data = payload.data;
   const gameMode =
     data.initialGameMode === GameMode.GM ? GameMode.GM : GameMode.STORY_TELLER;

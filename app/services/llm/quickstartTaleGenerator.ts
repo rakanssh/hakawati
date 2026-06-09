@@ -1,13 +1,14 @@
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { ResponseMode } from "@/types/api.type";
-import { GameMode, StorybookCategory } from "@/types/context.type";
+import { GameMode } from "@/types/context.type";
 import type { StoryCard } from "@/types/context.type";
 import type { Item } from "@/types/item.type";
 import type { Stat } from "@/types/stats.type";
 import { getActiveQuickstartTaleGeneratorPrompt } from "@/prompts";
 import { resolveModelRole, sendRoleChat } from "@/services/llm";
 import type { ChatMessage, ChatRequest } from "./schema";
+import { normalizeStorybookCategory } from "@/lib/story-card-utils";
 
 export const QUICKSTART_AUTHOR_NOTE = `- use present tense and second person pronouns.
 - show, don't simply tell. Using concrete sensory details over abstract descriptions.
@@ -114,13 +115,6 @@ function normalizeRange(range: number[] | undefined): [number, number] {
   return [range?.[0] ?? 0, range?.[1] ?? 100];
 }
 
-function normalizeCategory(category: string | undefined): StorybookCategory {
-  const validCategories = Object.values(StorybookCategory) as string[];
-  return category && validCategories.includes(category)
-    ? (category as StorybookCategory)
-    : StorybookCategory.UNCATEGORIZED;
-}
-
 function normalizeStoryCards(
   cards: z.infer<typeof QuickstartStoryCardSchema>[],
 ): StoryCard[] {
@@ -130,7 +124,7 @@ function normalizeStoryCards(
     title: card.title,
     triggers: card.triggers,
     content: card.content,
-    category: normalizeCategory(card.category),
+    category: normalizeStorybookCategory(card.category),
     isPinned: false,
     createdAt: now,
     updatedAt: now,

@@ -25,7 +25,7 @@ Always include narrative description. Tool calls supplement the story, they don'
 You may be provided the current game state (stats, inventory) in the input. Reference it naturally when relevant, but don't recap or list it in your narrative.
 `;
 
-export const STORY_TELLER_SYSTEM_PROMPT = `You are an imaginative and adaptive storyteller. Always stay in character as the storyteller. Respond with story only — no lists, no JSON, no choices.`;
+export const STORY_TELLER_SYSTEM_PROMPT = AI_INSTRUCTIONS_PROMPT;
 
 export const GM_SYSTEM_PROMPT = GM_MECHANICS_PROMPT;
 

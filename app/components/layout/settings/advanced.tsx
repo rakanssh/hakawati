@@ -287,8 +287,8 @@ export default function SettingsAdvanced() {
                 <div className="flex items-center gap-2">
                   <p className="text-sm text-muted-foreground">
                     <Trans>
-                      This is an extra author note that is injected early with
-                      other system prompts only during a <b>Continue</b> action.
+                      This is an extra author note that is injected near the end
+                      of the prompt only during a <b>Continue</b> action.
                     </Trans>
                   </p>
                 </div>

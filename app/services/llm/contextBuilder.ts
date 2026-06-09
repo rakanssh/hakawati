@@ -24,7 +24,7 @@ export interface BuiltContext {
 }
 
 /**
- * Builds context messages including tale description, author note, story cards, and conversation history.
+ * Builds context messages including AI-facing tale components, story cards, and conversation history.
  * Respects token budget and prioritizes recent messages.
  */
 export async function buildContext(

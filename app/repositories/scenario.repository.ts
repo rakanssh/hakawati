@@ -1,5 +1,6 @@
 import { getDb } from "@/services/db";
 import { normalizePromptComponents } from "@/lib/prompt-components";
+import { parseJsonValue, toUint8Array } from "@/lib/repository-utils";
 import {
   Scenario,
   ScenarioHead,
@@ -9,25 +10,6 @@ import {
 } from "@/types/context.type";
 import { ScenarioRow, PaginatedResponse } from "@/types/db.type";
 import { v4 as uuidv4 } from "uuid"; // TODO: replace with nanoid
-
-function toUint8Array(value: unknown): Uint8Array | null {
-  if (value === null || value === undefined) return null;
-  if (value instanceof Uint8Array) return value;
-  if (value instanceof ArrayBuffer) return new Uint8Array(value);
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-      try {
-        const arr = JSON.parse(trimmed);
-        if (Array.isArray(arr)) return new Uint8Array(arr as number[]);
-      } catch (_e) {
-        return null;
-      }
-    }
-    return null;
-  }
-  return null;
-}
 
 function toRow(id: string, s: Scenario, ts: number): ScenarioRow {
   const opening =
@@ -53,15 +35,6 @@ function toRow(id: string, s: Scenario, ts: number): ScenarioRow {
     created_at: ts,
     updated_at: ts,
   };
-}
-
-function parseJsonValue<T>(value: string | null | undefined): T | null {
-  if (!value) return null;
-  try {
-    return JSON.parse(value) as T;
-  } catch (_error) {
-    return null;
-  }
 }
 
 function fromRow(r: ScenarioRow): Scenario {

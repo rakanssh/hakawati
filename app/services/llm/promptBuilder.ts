@@ -37,8 +37,6 @@ interface BuildMessageParams {
     text: string;
     mode: LogEntryMode;
   };
-  description?: string;
-  authorNote?: string;
   components?: PromptComponent[];
   storyCards: StoryCard[];
   model: LLMModel;

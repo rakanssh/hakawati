@@ -10,30 +10,9 @@ import {
 import { saveScenario } from "@/services/scenario.service";
 import { PaginatedResponse } from "@/types/db.type";
 import { createTaleDTO, TaleHead, updateTaleDTO } from "@/types/tale.type";
-import {
-  PromptComponentType,
-  StoryCard,
-  StorybookCategory,
-  Scenario,
-} from "@/types/context.type";
+import { PromptComponentType, Scenario } from "@/types/context.type";
 import { normalizePromptComponents } from "@/lib/prompt-components";
-
-/**
- * Normalizes a story card by applying default values for missing fields.
- */
-function normalizeStoryCard(card: StoryCard): StoryCard {
-  const now = Date.now();
-  return {
-    id: card.id,
-    title: card.title,
-    triggers: card.triggers || [],
-    content: card.content,
-    category: card.category || StorybookCategory.UNCATEGORIZED,
-    isPinned: card.isPinned || false,
-    createdAt: card.createdAt || now,
-    updatedAt: card.updatedAt || now,
-  };
-}
+import { normalizeStoryCard } from "@/lib/story-card-utils";
 
 export async function initTale(tale: createTaleDTO): Promise<string> {
   const id = await createTale({

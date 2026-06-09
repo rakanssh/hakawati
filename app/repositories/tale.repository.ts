@@ -2,6 +2,7 @@ import { getDb } from "@/services/db";
 import { Tale, TaleHead } from "@/types/tale.type";
 import { LogEntry } from "@/types/log.type";
 import { normalizePromptComponents } from "@/lib/prompt-components";
+import { parseJsonValue, toUint8Array } from "@/lib/repository-utils";
 import {
   GameMode,
   PromptComponent,
@@ -33,34 +34,6 @@ function toRow(s: Tale): TaleRow {
     created_at: s.createdAt,
     updated_at: s.updatedAt,
   };
-}
-
-function toUint8Array(value: unknown): Uint8Array | null {
-  if (value === null || value === undefined) return null;
-  if (value instanceof Uint8Array) return value;
-  if (value instanceof ArrayBuffer) return new Uint8Array(value);
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-      try {
-        const arr = JSON.parse(trimmed);
-        if (Array.isArray(arr)) return new Uint8Array(arr as number[]);
-      } catch (_e) {
-        return null;
-      }
-    }
-    return null;
-  }
-  return null;
-}
-
-function parseJsonValue<T>(value: string | null | undefined): T | null {
-  if (!value) return null;
-  try {
-    return JSON.parse(value) as T;
-  } catch (_error) {
-    return null;
-  }
 }
 
 function fromRow(r: TaleRow): Tale {
