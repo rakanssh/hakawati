@@ -43,11 +43,13 @@ export function useLLMProviders(role: ModelRole = "narrator") {
 
       if (fetchedModels.length > 0) {
         const currentModel = useSettingsStore.getState().modelRoles[role].model;
-        if (
-          !currentModel ||
-          !fetchedModels.find((m) => m.id === currentModel.id)
-        ) {
+        const refreshedCurrentModel = fetchedModels.find(
+          (m) => m.id === currentModel?.id,
+        );
+        if (!currentModel || !refreshedCurrentModel) {
           setRoleModel(role, fetchedModels[0]);
+        } else {
+          setRoleModel(role, refreshedCurrentModel);
         }
       }
     } catch (error) {

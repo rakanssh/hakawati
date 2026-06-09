@@ -233,6 +233,27 @@ describe("role-aware LLM service", () => {
     });
   });
 
+  it("accepts camel-case supported voices from compatible model metadata", async () => {
+    fetchMock.mockResolvedValue(
+      responseJson({
+        data: [
+          {
+            id: "tts-compatible",
+            name: "TTS Compatible",
+            supportedVoices: ["Kore", "Puck"],
+          },
+        ],
+      }),
+    );
+
+    const models = await getRoleModels("textToSpeech");
+
+    expect(models[0]).toMatchObject({
+      id: "tts-compatible",
+      supportedVoices: ["Kore", "Puck"],
+    });
+  });
+
   it("rejects utility generation when the utility role is missing", async () => {
     const modelRoles = createDefaultModelRoles();
     modelRoles.narrator = {

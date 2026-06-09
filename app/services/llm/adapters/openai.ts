@@ -163,6 +163,7 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
             ),
           )
         : undefined;
+      const supportedVoices = readSupportedVoices(model);
 
       return {
         id: model.id ?? model.name,
@@ -172,11 +173,7 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
         supportsResponseFormat:
           supportedParameters?.includes("response_format"),
         supportsToolCalls,
-        supportedVoices: Array.isArray(model.supported_voices)
-          ? model.supported_voices.filter(
-              (voice: unknown): voice is string => typeof voice === "string",
-            )
-          : undefined,
+        supportedVoices,
       } satisfies LLMModel;
     });
   }
@@ -360,6 +357,21 @@ function readBlobWithFileReader(blob: Blob): Promise<ArrayBuffer> {
       reject(reader.error ?? new Error("Could not read audio data."));
     reader.readAsArrayBuffer(blob);
   });
+}
+
+function readSupportedVoices(
+  model: Record<string, unknown>,
+): string[] | undefined {
+  for (const key of ["supported_voices", "supportedVoices", "voices"]) {
+    const voices = model[key];
+    if (!Array.isArray(voices)) continue;
+    const supportedVoices = voices.filter(
+      (voice: unknown): voice is string =>
+        typeof voice === "string" && voice.trim().length > 0,
+    );
+    if (supportedVoices.length > 0) return [...new Set(supportedVoices)];
+  }
+  return undefined;
 }
 
 async function readErrorMessage(

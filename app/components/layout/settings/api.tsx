@@ -24,6 +24,8 @@ import {
   SettingsStack,
 } from "@/components/layout/settings/settings-layout";
 
+const CUSTOM_VOICE_SELECT_VALUE = "__custom__";
+
 function RoleTitle({ role }: { role: ModelRole }) {
   switch (role) {
     case "narrator":
@@ -91,7 +93,10 @@ function RoleApiSettings({ role }: { role: ModelRole }) {
     </span>
   );
   const supportedVoices = roleConfig.model?.supportedVoices ?? [];
-  const voiceListId = `tts-voices-${role}`;
+  const voiceSelectValue =
+    roleConfig.voice && supportedVoices.includes(roleConfig.voice)
+      ? roleConfig.voice
+      : CUSTOM_VOICE_SELECT_VALUE;
 
   useEffect(() => {
     setBaseUrl(roleConfig.baseUrl);
@@ -291,19 +296,37 @@ function RoleApiSettings({ role }: { role: ModelRole }) {
               )
             }
           >
-            <Input
-              list={supportedVoices.length > 0 ? voiceListId : undefined}
-              value={roleConfig.voice ?? ""}
-              onChange={(e) => setRoleVoice(role, e.target.value)}
-              placeholder={t`alloy`}
-            />
-            {supportedVoices.length > 0 && (
-              <datalist id={voiceListId}>
-                {supportedVoices.map((voice) => (
-                  <option key={voice} value={voice} />
-                ))}
-              </datalist>
-            )}
+            <div className="flex flex-col gap-2 sm:flex-row">
+              {supportedVoices.length > 0 && (
+                <Select
+                  value={voiceSelectValue}
+                  onValueChange={(value) => {
+                    if (value !== CUSTOM_VOICE_SELECT_VALUE) {
+                      setRoleVoice(role, value);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={CUSTOM_VOICE_SELECT_VALUE}>
+                      <Trans>Custom</Trans>
+                    </SelectItem>
+                    {supportedVoices.map((voice) => (
+                      <SelectItem key={voice} value={voice}>
+                        {voice}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Input
+                value={roleConfig.voice ?? ""}
+                onChange={(e) => setRoleVoice(role, e.target.value)}
+                placeholder={t`alloy`}
+              />
+            </div>
           </SettingsField>
         )}
       </div>
