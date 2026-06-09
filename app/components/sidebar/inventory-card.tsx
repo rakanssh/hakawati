@@ -1,11 +1,8 @@
 import { useTaleStore } from "@/store/useTaleStore";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { InventoryItem } from "./inventory-item";
 import { PlusIcon } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { AddIconButton } from "./add-icon-button";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -18,13 +15,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-
-const InventoryButton = ({ setOpen }: { setOpen: (open: boolean) => void }) => (
-  <AddIconButton onClick={() => setOpen(true)} ariaLabel="Add item" />
-);
+import { InlineEditableBadge } from "./inline-editable-badge";
+import {
+  SidebarSectionHeader,
+  sidebarChipClass,
+  sidebarEmptyLabelClass,
+} from "./sidebar-section";
 
 export function InventoryCard({ className }: { className?: string }) {
-  const { inventory, addToInventory } = useTaleStore();
+  const { inventory, addToInventory, updateItem, removeFromInventory } =
+    useTaleStore();
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState("");
@@ -41,29 +41,31 @@ export function InventoryCard({ className }: { className?: string }) {
 
   return (
     <div className={cn("relative flex flex-col overflow-hidden", className)}>
-      <div className="px-1 flex-shrink-0 pt-1 mt-2">
-        <div className="relative flex flex-row justify-between">
-          <div className="absolute end-0">
-            <InventoryButton setOpen={setOpen} />
-          </div>
-          <Label className="text-sm pb-1">
-            <Trans>Inventory</Trans>
-          </Label>
-        </div>
-        <Separator className="mb-1" />
-      </div>
+      <SidebarSectionHeader
+        actionLabel={t`Add item`}
+        onAction={() => setOpen(true)}
+      >
+        <Trans>Inventory</Trans>
+      </SidebarSectionHeader>
       <ScrollArea className="flex-1 min-h-0">
-        <div className="px-1 pb-1">
+        <div className="pt-3 pb-1">
           {inventory.length > 0 ? (
-            <ul className="flex flex-row flex-wrap gap-1">
+            <ul className="flex flex-row flex-wrap gap-1.5">
               {inventory.map((item) => (
                 <li key={item.id}>
-                  <InventoryItem item={item} />
+                  <InlineEditableBadge
+                    label={item.name}
+                    onRename={(newName) =>
+                      updateItem(item.id, { name: newName })
+                    }
+                    onRemove={() => removeFromInventory(item.id)}
+                    className={sidebarChipClass}
+                  />
                 </li>
               ))}
             </ul>
           ) : (
-            <Label className="text-muted-foreground text-xs">
+            <Label className={sidebarEmptyLabelClass}>
               <Trans>Nothing...</Trans>
             </Label>
           )}

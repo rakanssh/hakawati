@@ -2,7 +2,14 @@ import { useTaleStore } from "@/store/useTaleStore";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout";
 import { MobilePlayHeader } from "@/components/layout/mobile-play-header";
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  type CSSProperties,
+} from "react";
 import { ArrowDownIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -310,7 +317,12 @@ export default function Play() {
         <SidebarProvider
           defaultOpen={true}
           className="min-h-0 h-full"
-          style={{ height: "100%" }}
+          style={
+            {
+              height: "100%",
+              "--sidebar-width": "18rem",
+            } as CSSProperties
+          }
         >
           <AppSidebar
             style={

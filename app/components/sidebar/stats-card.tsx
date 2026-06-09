@@ -1,5 +1,4 @@
 import { useTaleStore } from "@/store/useTaleStore";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { PlusIcon } from "lucide-react";
@@ -8,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { InlineEditableBadge } from "./inline-editable-badge";
 import { InlineEditableNumber } from "./inline-editable-number";
 import { Stat } from "@/types/stats.type";
-import { AddIconButton } from "./add-icon-button";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -21,15 +19,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import {
+  SidebarSectionHeader,
+  sidebarChipClass,
+  sidebarEmptyLabelClass,
+} from "./sidebar-section";
 
 function ProgressBar({ stat }: { stat: Stat }) {
   const progress = (stat.value / stat.range[1]) * 100;
-  return <Progress value={progress} max={100} className="h-2 mt-1" />;
+  return (
+    <Progress
+      value={progress}
+      max={100}
+      className="mt-1.5 h-2.5 bg-sidebar-accent/55 dark:bg-sidebar-foreground/12"
+    />
+  );
 }
-
-const StatsButton = ({ setOpen }: { setOpen: (open: boolean) => void }) => (
-  <AddIconButton onClick={() => setOpen(true)} ariaLabel="Add stat" />
-);
 
 export function StatsCard({ className }: { className?: string }) {
   const { stats, addToStats, updateStat, removeFromStats } = useTaleStore();
@@ -63,28 +68,23 @@ export function StatsCard({ className }: { className?: string }) {
 
   return (
     <div className={cn("relative flex flex-col overflow-hidden", className)}>
-      <div className="px-1 flex-shrink-0 pt-1 mt-1">
-        <div className="relative flex flex-row justify-between">
-          <div className="absolute end-0">
-            <StatsButton setOpen={setOpen} />
-          </div>
-          <Label className="text-sm pb-1">
-            <Trans>Stats</Trans>
-          </Label>
-        </div>
-        <Separator className="mb-1" />
-      </div>
+      <SidebarSectionHeader
+        actionLabel={t`Add stat`}
+        onAction={() => setOpen(true)}
+      >
+        <Trans>Stats</Trans>
+      </SidebarSectionHeader>
       <ScrollArea className="flex-1 min-h-0">
-        <div className="px-1 pb-1">
+        <div className="pt-3 pb-1">
           {stats.length === 0 ? (
-            <Label className="text-muted-foreground text-xs">
+            <Label className={sidebarEmptyLabelClass}>
               <Trans>Nothing...</Trans>
             </Label>
           ) : (
             <div className="flex flex-col gap-4">
               {stats.map((stat) => (
-                <div key={stat.name} className="flex flex-col gap-1">
-                  <div className="flex flex-row justify-between items-baseline">
+                <div key={stat.name} className="flex flex-col gap-1.5">
+                  <div className="flex flex-row items-center justify-between gap-3">
                     <InlineEditableBadge
                       label={stat.name}
                       onRename={(newName) => {
@@ -98,23 +98,25 @@ export function StatsCard({ className }: { className?: string }) {
                         updateStat(stat.name, { name: newName.trim() });
                       }}
                       onRemove={() => removeFromStats(stat.name)}
-                      className="cursor-pointer border-primary/35 text-wrap whitespace-normal text-start"
+                      className={sidebarChipClass}
                     />
-                    <div className="flex items-baseline gap-1">
+                    <div className="flex shrink-0 items-baseline gap-1 text-sm text-sidebar-foreground/65">
                       <InlineEditableNumber
                         value={stat.value}
                         min={stat.range[0]}
                         max={stat.range[1]}
                         step={1}
+                        className="font-mono text-sidebar-foreground/80 hover:text-sidebar-foreground"
                         onChange={(newValue) =>
                           updateStat(stat.name, { value: newValue })
                         }
                       />
-                      /
+                      <span>/</span>
                       <InlineEditableNumber
                         value={stat.range[1]}
                         min={stat.value}
                         step={1}
+                        className="font-mono text-sidebar-foreground/70 hover:text-sidebar-foreground"
                         onChange={(newValue) =>
                           updateStat(stat.name, {
                             range: [stat.range[0], newValue],
