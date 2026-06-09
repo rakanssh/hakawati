@@ -64,7 +64,9 @@ describe("quickstart tale generator", () => {
     );
     expect(prompt).toContain(QUICKSTART_AUTHOR_NOTE);
     expect(prompt).toContain("do not include an authorNote field");
-    expect(prompt).toContain("description is saved as persistent AI context");
+    expect(prompt).toContain(
+      "description is saved as the tale's persistent story context",
+    );
     expect(prompt).toContain(
       "openingText is saved as the first visible tale entry",
     );
@@ -74,14 +76,12 @@ describe("quickstart tale generator", () => {
   });
 
   it("describes quickstart output fields by runtime use", () => {
+    expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain('"description"');
     expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain(
-      "Durable AI-facing scenario context",
+      "Core tale context sent with every future turn",
     );
     expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain(
-      "persistent internal context for future model turns",
-    );
-    expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain(
-      "not as player-facing promotional copy",
+      "reusable continuity material",
     );
     expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain(
       "The first visible tale entry",

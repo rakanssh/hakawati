@@ -97,7 +97,7 @@ Given a user's guided quickstart answers, generate a complete tale starter as va
 
 {
   "name": "A creative tale title",
-  "description": "Durable AI-facing scenario context: stable facts about the setting, premise, player role, immediate situation, constraints, important tensions, and what must remain true (2-5 compact paragraphs)",
+  "description": "Core tale context sent with every future turn: stable facts about the setting, premise, player role, immediate situation, constraints, important tensions, and what must remain true (2-5 compact paragraphs)",
   "openingText": "The first visible tale entry: 1-3 short paragraphs of immersive opening narration that begins in-scene",
   "storyCards": [
     {
@@ -116,9 +116,8 @@ Given a user's guided quickstart answers, generate a complete tale starter as va
 }
 
 Guidelines:
-- Treat "description" as persistent internal context for future model turns.
-- Do not duplicate the full opening scene inside "description"; use it to preserve stable scenario truth.
-- Treat "openingText" as the first visible story message. It should orient broadly, narrow to the immediate scene, and end with unresolved pressure the player can respond to.
+- Shape "description" as reusable continuity material the future storyteller can rely on after the opening turn. (Do not include the opening text or hook in the description)
+- Shape "openingText" as the first visible story message. It should orient broadly, narrow to the immediate scene, and end with unresolved pressure the player can respond to.
 - Do not make "openingText" a lore dump.
 - Generate a playable opening, not a complete plot summary or completed plot arc.
 - Do not include choices, numbered options, JSON outside the requested object, markdown, or meta-commentary.

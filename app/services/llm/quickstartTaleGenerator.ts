@@ -90,7 +90,7 @@ export function buildQuickstartTalePrompt(
   parts.push(
     "",
     "Runtime use of generated fields:",
-    "- description is saved as persistent AI context for future turns.",
+    "- description is saved as the tale's persistent story context and sent to the model on future turns.",
     "- openingText is saved as the first visible tale entry and starts play immediately.",
     "- The user will not review the generated setup before play begins.",
     "",
