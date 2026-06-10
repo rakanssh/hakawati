@@ -56,10 +56,6 @@ export async function getScenarioById(id: string): Promise<Scenario | null> {
   };
 }
 
-export async function createScenario(scenario: Scenario): Promise<string> {
-  return saveScenario(scenario);
-}
-
 export async function listAllScenarios(): Promise<
   Array<{ id: string; scenario: Scenario; updatedAt: number }>
 > {

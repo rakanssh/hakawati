@@ -69,26 +69,3 @@ export function normalizePromptComponents(
 
   return normalized;
 }
-
-export function legacyComponentsFromText(input: {
-  plot?: string;
-  authorNote?: string;
-  opening?: string;
-  includeOpening?: boolean;
-}): PromptComponent[] {
-  const components = [
-    createPromptComponent(PromptComponentType.PLOT, input.plot ?? ""),
-    createPromptComponent(
-      PromptComponentType.AUTHOR_NOTE,
-      input.authorNote ?? "",
-    ),
-  ];
-
-  if (input.includeOpening) {
-    components.push(
-      createPromptComponent(PromptComponentType.OPENING, input.opening ?? ""),
-    );
-  }
-
-  return components;
-}

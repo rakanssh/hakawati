@@ -59,15 +59,7 @@ export default function SettingsModel() {
 
   return (
     <SettingsStack>
-      <SettingsPanel
-        title={<Trans>Core generation</Trans>}
-        description={
-          <Trans>
-            Set the token budget and creativity controls used for new AI
-            responses.
-          </Trans>
-        }
-      >
+      <SettingsPanel title={<Trans>Core generation</Trans>}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <SettingsField
             label={
@@ -175,14 +167,7 @@ export default function SettingsModel() {
         </div>
       </SettingsPanel>
 
-      <SettingsPanel
-        title={<Trans>Advanced sampling</Trans>}
-        description={
-          <Trans>
-            Leave these empty to let the selected provider use its defaults.
-          </Trans>
-        }
-      >
+      <SettingsPanel title={<Trans>Advanced sampling</Trans>}>
         <Accordion type="single" collapsible className="w-full">
           <AccordionItem value="sampling">
             <AccordionTrigger>

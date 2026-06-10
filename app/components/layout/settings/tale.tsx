@@ -58,12 +58,7 @@ export default function SettingsTale() {
 
   return (
     <SettingsStack>
-      <SettingsPanel
-        title={<Trans>Tale mode</Trans>}
-        description={
-          <Trans>Choose how much control the AI has over this tale.</Trans>
-        }
-      >
+      <SettingsPanel title={<Trans>Tale mode</Trans>}>
         <SettingsField
           label={<Trans>Game Mode</Trans>}
           description={getGamemodeDescription(gameMode)}

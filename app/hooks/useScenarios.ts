@@ -10,7 +10,6 @@ import {
 } from "@/services/scenario.service";
 import { useLoadTale } from "@/hooks/useGameSaves";
 import { GameMode, Scenario, ScenarioHead } from "@/types/context.type";
-import { legacyComponentsFromText } from "@/lib/prompt-components";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
 import { copyTextToClipboard, readTextFromClipboard } from "@/lib/clipboard";
 import { toast } from "sonner";
@@ -59,24 +58,8 @@ export function useScenarioEditor(initial?: Partial<Scenario>) {
     id: initial?.id ?? "",
     name: initial?.name ?? "Untitled Scenario",
     initialGameMode: initial?.initialGameMode ?? GameMode.STORY_TELLER,
-    description:
-      initial?.description ??
-      // Backward-compatible imported v1 values before normalization.
-      (initial as Partial<Scenario> & { initialDescription?: string })
-        ?.initialDescription ??
-      "",
-    components:
-      initial?.components ??
-      legacyComponentsFromText({
-        plot: (initial as Partial<Scenario> & { initialDescription?: string })
-          ?.initialDescription,
-        authorNote: (
-          initial as Partial<Scenario> & { initialAuthorNote?: string }
-        )?.initialAuthorNote,
-        opening: (initial as Partial<Scenario> & { openingText?: string })
-          ?.openingText,
-        includeOpening: true,
-      }),
+    description: initial?.description ?? "",
+    components: initial?.components ?? [],
     initialStats: initial?.initialStats ?? [],
     initialInventory: initial?.initialInventory ?? [],
     initialStoryCards: initial?.initialStoryCards ?? [],

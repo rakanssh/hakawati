@@ -52,12 +52,7 @@ export default function SettingsGame() {
 
   return (
     <SettingsStack>
-      <SettingsPanel
-        title={<Trans>Look and language</Trans>}
-        description={
-          <Trans>Set the visual style, language, and reading direction.</Trans>
-        }
-      >
+      <SettingsPanel title={<Trans>Look and language</Trans>}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <SettingsField label={<Trans>Theme</Trans>}>
             <Select
@@ -117,14 +112,7 @@ export default function SettingsGame() {
         </div>
       </SettingsPanel>
 
-      <SettingsPanel
-        title={<Trans>Reading comfort</Trans>}
-        description={
-          <Trans>
-            Adjust interface density, story text size, and font choice.
-          </Trans>
-        }
-      >
+      <SettingsPanel title={<Trans>Reading comfort</Trans>}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <SettingsField label={<Trans>UI Scale (0.8 - 1.5)</Trans>}>
             <div className="flex flex-row items-center gap-2">
@@ -189,12 +177,7 @@ export default function SettingsGame() {
         </div>
       </SettingsPanel>
 
-      <SettingsPanel
-        title={<Trans>AI thinking</Trans>}
-        description={
-          <Trans>Choose how much model reasoning appears in the log.</Trans>
-        }
-      >
+      <SettingsPanel title={<Trans>AI thinking</Trans>}>
         <SettingsField label={<Trans>Thinking Visibility</Trans>}>
           <Select
             value={thinkingVisibility}

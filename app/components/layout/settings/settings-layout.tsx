@@ -18,12 +18,10 @@ export function SettingsStack({
 
 export function SettingsPanel({
   title,
-  description: _description,
   className,
   children,
 }: {
   title: ReactNode;
-  description?: ReactNode;
   className?: string;
   children: ReactNode;
 }) {
