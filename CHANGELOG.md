@@ -14,6 +14,10 @@ All notable changes to this project are documented in this file.
 - Refined the default AI Instructions for interactive fiction narration without story-only or JSON-specific output restrictions. (Reset your customized prompts to get the new defaults)
 - Quickstart generation can now create optional Author's Note components when needed.
 
+### Fixed
+
+- Fixed tale and scenario library cards stretching awkwardly when long titles appear in the same grid row.
+
 ## [v0.14.0] - 2026-06-09
 
 ### Added
