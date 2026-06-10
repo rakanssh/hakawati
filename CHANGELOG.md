@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Scenario and tale AI Components for per-story Plot, Author's Note, AI Instructions, and scenario opening text.
+- Scenario and tale descriptions are now library-facing summaries, while AI-facing context lives in dedicated components.
+
 ## [v0.14.0] - 2026-06-09
 
 ### Added
