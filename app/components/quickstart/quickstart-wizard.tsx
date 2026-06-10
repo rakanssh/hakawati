@@ -28,6 +28,7 @@ import {
 import { generateQuickstartTale } from "@/services/llm/quickstartTaleGenerator";
 import { createPromptComponent } from "@/lib/prompt-components";
 import { PromptComponentType } from "@/types/context.type";
+import type { PromptComponent } from "@/types/context.type";
 import { ArrowLeftIcon } from "lucide-react";
 
 export interface QuickstartState {
@@ -512,13 +513,23 @@ export function QuickstartPage() {
         abort.signal,
       );
 
+      const components: PromptComponent[] = [
+        createPromptComponent(PromptComponentType.PLOT, generated.plot),
+      ];
+      if (generated.authorNote.trim()) {
+        components.push(
+          createPromptComponent(
+            PromptComponentType.AUTHOR_NOTE,
+            generated.authorNote,
+          ),
+        );
+      }
+
       const taleId = await initTale({
         name: generated.name,
         description: generated.description,
         thumbnail: null,
-        components: [
-          createPromptComponent(PromptComponentType.PLOT, generated.plot),
-        ],
+        components,
         storyCards: generated.storyCards,
         scenarioId: undefined,
         stats: generated.stats,

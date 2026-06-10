@@ -64,6 +64,7 @@ describe("quickstart tale generator", () => {
     expect(prompt).toContain(
       "plot is saved as the tale's persistent story context",
     );
+    expect(prompt).toContain("authorNote is optional high-influence guidance");
     expect(prompt).toContain("description is saved as a user-facing tale");
     expect(prompt).toContain(
       "openingText is saved as the first visible tale entry",
@@ -77,6 +78,10 @@ describe("quickstart tale generator", () => {
     expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain('"description"');
     expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain(
       "Core tale context sent with every future turn",
+    );
+    expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain('"authorNote"');
+    expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain(
+      "shown near the end of the prompt and has strong influence",
     );
     expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain(
       "reusable continuity material",
@@ -120,6 +125,7 @@ describe("quickstart tale generator", () => {
       content: JSON.stringify({
         name: "Ash Over Moonwell",
         description: "Mira stands at the edge of a wounded kingdom.",
+        authorNote: "Keep the prose ash-dry and ominous.",
         openingText: "Smoke beads on your tongue.",
         storyCards: [
           {
@@ -164,6 +170,7 @@ describe("quickstart tale generator", () => {
     expect(result).toMatchObject({
       name: "Ash Over Moonwell",
       description: "Mira stands at the edge of a wounded kingdom.",
+      authorNote: "Keep the prose ash-dry and ominous.",
       openingText: "Smoke beads on your tongue.",
       stats: [
         { name: "HP", value: 18, range: [0, 100], description: "Health" },
@@ -208,6 +215,7 @@ describe("quickstart tale generator", () => {
 
     expect(result.stats).toEqual([]);
     expect(result.inventory).toEqual([]);
+    expect(result.authorNote).toBe("");
     expect(result.name).toBe("Glass Rain");
   });
 

@@ -67,7 +67,7 @@ Given a user's description, generate a complete scenario as valid JSON with the 
   "initialGameMode": "gm" or "story_teller",
   "description": "Short user-facing scenario description for browsing (1-2 sentences)",
   "plot": "AI-facing stable premise, world context, player role, constraints, tensions, and what must remain true (2-5 compact paragraphs)",
-  "authorNote": "Tone and style guidance for the AI storyteller (1 short paragraph)",
+  "authorNote": "Optional high-influence style and structure guidance for the AI storyteller (1 short paragraph)",
   "initialStats": [
     { "name": "Stat Name", "value": 50, "range": [0, 100] }
   ],
@@ -92,7 +92,7 @@ Guidelines:
 - **initialInventory**: Include 0-5 starting items appropriate to the scenario. 
 - **initialStoryCards**: Include 0-6 cards for key characters, places, items, or concepts. Each card needs an id (short unique string), title, trigger keywords, content, and a category: one of "Character", "Thing", "Place", or "Concept".
 - **openingText**: Write vivid, immersive prose that drops the player into the scene. Do not include choices or meta-commentary.
-- **authorNote**: Brief guidance on the tone and instructions for the narrator.
+- **authorNote**: Optional guidance for writing style, tone, pacing, structure, or recurring narrative devices. It is shown near the end of the prompt and has strong influence.
 
 Respond ONLY with valid JSON. No markdown fences, no explanation, no extra text.`;
 
@@ -104,6 +104,7 @@ Given a user's guided quickstart answers, generate a complete tale starter as va
   "name": "A creative tale title",
   "description": "Short user-facing tale description for browsing saved tales (1-2 sentences)",
   "plot": "Core tale context sent with every future turn: stable facts about the setting, premise, player role, immediate situation, constraints, important tensions, and what must remain true (2-5 compact paragraphs)",
+  "authorNote": "Optional high-influence style and structure guidance for the AI storyteller (omit or use an empty string if not needed)",
   "openingText": "The first visible tale entry: 1-3 short paragraphs of immersive opening narration that begins in-scene",
   "storyCards": [
     {
@@ -124,6 +125,7 @@ Given a user's guided quickstart answers, generate a complete tale starter as va
 Guidelines:
 - Shape "description" as a concise user-facing summary.
 - Shape "plot" as reusable continuity material the future storyteller can rely on after the opening turn. (Do not include the opening text or hook in the plot)
+- Shape "authorNote" as optional guidance for writing style, tone, pacing, structure, or recurring narrative devices. It is shown near the end of the prompt and has strong influence.
 - Shape "openingText" as the first visible story message. It should orient broadly, narrow to the immediate scene, and end with unresolved pressure the player can respond to.
 - Do not make "openingText" a lore dump.
 - Generate a playable opening, not a complete plot summary or completed plot arc.
@@ -133,6 +135,5 @@ Guidelines:
 - Story card content must name the card's subject directly because only the content is injected into later model context.
 - For Game Master tales, include 1-4 relevant stats and 0-5 starting inventory items.
 - For Story Teller tales, stats and inventory may be empty arrays.
-- Do not generate or include an author note field.
 
 Respond ONLY with valid JSON. No markdown fences, no explanation, no extra text.`;
