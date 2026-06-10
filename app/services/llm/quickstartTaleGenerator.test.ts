@@ -64,7 +64,7 @@ describe("quickstart tale generator", () => {
     expect(prompt).toContain(
       "plot is saved as the tale's persistent story context",
     );
-    expect(prompt).toContain("authorNote is optional high-influence guidance");
+    expect(prompt).toContain("Use it only for specific user-requested style");
     expect(prompt).toContain("description is saved as a user-facing tale");
     expect(prompt).toContain(
       "openingText is saved as the first visible tale entry",
@@ -81,7 +81,7 @@ describe("quickstart tale generator", () => {
     );
     expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain('"authorNote"');
     expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain(
-      "shown near the end of the prompt and has strong influence",
+      "Otherwise use an empty string",
     );
     expect(QUICKSTART_TALE_GENERATOR_PROMPT).toContain(
       "reusable continuity material",

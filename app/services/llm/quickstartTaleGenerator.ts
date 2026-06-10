@@ -90,7 +90,7 @@ export function buildQuickstartTalePrompt(
     "Runtime use of generated fields:",
     "- description is saved as a user-facing tale description for browsing saved tales. It is not sent to the model.",
     "- plot is saved as the tale's persistent story context and sent to the model on future turns.",
-    "- authorNote is optional high-influence guidance for style, tone, pacing, structure, or recurring narrative devices. It is shown near the end of the prompt.",
+    "- authorNote is optional high-influence guidance shown near the end of the prompt. Use it only for specific user-requested style, tone, pacing, structure, or recurring narrative devices.",
     "- openingText is saved as the first visible tale entry and starts play immediately.",
     "- The user will not review the generated setup before play begins.",
   );
