@@ -4,7 +4,6 @@ import { QUICKSTART_TALE_GENERATOR_PROMPT } from "@/prompts/system";
 import {
   buildQuickstartTalePrompt,
   generateQuickstartTale,
-  QUICKSTART_AUTHOR_NOTE,
 } from "./quickstartTaleGenerator";
 
 const { sendRoleChatMock, resolveModelRoleMock } = vi.hoisted(() => ({
@@ -43,7 +42,7 @@ describe("quickstart tale generator", () => {
     });
   });
 
-  it("builds a prompt from guided answers and fixed author note rules", () => {
+  it("builds a prompt from guided answers and runtime field usage", () => {
     const prompt = buildQuickstartTalePrompt({
       ...baseAnswers,
       world: "Custom: clockwork desert",
@@ -62,8 +61,6 @@ describe("quickstart tale generator", () => {
     expect(prompt).toContain(
       "Additional user details: Include a vanished caravan.",
     );
-    expect(prompt).toContain(QUICKSTART_AUTHOR_NOTE);
-    expect(prompt).toContain("do not include an authorNote field");
     expect(prompt).toContain(
       "plot is saved as the tale's persistent story context",
     );

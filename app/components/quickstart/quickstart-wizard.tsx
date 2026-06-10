@@ -25,10 +25,7 @@ import {
   isModelRoleConfigured,
   useSettingsStore,
 } from "@/store/useSettingsStore";
-import {
-  generateQuickstartTale,
-  QUICKSTART_AUTHOR_NOTE,
-} from "@/services/llm/quickstartTaleGenerator";
+import { generateQuickstartTale } from "@/services/llm/quickstartTaleGenerator";
 import { createPromptComponent } from "@/lib/prompt-components";
 import { PromptComponentType } from "@/types/context.type";
 import { ArrowLeftIcon } from "lucide-react";
@@ -521,10 +518,6 @@ export function QuickstartPage() {
         thumbnail: null,
         components: [
           createPromptComponent(PromptComponentType.PLOT, generated.plot),
-          createPromptComponent(
-            PromptComponentType.AUTHOR_NOTE,
-            QUICKSTART_AUTHOR_NOTE,
-          ),
         ],
         storyCards: generated.storyCards,
         scenarioId: undefined,

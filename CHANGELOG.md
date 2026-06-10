@@ -9,6 +9,10 @@ All notable changes to this project are documented in this file.
 - Scenario and tale AI Components for per-story Plot, Author's Note, AI Instructions, and scenario opening text.
 - Scenario and tale descriptions are now library-facing summaries, while AI-facing context lives in dedicated components.
 
+### Changed
+
+- Refined the default AI Instructions for interactive fiction narration without story-only or JSON-specific output restrictions. (Reset your customized prompts to get the new defaults)
+
 ## [v0.14.0] - 2026-06-09
 
 ### Added

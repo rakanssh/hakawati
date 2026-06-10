@@ -10,13 +10,6 @@ import { resolveModelRole, sendRoleChat } from "@/services/llm";
 import type { ChatMessage, ChatRequest } from "./schema";
 import { normalizeStorybookCategory } from "@/lib/story-card-utils";
 
-export const QUICKSTART_AUTHOR_NOTE = `- use present tense and second person pronouns.
-- show, don't simply tell. Using concrete sensory details over abstract descriptions.
-- vary sentence rhythm for tension and atmosphere
-- vary dialogue style and grammar to fit each character's personality
-- do not make decisions for the player character
-- keep responses short.`;
-
 export type QuickstartTaleAnswers = {
   gameMode: GameMode;
   world: string;
@@ -97,9 +90,6 @@ export function buildQuickstartTalePrompt(
     "- plot is saved as the tale's persistent story context and sent to the model on future turns.",
     "- openingText is saved as the first visible tale entry and starts play immediately.",
     "- The user will not review the generated setup before play begins.",
-    "",
-    "The saved tale will use this fixed author note. Follow it when writing the plot and openingText, but do not include an authorNote field in the JSON:",
-    QUICKSTART_AUTHOR_NOTE,
   );
 
   return parts.join("\n");
