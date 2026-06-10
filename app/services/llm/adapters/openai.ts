@@ -13,6 +13,7 @@ import { parseOpenAIStream } from "../streaming";
 import { fetch } from "@tauri-apps/plugin-http";
 import { GM_TOOLS, ToolCall } from "../tools";
 import { ModelRole } from "@/types";
+import { repairCommonMojibake } from "@/lib/utils";
 
 export interface OpenAiConnection {
   baseUrl: string;
@@ -91,8 +92,8 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
             (typeof message.thinking === "string" && message.thinking) ||
             "";
           const response: ChatResponse = {
-            content: message.content || "",
-            ...(thinking ? { thinking } : {}),
+            content: repairCommonMojibake(message.content || ""),
+            ...(thinking ? { thinking: repairCommonMojibake(thinking) } : {}),
             raw: json,
             usage: json.usage,
           };
