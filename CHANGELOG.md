@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## [v0.15.1] - 2026-06-11
+
+### Fixed
+
+- Confirmation dialogs before deleting tales or scenarios from their library pages.
+- A confirmation dialog before deleting AI components that contain text.
+
 ## [v0.15.0] - 2026-06-11
 
 ### Added

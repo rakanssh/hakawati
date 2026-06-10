@@ -1,4 +1,14 @@
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -29,10 +39,19 @@ import {
 } from "lucide-react";
 import placeholderImage from "@/assets/scen-ph.png";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
+
+type PendingTaleDelete = {
+  id: string;
+  name: string;
+};
 
 export default function TalesHome() {
   const navigate = useNavigate();
   const { t } = useLingui();
+  const [pendingDelete, setPendingDelete] = useState<PendingTaleDelete | null>(
+    null,
+  );
   const {
     items,
     loading,
@@ -46,8 +65,14 @@ export default function TalesHome() {
     saveAsScenario,
   } = useTalesList();
 
-  const handleClickDelete = async (id: string) => {
-    deleteTale(id);
+  const handleClickDelete = (tale: PendingTaleDelete) => {
+    setPendingDelete(tale);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    await deleteTale(pendingDelete.id);
+    setPendingDelete(null);
   };
 
   const handleSaveAsScenario = async (id: string) => {
@@ -159,7 +184,7 @@ export default function TalesHome() {
                         )}
                         <DropdownMenuItem
                           onSelect={(e) => e.preventDefault()}
-                          onClick={() => handleClickDelete(id)}
+                          onClick={() => handleClickDelete({ id, name })}
                           variant="destructive"
                           className="text-xs"
                         >
@@ -231,6 +256,37 @@ export default function TalesHome() {
           </Button>
         </div>
       )}
+      <AlertDialog
+        open={Boolean(pendingDelete)}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              <Trans>Delete this tale?</Trans>
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <Trans>
+                This will permanently delete {pendingDelete?.name} and its saved
+                history. This action cannot be undone.
+              </Trans>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              <Trans>Cancel</Trans>
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              <Trans>Delete</Trans>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

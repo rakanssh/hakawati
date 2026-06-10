@@ -1,5 +1,15 @@
 import { Button } from "@/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -15,6 +25,7 @@ import {
 } from "@/types/context.type";
 import { PlusIcon, TrashIcon } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 const COMPONENT_LABELS: Record<PromptComponentType, string> = {
@@ -64,12 +75,26 @@ export function PromptComponentsEditor({
   onRemove,
 }: PromptComponentsEditorProps) {
   const { t } = useLingui();
+  const [componentPendingRemoval, setComponentPendingRemoval] =
+    useState<PromptComponent | null>(null);
   const orderedComponents = [...components].sort(
     (a, b) => FIXED_ORDER.indexOf(a.type) - FIXED_ORDER.indexOf(b.type),
   );
   const missingTypes = allowedTypes.filter(
     (type) => !components.some((component) => component.type === type),
   );
+  const handleRemove = (component: PromptComponent) => {
+    if (component.content.trim()) {
+      setComponentPendingRemoval(component);
+      return;
+    }
+    onRemove(component.id);
+  };
+  const confirmRemove = () => {
+    if (!componentPendingRemoval) return;
+    onRemove(componentPendingRemoval.id);
+    setComponentPendingRemoval(null);
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -139,7 +164,7 @@ export function PromptComponentsEditor({
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => onRemove(component.id)}
+                    onClick={() => handleRemove(component)}
                     aria-label={t`Remove component`}
                   >
                     <TrashIcon className="h-4 w-4" />
@@ -157,6 +182,37 @@ export function PromptComponentsEditor({
           );
         })
       )}
+      <AlertDialog
+        open={Boolean(componentPendingRemoval)}
+        onOpenChange={(open) => {
+          if (!open) setComponentPendingRemoval(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              <Trans>Delete this AI component?</Trans>
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <Trans>
+                This will permanently delete the component content. This action
+                cannot be undone.
+              </Trans>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              <Trans>Cancel</Trans>
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmRemove}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              <Trans>Delete</Trans>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
