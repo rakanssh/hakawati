@@ -68,8 +68,8 @@ msgid "{0} tale"
 msgstr "{0} tale"
 
 #: app/components/layout/settings/tale.tsx:128
-msgid "{authorNoteChars} characters • ~{authorNoteTokens} tokens"
-msgstr "{authorNoteChars} characters • ~{authorNoteTokens} tokens"
+#~ msgid "{authorNoteChars} characters • ~{authorNoteTokens} tokens"
+#~ msgstr "{authorNoteChars} characters • ~{authorNoteTokens} tokens"
 
 #: app/data/quickstart-presets.ts:448
 #~ msgid "{characterName} has found signs of other survivors, a campfire still warm, a message painted on a wall, tire tracks in the mud. Following these signs will be a risk. Ignoring them might be worse."
@@ -95,7 +95,11 @@ msgstr "{authorNoteChars} characters • ~{authorNoteTokens} tokens"
 #~ msgid "{characterName}'s ship, station, or habitat picks up a signal that should not exist. It is old, far older than it should be, or it is coming from somewhere that should be empty. Someone has to investigate."
 #~ msgstr "{characterName}'s ship, station, or habitat picks up a signal that should not exist. It is old, far older than it should be, or it is coming from somewhere that should be empty. Someone has to investigate."
 
-#: app/components/layout/settings/tale.tsx:107
+#: app/components/prompt-components/PromptComponentsEditor.tsx:136
+msgid "{chars} characters • ~{tokens} tokens"
+msgstr "{chars} characters • ~{tokens} tokens"
+
+#: app/components/layout/settings/tale.tsx:97
 msgid "{descriptionChars} characters • ~{descriptionTokens} tokens"
 msgstr "{descriptionChars} characters • ~{descriptionTokens} tokens"
 
@@ -146,6 +150,11 @@ msgstr "100"
 #~ msgid "a setting defined by the theme you provided, grounded in the tone and situations common to that type of story."
 #~ msgstr "a setting defined by the theme you provided, grounded in the tone and situations common to that type of story."
 
+#: app/components/layout/settings/tale.tsx:104
+#: app/components/scenario/ScenarioBasicsFields.tsx:65
+msgid "A short library-facing summary. It is not sent to the AI."
+msgstr "A short library-facing summary. It is not sent to the AI."
+
 #: app/data/quickstart-presets.ts:149
 #~ msgid "A small bundle of incense sticks"
 #~ msgstr "A small bundle of incense sticks"
@@ -178,6 +187,7 @@ msgstr "About"
 msgid "Act"
 msgstr "Act"
 
+#: app/components/prompt-components/PromptComponentsEditor.tsx:101
 #: app/components/storybook/StorybookEditor.tsx:213
 msgid "Add"
 msgstr "Add"
@@ -254,14 +264,14 @@ msgstr "Add stat name"
 #~ msgstr "Address the player directly in second person. Write in present tense. Show, do not simply tell. Use concrete sensory details over abstract descriptions. Vary sentence rhythm. Short, sharp lines for tension. Longer, flowing passages for atmosphere. Avoid acting on behalf of the player."
 
 #: app/components/layout/settings/game.tsx:123
-msgid "Adjust interface density, story text size, and font choice."
-msgstr "Adjust interface density, story text size, and font choice."
+#~ msgid "Adjust interface density, story text size, and font choice."
+#~ msgstr "Adjust interface density, story text size, and font choice."
 
 #: app/components/layout/settings/settings-modal.tsx:99
 msgid "Adjust the active tale mode, setup, and author notes."
 msgstr "Adjust the active tale mode, setup, and author notes."
 
-#: app/components/layout/settings/model.tsx:179
+#: app/components/layout/settings/model.tsx:170
 msgid "Advanced sampling"
 msgstr "Advanced sampling"
 
@@ -271,7 +281,16 @@ msgstr "Advanced sampling"
 msgid "AI"
 msgstr "AI"
 
-#: app/components/layout/settings/tale.tsx:41
+#: app/components/layout/settings/tale.tsx:117
+#: app/components/prompt-components/PromptComponentsEditor.tsx:80
+msgid "AI Components"
+msgstr "AI Components"
+
+#: app/components/prompt-components/PromptComponentsEditor.tsx:90
+msgid "AI Instructions still apply in Game Master mode; GM mechanics and tool behavior are added separately."
+msgstr "AI Instructions still apply in Game Master mode; GM mechanics and tool behavior are added separately."
+
+#: app/components/layout/settings/tale.tsx:43
 msgid "AI runs the full game: it tells the story, manages inventory, and updates stats. Best with smarter models. Requires tool calling to be supported by the model."
 msgstr "AI runs the full game: it tells the story, manages inventory, and updates stats. Best with smarter models. Requires tool calling to be supported by the model."
 
@@ -279,15 +298,15 @@ msgstr "AI runs the full game: it tells the story, manages inventory, and update
 msgid "AI Setup"
 msgstr "AI Setup"
 
-#: app/components/layout/settings/tale.tsx:42
+#: app/components/layout/settings/tale.tsx:44
 msgid "AI tells the story only: no inventory or stats are tracked, just narrative. Works with any model."
 msgstr "AI tells the story only: no inventory or stats are tracked, just narrative. Works with any model."
 
-#: app/components/layout/settings/game.tsx:193
+#: app/components/layout/settings/game.tsx:180
 msgid "AI thinking"
 msgstr "AI thinking"
 
-#: app/components/layout/settings/game.tsx:210
+#: app/components/layout/settings/game.tsx:193
 #: app/components/storybook/CategoryFilter.tsx:32
 msgid "All"
 msgstr "All"
@@ -312,6 +331,10 @@ msgstr "alloy"
 msgid "Anything else before the tale begins?"
 msgstr "Anything else before the tale begins?"
 
+#: app/components/quickstart/quickstart-wizard.tsx:225
+msgid "Anything the tale should know before it begins..."
+msgstr "Anything the tale should know before it begins..."
+
 #: app/components/layout/settings/api.tsx:241
 msgid "API Key"
 msgstr "API Key"
@@ -333,14 +356,14 @@ msgstr "Appearance"
 #~ msgstr "assigned to the edge of known space, more interested in unknown phenomena than in safety protocols"
 
 #: app/components/layout/settings/tale.tsx:125
-msgid "Author Notes"
-msgstr "Author Notes"
+#~ msgid "Author Notes"
+#~ msgstr "Author Notes"
 
-#: app/components/layout/settings/advanced.tsx:321
+#: app/components/layout/settings/advanced.tsx:318
 msgid "Author's note injected during continue..."
 msgstr "Author's note injected during continue..."
 
-#: app/components/layout/settings/game.tsx:222
+#: app/components/layout/settings/game.tsx:205
 msgid "Auto-narrate"
 msgstr "Auto-narrate"
 
@@ -348,11 +371,11 @@ msgstr "Auto-narrate"
 msgid "Autofill"
 msgstr "Autofill"
 
-#: app/components/layout/settings/game.tsx:224
+#: app/components/layout/settings/game.tsx:207
 msgid "Automatically play new story narration after it finishes generating."
 msgstr "Automatically play new story narration after it finishes generating."
 
-#: app/components/quickstart/quickstart-wizard.tsx:648
+#: app/components/quickstart/quickstart-wizard.tsx:660
 msgid "Back"
 msgstr "Back"
 
@@ -464,12 +487,12 @@ msgid "Checking for updates..."
 msgstr "Checking for updates..."
 
 #: app/components/layout/settings/tale.tsx:62
-msgid "Choose how much control the AI has over this tale."
-msgstr "Choose how much control the AI has over this tale."
+#~ msgid "Choose how much control the AI has over this tale."
+#~ msgstr "Choose how much control the AI has over this tale."
 
 #: app/components/layout/settings/game.tsx:195
-msgid "Choose how much model reasoning appears in the log."
-msgstr "Choose how much model reasoning appears in the log."
+#~ msgid "Choose how much model reasoning appears in the log."
+#~ msgstr "Choose how much model reasoning appears in the log."
 
 #: app/components/quickstart/quickstart-wizard.tsx:364
 msgid "Choose the mode that fits the kind of tale you want to generate."
@@ -545,15 +568,15 @@ msgstr "Connect to any other OpenAI-compatible API. Enter the base URL and API k
 msgid "Content"
 msgstr "Content"
 
-#: app/components/layout/settings/model.tsx:101
+#: app/components/layout/settings/model.tsx:93
 msgid "Context window"
 msgstr "Context window"
 
-#: app/components/layout/settings/model.tsx:75
+#: app/components/layout/settings/model.tsx:67
 msgid "Context Window"
 msgstr "Context Window"
 
-#: app/components/layout/settings/model.tsx:83
+#: app/components/layout/settings/model.tsx:75
 msgid "Context window help"
 msgstr "Context window help"
 
@@ -568,11 +591,11 @@ msgstr "Continuation {0}"
 msgid "Continue"
 msgstr "Continue"
 
-#: app/components/layout/settings/advanced.tsx:286
+#: app/components/layout/settings/advanced.tsx:283
 msgid "Continue Author Note"
 msgstr "Continue Author Note"
 
-#: app/components/layout/settings/advanced.tsx:233
+#: app/components/layout/settings/advanced.tsx:230
 msgid "Continue System Prompt"
 msgstr "Continue System Prompt"
 
@@ -588,7 +611,7 @@ msgstr "Control the app theme, reading comfort, and language."
 msgid "Copy your API key and paste it here"
 msgstr "Copy your API key and paste it here"
 
-#: app/components/layout/settings/model.tsx:63
+#: app/components/layout/settings/model.tsx:62
 msgid "Core generation"
 msgstr "Core generation"
 
@@ -608,7 +631,7 @@ msgstr "Create a new secret key and paste it here"
 msgid "Create a new stat with initial and maximum values."
 msgstr "Create a new stat with initial and maximum values."
 
-#: app/components/quickstart/quickstart-wizard.tsx:611
+#: app/components/quickstart/quickstart-wizard.tsx:623
 msgid "Create a tale with a guided setup"
 msgstr "Create a tale with a guided setup"
 
@@ -617,7 +640,7 @@ msgid "Create an OpenAI account"
 msgstr "Create an OpenAI account"
 
 #: app/pages/home/home.tsx:478
-#: app/pages/scenarios/create.tsx:51
+#: app/pages/scenarios/create.tsx:56
 msgid "Create Scenario"
 msgstr "Create Scenario"
 
@@ -682,6 +705,14 @@ msgstr "Customize the system prompts used by Hakawati."
 #~ msgid "Dagger"
 #~ msgstr "Dagger"
 
+#: app/components/layout/settings/advanced.tsx:176
+msgid "Default AI Instructions"
+msgstr "Default AI Instructions"
+
+#: app/components/layout/settings/advanced.tsx:212
+msgid "Default AI instructions..."
+msgstr "Default AI instructions..."
+
 #: app/components/quickstart/quickstart-wizard.tsx:133
 #~ msgid "Define your character"
 #~ msgstr "Define your character"
@@ -719,7 +750,8 @@ msgstr "Describe your character archetype..."
 #~ msgid "Describe your character's role"
 #~ msgstr "Describe your character's role"
 
-#: app/components/layout/settings/tale.tsx:104
+#: app/components/layout/settings/tale.tsx:89
+#: app/components/scenario/ScenarioBasicsFields.tsx:62
 #: app/components/ui/inventory-item.tsx:61
 #: app/components/ui/stat-item.tsx:88
 msgid "Description"
@@ -807,8 +839,8 @@ msgstr "Downloading update... ({0})"
 #~ msgstr "e.g., Soldier, Sapient Potato, etc."
 
 #: app/components/quickstart/quickstart-wizard.tsx:225
-msgid "e.g., Start during a festival, include a lost sibling, avoid grim endings..."
-msgstr "e.g., Start during a festival, include a lost sibling, avoid grim endings..."
+#~ msgid "e.g., Start during a festival, include a lost sibling, avoid grim endings..."
+#~ msgstr "e.g., Start during a festival, include a lost sibling, avoid grim endings..."
 
 #: app/components/quickstart/steps/setting-step.tsx:85
 #~ msgid "e.g., Steampunk, Space Opera, etc."
@@ -822,7 +854,7 @@ msgstr "Edit"
 msgid "Edit Entry"
 msgstr "Edit Entry"
 
-#: app/pages/scenarios/edit.tsx:52
+#: app/pages/scenarios/edit.tsx:57
 msgid "Edit Scenario"
 msgstr "Edit Scenario"
 
@@ -901,7 +933,7 @@ msgid "Failed to generate scenario: {0}"
 msgstr "Failed to generate scenario: {0}"
 
 #. placeholder {0}: error instanceof Error ? error.message : "Unknown error"
-#: app/components/quickstart/quickstart-wizard.tsx:547
+#: app/components/quickstart/quickstart-wizard.tsx:559
 msgid "Failed to generate tale: {0}"
 msgstr "Failed to generate tale: {0}"
 
@@ -941,11 +973,11 @@ msgstr "Fantasy"
 #~ msgid "Flashlight"
 #~ msgstr "Flashlight"
 
-#: app/components/layout/settings/game.tsx:172
+#: app/components/layout/settings/game.tsx:160
 msgid "Font Family"
 msgstr "Font Family"
 
-#: app/components/layout/settings/game.tsx:150
+#: app/components/layout/settings/game.tsx:138
 msgid "Font Size (0.75 - 2.0)"
 msgstr "Font Size (0.75 - 2.0)"
 
@@ -953,16 +985,16 @@ msgstr "Font Size (0.75 - 2.0)"
 #~ msgid "forging your own path"
 #~ msgstr "forging your own path"
 
-#: app/components/layout/settings/model.tsx:218
-#: app/components/layout/settings/model.tsx:226
+#: app/components/layout/settings/model.tsx:203
+#: app/components/layout/settings/model.tsx:211
 msgid "Frequency penalty"
 msgstr "Frequency penalty"
 
-#: app/components/layout/settings/game.tsx:158
+#: app/components/layout/settings/game.tsx:146
 msgid "Game log font size"
 msgstr "Game log font size"
 
-#: app/components/layout/settings/tale.tsx:52
+#: app/components/layout/settings/tale.tsx:54
 #: app/components/scenario/GameModeField.tsx:22
 msgid "Game Master"
 msgstr "Game Master"
@@ -971,7 +1003,7 @@ msgstr "Game Master"
 msgid "Game Master (GM)"
 msgstr "Game Master (GM)"
 
-#: app/components/layout/settings/tale.tsx:66
+#: app/components/layout/settings/tale.tsx:63
 #: app/components/quickstart/quickstart-wizard.tsx:362
 msgid "Game Mode"
 msgstr "Game Mode"
@@ -989,11 +1021,11 @@ msgstr "Generate an API key and paste it here"
 msgid "Generate Scenario"
 msgstr "Generate Scenario"
 
-#: app/components/quickstart/quickstart-wizard.tsx:669
+#: app/components/quickstart/quickstart-wizard.tsx:681
 msgid "Generate Tale"
 msgstr "Generate Tale"
 
-#: app/components/quickstart/quickstart-wizard.tsx:667
+#: app/components/quickstart/quickstart-wizard.tsx:679
 msgid "Generating"
 msgstr "Generating"
 
@@ -1022,13 +1054,17 @@ msgstr "Getting Started"
 #~ msgid "Give your character a name"
 #~ msgstr "Give your character a name"
 
-#: app/components/layout/settings/advanced.tsx:137
+#: app/components/layout/settings/advanced.tsx:121
+msgid "GM Mechanics Prompt"
+msgstr "GM Mechanics Prompt"
+
+#: app/components/layout/settings/advanced.tsx:135
 msgid "GM mode is still in development and is very sensitive to the system prompt."
 msgstr "GM mode is still in development and is very sensitive to the system prompt."
 
 #: app/components/layout/settings/advanced.tsx:121
-msgid "GM System Prompt"
-msgstr "GM System Prompt"
+#~ msgid "GM System Prompt"
+#~ msgstr "GM System Prompt"
 
 #: app/data/api-presets.ts:85
 msgid "Go to API Keys in the dashboard"
@@ -1085,11 +1121,11 @@ msgstr "Help for {label}"
 msgid "Hide API key"
 msgstr "Hide API key"
 
-#: app/components/layout/settings/model.tsx:127
+#: app/components/layout/settings/model.tsx:119
 msgid "Higher values make responses less predictable."
 msgstr "Higher values make responses less predictable."
 
-#: app/components/layout/settings/game.tsx:186
+#: app/components/layout/settings/game.tsx:174
 msgid "Highlight last section"
 msgstr "Highlight last section"
 
@@ -1159,12 +1195,12 @@ msgid "Initial"
 msgstr "Initial"
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:80
-msgid "Initial Author Notes"
-msgstr "Initial Author Notes"
+#~ msgid "Initial Author Notes"
+#~ msgstr "Initial Author Notes"
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:71
-msgid "Initial Description"
-msgstr "Initial Description"
+#~ msgid "Initial Description"
+#~ msgstr "Initial Description"
 
 #: app/components/scenario/GameModeField.tsx:30
 msgid "Initial Game Mode"
@@ -1253,11 +1289,11 @@ msgstr "Journalist"
 #~ msgid "keeping others alive in a world that wants everyone dead, rationing hope along with the antibiotics"
 #~ msgstr "keeping others alive in a world that wants everyone dead, rationing hope along with the antibiotics"
 
-#: app/components/layout/settings/game.tsx:80
+#: app/components/layout/settings/game.tsx:75
 msgid "Language"
 msgstr "Language"
 
-#: app/components/layout/settings/game.tsx:106
+#: app/components/layout/settings/game.tsx:101
 msgid "Language Default"
 msgstr "Language Default"
 
@@ -1280,7 +1316,7 @@ msgstr "Last played: {0}"
 msgid "Last updated: {0}"
 msgstr "Last updated: {0}"
 
-#: app/components/layout/settings/game.tsx:213
+#: app/components/layout/settings/game.tsx:196
 msgid "Latest"
 msgstr "Latest"
 
@@ -1288,7 +1324,7 @@ msgstr "Latest"
 msgid "Latest Scenarios"
 msgstr "Latest Scenarios"
 
-#: app/components/layout/settings/game.tsx:178
+#: app/components/layout/settings/game.tsx:166
 msgid "Latest section"
 msgstr "Latest section"
 
@@ -1305,12 +1341,16 @@ msgstr "Latest Tales"
 #~ msgstr "Leave characters, objects, and concepts to the story cards"
 
 #: app/components/layout/settings/model.tsx:181
-msgid "Leave these empty to let the selected provider use its defaults."
-msgstr "Leave these empty to let the selected provider use its defaults."
+#~ msgid "Leave these empty to let the selected provider use its defaults."
+#~ msgstr "Leave these empty to let the selected provider use its defaults."
 
-#: app/components/layout/settings/game.tsx:109
+#: app/components/layout/settings/game.tsx:104
 msgid "Left to Right"
 msgstr "Left to Right"
+
+#: app/components/layout/settings/tale.tsx:94
+msgid "Library summary"
+msgstr "Library summary"
 
 #: app/components/layout/settings/about.tsx:14
 msgid "License"
@@ -1334,13 +1374,13 @@ msgid "Loading older entries..."
 msgstr "Loading older entries..."
 
 #: app/components/layout/model-select.tsx:91
+#: app/pages/scenarios/home.tsx:105
+#: app/pages/tales/home.tsx:82
 msgid "Loading..."
 msgstr "Loading..."
 
 #: app/pages/home/home.tsx:448
 #: app/pages/home/home.tsx:511
-#: app/pages/scenarios/home.tsx:105
-#: app/pages/tales/home.tsx:82
 msgid "Loading…"
 msgstr "Loading…"
 
@@ -1360,7 +1400,7 @@ msgstr "Local API servers"
 #~ msgid "Longbow"
 #~ msgstr "Longbow"
 
-#: app/components/layout/settings/game.tsx:56
+#: app/components/layout/settings/game.tsx:55
 msgid "Look and language"
 msgstr "Look and language"
 
@@ -1399,15 +1439,15 @@ msgstr "Manual updates are only available in the desktop app."
 msgid "Max"
 msgstr "Max"
 
-#: app/components/layout/settings/model.tsx:119
+#: app/components/layout/settings/model.tsx:111
 msgid "Max output tokens"
 msgstr "Max output tokens"
 
-#: app/components/layout/settings/model.tsx:109
+#: app/components/layout/settings/model.tsx:101
 msgid "Max Output Tokens"
 msgstr "Max Output Tokens"
 
-#: app/components/layout/settings/model.tsx:90
+#: app/components/layout/settings/model.tsx:82
 msgid "Maximum is determined by current model."
 msgstr "Maximum is determined by current model."
 
@@ -1441,8 +1481,8 @@ msgstr "Memory"
 #~ msgid "Mention the main theme or premise"
 #~ msgstr "Mention the main theme or premise"
 
-#: app/components/layout/settings/model.tsx:257
-#: app/components/layout/settings/model.tsx:265
+#: app/components/layout/settings/model.tsx:242
+#: app/components/layout/settings/model.tsx:250
 msgid "Min P"
 msgstr "Min P"
 
@@ -1477,7 +1517,7 @@ msgstr "Mystery"
 
 #: app/components/layout/settings/inventory-stats.tsx:108
 #: app/components/layout/settings/inventory-stats.tsx:207
-#: app/components/scenario/ScenarioBasicsFields.tsx:43
+#: app/components/scenario/ScenarioBasicsFields.tsx:34
 #: app/components/sidebar/inventory-card.tsx:88
 #: app/components/sidebar/stats-card.tsx:149
 #: app/components/ui/inventory-item.tsx:50
@@ -1511,15 +1551,19 @@ msgid "New scenario"
 msgstr "New scenario"
 
 #: app/pages/home/home.tsx:232
-#: app/pages/scenarios/home.tsx:211
+#: app/pages/scenarios/home.tsx:212
 msgid "New Tale"
 msgstr "New Tale"
 
-#: app/components/quickstart/quickstart-wizard.tsx:672
-#: app/pages/scenarios/home.tsx:237
+#: app/components/quickstart/quickstart-wizard.tsx:684
+#: app/pages/scenarios/home.tsx:238
 #: app/pages/tales/home.tsx:230
 msgid "Next"
 msgstr "Next"
+
+#: app/components/prompt-components/PromptComponentsEditor.tsx:116
+msgid "No AI components added."
+msgstr "No AI components added."
 
 #: app/pages/home/home.tsx:168
 #: app/pages/home/home.tsx:223
@@ -1560,7 +1604,7 @@ msgstr "No tales yet."
 msgid "No utility model selected"
 msgstr "No utility model selected"
 
-#: app/components/layout/settings/game.tsx:216
+#: app/components/layout/settings/game.tsx:199
 msgid "None"
 msgstr "None"
 
@@ -1618,8 +1662,8 @@ msgid "OpenAI"
 msgstr "OpenAI"
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:90
-msgid "Opening Text"
-msgstr "Opening Text"
+#~ msgid "Opening Text"
+#~ msgstr "Opening Text"
 
 #: app/data/api-presets.ts:24
 msgid "OpenRouter"
@@ -1650,7 +1694,7 @@ msgid "Or choose one of these options."
 msgstr "Or choose one of these options."
 
 #. placeholder {0}: Math.max(1, Math.ceil(total / limit) || 1)
-#: app/pages/scenarios/home.tsx:228
+#: app/pages/scenarios/home.tsx:229
 #: app/pages/tales/home.tsx:221
 msgid "Page {page} of {0}"
 msgstr "Page {page} of {0}"
@@ -1701,12 +1745,12 @@ msgstr "Play narration"
 #~ msgid "Power Armor"
 #~ msgstr "Power Armor"
 
-#: app/components/layout/settings/model.tsx:231
-#: app/components/layout/settings/model.tsx:239
+#: app/components/layout/settings/model.tsx:216
+#: app/components/layout/settings/model.tsx:224
 msgid "Presence penalty"
 msgstr "Presence penalty"
 
-#: app/pages/scenarios/home.tsx:225
+#: app/pages/scenarios/home.tsx:226
 #: app/pages/tales/home.tsx:218
 msgid "Prev"
 msgstr "Prev"
@@ -1715,11 +1759,11 @@ msgstr "Prev"
 msgid "Privacy-focused provider with multiple models on offer. Account optional. Offers subscription plan with unlimited usage on some models."
 msgstr "Privacy-focused provider with multiple models on offer. Account optional. Offers subscription plan with unlimited usage on some models."
 
-#: app/components/layout/settings/advanced.tsx:388
+#: app/components/layout/settings/advanced.tsx:385
 msgid "Prompt for story card generation..."
 msgstr "Prompt for story card generation..."
 
-#: app/components/layout/settings/advanced.tsx:268
+#: app/components/layout/settings/advanced.tsx:265
 msgid "Prompt used when continuing the story..."
 msgstr "Prompt used when continuing the story..."
 
@@ -1735,14 +1779,14 @@ msgstr "Prompting"
 msgid "Provider"
 msgstr "Provider"
 
-#: app/components/layout/settings/model.tsx:136
-#: app/components/layout/settings/model.tsx:200
-#: app/components/layout/settings/model.tsx:212
-#: app/components/layout/settings/model.tsx:225
-#: app/components/layout/settings/model.tsx:238
-#: app/components/layout/settings/model.tsx:251
-#: app/components/layout/settings/model.tsx:264
-#: app/components/layout/settings/model.tsx:277
+#: app/components/layout/settings/model.tsx:128
+#: app/components/layout/settings/model.tsx:185
+#: app/components/layout/settings/model.tsx:197
+#: app/components/layout/settings/model.tsx:210
+#: app/components/layout/settings/model.tsx:223
+#: app/components/layout/settings/model.tsx:236
+#: app/components/layout/settings/model.tsx:249
+#: app/components/layout/settings/model.tsx:262
 msgid "Provider default"
 msgstr "Provider default"
 
@@ -1776,7 +1820,7 @@ msgid "Quick Start:"
 msgstr "Quick Start:"
 
 #: app/components/layout/mobile-bottom-nav.tsx:61
-#: app/components/quickstart/quickstart-wizard.tsx:608
+#: app/components/quickstart/quickstart-wizard.tsx:620
 #: app/pages/home/home.tsx:389
 msgid "Quickstart"
 msgstr "Quickstart"
@@ -1785,8 +1829,8 @@ msgstr "Quickstart"
 #~ msgid "Quiver"
 #~ msgstr "Quiver"
 
-#: app/components/layout/settings/model.tsx:163
-#: app/components/layout/settings/model.tsx:170
+#: app/components/layout/settings/model.tsx:155
+#: app/components/layout/settings/model.tsx:162
 msgid "Randomize seed"
 msgstr "Randomize seed"
 
@@ -1794,11 +1838,11 @@ msgstr "Randomize seed"
 msgid "Ranger"
 msgstr "Ranger"
 
-#: app/components/layout/settings/game.tsx:235
+#: app/components/layout/settings/game.tsx:218
 msgid "Read new narration aloud"
 msgstr "Read new narration aloud"
 
-#: app/components/layout/settings/game.tsx:121
+#: app/components/layout/settings/game.tsx:115
 msgid "Reading comfort"
 msgstr "Reading comfort"
 
@@ -1827,8 +1871,12 @@ msgstr "Refresh models"
 msgid "Remove"
 msgstr "Remove"
 
-#: app/components/layout/settings/model.tsx:244
-#: app/components/layout/settings/model.tsx:252
+#: app/components/prompt-components/PromptComponentsEditor.tsx:143
+msgid "Remove component"
+msgstr "Remove component"
+
+#: app/components/layout/settings/model.tsx:229
+#: app/components/layout/settings/model.tsx:237
 msgid "Repetition penalty"
 msgstr "Repetition penalty"
 
@@ -1840,21 +1888,21 @@ msgstr "Rescan"
 #~ msgid "Research Notes"
 #~ msgstr "Research Notes"
 
-#: app/components/layout/settings/game.tsx:145
-#: app/components/layout/settings/game.tsx:166
+#: app/components/layout/settings/game.tsx:133
+#: app/components/layout/settings/game.tsx:154
 msgid "Reset"
 msgstr "Reset"
 
-#: app/components/layout/settings/model.tsx:290
+#: app/components/layout/settings/model.tsx:275
 msgid "Reset generation settings"
 msgstr "Reset generation settings"
 
 #: app/components/layout/settings/advanced.tsx:107
-#: app/components/layout/settings/advanced.tsx:169
-#: app/components/layout/settings/advanced.tsx:224
-#: app/components/layout/settings/advanced.tsx:277
-#: app/components/layout/settings/advanced.tsx:330
-#: app/components/layout/settings/advanced.tsx:397
+#: app/components/layout/settings/advanced.tsx:167
+#: app/components/layout/settings/advanced.tsx:221
+#: app/components/layout/settings/advanced.tsx:274
+#: app/components/layout/settings/advanced.tsx:327
+#: app/components/layout/settings/advanced.tsx:394
 msgid "Reset to Default"
 msgstr "Reset to Default"
 
@@ -1870,7 +1918,7 @@ msgstr "Retry (Ctrl+R)"
 msgid "Retry: Retry the last message. Can only be done if the last message is by the AI."
 msgstr "Retry: Retry the last message. Can only be done if the last message is by the AI."
 
-#: app/components/layout/settings/model.tsx:145
+#: app/components/layout/settings/model.tsx:137
 msgid "Reuse a seed for more repeatable generations."
 msgstr "Reuse a seed for more repeatable generations."
 
@@ -1882,7 +1930,7 @@ msgstr "Review license, dependency, and credit information."
 #~ msgid "Revolver"
 #~ msgstr "Revolver"
 
-#: app/components/layout/settings/game.tsx:112
+#: app/components/layout/settings/game.tsx:107
 msgid "Right to Left"
 msgstr "Right to Left"
 
@@ -1913,8 +1961,8 @@ msgstr "Save as Scenario"
 msgid "Save Changes"
 msgstr "Save Changes"
 
-#: app/pages/scenarios/create.tsx:61
-#: app/pages/scenarios/edit.tsx:61
+#: app/pages/scenarios/create.tsx:66
+#: app/pages/scenarios/edit.tsx:66
 msgid "Save Scenario"
 msgstr "Save Scenario"
 
@@ -1964,8 +2012,8 @@ msgstr "Scroll to bottom"
 msgid "Search model..."
 msgstr "Search model..."
 
-#: app/components/layout/settings/model.tsx:143
-#: app/components/layout/settings/model.tsx:154
+#: app/components/layout/settings/model.tsx:135
+#: app/components/layout/settings/model.tsx:146
 msgid "Seed"
 msgstr "Seed"
 
@@ -1973,7 +2021,7 @@ msgstr "Seed"
 msgid "Seek narration"
 msgstr "Seek narration"
 
-#: app/components/layout/settings/tale.tsx:71
+#: app/components/layout/settings/tale.tsx:68
 #: app/components/scenario/GameModeField.tsx:34
 msgid "Select a game mode"
 msgstr "Select a game mode"
@@ -1986,7 +2034,7 @@ msgstr "Select a model"
 msgid "Select a provider"
 msgstr "Select a provider"
 
-#: app/components/layout/settings/game.tsx:68
+#: app/components/layout/settings/game.tsx:63
 msgid "Select a theme"
 msgstr "Select a theme"
 
@@ -1998,11 +2046,11 @@ msgstr "Select a theme"
 msgid "Select action mode"
 msgstr "Select action mode"
 
-#: app/components/layout/settings/game.tsx:102
+#: app/components/layout/settings/game.tsx:97
 msgid "Select direction"
 msgstr "Select direction"
 
-#: app/components/layout/settings/game.tsx:83
+#: app/components/layout/settings/game.tsx:78
 msgid "Select language"
 msgstr "Select language"
 
@@ -2010,7 +2058,7 @@ msgstr "Select language"
 msgid "Select Model"
 msgstr "Select Model"
 
-#: app/components/layout/settings/game.tsx:206
+#: app/components/layout/settings/game.tsx:189
 msgid "Select thinking visibility"
 msgstr "Select thinking visibility"
 
@@ -2037,12 +2085,12 @@ msgstr "Set"
 #~ msgstr "Set the narrative tone for your story"
 
 #: app/components/layout/settings/model.tsx:65
-msgid "Set the token budget and creativity controls used for new AI responses."
-msgstr "Set the token budget and creativity controls used for new AI responses."
+#~ msgid "Set the token budget and creativity controls used for new AI responses."
+#~ msgstr "Set the token budget and creativity controls used for new AI responses."
 
 #: app/components/layout/settings/game.tsx:58
-msgid "Set the visual style, language, and reading direction."
-msgstr "Set the visual style, language, and reading direction."
+#~ msgid "Set the visual style, language, and reading direction."
+#~ msgstr "Set the visual style, language, and reading direction."
 
 #: app/components/quickstart/steps/description-style-step.tsx:122
 #~ msgid "Set tone and pacing preferences"
@@ -2065,7 +2113,7 @@ msgstr "Setup required"
 msgid "Show API key"
 msgstr "Show API key"
 
-#: app/components/layout/settings/model.tsx:189
+#: app/components/layout/settings/model.tsx:174
 msgid "Show sampling controls"
 msgstr "Show sampling controls"
 
@@ -2179,7 +2227,7 @@ msgstr "Stop recording"
 msgid "Story"
 msgstr "Story"
 
-#: app/components/layout/settings/advanced.tsx:339
+#: app/components/layout/settings/advanced.tsx:336
 msgid "Story Card Generator Prompt"
 msgstr "Story Card Generator Prompt"
 
@@ -2188,10 +2236,10 @@ msgid "Story Cards"
 msgstr "Story Cards"
 
 #: app/components/layout/settings/tale.tsx:93
-msgid "Story context"
-msgstr "Story context"
+#~ msgid "Story context"
+#~ msgstr "Story context"
 
-#: app/components/layout/settings/tale.tsx:52
+#: app/components/layout/settings/tale.tsx:54
 #: app/components/quickstart/steps/game-mode-step.tsx:15
 #: app/components/scenario/GameModeField.tsx:22
 msgid "Story Teller"
@@ -2202,8 +2250,8 @@ msgid "Story: Write a segment of text that the AI will treat as part of the stor
 msgstr "Story: Write a segment of text that the AI will treat as part of the story and continue from."
 
 #: app/components/layout/settings/advanced.tsx:178
-msgid "Storyteller System Prompt"
-msgstr "Storyteller System Prompt"
+#~ msgid "Storyteller System Prompt"
+#~ msgstr "Storyteller System Prompt"
 
 #: app/data/quickstart-presets.ts:167
 #: app/data/quickstart-presets.ts:185
@@ -2235,13 +2283,13 @@ msgstr "Surprise Me"
 msgid "Survivor"
 msgstr "Survivor"
 
-#: app/components/layout/settings/advanced.tsx:160
+#: app/components/layout/settings/advanced.tsx:158
 msgid "System prompt for Game Master mode..."
 msgstr "System prompt for Game Master mode..."
 
 #: app/components/layout/settings/advanced.tsx:215
-msgid "System prompt for Story Teller mode..."
-msgstr "System prompt for Story Teller mode..."
+#~ msgid "System prompt for Story Teller mode..."
+#~ msgstr "System prompt for Story Teller mode..."
 
 #: app/components/layout/settings/advanced.tsx:94
 msgid "System Prompts"
@@ -2256,7 +2304,7 @@ msgstr "Tale"
 msgid "Tale actions"
 msgstr "Tale actions"
 
-#: app/components/layout/settings/tale.tsx:60
+#: app/components/layout/settings/tale.tsx:61
 msgid "Tale mode"
 msgstr "Tale mode"
 
@@ -2274,8 +2322,8 @@ msgstr "Tales"
 #~ msgid "Tarot Cards"
 #~ msgstr "Tarot Cards"
 
-#: app/components/layout/settings/model.tsx:125
-#: app/components/layout/settings/model.tsx:137
+#: app/components/layout/settings/model.tsx:117
+#: app/components/layout/settings/model.tsx:129
 msgid "Temperature"
 msgstr "Temperature"
 
@@ -2299,21 +2347,30 @@ msgstr "The AI acts as a Game Master, tracking stats and inventory"
 msgid "The Official OpenAI API. Requires an OpenAI account with charged credits."
 msgstr "The Official OpenAI API. Requires an OpenAI account with charged credits."
 
-#: app/components/layout/settings/advanced.tsx:355
+#: app/components/layout/settings/advanced.tsx:352
 msgid "The output of this prompt are parsed as JSON. Make sure to preserve the JSON format if you customize this prompt."
 msgstr "The output of this prompt are parsed as JSON. Make sure to preserve the JSON format if you customize this prompt."
 
-#: app/components/layout/settings/game.tsx:62
+#: app/components/layout/settings/game.tsx:57
 msgid "Theme"
 msgstr "Theme"
+
+#: app/components/layout/settings/advanced.tsx:182
+msgid "These are the default AI instructions used by tales and scenarios that do not define their own AI Instructions component."
+msgstr "These are the default AI instructions used by tales and scenarios that do not define their own AI Instructions component."
 
 #: app/components/quickstart/steps/description-style-step.tsx:28
 #~ msgid "These fields were generated based on your choices. You can modify them here or from the Tale tab in the settings menu in-game."
 #~ msgstr "These fields were generated based on your choices. You can modify them here or from the Tale tab in the settings menu in-game."
 
 #: app/components/layout/settings/tale.tsx:95
-msgid "These notes guide the model while the current tale is running."
-msgstr "These notes guide the model while the current tale is running."
+#~ msgid "These notes guide the model while the current tale is running."
+#~ msgstr "These notes guide the model while the current tale is running."
+
+#: app/components/layout/settings/tale.tsx:124
+#: app/components/prompt-components/PromptComponentsEditor.tsx:85
+msgid "These optional components are sent to the AI."
+msgstr "These optional components are sent to the AI."
 
 #: app/components/storybook/CategoryFilter.tsx:38
 #: app/components/storybook/StorybookEditor.tsx:60
@@ -2325,7 +2382,7 @@ msgstr "Thing"
 msgid "Thinking"
 msgstr "Thinking"
 
-#: app/components/layout/settings/game.tsx:198
+#: app/components/layout/settings/game.tsx:181
 msgid "Thinking Visibility"
 msgstr "Thinking Visibility"
 
@@ -2334,34 +2391,38 @@ msgid "Third-party dependencies"
 msgstr "Third-party dependencies"
 
 #: app/components/layout/settings/advanced.tsx:292
-msgid "This is an extra author note that is injected early with other system prompts only during a <0>Continue</0> action."
-msgstr "This is an extra author note that is injected early with other system prompts only during a <0>Continue</0> action."
+#~ msgid "This is an extra author note that is injected early with other system prompts only during a <0>Continue</0> action."
+#~ msgstr "This is an extra author note that is injected early with other system prompts only during a <0>Continue</0> action."
+
+#: app/components/layout/settings/advanced.tsx:289
+msgid "This is an extra author note that is injected near the end of the prompt only during a <0>Continue</0> action."
+msgstr "This is an extra author note that is injected near the end of the prompt only during a <0>Continue</0> action."
 
 #: app/components/quickstart/steps/character-name-step.tsx:31
 #~ msgid "This is how you'll be known"
 #~ msgstr "This is how you'll be known"
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:94
-msgid "This is the initial paragraph of story that the player will respond to. <0/> Useful for setting up the initial scene."
-msgstr "This is the initial paragraph of story that the player will respond to. <0/> Useful for setting up the initial scene."
+#~ msgid "This is the initial paragraph of story that the player will respond to. <0/> Useful for setting up the initial scene."
+#~ msgstr "This is the initial paragraph of story that the player will respond to. <0/> Useful for setting up the initial scene."
 
 #: app/components/quickstart/quickstart-wizard.tsx:425
 msgid "This is the player character the tale will address directly."
 msgstr "This is the player character the tale will address directly."
 
-#: app/components/layout/settings/advanced.tsx:345
+#: app/components/layout/settings/advanced.tsx:342
 msgid "This is the system prompt used when auto-generating story cards. The AI is asked to output JSON with content, triggers, and category. The JSON is parsed and used to populate the new story card."
 msgstr "This is the system prompt used when auto-generating story cards. The AI is asked to output JSON with content, triggers, and category. The JSON is parsed and used to populate the new story card."
 
 #: app/components/layout/settings/advanced.tsx:128
-msgid "This is the system prompt used when the game is in \"Game Master\" mode. The story description is appended to the prompt. (Two new lines, followed by \"The story is: \" and the description text.)"
-msgstr "This is the system prompt used when the game is in \"Game Master\" mode. The story description is appended to the prompt. (Two new lines, followed by \"The story is: \" and the description text.)"
+#~ msgid "This is the system prompt used when the game is in \"Game Master\" mode. The story description is appended to the prompt. (Two new lines, followed by \"The story is: \" and the description text.)"
+#~ msgstr "This is the system prompt used when the game is in \"Game Master\" mode. The story description is appended to the prompt. (Two new lines, followed by \"The story is: \" and the description text.)"
 
 #: app/components/layout/settings/advanced.tsx:184
-msgid "This is the system prompt used when the game is in \"Story Teller\" mode. The story description is appended to the prompt. (Two new lines, followed by \"The story is: \" and the description text.)"
-msgstr "This is the system prompt used when the game is in \"Story Teller\" mode. The story description is appended to the prompt. (Two new lines, followed by \"The story is: \" and the description text.)"
+#~ msgid "This is the system prompt used when the game is in \"Story Teller\" mode. The story description is appended to the prompt. (Two new lines, followed by \"The story is: \" and the description text.)"
+#~ msgstr "This is the system prompt used when the game is in \"Story Teller\" mode. The story description is appended to the prompt. (Two new lines, followed by \"The story is: \" and the description text.)"
 
-#: app/components/layout/settings/advanced.tsx:239
+#: app/components/layout/settings/advanced.tsx:236
 msgid "This is the user message that is sent to the AI when the continue button is clicked."
 msgstr "This is the user message that is sent to the AI when the continue button is clicked."
 
@@ -2389,7 +2450,11 @@ msgstr "This model will be used for spoken narration."
 msgid "This preset includes auto-detection of local servers (They must expose an OpenAI-compatible endpoint). LM Studio, Ollama, LocalAI, etc."
 msgstr "This preset includes auto-detection of local servers (They must expose an OpenAI-compatible endpoint). LM Studio, Ollama, LocalAI, etc."
 
-#: app/components/scenario/ScenarioBasicsFields.tsx:49
+#: app/components/layout/settings/advanced.tsx:128
+msgid "This prompt is added in \"Game Master\" mode to explain game state tools and GM-specific behavior."
+msgstr "This prompt is added in \"Game Master\" mode to explain game state tools and GM-specific behavior."
+
+#: app/components/scenario/ScenarioBasicsFields.tsx:40
 msgid "Thumbnail (WebP recommended)"
 msgstr "Thumbnail (WebP recommended)"
 
@@ -2410,18 +2475,18 @@ msgstr "Title"
 msgid "Tone (Optional)"
 msgstr "Tone (Optional)"
 
-#: app/components/layout/settings/model.tsx:270
-#: app/components/layout/settings/model.tsx:278
+#: app/components/layout/settings/model.tsx:255
+#: app/components/layout/settings/model.tsx:263
 msgid "Top A"
 msgstr "Top A"
 
-#: app/components/layout/settings/model.tsx:206
-#: app/components/layout/settings/model.tsx:213
+#: app/components/layout/settings/model.tsx:191
+#: app/components/layout/settings/model.tsx:198
 msgid "Top K"
 msgstr "Top K"
 
-#: app/components/layout/settings/model.tsx:193
-#: app/components/layout/settings/model.tsx:201
+#: app/components/layout/settings/model.tsx:178
+#: app/components/layout/settings/model.tsx:186
 msgid "Top P"
 msgstr "Top P"
 
@@ -2460,13 +2525,13 @@ msgstr "Tune token budgets, sampling, and repeatable seeds."
 
 #: app/pages/home/home.tsx:162
 #: app/pages/home/home.tsx:630
-#: app/pages/tales/home.tsx:190
+#: app/pages/tales/home.tsx:185
 msgid "turn"
 msgstr "turn"
 
 #: app/pages/home/home.tsx:162
 #: app/pages/home/home.tsx:630
-#: app/pages/tales/home.tsx:190
+#: app/pages/tales/home.tsx:185
 msgid "turns"
 msgstr "turns"
 
@@ -2482,11 +2547,11 @@ msgstr "Type actions, the AI continues. Available actions:"
 msgid "Type your own world, or start from one of the suggestions below."
 msgstr "Type your own world, or start from one of the suggestions below."
 
-#: app/components/layout/settings/game.tsx:94
+#: app/components/layout/settings/game.tsx:89
 msgid "UI Direction"
 msgstr "UI Direction"
 
-#: app/components/layout/settings/game.tsx:129
+#: app/components/layout/settings/game.tsx:117
 msgid "UI Scale (0.8 - 1.5)"
 msgstr "UI Scale (0.8 - 1.5)"
 
@@ -2530,11 +2595,11 @@ msgstr "Update downloaded. Restarting..."
 msgid "Use"
 msgstr "Use"
 
-#: app/components/layout/settings/advanced.tsx:151
-#: app/components/layout/settings/advanced.tsx:202
-#: app/components/layout/settings/advanced.tsx:255
-#: app/components/layout/settings/advanced.tsx:308
-#: app/components/layout/settings/advanced.tsx:373
+#: app/components/layout/settings/advanced.tsx:149
+#: app/components/layout/settings/advanced.tsx:199
+#: app/components/layout/settings/advanced.tsx:252
+#: app/components/layout/settings/advanced.tsx:305
+#: app/components/layout/settings/advanced.tsx:370
 msgid "Use Custom Prompt"
 msgstr "Use Custom Prompt"
 
@@ -2542,7 +2607,7 @@ msgstr "Use Custom Prompt"
 msgid "Use the Rescan button to detect your server (This will only work if the server is running and accessible)"
 msgstr "Use the Rescan button to detect your server (This will only work if the server is running and accessible)"
 
-#: app/components/layout/settings/game.tsx:137
+#: app/components/layout/settings/game.tsx:125
 msgid "User interface scale"
 msgstr "User interface scale"
 
