@@ -4,12 +4,11 @@ export type Scenario = {
   id: string;
   name: string;
   initialGameMode: GameMode;
-  initialDescription: string;
-  initialAuthorNote: string;
+  description: string;
+  components: PromptComponent[];
   initialStats: Stat[];
   initialInventory: string[];
   initialStoryCards: StoryCard[];
-  openingText?: string;
   thumbnail?: Uint8Array | null;
 };
 
@@ -17,9 +16,24 @@ export type ScenarioHead = {
   id: string;
   name: string;
   initialGameMode: GameMode;
-  initialDescription: string;
+  description: string;
   updatedAt: number;
   thumbnail?: Uint8Array | null;
+};
+
+export enum PromptComponentType {
+  AI_INSTRUCTIONS = "ai_instructions",
+  PLOT = "plot",
+  AUTHOR_NOTE = "author_note",
+  OPENING = "opening",
+}
+
+export type PromptComponent = {
+  id: string;
+  type: PromptComponentType;
+  content: string;
+  createdAt: number;
+  updatedAt: number;
 };
 
 export enum StorybookCategory {

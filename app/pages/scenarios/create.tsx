@@ -8,7 +8,9 @@ import { GameModeField } from "@/components/scenario/GameModeField";
 import { StatsEditor } from "@/components/scenario/StatsEditor";
 import { InventoryEditor } from "@/components/scenario/InventoryEditor";
 import { StorybookEditor } from "@/components/storybook";
+import { PromptComponentsEditor } from "@/components/prompt-components/PromptComponentsEditor";
 import { useScenarioForm } from "@/hooks/useScenarioForm";
+import { SCENARIO_COMPONENT_TYPES } from "@/lib/prompt-components";
 import { Scenario } from "@/types";
 import { ArrowLeftIcon } from "lucide-react";
 import { Trans } from "@lingui/react/macro";
@@ -35,6 +37,9 @@ export default function ScenarioCreate() {
     addStoryCard,
     updateStoryCard,
     removeStoryCard,
+    addComponent,
+    updateComponent,
+    removeComponent,
   } = useScenarioForm(scenario, setScenario);
 
   return (
@@ -65,26 +70,27 @@ export default function ScenarioCreate() {
       <ScenarioBasicsFields
         name={scenario.name}
         thumbnail={scenario.thumbnail}
-        initialDescription={scenario.initialDescription}
-        initialAuthorNote={scenario.initialAuthorNote}
-        openingText={scenario.openingText ?? ""}
+        description={scenario.description}
         onNameChange={(name) => setScenario({ ...scenario, name })}
         onThumbnailChange={(bytes) =>
           setScenario({ ...scenario, thumbnail: bytes })
         }
-        onInitialDescriptionChange={(text) =>
-          setScenario({ ...scenario, initialDescription: text })
-        }
-        onInitialAuthorNoteChange={(text) =>
-          setScenario({ ...scenario, initialAuthorNote: text })
-        }
-        onOpeningTextChange={(text) =>
-          setScenario({ ...scenario, openingText: text })
+        onDescriptionChange={(text) =>
+          setScenario({ ...scenario, description: text })
         }
       />
       <GameModeField
         value={scenario.initialGameMode}
         onChange={(v) => setScenario({ ...scenario, initialGameMode: v })}
+      />
+      <Separator />
+      <PromptComponentsEditor
+        components={scenario.components}
+        allowedTypes={SCENARIO_COMPONENT_TYPES}
+        gameMode={scenario.initialGameMode}
+        onAdd={addComponent}
+        onUpdate={updateComponent}
+        onRemove={removeComponent}
       />
       <Separator />
       <StatsEditor

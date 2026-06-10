@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { buildMessage } from "./promptBuilder";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
-import { GameMode, StorybookCategory } from "@/types/context.type";
+import {
+  GameMode,
+  PromptComponentType,
+  StorybookCategory,
+} from "@/types/context.type";
 import { ResponseMode } from "@/types";
 import type { ChatMessage, LLMModel } from "./schema";
 import type { LogEntry } from "@/types/log.type";
@@ -61,6 +65,14 @@ const createMockModel = (overrides?: Partial<LLMModel>): LLMModel => ({
   ...overrides,
 });
 
+const createPromptComponent = (type: PromptComponentType, content: string) => ({
+  id: `${type}-1`,
+  type,
+  content,
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+});
+
 const createMockLogEntry = (overrides?: Partial<LogEntry>): LogEntry => ({
   id: "entry-1",
   role: LogEntryRole.PLAYER,
@@ -97,8 +109,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Hello", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -112,22 +122,29 @@ describe("promptBuilder", () => {
       expect(result.messages[1].content).toContain("Action: Hello");
     });
 
-    it("should include description and author note when provided", async () => {
+    it("should include plot and author note components when provided", async () => {
       const result = await buildMessage({
         log: [],
         stats: [],
         inventory: [],
         lastMessage: { text: "Hello", mode: LogEntryMode.DO },
-        description: "A dark forest",
-        authorNote: "Keep it mysterious",
+        components: [
+          createPromptComponent(PromptComponentType.PLOT, "A dark forest"),
+          createPromptComponent(
+            PromptComponentType.AUTHOR_NOTE,
+            "Keep it mysterious",
+          ),
+        ],
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
       });
 
-      expect(result.messages).toHaveLength(4); // system + description + authorNote + user
-      expect(result.messages[1].content).toBe("A dark forest");
-      expect(result.messages[2].content).toBe("Keep it mysterious");
+      expect(result.messages).toHaveLength(4); // system + plot + authorNote + user
+      expect(result.messages[1].content).toBe("**Plot:**\nA dark forest");
+      expect(result.messages[2].content).toBe(
+        "**Author's Note:**\nKeep it mysterious",
+      );
     });
   });
 
@@ -138,14 +155,13 @@ describe("promptBuilder", () => {
         stats: [{ name: "HP", value: 100, range: [0, 100] }],
         inventory: [{ id: "1", name: "Sword" }],
         lastMessage: { text: "Attack", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.GM,
       });
 
-      expect(result.messages[0].content).toBe("You are a game master.");
+      expect(result.messages[0].content).toBe("You are a storyteller.");
+      expect(result.messages[1].content).toBe("You are a game master.");
       expect(result.messages[result.messages.length - 1].content).toContain(
         "**Game State:**",
       );
@@ -163,8 +179,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Continue", mode: LogEntryMode.STORY },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -183,8 +197,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "open door", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -200,8 +212,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Hello there", mode: LogEntryMode.SAY },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -217,8 +227,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Make it scary", mode: LogEntryMode.DIRECT },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -234,8 +242,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "The wind howls", mode: LogEntryMode.STORY },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -251,15 +257,15 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "", mode: LogEntryMode.CONTINUE },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
       });
 
       const hasContinueNote = result.messages.some(
-        (msg) => msg.content === "Continue from where you left off.",
+        (msg) =>
+          msg.content ===
+          "**Continue Note:**\nContinue from where you left off.",
       );
       expect(hasContinueNote).toBe(true);
     });
@@ -280,8 +286,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Hello", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [pinnedCard],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -324,8 +328,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "What do I do?", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [dragonCard],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -368,8 +370,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Continue walking", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [dragonCard],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -418,8 +418,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Fight it", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [pinnedCard, dragonCard],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -468,8 +466,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Approach the dragon", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [dragonCard, dragonLoreCard],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -512,8 +508,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Where am I?", mode: LogEntryMode.SAY },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -551,8 +545,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Where am I?", mode: LogEntryMode.SAY },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -590,8 +582,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Continue", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -637,8 +627,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Continue", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -676,8 +664,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Current message", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -721,8 +707,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Hello", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel({ contextLength: 100 }),
         gameMode: GameMode.STORY_TELLER,
@@ -747,8 +731,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: longInput, mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel({ contextLength: 2000 }), // Smaller than settings
         gameMode: GameMode.STORY_TELLER,
@@ -780,8 +762,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Hi", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [pinnedCard],
         model: createMockModel({ contextLength: 250 }),
         gameMode: GameMode.STORY_TELLER,
@@ -800,8 +780,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Start", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -816,8 +794,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Hello", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -835,8 +811,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Start", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [],
         model: createMockModel(),
         gameMode: GameMode.GM,
@@ -871,8 +845,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Run", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [dragonCard],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -909,8 +881,6 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "Defend", mode: LogEntryMode.DO },
-        description: "",
-        authorNote: "",
         storyCards: [dragonCard],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -956,8 +926,10 @@ describe("promptBuilder", () => {
         stats: [],
         inventory: [],
         lastMessage: { text: "How are you?", mode: LogEntryMode.SAY },
-        description: "Test description",
-        authorNote: "Test note",
+        components: [
+          createPromptComponent(PromptComponentType.PLOT, "Test plot"),
+          createPromptComponent(PromptComponentType.AUTHOR_NOTE, "Test note"),
+        ],
         storyCards: [pinnedCard],
         model: createMockModel(),
         gameMode: GameMode.STORY_TELLER,
@@ -965,12 +937,11 @@ describe("promptBuilder", () => {
 
       // Verify order
       expect(result.messages[0].role).toBe("system"); // System prompt
-      expect(result.messages[1].role).toBe("system"); // Description
-      expect(result.messages[2].role).toBe("system"); // Author note
-      expect(result.messages[3].role).toBe("system"); // Storybook
-      expect(result.messages[3].content).toContain("**StoryBook:**");
-      // History messages
-      // Last message should be user
+      expect(result.messages[1].content).toBe("**Plot:**\nTest plot");
+      expect(result.messages[2].content).toContain("**StoryBook:**");
+      expect(result.messages.at(-2)?.content).toBe(
+        "**Author's Note:**\nTest note",
+      );
       expect(result.messages[result.messages.length - 1].role).toBe("user");
     });
   });

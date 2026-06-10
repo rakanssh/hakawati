@@ -38,7 +38,7 @@ msgstr "..."
 msgid "(${0} downloaded)"
 msgstr "(تم تنزيل ${0})"
 
-#: app/components/layout/settings/api.tsx:216
+#: app/components/layout/settings/api.tsx:221
 msgid "(auth required)"
 msgstr "(تتطلب مصادقة)"
 
@@ -134,11 +134,11 @@ msgstr "🎲 افعل..."
 #~ msgid "💡 Tip: You can always adjust the tone later by editing the author note"
 #~ msgstr "💡 نصيحة: يمكنك دائماً تعديل النبرة لاحقاً عن طريق تحرير ملاحظة المؤلف"
 
-#: app/components/sidebar/stats-card.tsx:167
+#: app/components/sidebar/stats-card.tsx:169
 msgid "0"
 msgstr "0"
 
-#: app/components/sidebar/stats-card.tsx:180
+#: app/components/sidebar/stats-card.tsx:182
 msgid "100"
 msgstr "100"
 
@@ -193,8 +193,8 @@ msgstr "إضافة رصيد API"
 
 #: app/components/layout/settings/inventory-stats.tsx:152
 #: app/components/layout/settings/inventory-stats.tsx:229
-#: app/components/sidebar/inventory-card.tsx:103
-#: app/components/sidebar/stats-card.tsx:193
+#: app/components/sidebar/inventory-card.tsx:105
+#: app/components/sidebar/stats-card.tsx:195
 #: app/components/ui/inventory-item.tsx:66
 #: app/components/ui/stat-item.tsx:93
 msgid "Add context for the AI..."
@@ -221,9 +221,13 @@ msgstr "أضف رصيداً أو اشترك في خطة"
 msgid "Add inventory item"
 msgstr "إضافة شيء للمخزون"
 
+#: app/components/sidebar/inventory-card.tsx:45
+msgid "Add item"
+msgstr "إضافة شيء"
+
 #: app/components/scenario/InventoryEditor.tsx:65
-#: app/components/sidebar/inventory-card.tsx:77
-#: app/components/sidebar/inventory-card.tsx:116
+#: app/components/sidebar/inventory-card.tsx:79
+#: app/components/sidebar/inventory-card.tsx:118
 msgid "Add Item"
 msgstr "إضافة شيء"
 
@@ -231,9 +235,13 @@ msgstr "إضافة شيء"
 msgid "Add item..."
 msgstr "إضافة شيء..."
 
+#: app/components/sidebar/stats-card.tsx:72
+msgid "Add stat"
+msgstr "إضافة خاصية"
+
 #: app/components/scenario/StatsEditor.tsx:111
-#: app/components/sidebar/stats-card.tsx:138
-#: app/components/sidebar/stats-card.tsx:206
+#: app/components/sidebar/stats-card.tsx:140
+#: app/components/sidebar/stats-card.tsx:208
 msgid "Add Stat"
 msgstr "إضافة خاصية"
 
@@ -245,7 +253,7 @@ msgstr "أضف اسم الخاصية"
 #~ msgid "Address the player directly in second person. Write in present tense. Show, do not simply tell. Use concrete sensory details over abstract descriptions. Vary sentence rhythm. Short, sharp lines for tension. Longer, flowing passages for atmosphere. Avoid acting on behalf of the player."
 #~ msgstr "خاطب اللاعب مباشرة بضمير المخاطب. اكتب بصيغة المضارع. أظهر ولا تخبر فقط. استخدم تفاصيل حسية ملموسة. نوّع إيقاع الجمل: قصيرة وحادة للتوتر، وطويلة وانسيابية للجو. تجنب التصرف نيابة عن اللاعب."
 
-#: app/components/layout/settings/game.tsx:121
+#: app/components/layout/settings/game.tsx:123
 msgid "Adjust interface density, story text size, and font choice."
 msgstr "ضبط كثافة الواجهة، وحجم نص القصة، واختيار الخط."
 
@@ -275,11 +283,11 @@ msgstr "إعداد الذكاء الاصطناعي"
 msgid "AI tells the story only: no inventory or stats are tracked, just narrative. Works with any model."
 msgstr "يسرد الذكاء الاصطناعي القصة فقط: لا يتم تتبع المخزون أو الخصائص، مجرد سرد. يعمل مع أي نموذج."
 
-#: app/components/layout/settings/game.tsx:179
+#: app/components/layout/settings/game.tsx:193
 msgid "AI thinking"
 msgstr "تفكير الذكاء الاصطناعي"
 
-#: app/components/layout/settings/game.tsx:196
+#: app/components/layout/settings/game.tsx:210
 #: app/components/storybook/CategoryFilter.tsx:32
 msgid "All"
 msgstr "الكل"
@@ -288,7 +296,7 @@ msgstr "الكل"
 #~ msgid "Allow small moments of warmth or levity to color the scene, even if danger is present."
 #~ msgstr "اسمح للحظات صغيرة من الدفء أو الخفة أن تلون المشهد، حتى في وجود الخطر."
 
-#: app/components/layout/settings/api.tsx:298
+#: app/components/layout/settings/api.tsx:327
 msgid "alloy"
 msgstr "alloy"
 
@@ -304,7 +312,7 @@ msgstr "alloy"
 msgid "Anything else before the tale begins?"
 msgstr "هل هناك أي شيء آخر قبل بدء الحكاية؟"
 
-#: app/components/layout/settings/api.tsx:236
+#: app/components/layout/settings/api.tsx:241
 msgid "API Key"
 msgstr "مفتاح API"
 
@@ -332,7 +340,7 @@ msgstr "ملاحظات المؤلف"
 msgid "Author's note injected during continue..."
 msgstr "ملاحظة المؤلف المدرجة أثناء الاستمرار..."
 
-#: app/components/layout/settings/game.tsx:208
+#: app/components/layout/settings/game.tsx:222
 msgid "Auto-narrate"
 msgstr "سرد تلقائي"
 
@@ -340,7 +348,7 @@ msgstr "سرد تلقائي"
 msgid "Autofill"
 msgstr "تعبئة آلية"
 
-#: app/components/layout/settings/game.tsx:210
+#: app/components/layout/settings/game.tsx:224
 msgid "Automatically play new story narration after it finishes generating."
 msgstr "تشغيل سرد القصة الجديد تلقائياً بعد انتهاء توليده."
 
@@ -348,7 +356,7 @@ msgstr "تشغيل سرد القصة الجديد تلقائياً بعد انت
 msgid "Back"
 msgstr "السابق"
 
-#: app/components/layout/settings/api.tsx:143
+#: app/components/layout/settings/api.tsx:148
 msgid "Base URL"
 msgstr "العنوان الأساسي"
 
@@ -398,8 +406,8 @@ msgstr "تصفح وإدارة السيناريوهات"
 #~ msgstr "كاميرا"
 
 #: app/components/scenario/GenerateScenarioDialog.tsx:104
-#: app/components/sidebar/inventory-card.tsx:112
-#: app/components/sidebar/stats-card.tsx:202
+#: app/components/sidebar/inventory-card.tsx:114
+#: app/components/sidebar/stats-card.tsx:204
 #: app/components/storybook/StorybookEditor.tsx:349
 #: app/components/ui/inventory-item.tsx:73
 #: app/components/ui/stat-item.tsx:100
@@ -459,7 +467,7 @@ msgstr "جاري التحقق من وجود تحديثات..."
 msgid "Choose how much control the AI has over this tale."
 msgstr "اختر مدى تحكم الذكاء الاصطناعي في هذه الحكاية."
 
-#: app/components/layout/settings/game.tsx:181
+#: app/components/layout/settings/game.tsx:195
 msgid "Choose how much model reasoning appears in the log."
 msgstr "اختر مقدار تفكير النموذج الذي يظهر في السجل."
 
@@ -596,7 +604,7 @@ msgstr "أنشئ مفتاح API جديداً والصقه هنا"
 msgid "Create a new secret key and paste it here"
 msgstr "أنشئ مفتاحاً سرياً (Secret Key) جديداً والصقه هنا"
 
-#: app/components/sidebar/stats-card.tsx:141
+#: app/components/sidebar/stats-card.tsx:143
 msgid "Create a new stat with initial and maximum values."
 msgstr "إنشاء خاصية جديدة مع قيمة ابتدائية وقيمة قصوى."
 
@@ -633,7 +641,7 @@ msgstr "الحالي"
 #~ msgid "Current energy"
 #~ msgstr "الطاقة الحالية"
 
-#: app/components/sidebar/stats-card.tsx:162
+#: app/components/sidebar/stats-card.tsx:164
 msgid "Current Value"
 msgstr "القيمة الحالية"
 
@@ -646,11 +654,9 @@ msgstr "الإصدار الحالي: {0}"
 #~ msgid "cursed, or gifted, with glimpses beyond the veil, never certain if what you see is truth or madness"
 #~ msgstr "ملعون أو موهوب بلمحات مما وراء الحجاب، غير متأكد إن كان ما تراه حقيقة أم جنوناً"
 
-#: app/components/quickstart/steps/archetype-step.tsx:37
-#: app/data/quickstart-presets.ts:62
-#: app/data/quickstart-presets.ts:288
-#~ msgid "Custom"
-#~ msgstr "مخصص"
+#: app/components/layout/settings/api.tsx:314
+msgid "Custom"
+msgstr "مخصص"
 
 #: app/components/quickstart/steps/archetype-step.tsx:139
 #~ msgid "Custom Archetype"
@@ -722,8 +728,8 @@ msgstr "الوصف"
 #: app/components/layout/settings/inventory-stats.tsx:149
 #: app/components/layout/settings/inventory-stats.tsx:226
 #: app/components/scenario/StatsEditor.tsx:65
-#: app/components/sidebar/inventory-card.tsx:99
-#: app/components/sidebar/stats-card.tsx:189
+#: app/components/sidebar/inventory-card.tsx:101
+#: app/components/sidebar/stats-card.tsx:191
 msgid "Description (optional)"
 msgstr "الوصف (اختياري)"
 
@@ -832,7 +838,7 @@ msgstr "تعديل سياق قصة الحكاية النشطة، وحالة ال
 #~ msgid "Energy sidearm"
 #~ msgstr "سلاح طاقة جانبي"
 
-#: app/components/sidebar/inventory-card.tsx:80
+#: app/components/sidebar/inventory-card.tsx:82
 msgid "Enter a new item to add to your inventory."
 msgstr "أدخل شيء جديد لإضافته إلى المخزون."
 
@@ -885,7 +891,7 @@ msgstr "تصدير JSON"
 msgid "Failed to check for updates."
 msgstr "فشل التحقق من وجود تحديثات."
 
-#: app/pages/play/play.tsx:87
+#: app/pages/play/play.tsx:94
 msgid "Failed to generate narration audio."
 msgstr "فشل توليد الصوت للسرد."
 
@@ -935,11 +941,11 @@ msgstr "خيال"
 #~ msgid "Flashlight"
 #~ msgstr "مصباح يدوي"
 
-#: app/components/layout/settings/game.tsx:170
+#: app/components/layout/settings/game.tsx:172
 msgid "Font Family"
 msgstr "عائلة الخط"
 
-#: app/components/layout/settings/game.tsx:148
+#: app/components/layout/settings/game.tsx:150
 msgid "Font Size (0.75 - 2.0)"
 msgstr "حجم الخط (0.75 - 2.0)"
 
@@ -952,7 +958,7 @@ msgstr "حجم الخط (0.75 - 2.0)"
 msgid "Frequency penalty"
 msgstr "عقوبة التواتر"
 
-#: app/components/layout/settings/game.tsx:156
+#: app/components/layout/settings/game.tsx:158
 msgid "Game log font size"
 msgstr "حجم الخط لسجل اللعبة"
 
@@ -1075,13 +1081,17 @@ msgstr "تطبيق حكواتي محدّث."
 msgid "Help for {label}"
 msgstr "مساعدة بخصوص {label}"
 
-#: app/components/layout/settings/api.tsx:258
+#: app/components/layout/settings/api.tsx:263
 msgid "Hide API key"
 msgstr "إخفاء مفتاح API"
 
 #: app/components/layout/settings/model.tsx:127
 msgid "Higher values make responses less predictable."
 msgstr "القيم الأعلى تجعل الاستجابات أقل قابلية للتنبؤ."
+
+#: app/components/layout/settings/game.tsx:186
+msgid "Highlight last section"
+msgstr "تمييز آخر قسم"
 
 #: app/data/quickstart-presets.ts:28
 msgid "Horror"
@@ -1116,7 +1126,7 @@ msgstr "كيفية اللعب"
 #~ msgid "HP"
 #~ msgstr "صحة"
 
-#: app/components/layout/settings/api.tsx:161
+#: app/components/layout/settings/api.tsx:166
 msgid "http://localhost:11434/v1"
 msgstr "http://localhost:11434/v1"
 
@@ -1190,7 +1200,7 @@ msgid "Instructions"
 msgstr "التعليمات"
 
 #: app/components/layout/settings/inventory-stats.tsx:196
-#: app/components/sidebar/inventory-card.tsx:50
+#: app/components/sidebar/inventory-card.tsx:48
 msgid "Inventory"
 msgstr "المخزون"
 
@@ -1214,7 +1224,7 @@ msgstr "محقّق"
 #~ msgid "Iron Sword"
 #~ msgstr "سيف حديدي"
 
-#: app/components/sidebar/inventory-card.tsx:90
+#: app/components/sidebar/inventory-card.tsx:92
 #: app/components/ui/inventory-item.tsx:55
 msgid "Item name"
 msgstr "اسم الشيء"
@@ -1243,11 +1253,11 @@ msgstr "صحفي"
 #~ msgid "keeping others alive in a world that wants everyone dead, rationing hope along with the antibiotics"
 #~ msgstr "يبقي الآخرين على قيد الحياة في عالم يتربص بالجميع، يقتصد في الأمل كما يقتصد في المضادات الحيوية"
 
-#: app/components/layout/settings/game.tsx:78
+#: app/components/layout/settings/game.tsx:80
 msgid "Language"
 msgstr "اللغة"
 
-#: app/components/layout/settings/game.tsx:104
+#: app/components/layout/settings/game.tsx:106
 msgid "Language Default"
 msgstr "حسب اللغة"
 
@@ -1270,13 +1280,17 @@ msgstr "آخر لعب: {0}"
 msgid "Last updated: {0}"
 msgstr "آخر تحديث: {0}"
 
-#: app/components/layout/settings/game.tsx:199
+#: app/components/layout/settings/game.tsx:213
 msgid "Latest"
 msgstr "الأحدث"
 
 #: app/pages/home/home.tsx:473
 msgid "Latest Scenarios"
 msgstr "أحدث السيناريوهات"
+
+#: app/components/layout/settings/game.tsx:178
+msgid "Latest section"
+msgstr "آخر قسم"
 
 #: app/pages/home/home.tsx:434
 msgid "Latest Tales"
@@ -1294,7 +1308,7 @@ msgstr "أحدث الحكايات"
 msgid "Leave these empty to let the selected provider use its defaults."
 msgstr "اترك هذه الحقول فارغة للسماح للمزود المختار باستخدام إعداداته الافتراضية."
 
-#: app/components/layout/settings/game.tsx:107
+#: app/components/layout/settings/game.tsx:109
 msgid "Left to Right"
 msgstr "من اليسار إلى اليمين"
 
@@ -1311,11 +1325,11 @@ msgstr "مرح"
 msgid "Load Tale"
 msgstr "تحميل الحكاية"
 
-#: app/pages/play/play.tsx:226
+#: app/pages/play/play.tsx:233
 msgid "Loading adventure..."
 msgstr "جاري تحميل المغامرة..."
 
-#: app/components/play/play-log-display.tsx:67
+#: app/components/play/play-log-display.tsx:70
 msgid "Loading older entries..."
 msgstr "جاري تحميل المدخلات القديمة..."
 
@@ -1334,7 +1348,7 @@ msgstr "جاري تحميل..."
 msgid "Local"
 msgstr "محلي"
 
-#: app/components/layout/settings/api.tsx:185
+#: app/components/layout/settings/api.tsx:190
 msgid "Local API servers"
 msgstr "خوادم API المحلية"
 
@@ -1346,7 +1360,7 @@ msgstr "خوادم API المحلية"
 #~ msgid "Longbow"
 #~ msgstr "قوس طويل"
 
-#: app/components/layout/settings/game.tsx:54
+#: app/components/layout/settings/game.tsx:56
 msgid "Look and language"
 msgstr "المظهر واللغة"
 
@@ -1397,7 +1411,7 @@ msgstr "الحد الأقصى لرموز المخرجات"
 msgid "Maximum is determined by current model."
 msgstr "يتم تحديد الحد الأقصى بواسطة النموذج الحالي."
 
-#: app/components/sidebar/stats-card.tsx:175
+#: app/components/sidebar/stats-card.tsx:177
 msgid "Maximum Value"
 msgstr "القيمة القصوى"
 
@@ -1437,7 +1451,7 @@ msgstr "Min P"
 msgid "Missing settings: {0}. Configure your API in Settings."
 msgstr "الإعدادات المفقودة: {0}. قم بتعيين API في الإعدادات."
 
-#: app/components/layout/settings/api.tsx:274
+#: app/components/layout/settings/api.tsx:279
 msgid "Model"
 msgstr "النموذج"
 
@@ -1464,8 +1478,8 @@ msgstr "غموض"
 #: app/components/layout/settings/inventory-stats.tsx:108
 #: app/components/layout/settings/inventory-stats.tsx:207
 #: app/components/scenario/ScenarioBasicsFields.tsx:43
-#: app/components/sidebar/inventory-card.tsx:86
-#: app/components/sidebar/stats-card.tsx:147
+#: app/components/sidebar/inventory-card.tsx:88
+#: app/components/sidebar/stats-card.tsx:149
 #: app/components/ui/inventory-item.tsx:50
 #: app/components/ui/stat-item.tsx:53
 msgid "Name"
@@ -1488,7 +1502,7 @@ msgstr "سرد القسم"
 #~ msgid "Narration Style (Optional)"
 #~ msgstr "أسلوب السرد (اختياري)"
 
-#: app/components/layout/settings/api.tsx:30
+#: app/components/layout/settings/api.tsx:32
 msgid "Narrator"
 msgstr "الراوي"
 
@@ -1521,7 +1535,7 @@ msgstr "لا توجد مدخلات في فئة <0>{selectedCategory}</0>"
 msgid "No entries yet."
 msgstr "لا توجد مدخلات بعد."
 
-#: app/components/layout/settings/api.tsx:203
+#: app/components/layout/settings/api.tsx:208
 msgid "No local servers found."
 msgstr "لا يوجد خوادم محلية."
 
@@ -1546,7 +1560,7 @@ msgstr "لا توجد حكايات بعد."
 msgid "No utility model selected"
 msgstr "لم يتم تحديد نموذج مساعدة"
 
-#: app/components/layout/settings/game.tsx:202
+#: app/components/layout/settings/game.tsx:216
 msgid "None"
 msgstr "لا شيء"
 
@@ -1558,7 +1572,7 @@ msgstr "لا شيء"
 #~ msgid "Nothing Specific"
 #~ msgstr "لا شيء محدد"
 
-#: app/components/sidebar/inventory-card.tsx:67
+#: app/components/sidebar/inventory-card.tsx:69
 #: app/components/sidebar/stats-card.tsx:81
 msgid "Nothing..."
 msgstr "لا شيء..."
@@ -1611,11 +1625,11 @@ msgstr "نص الافتتاحية"
 msgid "OpenRouter"
 msgstr "OpenRouter"
 
-#: app/components/layout/settings/api.tsx:250
+#: app/components/layout/settings/api.tsx:255
 msgid "Optional for most local servers"
 msgstr "اختياري لمعظم الخوادم المحلية"
 
-#: app/components/layout/settings/api.tsx:239
+#: app/components/layout/settings/api.tsx:244
 msgid "Optional for most local servers."
 msgstr "اختياري لمعظم الخوادم المحلية."
 
@@ -1717,7 +1731,7 @@ msgstr "الموجّهات"
 #~ msgid "Protective charm"
 #~ msgstr "تعويذة حماية"
 
-#: app/components/layout/settings/api.tsx:124
+#: app/components/layout/settings/api.tsx:129
 msgid "Provider"
 msgstr "المزود"
 
@@ -1732,7 +1746,7 @@ msgstr "المزود"
 msgid "Provider default"
 msgstr "الافتراضي للمزود"
 
-#: app/components/layout/settings/api.tsx:287
+#: app/components/layout/settings/api.tsx:292
 msgid "Provider voice id for speech generation. OpenAI-compatible providers commonly support alloy."
 msgstr "معرف صوت المزود لتوليد الكلام. تدعم المزودات المتوافقة مع OpenAI عادةً صوت alloy."
 
@@ -1780,11 +1794,11 @@ msgstr "عشوائية البذرة"
 msgid "Ranger"
 msgstr "حارس"
 
-#: app/components/layout/settings/game.tsx:221
+#: app/components/layout/settings/game.tsx:235
 msgid "Read new narration aloud"
 msgstr "قراءة السرد الجديد بصوت عالٍ"
 
-#: app/components/layout/settings/game.tsx:119
+#: app/components/layout/settings/game.tsx:121
 msgid "Reading comfort"
 msgstr "راحة القراءة"
 
@@ -1818,7 +1832,7 @@ msgstr "إزالة"
 msgid "Repetition penalty"
 msgstr "عقوبة التكرار"
 
-#: app/components/layout/settings/api.tsx:192
+#: app/components/layout/settings/api.tsx:197
 msgid "Rescan"
 msgstr "إعادة الفحص"
 
@@ -1826,8 +1840,8 @@ msgstr "إعادة الفحص"
 #~ msgid "Research Notes"
 #~ msgstr "ملاحظات بحث"
 
-#: app/components/layout/settings/game.tsx:143
-#: app/components/layout/settings/game.tsx:164
+#: app/components/layout/settings/game.tsx:145
+#: app/components/layout/settings/game.tsx:166
 msgid "Reset"
 msgstr "إعادة تعيين"
 
@@ -1868,7 +1882,7 @@ msgstr "مراجعة معلومات الترخيص والتبعيات والمس
 #~ msgid "Revolver"
 #~ msgstr "مسدس"
 
-#: app/components/layout/settings/game.tsx:110
+#: app/components/layout/settings/game.tsx:112
 msgid "Right to Left"
 msgstr "من اليمين إلى اليسار"
 
@@ -1912,11 +1926,11 @@ msgstr "قل"
 msgid "Say: Speak something out loud."
 msgstr "قل: قل شيئاً."
 
-#: app/components/layout/settings/api.tsx:198
+#: app/components/layout/settings/api.tsx:203
 msgid "Scanning for local servers..."
 msgstr "جاري البحث عن خوادم محلية..."
 
-#: app/components/layout/settings/api.tsx:192
+#: app/components/layout/settings/api.tsx:197
 msgid "Scanning..."
 msgstr "جاري البحث..."
 
@@ -1941,7 +1955,7 @@ msgstr "خيال علمي"
 msgid "Scientist"
 msgstr "عالم"
 
-#: app/pages/play/play.tsx:293
+#: app/pages/play/play.tsx:300
 msgid "Scroll to bottom"
 msgstr "التمرير إلى الأسفل"
 
@@ -1968,11 +1982,11 @@ msgstr "اختر نوع اللعبة"
 msgid "Select a model"
 msgstr "اختر نموذج"
 
-#: app/components/layout/settings/api.tsx:132
+#: app/components/layout/settings/api.tsx:137
 msgid "Select a provider"
 msgstr "اختر مزود"
 
-#: app/components/layout/settings/game.tsx:66
+#: app/components/layout/settings/game.tsx:68
 msgid "Select a theme"
 msgstr "اختر النسق"
 
@@ -1984,11 +1998,11 @@ msgstr "اختر النسق"
 msgid "Select action mode"
 msgstr "اختر نوع الإجراء"
 
-#: app/components/layout/settings/game.tsx:100
+#: app/components/layout/settings/game.tsx:102
 msgid "Select direction"
 msgstr "اختر الاتجاه"
 
-#: app/components/layout/settings/game.tsx:81
+#: app/components/layout/settings/game.tsx:83
 msgid "Select language"
 msgstr "اختر اللغة"
 
@@ -1996,7 +2010,7 @@ msgstr "اختر اللغة"
 msgid "Select Model"
 msgstr "اختر النموذج"
 
-#: app/components/layout/settings/game.tsx:192
+#: app/components/layout/settings/game.tsx:206
 msgid "Select thinking visibility"
 msgstr "اختر عرض التفكير"
 
@@ -2010,7 +2024,7 @@ msgstr "جدي"
 
 #: app/components/layout/model-select.tsx:209
 #: app/components/layout/model-select.tsx:278
-#: app/components/layout/settings/api.tsx:174
+#: app/components/layout/settings/api.tsx:179
 msgid "Set"
 msgstr "ضبط"
 
@@ -2026,7 +2040,7 @@ msgstr "ضبط"
 msgid "Set the token budget and creativity controls used for new AI responses."
 msgstr "ضبط ميزانية الرموز وعناصر التحكم في الإبداع المستخدمة لاستجابات الذكاء الاصطناعي الجديدة."
 
-#: app/components/layout/settings/game.tsx:56
+#: app/components/layout/settings/game.tsx:58
 msgid "Set the visual style, language, and reading direction."
 msgstr "ضبط النمط المرئي واللغة واتجاه القراءة."
 
@@ -2047,7 +2061,7 @@ msgstr "الإعدادات"
 msgid "Setup required"
 msgstr "يجب إعداد التطبيق"
 
-#: app/components/layout/settings/api.tsx:258
+#: app/components/layout/settings/api.tsx:263
 msgid "Show API key"
 msgstr "اظهر مفتاح API"
 
@@ -2088,7 +2102,7 @@ msgstr "جندي فضاء"
 #~ msgid "Specify perspective (first/second person)"
 #~ msgstr "حدد المنظور (المتكلم/المخاطب)"
 
-#: app/components/layout/settings/api.tsx:34
+#: app/components/layout/settings/api.tsx:36
 msgid "Speech to Text"
 msgstr "تحويل الكلام إلى نص"
 
@@ -2112,13 +2126,13 @@ msgid "Starting download..."
 msgstr "جاري بدء التحميل..."
 
 #: app/components/layout/settings/inventory-stats.tsx:111
-#: app/components/sidebar/stats-card.tsx:151
+#: app/components/sidebar/stats-card.tsx:153
 #: app/components/ui/stat-item.tsx:58
 msgid "Stat name"
 msgstr "اسم الخاصية"
 
 #: app/components/layout/settings/inventory-stats.tsx:97
-#: app/components/sidebar/stats-card.tsx:72
+#: app/components/sidebar/stats-card.tsx:75
 msgid "Stats"
 msgstr "الخصائص"
 
@@ -2265,7 +2279,7 @@ msgstr "حكايات"
 msgid "Temperature"
 msgstr "درجة الحرارة"
 
-#: app/components/layout/settings/api.tsx:36
+#: app/components/layout/settings/api.tsx:38
 msgid "Text to Speech"
 msgstr "تحويل النص إلى كلام"
 
@@ -2289,7 +2303,7 @@ msgstr "الـ API الرسمي لـ OpenAI. يتطلب حساب OpenAI مشحو
 msgid "The output of this prompt are parsed as JSON. Make sure to preserve the JSON format if you customize this prompt."
 msgstr "يتم تحليل مخرجات هذا الموجّه كـ JSON. تأكد من الحفاظ على تنسيق JSON إذا قمت بتخصيص هذا الموجّه."
 
-#: app/components/layout/settings/game.tsx:60
+#: app/components/layout/settings/game.tsx:62
 msgid "Theme"
 msgstr "النسق"
 
@@ -2311,7 +2325,7 @@ msgstr "شيء"
 msgid "Thinking"
 msgstr "تفكير"
 
-#: app/components/layout/settings/game.tsx:184
+#: app/components/layout/settings/game.tsx:198
 msgid "Thinking Visibility"
 msgstr "إظهار التفكير"
 
@@ -2351,23 +2365,23 @@ msgstr "هذا هو موجّه النظام المستخدم عندما تكون
 msgid "This is the user message that is sent to the AI when the continue button is clicked."
 msgstr "هذه هي رسالة المستخدم التي يتم إرسالها إلى الذكاء الاصطناعي عند النقر على زر الاستمرار."
 
-#: app/components/layout/settings/api.tsx:46
+#: app/components/layout/settings/api.tsx:48
 msgid "This model is used for miscellaneous actions like generating scenarios and story cards."
 msgstr "يُستخدم هذا النموذج لإجراءات متنوعة مثل توليد السيناريوهات وبطاقات القصة."
 
-#: app/components/layout/settings/api.tsx:43
+#: app/components/layout/settings/api.tsx:45
 msgid "This model is used to generate story."
 msgstr "يُستخدم هذا النموذج لتوليد القصة."
 
-#: app/components/layout/settings/api.tsx:282
+#: app/components/layout/settings/api.tsx:287
 msgid "This model publishes supported voices. Pick one from the suggestions."
 msgstr "ينشر هذا النموذج الأصوات المدعومة. اختر واحداً من الاقتراحات."
 
-#: app/components/layout/settings/api.tsx:53
+#: app/components/layout/settings/api.tsx:55
 msgid "This model transcribes recorded speech into text for the input box."
 msgstr "يقوم هذا النموذج بتحويل الكلام المسجل إلى نص لصندوق الإدخال."
 
-#: app/components/layout/settings/api.tsx:58
+#: app/components/layout/settings/api.tsx:60
 msgid "This model will be used for spoken narration."
 msgstr "سيتم استخدام هذا النموذج للسرد الصوتي."
 
@@ -2468,11 +2482,11 @@ msgstr "أدخل إجراءات، ويستمر الكاتب. الإجراءات 
 msgid "Type your own world, or start from one of the suggestions below."
 msgstr "اكتب عالمك الخاص، أو ابدأ بأحد الاقتراحات أدناه."
 
-#: app/components/layout/settings/game.tsx:92
+#: app/components/layout/settings/game.tsx:94
 msgid "UI Direction"
 msgstr "الاتجاه"
 
-#: app/components/layout/settings/game.tsx:127
+#: app/components/layout/settings/game.tsx:129
 msgid "UI Scale (0.8 - 1.5)"
 msgstr "مقياس الواجهة (0.8 - 1.5)"
 
@@ -2512,7 +2526,7 @@ msgstr "التحديث {0} متاح."
 msgid "Update downloaded. Restarting..."
 msgstr "تم تحميل التحديث. جاري إعادة التشغيل..."
 
-#: app/components/layout/settings/api.tsx:225
+#: app/components/layout/settings/api.tsx:230
 msgid "Use"
 msgstr "استخدام"
 
@@ -2528,11 +2542,11 @@ msgstr "استخدام موجّه مخصص"
 msgid "Use the Rescan button to detect your server (This will only work if the server is running and accessible)"
 msgstr "استخدم زر إعادة الفحص لاكتشاف خادمك (سيعمل هذا فقط إذا كان الخادم قيد التشغيل ويمكن الوصول إليه)"
 
-#: app/components/layout/settings/game.tsx:135
+#: app/components/layout/settings/game.tsx:137
 msgid "User interface scale"
 msgstr "مقياس الواجهة"
 
-#: app/components/layout/settings/api.tsx:32
+#: app/components/layout/settings/api.tsx:34
 msgid "Utility"
 msgstr "المساعدة"
 
@@ -2557,7 +2571,7 @@ msgstr "عرض شروط GPLv3"
 msgid "Visit NanoGPT (Account optional)"
 msgstr "قم بزيارة NanoGPT (الحساب اختياري)"
 
-#: app/components/layout/settings/api.tsx:279
+#: app/components/layout/settings/api.tsx:284
 msgid "Voice"
 msgstr "الصوت"
 

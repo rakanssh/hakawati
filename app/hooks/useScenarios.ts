@@ -5,8 +5,8 @@ import {
   initTaleFromScenario,
   getScenarioById,
   getAllScenarios,
-  serializeScenarioExportV1,
-  deserializeScenarioExportV1,
+  deserializeScenarioExport,
+  serializeScenarioExportV2,
 } from "@/services/scenario.service";
 import { useLoadTale } from "@/hooks/useGameSaves";
 import { GameMode, Scenario, ScenarioHead } from "@/types/context.type";
@@ -58,9 +58,8 @@ export function useScenarioEditor(initial?: Partial<Scenario>) {
     id: initial?.id ?? "",
     name: initial?.name ?? "Untitled Scenario",
     initialGameMode: initial?.initialGameMode ?? GameMode.STORY_TELLER,
-    initialDescription: initial?.initialDescription ?? "",
-    initialAuthorNote: initial?.initialAuthorNote ?? "",
-    openingText: initial?.openingText ?? "",
+    description: initial?.description ?? "",
+    components: initial?.components ?? [],
     initialStats: initial?.initialStats ?? [],
     initialInventory: initial?.initialInventory ?? [],
     initialStoryCards: initial?.initialStoryCards ?? [],
@@ -120,13 +119,13 @@ export function useScenariosExport() {
       toast.error("Scenario not found");
       return;
     }
-    const json = serializeScenarioExportV1(scenario);
+    const json = serializeScenarioExportV2(scenario);
     await copyTextToClipboard(json);
     toast.success("Scenario JSON copied to clipboard");
   }, []);
 
   const exportFromValue = useCallback(async (scenario: Scenario) => {
-    const json = serializeScenarioExportV1(scenario);
+    const json = serializeScenarioExportV2(scenario);
     await copyTextToClipboard(json);
     toast.success("Scenario JSON copied to clipboard");
   }, []);
@@ -137,7 +136,7 @@ export function useScenariosExport() {
 export function useScenariosImport() {
   const importFromClipboard = useCallback(async () => {
     const raw = await readTextFromClipboard();
-    const scenario = deserializeScenarioExportV1(raw);
+    const scenario = deserializeScenarioExport(raw);
     return scenario;
   }, []);
 

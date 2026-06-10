@@ -54,6 +54,33 @@ export function decodeEscapedText(input: string): string {
   );
 }
 
+const MOJIBAKE_REPLACEMENTS: Record<string, string> = {
+  "â": "—",
+  "â€”": "—",
+  "â": "–",
+  "â€“": "–",
+  "â": "‘",
+  "â€˜": "‘",
+  "â": "’",
+  "â€™": "’",
+  "â": "“",
+  "â€œ": "“",
+  "â": "”",
+  "â€�": "”",
+  "â¦": "…",
+  "â€¦": "…",
+  "Â ": " ",
+};
+
+export function repairCommonMojibake(input: string): string {
+  if (!input) return input;
+  let output = input;
+  for (const [bad, fixed] of Object.entries(MOJIBAKE_REPLACEMENTS)) {
+    output = output.split(bad).join(fixed);
+  }
+  return output;
+}
+
 /**
  * Convert bytes to object URL. Chat-GPT method, no clue what this means but it fixed the problem.
  * @param bytes - The bytes to convert

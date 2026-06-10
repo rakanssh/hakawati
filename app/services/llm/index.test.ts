@@ -141,6 +141,31 @@ describe("role-aware LLM service", () => {
     });
   });
 
+  it("repairs common mojibake in non-streamed chat text", async () => {
+    fetchMock.mockResolvedValue(
+      responseJson({
+        choices: [
+          {
+            message: {
+              content: "The door opensâslowly.",
+              reasoning: "Thinkâ¦ carefully.",
+            },
+          },
+        ],
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      }),
+    );
+
+    const response = await sendRoleChat("narrator", {
+      model: narratorModel.id,
+      messages: [{ role: "user", content: "Hello" }],
+      responseMode: ResponseMode.FREE_FORM,
+    });
+
+    expect(response.content).toBe("The door opens—slowly.");
+    expect(response.thinking).toBe("Think… carefully.");
+  });
+
   it("fetches utility models from the utility endpoint", async () => {
     fetchMock.mockResolvedValue(
       responseJson({

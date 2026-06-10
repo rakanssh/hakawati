@@ -102,7 +102,7 @@ export default function ScenariosHome() {
       <Separator />
       {loading && (
         <div className="text-sm text-muted-foreground">
-          <Trans>Loading…</Trans>
+          <Trans>Loading...</Trans>
         </div>
       )}
       {Boolean(error) && (
@@ -111,7 +111,7 @@ export default function ScenariosHome() {
         </div>
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {items.map(({ id, name, initialDescription, thumbnail, updatedAt }) => {
+        {items.map(({ id, name, description, thumbnail, updatedAt }) => {
           return (
             <Card
               key={id}
@@ -194,11 +194,12 @@ export default function ScenariosHome() {
                   </Tooltip>
                 </div>
               </CardHeader>
-              <CardContent className="px-2 flex flex-col justify-between  gap-1">
-                <span className="font-bold">{name}</span>
-                <div className="flex items-center gap-2"></div>
-                <p className="line-clamp-3 text-sm text-muted-foreground h-16 rounded-xs">
-                  {initialDescription}
+              <CardContent className="flex h-36 flex-col gap-2 px-2">
+                <span className="line-clamp-2 min-h-9 text-sm font-semibold leading-snug">
+                  {name}
+                </span>
+                <p className="line-clamp-3 min-h-0 flex-1 rounded-xs text-sm text-muted-foreground">
+                  {description}
                 </p>
                 <Button
                   onClick={async () => {
@@ -206,7 +207,7 @@ export default function ScenariosHome() {
                     await loadTale(taleId);
                     navigate({ to: "/play" });
                   }}
-                  className="w-full "
+                  className="mt-auto w-full"
                 >
                   <Trans>New Tale</Trans>
                 </Button>

@@ -220,7 +220,7 @@ function ScenarioCard({
         <div className="min-w-0">
           <h3 className="truncate font-semibold">{scenario.name}</h3>
           <p className="mt-1 line-clamp-2 min-h-10 text-sm text-muted-foreground">
-            {scenario.initialDescription || t`No description yet.`}
+            {scenario.description || t`No description yet.`}
           </p>
         </div>
         <Button

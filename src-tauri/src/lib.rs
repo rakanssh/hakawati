@@ -39,6 +39,12 @@ pub fn run() {
                 sql: include_str!("../migrations/002_create_tales.sql"),
                 kind: MigrationKind::Up,
             },
+            Migration {
+                version: 3,
+                description: "add_prompt_components",
+                sql: include_str!("../migrations/003_add_prompt_components.sql"),
+                kind: MigrationKind::Up,
+            },
         ];
 
         app.handle().plugin(

@@ -79,7 +79,7 @@ export default function TalesHome() {
       <Separator />
       {loading && (
         <div className="text-sm text-muted-foreground">
-          <Trans>Loading…</Trans>
+          <Trans>Loading...</Trans>
         </div>
       )}
       {Boolean(error) && (
@@ -181,16 +181,16 @@ export default function TalesHome() {
                       </Trans>
                     </TooltipContent>
                   </Tooltip>
-                </div>
-              </CardHeader>
-              <CardContent className="px-2 flex flex-col justify-between  gap-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold">{name}</span>
-                  <Badge variant="outline" className="text-xs">
+                  <Badge className="absolute left-1 top-8 h-5 bg-accent/50 px-2 text-xs text-muted-foreground">
                     {logCount} {logCount === 1 ? t`turn` : t`turns`}
                   </Badge>
                 </div>
-                <p className="line-clamp-3 text-sm text-muted-foreground h-16 rounded-xs">
+              </CardHeader>
+              <CardContent className="flex h-36 flex-col gap-2 px-2">
+                <span className="line-clamp-2 min-h-9 text-sm font-semibold leading-snug">
+                  {name}
+                </span>
+                <p className="line-clamp-3 min-h-0 flex-1 rounded-xs text-sm text-muted-foreground">
                   {lastLogEntry?.text ?? description}
                 </p>
 
@@ -199,7 +199,7 @@ export default function TalesHome() {
                     await loadIntoGame(id);
                     navigate({ to: "/play" });
                   }}
-                  className="w-full "
+                  className="mt-auto w-full"
                 >
                   <Trans>Load Tale</Trans>
                 </Button>

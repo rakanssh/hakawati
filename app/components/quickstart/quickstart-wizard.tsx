@@ -25,10 +25,10 @@ import {
   isModelRoleConfigured,
   useSettingsStore,
 } from "@/store/useSettingsStore";
-import {
-  generateQuickstartTale,
-  QUICKSTART_AUTHOR_NOTE,
-} from "@/services/llm/quickstartTaleGenerator";
+import { generateQuickstartTale } from "@/services/llm/quickstartTaleGenerator";
+import { createPromptComponent } from "@/lib/prompt-components";
+import { PromptComponentType } from "@/types/context.type";
+import type { PromptComponent } from "@/types/context.type";
 import { ArrowLeftIcon } from "lucide-react";
 
 export interface QuickstartState {
@@ -222,7 +222,7 @@ function OptionalDetailsQuestion({
         id="quickstart-extra-details"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder={t`e.g., Start during a festival, include a lost sibling, avoid grim endings...`}
+        placeholder={t`Anything the tale should know before it begins...`}
         className="min-h-[180px] resize-none rounded-xs border-border/75 bg-background/70 p-4 text-base shadow-lg shadow-background/20 backdrop-blur-sm md:text-lg"
       />
     </div>
@@ -513,11 +513,23 @@ export function QuickstartPage() {
         abort.signal,
       );
 
+      const components: PromptComponent[] = [
+        createPromptComponent(PromptComponentType.PLOT, generated.plot),
+      ];
+      if (generated.authorNote.trim()) {
+        components.push(
+          createPromptComponent(
+            PromptComponentType.AUTHOR_NOTE,
+            generated.authorNote,
+          ),
+        );
+      }
+
       const taleId = await initTale({
         name: generated.name,
         description: generated.description,
         thumbnail: null,
-        authorNote: QUICKSTART_AUTHOR_NOTE,
+        components,
         storyCards: generated.storyCards,
         scenarioId: undefined,
         stats: generated.stats,

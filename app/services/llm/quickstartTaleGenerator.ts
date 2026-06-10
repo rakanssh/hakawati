@@ -1,20 +1,14 @@
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { ResponseMode } from "@/types/api.type";
-import { GameMode, StorybookCategory } from "@/types/context.type";
+import { GameMode } from "@/types/context.type";
 import type { StoryCard } from "@/types/context.type";
 import type { Item } from "@/types/item.type";
 import type { Stat } from "@/types/stats.type";
 import { getActiveQuickstartTaleGeneratorPrompt } from "@/prompts";
 import { resolveModelRole, sendRoleChat } from "@/services/llm";
 import type { ChatMessage, ChatRequest } from "./schema";
-
-export const QUICKSTART_AUTHOR_NOTE = `- use present tense and second person pronouns.
-- show, don't simply tell. Using concrete sensory details over abstract descriptions.
-- vary sentence rhythm for tension and atmosphere
-- vary dialogue style and grammar to fit each character's personality
-- do not make decisions for the player character
-- keep responses short.`;
+import { normalizeStorybookCategory } from "@/lib/story-card-utils";
 
 export type QuickstartTaleAnswers = {
   gameMode: GameMode;
@@ -28,6 +22,8 @@ export type QuickstartTaleAnswers = {
 export type GeneratedQuickstartTale = {
   name: string;
   description: string;
+  plot: string;
+  authorNote: string;
   openingText: string;
   storyCards: StoryCard[];
   stats: Stat[];
@@ -59,6 +55,8 @@ const QuickstartInventoryItemSchema = z.union([
 const QuickstartTaleResponseSchema = z.object({
   name: z.string(),
   description: z.string(),
+  plot: z.string().optional(),
+  authorNote: z.string().optional().default(""),
   openingText: z.string(),
   storyCards: z.array(QuickstartStoryCardSchema).default([]),
   stats: z.array(QuickstartStatSchema).default([]),
@@ -90,12 +88,11 @@ export function buildQuickstartTalePrompt(
   parts.push(
     "",
     "Runtime use of generated fields:",
-    "- description is saved as the tale's persistent story context and sent to the model on future turns.",
+    "- description is saved as a user-facing tale description for browsing saved tales. It is not sent to the model.",
+    "- plot is saved as the tale's persistent story context and sent to the model on future turns.",
+    "- authorNote is optional high-influence guidance shown near the end of the prompt. Use it only for specific user-requested style, tone, pacing, structure, or recurring narrative devices.",
     "- openingText is saved as the first visible tale entry and starts play immediately.",
     "- The user will not review the generated setup before play begins.",
-    "",
-    "The saved tale will use this fixed author note. Follow it when writing the description and openingText, but do not include an authorNote field in the JSON:",
-    QUICKSTART_AUTHOR_NOTE,
   );
 
   return parts.join("\n");
@@ -111,13 +108,6 @@ function normalizeRange(range: number[] | undefined): [number, number] {
   return [range?.[0] ?? 0, range?.[1] ?? 100];
 }
 
-function normalizeCategory(category: string | undefined): StorybookCategory {
-  const validCategories = Object.values(StorybookCategory) as string[];
-  return category && validCategories.includes(category)
-    ? (category as StorybookCategory)
-    : StorybookCategory.UNCATEGORIZED;
-}
-
 function normalizeStoryCards(
   cards: z.infer<typeof QuickstartStoryCardSchema>[],
 ): StoryCard[] {
@@ -127,7 +117,7 @@ function normalizeStoryCards(
     title: card.title,
     triggers: card.triggers,
     content: card.content,
-    category: normalizeCategory(card.category),
+    category: normalizeStorybookCategory(card.category),
     isPinned: false,
     createdAt: now,
     updatedAt: now,
@@ -186,6 +176,8 @@ export async function generateQuickstartTale(
     return {
       name: parsed.name,
       description: parsed.description,
+      plot: parsed.plot ?? parsed.description,
+      authorNote: parsed.authorNote,
       openingText: parsed.openingText,
       storyCards: normalizeStoryCards(parsed.storyCards),
       stats: isGm ? normalizeStats(parsed.stats) : [],

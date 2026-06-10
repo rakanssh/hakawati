@@ -1,13 +1,18 @@
 import { Stat } from "./stats.type";
 import { Item, LogEntry } from "./index";
-import { GameMode, ScenarioHead, StoryCard } from "./context.type";
+import {
+  GameMode,
+  PromptComponent,
+  ScenarioHead,
+  StoryCard,
+} from "./context.type";
 
 export type Tale = {
   id: string;
   name: string;
   description: string;
   thumbnail: Uint8Array | null;
-  authorNote: string;
+  components: PromptComponent[];
   storyCards: StoryCard[];
   scenarioId?: string;
   stats: Stat[];

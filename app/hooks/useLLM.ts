@@ -32,15 +32,8 @@ export function useLLM() {
     setLoading(true);
 
     try {
-      const {
-        log,
-        stats,
-        inventory,
-        gameMode,
-        description,
-        authorNote,
-        storyCards,
-      } = useTaleStore.getState();
+      const { log, stats, inventory, gameMode, components, storyCards } =
+        useTaleStore.getState();
 
       const {
         temperature,
@@ -61,8 +54,7 @@ export function useLLM() {
         inventory,
         lastMessage,
         model,
-        description,
-        authorNote,
+        components,
         storyCards,
         gameMode,
         options: {

@@ -1,6 +1,8 @@
 import { ChatMessage, LLMModel } from "./schema";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useTaleStore } from "@/store/useTaleStore";
+import { getPromptComponentContent } from "@/lib/prompt-components";
+import { PromptComponentType } from "@/types";
 import {
   assembleContextMessages,
   ensureDesiredLogEntriesLoaded,
@@ -22,7 +24,7 @@ export interface BuiltContext {
 }
 
 /**
- * Builds context messages including tale description, author note, story cards, and conversation history.
+ * Builds context messages including AI-facing tale components, story cards, and conversation history.
  * Respects token budget and prioritizes recent messages.
  */
 export async function buildContext(
@@ -39,7 +41,7 @@ export async function buildContext(
 
   const settings = useSettingsStore.getState();
   const store = useTaleStore.getState();
-  const { description, authorNote, storyCards } = store;
+  const { components, storyCards } = store;
 
   const contextLimit = Math.min(
     model.contextLength ?? settings.contextWindow,
@@ -53,17 +55,24 @@ export async function buildContext(
   );
 
   // Build required meta messages
-  const requiredMeta: ChatMessage[] = [
-    {
-      role: "system",
-      content: `${systemPrompt}${description ? "\n\n**Story Setting:**\n" + description : ""}`,
-    },
-  ];
+  const plot = getPromptComponentContent(components, PromptComponentType.PLOT);
+  const authorNote = getPromptComponentContent(
+    components,
+    PromptComponentType.AUTHOR_NOTE,
+  );
 
+  const requiredMeta: ChatMessage[] = [
+    { role: "system", content: systemPrompt },
+  ];
+  if (plot) {
+    requiredMeta.push({ role: "system", content: `**Plot:**\n${plot}` });
+  }
+
+  const lateMeta: ChatMessage[] = [];
   if (includeAuthorNote && authorNote) {
-    requiredMeta.push({
+    lateMeta.push({
       role: "system",
-      content: `**Author Notes:**\n${authorNote}`,
+      content: `**Author's Note:**\n${authorNote}`,
     });
   }
 
@@ -76,6 +85,7 @@ export async function buildContext(
     log: effectiveLogSource,
     storyCards,
     requiredMeta,
+    lateMeta,
     userMessage: userMsg,
     promptBudget,
   });
