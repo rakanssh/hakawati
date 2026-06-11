@@ -95,7 +95,7 @@ msgstr "حكاية {0}"
 #~ msgid "{characterName}'s ship, station, or habitat picks up a signal that should not exist. It is old, far older than it should be, or it is coming from somewhere that should be empty. Someone has to investigate."
 #~ msgstr "تلتقط سفينة أو محطة أو مسكن {characterName} إشارة لا ينبغي أن توجد. إنها قديمة، أقدم مما ينبغي، أو قادمة من مكان يفترض أن يكون فارغاً. شخص ما يجب أن يحقق."
 
-#: app/components/prompt-components/PromptComponentsEditor.tsx:136
+#: app/components/prompt-components/PromptComponentsEditor.tsx:161
 msgid "{chars} characters • ~{tokens} tokens"
 msgstr "{chars} حرف • ~{tokens} رمز"
 
@@ -103,10 +103,10 @@ msgstr "{chars} حرف • ~{tokens} رمز"
 msgid "{descriptionChars} characters • ~{descriptionTokens} tokens"
 msgstr "{descriptionChars} حرف • ~{descriptionTokens} رمز"
 
-#: app/pages/scenarios/home.tsx:125
-#: app/pages/scenarios/home.tsx:131
-#: app/pages/tales/home.tsx:111
-#: app/pages/tales/home.tsx:117
+#: app/pages/scenarios/home.tsx:148
+#: app/pages/scenarios/home.tsx:154
+#: app/pages/tales/home.tsx:136
+#: app/pages/tales/home.tsx:142
 msgid "{name} thumbnail"
 msgstr "صورة مصغرة لـ {name}"
 
@@ -187,7 +187,7 @@ msgstr "عن التطبيق"
 msgid "Act"
 msgstr "افعل"
 
-#: app/components/prompt-components/PromptComponentsEditor.tsx:101
+#: app/components/prompt-components/PromptComponentsEditor.tsx:126
 #: app/components/storybook/StorybookEditor.tsx:213
 msgid "Add"
 msgstr "إضافة"
@@ -282,11 +282,11 @@ msgid "AI"
 msgstr "الذكاء الاصطناعي"
 
 #: app/components/layout/settings/tale.tsx:117
-#: app/components/prompt-components/PromptComponentsEditor.tsx:80
+#: app/components/prompt-components/PromptComponentsEditor.tsx:105
 msgid "AI Components"
 msgstr "مكونات الذكاء الاصطناعي"
 
-#: app/components/prompt-components/PromptComponentsEditor.tsx:90
+#: app/components/prompt-components/PromptComponentsEditor.tsx:115
 msgid "AI Instructions still apply in Game Master mode; GM mechanics and tool behavior are added separately."
 msgstr "لا تزال تعليمات الذكاء الاصطناعي سارية في وضع مدير اللعبة (GM)؛ وتُضاف آليات مدير اللعبة وسلوك الأدوات بشكل منفصل."
 
@@ -411,11 +411,11 @@ msgstr "العنوان الأساسي"
 msgid "Best with more capable models. Requires tool calling."
 msgstr "أفضل مع نماذج أكثر قدرة. يتطلب دعم استدعاء الأدوات."
 
-#: app/pages/tales/home.tsx:75
+#: app/pages/tales/home.tsx:100
 msgid "Browse and load saved tales"
 msgstr "تصفح وتحميل الحكايات المحفوظة"
 
-#: app/pages/scenarios/home.tsx:69
+#: app/pages/scenarios/home.tsx:92
 msgid "Browse and manage your scenarios"
 msgstr "تصفح وإدارة السيناريوهات"
 
@@ -428,12 +428,15 @@ msgstr "تصفح وإدارة السيناريوهات"
 #~ msgid "Camera"
 #~ msgstr "كاميرا"
 
+#: app/components/prompt-components/PromptComponentsEditor.tsx:205
 #: app/components/scenario/GenerateScenarioDialog.tsx:104
 #: app/components/sidebar/inventory-card.tsx:114
 #: app/components/sidebar/stats-card.tsx:204
 #: app/components/storybook/StorybookEditor.tsx:349
 #: app/components/ui/inventory-item.tsx:73
 #: app/components/ui/stat-item.tsx:100
+#: app/pages/scenarios/home.tsx:283
+#: app/pages/tales/home.tsx:279
 msgid "Cancel"
 msgstr "إلغاء"
 
@@ -615,7 +618,7 @@ msgstr "انسخ مفتاح API الخاص بك والصقه هنا"
 msgid "Core generation"
 msgstr "التوليد الأساسي"
 
-#: app/pages/scenarios/home.tsx:94
+#: app/pages/scenarios/home.tsx:117
 msgid "Create"
 msgstr "إنشاء"
 
@@ -717,10 +720,25 @@ msgstr "تعليمات الذكاء الاصطناعي الافتراضية..."
 #~ msgid "Define your character"
 #~ msgstr "عرف الشخصية"
 
-#: app/pages/scenarios/home.tsx:177
-#: app/pages/tales/home.tsx:167
+#: app/components/prompt-components/PromptComponentsEditor.tsx:211
+#: app/pages/scenarios/home.tsx:198
+#: app/pages/scenarios/home.tsx:289
+#: app/pages/tales/home.tsx:192
+#: app/pages/tales/home.tsx:285
 msgid "Delete"
 msgstr "حذف"
+
+#: app/components/prompt-components/PromptComponentsEditor.tsx:194
+msgid "Delete this AI component?"
+msgstr "حذف مكون الذكاء الاصطناعي هذا؟"
+
+#: app/pages/scenarios/home.tsx:272
+msgid "Delete this scenario?"
+msgstr "حذف هذا السيناريو؟"
+
+#: app/pages/tales/home.tsx:268
+msgid "Delete this tale?"
+msgstr "حذف هذه الحكاية؟"
 
 #: app/components/layout/settings/about.tsx:38
 msgid "Dependency licenses ship with the application. After installation, check the {LICENSES_FOLDER} directory for the generated reports."
@@ -846,7 +864,7 @@ msgstr "جاري تحميل التحديث... ({0})"
 #~ msgid "e.g., Steampunk, Space Opera, etc."
 #~ msgstr "مثال: ستيم بانك، أوبرا الفضاء، إلخ."
 
-#: app/pages/scenarios/home.tsx:158
+#: app/pages/scenarios/home.tsx:181
 msgid "Edit"
 msgstr "تعديل"
 
@@ -915,7 +933,7 @@ msgstr "عنوان المدخل"
 msgid "EXPERIMENTAL"
 msgstr "تجريبي"
 
-#: app/pages/scenarios/home.tsx:166
+#: app/pages/scenarios/home.tsx:189
 msgid "Export JSON"
 msgstr "تصدير JSON"
 
@@ -943,13 +961,13 @@ msgstr "فشل تثبيت التحديث."
 
 #: app/pages/home/home.tsx:315
 #: app/pages/home/home.tsx:516
-#: app/pages/scenarios/home.tsx:110
+#: app/pages/scenarios/home.tsx:133
 msgid "Failed to load scenarios."
 msgstr "فشل تحميل السيناريوهات."
 
 #: app/pages/home/home.tsx:302
 #: app/pages/home/home.tsx:453
-#: app/pages/tales/home.tsx:87
+#: app/pages/tales/home.tsx:112
 msgid "Failed to load tales."
 msgstr "فشل تحميل الحكايات."
 
@@ -1174,7 +1192,7 @@ msgstr "http://localhost:11434/v1"
 msgid "If the tool requires auth, look up how to generate a key (Ollama requires this)"
 msgstr "إذا كانت الأداة تتطلب مصادقة (auth)، ابحث عن كيفية توليد مفتاح (Ollama يتطلب ذلك)"
 
-#: app/pages/scenarios/home.tsx:90
+#: app/pages/scenarios/home.tsx:113
 msgid "Import"
 msgstr "استيراد"
 
@@ -1305,14 +1323,14 @@ msgstr "آخر تحقق: {0}"
 #. placeholder {0}: formatExactDateTime(tale.updatedAt)
 #. placeholder {0}: formatExactDateTime(updatedAt)
 #: app/pages/home/home.tsx:150
-#: app/pages/tales/home.tsx:179
+#: app/pages/tales/home.tsx:204
 msgid "Last played: {0}"
 msgstr "آخر لعب: {0}"
 
 #. placeholder {0}: formatExactDateTime(scenario.updatedAt)
 #. placeholder {0}: formatExactDateTime(updatedAt)
 #: app/pages/home/home.tsx:212
-#: app/pages/scenarios/home.tsx:190
+#: app/pages/scenarios/home.tsx:211
 msgid "Last updated: {0}"
 msgstr "آخر تحديث: {0}"
 
@@ -1361,7 +1379,7 @@ msgid "Light-Hearted"
 msgstr "مرح"
 
 #: app/pages/home/home.tsx:177
-#: app/pages/tales/home.tsx:204
+#: app/pages/tales/home.tsx:229
 msgid "Load Tale"
 msgstr "تحميل الحكاية"
 
@@ -1374,8 +1392,8 @@ msgid "Loading older entries..."
 msgstr "جاري تحميل المدخلات القديمة..."
 
 #: app/components/layout/model-select.tsx:91
-#: app/pages/scenarios/home.tsx:105
-#: app/pages/tales/home.tsx:82
+#: app/pages/scenarios/home.tsx:128
+#: app/pages/tales/home.tsx:107
 msgid "Loading..."
 msgstr "جاري التحميل..."
 
@@ -1551,17 +1569,17 @@ msgid "New scenario"
 msgstr "سيناريو جديد"
 
 #: app/pages/home/home.tsx:232
-#: app/pages/scenarios/home.tsx:212
+#: app/pages/scenarios/home.tsx:233
 msgid "New Tale"
 msgstr "حكاية جديدة"
 
 #: app/components/quickstart/quickstart-wizard.tsx:684
-#: app/pages/scenarios/home.tsx:238
-#: app/pages/tales/home.tsx:230
+#: app/pages/scenarios/home.tsx:259
+#: app/pages/tales/home.tsx:255
 msgid "Next"
 msgstr "التالي"
 
-#: app/components/prompt-components/PromptComponentsEditor.tsx:116
+#: app/components/prompt-components/PromptComponentsEditor.tsx:141
 msgid "No AI components added."
 msgstr "لم يتم إضافة أي مكونات للذكاء الاصطناعي."
 
@@ -1694,8 +1712,8 @@ msgid "Or choose one of these options."
 msgstr "أو اختر أحد هذه الخيارات."
 
 #. placeholder {0}: Math.max(1, Math.ceil(total / limit) || 1)
-#: app/pages/scenarios/home.tsx:229
-#: app/pages/tales/home.tsx:221
+#: app/pages/scenarios/home.tsx:250
+#: app/pages/tales/home.tsx:246
 msgid "Page {page} of {0}"
 msgstr "الصفحة {page} من {0}"
 
@@ -1750,8 +1768,8 @@ msgstr "تشغيل السرد"
 msgid "Presence penalty"
 msgstr "عقوبة التواجد"
 
-#: app/pages/scenarios/home.tsx:226
-#: app/pages/tales/home.tsx:218
+#: app/pages/scenarios/home.tsx:247
+#: app/pages/tales/home.tsx:243
 msgid "Prev"
 msgstr "السابق"
 
@@ -1871,7 +1889,7 @@ msgstr "تحديث النماذج"
 msgid "Remove"
 msgstr "إزالة"
 
-#: app/components/prompt-components/PromptComponentsEditor.tsx:143
+#: app/components/prompt-components/PromptComponentsEditor.tsx:168
 msgid "Remove component"
 msgstr "إزالة المكون"
 
@@ -1953,7 +1971,7 @@ msgstr "رمي النرد"
 msgid "Save"
 msgstr "حفط"
 
-#: app/pages/tales/home.tsx:157
+#: app/pages/tales/home.tsx:182
 msgid "Save as Scenario"
 msgstr "حفظ كسيناريو"
 
@@ -1982,16 +2000,16 @@ msgstr "جاري البحث عن خوادم محلية..."
 msgid "Scanning..."
 msgstr "جاري البحث..."
 
-#: app/pages/tales/home.tsx:147
+#: app/pages/tales/home.tsx:172
 msgid "Scenario"
 msgstr "سيناريو"
 
-#: app/pages/scenarios/home.tsx:142
+#: app/pages/scenarios/home.tsx:165
 msgid "Scenario actions"
 msgstr "إجراءات السيناريو"
 
 #: app/components/layout/header.tsx:12
-#: app/pages/scenarios/home.tsx:66
+#: app/pages/scenarios/home.tsx:89
 msgid "Scenarios"
 msgstr "سيناريوهات"
 
@@ -2300,7 +2318,7 @@ msgstr "موجهات النظام"
 msgid "Tale"
 msgstr "حكاية"
 
-#: app/pages/tales/home.tsx:128
+#: app/pages/tales/home.tsx:153
 msgid "Tale actions"
 msgstr "إجراءات الحكاية"
 
@@ -2314,7 +2332,7 @@ msgid "Tale Settings"
 msgstr "إعدادات الحكاية"
 
 #: app/components/layout/header.tsx:9
-#: app/pages/tales/home.tsx:72
+#: app/pages/tales/home.tsx:97
 msgid "Tales"
 msgstr "حكايات"
 
@@ -2368,7 +2386,7 @@ msgstr "هذه هي تعليمات الذكاء الاصطناعي الافتر�
 #~ msgstr "توجه هذه الملاحظات النموذج أثناء تشغيل الحكاية الحالية."
 
 #: app/components/layout/settings/tale.tsx:124
-#: app/components/prompt-components/PromptComponentsEditor.tsx:85
+#: app/components/prompt-components/PromptComponentsEditor.tsx:110
 msgid "These optional components are sent to the AI."
 msgstr "تُرسل هذه المكونات الاختيارية إلى الذكاء الاصطناعي."
 
@@ -2452,7 +2470,21 @@ msgstr "يتضمن هذا الإعداد المسبق اكتشافاً تلقا�
 
 #: app/components/layout/settings/advanced.tsx:128
 msgid "This prompt is added in \"Game Master\" mode to explain game state tools and GM-specific behavior."
-msgstr "يُضاف هذا الموجه في وضع "مدير اللعبة" لشرح أدوات حالة اللعبة وسلوك مدير اللعبة المحدد."
+msgstr "يُضاف هذا الموجه في وضع \"مدير اللعبة\" لشرح أدوات حالة اللعبة وسلوك مدير اللعبة المحدد."
+
+#. placeholder {0}: pendingDelete?.name
+#: app/pages/tales/home.tsx:271
+msgid "This will permanently delete {0} and its saved history. This action cannot be undone."
+msgstr "سيؤدي هذا إلى حذف {0} وسجلها المحفوظ نهائياً. لا يمكن التراجع عن هذا الإجراء."
+
+#. placeholder {0}: pendingDelete?.name
+#: app/pages/scenarios/home.tsx:275
+msgid "This will permanently delete {0}. This action cannot be undone."
+msgstr "سيؤدي هذا إلى حذف {0} نهائياً. لا يمكن التراجع عن هذا الإجراء."
+
+#: app/components/prompt-components/PromptComponentsEditor.tsx:197
+msgid "This will permanently delete the component content. This action cannot be undone."
+msgstr "سيؤدي هذا إلى حذف محتوى المكون نهائياً. لا يمكن التراجع عن هذا الإجراء."
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:40
 msgid "Thumbnail (WebP recommended)"
@@ -2525,13 +2557,13 @@ msgstr "ضبط ميزانيات الرموز، وأخذ العينات، وال�
 
 #: app/pages/home/home.tsx:162
 #: app/pages/home/home.tsx:630
-#: app/pages/tales/home.tsx:185
+#: app/pages/tales/home.tsx:210
 msgid "turn"
 msgstr "دور"
 
 #: app/pages/home/home.tsx:162
 #: app/pages/home/home.tsx:630
-#: app/pages/tales/home.tsx:185
+#: app/pages/tales/home.tsx:210
 msgid "turns"
 msgstr "أدوار"
 

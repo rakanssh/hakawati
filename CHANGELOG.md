@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [v0.15.2] - 2026-06-11
+
+### Fixed
+
+- Added missing English/Arabic strings for the delete confirmation dialog.
+
 ## [v0.15.1] - 2026-06-11
 
 ### Fixed

@@ -95,7 +95,7 @@ msgstr "{0} tale"
 #~ msgid "{characterName}'s ship, station, or habitat picks up a signal that should not exist. It is old, far older than it should be, or it is coming from somewhere that should be empty. Someone has to investigate."
 #~ msgstr "{characterName}'s ship, station, or habitat picks up a signal that should not exist. It is old, far older than it should be, or it is coming from somewhere that should be empty. Someone has to investigate."
 
-#: app/components/prompt-components/PromptComponentsEditor.tsx:136
+#: app/components/prompt-components/PromptComponentsEditor.tsx:161
 msgid "{chars} characters • ~{tokens} tokens"
 msgstr "{chars} characters • ~{tokens} tokens"
 
@@ -103,10 +103,10 @@ msgstr "{chars} characters • ~{tokens} tokens"
 msgid "{descriptionChars} characters • ~{descriptionTokens} tokens"
 msgstr "{descriptionChars} characters • ~{descriptionTokens} tokens"
 
-#: app/pages/scenarios/home.tsx:125
-#: app/pages/scenarios/home.tsx:131
-#: app/pages/tales/home.tsx:111
-#: app/pages/tales/home.tsx:117
+#: app/pages/scenarios/home.tsx:148
+#: app/pages/scenarios/home.tsx:154
+#: app/pages/tales/home.tsx:136
+#: app/pages/tales/home.tsx:142
 msgid "{name} thumbnail"
 msgstr "{name} thumbnail"
 
@@ -187,7 +187,7 @@ msgstr "About"
 msgid "Act"
 msgstr "Act"
 
-#: app/components/prompt-components/PromptComponentsEditor.tsx:101
+#: app/components/prompt-components/PromptComponentsEditor.tsx:126
 #: app/components/storybook/StorybookEditor.tsx:213
 msgid "Add"
 msgstr "Add"
@@ -282,11 +282,11 @@ msgid "AI"
 msgstr "AI"
 
 #: app/components/layout/settings/tale.tsx:117
-#: app/components/prompt-components/PromptComponentsEditor.tsx:80
+#: app/components/prompt-components/PromptComponentsEditor.tsx:105
 msgid "AI Components"
 msgstr "AI Components"
 
-#: app/components/prompt-components/PromptComponentsEditor.tsx:90
+#: app/components/prompt-components/PromptComponentsEditor.tsx:115
 msgid "AI Instructions still apply in Game Master mode; GM mechanics and tool behavior are added separately."
 msgstr "AI Instructions still apply in Game Master mode; GM mechanics and tool behavior are added separately."
 
@@ -411,11 +411,11 @@ msgstr "Base URL"
 msgid "Best with more capable models. Requires tool calling."
 msgstr "Best with more capable models. Requires tool calling."
 
-#: app/pages/tales/home.tsx:75
+#: app/pages/tales/home.tsx:100
 msgid "Browse and load saved tales"
 msgstr "Browse and load saved tales"
 
-#: app/pages/scenarios/home.tsx:69
+#: app/pages/scenarios/home.tsx:92
 msgid "Browse and manage your scenarios"
 msgstr "Browse and manage your scenarios"
 
@@ -428,12 +428,15 @@ msgstr "Browse and manage your scenarios"
 #~ msgid "Camera"
 #~ msgstr "Camera"
 
+#: app/components/prompt-components/PromptComponentsEditor.tsx:205
 #: app/components/scenario/GenerateScenarioDialog.tsx:104
 #: app/components/sidebar/inventory-card.tsx:114
 #: app/components/sidebar/stats-card.tsx:204
 #: app/components/storybook/StorybookEditor.tsx:349
 #: app/components/ui/inventory-item.tsx:73
 #: app/components/ui/stat-item.tsx:100
+#: app/pages/scenarios/home.tsx:283
+#: app/pages/tales/home.tsx:279
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -615,7 +618,7 @@ msgstr "Copy your API key and paste it here"
 msgid "Core generation"
 msgstr "Core generation"
 
-#: app/pages/scenarios/home.tsx:94
+#: app/pages/scenarios/home.tsx:117
 msgid "Create"
 msgstr "Create"
 
@@ -717,10 +720,25 @@ msgstr "Default AI instructions..."
 #~ msgid "Define your character"
 #~ msgstr "Define your character"
 
-#: app/pages/scenarios/home.tsx:177
-#: app/pages/tales/home.tsx:167
+#: app/components/prompt-components/PromptComponentsEditor.tsx:211
+#: app/pages/scenarios/home.tsx:198
+#: app/pages/scenarios/home.tsx:289
+#: app/pages/tales/home.tsx:192
+#: app/pages/tales/home.tsx:285
 msgid "Delete"
 msgstr "Delete"
+
+#: app/components/prompt-components/PromptComponentsEditor.tsx:194
+msgid "Delete this AI component?"
+msgstr "Delete this AI component?"
+
+#: app/pages/scenarios/home.tsx:272
+msgid "Delete this scenario?"
+msgstr "Delete this scenario?"
+
+#: app/pages/tales/home.tsx:268
+msgid "Delete this tale?"
+msgstr "Delete this tale?"
 
 #: app/components/layout/settings/about.tsx:38
 msgid "Dependency licenses ship with the application. After installation, check the {LICENSES_FOLDER} directory for the generated reports."
@@ -846,7 +864,7 @@ msgstr "Downloading update... ({0})"
 #~ msgid "e.g., Steampunk, Space Opera, etc."
 #~ msgstr "e.g., Steampunk, Space Opera, etc."
 
-#: app/pages/scenarios/home.tsx:158
+#: app/pages/scenarios/home.tsx:181
 msgid "Edit"
 msgstr "Edit"
 
@@ -915,7 +933,7 @@ msgstr "Entry title"
 msgid "EXPERIMENTAL"
 msgstr "EXPERIMENTAL"
 
-#: app/pages/scenarios/home.tsx:166
+#: app/pages/scenarios/home.tsx:189
 msgid "Export JSON"
 msgstr "Export JSON"
 
@@ -943,13 +961,13 @@ msgstr "Failed to install the update."
 
 #: app/pages/home/home.tsx:315
 #: app/pages/home/home.tsx:516
-#: app/pages/scenarios/home.tsx:110
+#: app/pages/scenarios/home.tsx:133
 msgid "Failed to load scenarios."
 msgstr "Failed to load scenarios."
 
 #: app/pages/home/home.tsx:302
 #: app/pages/home/home.tsx:453
-#: app/pages/tales/home.tsx:87
+#: app/pages/tales/home.tsx:112
 msgid "Failed to load tales."
 msgstr "Failed to load tales."
 
@@ -1174,7 +1192,7 @@ msgstr "http://localhost:11434/v1"
 msgid "If the tool requires auth, look up how to generate a key (Ollama requires this)"
 msgstr "If the tool requires auth, look up how to generate a key (Ollama requires this)"
 
-#: app/pages/scenarios/home.tsx:90
+#: app/pages/scenarios/home.tsx:113
 msgid "Import"
 msgstr "Import"
 
@@ -1305,14 +1323,14 @@ msgstr "Last checked: {0}"
 #. placeholder {0}: formatExactDateTime(tale.updatedAt)
 #. placeholder {0}: formatExactDateTime(updatedAt)
 #: app/pages/home/home.tsx:150
-#: app/pages/tales/home.tsx:179
+#: app/pages/tales/home.tsx:204
 msgid "Last played: {0}"
 msgstr "Last played: {0}"
 
 #. placeholder {0}: formatExactDateTime(scenario.updatedAt)
 #. placeholder {0}: formatExactDateTime(updatedAt)
 #: app/pages/home/home.tsx:212
-#: app/pages/scenarios/home.tsx:190
+#: app/pages/scenarios/home.tsx:211
 msgid "Last updated: {0}"
 msgstr "Last updated: {0}"
 
@@ -1361,7 +1379,7 @@ msgid "Light-Hearted"
 msgstr "Light-Hearted"
 
 #: app/pages/home/home.tsx:177
-#: app/pages/tales/home.tsx:204
+#: app/pages/tales/home.tsx:229
 msgid "Load Tale"
 msgstr "Load Tale"
 
@@ -1374,8 +1392,8 @@ msgid "Loading older entries..."
 msgstr "Loading older entries..."
 
 #: app/components/layout/model-select.tsx:91
-#: app/pages/scenarios/home.tsx:105
-#: app/pages/tales/home.tsx:82
+#: app/pages/scenarios/home.tsx:128
+#: app/pages/tales/home.tsx:107
 msgid "Loading..."
 msgstr "Loading..."
 
@@ -1551,17 +1569,17 @@ msgid "New scenario"
 msgstr "New scenario"
 
 #: app/pages/home/home.tsx:232
-#: app/pages/scenarios/home.tsx:212
+#: app/pages/scenarios/home.tsx:233
 msgid "New Tale"
 msgstr "New Tale"
 
 #: app/components/quickstart/quickstart-wizard.tsx:684
-#: app/pages/scenarios/home.tsx:238
-#: app/pages/tales/home.tsx:230
+#: app/pages/scenarios/home.tsx:259
+#: app/pages/tales/home.tsx:255
 msgid "Next"
 msgstr "Next"
 
-#: app/components/prompt-components/PromptComponentsEditor.tsx:116
+#: app/components/prompt-components/PromptComponentsEditor.tsx:141
 msgid "No AI components added."
 msgstr "No AI components added."
 
@@ -1694,8 +1712,8 @@ msgid "Or choose one of these options."
 msgstr "Or choose one of these options."
 
 #. placeholder {0}: Math.max(1, Math.ceil(total / limit) || 1)
-#: app/pages/scenarios/home.tsx:229
-#: app/pages/tales/home.tsx:221
+#: app/pages/scenarios/home.tsx:250
+#: app/pages/tales/home.tsx:246
 msgid "Page {page} of {0}"
 msgstr "Page {page} of {0}"
 
@@ -1750,8 +1768,8 @@ msgstr "Play narration"
 msgid "Presence penalty"
 msgstr "Presence penalty"
 
-#: app/pages/scenarios/home.tsx:226
-#: app/pages/tales/home.tsx:218
+#: app/pages/scenarios/home.tsx:247
+#: app/pages/tales/home.tsx:243
 msgid "Prev"
 msgstr "Prev"
 
@@ -1871,7 +1889,7 @@ msgstr "Refresh models"
 msgid "Remove"
 msgstr "Remove"
 
-#: app/components/prompt-components/PromptComponentsEditor.tsx:143
+#: app/components/prompt-components/PromptComponentsEditor.tsx:168
 msgid "Remove component"
 msgstr "Remove component"
 
@@ -1953,7 +1971,7 @@ msgstr "Roll a dice"
 msgid "Save"
 msgstr "Save"
 
-#: app/pages/tales/home.tsx:157
+#: app/pages/tales/home.tsx:182
 msgid "Save as Scenario"
 msgstr "Save as Scenario"
 
@@ -1982,16 +2000,16 @@ msgstr "Scanning for local servers..."
 msgid "Scanning..."
 msgstr "Scanning..."
 
-#: app/pages/tales/home.tsx:147
+#: app/pages/tales/home.tsx:172
 msgid "Scenario"
 msgstr "Scenario"
 
-#: app/pages/scenarios/home.tsx:142
+#: app/pages/scenarios/home.tsx:165
 msgid "Scenario actions"
 msgstr "Scenario actions"
 
 #: app/components/layout/header.tsx:12
-#: app/pages/scenarios/home.tsx:66
+#: app/pages/scenarios/home.tsx:89
 msgid "Scenarios"
 msgstr "Scenarios"
 
@@ -2300,7 +2318,7 @@ msgstr "System Prompts"
 msgid "Tale"
 msgstr "Tale"
 
-#: app/pages/tales/home.tsx:128
+#: app/pages/tales/home.tsx:153
 msgid "Tale actions"
 msgstr "Tale actions"
 
@@ -2314,7 +2332,7 @@ msgid "Tale Settings"
 msgstr "Tale Settings"
 
 #: app/components/layout/header.tsx:9
-#: app/pages/tales/home.tsx:72
+#: app/pages/tales/home.tsx:97
 msgid "Tales"
 msgstr "Tales"
 
@@ -2368,7 +2386,7 @@ msgstr "These are the default AI instructions used by tales and scenarios that d
 #~ msgstr "These notes guide the model while the current tale is running."
 
 #: app/components/layout/settings/tale.tsx:124
-#: app/components/prompt-components/PromptComponentsEditor.tsx:85
+#: app/components/prompt-components/PromptComponentsEditor.tsx:110
 msgid "These optional components are sent to the AI."
 msgstr "These optional components are sent to the AI."
 
@@ -2454,6 +2472,20 @@ msgstr "This preset includes auto-detection of local servers (They must expose a
 msgid "This prompt is added in \"Game Master\" mode to explain game state tools and GM-specific behavior."
 msgstr "This prompt is added in \"Game Master\" mode to explain game state tools and GM-specific behavior."
 
+#. placeholder {0}: pendingDelete?.name
+#: app/pages/tales/home.tsx:271
+msgid "This will permanently delete {0} and its saved history. This action cannot be undone."
+msgstr "This will permanently delete {0} and its saved history. This action cannot be undone."
+
+#. placeholder {0}: pendingDelete?.name
+#: app/pages/scenarios/home.tsx:275
+msgid "This will permanently delete {0}. This action cannot be undone."
+msgstr "This will permanently delete {0}. This action cannot be undone."
+
+#: app/components/prompt-components/PromptComponentsEditor.tsx:197
+msgid "This will permanently delete the component content. This action cannot be undone."
+msgstr "This will permanently delete the component content. This action cannot be undone."
+
 #: app/components/scenario/ScenarioBasicsFields.tsx:40
 msgid "Thumbnail (WebP recommended)"
 msgstr "Thumbnail (WebP recommended)"
@@ -2525,13 +2557,13 @@ msgstr "Tune token budgets, sampling, and repeatable seeds."
 
 #: app/pages/home/home.tsx:162
 #: app/pages/home/home.tsx:630
-#: app/pages/tales/home.tsx:185
+#: app/pages/tales/home.tsx:210
 msgid "turn"
 msgstr "turn"
 
 #: app/pages/home/home.tsx:162
 #: app/pages/home/home.tsx:630
-#: app/pages/tales/home.tsx:185
+#: app/pages/tales/home.tsx:210
 msgid "turns"
 msgstr "turns"
 
