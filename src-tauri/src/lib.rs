@@ -45,6 +45,12 @@ pub fn run() {
                 sql: include_str!("../migrations/003_add_prompt_components.sql"),
                 kind: MigrationKind::Up,
             },
+            Migration {
+                version: 4,
+                description: "split_tale_storage",
+                sql: include_str!("../migrations/004_split_tale_storage.sql"),
+                kind: MigrationKind::Up,
+            },
         ];
 
         app.handle().plugin(

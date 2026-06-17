@@ -46,6 +46,9 @@ export default function Play() {
     oldestLoadedIndex,
     isLoadingOlderEntries,
     loadOlderLogEntries,
+    name,
+    description,
+    components,
     stats,
     inventory,
     storyCards,
@@ -59,7 +62,7 @@ export default function Play() {
   const { isMobilePlatform } = useIsMobile();
   const { lastPlayedTaleId } = useLastPlayedStore();
   const { load, loading: isLoadingTale } = useLoadTale();
-  const { save } = usePersistTale();
+  const { save, editEntry } = usePersistTale();
 
   const [currentlyEditingLogId, setCurrentlyEditingLogId] = useState<
     string | null
@@ -81,6 +84,7 @@ export default function Play() {
     handleContinue,
     handleRetry,
     handleUndo,
+    handleRedo,
     handleStop,
     executeLlmSend,
   } = usePlaySession();
@@ -125,8 +129,16 @@ export default function Play() {
   });
 
   const autoSaveData = useMemo(
-    () => ({ log, stats, inventory, storyCards }),
-    [log, stats, inventory, storyCards],
+    () => ({
+      name,
+      description,
+      components,
+      gameMode,
+      stats,
+      inventory,
+      storyCards,
+    }),
+    [name, description, components, gameMode, stats, inventory, storyCards],
   );
 
   useAutoSave({
@@ -194,11 +206,30 @@ export default function Play() {
       void executeLlmSend(
         firstEntry.text,
         firstEntry.mode ?? LogEntryMode.DIRECT,
+        {
+          persistence: {
+            type: "new-turn",
+            pendingEntries: [firstEntry],
+            leadingEntries: [firstEntry],
+            fallbackToAppend: true,
+          },
+        },
       );
     }
   }, [log, loading, narratorConfig, executeLlmSend, isLoadingTale]);
 
   const blocks = useMemo(() => groupLogEntriesIntoBlocks(log), [log]);
+
+  const commitLogEntryEdit = useCallback(
+    (entryId: string, updates: Parameters<typeof updateLogEntry>[1]) => {
+      updateLogEntry(entryId, updates);
+      void editEntry(taleId, entryId, updates).catch((error) => {
+        console.error("Failed to save edited log entry:", error);
+        toast.error("Failed to save progress");
+      });
+    },
+    [editEntry, taleId, updateLogEntry],
+  );
 
   useEffect(() => {
     if (loading || isLoadingTale) return;
@@ -244,7 +275,7 @@ export default function Play() {
           isStreaming={loading}
           currentlyEditingLogId={currentlyEditingLogId}
           setCurrentlyEditingLogId={setCurrentlyEditingLogId}
-          updateLogEntry={updateLogEntry}
+          updateLogEntry={commitLogEntryEdit}
           viewportRef={viewportRef}
           bottomRef={bottomRef}
           onViewportScroll={handleScroll}
@@ -266,6 +297,7 @@ export default function Play() {
           onContinue={handleContinue}
           onRetry={handleRetry}
           onUndo={handleUndo}
+          onRedo={handleRedo}
         />
         <TtsPlayer
           visible={ttsPlayback.isVisible}
