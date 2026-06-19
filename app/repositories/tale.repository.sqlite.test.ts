@@ -1039,5 +1039,10 @@ describe("tale repository SQLite storage", () => {
     expect(
       (await getLogEntries(taleId, 0, 10)).map((entry) => entry.id),
     ).toEqual(["player-1", "gm-1", "gm-2"]);
+    expect(
+      dbState.current!.executeSql.some(
+        (sql) => sql.trim().toUpperCase().split(/\s+/)[0] === "BEGIN",
+      ),
+    ).toBe(false);
   });
 });

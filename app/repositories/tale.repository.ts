@@ -161,26 +161,10 @@ async function withTransaction<T>(
   db: Database,
   run: () => Promise<T>,
 ): Promise<T> {
-  let began = false;
-  try {
-    await db.execute("BEGIN IMMEDIATE");
-    began = true;
-    const result = await run();
-    await db.execute("COMMIT");
-    return result;
-  } catch (error) {
-    if (began) {
-      try {
-        await db.execute("ROLLBACK");
-      } catch (rollbackError) {
-        console.error(
-          "Failed to roll back local tale transaction:",
-          rollbackError,
-        );
-      }
-    }
-    throw error;
-  }
+  void db;
+  // ponytail: tauri-plugin-sql uses a pool; BEGIN/COMMIT across separate calls
+  // can land on different connections. enqueueLocalWrite is the write lock.
+  return run();
 }
 
 async function withReadTransaction<T>(
