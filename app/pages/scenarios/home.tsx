@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   ArrowLeftIcon,
+  LockIcon,
   PencilIcon,
   TrashIcon,
   ClipboardIcon,
@@ -222,16 +223,31 @@ export default function ScenariosHome() {
                 <p className="line-clamp-3 min-h-0 flex-1 rounded-xs text-sm text-muted-foreground">
                   {description}
                 </p>
-                <Button
-                  onClick={async () => {
-                    const taleId = await initTaleFromScenario(id);
-                    await loadTale(taleId);
-                    navigate({ to: "/play" });
-                  }}
-                  className="mt-auto w-full"
-                >
-                  <Trans>New Tale</Trans>
-                </Button>
+                <div className="mt-auto grid grid-cols-[1fr_auto] gap-1">
+                  <Button
+                    onClick={async () => {
+                      const taleId = await initTaleFromScenario(id);
+                      await loadTale(taleId);
+                      navigate({ to: "/play" });
+                    }}
+                  >
+                    <Trans>New Tale</Trans>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={async () => {
+                      const taleId = await initTaleFromScenario(id, {
+                        syncPolicy: "private",
+                      });
+                      await loadTale(taleId);
+                      navigate({ to: "/play" });
+                    }}
+                    aria-label={t`Start local-only tale`}
+                  >
+                    <LockIcon className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           );

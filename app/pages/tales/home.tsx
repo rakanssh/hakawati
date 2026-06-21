@@ -10,10 +10,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "@tanstack/react-router";
-import { useTalesList } from "@/hooks/useTales";
+import { useTaleLibrary } from "@/hooks/useTaleLibrary";
 import {
   bytesToObjectUrl,
   formatExactDateTime,
@@ -33,16 +34,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   ArrowLeftIcon,
+  Cloud,
   FilePlus2Icon,
   PencilIcon,
   TrashIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 import placeholderImage from "@/assets/scen-ph.png";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
+import type { LibraryTaleItem } from "@/lib/tale-library";
+import type { TaleConflictChoice } from "@/hooks/useTaleLibrary";
 
 type PendingTaleDelete = {
-  id: string;
+  item: LibraryTaleItem;
   name: string;
 };
 
@@ -52,18 +57,24 @@ export default function TalesHome() {
   const [pendingDelete, setPendingDelete] = useState<PendingTaleDelete | null>(
     null,
   );
+  const [search, setSearch] = useState("");
+  const [resolvingConflict, setResolvingConflict] = useState<string | null>(
+    null,
+  );
   const {
     items,
     loading,
     error,
+    remoteError,
     loadIntoGame,
     page,
     limit,
     total,
     setPage,
-    deleteTale,
+    deleteLibraryTale,
+    resolveConflict,
     saveAsScenario,
-  } = useTalesList();
+  } = useTaleLibrary();
 
   const handleClickDelete = (tale: PendingTaleDelete) => {
     setPendingDelete(tale);
@@ -71,7 +82,7 @@ export default function TalesHome() {
 
   const confirmDelete = async () => {
     if (!pendingDelete) return;
-    await deleteTale(pendingDelete.id);
+    await deleteLibraryTale(pendingDelete.item);
     setPendingDelete(null);
   };
 
@@ -79,7 +90,47 @@ export default function TalesHome() {
     await saveAsScenario(id);
   };
 
-  // no-op
+  const handleLoad = async (item: LibraryTaleItem) => {
+    await loadIntoGame(item);
+    navigate({ to: "/play" });
+  };
+
+  const handleResolveConflict = async (
+    item: LibraryTaleItem,
+    choice: TaleConflictChoice,
+  ) => {
+    if (item.source !== "local") return;
+    setResolvingConflict(`${item.localTale.id}:${choice}`);
+    try {
+      await resolveConflict(item, choice);
+      toast.success(t`Conflict resolved`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t`Failed to resolve conflict`,
+      );
+    } finally {
+      setResolvingConflict(null);
+    }
+  };
+
+  const query = search.trim().toLowerCase();
+  const visibleItems = query
+    ? items.filter((item) => {
+        const text =
+          item.source === "remote"
+            ? [
+                item.remoteTale.title,
+                item.remoteTale.description,
+                item.remoteTale.lastEntryPreview,
+              ].join(" ")
+            : [
+                item.localTale.name,
+                item.localTale.description,
+                item.localTale.lastLogEntry?.text,
+              ].join(" ");
+        return text.toLowerCase().includes(query);
+      })
+    : items;
 
   return (
     <div className="mx-auto w-full max-w-screen-2xl py-5 flex flex-col gap-4 px-3">
@@ -102,6 +153,12 @@ export default function TalesHome() {
         </div>
       </div>
       <Separator />
+      <Input
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+        placeholder={t`Search tales`}
+        className="max-w-md"
+      />
       {loading && (
         <div className="text-sm text-muted-foreground">
           <Trans>Loading...</Trans>
@@ -112,20 +169,38 @@ export default function TalesHome() {
           <Trans>Failed to load tales.</Trans>
         </div>
       )}
+      {Boolean(remoteError) && (
+        <div className="text-sm text-muted-foreground">
+          <Trans>Cloud tales are unavailable.</Trans>
+        </div>
+      )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {items.map(
-          ({
-            id,
-            name,
-            description,
-            lastLogEntry,
-            thumbnail,
-            scenarioHead,
-            updatedAt,
-            logCount,
-          }) => (
+        {visibleItems.map((item) => {
+          const isRemote = item.source === "remote";
+          const id = isRemote ? item.remoteTale.id : item.localTale.id;
+          const name = isRemote ? item.remoteTale.title : item.localTale.name;
+          const description = isRemote
+            ? (item.remoteTale.lastEntryPreview ??
+              item.remoteTale.description ??
+              "")
+            : (item.localTale.lastLogEntry?.text ??
+              item.localTale.description ??
+              "");
+          const thumbnail = isRemote ? null : item.localTale.thumbnail;
+          const scenarioHead = isRemote ? null : item.localTale.scenarioHead;
+          const updatedAt = isRemote
+            ? Date.parse(item.remoteTale.updatedAt) || 0
+            : item.localTale.updatedAt;
+          const logCount = isRemote
+            ? item.remoteTale.turnCount
+            : item.localTale.logCount;
+          const hasConflict =
+            item.source === "local" && item.sync?.status === "conflict";
+          const resolvingKey =
+            item.source === "local" ? item.localTale.id : null;
+          return (
             <Card
-              key={id}
+              key={isRemote ? `remote-${id}` : `local-${id}`}
               className="flex flex-col gap-1 pt-0 pb-2 border-accent/50"
             >
               <CardHeader className="p-0 m-0">
@@ -149,7 +224,7 @@ export default function TalesHome() {
                         <Button
                           variant="secondary"
                           size="icon"
-                          className="h-6 w-6 rounded-full pb-1.5 bg-accent/50"
+                          className="h-6 w-6 rounded-full bg-accent/50 pb-1.5"
                           aria-label={t`Tale actions`}
                         >
                           ...
@@ -160,11 +235,13 @@ export default function TalesHome() {
                         side="bottom"
                         sideOffset={4}
                       >
-                        {scenarioHead?.id && (
+                        {!isRemote && scenarioHead?.id && (
                           <DropdownMenuItem
                             onSelect={(e) => e.preventDefault()}
                             onClick={() =>
-                              navigate({ to: `/scenarios/${scenarioHead?.id}` })
+                              navigate({
+                                to: `/scenarios/${scenarioHead?.id}`,
+                              })
                             }
                             className="text-xs"
                           >
@@ -172,7 +249,7 @@ export default function TalesHome() {
                             <Trans>Scenario</Trans>
                           </DropdownMenuItem>
                         )}
-                        {!scenarioHead?.id && (
+                        {!isRemote && !scenarioHead?.id && (
                           <DropdownMenuItem
                             onSelect={(e) => e.preventDefault()}
                             onClick={() => handleSaveAsScenario(id)}
@@ -184,7 +261,7 @@ export default function TalesHome() {
                         )}
                         <DropdownMenuItem
                           onSelect={(e) => e.preventDefault()}
-                          onClick={() => handleClickDelete({ id, name })}
+                          onClick={() => handleClickDelete({ item, name })}
                           variant="destructive"
                           className="text-xs"
                         >
@@ -194,6 +271,11 @@ export default function TalesHome() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
+                  {isRemote ? (
+                    <Badge className="absolute right-9 top-1.5 z-10 bg-accent/70 text-muted-foreground">
+                      <Cloud className="size-3" />
+                    </Badge>
+                  ) : null}
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Badge className="absolute top-1 left-1 text-xs text-muted-foreground bg-accent/50">
@@ -209,29 +291,79 @@ export default function TalesHome() {
                   <Badge className="absolute left-1 top-8 h-5 bg-accent/50 px-2 text-xs text-muted-foreground">
                     {logCount} {logCount === 1 ? t`turn` : t`turns`}
                   </Badge>
+                  {!isRemote && item.sync && item.sync.status !== "idle" ? (
+                    <Badge className="absolute left-1 top-14 h-5 bg-accent/50 px-2 text-xs text-muted-foreground">
+                      {item.sync.lastErrorCode ?? item.sync.status}
+                    </Badge>
+                  ) : null}
                 </div>
               </CardHeader>
-              <CardContent className="flex h-36 flex-col gap-2 px-2">
+              <CardContent
+                className={`flex flex-col gap-2 px-2 ${hasConflict ? "h-48" : "h-36"}`}
+              >
                 <span className="line-clamp-2 min-h-9 text-sm font-semibold leading-snug">
                   {name}
                 </span>
                 <p className="line-clamp-3 min-h-0 flex-1 rounded-xs text-sm text-muted-foreground">
-                  {lastLogEntry?.text ?? description}
+                  {description}
                 </p>
 
+                {hasConflict ? (
+                  <div className="grid grid-cols-3 gap-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 gap-1 px-1 text-xs"
+                      disabled={Boolean(resolvingConflict)}
+                      onClick={() => handleResolveConflict(item, "keep-remote")}
+                    >
+                      <Cloud className="size-3" />
+                      <span className="truncate">
+                        <Trans>Use Remote</Trans>
+                      </span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 gap-1 px-1 text-xs"
+                      disabled={Boolean(resolvingConflict)}
+                      onClick={() => handleResolveConflict(item, "keep-local")}
+                    >
+                      <PencilIcon className="size-3" />
+                      <span className="truncate">
+                        <Trans>Keep Local</Trans>
+                      </span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 gap-1 px-1 text-xs"
+                      disabled={Boolean(resolvingConflict)}
+                      onClick={() => handleResolveConflict(item, "keep-both")}
+                    >
+                      <FilePlus2Icon className="size-3" />
+                      <span className="truncate">
+                        <Trans>Keep Both</Trans>
+                      </span>
+                    </Button>
+                    {resolvingConflict?.startsWith(`${resolvingKey}:`) ? (
+                      <span className="col-span-3 text-center text-xs text-muted-foreground">
+                        <Trans>Resolving...</Trans>
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 <Button
-                  onClick={async () => {
-                    await loadIntoGame(id);
-                    navigate({ to: "/play" });
-                  }}
+                  onClick={() => handleLoad(item)}
                   className="mt-auto w-full"
                 >
                   <Trans>Load Tale</Trans>
                 </Button>
               </CardContent>
             </Card>
-          ),
-        )}
+          );
+        })}
       </div>
       {total > limit && (
         <div className="flex items-center justify-end gap-2">
@@ -269,8 +401,8 @@ export default function TalesHome() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               <Trans>
-                This will permanently delete {pendingDelete?.name} and its saved
-                history. This action cannot be undone.
+                This will permanently delete {pendingDelete?.name}. This action
+                cannot be undone.
               </Trans>
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -14,6 +14,11 @@ import {
 import type { LogEntry } from "@/types/log.type";
 import { DEFAULT_WINDOW_SIZE, useTaleStore } from "@/store/useTaleStore";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
+import {
+  listSyncStatesForLocalTale,
+  setTaleSyncStatus,
+} from "@/repositories/sync.repository";
+import { wakeSyncBackground } from "@/services/sync-wakeup";
 
 function snapshotMutableTale(): TaleMutableSnapshot {
   const state = useTaleStore.getState();
@@ -27,6 +32,24 @@ function snapshotMutableTale(): TaleMutableSnapshot {
     gameMode: state.gameMode,
     undoStack: state.undoStack,
   };
+}
+
+async function markLinkedTaleForPush(taleId: string) {
+  const states = await listSyncStatesForLocalTale(taleId);
+  const pushableStates = states.filter(
+    (state) => state.pendingStatus !== "conflict",
+  );
+  await Promise.all(
+    pushableStates.map((state) =>
+      setTaleSyncStatus({
+        profileId: state.profileId,
+        localTaleId: taleId,
+        pendingStatus: "push",
+        lastErrorCode: null,
+      }),
+    ),
+  );
+  if (pushableStates.length > 0) wakeSyncBackground();
 }
 
 export function usePersistTale() {
@@ -56,21 +79,31 @@ export function usePersistTale() {
     }
   }, []);
 
+  const runTalePersist = useCallback(
+    async (taleId: string, operation: () => Promise<void>) => {
+      await runPersist(async () => {
+        await operation();
+        await markLinkedTaleForPush(taleId);
+      });
+    },
+    [runPersist],
+  );
+
   const save = useCallback(
     async (taleId: string) => {
-      await runPersist(() =>
+      await runTalePersist(taleId, () =>
         persistCurrentTale({
           id: taleId,
           tale: snapshotMutableTale(),
         }),
       );
     },
-    [runPersist],
+    [runTalePersist],
   );
 
   const saveTurn = useCallback(
     async (taleId: string, entries: LogEntry[], createdAt = Date.now()) => {
-      await runPersist(() =>
+      await runTalePersist(taleId, () =>
         commitTaleTurn({
           id: taleId,
           tale: snapshotMutableTale(),
@@ -79,7 +112,7 @@ export function usePersistTale() {
         }),
       );
     },
-    [runPersist],
+    [runTalePersist],
   );
 
   const completePendingTurn = useCallback(
@@ -90,7 +123,7 @@ export function usePersistTale() {
       createdAt = Date.now(),
       fallbackToAppend = false,
     ) => {
-      await runPersist(() =>
+      await runTalePersist(taleId, () =>
         completePendingTaleTurn({
           id: taleId,
           tale: snapshotMutableTale(),
@@ -101,7 +134,7 @@ export function usePersistTale() {
         }),
       );
     },
-    [runPersist],
+    [runTalePersist],
   );
 
   const retryTurn = useCallback(
@@ -111,7 +144,7 @@ export function usePersistTale() {
       entries: LogEntry[],
       createdAt = Date.now(),
     ) => {
-      await runPersist(() =>
+      await runTalePersist(taleId, () =>
         retryTaleTurn({
           id: taleId,
           tale: snapshotMutableTale(),
@@ -121,13 +154,13 @@ export function usePersistTale() {
         }),
       );
     },
-    [runPersist],
+    [runTalePersist],
   );
 
   const undoToEntryCount = useCallback(
     async (taleId: string, entryCount?: number) => {
       const state = useTaleStore.getState();
-      await runPersist(() =>
+      await runTalePersist(taleId, () =>
         undoTaleLogToEntryCount({
           id: taleId,
           tale: snapshotMutableTale(),
@@ -135,7 +168,7 @@ export function usePersistTale() {
         }),
       );
     },
-    [runPersist],
+    [runTalePersist],
   );
 
   const editEntry = useCallback(
@@ -144,7 +177,7 @@ export function usePersistTale() {
       entryId: string,
       patch: Partial<Omit<LogEntry, "id">>,
     ) => {
-      await runPersist(() =>
+      await runTalePersist(taleId, () =>
         editTaleLogEntry({
           id: taleId,
           tale: snapshotMutableTale(),
@@ -153,7 +186,7 @@ export function usePersistTale() {
         }),
       );
     },
-    [runPersist],
+    [runTalePersist],
   );
 
   const retryEntry = useCallback(
@@ -162,7 +195,7 @@ export function usePersistTale() {
       previousEntry: LogEntry,
       replacementEntry: LogEntry,
     ) => {
-      await runPersist(() =>
+      await runTalePersist(taleId, () =>
         retryTaleLogEntry({
           id: taleId,
           tale: snapshotMutableTale(),
@@ -171,12 +204,12 @@ export function usePersistTale() {
         }),
       );
     },
-    [runPersist],
+    [runTalePersist],
   );
 
   const redoEntry = useCallback(
     async (taleId: string, entry: LogEntry, createdAt = Date.now()) => {
-      await runPersist(() =>
+      await runTalePersist(taleId, () =>
         redoTaleLogEntry({
           id: taleId,
           tale: snapshotMutableTale(),
@@ -185,7 +218,7 @@ export function usePersistTale() {
         }),
       );
     },
-    [runPersist],
+    [runTalePersist],
   );
 
   return {

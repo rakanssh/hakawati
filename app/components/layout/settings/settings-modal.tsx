@@ -1,6 +1,7 @@
 import {
   Bot,
   BookOpen,
+  Cloud,
   DownloadCloud,
   Info,
   Library,
@@ -25,6 +26,7 @@ import SettingsAbout from "@/components/layout/settings/about";
 import SettingsTale from "@/components/layout/settings/tale";
 import SettingsStoryCards from "@/components/layout/settings/story-cards";
 import SettingsInventoryStats from "@/components/layout/settings/inventory-stats";
+import SettingsCloudSync from "@/components/layout/settings/cloud-sync";
 
 const globalSections = [
   {
@@ -68,6 +70,17 @@ const globalSections = [
     group: <Trans>AI</Trans>,
     icon: Sparkles,
     component: SettingsAdvanced,
+  },
+  {
+    id: "cloud-sync",
+    label: <Trans>Cloud Sync</Trans>,
+    description: (
+      <Trans>Connect cloud saves and move tales between devices.</Trans>
+    ),
+    groupId: "app",
+    group: <Trans>App</Trans>,
+    icon: Cloud,
+    component: SettingsCloudSync,
   },
   {
     id: "maintenance",

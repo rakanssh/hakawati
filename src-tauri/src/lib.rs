@@ -1,3 +1,4 @@
+mod oauth_loopback;
 mod speech_recorder;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -51,6 +52,18 @@ pub fn run() {
                 sql: include_str!("../migrations/004_split_tale_storage.sql"),
                 kind: MigrationKind::Up,
             },
+            Migration {
+                version: 5,
+                description: "add_sync_metadata",
+                sql: include_str!("../migrations/005_add_sync_metadata.sql"),
+                kind: MigrationKind::Up,
+            },
+            Migration {
+                version: 6,
+                description: "sync_profile_controls",
+                sql: include_str!("../migrations/006_sync_profile_controls.sql"),
+                kind: MigrationKind::Up,
+            },
         ];
 
         app.handle().plugin(
@@ -73,9 +86,12 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_process::init())
+        .manage(oauth_loopback::OAuthLoopbackState::default())
         .manage(speech_recorder::SpeechRecorderState::default())
         .invoke_handler(tauri::generate_handler![
             greet,
+            oauth_loopback::start_oauth_loopback,
+            oauth_loopback::wait_oauth_loopback,
             speech_recorder::start_speech_recording,
             speech_recorder::stop_speech_recording,
             speech_recorder::get_speech_recording_level,

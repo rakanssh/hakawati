@@ -491,6 +491,69 @@ function base64ToBytes(value: string): Uint8Array {
   return bytes;
 }
 
+function prepareTalePackageWrite(input: TalePackageV1) {
+  const payload = TalePackageV1Schema.parse(input) as TalePackageV1;
+  const turnIds = new Set<string>();
+  const entryIds = new Set<string>();
+  const assetIds = new Set<string>();
+
+  for (const asset of payload.assets) {
+    if (assetIds.has(asset.id)) {
+      throw new Error("Tale package assets must have unique ids");
+    }
+    assetIds.add(asset.id);
+  }
+
+  if (
+    payload.tale.thumbnailAssetId &&
+    !assetIds.has(payload.tale.thumbnailAssetId)
+  ) {
+    throw new Error("Tale package thumbnail asset is missing");
+  }
+
+  payload.turns.forEach((turn, index) => {
+    if (turn.seq !== index + 1) {
+      throw new Error("Tale package turns must be contiguous from sequence 1");
+    }
+    if (turnIds.has(turn.id)) {
+      throw new Error("Tale package turns must have unique ids");
+    }
+    turnIds.add(turn.id);
+
+    const cleanEntries = sanitizeTurnEntries(turn.entries);
+    for (const entry of cleanEntries) {
+      if (entryIds.has(entry.id)) {
+        throw new Error("Tale package log entries must have unique ids");
+      }
+      entryIds.add(entry.id);
+    }
+  });
+
+  const thumbnailAsset = payload.assets.find(
+    (asset) => asset.id === payload.tale.thumbnailAssetId,
+  );
+  const state = createTaleCurrentState({
+    components: normalizePromptComponents(payload.state.data.components),
+    storyCards: payload.state.data.storyCards.map(normalizeStoryCard),
+    stats: payload.state.data.gm.stats.map((stat) => ({
+      ...stat,
+      range: [stat.range[0] ?? 0, stat.range[1] ?? 100],
+    })),
+    inventory: payload.state.data.gm.inventory,
+    scratchpad: payload.state.data.gm.scratchpad,
+  });
+
+  return {
+    payload,
+    thumbnail: thumbnailAsset ? base64ToBytes(thumbnailAsset.dataBase64) : null,
+    state,
+    turns: payload.turns.map((turn) => ({
+      entries: turn.entries,
+      createdAt: turn.createdAt,
+    })),
+  };
+}
+
 // Create once with scenario; later updates do not require scenarioId.
 export async function createTale(input: {
   scenarioId?: string;
@@ -1421,62 +1484,11 @@ export async function importTalePackage(
   input: TalePackageV1,
   options: { preserveId?: boolean; title?: string } = {},
 ): Promise<string> {
-  const payload = TalePackageV1Schema.parse(input) as TalePackageV1;
-  const turnIds = new Set<string>();
-  const entryIds = new Set<string>();
-  const assetIds = new Set<string>();
-
-  for (const asset of payload.assets) {
-    if (assetIds.has(asset.id)) {
-      throw new Error("Tale package assets must have unique ids");
-    }
-    assetIds.add(asset.id);
-  }
-
-  if (
-    payload.tale.thumbnailAssetId &&
-    !assetIds.has(payload.tale.thumbnailAssetId)
-  ) {
-    throw new Error("Tale package thumbnail asset is missing");
-  }
-
-  payload.turns.forEach((turn, index) => {
-    if (turn.seq !== index + 1) {
-      throw new Error("Tale package turns must be contiguous from sequence 1");
-    }
-    if (turnIds.has(turn.id)) {
-      throw new Error("Tale package turns must have unique ids");
-    }
-    turnIds.add(turn.id);
-
-    const cleanEntries = sanitizeTurnEntries(turn.entries);
-    for (const entry of cleanEntries) {
-      if (entryIds.has(entry.id)) {
-        throw new Error("Tale package log entries must have unique ids");
-      }
-      entryIds.add(entry.id);
-    }
-  });
+  const { payload, thumbnail, state, turns } = prepareTalePackageWrite(input);
 
   const requestedId = options.preserveId ? payload.tale.id : uuidv4();
   let taleId = requestedId;
   const now = Date.now();
-  const thumbnailAsset = payload.assets.find(
-    (asset) => asset.id === payload.tale.thumbnailAssetId,
-  );
-  const thumbnail = thumbnailAsset
-    ? base64ToBytes(thumbnailAsset.dataBase64)
-    : null;
-  const state = createTaleCurrentState({
-    components: normalizePromptComponents(payload.state.data.components),
-    storyCards: payload.state.data.storyCards.map(normalizeStoryCard),
-    stats: payload.state.data.gm.stats.map((stat) => ({
-      ...stat,
-      range: [stat.range[0] ?? 0, stat.range[1] ?? 100],
-    })),
-    inventory: payload.state.data.gm.inventory,
-    scratchpad: payload.state.data.gm.scratchpad,
-  });
   await enqueueLocalWrite(async () => {
     const db = await getDb();
     const existing = await selectTaleRow(db, requestedId);
@@ -1522,21 +1534,68 @@ export async function importTalePackage(
         ],
       );
       await replaceState(db, taleId, state, now);
-      await insertTurns(
-        db,
-        taleId,
-        payload.turns.map((turn) => ({
-          entries: turn.entries,
-          createdAt: turn.createdAt,
-        })),
-        1,
-        0,
-        now,
-      );
+      await insertTurns(db, taleId, turns, 1, 0, now);
       await refreshTaleLogSummary(db, taleId);
       await replaceSession(db, taleId, createTaleSessionState(), now);
     });
   });
 
   return taleId;
+}
+
+export async function replaceTaleWithPackage(
+  taleId: string,
+  input: TalePackageV1,
+  options: { title?: string } = {},
+): Promise<void> {
+  const { payload, thumbnail, state, turns } = prepareTalePackageWrite(input);
+  const now = Date.now();
+
+  await enqueueLocalWrite(async () => {
+    const db = await getDb();
+    await withTransaction(db, async () => {
+      await requireTaleRow(db, taleId);
+      await db.execute(
+        `UPDATE tales SET
+           name = ?,
+           description = ?,
+           thumbnail_data = ?,
+           author_note = ?,
+           components = ?,
+           story_cards = ?,
+           stats = ?,
+           inventory = ?,
+           log = ?,
+           game_mode = ?,
+           undo_stack = ?,
+           save_version = save_version + 1,
+           schema_version = ?,
+           updated_at = ?
+         WHERE id = ?`,
+        [
+          options.title ?? payload.tale.title,
+          payload.tale.description,
+          thumbnail,
+          getAuthorNote(state.components),
+          LEGACY_JSON_PLACEHOLDER,
+          LEGACY_JSON_PLACEHOLDER,
+          LEGACY_JSON_PLACEHOLDER,
+          LEGACY_JSON_PLACEHOLDER,
+          LEGACY_JSON_PLACEHOLDER,
+          payload.tale.gameMode,
+          LEGACY_JSON_PLACEHOLDER,
+          payload.tale.schemaVersion,
+          now,
+          taleId,
+        ],
+      );
+      await db.execute(`DELETE FROM tale_sessions WHERE tale_id = ?`, [taleId]);
+      await db.execute(`DELETE FROM tale_turns WHERE tale_id = ?`, [taleId]);
+      await db.execute(`DELETE FROM tale_states WHERE tale_id = ?`, [taleId]);
+      await replaceState(db, taleId, state, now);
+      await insertTurns(db, taleId, turns, 1, 0, now);
+      await refreshTaleLogSummary(db, taleId);
+      await replaceSession(db, taleId, createTaleSessionState(), now);
+    });
+  });
 }

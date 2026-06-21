@@ -83,6 +83,7 @@ const migrationFiles = [
   "002_create_tales.sql",
   "003_add_prompt_components.sql",
   "004_split_tale_storage.sql",
+  "005_add_sync_metadata.sql",
 ];
 
 function applyMigration(db: TestDatabase, index: number) {
@@ -798,6 +799,57 @@ describe("tale repository SQLite storage", () => {
     expect(
       (await getLogEntries(importedId, 0, 10)).map((entry) => entry.id),
     ).toEqual(["player-1", "gm-1"]);
+  });
+
+  it("replaces an existing tale from a package without changing its local id", async () => {
+    const db = dbState.current!;
+    applyMigrations(db);
+    const {
+      appendTurn,
+      createTale,
+      exportTalePackage,
+      getTale,
+      replaceTaleWithPackage,
+    } = await import("./tale.repository");
+    const localId = await createEmptyTale();
+    await appendTurn(
+      localId,
+      { entries: [gmEntry("local-gm", "Local branch.")], createdAt: 10 },
+      emptyState(),
+      createTaleSessionState({ undoStack: [gmEntry("local-undo")] }),
+    );
+    const remoteSourceId = await createTale({
+      name: "Remote Canon",
+      description: "Remote wins.",
+      components: [],
+      storyCards: [],
+      stats: [{ name: "HP", value: 7, range: [0, 10] }],
+      inventory: [{ id: "remote-item", name: "Compass" }],
+      log: [playerEntry("remote-player"), gmEntry("remote-gm")],
+      gameMode: GameMode.STORY_TELLER,
+      undoStack: [gmEntry("remote-undo")],
+    });
+
+    await replaceTaleWithPackage(
+      localId,
+      await exportTalePackage(remoteSourceId),
+    );
+
+    const replaced = await getTale(localId);
+    const sessionRow = db.raw
+      .prepare("SELECT undo_stack_json FROM tale_sessions WHERE tale_id = ?")
+      .get(localId) as { undo_stack_json: string };
+
+    expect(replaced?.id).toBe(localId);
+    expect(replaced?.name).toBe("Remote Canon");
+    expect(replaced?.description).toBe("Remote wins.");
+    expect(replaced?.stats[0].value).toBe(7);
+    expect(replaced?.inventory[0].name).toBe("Compass");
+    expect(replaced?.log.map((entry) => entry.id)).toEqual([
+      "remote-player",
+      "remote-gm",
+    ]);
+    expect(JSON.parse(sessionRow.undo_stack_json)).toEqual([]);
   });
 
   it("edits log text without replacing current state or session snapshots", async () => {

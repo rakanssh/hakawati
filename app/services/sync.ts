@@ -1,0 +1,1166 @@
+import { fetch } from "@tauri-apps/plugin-http";
+import { invoke } from "@tauri-apps/api/core";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import {
+  exportTalePackage,
+  importTalePackage,
+  replaceTaleWithPackage,
+} from "@/repositories/tale.repository";
+import {
+  getTaleSyncState,
+  setSyncProfileDisabled,
+  setTaleSyncStatus,
+  upsertSyncProfile,
+  upsertTaleSyncState,
+  type TaleSyncState,
+} from "@/repositories/sync.repository";
+import type { TalePackageV1 } from "@/types/export.type";
+
+export type SyncMode = "hosted" | "personal";
+
+export type SyncProfile = {
+  id: string;
+  baseUrl: string;
+  mode: SyncMode;
+  deviceId?: string | null;
+  enabled?: boolean;
+  disabledReason?: SyncDisabledReason | null;
+};
+
+export type SyncDisabledReason =
+  | "device_limit"
+  | "signed_out"
+  | "user_disabled";
+
+export type SyncWriteOptions = {
+  idempotencyKey?: string;
+};
+
+export type SyncTransport = {
+  get(path: string): Promise<unknown>;
+  post(
+    path: string,
+    body: unknown,
+    options?: SyncWriteOptions,
+  ): Promise<unknown>;
+  put(
+    path: string,
+    body: unknown,
+    options?: SyncWriteOptions,
+  ): Promise<unknown>;
+  patch(path: string, body: unknown): Promise<unknown>;
+  delete(path: string): Promise<unknown>;
+};
+
+export type SyncTransportOptions = {
+  profile: SyncProfile;
+  accessToken?: string;
+  deviceId?: string;
+};
+
+export type SyncCapabilities = {
+  server?: string;
+  cloudSaveProtocol?: number;
+  features?: Record<string, "enabled" | "disabled" | "unsupported" | string>;
+};
+
+export type SyncTalePackageV1 = {
+  format: "hakawati-tale-package";
+  formatVersion: 1;
+  exportedAt: string;
+  tale: {
+    id: string;
+    title: string;
+    description: string;
+    gameMode: string;
+    thumbnailAssetId?: string | null;
+    coverAssetId?: string | null;
+    createdAt: number;
+    updatedAt: number;
+    schemaVersion: number;
+  };
+  state: {
+    stateSchemaVersion: number;
+    data: unknown;
+  };
+  turns: Array<{
+    id: string;
+    seq: number;
+    createdAt: number;
+    entries: unknown[];
+  }>;
+  assets?: Array<{
+    id: string;
+    role: "thumbnail";
+    contentType: string;
+    dataBase64?: string;
+  }>;
+};
+
+export type HostedAuthConfig = {
+  provider: "logto";
+  issuer: string;
+  audience: string;
+  clientId: string;
+  scopes: string[];
+};
+
+type OAuthLoopbackStart = {
+  id: string;
+  redirectUri: string;
+};
+
+type OidcDiscovery = {
+  authorization_endpoint?: string;
+  token_endpoint?: string;
+};
+
+type TokenResponse = {
+  access_token?: string;
+  expires_in?: number;
+  token_type?: string;
+  error?: string;
+  error_description?: string;
+  message?: string;
+};
+
+export type HostedSignInResult = {
+  accessToken: string;
+  expiresIn?: number;
+};
+
+export type HostedAccount = {
+  id: string;
+  emailVerified: boolean;
+  emailNormalized: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SyncDevice = {
+  id: string;
+  name: string;
+  platform: string;
+  appVersion: string;
+  createdAt: string;
+  lastSeenAt: string;
+};
+
+export type RegisterSyncDeviceInput = {
+  id: string;
+  name: string;
+  platform: string;
+  appVersion: string;
+};
+
+export type RemoteTale = {
+  id: string;
+  title: string;
+  description: string | null;
+  gameMode: string;
+  coverAssetId: string | null;
+  thumbnailAssetId: string | null;
+  contentRev: number;
+  metadataRev: number;
+  turnCount: number;
+  updatedAt: string;
+  lastEntryPreview: string | null;
+};
+
+export type RemoteTalePage = {
+  items: RemoteTale[];
+  nextCursor: string | null;
+};
+
+export type RemoteTalePackageResponse = {
+  id: string;
+  contentRev: number;
+  metadataRev: number;
+  turnCount: number;
+  package: SyncTalePackageV1;
+  cover?: unknown;
+};
+
+export class SyncHttpError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly code = String(status),
+  ) {
+    super(message);
+  }
+}
+
+function isDeviceLimitError(error: unknown): boolean {
+  return (
+    error instanceof SyncHttpError &&
+    error.status === 403 &&
+    (error.code === "device_limit_exceeded" ||
+      error.message.toLowerCase().includes("device limit"))
+  );
+}
+
+function bodyValue(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object"
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function errorCode(value: unknown, status: number): string {
+  const payload = bodyValue(value);
+  return typeof payload.code === "string"
+    ? payload.code
+    : typeof payload.type === "string"
+      ? payload.type
+      : String(status);
+}
+
+function rev(value: unknown): string | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  return typeof value === "string" && value.trim().length > 0
+    ? value.trim()
+    : null;
+}
+
+function contentRevNumber(value: string | null): number {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new Error("Synced tale is missing a valid content revision");
+  }
+  return parsed;
+}
+
+function metadataRevNumber(value: string | null): number {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new Error("Synced tale is missing a valid metadata revision");
+  }
+  return parsed;
+}
+
+function parseResponseBody(text: string): unknown {
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
+}
+
+function syncBaseUrl(value: string): string {
+  return value.replace(/\/+$/, "").replace(/\/v1$/, "");
+}
+
+function base64ToBytes(value: string): Uint8Array {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
+}
+
+async function sha256Hex(bytes: Uint8Array): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    bytes.slice() as BufferSource,
+  );
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export function createSyncTransport({
+  profile,
+  accessToken,
+  deviceId,
+}: SyncTransportOptions): SyncTransport {
+  const base = syncBaseUrl(profile.baseUrl);
+  const syncDeviceId = deviceId ?? profile.deviceId ?? undefined;
+
+  async function request(
+    method: string,
+    path: string,
+    body?: unknown,
+    options: SyncWriteOptions = {},
+  ): Promise<unknown> {
+    const headers: Record<string, string> = {
+      ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+      ...(profile.mode === "hosted" && accessToken
+        ? { Authorization: `Bearer ${accessToken}` }
+        : {}),
+      ...(profile.mode === "hosted" && method !== "GET" && syncDeviceId
+        ? { "X-Hakawati-Device-Id": syncDeviceId }
+        : {}),
+      ...(options.idempotencyKey
+        ? { "Idempotency-Key": options.idempotencyKey }
+        : {}),
+    };
+    const response = await fetch(`${base}${path}`, {
+      method,
+      headers,
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    });
+    const text = await response.text();
+    const data = parseResponseBody(text);
+    if (!response.ok) {
+      const payload = bodyValue(data);
+      throw new SyncHttpError(
+        typeof payload.message === "string" ? payload.message : text,
+        response.status,
+        errorCode(data, response.status),
+      );
+    }
+    return data;
+  }
+
+  return {
+    get: (path) => request("GET", path),
+    post: (path, body, options) => request("POST", path, body, options),
+    put: (path, body, options) => request("PUT", path, body, options),
+    patch: (path, body) => request("PATCH", path, body),
+    delete: (path) => request("DELETE", path),
+  };
+}
+
+export async function fetchSyncCapabilities(
+  transport: SyncTransport,
+): Promise<SyncCapabilities> {
+  return bodyValue(await transport.get("/v1/capabilities")) as SyncCapabilities;
+}
+
+export async function fetchHostedAuthConfig(
+  transport: SyncTransport,
+): Promise<HostedAuthConfig> {
+  return bodyValue(await transport.get("/v1/auth/config")) as HostedAuthConfig;
+}
+
+function base64Url(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
+function randomString(bytes = 32): string {
+  const value = new Uint8Array(bytes);
+  crypto.getRandomValues(value);
+  return base64Url(value);
+}
+
+async function sha256Base64Url(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
+  return base64Url(new Uint8Array(digest));
+}
+
+async function fetchOidcDiscovery(issuer: string): Promise<OidcDiscovery> {
+  const issuerBase = issuer.replace(/\/$/, "");
+  const response = await fetch(
+    `${issuerBase}/.well-known/openid-configuration`,
+  );
+  if (!response.ok) {
+    throw new Error(await response.text());
+  }
+  return (await response.json()) as OidcDiscovery;
+}
+
+export async function signInHostedSync(input: {
+  profile: SyncProfile;
+  prompt?: "none";
+  timeoutMs?: number;
+}): Promise<HostedSignInResult> {
+  const transport = createSyncTransport({ profile: input.profile });
+  await fetchSyncCapabilities(transport);
+  const authConfig = await fetchHostedAuthConfig(transport);
+  const discovery = await fetchOidcDiscovery(authConfig.issuer);
+  if (!discovery.authorization_endpoint || !discovery.token_endpoint) {
+    throw new Error("OIDC discovery did not return sign-in endpoints");
+  }
+
+  const loopback = await invoke<OAuthLoopbackStart>("start_oauth_loopback");
+  const verifier = randomString(64);
+  const challenge = await sha256Base64Url(verifier);
+  const state = randomString(16);
+  const authUrl = new URL(discovery.authorization_endpoint);
+  authUrl.searchParams.set("client_id", authConfig.clientId);
+  authUrl.searchParams.set("redirect_uri", loopback.redirectUri);
+  authUrl.searchParams.set("response_type", "code");
+  authUrl.searchParams.set("scope", authConfig.scopes.join(" "));
+  authUrl.searchParams.set("state", state);
+  authUrl.searchParams.set("code_challenge", challenge);
+  authUrl.searchParams.set("code_challenge_method", "S256");
+  if (input.prompt) {
+    authUrl.searchParams.set("prompt", input.prompt);
+  }
+  if (authConfig.audience) {
+    authUrl.searchParams.set("resource", authConfig.audience);
+  }
+
+  await openUrl(authUrl);
+  const callback = new URL(
+    await invoke<string>("wait_oauth_loopback", {
+      id: loopback.id,
+      timeoutMs: input.timeoutMs ?? 120_000,
+    }),
+  );
+  if (callback.searchParams.get("state") !== state) {
+    throw new Error("Sign-in state did not match");
+  }
+  const error = callback.searchParams.get("error");
+  if (error) {
+    throw new Error(callback.searchParams.get("error_description") ?? error);
+  }
+  const code = callback.searchParams.get("code");
+  if (!code) {
+    throw new Error("Sign-in callback did not include an authorization code");
+  }
+
+  const body = new URLSearchParams({
+    grant_type: "authorization_code",
+    client_id: authConfig.clientId,
+    redirect_uri: loopback.redirectUri,
+    code,
+    code_verifier: verifier,
+  });
+  if (authConfig.audience) {
+    body.set("resource", authConfig.audience);
+  }
+  const tokenResponse = await fetch(discovery.token_endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
+  });
+  const tokenBody = (await tokenResponse
+    .json()
+    .catch(() => null)) as TokenResponse | null;
+  if (!tokenResponse.ok || !tokenBody?.access_token) {
+    throw new Error(
+      tokenBody?.error_description ??
+        tokenBody?.message ??
+        tokenBody?.error ??
+        "Sign-in token exchange failed",
+    );
+  }
+
+  return {
+    accessToken: tokenBody.access_token,
+    ...(tokenBody.expires_in ? { expiresIn: tokenBody.expires_in } : {}),
+  };
+}
+
+export async function getHostedAccount(
+  transport: SyncTransport,
+): Promise<HostedAccount> {
+  return bodyValue(await transport.get("/v1/accounts/me")) as HostedAccount;
+}
+
+export async function updateHostedAccountProfile(
+  transport: SyncTransport,
+  input: { displayName: string },
+): Promise<HostedAccount> {
+  return bodyValue(
+    await transport.patch("/v1/accounts/me", input),
+  ) as HostedAccount;
+}
+
+export async function registerSyncDevice(
+  transport: SyncTransport,
+  device: RegisterSyncDeviceInput,
+): Promise<SyncDevice> {
+  return bodyValue(
+    await transport.put(`/v1/devices/${encodeURIComponent(device.id)}`, {
+      name: device.name,
+      platform: device.platform,
+      appVersion: device.appVersion,
+    }),
+  ) as SyncDevice;
+}
+
+export async function listRemoteTales(
+  transport: SyncTransport,
+  options: { cursor?: string; limit?: number } = {},
+): Promise<RemoteTalePage> {
+  const query = new URLSearchParams();
+  if (options.cursor) query.set("cursor", options.cursor);
+  if (options.limit) query.set("limit", String(options.limit));
+  const encoded = query.toString();
+  const suffix = encoded ? `?${encoded}` : "";
+  return bodyValue(await transport.get(`/v1/tales${suffix}`)) as RemoteTalePage;
+}
+
+export async function listAllRemoteTales(
+  transport: SyncTransport,
+  limit = 100,
+): Promise<RemoteTale[]> {
+  const items: RemoteTale[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await listRemoteTales(transport, { cursor, limit });
+    items.push(...page.items);
+    cursor = page.nextCursor ?? undefined;
+  } while (cursor);
+  return items;
+}
+
+export async function downloadRemoteTalePackage(
+  transport: SyncTransport,
+  remoteTaleId: string,
+): Promise<RemoteTalePackageResponse> {
+  return bodyValue(
+    await transport.get(
+      `/v1/tales/${encodeURIComponent(remoteTaleId)}/package`,
+    ),
+  ) as RemoteTalePackageResponse;
+}
+
+export async function deleteRemoteTale(
+  transport: SyncTransport,
+  remoteTaleId: string,
+): Promise<void> {
+  await transport.delete(`/v1/tales/${encodeURIComponent(remoteTaleId)}`);
+}
+
+export function toSyncTalePackage(
+  pkg: TalePackageV1,
+  options: { mode: SyncMode; coverAssetId?: string } = { mode: "personal" },
+): SyncTalePackageV1 {
+  const remoteCover =
+    options.mode === "hosted" && options.coverAssetId
+      ? {
+          coverAssetId: options.coverAssetId,
+          thumbnailAssetId: options.coverAssetId,
+        }
+      : {};
+  return {
+    format: pkg.format,
+    formatVersion: pkg.formatVersion,
+    exportedAt: pkg.exportedAt,
+    tale: {
+      id: pkg.tale.id,
+      title: pkg.tale.title,
+      description: pkg.tale.description,
+      gameMode: pkg.tale.gameMode,
+      createdAt: pkg.tale.createdAt,
+      updatedAt: pkg.tale.updatedAt,
+      schemaVersion: pkg.tale.schemaVersion,
+      ...remoteCover,
+    },
+    state: {
+      stateSchemaVersion: pkg.state.stateSchemaVersion,
+      data: {
+        components: pkg.state.data.components,
+        storyCards: pkg.state.data.storyCards,
+        gm: {
+          stats: pkg.state.data.gm.stats,
+          inventory: pkg.state.data.gm.inventory,
+          scratchpad: pkg.state.data.gm.scratchpad,
+        },
+      },
+    },
+    turns: pkg.turns.map(({ updatedAt: _updatedAt, ...turn }) => turn),
+    assets: [],
+  };
+}
+
+export function canUploadCoverAssets(capabilities: SyncCapabilities): boolean {
+  return (
+    capabilities.features?.coverAssets === "enabled" ||
+    capabilities.features?.thumbnails === "enabled"
+  );
+}
+
+function localThumbnailAsset(pkg: TalePackageV1) {
+  return pkg.assets.find((asset) => asset.id === pkg.tale.thumbnailAssetId);
+}
+
+async function uploadHostedCoverAsset(
+  transport: SyncTransport,
+  asset: TalePackageV1["assets"][number],
+): Promise<string> {
+  const bytes = base64ToBytes(asset.dataBase64);
+  const intent = bodyValue(
+    await transport.post("/v1/assets/cover-upload-intents", {
+      visibility: "private",
+      contentType: asset.contentType,
+      byteSize: bytes.byteLength,
+      sha256: await sha256Hex(bytes),
+    }),
+  );
+  const upload = bodyValue(intent.upload);
+  const cover = bodyValue(intent.asset);
+  const assetId = typeof cover.assetId === "string" ? cover.assetId : null;
+  const uploadUrl = typeof upload.url === "string" ? upload.url : null;
+  const uploadMethod =
+    typeof upload.method === "string" ? upload.method : "PUT";
+  const uploadHeaders = bodyValue(upload.headers) as Record<string, string>;
+  if (!assetId || !uploadUrl) {
+    throw new Error("Cover upload intent did not include upload details");
+  }
+
+  const response = await fetch(uploadUrl, {
+    method: uploadMethod,
+    headers: uploadHeaders,
+    body: new Blob([bytes.slice().buffer], { type: asset.contentType }),
+  });
+  if (!response.ok) {
+    throw new SyncHttpError(
+      "Cover upload failed",
+      response.status,
+      "cover_upload_failed",
+    );
+  }
+
+  await transport.post(
+    `/v1/assets/${encodeURIComponent(assetId)}/complete`,
+    {},
+  );
+  return assetId;
+}
+
+async function toUploadSyncPackage(input: {
+  profile: SyncProfile;
+  transport: SyncTransport;
+  localPackage: TalePackageV1;
+  capabilities?: SyncCapabilities;
+}): Promise<SyncTalePackageV1> {
+  const capabilities =
+    input.capabilities ?? (await fetchSyncCapabilities(input.transport));
+  const coverAsset =
+    input.profile.mode === "hosted" && canUploadCoverAssets(capabilities)
+      ? localThumbnailAsset(input.localPackage)
+      : undefined;
+  const coverAssetId = coverAsset
+    ? await uploadHostedCoverAsset(input.transport, coverAsset)
+    : undefined;
+  return toSyncTalePackage(input.localPackage, {
+    mode: input.profile.mode,
+    ...(coverAssetId ? { coverAssetId } : {}),
+  });
+}
+
+export function remoteTaleChanged(
+  state: {
+    remoteTaleId: string;
+    contentRev: string | null;
+    metadataRev: string | null;
+  },
+  remote: RemoteTale,
+): boolean {
+  return (
+    state.remoteTaleId === remote.id &&
+    (Number(state.contentRev) !== remote.contentRev ||
+      Number(state.metadataRev) !== remote.metadataRev)
+  );
+}
+
+export type LinkedTaleSyncResult = "skipped" | "pushed" | "pulled" | "conflict";
+
+function localMetadataChanged(pkg: TalePackageV1, remote: RemoteTale) {
+  return (
+    pkg.tale.title !== remote.title ||
+    pkg.tale.description !== (remote.description ?? "") ||
+    pkg.tale.gameMode !== remote.gameMode
+  );
+}
+
+function hasLocalPendingWork(state: TaleSyncState) {
+  return state.pendingStatus === "push" || state.pendingStatus === "error";
+}
+
+function syncFailureStatus(error: unknown): "conflict" | "error" {
+  return error instanceof SyncHttpError && error.status === 409
+    ? "conflict"
+    : "error";
+}
+
+async function setTaleSyncFailure(
+  input: { profileId: string; localTaleId: string },
+  error: unknown,
+) {
+  await setTaleSyncStatus({
+    ...input,
+    pendingStatus: syncFailureStatus(error),
+    lastErrorCode: error instanceof SyncHttpError ? error.code : "sync_failed",
+  });
+}
+
+async function setTaleSynced(input: {
+  profileId: string;
+  localTaleId: string;
+  result: Record<string, unknown>;
+  remoteTaleId: string;
+  contentRev: string | null;
+  metadataRev: string | null;
+}) {
+  await upsertTaleSyncState({
+    profileId: input.profileId,
+    localTaleId: input.localTaleId,
+    remoteTaleId:
+      typeof input.result.id === "string"
+        ? input.result.id
+        : input.remoteTaleId,
+    contentRev: rev(input.result.contentRev) ?? input.contentRev,
+    metadataRev: rev(input.result.metadataRev) ?? input.metadataRev,
+    lastSyncedAt: Date.now(),
+    pendingStatus: "idle",
+    lastErrorCode: null,
+  });
+}
+
+export async function syncLinkedTale(input: {
+  profile: SyncProfile;
+  transport: SyncTransport;
+  localTaleId: string;
+  remoteTale: RemoteTale;
+  idempotencyKey: string;
+}): Promise<LinkedTaleSyncResult> {
+  const state = await getTaleSyncState({
+    profileId: input.profile.id,
+    localTaleId: input.localTaleId,
+  });
+  if (!state || state.remoteTaleId !== input.remoteTale.id) {
+    return "skipped";
+  }
+  if (state.pendingStatus === "conflict") {
+    return "skipped";
+  }
+
+  const remoteChanged = remoteTaleChanged(state, input.remoteTale);
+  if (remoteChanged && hasLocalPendingWork(state)) {
+    await setTaleSyncStatus({
+      profileId: input.profile.id,
+      localTaleId: input.localTaleId,
+      pendingStatus: "conflict",
+      lastErrorCode: "remote_changed",
+    });
+    return "conflict";
+  }
+
+  if (remoteChanged) {
+    try {
+      await applyRemoteTalePackage({
+        profile: input.profile,
+        transport: input.transport,
+        localTaleId: input.localTaleId,
+      });
+    } catch (error) {
+      await setTaleSyncStatus({
+        profileId: input.profile.id,
+        localTaleId: input.localTaleId,
+        pendingStatus: "error",
+        lastErrorCode:
+          error instanceof SyncHttpError ? error.code : "sync_failed",
+      });
+      throw error;
+    }
+    return "pulled";
+  }
+
+  if (!hasLocalPendingWork(state)) {
+    return "skipped";
+  }
+
+  const pkg = await exportTalePackage(input.localTaleId);
+  const metadataChanged = localMetadataChanged(pkg, input.remoteTale);
+  if (metadataChanged) {
+    await pushTaleMetadataPatch({
+      profile: input.profile,
+      transport: input.transport,
+      localTaleId: input.localTaleId,
+    });
+  }
+
+  if (pkg.turns.length <= input.remoteTale.turnCount) {
+    await replaceRemoteTalePackage({
+      profile: input.profile,
+      transport: input.transport,
+      localTaleId: input.localTaleId,
+      idempotencyKey: input.idempotencyKey,
+    });
+    return "pushed";
+  }
+
+  // ponytail: one dirty bit means metadata-only saves may send stateAfter too; split dirty flags if content-rev churn matters.
+  await pushTaleContentBatch({
+    profile: input.profile,
+    transport: input.transport,
+    localTaleId: input.localTaleId,
+    remoteTale: input.remoteTale,
+    idempotencyKey: input.idempotencyKey,
+  });
+
+  return "pushed";
+}
+
+function toLocalTalePackage(
+  pkg: RemoteTalePackageResponse["package"],
+): TalePackageV1 {
+  const assets = (pkg.assets ?? []).filter(
+    (asset): asset is TalePackageV1["assets"][number] =>
+      typeof asset.dataBase64 === "string",
+  );
+  const assetIds = new Set(assets.map((asset) => asset.id));
+  const { thumbnailAssetId, coverAssetId, ...tale } = pkg.tale;
+  const localThumbnailAssetId = thumbnailAssetId ?? coverAssetId ?? undefined;
+
+  return {
+    ...pkg,
+    tale: {
+      ...tale,
+      gameMode: tale.gameMode as TalePackageV1["tale"]["gameMode"],
+      ...(localThumbnailAssetId && assetIds.has(localThumbnailAssetId)
+        ? { thumbnailAssetId: localThumbnailAssetId }
+        : {}),
+    },
+    state: pkg.state as TalePackageV1["state"],
+    turns: pkg.turns as TalePackageV1["turns"],
+    assets,
+  };
+}
+
+export async function prepareHostedSync(input: {
+  profile: SyncProfile;
+  accessToken: string;
+  device: RegisterSyncDeviceInput;
+}): Promise<{
+  capabilities: SyncCapabilities;
+  authConfig: HostedAuthConfig;
+  account: HostedAccount;
+  device: SyncDevice | null;
+  transport: SyncTransport;
+}> {
+  const profile = { ...input.profile, deviceId: input.device.id };
+  await upsertSyncProfile(profile);
+  const publicTransport = createSyncTransport({ profile });
+  const capabilities = await fetchSyncCapabilities(publicTransport);
+  const authConfig = await fetchHostedAuthConfig(publicTransport);
+  const transport = createSyncTransport({
+    profile,
+    accessToken: input.accessToken,
+  });
+  const account = await getHostedAccount(transport);
+  let device: SyncDevice;
+  try {
+    device = await registerSyncDevice(transport, input.device);
+  } catch (error) {
+    if (isDeviceLimitError(error)) {
+      await setSyncProfileDisabled(profile.id, "device_limit");
+      return { capabilities, authConfig, account, device: null, transport };
+    }
+    throw error;
+  }
+  await upsertSyncProfile({
+    ...profile,
+    enabled: true,
+    disabledReason: null,
+  });
+  return { capabilities, authConfig, account, device, transport };
+}
+
+export async function uploadTalePackage(input: {
+  profile: SyncProfile;
+  transport: SyncTransport;
+  localTaleId: string;
+  idempotencyKey: string;
+  capabilities?: SyncCapabilities;
+}): Promise<void> {
+  await upsertSyncProfile(input.profile);
+  await upsertTaleSyncState({
+    profileId: input.profile.id,
+    localTaleId: input.localTaleId,
+    remoteTaleId: input.localTaleId,
+    contentRev: null,
+    metadataRev: null,
+    lastSyncedAt: null,
+    pendingStatus: "push",
+    lastErrorCode: null,
+  });
+
+  try {
+    const pkg = await exportTalePackage(input.localTaleId);
+    const syncPackage = await toUploadSyncPackage({
+      profile: input.profile,
+      transport: input.transport,
+      localPackage: pkg,
+      capabilities: input.capabilities,
+    });
+    const result = bodyValue(
+      await input.transport.post(
+        "/v1/tales",
+        { package: syncPackage },
+        { idempotencyKey: input.idempotencyKey },
+      ),
+    );
+    await setTaleSynced({
+      profileId: input.profile.id,
+      localTaleId: input.localTaleId,
+      result,
+      remoteTaleId: input.localTaleId,
+      contentRev: null,
+      metadataRev: null,
+    });
+  } catch (error) {
+    await setTaleSyncFailure(
+      {
+        profileId: input.profile.id,
+        localTaleId: input.localTaleId,
+      },
+      error,
+    );
+    throw error;
+  }
+}
+
+export async function replaceRemoteTalePackage(input: {
+  profile: SyncProfile;
+  transport: SyncTransport;
+  localTaleId: string;
+  idempotencyKey: string;
+  capabilities?: SyncCapabilities;
+}): Promise<unknown> {
+  const state = await getTaleSyncState({
+    profileId: input.profile.id,
+    localTaleId: input.localTaleId,
+  });
+  if (!state) {
+    throw new Error("Tale is not linked to this sync profile");
+  }
+
+  const pkg = await exportTalePackage(input.localTaleId);
+  try {
+    const syncPackage = await toUploadSyncPackage({
+      profile: input.profile,
+      transport: input.transport,
+      localPackage: pkg,
+      capabilities: input.capabilities,
+    });
+    const result = bodyValue(
+      await input.transport.put(
+        `/v1/tales/${encodeURIComponent(state.remoteTaleId)}/package`,
+        {
+          package: syncPackage,
+          baseContentRev: contentRevNumber(state.contentRev),
+          confirmReplace: true,
+        },
+        { idempotencyKey: input.idempotencyKey },
+      ),
+    );
+    await setTaleSynced({
+      profileId: input.profile.id,
+      localTaleId: input.localTaleId,
+      result,
+      remoteTaleId: state.remoteTaleId,
+      contentRev: state.contentRev,
+      metadataRev: state.metadataRev,
+    });
+    return result;
+  } catch (error) {
+    await setTaleSyncFailure(
+      {
+        profileId: input.profile.id,
+        localTaleId: input.localTaleId,
+      },
+      error,
+    );
+    throw error;
+  }
+}
+
+export async function pushTaleContentBatch(input: {
+  profile: SyncProfile;
+  transport: SyncTransport;
+  localTaleId: string;
+  remoteTale: Pick<RemoteTale, "turnCount">;
+  idempotencyKey: string;
+}): Promise<unknown> {
+  const state = await getTaleSyncState({
+    profileId: input.profile.id,
+    localTaleId: input.localTaleId,
+  });
+  if (!state) {
+    throw new Error("Tale is not linked to this sync profile");
+  }
+
+  const pkg = await exportTalePackage(input.localTaleId);
+  const syncPackage = toSyncTalePackage(pkg, { mode: input.profile.mode });
+  const baseContentRev = contentRevNumber(state.contentRev);
+  try {
+    const result = bodyValue(
+      await input.transport.post(
+        `/v1/tales/${encodeURIComponent(state.remoteTaleId)}/content-batch`,
+        {
+          baseContentRev,
+          turns: syncPackage.turns.filter(
+            (turn) => turn.seq > input.remoteTale.turnCount,
+          ),
+          stateAfter: syncPackage.state,
+        },
+        { idempotencyKey: input.idempotencyKey },
+      ),
+    );
+    await setTaleSynced({
+      profileId: input.profile.id,
+      localTaleId: input.localTaleId,
+      result,
+      remoteTaleId: state.remoteTaleId,
+      contentRev: state.contentRev,
+      metadataRev: state.metadataRev,
+    });
+    return result;
+  } catch (error) {
+    await setTaleSyncFailure(
+      {
+        profileId: input.profile.id,
+        localTaleId: input.localTaleId,
+      },
+      error,
+    );
+    throw error;
+  }
+}
+
+export async function pushTaleMetadataPatch(input: {
+  profile: SyncProfile;
+  transport: SyncTransport;
+  localTaleId: string;
+}): Promise<unknown> {
+  const state = await getTaleSyncState({
+    profileId: input.profile.id,
+    localTaleId: input.localTaleId,
+  });
+  if (!state) {
+    throw new Error("Tale is not linked to this sync profile");
+  }
+
+  const pkg = await exportTalePackage(input.localTaleId);
+  try {
+    const result = bodyValue(
+      await input.transport.patch(
+        `/v1/tales/${encodeURIComponent(state.remoteTaleId)}/metadata`,
+        {
+          baseMetadataRev: metadataRevNumber(state.metadataRev),
+          title: pkg.tale.title,
+          description: pkg.tale.description,
+          gameMode: pkg.tale.gameMode,
+        },
+      ),
+    );
+    await setTaleSynced({
+      profileId: input.profile.id,
+      localTaleId: input.localTaleId,
+      result,
+      remoteTaleId: state.remoteTaleId,
+      contentRev: state.contentRev,
+      metadataRev: state.metadataRev,
+    });
+    return result;
+  } catch (error) {
+    await setTaleSyncFailure(
+      {
+        profileId: input.profile.id,
+        localTaleId: input.localTaleId,
+      },
+      error,
+    );
+    throw error;
+  }
+}
+
+export async function keepBothTalePackage(input: {
+  profile: SyncProfile;
+  transport: SyncTransport;
+  localTaleId: string;
+  idempotencyKey: string;
+}): Promise<string> {
+  const pkg = await exportTalePackage(input.localTaleId);
+  const copyId = await importTalePackage(pkg, {
+    title: `${pkg.tale.title} (copy)`,
+  });
+  await uploadTalePackage({
+    profile: input.profile,
+    transport: input.transport,
+    localTaleId: copyId,
+    idempotencyKey: input.idempotencyKey,
+  });
+  await applyRemoteTalePackage({
+    profile: input.profile,
+    transport: input.transport,
+    localTaleId: input.localTaleId,
+  });
+  return copyId;
+}
+
+export async function importRemoteTalePackage(input: {
+  profile: SyncProfile;
+  transport: SyncTransport;
+  remoteTaleId: string;
+  title?: string;
+}): Promise<string> {
+  await upsertSyncProfile(input.profile);
+  const remote = await downloadRemoteTalePackage(
+    input.transport,
+    input.remoteTaleId,
+  );
+  const localTaleId = await importTalePackage(
+    toLocalTalePackage(remote.package),
+    {
+      preserveId: true,
+      ...(input.title ? { title: input.title } : {}),
+    },
+  );
+
+  await upsertTaleSyncState({
+    profileId: input.profile.id,
+    localTaleId,
+    remoteTaleId: remote.id,
+    contentRev: rev(remote.contentRev),
+    metadataRev: rev(remote.metadataRev),
+    lastSyncedAt: Date.now(),
+    pendingStatus: "idle",
+    lastErrorCode: null,
+  });
+
+  return localTaleId;
+}
+
+export async function applyRemoteTalePackage(input: {
+  profile: SyncProfile;
+  transport: SyncTransport;
+  localTaleId: string;
+}): Promise<void> {
+  const state = await getTaleSyncState({
+    profileId: input.profile.id,
+    localTaleId: input.localTaleId,
+  });
+  if (!state) {
+    throw new Error("Tale is not linked to this sync profile");
+  }
+
+  const remote = await downloadRemoteTalePackage(
+    input.transport,
+    state.remoteTaleId,
+  );
+  await replaceTaleWithPackage(
+    input.localTaleId,
+    toLocalTalePackage(remote.package),
+  );
+  await upsertTaleSyncState({
+    profileId: input.profile.id,
+    localTaleId: input.localTaleId,
+    remoteTaleId: remote.id,
+    contentRev: rev(remote.contentRev),
+    metadataRev: rev(remote.metadataRev),
+    lastSyncedAt: Date.now(),
+    pendingStatus: "idle",
+    lastErrorCode: null,
+  });
+}

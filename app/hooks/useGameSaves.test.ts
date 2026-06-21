@@ -79,6 +79,15 @@ const serviceMocks = vi.hoisted(() => ({
   undoTaleLogToEntryCount: vi.fn(),
 }));
 
+const syncRepoMocks = vi.hoisted(() => ({
+  listSyncStatesForLocalTale: vi.fn(),
+  setTaleSyncStatus: vi.fn(),
+}));
+
+const syncWakeMocks = vi.hoisted(() => ({
+  wakeSyncBackground: vi.fn(),
+}));
+
 vi.mock("@/store/useTaleStore", () => ({
   DEFAULT_WINDOW_SIZE: 200,
   useTaleStore: taleStoreMocks.useTaleStore,
@@ -94,7 +103,10 @@ vi.mock("@/store/useLastPlayedStore", () => ({
 
 vi.mock("@/services/tale.service", () => serviceMocks);
 
-import { useLoadTale } from "./useGameSaves";
+vi.mock("@/repositories/sync.repository", () => syncRepoMocks);
+vi.mock("@/services/sync-wakeup", () => syncWakeMocks);
+
+import { useLoadTale, usePersistTale } from "./useGameSaves";
 
 function renderLoadHarness() {
   const container = document.createElement("div");
@@ -103,6 +115,33 @@ function renderLoadHarness() {
 
   function Harness() {
     controls = useLoadTale();
+    return null;
+  }
+
+  const root = createRoot(container);
+  act(() => {
+    root.render(createElement(Harness));
+  });
+
+  return {
+    get controls() {
+      if (!controls) throw new Error("Harness did not render.");
+      return controls;
+    },
+    cleanup() {
+      act(() => root.unmount());
+      container.remove();
+    },
+  };
+}
+
+function renderPersistHarness() {
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  let controls: ReturnType<typeof usePersistTale> | undefined;
+
+  function Harness() {
+    controls = usePersistTale();
     return null;
   }
 
@@ -243,6 +282,74 @@ describe("useLoadTale", () => {
       "fresh-entry",
     ]);
     expect(taleStoreMocks.state.totalLogCount).toBe(1);
+
+    harness.cleanup();
+  });
+});
+
+describe("usePersistTale", () => {
+  beforeEach(() => {
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
+    vi.clearAllMocks();
+    taleStoreMocks.reset({
+      id: "tale-1",
+      name: "Linked tale",
+      description: "",
+      components: [],
+      storyCards: [],
+      stats: [],
+      inventory: [],
+      log: [],
+      gameMode: GameMode.STORY_TELLER,
+      undoStack: [],
+    });
+  });
+
+  it("marks linked tales for push after local turn save succeeds", async () => {
+    serviceMocks.commitTaleTurn.mockResolvedValueOnce(undefined);
+    syncRepoMocks.listSyncStatesForLocalTale.mockResolvedValueOnce([
+      {
+        profileId: "hosted",
+        localTaleId: "tale-1",
+        remoteTaleId: "remote-1",
+        contentRev: "1",
+        metadataRev: "1",
+        lastSyncedAt: 1,
+        pendingStatus: "idle",
+        lastErrorCode: null,
+      },
+      {
+        profileId: "personal",
+        localTaleId: "tale-1",
+        remoteTaleId: "remote-2",
+        contentRev: "1",
+        metadataRev: "1",
+        lastSyncedAt: 1,
+        pendingStatus: "conflict",
+        lastErrorCode: "content_conflict",
+      },
+    ]);
+    const harness = renderPersistHarness();
+
+    await act(async () => {
+      await harness.controls.saveTurn(
+        "tale-1",
+        [{ id: "entry-1", role: LogEntryRole.PLAYER, text: "Go" }],
+        123,
+      );
+    });
+
+    expect(serviceMocks.commitTaleTurn).toHaveBeenCalledOnce();
+    expect(syncRepoMocks.setTaleSyncStatus).toHaveBeenCalledOnce();
+    expect(syncRepoMocks.setTaleSyncStatus).toHaveBeenCalledWith({
+      profileId: "hosted",
+      localTaleId: "tale-1",
+      pendingStatus: "push",
+      lastErrorCode: null,
+    });
+    expect(syncWakeMocks.wakeSyncBackground).toHaveBeenCalledOnce();
 
     harness.cleanup();
   });

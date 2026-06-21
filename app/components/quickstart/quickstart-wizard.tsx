@@ -26,10 +26,14 @@ import {
   useSettingsStore,
 } from "@/store/useSettingsStore";
 import { generateQuickstartTale } from "@/services/llm/quickstartTaleGenerator";
+import {
+  markNewTaleSyncPreference,
+  type NewTaleSyncPolicy,
+} from "@/services/new-tale-sync";
 import { createPromptComponent } from "@/lib/prompt-components";
 import { PromptComponentType } from "@/types/context.type";
 import type { PromptComponent } from "@/types/context.type";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, Cloud, LockIcon } from "lucide-react";
 
 export interface QuickstartState {
   gameMode: GameMode;
@@ -239,6 +243,7 @@ export function QuickstartPage() {
 
   const [currentStep, setCurrentStep] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [syncPolicy, setSyncPolicy] = useState<NewTaleSyncPolicy>("default");
   const abortRef = useRef<AbortController | null>(null);
   const [state, setState] = useState<QuickstartState>({
     gameMode: GameMode.STORY_TELLER,
@@ -546,6 +551,7 @@ export function QuickstartPage() {
         gameMode: state.gameMode,
         undoStack: [],
       });
+      await markNewTaleSyncPreference(taleId, syncPolicy);
 
       taleStore.resetAllState();
       setLastPlayedTaleId(taleId);
@@ -562,7 +568,15 @@ export function QuickstartPage() {
       setIsGenerating(false);
       abortRef.current = null;
     }
-  }, [utilityConfig, t, state, taleStore, setLastPlayedTaleId, navigate]);
+  }, [
+    utilityConfig,
+    t,
+    state,
+    syncPolicy,
+    taleStore,
+    setLastPlayedTaleId,
+    navigate,
+  ]);
 
   const handlePrimaryAction = useCallback(() => {
     if (!currentStepData.canProgress || isGenerating) return;
@@ -650,6 +664,34 @@ export function QuickstartPage() {
           </section>
 
           <footer className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {isLastStep ? (
+              <div className="mb-2 flex justify-center">
+                <div className="grid grid-cols-2 rounded-xs border border-border/70 bg-card/60 p-1 shadow-sm">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={syncPolicy === "default" ? "default" : "ghost"}
+                    onClick={() => setSyncPolicy("default")}
+                    disabled={isGenerating}
+                    className="rounded-xs"
+                  >
+                    <Cloud className="h-4 w-4" />
+                    <Trans>Sync</Trans>
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={syncPolicy === "private" ? "default" : "ghost"}
+                    onClick={() => setSyncPolicy("private")}
+                    disabled={isGenerating}
+                    className="rounded-xs"
+                  >
+                    <LockIcon className="h-4 w-4" />
+                    <Trans>Local only</Trans>
+                  </Button>
+                </div>
+              </div>
+            ) : null}
             <div className="flex items-center justify-between gap-3 rounded-xs border border-border/70 bg-card/60 p-2.5 shadow-lg shadow-background/20 backdrop-blur">
               <Button
                 variant="outline"

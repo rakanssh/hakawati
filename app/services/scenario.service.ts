@@ -12,6 +12,10 @@ import {
 } from "@/lib/prompt-components";
 import { normalizeStoryCard } from "@/lib/story-card-utils";
 import {
+  markNewTaleSyncPreference,
+  type NewTaleSyncPolicy,
+} from "@/services/new-tale-sync";
+import {
   GameMode,
   PromptComponentType,
   Scenario,
@@ -83,6 +87,7 @@ export async function getAllScenarios(
 
 export async function initTaleFromScenario(
   scenarioId: string,
+  options: { syncPolicy?: NewTaleSyncPolicy } = {},
 ): Promise<string> {
   const scenario = await getScenario(scenarioId);
   if (!scenario) throw new Error("Scenario not found");
@@ -97,7 +102,7 @@ export async function initTaleFromScenario(
     PromptComponentType.OPENING,
   );
   // Copy scenario thumbnail into tale at creation time
-  return initTale({
+  const taleId = await initTale({
     scenarioId,
     thumbnail: scenario.thumbnail ?? null,
     components,
@@ -121,6 +126,8 @@ export async function initTaleFromScenario(
     name: scenario.name,
     description: scenario.description,
   });
+  await markNewTaleSyncPreference(taleId, options.syncPolicy);
+  return taleId;
 }
 
 export function buildScenarioExportV2(scenario: Scenario): ScenarioExportV2 {
