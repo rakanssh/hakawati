@@ -31,6 +31,7 @@ export interface SyncSettingsStore {
   accountDisplayName: string;
   accountEmail: string;
   accountEmailVerified: boolean | null;
+  hostedRefreshFailed: boolean;
   showSyncAllPrompt: boolean;
   syncAllPromptAnswered: boolean;
   setCloudBaseUrl: (baseUrl: string) => void;
@@ -48,6 +49,7 @@ export interface SyncSettingsStore {
   }) => void;
   setShowSyncAllPrompt: (showSyncAllPrompt: boolean) => void;
   setSyncAllPromptAnswered: (syncAllPromptAnswered: boolean) => void;
+  setHostedRefreshFailed: (hostedRefreshFailed: boolean) => void;
   clearSession: () => void;
   setDeviceId: (deviceId: string) => void;
   setDeviceName: (deviceName: string) => void;
@@ -77,6 +79,7 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
       accountDisplayName: "",
       accountEmail: "",
       accountEmailVerified: null,
+      hostedRefreshFailed: false,
       showSyncAllPrompt: false,
       syncAllPromptAnswered: false,
       setCloudBaseUrl: (cloudBaseUrl) => set({ cloudBaseUrl }),
@@ -90,6 +93,7 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
         set((state) => ({
           accessToken,
           accessTokenExpiresAt,
+          hostedRefreshFailed: false,
           // ponytail: persisted with sync settings; move to OS keychain when a secure-store plugin lands.
           refreshToken: refreshToken ?? state.refreshToken,
         })),
@@ -102,11 +106,14 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
       setShowSyncAllPrompt: (showSyncAllPrompt) => set({ showSyncAllPrompt }),
       setSyncAllPromptAnswered: (syncAllPromptAnswered) =>
         set({ syncAllPromptAnswered }),
+      setHostedRefreshFailed: (hostedRefreshFailed) =>
+        set({ hostedRefreshFailed }),
       clearSession: () =>
         set({
           accessToken: "",
           accessTokenExpiresAt: null,
           refreshToken: "",
+          hostedRefreshFailed: false,
           accountDisplayName: "",
           accountEmail: "",
           accountEmailVerified: null,

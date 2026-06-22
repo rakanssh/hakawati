@@ -73,10 +73,8 @@ const globalSections = [
   },
   {
     id: "cloud-sync",
-    label: <Trans>Cloud Sync</Trans>,
-    description: (
-      <Trans>Connect cloud saves and move tales between devices.</Trans>
-    ),
+    label: <Trans>Account & Sync</Trans>,
+    description: <Trans>Manage your account and cloud sync.</Trans>,
     groupId: "app",
     group: <Trans>App</Trans>,
     icon: Cloud,

@@ -9,6 +9,7 @@ describe("useSyncSettingsStore", () => {
       accessToken: "",
       accessTokenExpiresAt: null,
       refreshToken: "",
+      hostedRefreshFailed: false,
       accountDisplayName: "",
       accountEmail: "",
       accountEmailVerified: null,
@@ -35,11 +36,13 @@ describe("useSyncSettingsStore", () => {
       accessToken: "token",
       accessTokenExpiresAt: 123,
       refreshToken: "refresh-token",
+      hostedRefreshFailed: true,
       accountDisplayName: "Player",
     });
 
     useSyncSettingsStore.getState().clearSession();
 
+    expect(useSyncSettingsStore.getState().hostedRefreshFailed).toBe(false);
     expect(partialize(useSyncSettingsStore.getState())).toMatchObject({
       accessToken: "",
       accessTokenExpiresAt: null,

@@ -1,8 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
-import { Cloud, LogOut, Power, Upload } from "lucide-react";
+import { AlertTriangle, Cloud, LogOut, Power, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Trans, useLingui } from "@lingui/react/macro";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +27,7 @@ import {
   SettingsPanel,
   SettingsStack,
 } from "@/components/layout/settings/settings-layout";
+import { getSyncUiKind } from "@/lib/sync-ui";
 import { useSyncSettingsStore } from "@/store";
 import {
   getSyncProfile,
@@ -44,6 +52,10 @@ import { notifySyncChanged, wakeSyncBackground } from "@/services/sync-wakeup";
 const HOSTED_PROFILE_ID = "hosted";
 const PERSONAL_PROFILE_ID = "personal";
 const PROFILE_UPDATE_TIMEOUT_MS = 15_000;
+
+function avatarInitial(label: string) {
+  return (label.trim()[0] ?? "?").toUpperCase();
+}
 
 function idempotencyKey() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`;
@@ -71,6 +83,10 @@ export default function SettingsCloudSync() {
   const accessToken = useSyncSettingsStore((state) => state.accessToken);
   const accessTokenExpiresAt = useSyncSettingsStore(
     (state) => state.accessTokenExpiresAt,
+  );
+  const refreshToken = useSyncSettingsStore((state) => state.refreshToken);
+  const hostedRefreshFailed = useSyncSettingsStore(
+    (state) => state.hostedRefreshFailed,
   );
   const deviceId = useSyncSettingsStore((state) => state.deviceId);
   const deviceName = useSyncSettingsStore((state) => state.deviceName);
@@ -146,6 +162,19 @@ export default function SettingsCloudSync() {
     deviceName.trim().length > 0 &&
     devicePlatform.trim().length > 0;
   const accountLabel = accountDisplayName || accountEmail;
+  const syncUiKind = getSyncUiKind({
+    activeSyncMode,
+    personalBaseUrl,
+    accessToken,
+    accessTokenExpiresAt,
+    refreshToken,
+    accountLabel,
+    syncEnabled,
+    disabledReason,
+    refreshFailed: hostedRefreshFailed,
+  });
+  const needsBrowserLogin =
+    syncUiKind === "local" || syncUiKind === "sign-in-required";
   const needsProfileCompletion =
     activeSyncMode === "hosted" &&
     hasUsableToken &&
@@ -157,10 +186,11 @@ export default function SettingsCloudSync() {
       ? profile.baseUrl.length > 0
       : canConnect && accountLabel.trim().length > 0);
 
-  const tokenStatus =
-    tokenExpired && accessToken.trim().length > 0
-      ? t`Session expired. Connect again.`
-      : "";
+  const syncUiStatus =
+    syncUiKind === "reconnecting" ? t`Reconnecting...` : status;
+  const hasAnySession = Boolean(accessToken || refreshToken || accountLabel);
+  const cloudConfigured = hostedProfile.baseUrl.length > 0;
+  const showSyncControls = hasAnySession || activeSyncMode === "personal";
 
   useEffect(() => {
     getSyncProfile(profile.id)
@@ -299,7 +329,7 @@ export default function SettingsCloudSync() {
         await setSyncProfileDisabled(profile.id, "user_disabled");
         setSyncEnabled(false);
         setDisabledReason("user_disabled");
-        setStatus(t`Sync is off on this device`);
+        setStatus("");
         notifySyncChanged();
       });
       return;
@@ -314,7 +344,7 @@ export default function SettingsCloudSync() {
         });
         setSyncEnabled(true);
         setDisabledReason(null);
-        setStatus(t`Sync is on`);
+        setStatus("");
         wakeSyncBackground();
         notifySyncChanged();
         return;
@@ -344,7 +374,7 @@ export default function SettingsCloudSync() {
       }
       setSyncEnabled(true);
       setDisabledReason(null);
-      setStatus(t`Sync is on`);
+      setStatus("");
       wakeSyncBackground();
       notifySyncChanged();
     });
@@ -453,128 +483,224 @@ export default function SettingsCloudSync() {
         title={
           <span className="inline-flex items-center gap-2">
             <Cloud className="size-4" />
-            <Trans>Cloud Sync</Trans>
+            <Trans>Account & Sync</Trans>
           </span>
         }
       >
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <SettingsField label={<Trans>Cloud URL</Trans>}>
-            <Input
-              value={cloudBaseUrl}
-              onChange={(event) => setCloudBaseUrl(event.target.value)}
-              placeholder={t`https://sync.example.com`}
-            />
-          </SettingsField>
-          <SettingsField label={<Trans>Device Name</Trans>}>
-            <Input
-              value={deviceName}
-              onChange={(event) => setDeviceName(event.target.value)}
-            />
-          </SettingsField>
-          <SettingsField label={<Trans>Platform</Trans>}>
-            <Input
-              value={devicePlatform}
-              onChange={(event) => setDevicePlatform(event.target.value)}
-            />
-          </SettingsField>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={connect}
-            disabled={!canConnect || busy !== null}
-          >
-            <Cloud className="size-4" />
-            {hasUsableToken ? (
-              <Trans>Reconnect sync</Trans>
-            ) : (
-              <Trans>Log in / Sign up</Trans>
-            )}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={signOut}
-            disabled={!accessToken && !accountLabel}
-          >
-            <LogOut className="size-4" />
-            <Trans>Sign out</Trans>
-          </Button>
-          <Badge variant="outline">
-            {accountLabel ? (
-              accountLabel
-            ) : hasUsableToken ? (
-              <Trans>Profile incomplete</Trans>
-            ) : (
-              <Trans>LOCAL</Trans>
-            )}
-          </Badge>
-          <Button
-            variant={syncEnabled ? "outline" : "secondary"}
-            onClick={toggleSync}
-            disabled={!canToggleActiveProfile}
-          >
-            <Power className="size-4" />
-            {syncEnabled ? <Trans>Sync on</Trans> : <Trans>Sync off</Trans>}
-          </Button>
-          {accountEmailVerified === false ? (
-            <Badge variant="destructive">
-              <Trans>Email not verified</Trans>
-            </Badge>
-          ) : null}
-          {disabledReason === "device_limit" ? (
-            <Badge variant="destructive">
-              <Trans>Device limit reached</Trans>
-            </Badge>
-          ) : null}
-          {status || tokenStatus ? (
-            <Badge variant="outline">{tokenStatus || status}</Badge>
-          ) : null}
+        <div className="flex flex-col gap-3 border-t border-border/70 pt-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <Avatar className="size-10 border border-border/70">
+              <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+                {syncUiKind === "reconnecting" ? (
+                  <Cloud className="size-4 animate-pulse" />
+                ) : accountLabel ? (
+                  avatarInitial(accountLabel)
+                ) : (
+                  <Cloud className="size-4" />
+                )}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                <div className="truncate font-semibold">
+                  {accountLabel ? (
+                    accountLabel
+                  ) : syncUiKind === "personal" ? (
+                    <Trans>Personal Sync</Trans>
+                  ) : syncUiKind === "profile-incomplete" ? (
+                    <Trans>Complete profile</Trans>
+                  ) : syncUiKind === "reconnecting" ? (
+                    <Trans>Reconnecting...</Trans>
+                  ) : (
+                    <Trans>Not signed in</Trans>
+                  )}
+                </div>
+                {accountEmailVerified === false ? (
+                  <div className="flex min-w-0 items-center gap-1.5 text-sm text-amber-700 dark:text-amber-300">
+                    <AlertTriangle className="size-3.5 shrink-0" />
+                    <span className="truncate">
+                      <Trans>Email not verified</Trans>
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+              <div className="mt-1 grid gap-0.5 text-sm">
+                <div
+                  className={
+                    syncUiKind === "device-limit" ||
+                    syncUiKind === "sign-in-required" ||
+                    !cloudConfigured
+                      ? "flex min-w-0 items-center gap-2 text-destructive"
+                      : "flex min-w-0 items-center gap-2 text-muted-foreground"
+                  }
+                >
+                  <Cloud className="size-3.5 shrink-0" />
+                  <span className="truncate">
+                    {syncUiKind === "signed-in" ? (
+                      <Trans>Cloud sync on</Trans>
+                    ) : syncUiKind === "reconnecting" ? (
+                      <Trans>Reconnecting</Trans>
+                    ) : syncUiKind === "sync-off" ? (
+                      <Trans>Sync off</Trans>
+                    ) : syncUiKind === "device-limit" ? (
+                      <Trans>Device limit reached</Trans>
+                    ) : syncUiKind === "sign-in-required" ? (
+                      <Trans>Sign in required</Trans>
+                    ) : syncUiKind === "personal" ? (
+                      <Trans>Personal</Trans>
+                    ) : syncUiKind === "profile-incomplete" ? (
+                      <Trans>Profile incomplete</Trans>
+                    ) : (
+                      <Trans>Local profile</Trans>
+                    )}
+                  </span>
+                </div>
+                {!cloudConfigured ? (
+                  <div className="flex min-w-0 items-center gap-2 text-destructive">
+                    <AlertTriangle className="size-3.5 shrink-0" />
+                    <span className="truncate">
+                      <Trans>Cloud service is not configured</Trans>
+                    </span>
+                  </div>
+                ) : null}
+                {syncUiStatus ? (
+                  <div className="truncate text-muted-foreground">
+                    {syncUiStatus}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+            {needsBrowserLogin ? (
+              <Button
+                variant="default"
+                onClick={connect}
+                disabled={!canConnect || busy !== null}
+              >
+                <Cloud className="size-4" />
+                <Trans>Log in / Sign up</Trans>
+              </Button>
+            ) : null}
+            {showSyncControls ? (
+              <>
+                {hasAnySession ? (
+                  <Button variant="outline" onClick={signOut}>
+                    <LogOut className="size-4" />
+                    <Trans>Sign out</Trans>
+                  </Button>
+                ) : null}
+                <Button
+                  variant={syncEnabled ? "outline" : "secondary"}
+                  onClick={toggleSync}
+                  disabled={!canToggleActiveProfile}
+                >
+                  <Power className="size-4" />
+                  {syncEnabled ? (
+                    <Trans>Disable sync</Trans>
+                  ) : (
+                    <Trans>Enable sync</Trans>
+                  )}
+                </Button>
+              </>
+            ) : null}
+          </div>
         </div>
       </SettingsPanel>
 
-      <SettingsPanel title={<Trans>Personal Sync Server</Trans>}>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <SettingsField label={<Trans>Personal Sync URL</Trans>}>
-            <Input
-              value={personalBaseUrl}
-              onChange={(event) => setPersonalBaseUrl(event.target.value)}
-              placeholder={t`http://192.168.1.20:8787`}
-            />
-          </SettingsField>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={connectPersonal}
-            disabled={!personalProfile.baseUrl || busy !== null}
-          >
-            <Cloud className="size-4" />
-            <Trans>Connect Personal Sync</Trans>
-          </Button>
-          {activeSyncMode === "personal" ? (
-            <Badge variant="outline">
-              <Trans>Personal active</Trans>
-            </Badge>
-          ) : null}
-        </div>
+      <SettingsPanel title={<Trans>Advanced</Trans>}>
+        <Accordion type="single" collapsible>
+          <AccordionItem value="cloud">
+            <AccordionTrigger>
+              <Trans>Cloud service</Trans>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <SettingsField label={<Trans>Cloud URL</Trans>}>
+                  <Input
+                    value={cloudBaseUrl}
+                    onChange={(event) => setCloudBaseUrl(event.target.value)}
+                    placeholder={t`https://sync.example.com`}
+                  />
+                </SettingsField>
+                <SettingsField label={<Trans>Device Name</Trans>}>
+                  <Input
+                    value={deviceName}
+                    onChange={(event) => setDeviceName(event.target.value)}
+                  />
+                </SettingsField>
+                <SettingsField label={<Trans>Platform</Trans>}>
+                  <Input
+                    value={devicePlatform}
+                    onChange={(event) => setDevicePlatform(event.target.value)}
+                  />
+                </SettingsField>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="personal">
+            <AccordionTrigger>
+              <Trans>Personal sync server</Trans>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <SettingsField label={<Trans>Personal Sync URL</Trans>}>
+                  <Input
+                    value={personalBaseUrl}
+                    onChange={(event) => setPersonalBaseUrl(event.target.value)}
+                    placeholder={t`http://192.168.1.20:8787`}
+                  />
+                </SettingsField>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={connectPersonal}
+                  disabled={!personalProfile.baseUrl || busy !== null}
+                >
+                  <Cloud className="size-4" />
+                  <Trans>Connect Personal Sync</Trans>
+                </Button>
+                {activeSyncMode === "personal" ? (
+                  <Badge variant="outline">
+                    <Trans>Personal active</Trans>
+                  </Badge>
+                ) : null}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </SettingsPanel>
 
       {showSyncAllPrompt ? (
-        <SettingsPanel title={<Trans>Sync existing local tales?</Trans>}>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={syncAllLocalTales} disabled={busy !== null}>
-              <Upload className="size-4" />
-              <Trans>Sync all local tales</Trans>
-            </Button>
-            <Button
-              variant="outline"
-              onClick={keepExistingLocalPrivate}
-              disabled={busy !== null}
-            >
-              <Trans>Keep existing tales private</Trans>
-            </Button>
-          </div>
-        </SettingsPanel>
+        <Dialog open={showSyncAllPrompt}>
+          <DialogContent showCloseButton={false}>
+            <DialogHeader>
+              <DialogTitle>
+                <Trans>Sync existing local tales?</Trans>
+              </DialogTitle>
+              <DialogDescription>
+                <Trans>
+                  Choose whether tales already on this device should be added to
+                  cloud sync.
+                </Trans>
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={keepExistingLocalPrivate}
+                disabled={busy !== null}
+              >
+                <Trans>Keep local</Trans>
+              </Button>
+              <Button onClick={syncAllLocalTales} disabled={busy !== null}>
+                <Upload className="size-4" />
+                <Trans>Sync local tales</Trans>
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       <Dialog open={needsProfileCompletion}>

@@ -16,6 +16,9 @@ export function useHostedTokenRefresh(dbReady: boolean) {
   const refreshToken = useSyncSettingsStore((state) => state.refreshToken);
   const deviceId = useSyncSettingsStore((state) => state.deviceId);
   const setAccessToken = useSyncSettingsStore((state) => state.setAccessToken);
+  const setHostedRefreshFailed = useSyncSettingsStore(
+    (state) => state.setHostedRefreshFailed,
+  );
   const triedKeyRef = useRef("");
 
   const profile = useMemo<SyncProfile>(
@@ -54,6 +57,7 @@ export function useHostedTokenRefresh(dbReady: boolean) {
         nextExpiresAt,
         result.refreshToken ?? refreshToken,
       );
+      setHostedRefreshFailed(false);
     };
 
     const expiresAt = accessTokenExpiresAt ?? Number.POSITIVE_INFINITY;
@@ -63,6 +67,7 @@ export function useHostedTokenRefresh(dbReady: boolean) {
         triedKeyRef.current = "";
         void refresh().catch((error) => {
           console.info("Hosted sync token refresh skipped", error);
+          setHostedRefreshFailed(true);
         });
       }, refreshIn);
       return () => window.clearTimeout(timer);
@@ -74,6 +79,7 @@ export function useHostedTokenRefresh(dbReady: boolean) {
 
     void refresh().catch((error) => {
       console.info("Hosted sync token refresh skipped", error);
+      setHostedRefreshFailed(true);
     });
   }, [
     accessToken,
@@ -83,5 +89,6 @@ export function useHostedTokenRefresh(dbReady: boolean) {
     profile,
     refreshToken,
     setAccessToken,
+    setHostedRefreshFailed,
   ]);
 }

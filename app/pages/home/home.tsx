@@ -4,6 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -13,13 +14,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Tooltip,
@@ -37,20 +31,25 @@ import { useLoadTale } from "@/hooks/useGameSaves";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useScenariosList } from "@/hooks/useScenarios";
 import { useTaleLibrary } from "@/hooks/useTaleLibrary";
-import { type Locale, LOCALES, loadLocale } from "@/i18n";
 import {
   bytesToObjectUrl,
   formatExactDateTime,
   formatRelativeTime,
 } from "@/lib/utils";
+import { getSyncUiKind } from "@/lib/sync-ui";
 import { initTaleFromScenario } from "@/services/scenario.service";
 import type { NewTaleSyncPolicy } from "@/services/new-tale-sync";
+import { getSyncProfile } from "@/repositories/sync.repository";
 import {
   prepareHostedSync,
   signInHostedSync,
   type SyncProfile,
 } from "@/services/sync";
-import { notifySyncChanged, wakeSyncBackground } from "@/services/sync-wakeup";
+import {
+  addSyncChangedListener,
+  notifySyncChanged,
+  wakeSyncBackground,
+} from "@/services/sync-wakeup";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 import {
   isModelRoleConfigured,
@@ -69,7 +68,6 @@ import {
   AlertTriangle,
   ChevronRight,
   Cloud,
-  Globe,
   LockIcon,
   LogIn,
   Loader2,
@@ -84,6 +82,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 const HOSTED_PROFILE_ID = "hosted";
+
+function avatarInitial(label: string) {
+  return (label.trim()[0] ?? "?").toUpperCase();
+}
 
 type ShelfProps = {
   title: React.ReactNode;
@@ -167,6 +169,7 @@ function TaleCard({
     ? item.remoteTale.turnCount
     : item.localTale.logCount;
   const thumbnail = isRemote ? null : item.localTale.thumbnail;
+  const synced = isRemote || Boolean(item.sync);
 
   return (
     <Card className="w-[60vw] max-w-56 shrink-0 snap-start gap-0 overflow-hidden py-0 sm:w-60 sm:max-w-64 lg:w-64">
@@ -183,11 +186,14 @@ function TaleCard({
               <Trans>Last played: {formatExactDateTime(updatedAt)}</Trans>
             </TooltipContent>
           </Tooltip>
+          <Badge
+            className="absolute right-2 top-2 bg-background/80 text-[10px] text-foreground backdrop-blur"
+            aria-label={synced ? t`Synced` : t`Local`}
+          >
+            {synced ? <Cloud className="size-3" /> : <Trans>LOCAL</Trans>}
+          </Badge>
           {isRemote ? (
             <>
-              <Badge className="absolute right-2 top-2 bg-background/80 text-foreground backdrop-blur">
-                <Cloud className="size-3" />
-              </Badge>
               <Button
                 variant="secondary"
                 size="icon-sm"
@@ -299,8 +305,6 @@ function ScenarioCard({
 export default function Home() {
   const navigate = useNavigate();
   const { t } = useLingui();
-  const language = useSettingsStore((state) => state.language);
-  const setLanguage = useSettingsStore((state) => state.setLanguage);
   const narratorConfig = useSettingsStore((state) => state.modelRoles.narrator);
   const utilityConfig = useSettingsStore((state) => state.modelRoles.utility);
   const { name, description, log, id: currentTaleId } = useTaleStore();
@@ -335,6 +339,10 @@ export default function Home() {
   const accessToken = useSyncSettingsStore((state) => state.accessToken);
   const accessTokenExpiresAt = useSyncSettingsStore(
     (state) => state.accessTokenExpiresAt,
+  );
+  const refreshToken = useSyncSettingsStore((state) => state.refreshToken);
+  const hostedRefreshFailed = useSyncSettingsStore(
+    (state) => state.hostedRefreshFailed,
   );
   const deviceId = useSyncSettingsStore((state) => state.deviceId);
   const deviceName = useSyncSettingsStore((state) => state.deviceName);
@@ -381,14 +389,30 @@ export default function Home() {
   const personalActive = Boolean(
     activeSyncMode === "personal" && personalBaseUrl.trim(),
   );
-  const tokenExpired =
-    accessTokenExpiresAt !== null && accessTokenExpiresAt <= Date.now();
-  const signedIn = Boolean(
-    activeSyncMode === "hosted" && accessToken && !tokenExpired,
-  );
-  const needsReconnect = Boolean(
-    accountLabel && activeSyncMode === "hosted" && !signedIn,
-  );
+  const [homeSyncProfile, setHomeSyncProfile] = useState<{
+    enabled: boolean;
+    disabledReason: string | null;
+  } | null>(null);
+  const syncUiKind = getSyncUiKind({
+    activeSyncMode,
+    personalBaseUrl,
+    accessToken,
+    accessTokenExpiresAt,
+    refreshToken,
+    accountLabel,
+    syncEnabled: homeSyncProfile?.enabled,
+    disabledReason: homeSyncProfile?.disabledReason,
+    refreshFailed: hostedRefreshFailed,
+  });
+  const signedIn =
+    syncUiKind === "signed-in" ||
+    syncUiKind === "profile-incomplete" ||
+    syncUiKind === "sync-off";
+  const accountSettingsState =
+    signedIn ||
+    syncUiKind === "personal" ||
+    syncUiKind === "reconnecting" ||
+    syncUiKind === "device-limit";
 
   const hostedProfile = useMemo<SyncProfile>(
     () => ({
@@ -400,15 +424,38 @@ export default function Home() {
     [cloudBaseUrl, deviceId],
   );
 
+  useEffect(() => {
+    let disposed = false;
+
+    const refreshSyncProfile = () => {
+      getSyncProfile(hostedProfile.id)
+        .then((profile) => {
+          if (disposed) return;
+          setHomeSyncProfile(
+            profile
+              ? {
+                  enabled: profile.enabled === true,
+                  disabledReason: profile.disabledReason ?? null,
+                }
+              : null,
+          );
+        })
+        .catch(() => {
+          if (!disposed) setHomeSyncProfile(null);
+        });
+    };
+
+    refreshSyncProfile();
+    const removeListener = addSyncChangedListener(refreshSyncProfile);
+    return () => {
+      disposed = true;
+      removeListener();
+    };
+  }, [hostedProfile.id]);
+
   const openSettings = (tab: GlobalSettingsSectionId) => {
     setSettingsTab(tab);
     setSettingsOpen(true);
-  };
-
-  const handleLanguageChange = (value: string) => {
-    const locale = value as Locale;
-    setLanguage(locale);
-    void loadLocale(locale);
   };
 
   const handleLoadTale = async (item: LibraryTaleItem) => {
@@ -436,7 +483,7 @@ export default function Home() {
   };
 
   const handleAccountClick = async () => {
-    if (signedIn || personalActive || !hostedProfile.baseUrl) {
+    if (accountSettingsState || personalActive || !hostedProfile.baseUrl) {
       openSettings("cloud-sync");
       return;
     }
@@ -546,22 +593,6 @@ export default function Home() {
     }
   };
 
-  const languageControl = (
-    <Select value={language} onValueChange={handleLanguageChange}>
-      <SelectTrigger className="w-auto gap-2 border-none bg-background/50 backdrop-blur transition-colors hover:bg-accent/50">
-        <Globe className="h-4 w-4 text-muted-foreground" />
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent align="start">
-        {Object.entries(LOCALES).map(([code, localeName]) => (
-          <SelectItem key={code} value={code}>
-            {localeName}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-
   const quickstartControl = (
     <Button
       size="sm"
@@ -575,48 +606,76 @@ export default function Home() {
 
   const accountControl = (
     <div className="flex min-w-0 items-center gap-2">
-      <Badge variant="outline" className="shrink-0">
-        {signedIn && accountLabel ? (
-          accountLabel
-        ) : signedIn ? (
-          <Trans>Profile incomplete</Trans>
-        ) : needsReconnect ? (
-          <Trans>RECONNECT</Trans>
-        ) : personalActive ? (
-          <Trans>PERSONAL</Trans>
-        ) : (
-          <Trans>LOCAL</Trans>
-        )}
-      </Badge>
       <Button
         variant="outline"
-        size="sm"
         onClick={handleAccountClick}
         disabled={accountBusy}
-        className="max-w-56"
+        className="h-14 w-64 max-w-full justify-start gap-2.5 border-primary/25 bg-card/70 px-2.5 shadow-xs hover:border-primary/45 hover:bg-accent/45"
       >
-        {accountBusy ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : signedIn || personalActive || needsReconnect ? (
-          <UserRound className="h-4 w-4" />
-        ) : hostedProfile.baseUrl ? (
-          <LogIn className="h-4 w-4" />
-        ) : (
-          <Cloud className="h-4 w-4" />
-        )}
-        <span className="truncate">
-          {signedIn && accountLabel ? (
-            accountLabel
-          ) : signedIn ? (
-            <Trans>Complete profile</Trans>
-          ) : needsReconnect ? (
-            <Trans>Reconnect</Trans>
-          ) : personalActive ? (
-            <Trans>Personal Sync</Trans>
-          ) : (
-            <Trans>Log in / Sign up</Trans>
-          )}
+        <span className="relative shrink-0">
+          <Avatar className="size-9 border border-border/70">
+            <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+              {accountBusy ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : signedIn && accountLabel ? (
+                avatarInitial(accountLabel)
+              ) : syncUiKind === "reconnecting" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : hostedProfile.baseUrl && syncUiKind !== "personal" ? (
+                <LogIn className="size-4" />
+              ) : (
+                <UserRound className="size-4" />
+              )}
+            </AvatarFallback>
+          </Avatar>
+          <span
+            className={
+              syncUiKind === "signed-in"
+                ? "absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-card bg-primary"
+                : "absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-card bg-muted-foreground"
+            }
+          />
         </span>
+        <span className="grid min-w-0 flex-1 text-left leading-tight">
+          <span className="truncate font-semibold">
+            {accountBusy ? (
+              <Trans>Connecting...</Trans>
+            ) : signedIn && accountLabel ? (
+              accountLabel
+            ) : signedIn ? (
+              <Trans>Complete profile</Trans>
+            ) : syncUiKind === "reconnecting" ? (
+              <Trans>Reconnecting...</Trans>
+            ) : syncUiKind === "personal" ? (
+              <Trans>Personal Sync</Trans>
+            ) : (
+              <Trans>Log in / Sign up</Trans>
+            )}
+          </span>
+          <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-normal text-muted-foreground">
+            {syncUiKind === "signed-in" || syncUiKind === "reconnecting" ? (
+              <Cloud className="size-3" />
+            ) : (
+              <UserRound className="size-3" />
+            )}
+            <span className="truncate">
+              {syncUiKind === "signed-in" ? (
+                <Trans>Cloud sync on</Trans>
+              ) : syncUiKind === "sync-off" ? (
+                <Trans>Sync off</Trans>
+              ) : syncUiKind === "reconnecting" ? (
+                <Trans>Restoring session</Trans>
+              ) : syncUiKind === "personal" ? (
+                <Trans>Personal server</Trans>
+              ) : syncUiKind === "sign-in-required" ? (
+                <Trans>Sign in required</Trans>
+              ) : (
+                <Trans>Local profile</Trans>
+              )}
+            </span>
+          </span>
+        </span>
+        <ChevronRight className="ml-auto size-4 text-muted-foreground rtl:rotate-180" />
       </Button>
     </div>
   );
@@ -636,9 +695,8 @@ export default function Home() {
         }
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="min-w-0">{languageControl}</div>
+          <div className="min-w-0">{accountControl}</div>
           <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
-            {accountControl}
             {quickstartControl}
           </div>
         </div>

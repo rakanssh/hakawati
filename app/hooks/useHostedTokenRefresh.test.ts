@@ -1,6 +1,6 @@
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const syncRepoMocks = vi.hoisted(() => ({
   getSyncProfile: vi.fn(),
@@ -18,6 +18,7 @@ const syncStoreState = vi.hoisted(() => ({
   refreshToken: "refresh-token",
   deviceId: "device-1",
   setAccessToken: vi.fn(),
+  setHostedRefreshFailed: vi.fn(),
 }));
 
 vi.mock("@/repositories/sync.repository", () => syncRepoMocks);
@@ -62,6 +63,7 @@ describe("useHostedTokenRefresh", () => {
     (
       globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
     ).IS_REACT_ACT_ENVIRONMENT = true;
+    vi.spyOn(console, "info").mockImplementation(() => undefined);
     vi.clearAllMocks();
     Object.assign(syncStoreState, {
       cloudBaseUrl: "https://sync.example",
@@ -79,6 +81,10 @@ describe("useHostedTokenRefresh", () => {
     });
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("refreshes an expired hosted token without browser auth", async () => {
     const harness = renderHarness();
     await harness.flush();
@@ -91,6 +97,7 @@ describe("useHostedTokenRefresh", () => {
       expect.any(Number),
       "new-refresh-token",
     );
+    expect(syncStoreState.setHostedRefreshFailed).toHaveBeenCalledWith(false);
 
     harness.cleanup();
   });
@@ -111,4 +118,17 @@ describe("useHostedTokenRefresh", () => {
       harness.cleanup();
     },
   );
+
+  it("marks the hosted session when silent refresh fails", async () => {
+    syncServiceMocks.refreshHostedSync.mockRejectedValueOnce(
+      new Error("invalid_grant"),
+    );
+
+    const harness = renderHarness();
+    await harness.flush();
+
+    expect(syncStoreState.setHostedRefreshFailed).toHaveBeenCalledWith(true);
+
+    harness.cleanup();
+  });
 });
