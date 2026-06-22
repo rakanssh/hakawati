@@ -15,6 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "@tanstack/react-router";
 import { useTaleLibrary } from "@/hooks/useTaleLibrary";
+import { useLoadTale } from "@/hooks/useGameSaves";
+import { TaleConflictDialog } from "@/components/tales/tale-conflict-dialog";
 import {
   bytesToObjectUrl,
   formatExactDateTime,
@@ -58,9 +60,11 @@ export default function TalesHome() {
     null,
   );
   const [search, setSearch] = useState("");
-  const [resolvingConflict, setResolvingConflict] = useState<string | null>(
+  const [conflictItem, setConflictItem] = useState<LibraryTaleItem | null>(
     null,
   );
+  const [resolvingConflict, setResolvingConflict] = useState(false);
+  const { load: loadResolvedTale } = useLoadTale();
   const {
     items,
     loading,
@@ -91,25 +95,29 @@ export default function TalesHome() {
   };
 
   const handleLoad = async (item: LibraryTaleItem) => {
+    if (item.source === "local" && item.sync?.status === "conflict") {
+      setConflictItem(item);
+      return;
+    }
     await loadIntoGame(item);
     navigate({ to: "/play" });
   };
 
-  const handleResolveConflict = async (
-    item: LibraryTaleItem,
-    choice: TaleConflictChoice,
-  ) => {
-    if (item.source !== "local") return;
-    setResolvingConflict(`${item.localTale.id}:${choice}`);
+  const handleResolveConflict = async (choice: TaleConflictChoice) => {
+    if (!conflictItem || conflictItem.source !== "local") return;
+    setResolvingConflict(true);
     try {
-      await resolveConflict(item, choice);
+      const taleId = await resolveConflict(conflictItem, choice);
+      await loadResolvedTale(taleId);
+      setConflictItem(null);
       toast.success(t`Conflict resolved`);
+      navigate({ to: "/play" });
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : t`Failed to resolve conflict`,
       );
     } finally {
-      setResolvingConflict(null);
+      setResolvingConflict(false);
     }
   };
 
@@ -196,8 +204,12 @@ export default function TalesHome() {
             : item.localTale.logCount;
           const hasConflict =
             item.source === "local" && item.sync?.status === "conflict";
-          const resolvingKey =
-            item.source === "local" ? item.localTale.id : null;
+          const syncLabel =
+            !isRemote && item.sync && item.sync.status !== "idle"
+              ? hasConflict
+                ? t`Needs review`
+                : item.sync.lastErrorCode || item.sync.status
+              : "";
           return (
             <Card
               key={isRemote ? `remote-${id}` : `local-${id}`}
@@ -291,68 +303,20 @@ export default function TalesHome() {
                   <Badge className="absolute left-1 top-8 h-5 bg-accent/50 px-2 text-xs text-muted-foreground">
                     {logCount} {logCount === 1 ? t`turn` : t`turns`}
                   </Badge>
-                  {!isRemote && item.sync && item.sync.status !== "idle" ? (
+                  {syncLabel ? (
                     <Badge className="absolute left-1 top-14 h-5 bg-accent/50 px-2 text-xs text-muted-foreground">
-                      {item.sync.lastErrorCode ?? item.sync.status}
+                      {syncLabel}
                     </Badge>
                   ) : null}
                 </div>
               </CardHeader>
-              <CardContent
-                className={`flex flex-col gap-2 px-2 ${hasConflict ? "h-48" : "h-36"}`}
-              >
+              <CardContent className="flex h-36 flex-col gap-2 px-2">
                 <span className="line-clamp-2 min-h-9 text-sm font-semibold leading-snug">
                   {name}
                 </span>
                 <p className="line-clamp-3 min-h-0 flex-1 rounded-xs text-sm text-muted-foreground">
                   {description}
                 </p>
-
-                {hasConflict ? (
-                  <div className="grid grid-cols-3 gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 gap-1 px-1 text-xs"
-                      disabled={Boolean(resolvingConflict)}
-                      onClick={() => handleResolveConflict(item, "keep-remote")}
-                    >
-                      <Cloud className="size-3" />
-                      <span className="truncate">
-                        <Trans>Use Remote</Trans>
-                      </span>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 gap-1 px-1 text-xs"
-                      disabled={Boolean(resolvingConflict)}
-                      onClick={() => handleResolveConflict(item, "keep-local")}
-                    >
-                      <PencilIcon className="size-3" />
-                      <span className="truncate">
-                        <Trans>Keep Local</Trans>
-                      </span>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 gap-1 px-1 text-xs"
-                      disabled={Boolean(resolvingConflict)}
-                      onClick={() => handleResolveConflict(item, "keep-both")}
-                    >
-                      <FilePlus2Icon className="size-3" />
-                      <span className="truncate">
-                        <Trans>Keep Both</Trans>
-                      </span>
-                    </Button>
-                    {resolvingConflict?.startsWith(`${resolvingKey}:`) ? (
-                      <span className="col-span-3 text-center text-xs text-muted-foreground">
-                        <Trans>Resolving...</Trans>
-                      </span>
-                    ) : null}
-                  </div>
-                ) : null}
 
                 <Button
                   onClick={() => handleLoad(item)}
@@ -365,6 +329,15 @@ export default function TalesHome() {
           );
         })}
       </div>
+      <TaleConflictDialog
+        item={conflictItem}
+        open={Boolean(conflictItem)}
+        resolving={resolvingConflict}
+        onOpenChange={(open) => {
+          if (!open && !resolvingConflict) setConflictItem(null);
+        }}
+        onResolve={handleResolveConflict}
+      />
       {total > limit && (
         <div className="flex items-center justify-end gap-2">
           <Button

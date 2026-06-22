@@ -383,8 +383,9 @@ describe("useTaleLibrary", () => {
     });
 
     const item = harness.controls.items[0];
+    let resolvedId = "";
     await act(async () => {
-      await harness.controls.resolveConflict(item, "keep-local");
+      resolvedId = await harness.controls.resolveConflict(item, "keep-local");
     });
 
     expect(syncServiceMocks.replaceRemoteTalePackage).toHaveBeenCalledWith(
@@ -393,16 +394,22 @@ describe("useTaleLibrary", () => {
         idempotencyKey: expect.stringMatching(/^conflict-local-1-/),
       }),
     );
+    expect(resolvedId).toBe("local-1");
 
     harness.cleanup();
   });
 
   it.each([
-    ["keep-remote" as const, syncServiceMocks.applyRemoteTalePackage],
-    ["keep-both" as const, syncServiceMocks.keepBothTalePackage],
+    [
+      "keep-remote" as const,
+      syncServiceMocks.applyRemoteTalePackage,
+      "local-1",
+    ],
+    ["keep-both" as const, syncServiceMocks.keepBothTalePackage, "copy-1"],
   ])(
     "resolves a linked tale conflict with %s",
-    async (choice, expectedCall) => {
+    async (choice, expectedCall, expectedResolvedId) => {
+      syncServiceMocks.keepBothTalePackage.mockResolvedValue("copy-1");
       syncRepoMocks.getSyncProfile.mockResolvedValue({ enabled: true });
       syncRepoMocks.listTaleSyncStates.mockResolvedValue([
         {
@@ -423,8 +430,9 @@ describe("useTaleLibrary", () => {
         await Promise.resolve();
       });
 
+      let resolvedId = "";
       await act(async () => {
-        await harness.controls.resolveConflict(
+        resolvedId = await harness.controls.resolveConflict(
           harness.controls.items[0],
           choice,
         );
@@ -435,6 +443,7 @@ describe("useTaleLibrary", () => {
           localTaleId: "local-1",
         }),
       );
+      expect(resolvedId).toBe(expectedResolvedId);
 
       harness.cleanup();
     },

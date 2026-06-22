@@ -181,6 +181,7 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
       });
       const idempotencyKey = `conflict-${item.localTale.id}-${Date.now()}`;
 
+      let resolvedLocalTaleId = item.localTale.id;
       if (choice === "keep-remote") {
         await applyRemoteTalePackage({
           profile,
@@ -195,7 +196,7 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
           idempotencyKey,
         });
       } else {
-        await keepBothTalePackage({
+        resolvedLocalTaleId = await keepBothTalePackage({
           profile,
           transport,
           localTaleId: item.localTale.id,
@@ -204,6 +205,7 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
       }
 
       await refresh();
+      return resolvedLocalTaleId;
     },
     [accessToken, profile, refresh],
   );

@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { GenerateScenarioDialog } from "@/components/scenario";
+import { TaleConflictDialog } from "@/components/tales/tale-conflict-dialog";
 import {
   SettingsModal,
   type GlobalSettingsSectionId,
@@ -65,6 +66,7 @@ import { useUpdateStore } from "@/store/useUpdateStore";
 import { useVersionStore } from "@/store/useVersionStore";
 import type { ScenarioHead } from "@/types/context.type";
 import type { LibraryTaleItem } from "@/lib/tale-library";
+import type { TaleConflictChoice } from "@/hooks/useTaleLibrary";
 import { getVersion } from "@tauri-apps/api/app";
 import { useNavigate } from "@tanstack/react-router";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -174,6 +176,12 @@ function TaleCard({
     : item.localTale.logCount;
   const thumbnail = isRemote ? null : item.localTale.thumbnail;
   const synced = isRemote || Boolean(item.sync);
+  const syncLabel =
+    item.source === "local" && item.sync?.status !== "idle"
+      ? item.sync?.status === "conflict"
+        ? t`Needs review`
+        : item.sync?.lastErrorCode || item.sync?.status
+      : "";
 
   return (
     <Card className="w-[60vw] max-w-56 shrink-0 snap-start gap-0 overflow-hidden py-0 sm:w-60 sm:max-w-64 lg:w-64">
@@ -222,9 +230,9 @@ function TaleCard({
           <p className="mt-1 line-clamp-2 min-h-10 text-sm text-muted-foreground">
             {description}
           </p>
-          {item.source === "local" && item.sync?.status !== "idle" ? (
+          {syncLabel ? (
             <Badge variant="outline" className="mt-1 text-[10px]">
-              {item.sync?.lastErrorCode ?? item.sync?.status}
+              {syncLabel}
             </Badge>
           ) : null}
         </div>
@@ -331,6 +339,10 @@ export default function Home() {
   const [whatsNewOpen, setWhatsNewOpen] = useState(false);
   const [loadingTaleId, setLoadingTaleId] = useState<string | null>(null);
   const [accountBusy, setAccountBusy] = useState(false);
+  const [conflictItem, setConflictItem] = useState<LibraryTaleItem | null>(
+    null,
+  );
+  const [resolvingConflict, setResolvingConflict] = useState(false);
   const [canStartPrivate, setCanStartPrivate] = useState(false);
   const [startingScenarioId, setStartingScenarioId] = useState<string | null>(
     null,
@@ -485,6 +497,10 @@ export default function Home() {
   };
 
   const handleLoadTale = async (item: LibraryTaleItem) => {
+    if (item.source === "local" && item.sync?.status === "conflict") {
+      setConflictItem(item);
+      return;
+    }
     const id = item.source === "local" ? item.localTale.id : item.remoteTale.id;
     setLoadingTaleId(id);
     try {
@@ -494,6 +510,24 @@ export default function Home() {
       toast.error(t`Failed to load tales.`);
     } finally {
       setLoadingTaleId(null);
+    }
+  };
+
+  const handleResolveConflict = async (choice: TaleConflictChoice) => {
+    if (!conflictItem || conflictItem.source !== "local") return;
+    setResolvingConflict(true);
+    try {
+      const taleId = await tales.resolveConflict(conflictItem, choice);
+      await load(taleId);
+      setConflictItem(null);
+      toast.success(t`Conflict resolved`);
+      navigate({ to: "/play" });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t`Failed to resolve conflict`,
+      );
+    } finally {
+      setResolvingConflict(false);
     }
   };
 
@@ -1007,6 +1041,15 @@ export default function Home() {
             }),
           });
         }}
+      />
+      <TaleConflictDialog
+        item={conflictItem}
+        open={Boolean(conflictItem)}
+        resolving={resolvingConflict}
+        onOpenChange={(open) => {
+          if (!open && !resolvingConflict) setConflictItem(null);
+        }}
+        onResolve={handleResolveConflict}
       />
       {pendingChangelogVersion && pendingChangelogNotes && (
         <WhatsNewModal
