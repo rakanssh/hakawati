@@ -38,7 +38,10 @@ import {
 } from "@/lib/utils";
 import { getSyncUiKind } from "@/lib/sync-ui";
 import { initTaleFromScenario } from "@/services/scenario.service";
-import type { NewTaleSyncPolicy } from "@/services/new-tale-sync";
+import {
+  canSyncNewTales,
+  type NewTaleSyncPolicy,
+} from "@/services/new-tale-sync";
 import { getSyncProfile } from "@/repositories/sync.repository";
 import {
   prepareHostedSync,
@@ -50,6 +53,7 @@ import {
   notifySyncChanged,
   wakeSyncBackground,
 } from "@/services/sync-wakeup";
+import { setHostedRefreshToken } from "@/services/secret-store";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 import {
   isModelRoleConfigured,
@@ -68,7 +72,6 @@ import {
   AlertTriangle,
   ChevronRight,
   Cloud,
-  LockIcon,
   LogIn,
   Loader2,
   Plus,
@@ -76,6 +79,7 @@ import {
   Sparkles,
   TrashIcon,
   UserRound,
+  VenetianMask,
   WandSparkles,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -241,11 +245,13 @@ function ScenarioCard({
   scenario,
   loading,
   disabled,
+  canStartPrivate,
   onStart,
 }: {
   scenario: ScenarioHead;
   loading: boolean;
   disabled: boolean;
+  canStartPrivate: boolean;
   onStart: (id: string, syncPolicy?: NewTaleSyncPolicy) => void;
 }) {
   const { t } = useLingui();
@@ -279,7 +285,13 @@ function ScenarioCard({
             {scenario.description || t`No description yet.`}
           </p>
         </div>
-        <div className="mt-auto grid grid-cols-[1fr_auto] gap-1">
+        <div
+          className={
+            canStartPrivate
+              ? "mt-auto grid grid-cols-[1fr_auto] gap-1"
+              : "mt-auto grid"
+          }
+        >
           <Button
             onClick={() => onStart(scenario.id)}
             disabled={disabled || loading}
@@ -287,15 +299,17 @@ function ScenarioCard({
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play />}
             <Trans>New Tale</Trans>
           </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => onStart(scenario.id, "private")}
-            disabled={disabled || loading}
-            aria-label={t`Start local-only tale`}
-          >
-            <LockIcon className="h-4 w-4" />
-          </Button>
+          {canStartPrivate ? (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => onStart(scenario.id, "private")}
+              disabled={disabled || loading}
+              aria-label={t`Start local-only tale`}
+            >
+              <VenetianMask className="h-4 w-4" />
+            </Button>
+          ) : null}
         </div>
       </CardContent>
     </Card>
@@ -317,6 +331,7 @@ export default function Home() {
   const [whatsNewOpen, setWhatsNewOpen] = useState(false);
   const [loadingTaleId, setLoadingTaleId] = useState<string | null>(null);
   const [accountBusy, setAccountBusy] = useState(false);
+  const [canStartPrivate, setCanStartPrivate] = useState(false);
   const [startingScenarioId, setStartingScenarioId] = useState<string | null>(
     null,
   );
@@ -340,7 +355,9 @@ export default function Home() {
   const accessTokenExpiresAt = useSyncSettingsStore(
     (state) => state.accessTokenExpiresAt,
   );
-  const refreshToken = useSyncSettingsStore((state) => state.refreshToken);
+  const hasRefreshToken = useSyncSettingsStore(
+    (state) => state.hasRefreshToken,
+  );
   const hostedRefreshFailed = useSyncSettingsStore(
     (state) => state.hostedRefreshFailed,
   );
@@ -356,13 +373,6 @@ export default function Home() {
   const setActiveSyncMode = useSyncSettingsStore(
     (state) => state.setActiveSyncMode,
   );
-  const setShowSyncAllPrompt = useSyncSettingsStore(
-    (state) => state.setShowSyncAllPrompt,
-  );
-  const syncAllPromptAnswered = useSyncSettingsStore(
-    (state) => state.syncAllPromptAnswered,
-  );
-
   const pendingChangelogVersion = useUpdateStore(
     (state) => state.pendingChangelogVersion,
   );
@@ -398,7 +408,7 @@ export default function Home() {
     personalBaseUrl,
     accessToken,
     accessTokenExpiresAt,
-    refreshToken,
+    hasRefreshToken,
     accountLabel,
     syncEnabled: homeSyncProfile?.enabled,
     disabledReason: homeSyncProfile?.disabledReason,
@@ -453,6 +463,22 @@ export default function Home() {
     };
   }, [hostedProfile.id]);
 
+  useEffect(() => {
+    let disposed = false;
+    const refreshPrivateStart = () => {
+      canSyncNewTales().then((canSync) => {
+        if (!disposed) setCanStartPrivate(canSync);
+      });
+    };
+
+    refreshPrivateStart();
+    const removeListener = addSyncChangedListener(refreshPrivateStart);
+    return () => {
+      disposed = true;
+      removeListener();
+    };
+  }, [syncUiKind]);
+
   const openSettings = (tab: GlobalSettingsSectionId) => {
     setSettingsTab(tab);
     setSettingsOpen(true);
@@ -491,11 +517,18 @@ export default function Home() {
     setAccountBusy(true);
     try {
       const result = await signInHostedSync({ profile: hostedProfile });
+      if (result.refreshToken) {
+        await setHostedRefreshToken(HOSTED_PROFILE_ID, result.refreshToken);
+      }
       const expiresAt =
         result.expiresIn && result.expiresIn > 0
           ? Date.now() + result.expiresIn * 1000
           : null;
-      setAccessToken(result.accessToken, expiresAt, result.refreshToken);
+      setAccessToken(
+        result.accessToken,
+        expiresAt,
+        Boolean(result.refreshToken),
+      );
       const appVersion = await getVersion().catch(() => "0.15.0");
       const prepared = await prepareHostedSync({
         profile: hostedProfile,
@@ -520,7 +553,6 @@ export default function Home() {
         );
         return;
       }
-      setShowSyncAllPrompt(!syncAllPromptAnswered);
       wakeSyncBackground();
       notifySyncChanged();
       openSettings("cloud-sync");
@@ -839,6 +871,7 @@ export default function Home() {
                 scenario={scenario}
                 loading={startingScenarioId === scenario.id}
                 disabled={hasIssues}
+                canStartPrivate={canStartPrivate}
                 onStart={handleStartScenario}
               />
             ))}

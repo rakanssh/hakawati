@@ -13,7 +13,7 @@ export function getSyncUiKind(input: {
   personalBaseUrl: string;
   accessToken: string;
   accessTokenExpiresAt: number | null;
-  refreshToken: string;
+  hasRefreshToken: boolean;
   accountLabel: string;
   syncEnabled?: boolean;
   disabledReason?: string | null;
@@ -29,7 +29,6 @@ export function getSyncUiKind(input: {
     input.accessTokenExpiresAt !== null &&
     input.accessTokenExpiresAt <= (input.now ?? Date.now());
   const hasToken = input.accessToken.trim().length > 0;
-  const hasRefresh = input.refreshToken.trim().length > 0;
   const hasAccount = input.accountLabel.trim().length > 0;
 
   if (hasToken && !tokenExpired) {
@@ -42,7 +41,7 @@ export function getSyncUiKind(input: {
     return hasAccount ? "signed-in" : "profile-incomplete";
   }
   if (
-    hasRefresh &&
+    input.hasRefreshToken &&
     !input.refreshFailed &&
     input.disabledReason !== "signed_out" &&
     input.disabledReason !== "user_disabled"
@@ -50,5 +49,7 @@ export function getSyncUiKind(input: {
     return "reconnecting";
   }
 
-  return hasAccount || hasToken || hasRefresh ? "sign-in-required" : "local";
+  return hasAccount || hasToken || input.hasRefreshToken
+    ? "sign-in-required"
+    : "local";
 }

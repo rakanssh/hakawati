@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { GameModeStep } from "./steps";
 import { GameMode } from "@/types";
@@ -27,13 +28,13 @@ import {
 } from "@/store/useSettingsStore";
 import { generateQuickstartTale } from "@/services/llm/quickstartTaleGenerator";
 import {
+  canSyncNewTales,
   markNewTaleSyncPreference,
-  type NewTaleSyncPolicy,
 } from "@/services/new-tale-sync";
 import { createPromptComponent } from "@/lib/prompt-components";
 import { PromptComponentType } from "@/types/context.type";
 import type { PromptComponent } from "@/types/context.type";
-import { ArrowLeftIcon, Cloud, LockIcon } from "lucide-react";
+import { ArrowLeftIcon } from "lucide-react";
 
 export interface QuickstartState {
   gameMode: GameMode;
@@ -243,7 +244,8 @@ export function QuickstartPage() {
 
   const [currentStep, setCurrentStep] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [syncPolicy, setSyncPolicy] = useState<NewTaleSyncPolicy>("default");
+  const [canStartPrivate, setCanStartPrivate] = useState(false);
+  const [localOnly, setLocalOnly] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const [state, setState] = useState<QuickstartState>({
     gameMode: GameMode.STORY_TELLER,
@@ -551,7 +553,10 @@ export function QuickstartPage() {
         gameMode: state.gameMode,
         undoStack: [],
       });
-      await markNewTaleSyncPreference(taleId, syncPolicy);
+      await markNewTaleSyncPreference(
+        taleId,
+        localOnly ? "private" : "default",
+      );
 
       taleStore.resetAllState();
       setLastPlayedTaleId(taleId);
@@ -572,7 +577,7 @@ export function QuickstartPage() {
     utilityConfig,
     t,
     state,
-    syncPolicy,
+    localOnly,
     taleStore,
     setLastPlayedTaleId,
     navigate,
@@ -614,6 +619,18 @@ export function QuickstartPage() {
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    canSyncNewTales().then((canSync) => {
+      if (disposed) return;
+      setCanStartPrivate(canSync);
+      if (!canSync) setLocalOnly(false);
+    });
+    return () => {
+      disposed = true;
     };
   }, []);
 
@@ -664,32 +681,18 @@ export function QuickstartPage() {
           </section>
 
           <footer className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            {isLastStep ? (
+            {isLastStep && canStartPrivate ? (
               <div className="mb-2 flex justify-center">
-                <div className="grid grid-cols-2 rounded-xs border border-border/70 bg-card/60 p-1 shadow-sm">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={syncPolicy === "default" ? "default" : "ghost"}
-                    onClick={() => setSyncPolicy("default")}
+                <label className="flex items-center gap-2 rounded-xs border border-border/70 bg-card/60 px-3 py-2 text-sm shadow-sm">
+                  <Checkbox
+                    checked={localOnly}
+                    onCheckedChange={(checked) =>
+                      setLocalOnly(checked === true)
+                    }
                     disabled={isGenerating}
-                    className="rounded-xs"
-                  >
-                    <Cloud className="h-4 w-4" />
-                    <Trans>Sync</Trans>
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant={syncPolicy === "private" ? "default" : "ghost"}
-                    onClick={() => setSyncPolicy("private")}
-                    disabled={isGenerating}
-                    className="rounded-xs"
-                  >
-                    <LockIcon className="h-4 w-4" />
-                    <Trans>Local only</Trans>
-                  </Button>
-                </div>
+                  />
+                  <Trans>Keep this tale local only</Trans>
+                </label>
               </div>
             ) : null}
             <div className="flex items-center justify-between gap-3 rounded-xs border border-border/70 bg-card/60 p-2.5 shadow-lg shadow-background/20 backdrop-blur">

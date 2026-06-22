@@ -1,4 +1,5 @@
 mod oauth_loopback;
+mod secret_store;
 mod speech_recorder;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -92,6 +93,9 @@ pub fn run() {
             greet,
             oauth_loopback::start_oauth_loopback,
             oauth_loopback::wait_oauth_loopback,
+            secret_store::set_hosted_refresh_token,
+            secret_store::get_hosted_refresh_token,
+            secret_store::delete_hosted_refresh_token,
             speech_recorder::start_speech_recording,
             speech_recorder::stop_speech_recording,
             speech_recorder::get_speech_recording_level,

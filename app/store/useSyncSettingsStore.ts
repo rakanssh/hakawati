@@ -8,14 +8,13 @@ type SyncSettingsPersistedState = Pick<
   | "activeSyncMode"
   | "accessToken"
   | "accessTokenExpiresAt"
-  | "refreshToken"
+  | "hasRefreshToken"
   | "deviceId"
   | "deviceName"
   | "devicePlatform"
   | "accountDisplayName"
   | "accountEmail"
   | "accountEmailVerified"
-  | "syncAllPromptAnswered"
 >;
 
 export interface SyncSettingsStore {
@@ -24,7 +23,7 @@ export interface SyncSettingsStore {
   activeSyncMode: "hosted" | "personal";
   accessToken: string;
   accessTokenExpiresAt: number | null;
-  refreshToken: string;
+  hasRefreshToken: boolean;
   deviceId: string;
   deviceName: string;
   devicePlatform: string;
@@ -32,23 +31,20 @@ export interface SyncSettingsStore {
   accountEmail: string;
   accountEmailVerified: boolean | null;
   hostedRefreshFailed: boolean;
-  showSyncAllPrompt: boolean;
-  syncAllPromptAnswered: boolean;
   setCloudBaseUrl: (baseUrl: string) => void;
   setPersonalBaseUrl: (baseUrl: string) => void;
   setActiveSyncMode: (mode: "hosted" | "personal") => void;
   setAccessToken: (
     accessToken: string,
     expiresAt?: number | null,
-    refreshToken?: string | null,
+    hasRefreshToken?: boolean,
   ) => void;
+  setHasRefreshToken: (hasRefreshToken: boolean) => void;
   setAccount: (account: {
     displayName?: string | null;
     email?: string | null;
     emailVerified?: boolean | null;
   }) => void;
-  setShowSyncAllPrompt: (showSyncAllPrompt: boolean) => void;
-  setSyncAllPromptAnswered: (syncAllPromptAnswered: boolean) => void;
   setHostedRefreshFailed: (hostedRefreshFailed: boolean) => void;
   clearSession: () => void;
   setDeviceId: (deviceId: string) => void;
@@ -72,7 +68,7 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
       activeSyncMode: "hosted",
       accessToken: "",
       accessTokenExpiresAt: null,
-      refreshToken: "",
+      hasRefreshToken: false,
       deviceId: createDeviceId(),
       deviceName: defaultDeviceName(),
       devicePlatform: defaultDeviceName(),
@@ -80,44 +76,38 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
       accountEmail: "",
       accountEmailVerified: null,
       hostedRefreshFailed: false,
-      showSyncAllPrompt: false,
-      syncAllPromptAnswered: false,
       setCloudBaseUrl: (cloudBaseUrl) => set({ cloudBaseUrl }),
       setPersonalBaseUrl: (personalBaseUrl) => set({ personalBaseUrl }),
       setActiveSyncMode: (activeSyncMode) => set({ activeSyncMode }),
       setAccessToken: (
         accessToken,
         accessTokenExpiresAt = null,
-        refreshToken,
+        hasRefreshToken,
       ) =>
         set((state) => ({
           accessToken,
           accessTokenExpiresAt,
           hostedRefreshFailed: false,
-          // ponytail: persisted with sync settings; move to OS keychain when a secure-store plugin lands.
-          refreshToken: refreshToken ?? state.refreshToken,
+          hasRefreshToken: hasRefreshToken ?? state.hasRefreshToken,
         })),
+      setHasRefreshToken: (hasRefreshToken) => set({ hasRefreshToken }),
       setAccount: (account) =>
         set({
           accountDisplayName: account.displayName ?? "",
           accountEmail: account.email ?? "",
           accountEmailVerified: account.emailVerified ?? null,
         }),
-      setShowSyncAllPrompt: (showSyncAllPrompt) => set({ showSyncAllPrompt }),
-      setSyncAllPromptAnswered: (syncAllPromptAnswered) =>
-        set({ syncAllPromptAnswered }),
       setHostedRefreshFailed: (hostedRefreshFailed) =>
         set({ hostedRefreshFailed }),
       clearSession: () =>
         set({
           accessToken: "",
           accessTokenExpiresAt: null,
-          refreshToken: "",
+          hasRefreshToken: false,
           hostedRefreshFailed: false,
           accountDisplayName: "",
           accountEmail: "",
           accountEmailVerified: null,
-          showSyncAllPrompt: false,
         }),
       setDeviceId: (deviceId) => set({ deviceId }),
       setDeviceName: (deviceName) => set({ deviceName }),
@@ -131,14 +121,13 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
         activeSyncMode: state.activeSyncMode,
         accessToken: state.accessToken,
         accessTokenExpiresAt: state.accessTokenExpiresAt,
-        refreshToken: state.refreshToken,
+        hasRefreshToken: state.hasRefreshToken,
         deviceId: state.deviceId,
         deviceName: state.deviceName,
         devicePlatform: state.devicePlatform,
         accountDisplayName: state.accountDisplayName,
         accountEmail: state.accountEmail,
         accountEmailVerified: state.accountEmailVerified,
-        syncAllPromptAnswered: state.syncAllPromptAnswered,
       }),
     },
   ),

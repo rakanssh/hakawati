@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef } from "react";
 import { getSyncProfile } from "@/repositories/sync.repository";
+import {
+  getHostedRefreshToken,
+  migrateStoredHostedRefreshToken,
+  setHostedRefreshToken,
+} from "@/services/secret-store";
 import { refreshHostedSync, type SyncProfile } from "@/services/sync";
 import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
 
@@ -13,9 +18,14 @@ export function useHostedTokenRefresh(dbReady: boolean) {
   const accessTokenExpiresAt = useSyncSettingsStore(
     (state) => state.accessTokenExpiresAt,
   );
-  const refreshToken = useSyncSettingsStore((state) => state.refreshToken);
+  const hasRefreshToken = useSyncSettingsStore(
+    (state) => state.hasRefreshToken,
+  );
   const deviceId = useSyncSettingsStore((state) => state.deviceId);
   const setAccessToken = useSyncSettingsStore((state) => state.setAccessToken);
+  const setHasRefreshToken = useSyncSettingsStore(
+    (state) => state.setHasRefreshToken,
+  );
   const setHostedRefreshFailed = useSyncSettingsStore(
     (state) => state.setHostedRefreshFailed,
   );
@@ -35,28 +45,38 @@ export function useHostedTokenRefresh(dbReady: boolean) {
     if (
       !dbReady ||
       activeSyncMode !== "hosted" ||
-      profile.baseUrl.length === 0 ||
-      refreshToken.trim().length === 0
+      profile.baseUrl.length === 0
     ) {
       return;
     }
 
     const refresh = async () => {
+      const migrated = await migrateStoredHostedRefreshToken(profile.id);
+      if (migrated) setHasRefreshToken(true);
+      if (!hasRefreshToken && !migrated) return;
+
       const storedProfile = await getSyncProfile(profile.id).catch(() => null);
       if (storedProfile?.enabled !== true) return;
+      const refreshToken = await getHostedRefreshToken(profile.id);
+      if (!refreshToken) {
+        setHasRefreshToken(false);
+        setHostedRefreshFailed(true);
+        return;
+      }
+
       const result = await refreshHostedSync({
         profile,
-        refreshToken: refreshToken.trim(),
+        refreshToken,
       });
+      if (result.refreshToken) {
+        await setHostedRefreshToken(profile.id, result.refreshToken);
+      }
       const nextExpiresAt =
         result.expiresIn && result.expiresIn > 0
           ? Date.now() + result.expiresIn * 1000
           : null;
-      setAccessToken(
-        result.accessToken,
-        nextExpiresAt,
-        result.refreshToken ?? refreshToken,
-      );
+      setAccessToken(result.accessToken, nextExpiresAt, true);
+      setHasRefreshToken(true);
       setHostedRefreshFailed(false);
     };
 
@@ -73,7 +93,7 @@ export function useHostedTokenRefresh(dbReady: boolean) {
       return () => window.clearTimeout(timer);
     }
 
-    const key = `${profile.baseUrl}:${refreshToken}:${accessTokenExpiresAt ?? 0}`;
+    const key = `${profile.baseUrl}:${hasRefreshToken}:${accessTokenExpiresAt ?? 0}`;
     if (triedKeyRef.current === key) return;
     triedKeyRef.current = key;
 
@@ -86,9 +106,10 @@ export function useHostedTokenRefresh(dbReady: boolean) {
     accessTokenExpiresAt,
     activeSyncMode,
     dbReady,
+    hasRefreshToken,
     profile,
-    refreshToken,
     setAccessToken,
+    setHasRefreshToken,
     setHostedRefreshFailed,
   ]);
 }

@@ -6,7 +6,7 @@ const base = {
   personalBaseUrl: "",
   accessToken: "",
   accessTokenExpiresAt: null,
-  refreshToken: "",
+  hasRefreshToken: false,
   accountLabel: "",
   now: 1000,
 };
@@ -18,7 +18,7 @@ describe("getSyncUiKind", () => {
         ...base,
         accessToken: "old",
         accessTokenExpiresAt: 999,
-        refreshToken: "refresh",
+        hasRefreshToken: true,
         accountLabel: "Rakan",
       }),
     ).toBe("reconnecting");
@@ -28,7 +28,7 @@ describe("getSyncUiKind", () => {
         ...base,
         accessToken: "old",
         accessTokenExpiresAt: 999,
-        refreshToken: "refresh",
+        hasRefreshToken: true,
         accountLabel: "Rakan",
         refreshFailed: true,
       }),
@@ -39,7 +39,7 @@ describe("getSyncUiKind", () => {
     expect(
       getSyncUiKind({
         ...base,
-        refreshToken: "refresh",
+        hasRefreshToken: true,
         accountLabel: "Rakan",
         disabledReason: "user_disabled",
       }),

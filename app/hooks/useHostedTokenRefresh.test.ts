@@ -10,19 +10,27 @@ const syncServiceMocks = vi.hoisted(() => ({
   refreshHostedSync: vi.fn(),
 }));
 
+const secretStoreMocks = vi.hoisted(() => ({
+  getHostedRefreshToken: vi.fn(),
+  migrateStoredHostedRefreshToken: vi.fn(),
+  setHostedRefreshToken: vi.fn(),
+}));
+
 const syncStoreState = vi.hoisted(() => ({
   cloudBaseUrl: "https://sync.example",
   activeSyncMode: "hosted" as "hosted" | "personal",
   accessToken: "old-token",
   accessTokenExpiresAt: Date.now() - 1,
-  refreshToken: "refresh-token",
+  hasRefreshToken: true,
   deviceId: "device-1",
   setAccessToken: vi.fn(),
+  setHasRefreshToken: vi.fn(),
   setHostedRefreshFailed: vi.fn(),
 }));
 
 vi.mock("@/repositories/sync.repository", () => syncRepoMocks);
 vi.mock("@/services/sync", () => syncServiceMocks);
+vi.mock("@/services/secret-store", () => secretStoreMocks);
 vi.mock("@/store/useSyncSettingsStore", () => ({
   useSyncSettingsStore: (selector: (state: typeof syncStoreState) => unknown) =>
     selector(syncStoreState),
@@ -70,10 +78,13 @@ describe("useHostedTokenRefresh", () => {
       activeSyncMode: "hosted",
       accessToken: "old-token",
       accessTokenExpiresAt: Date.now() - 1,
-      refreshToken: "refresh-token",
+      hasRefreshToken: true,
       deviceId: "device-1",
     });
     syncRepoMocks.getSyncProfile.mockResolvedValue({ enabled: true });
+    secretStoreMocks.getHostedRefreshToken.mockResolvedValue("refresh-token");
+    secretStoreMocks.migrateStoredHostedRefreshToken.mockResolvedValue(false);
+    secretStoreMocks.setHostedRefreshToken.mockResolvedValue(undefined);
     syncServiceMocks.refreshHostedSync.mockResolvedValue({
       accessToken: "new-token",
       expiresIn: 3600,
@@ -95,9 +106,31 @@ describe("useHostedTokenRefresh", () => {
     expect(syncStoreState.setAccessToken).toHaveBeenCalledWith(
       "new-token",
       expect.any(Number),
+      true,
+    );
+    expect(secretStoreMocks.setHostedRefreshToken).toHaveBeenCalledWith(
+      "hosted",
       "new-refresh-token",
     );
     expect(syncStoreState.setHostedRefreshFailed).toHaveBeenCalledWith(false);
+
+    harness.cleanup();
+  });
+
+  it("migrates an old localStorage refresh token before refreshing", async () => {
+    syncStoreState.hasRefreshToken = false;
+    secretStoreMocks.migrateStoredHostedRefreshToken.mockResolvedValueOnce(
+      true,
+    );
+
+    const harness = renderHarness();
+    await harness.flush();
+
+    expect(
+      secretStoreMocks.migrateStoredHostedRefreshToken,
+    ).toHaveBeenCalledWith("hosted");
+    expect(syncStoreState.setHasRefreshToken).toHaveBeenCalledWith(true);
+    expect(syncServiceMocks.refreshHostedSync).toHaveBeenCalledOnce();
 
     harness.cleanup();
   });
@@ -127,6 +160,19 @@ describe("useHostedTokenRefresh", () => {
     const harness = renderHarness();
     await harness.flush();
 
+    expect(syncStoreState.setHostedRefreshFailed).toHaveBeenCalledWith(true);
+
+    harness.cleanup();
+  });
+
+  it("falls back to reconnect when secure storage has no token", async () => {
+    secretStoreMocks.getHostedRefreshToken.mockResolvedValueOnce(null);
+
+    const harness = renderHarness();
+    await harness.flush();
+
+    expect(syncServiceMocks.refreshHostedSync).not.toHaveBeenCalled();
+    expect(syncStoreState.setHasRefreshToken).toHaveBeenCalledWith(false);
     expect(syncStoreState.setHostedRefreshFailed).toHaveBeenCalledWith(true);
 
     harness.cleanup();

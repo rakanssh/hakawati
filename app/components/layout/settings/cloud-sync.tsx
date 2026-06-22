@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
-import { AlertTriangle, Cloud, LogOut, Power, Upload } from "lucide-react";
+import { AlertTriangle, Cloud, LogOut, Power } from "lucide-react";
 import { toast } from "sonner";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
@@ -31,23 +31,32 @@ import { getSyncUiKind } from "@/lib/sync-ui";
 import { useSyncSettingsStore } from "@/store";
 import {
   getSyncProfile,
-  listTaleSyncPreferences,
-  listTaleSyncStates,
   setSyncProfileDisabled,
-  setTaleSyncPreference,
   upsertSyncProfile,
 } from "@/repositories/sync.repository";
-import { getAllTales } from "@/services/tale.service";
 import {
   createSyncTransport,
   prepareHostedSync,
   fetchSyncCapabilities,
   signInHostedSync,
   updateHostedAccountProfile,
-  uploadTalePackage,
   type SyncProfile,
 } from "@/services/sync";
-import { notifySyncChanged, wakeSyncBackground } from "@/services/sync-wakeup";
+import {
+  addSyncChangedListener,
+  notifySyncChanged,
+  wakeSyncBackground,
+} from "@/services/sync-wakeup";
+import {
+  deleteHostedRefreshToken,
+  setHostedRefreshToken,
+} from "@/services/secret-store";
+import {
+  decideAllTaleSyncPreferences,
+  decideTaleSyncPreference,
+  listUndecidedTales,
+  type UndecidedTale,
+} from "@/services/new-tale-sync";
 
 const HOSTED_PROFILE_ID = "hosted";
 const PERSONAL_PROFILE_ID = "personal";
@@ -55,10 +64,6 @@ const PROFILE_UPDATE_TIMEOUT_MS = 15_000;
 
 function avatarInitial(label: string) {
   return (label.trim()[0] ?? "?").toUpperCase();
-}
-
-function idempotencyKey() {
-  return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`;
 }
 
 function withTimeout<T>(work: Promise<T>, timeoutMs: number): Promise<T> {
@@ -84,7 +89,9 @@ export default function SettingsCloudSync() {
   const accessTokenExpiresAt = useSyncSettingsStore(
     (state) => state.accessTokenExpiresAt,
   );
-  const refreshToken = useSyncSettingsStore((state) => state.refreshToken);
+  const hasRefreshToken = useSyncSettingsStore(
+    (state) => state.hasRefreshToken,
+  );
   const hostedRefreshFailed = useSyncSettingsStore(
     (state) => state.hostedRefreshFailed,
   );
@@ -114,24 +121,14 @@ export default function SettingsCloudSync() {
   const setDevicePlatform = useSyncSettingsStore(
     (state) => state.setDevicePlatform,
   );
-  const showSyncAllPrompt = useSyncSettingsStore(
-    (state) => state.showSyncAllPrompt,
-  );
-  const syncAllPromptAnswered = useSyncSettingsStore(
-    (state) => state.syncAllPromptAnswered,
-  );
-  const setShowSyncAllPrompt = useSyncSettingsStore(
-    (state) => state.setShowSyncAllPrompt,
-  );
-  const setSyncAllPromptAnswered = useSyncSettingsStore(
-    (state) => state.setSyncAllPromptAnswered,
-  );
   const [busy, setBusy] = useState<string | null>(null);
   const [profileBusy, setProfileBusy] = useState(false);
   const [profileDisplayName, setProfileDisplayName] = useState("");
   const [status, setStatus] = useState<string>("");
   const [syncEnabled, setSyncEnabled] = useState(true);
   const [disabledReason, setDisabledReason] = useState<string | null>(null);
+  const [undecidedTales, setUndecidedTales] = useState<UndecidedTale[]>([]);
+  const [resolverOpen, setResolverOpen] = useState(false);
 
   const hostedProfile = useMemo<SyncProfile>(
     () => ({
@@ -167,7 +164,7 @@ export default function SettingsCloudSync() {
     personalBaseUrl,
     accessToken,
     accessTokenExpiresAt,
-    refreshToken,
+    hasRefreshToken,
     accountLabel,
     syncEnabled,
     disabledReason,
@@ -188,9 +185,12 @@ export default function SettingsCloudSync() {
 
   const syncUiStatus =
     syncUiKind === "reconnecting" ? t`Reconnecting...` : status;
-  const hasAnySession = Boolean(accessToken || refreshToken || accountLabel);
+  const hasAnySession = Boolean(accessToken || hasRefreshToken || accountLabel);
   const cloudConfigured = hostedProfile.baseUrl.length > 0;
   const showSyncControls = hasAnySession || activeSyncMode === "personal";
+  const canReviewUndecidedTales =
+    undecidedTales.length > 0 &&
+    (syncUiKind === "signed-in" || syncUiKind === "personal");
 
   useEffect(() => {
     getSyncProfile(profile.id)
@@ -201,24 +201,46 @@ export default function SettingsCloudSync() {
       .catch(() => undefined);
   }, [profile.id]);
 
+  const refreshUndecidedTales = useCallback(
+    async (
+      profileId: string = profile.id,
+      options: { open?: boolean; force?: boolean } = {},
+    ) => {
+      if (!options.force && (!syncEnabled || profile.baseUrl.length === 0)) {
+        if (profileId === profile.id) setUndecidedTales([]);
+        return [];
+      }
+      const tales = await listUndecidedTales(profileId);
+      if (profileId === profile.id || options.open) setUndecidedTales(tales);
+      if (options.open && tales.length > 0) setResolverOpen(true);
+      return tales;
+    },
+    [profile.baseUrl.length, profile.id, syncEnabled],
+  );
+
+  useEffect(() => {
+    void refreshUndecidedTales();
+    const removeListener = addSyncChangedListener(() => {
+      void refreshUndecidedTales();
+    });
+    return removeListener;
+  }, [refreshUndecidedTales]);
+
   async function signInForToken() {
     const result = await signInHostedSync({ profile: hostedProfile });
+    if (result.refreshToken) {
+      await setHostedRefreshToken(HOSTED_PROFILE_ID, result.refreshToken);
+    }
     const expiresAt =
       result.expiresIn && result.expiresIn > 0
         ? Date.now() + result.expiresIn * 1000
         : null;
-    setAccessToken(result.accessToken, expiresAt, result.refreshToken);
+    setAccessToken(result.accessToken, expiresAt, Boolean(result.refreshToken));
     return result.accessToken;
   }
 
-  function transport() {
-    return createSyncTransport({
-      profile,
-      accessToken: profile.mode === "hosted" ? accessToken.trim() : undefined,
-    });
-  }
-
   function signOut() {
+    void deleteHostedRefreshToken(HOSTED_PROFILE_ID).catch(() => undefined);
     clearSession();
     void setSyncProfileDisabled(HOSTED_PROFILE_ID, "signed_out").catch(
       () => undefined,
@@ -307,7 +329,6 @@ export default function SettingsCloudSync() {
       });
       setSyncEnabled(Boolean(result.device));
       setDisabledReason(result.device ? null : "device_limit");
-      setShowSyncAllPrompt(Boolean(result.device) && !syncAllPromptAnswered);
       setActiveSyncMode("hosted");
       if (!result.device) {
         setStatus(
@@ -319,6 +340,10 @@ export default function SettingsCloudSync() {
       setStatus(t`Connected as ${label}`);
       wakeSyncBackground();
       notifySyncChanged();
+      await refreshUndecidedTales(HOSTED_PROFILE_ID, {
+        open: true,
+        force: true,
+      });
       toast.success(t`Cloud sync connected`);
     });
   }
@@ -347,6 +372,7 @@ export default function SettingsCloudSync() {
         setStatus("");
         wakeSyncBackground();
         notifySyncChanged();
+        await refreshUndecidedTales(profile.id, { open: true, force: true });
         return;
       }
       const token = hasUsableToken
@@ -377,6 +403,10 @@ export default function SettingsCloudSync() {
       setStatus("");
       wakeSyncBackground();
       notifySyncChanged();
+      await refreshUndecidedTales(HOSTED_PROFILE_ID, {
+        open: true,
+        force: true,
+      });
     });
   }
 
@@ -393,86 +423,30 @@ export default function SettingsCloudSync() {
       setActiveSyncMode("personal");
       setSyncEnabled(true);
       setDisabledReason(null);
-      setShowSyncAllPrompt(!syncAllPromptAnswered);
       setStatus(t`Personal sync connected`);
       wakeSyncBackground();
       notifySyncChanged();
+      await refreshUndecidedTales(PERSONAL_PROFILE_ID, {
+        open: true,
+        force: true,
+      });
     });
   }
 
-  async function loadAllLocalTales() {
-    const first = await getAllTales(1, 100);
-    const pages = [first];
-    for (let page = 2; (page - 1) * 100 < first.total; page += 1) {
-      pages.push(await getAllTales(page, 100));
-    }
-    return pages.flatMap((page) => page.data);
-  }
-
-  async function syncAllLocalTales() {
-    await run("sync-all", async () => {
-      const tales = await loadAllLocalTales();
-      const privateTaleIds = new Set(
-        (await listTaleSyncPreferences(profile.id))
-          .filter((preference) => preference.policy === "private")
-          .map((preference) => preference.localTaleId),
-      );
-      const linkedLocalTaleIds = new Set(
-        (await listTaleSyncStates(profile.id)).map(
-          (state) => state.localTaleId,
-        ),
-      );
-      let failed = 0;
-      const syncableTales = tales.filter(
-        (tale) =>
-          !privateTaleIds.has(tale.id) && !linkedLocalTaleIds.has(tale.id),
-      );
-      for (const tale of syncableTales) {
-        try {
-          await setTaleSyncPreference({
-            profileId: profile.id,
-            localTaleId: tale.id,
-            policy: "sync",
-          });
-          await uploadTalePackage({
-            profile,
-            transport: transport(),
-            localTaleId: tale.id,
-            idempotencyKey: idempotencyKey(),
-          });
-        } catch {
-          failed += 1;
-        }
-      }
-      setSyncAllPromptAnswered(true);
-      setShowSyncAllPrompt(false);
-      const message =
-        syncableTales.length === 0
-          ? t`No local tales to sync.`
-          : failed > 0
-            ? t`Synced ${syncableTales.length - failed} tales. ${failed} failed.`
-            : t`Synced ${syncableTales.length} tales.`;
-      setStatus(message);
+  async function decideOne(taleId: string, policy: "sync" | "private") {
+    await run(`${policy}-${taleId}`, async () => {
+      await decideTaleSyncPreference(profile.id, taleId, policy);
+      await refreshUndecidedTales();
       notifySyncChanged();
-      toast.success(message);
     });
   }
 
-  async function keepExistingLocalPrivate() {
-    await run("keep-private", async () => {
-      const tales = await loadAllLocalTales();
-      await Promise.all(
-        tales.map((tale) =>
-          setTaleSyncPreference({
-            profileId: profile.id,
-            localTaleId: tale.id,
-            policy: "private",
-          }),
-        ),
-      );
-      setSyncAllPromptAnswered(true);
-      setShowSyncAllPrompt(false);
-      setStatus(t`Existing local tales will stay private`);
+  async function decideAll(policy: "sync" | "private") {
+    await run(`${policy}-all`, async () => {
+      const ids = undecidedTales.map((tale) => tale.id);
+      await decideAllTaleSyncPreferences(profile.id, ids, policy);
+      setUndecidedTales([]);
+      setResolverOpen(false);
       notifySyncChanged();
     });
   }
@@ -604,6 +578,15 @@ export default function SettingsCloudSync() {
                 </Button>
               </>
             ) : null}
+            {canReviewUndecidedTales ? (
+              <Button
+                variant="secondary"
+                onClick={() => setResolverOpen(true)}
+                disabled={busy !== null}
+              >
+                <Trans>Review undecided tales</Trans>
+              </Button>
+            ) : null}
           </div>
         </div>
       </SettingsPanel>
@@ -672,36 +655,85 @@ export default function SettingsCloudSync() {
         </Accordion>
       </SettingsPanel>
 
-      {showSyncAllPrompt ? (
-        <Dialog open={showSyncAllPrompt}>
-          <DialogContent showCloseButton={false}>
-            <DialogHeader>
-              <DialogTitle>
-                <Trans>Sync existing local tales?</Trans>
-              </DialogTitle>
-              <DialogDescription>
-                <Trans>
-                  Choose whether tales already on this device should be added to
-                  cloud sync.
-                </Trans>
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={keepExistingLocalPrivate}
-                disabled={busy !== null}
-              >
-                <Trans>Keep local</Trans>
-              </Button>
-              <Button onClick={syncAllLocalTales} disabled={busy !== null}>
-                <Upload className="size-4" />
-                <Trans>Sync local tales</Trans>
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      ) : null}
+      <Dialog open={resolverOpen} onOpenChange={setResolverOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              <Trans>Review undecided tales</Trans>
+            </DialogTitle>
+            <DialogDescription>
+              <Trans>
+                Choose which local tales should sync now and which should stay
+                private.
+              </Trans>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[50vh] overflow-y-auto pe-1">
+            <div className="grid gap-2">
+              {undecidedTales.map((tale) => (
+                <div
+                  key={tale.id}
+                  className="grid gap-2 border border-border/70 p-2 sm:grid-cols-[1fr_auto] sm:items-center"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{tale.name}</div>
+                    <div className="truncate text-sm text-muted-foreground">
+                      {tale.description || t`No description yet.`}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(tale.updatedAt).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 sm:justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void decideOne(tale.id, "private")}
+                      disabled={busy !== null}
+                    >
+                      <Trans>Private</Trans>
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => void decideOne(tale.id, "sync")}
+                      disabled={busy !== null}
+                    >
+                      <Trans>Sync</Trans>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {undecidedTales.length === 0 ? (
+                <div className="border border-dashed border-border/80 p-3 text-center text-sm text-muted-foreground">
+                  <Trans>No undecided tales.</Trans>
+                </div>
+              ) : null}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setResolverOpen(false)}
+              disabled={busy !== null}
+            >
+              <Trans>Later</Trans>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => void decideAll("private")}
+              disabled={busy !== null || undecidedTales.length === 0}
+            >
+              <Trans>Keep all private</Trans>
+            </Button>
+            <Button
+              onClick={() => void decideAll("sync")}
+              disabled={busy !== null || undecidedTales.length === 0}
+            >
+              <Trans>Sync all</Trans>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={needsProfileCompletion}>
         <DialogContent showCloseButton={false}>

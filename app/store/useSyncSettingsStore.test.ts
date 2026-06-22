@@ -8,7 +8,7 @@ describe("useSyncSettingsStore", () => {
     useSyncSettingsStore.setState({
       accessToken: "",
       accessTokenExpiresAt: null,
-      refreshToken: "",
+      hasRefreshToken: false,
       hostedRefreshFailed: false,
       accountDisplayName: "",
       accountEmail: "",
@@ -16,26 +16,27 @@ describe("useSyncSettingsStore", () => {
     });
   });
 
-  it("persists hosted tokens for silent refresh", () => {
+  it("persists only the hosted refresh-token marker", () => {
     const persisted = partialize({
       ...useSyncSettingsStore.getState(),
       accessToken: "token",
       accessTokenExpiresAt: 123,
-      refreshToken: "refresh-token",
+      hasRefreshToken: true,
     });
 
     expect(persisted).toMatchObject({
       accessToken: "token",
       accessTokenExpiresAt: 123,
-      refreshToken: "refresh-token",
+      hasRefreshToken: true,
     });
+    expect(persisted).not.toHaveProperty("refreshToken");
   });
 
   it("does not keep a token after sign-out", () => {
     useSyncSettingsStore.setState({
       accessToken: "token",
       accessTokenExpiresAt: 123,
-      refreshToken: "refresh-token",
+      hasRefreshToken: true,
       hostedRefreshFailed: true,
       accountDisplayName: "Player",
     });
@@ -46,7 +47,7 @@ describe("useSyncSettingsStore", () => {
     expect(partialize(useSyncSettingsStore.getState())).toMatchObject({
       accessToken: "",
       accessTokenExpiresAt: null,
-      refreshToken: "",
+      hasRefreshToken: false,
       accountDisplayName: "",
     });
   });
