@@ -40,6 +40,7 @@ import {
   FilePlus2Icon,
   PencilIcon,
   TrashIcon,
+  VenetianMask,
 } from "lucide-react";
 import { toast } from "sonner";
 import placeholderImage from "@/assets/scen-ph.png";
@@ -204,12 +205,12 @@ export default function TalesHome() {
             : item.localTale.logCount;
           const hasConflict =
             item.source === "local" && item.sync?.status === "conflict";
-          const syncLabel =
-            !isRemote && item.sync && item.sync.status !== "idle"
-              ? hasConflict
-                ? t`Needs review`
-                : item.sync.lastErrorCode || item.sync.status
-              : "";
+          const isSynced = isRemote || Boolean(!isRemote && item.sync);
+          const statusLabel = hasConflict
+            ? t`Needs review`
+            : isSynced
+              ? t`Cloud`
+              : t`Local`;
           return (
             <Card
               key={isRemote ? `remote-${id}` : `local-${id}`}
@@ -283,15 +284,11 @@ export default function TalesHome() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  {isRemote ? (
-                    <Badge className="absolute right-9 top-1.5 z-10 bg-accent/70 text-muted-foreground">
-                      <Cloud className="size-3" />
-                    </Badge>
-                  ) : null}
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Badge className="absolute top-1 left-1 text-xs text-muted-foreground bg-accent/50">
-                        {formatRelativeTime(updatedAt)}
+                      <Badge className="absolute left-1 top-1 z-10 h-5 bg-accent/60 px-2 text-xs text-muted-foreground">
+                        {formatRelativeTime(updatedAt)} · {logCount}{" "}
+                        {logCount === 1 ? t`turn` : t`turns`}
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent side="top">
@@ -300,14 +297,18 @@ export default function TalesHome() {
                       </Trans>
                     </TooltipContent>
                   </Tooltip>
-                  <Badge className="absolute left-1 top-8 h-5 bg-accent/50 px-2 text-xs text-muted-foreground">
-                    {logCount} {logCount === 1 ? t`turn` : t`turns`}
+                  <Badge
+                    className="absolute left-1 top-8 z-10 h-5 bg-accent/60 px-2 text-xs text-muted-foreground"
+                    aria-label={statusLabel}
+                  >
+                    {hasConflict ? (
+                      <Trans>Needs review</Trans>
+                    ) : isSynced ? (
+                      <Cloud className="size-3" />
+                    ) : (
+                      <VenetianMask className="size-3" />
+                    )}
                   </Badge>
-                  {syncLabel ? (
-                    <Badge className="absolute left-1 top-14 h-5 bg-accent/50 px-2 text-xs text-muted-foreground">
-                      {syncLabel}
-                    </Badge>
-                  ) : null}
                 </div>
               </CardHeader>
               <CardContent className="flex h-36 flex-col gap-2 px-2">

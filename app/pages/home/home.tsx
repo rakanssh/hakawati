@@ -175,13 +175,14 @@ function TaleCard({
     ? item.remoteTale.turnCount
     : item.localTale.logCount;
   const thumbnail = isRemote ? null : item.localTale.thumbnail;
-  const synced = isRemote || Boolean(item.sync);
-  const syncLabel =
-    item.source === "local" && item.sync?.status !== "idle"
-      ? item.sync?.status === "conflict"
-        ? t`Needs review`
-        : item.sync?.lastErrorCode || item.sync?.status
-      : "";
+  const hasConflict =
+    item.source === "local" && item.sync?.status === "conflict";
+  const isSynced = isRemote || Boolean(item.sync);
+  const statusLabel = hasConflict
+    ? t`Needs review`
+    : isSynced
+      ? t`Cloud`
+      : t`Local`;
 
   return (
     <Card className="w-[60vw] max-w-56 shrink-0 snap-start gap-0 overflow-hidden py-0 sm:w-60 sm:max-w-64 lg:w-64">
@@ -200,9 +201,15 @@ function TaleCard({
           </Tooltip>
           <Badge
             className="absolute right-2 top-2 bg-background/80 text-[10px] text-foreground backdrop-blur"
-            aria-label={synced ? t`Synced` : t`Local`}
+            aria-label={statusLabel}
           >
-            {synced ? <Cloud className="size-3" /> : <Trans>LOCAL</Trans>}
+            {hasConflict ? (
+              <Trans>Needs review</Trans>
+            ) : isSynced ? (
+              <Cloud className="size-3" />
+            ) : (
+              <VenetianMask className="size-3" />
+            )}
           </Badge>
           {isRemote ? (
             <>
@@ -230,11 +237,6 @@ function TaleCard({
           <p className="mt-1 line-clamp-2 min-h-10 text-sm text-muted-foreground">
             {description}
           </p>
-          {syncLabel ? (
-            <Badge variant="outline" className="mt-1 text-[10px]">
-              {syncLabel}
-            </Badge>
-          ) : null}
         </div>
         <Button
           className="mt-auto w-full"
@@ -733,8 +735,6 @@ export default function Home() {
                 <Trans>Restoring session</Trans>
               ) : syncUiKind === "personal" ? (
                 <Trans>Personal server</Trans>
-              ) : syncUiKind === "sign-in-required" ? (
-                <Trans>Sign in required</Trans>
               ) : (
                 <Trans>Local profile</Trans>
               )}

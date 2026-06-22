@@ -57,6 +57,7 @@ describe("mergeTaleLibrary", () => {
         remoteTaleId: "remote-linked",
         status: "error",
         lastErrorCode: "email_not_verified",
+        remoteTale: { id: "remote-linked", turnCount: 1 },
       },
     });
   });

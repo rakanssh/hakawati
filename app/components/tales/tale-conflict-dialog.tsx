@@ -3,14 +3,14 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { TaleConflictChoice } from "@/hooks/useTaleLibrary";
 import type { LibraryTaleItem } from "@/lib/tale-library";
-import { Cloud, FilePlus2Icon, PencilIcon } from "lucide-react";
-import { Trans } from "@lingui/react/macro";
+import { formatExactDateTime, formatRelativeTime } from "@/lib/utils";
+import { Cloud, FilePlus2Icon, HardDrive } from "lucide-react";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 type TaleConflictDialogProps = {
   item: LibraryTaleItem | null;
@@ -27,64 +27,107 @@ export function TaleConflictDialog({
   onOpenChange,
   onResolve,
 }: TaleConflictDialogProps) {
-  const name = item?.source === "local" ? item.localTale.name : "";
+  const { t } = useLingui();
+  const localTurnCount = item?.source === "local" ? item.localTale.logCount : 0;
+  const localUpdatedAt =
+    item?.source === "local" ? item.localTale.updatedAt : 0;
+  const remoteTale = item?.source === "local" ? item.sync?.remoteTale : null;
+  const remoteTurnCount = remoteTale?.turnCount ?? null;
+  const remoteUpdatedAt = remoteTale
+    ? Date.parse(remoteTale.updatedAt) || 0
+    : 0;
+
+  const versionLabel = (updatedAt: number) =>
+    updatedAt
+      ? `${formatRelativeTime(updatedAt)} · ${formatExactDateTime(updatedAt)}`
+      : t`Unknown time`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
             <Trans>Resolve sync conflict</Trans>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="pe-8">
             <Trans>
-              {name} changed here and in cloud sync. Choose which version to
-              open.
+              The tale changed here and in the cloud, pick one to keep or save
+              both.
             </Trans>
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-2 text-sm text-muted-foreground">
-          <p>
-            <Trans>
-              Use Cloud replaces this device&apos;s unsynced changes.
-            </Trans>
-          </p>
-          <p>
-            <Trans>Keep This Device replaces the cloud version.</Trans>
-          </p>
-          <p>
-            <Trans>Keep Both saves this device&apos;s version as a copy.</Trans>
-          </p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Button
+            variant="outline"
+            className="h-auto min-w-0 justify-start p-4 text-start"
+            onClick={() => onResolve("keep-remote")}
+            disabled={resolving}
+          >
+            <div className="flex min-w-0 items-start gap-3">
+              <Cloud className="mt-0.5 size-5 shrink-0" />
+              <div className="min-w-0">
+                <div className="font-semibold">
+                  <Trans>Keep Cloud</Trans>
+                </div>
+                <div className="mt-1 text-sm font-normal text-muted-foreground">
+                  {remoteTurnCount === null ? (
+                    <Trans>Unknown turns</Trans>
+                  ) : (
+                    <Trans>
+                      {remoteTurnCount}{" "}
+                      {remoteTurnCount === 1 ? t`turn` : t`turns`}
+                    </Trans>
+                  )}
+                </div>
+                <div className="mt-1 whitespace-normal text-xs font-normal text-muted-foreground">
+                  {versionLabel(remoteUpdatedAt)}
+                </div>
+              </div>
+            </div>
+          </Button>
+          <Button
+            variant="outline"
+            className="h-auto min-w-0 justify-start p-4 text-start"
+            onClick={() => onResolve("keep-local")}
+            disabled={resolving}
+          >
+            <div className="flex min-w-0 items-start gap-3">
+              <HardDrive className="mt-0.5 size-5 shrink-0" />
+              <div className="min-w-0">
+                <div className="font-semibold">
+                  <Trans>Keep This Device</Trans>
+                </div>
+                <div className="mt-1 text-sm font-normal text-muted-foreground">
+                  <Trans>
+                    {localTurnCount} {localTurnCount === 1 ? t`turn` : t`turns`}
+                  </Trans>
+                </div>
+                <div className="mt-1 whitespace-normal text-xs font-normal text-muted-foreground">
+                  {versionLabel(localUpdatedAt)}
+                </div>
+              </div>
+            </div>
+          </Button>
         </div>
-        <DialogFooter>
+        <div className="grid gap-2">
+          <Button
+            variant="secondary"
+            className="h-11 w-full"
+            onClick={() => onResolve("keep-both")}
+            disabled={resolving}
+          >
+            <FilePlus2Icon className="size-4" />
+            <Trans>Keep both (make a copy)</Trans>
+          </Button>
           <Button
             variant="ghost"
+            className="w-full"
             onClick={() => onOpenChange(false)}
             disabled={resolving}
           >
             <Trans>Cancel</Trans>
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => onResolve("keep-remote")}
-            disabled={resolving}
-          >
-            <Cloud className="size-4" />
-            <Trans>Use Cloud</Trans>
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => onResolve("keep-local")}
-            disabled={resolving}
-          >
-            <PencilIcon className="size-4" />
-            <Trans>Keep This Device</Trans>
-          </Button>
-          <Button onClick={() => onResolve("keep-both")} disabled={resolving}>
-            <FilePlus2Icon className="size-4" />
-            <Trans>Keep Both</Trans>
-          </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

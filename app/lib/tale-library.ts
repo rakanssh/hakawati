@@ -11,6 +11,7 @@ export type LibraryTaleItem =
         remoteTaleId: string;
         status: TaleSyncState["pendingStatus"];
         lastErrorCode: string | null;
+        remoteTale?: RemoteTale;
       };
     }
   | {
@@ -31,6 +32,7 @@ export function mergeTaleLibrary(input: {
   const linkedRemoteIds = new Set(
     input.syncStates.map((state) => state.remoteTaleId),
   );
+  const remoteById = new Map(input.remoteTales.map((tale) => [tale.id, tale]));
   return [
     ...input.localTales.map((localTale): LibraryTaleItem => {
       const syncState = syncByLocalId.get(localTale.id);
@@ -44,6 +46,7 @@ export function mergeTaleLibrary(input: {
                 remoteTaleId: syncState.remoteTaleId,
                 status: syncState.pendingStatus,
                 lastErrorCode: syncState.lastErrorCode,
+                remoteTale: remoteById.get(syncState.remoteTaleId),
               },
             }
           : {}),

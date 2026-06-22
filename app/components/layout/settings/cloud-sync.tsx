@@ -501,9 +501,7 @@ export default function SettingsCloudSync() {
               <div className="mt-1 grid gap-0.5 text-sm">
                 <div
                   className={
-                    syncUiKind === "device-limit" ||
-                    syncUiKind === "sign-in-required" ||
-                    !cloudConfigured
+                    syncUiKind === "device-limit" || !cloudConfigured
                       ? "flex min-w-0 items-center gap-2 text-destructive"
                       : "flex min-w-0 items-center gap-2 text-muted-foreground"
                   }
@@ -518,8 +516,6 @@ export default function SettingsCloudSync() {
                       <Trans>Sync off</Trans>
                     ) : syncUiKind === "device-limit" ? (
                       <Trans>Device limit reached</Trans>
-                    ) : syncUiKind === "sign-in-required" ? (
-                      <Trans>Sign in required</Trans>
                     ) : syncUiKind === "personal" ? (
                       <Trans>Personal</Trans>
                     ) : syncUiKind === "profile-incomplete" ? (
