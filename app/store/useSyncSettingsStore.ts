@@ -6,6 +6,9 @@ type SyncSettingsPersistedState = Pick<
   | "cloudBaseUrl"
   | "personalBaseUrl"
   | "activeSyncMode"
+  | "accessToken"
+  | "accessTokenExpiresAt"
+  | "refreshToken"
   | "deviceId"
   | "deviceName"
   | "devicePlatform"
@@ -21,6 +24,7 @@ export interface SyncSettingsStore {
   activeSyncMode: "hosted" | "personal";
   accessToken: string;
   accessTokenExpiresAt: number | null;
+  refreshToken: string;
   deviceId: string;
   deviceName: string;
   devicePlatform: string;
@@ -32,7 +36,11 @@ export interface SyncSettingsStore {
   setCloudBaseUrl: (baseUrl: string) => void;
   setPersonalBaseUrl: (baseUrl: string) => void;
   setActiveSyncMode: (mode: "hosted" | "personal") => void;
-  setAccessToken: (accessToken: string, expiresAt?: number | null) => void;
+  setAccessToken: (
+    accessToken: string,
+    expiresAt?: number | null,
+    refreshToken?: string | null,
+  ) => void;
   setAccount: (account: {
     displayName?: string | null;
     email?: string | null;
@@ -62,6 +70,7 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
       activeSyncMode: "hosted",
       accessToken: "",
       accessTokenExpiresAt: null,
+      refreshToken: "",
       deviceId: createDeviceId(),
       deviceName: defaultDeviceName(),
       devicePlatform: defaultDeviceName(),
@@ -73,8 +82,17 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
       setCloudBaseUrl: (cloudBaseUrl) => set({ cloudBaseUrl }),
       setPersonalBaseUrl: (personalBaseUrl) => set({ personalBaseUrl }),
       setActiveSyncMode: (activeSyncMode) => set({ activeSyncMode }),
-      setAccessToken: (accessToken, accessTokenExpiresAt = null) =>
-        set({ accessToken, accessTokenExpiresAt }),
+      setAccessToken: (
+        accessToken,
+        accessTokenExpiresAt = null,
+        refreshToken,
+      ) =>
+        set((state) => ({
+          accessToken,
+          accessTokenExpiresAt,
+          // ponytail: persisted with sync settings; move to OS keychain when a secure-store plugin lands.
+          refreshToken: refreshToken ?? state.refreshToken,
+        })),
       setAccount: (account) =>
         set({
           accountDisplayName: account.displayName ?? "",
@@ -88,6 +106,7 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
         set({
           accessToken: "",
           accessTokenExpiresAt: null,
+          refreshToken: "",
           accountDisplayName: "",
           accountEmail: "",
           accountEmailVerified: null,
@@ -103,6 +122,9 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
         cloudBaseUrl: state.cloudBaseUrl,
         personalBaseUrl: state.personalBaseUrl,
         activeSyncMode: state.activeSyncMode,
+        accessToken: state.accessToken,
+        accessTokenExpiresAt: state.accessTokenExpiresAt,
+        refreshToken: state.refreshToken,
         deviceId: state.deviceId,
         deviceName: state.deviceName,
         devicePlatform: state.devicePlatform,

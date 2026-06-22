@@ -448,7 +448,7 @@ export default function Home() {
         result.expiresIn && result.expiresIn > 0
           ? Date.now() + result.expiresIn * 1000
           : null;
-      setAccessToken(result.accessToken, expiresAt);
+      setAccessToken(result.accessToken, expiresAt, result.refreshToken);
       const appVersion = await getVersion().catch(() => "0.15.0");
       const prepared = await prepareHostedSync({
         profile: hostedProfile,

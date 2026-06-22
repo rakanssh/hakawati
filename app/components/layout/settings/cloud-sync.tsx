@@ -177,7 +177,7 @@ export default function SettingsCloudSync() {
       result.expiresIn && result.expiresIn > 0
         ? Date.now() + result.expiresIn * 1000
         : null;
-    setAccessToken(result.accessToken, expiresAt);
+    setAccessToken(result.accessToken, expiresAt, result.refreshToken);
     return result.accessToken;
   }
 

@@ -118,6 +118,7 @@ type OidcDiscovery = {
 type TokenResponse = {
   access_token?: string;
   expires_in?: number;
+  refresh_token?: string;
   token_type?: string;
   error?: string;
   error_description?: string;
@@ -127,6 +128,7 @@ type TokenResponse = {
 export type HostedSignInResult = {
   accessToken: string;
   expiresIn?: number;
+  refreshToken?: string;
 };
 
 export type HostedAccount = {
@@ -375,7 +377,6 @@ async function fetchOidcDiscovery(issuer: string): Promise<OidcDiscovery> {
 
 export async function signInHostedSync(input: {
   profile: SyncProfile;
-  prompt?: "none";
   timeoutMs?: number;
 }): Promise<HostedSignInResult> {
   const transport = createSyncTransport({ profile: input.profile });
@@ -394,13 +395,14 @@ export async function signInHostedSync(input: {
   authUrl.searchParams.set("client_id", authConfig.clientId);
   authUrl.searchParams.set("redirect_uri", loopback.redirectUri);
   authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("scope", authConfig.scopes.join(" "));
+  authUrl.searchParams.set(
+    "scope",
+    Array.from(new Set([...authConfig.scopes, "offline_access"])).join(" "),
+  );
+  authUrl.searchParams.set("prompt", "consent");
   authUrl.searchParams.set("state", state);
   authUrl.searchParams.set("code_challenge", challenge);
   authUrl.searchParams.set("code_challenge_method", "S256");
-  if (input.prompt) {
-    authUrl.searchParams.set("prompt", input.prompt);
-  }
   if (authConfig.audience) {
     authUrl.searchParams.set("resource", authConfig.audience);
   }
@@ -454,6 +456,55 @@ export async function signInHostedSync(input: {
   return {
     accessToken: tokenBody.access_token,
     ...(tokenBody.expires_in ? { expiresIn: tokenBody.expires_in } : {}),
+    ...(tokenBody.refresh_token
+      ? { refreshToken: tokenBody.refresh_token }
+      : {}),
+  };
+}
+
+export async function refreshHostedSync(input: {
+  profile: SyncProfile;
+  refreshToken: string;
+}): Promise<HostedSignInResult> {
+  const transport = createSyncTransport({ profile: input.profile });
+  await fetchSyncCapabilities(transport);
+  const authConfig = await fetchHostedAuthConfig(transport);
+  const discovery = await fetchOidcDiscovery(authConfig.issuer);
+  if (!discovery.token_endpoint) {
+    throw new Error("OIDC discovery did not return a token endpoint");
+  }
+
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    client_id: authConfig.clientId,
+    refresh_token: input.refreshToken,
+  });
+  if (authConfig.audience) {
+    body.set("resource", authConfig.audience);
+  }
+  const tokenResponse = await fetch(discovery.token_endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: body.toString(),
+  });
+  const tokenBody = (await tokenResponse
+    .json()
+    .catch(() => null)) as TokenResponse | null;
+  if (!tokenResponse.ok || !tokenBody?.access_token) {
+    throw new Error(
+      tokenBody?.error_description ??
+        tokenBody?.message ??
+        tokenBody?.error ??
+        "Hosted session refresh failed",
+    );
+  }
+
+  return {
+    accessToken: tokenBody.access_token,
+    ...(tokenBody.expires_in ? { expiresIn: tokenBody.expires_in } : {}),
+    ...(tokenBody.refresh_token
+      ? { refreshToken: tokenBody.refresh_token }
+      : {}),
   };
 }
 

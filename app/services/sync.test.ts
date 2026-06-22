@@ -10,6 +10,7 @@ import {
   prepareHostedSync,
   pushTaleContentBatch,
   pushTaleMetadataPatch,
+  refreshHostedSync,
   replaceRemoteTalePackage,
   remoteTaleChanged,
   signInHostedSync,
@@ -1171,6 +1172,7 @@ describe("sync transport", () => {
         jsonResponse({
           access_token: "access-token",
           expires_in: 3600,
+          refresh_token: "refresh-token",
           token_type: "Bearer",
         }),
       );
@@ -1194,6 +1196,7 @@ describe("sync transport", () => {
 
     expect(result.accessToken).toBe("access-token");
     expect(result.expiresIn).toBe(3600);
+    expect(result.refreshToken).toBe("refresh-token");
     expect(opener.openUrl).toHaveBeenCalledWith(
       expect.objectContaining({
         searchParams: expect.any(URLSearchParams),
@@ -1210,9 +1213,14 @@ describe("sync transport", () => {
       String(http.fetch.mock.calls.at(-1)?.[1]?.body),
     );
     expect(tokenBody.get("resource")).toBe("hakawati");
+    const openedUrl = new URL(String(opener.openUrl.mock.calls[0][0]));
+    expect(openedUrl.searchParams.get("scope")).toBe(
+      "openid profile offline_access",
+    );
+    expect(openedUrl.searchParams.get("prompt")).toBe("consent");
   });
 
-  it("can request browser-session re-auth without an interactive prompt", async () => {
+  it("refreshes hosted tokens without opening the browser", async () => {
     http.fetch
       .mockResolvedValueOnce(jsonResponse({ cloudSaveProtocol: 1 }))
       .mockResolvedValueOnce(
@@ -1226,38 +1234,39 @@ describe("sync transport", () => {
       )
       .mockResolvedValueOnce(
         jsonResponse({
-          authorization_endpoint: "https://auth.example/authorize",
           token_endpoint: "https://auth.example/token",
         }),
       )
       .mockResolvedValueOnce(
         jsonResponse({
-          access_token: "access-token",
+          access_token: "new-access-token",
           expires_in: 3600,
+          refresh_token: "new-refresh-token",
           token_type: "Bearer",
         }),
       );
-    tauriCore.invoke
-      .mockResolvedValueOnce({
-        id: "oauth-123",
-        redirectUri: "http://127.0.0.1:1234/callback",
-      })
-      .mockImplementationOnce(async () => {
-        const openedUrl = new URL(String(opener.openUrl.mock.calls[0][0]));
-        return `http://127.0.0.1:1234/callback?code=abc&state=${openedUrl.searchParams.get("state")}`;
-      });
 
-    await signInHostedSync({
+    const result = await refreshHostedSync({
       profile: {
         id: "cloud",
         baseUrl: "https://sync.example",
         mode: "hosted",
       },
-      prompt: "none",
+      refreshToken: "refresh-token",
     });
 
-    const openedUrl = new URL(String(opener.openUrl.mock.calls[0][0]));
-    expect(openedUrl.searchParams.get("prompt")).toBe("none");
+    expect(opener.openUrl).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      accessToken: "new-access-token",
+      expiresIn: 3600,
+      refreshToken: "new-refresh-token",
+    });
+    const tokenBody = new URLSearchParams(
+      String(http.fetch.mock.calls.at(-1)?.[1]?.body),
+    );
+    expect(tokenBody.get("grant_type")).toBe("refresh_token");
+    expect(tokenBody.get("refresh_token")).toBe("refresh-token");
+    expect(tokenBody.get("resource")).toBe("hakawati");
   });
 
   it("surfaces OIDC token exchange errors", async () => {
