@@ -348,7 +348,7 @@ describe("useTaleLibrary", () => {
     harness.cleanup();
   });
 
-  it("waits for the first remote list when sync is reachable", async () => {
+  it("keeps local tales visible while the first remote list is loading", async () => {
     let resolveRemote!: (page: {
       items: unknown[];
       nextCursor: string | null;
@@ -366,8 +366,11 @@ describe("useTaleLibrary", () => {
       await Promise.resolve();
     });
 
-    expect(harness.controls.loading).toBe(true);
-    expect(harness.controls.items).toEqual([]);
+    expect(harness.controls.loading).toBe(false);
+    expect(harness.controls.syncListLoading).toBe(true);
+    expect(harness.controls.items).toMatchObject([
+      { source: "local", localTale: { id: "local-1" } },
+    ]);
 
     await act(async () => {
       resolveRemote({ items: [], nextCursor: null });

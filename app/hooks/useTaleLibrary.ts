@@ -326,8 +326,8 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
 
   return {
     ...local,
-    loading: local.loading || syncListLoading,
-    items: syncListLoading ? [] : items,
+    loading: local.loading,
+    items,
     remoteLoading,
     syncListLoading,
     syncActive,
