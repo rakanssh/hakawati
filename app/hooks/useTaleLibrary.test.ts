@@ -1,7 +1,7 @@
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { notifySyncChanged } from "@/services/sync-wakeup";
+import { addSyncWakeListener, notifySyncChanged } from "@/services/sync-wakeup";
 import type { TaleHead } from "@/types/tale.type";
 import { useTaleLibrary } from "./useTaleLibrary";
 
@@ -14,8 +14,10 @@ const gameSaveMocks = vi.hoisted(() => ({
 }));
 
 const syncRepoMocks = vi.hoisted(() => ({
+  deleteTaleSyncState: vi.fn(),
   getSyncProfile: vi.fn(),
   listTaleSyncStates: vi.fn(),
+  setTaleSyncPreference: vi.fn(),
 }));
 
 const syncServiceMocks = vi.hoisted(() => {
@@ -42,6 +44,15 @@ const syncServiceMocks = vi.hoisted(() => {
     listAllRemoteTales,
     listRemoteTales,
     replaceRemoteTalePackage: vi.fn(),
+    SyncHttpError: class SyncHttpError extends Error {
+      constructor(
+        message: string,
+        readonly status: number,
+        readonly code = String(status),
+      ) {
+        super(message);
+      }
+    },
   };
 });
 
@@ -125,6 +136,8 @@ describe("useTaleLibrary", () => {
       saveAsScenario: vi.fn(),
     });
     syncRepoMocks.listTaleSyncStates.mockResolvedValue([]);
+    syncRepoMocks.setTaleSyncPreference.mockResolvedValue(undefined);
+    syncRepoMocks.deleteTaleSyncState.mockResolvedValue(undefined);
     syncServiceMocks.listRemoteTales.mockResolvedValue({
       items: [],
       nextCursor: null,
@@ -609,6 +622,205 @@ describe("useTaleLibrary", () => {
       3,
     );
     expect(localDelete).toHaveBeenCalledWith("local-1");
+
+    harness.cleanup();
+  });
+
+  it("queues a local tale for cloud sync", async () => {
+    syncRepoMocks.getSyncProfile.mockResolvedValue({ enabled: true });
+    const wakeListener = vi.fn();
+    const removeWakeListener = addSyncWakeListener(wakeListener);
+    const harness = renderHarness();
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      await harness.controls.syncLibraryTale(harness.controls.items[0]);
+    });
+
+    expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledWith({
+      profileId: "hosted",
+      localTaleId: "local-1",
+      policy: "sync",
+    });
+    expect(wakeListener).toHaveBeenCalledOnce();
+
+    removeWakeListener();
+    harness.cleanup();
+  });
+
+  it("removes a linked local tale from cloud and keeps it private", async () => {
+    syncRepoMocks.getSyncProfile.mockResolvedValue({ enabled: true });
+    syncRepoMocks.listTaleSyncStates.mockResolvedValue([
+      {
+        profileId: "hosted",
+        localTaleId: "local-1",
+        remoteTaleId: "remote-1",
+        contentRev: "2",
+        metadataRev: "3",
+        lastSyncedAt: 1,
+        pendingStatus: "idle",
+        lastErrorCode: null,
+      },
+    ]);
+    const harness = renderHarness();
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      await harness.controls.removeLibraryTaleFromCloud(
+        harness.controls.items[0],
+      );
+    });
+
+    expect(syncServiceMocks.deleteRemoteTale).toHaveBeenCalledWith(
+      {},
+      "remote-1",
+      3,
+    );
+    expect(syncRepoMocks.deleteTaleSyncState).toHaveBeenCalledWith({
+      profileId: "hosted",
+      localTaleId: "local-1",
+    });
+    expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledWith({
+      profileId: "hosted",
+      localTaleId: "local-1",
+      policy: "private",
+    });
+
+    harness.cleanup();
+  });
+
+  it("imports a remote-only tale before removing it from cloud", async () => {
+    syncRepoMocks.getSyncProfile.mockResolvedValue({ enabled: true });
+    syncServiceMocks.listRemoteTales.mockResolvedValue({
+      items: [remoteTale("remote-1")],
+      nextCursor: null,
+    });
+    syncServiceMocks.importRemoteTalePackage.mockResolvedValueOnce(
+      "local-imported",
+    );
+    const harness = renderHarness();
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const item = harness.controls.items.find(
+      (candidate) => candidate.source === "remote",
+    );
+    if (!item) throw new Error("Remote item did not render");
+    await act(async () => {
+      await harness.controls.removeLibraryTaleFromCloud(item);
+    });
+
+    expect(syncServiceMocks.importRemoteTalePackage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        remoteTaleId: "remote-1",
+      }),
+    );
+    expect(syncServiceMocks.deleteRemoteTale).toHaveBeenCalledWith(
+      {},
+      "remote-1",
+      1,
+    );
+    expect(syncRepoMocks.deleteTaleSyncState).toHaveBeenCalledWith({
+      profileId: "hosted",
+      localTaleId: "local-imported",
+    });
+    expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledWith({
+      profileId: "hosted",
+      localTaleId: "local-imported",
+      policy: "private",
+    });
+
+    harness.cleanup();
+  });
+
+  it("finishes local unlink when removing a cloud tale that is already gone", async () => {
+    syncRepoMocks.getSyncProfile.mockResolvedValue({ enabled: true });
+    syncRepoMocks.listTaleSyncStates.mockResolvedValue([
+      {
+        profileId: "hosted",
+        localTaleId: "local-1",
+        remoteTaleId: "remote-1",
+        contentRev: "2",
+        metadataRev: "3",
+        lastSyncedAt: 1,
+        pendingStatus: "idle",
+        lastErrorCode: null,
+      },
+    ]);
+    syncServiceMocks.deleteRemoteTale.mockRejectedValueOnce(
+      new syncServiceMocks.SyncHttpError("Not found", 404),
+    );
+    const harness = renderHarness();
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      await harness.controls.removeLibraryTaleFromCloud(
+        harness.controls.items[0],
+      );
+    });
+
+    expect(syncRepoMocks.deleteTaleSyncState).toHaveBeenCalledWith({
+      profileId: "hosted",
+      localTaleId: "local-1",
+    });
+    expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledWith({
+      profileId: "hosted",
+      localTaleId: "local-1",
+      policy: "private",
+    });
+
+    harness.cleanup();
+  });
+
+  it("does not unlink a cloud tale when remote removal fails", async () => {
+    syncRepoMocks.getSyncProfile.mockResolvedValue({ enabled: true });
+    syncRepoMocks.listTaleSyncStates.mockResolvedValue([
+      {
+        profileId: "hosted",
+        localTaleId: "local-1",
+        remoteTaleId: "remote-1",
+        contentRev: "2",
+        metadataRev: "3",
+        lastSyncedAt: 1,
+        pendingStatus: "idle",
+        lastErrorCode: null,
+      },
+    ]);
+    syncServiceMocks.deleteRemoteTale.mockRejectedValueOnce(
+      new Error("offline"),
+    );
+    const harness = renderHarness();
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await expect(
+      act(async () => {
+        await harness.controls.removeLibraryTaleFromCloud(
+          harness.controls.items[0],
+        );
+      }),
+    ).rejects.toThrow("offline");
+
+    expect(syncRepoMocks.deleteTaleSyncState).not.toHaveBeenCalled();
+    expect(syncRepoMocks.setTaleSyncPreference).not.toHaveBeenCalled();
 
     harness.cleanup();
   });

@@ -252,6 +252,20 @@ export async function upsertTaleSyncState(state: TaleSyncState): Promise<void> {
   });
 }
 
+export async function deleteTaleSyncState(input: {
+  profileId: string;
+  localTaleId: string;
+}): Promise<void> {
+  await enqueueLocalWrite(async () => {
+    const db = await getDb();
+    await db.execute(
+      `DELETE FROM tale_sync_state
+       WHERE profile_id = ? AND local_tale_id = ?`,
+      [input.profileId, input.localTaleId],
+    );
+  });
+}
+
 export async function setTaleSyncStatus(input: {
   profileId: string;
   localTaleId: string;

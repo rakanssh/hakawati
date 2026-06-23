@@ -37,6 +37,8 @@ import {
 import {
   ArrowLeftIcon,
   Cloud,
+  CloudOff,
+  CloudUpload,
   FilePlus2Icon,
   PencilIcon,
   TrashIcon,
@@ -54,12 +56,19 @@ type PendingTaleDelete = {
   name: string;
 };
 
+type PendingCloudRemove = {
+  item: LibraryTaleItem;
+  name: string;
+};
+
 export default function TalesHome() {
   const navigate = useNavigate();
   const { t } = useLingui();
   const [pendingDelete, setPendingDelete] = useState<PendingTaleDelete | null>(
     null,
   );
+  const [pendingCloudRemove, setPendingCloudRemove] =
+    useState<PendingCloudRemove | null>(null);
   const [search, setSearch] = useState("");
   const [conflictItem, setConflictItem] = useState<LibraryTaleItem | null>(
     null,
@@ -79,8 +88,10 @@ export default function TalesHome() {
     total,
     setPage,
     deleteLibraryTale,
+    removeLibraryTaleFromCloud,
     resolveConflict,
     saveAsScenario,
+    syncLibraryTale,
   } = useTaleLibrary();
 
   const handleClickDelete = (tale: PendingTaleDelete) => {
@@ -91,6 +102,30 @@ export default function TalesHome() {
     if (!pendingDelete) return;
     await deleteLibraryTale(pendingDelete.item);
     setPendingDelete(null);
+  };
+
+  const confirmCloudRemove = async () => {
+    if (!pendingCloudRemove) return;
+    try {
+      await removeLibraryTaleFromCloud(pendingCloudRemove.item);
+      toast.success(t`Removed from cloud`);
+      setPendingCloudRemove(null);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t`Failed to remove from cloud`,
+      );
+    }
+  };
+
+  const handleSyncToCloud = async (item: LibraryTaleItem) => {
+    try {
+      await syncLibraryTale(item);
+      toast.success(t`Sync queued`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t`Failed to queue sync`,
+      );
+    }
   };
 
   const handleSaveAsScenario = async (id: string) => {
@@ -282,6 +317,31 @@ export default function TalesHome() {
                             <Trans>Save as Scenario</Trans>
                           </DropdownMenuItem>
                         )}
+                        {syncActive && isSynced ? (
+                          <DropdownMenuItem
+                            onSelect={(e) => e.preventDefault()}
+                            onClick={() =>
+                              setPendingCloudRemove({ item, name })
+                            }
+                            className="text-xs"
+                          >
+                            <CloudOff className="w-4 h-4 me-2" />{" "}
+                            <Trans>Remove from cloud</Trans>
+                          </DropdownMenuItem>
+                        ) : null}
+                        {syncActive &&
+                        !isRemote &&
+                        !item.sync &&
+                        !syncStatusUnknown ? (
+                          <DropdownMenuItem
+                            onSelect={(e) => e.preventDefault()}
+                            onClick={() => void handleSyncToCloud(item)}
+                            className="text-xs"
+                          >
+                            <CloudUpload className="w-4 h-4 me-2" />{" "}
+                            <Trans>Sync to cloud</Trans>
+                          </DropdownMenuItem>
+                        ) : null}
                         <DropdownMenuItem
                           onSelect={(e) => e.preventDefault()}
                           onClick={() => handleClickDelete({ item, name })}
@@ -401,6 +461,34 @@ export default function TalesHome() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               <Trans>Delete</Trans>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog
+        open={Boolean(pendingCloudRemove)}
+        onOpenChange={(open) => {
+          if (!open) setPendingCloudRemove(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              <Trans>Remove from cloud?</Trans>
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <Trans>
+                This keeps the tale on this device and removes it from cloud
+                sync.
+              </Trans>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              <Trans>Cancel</Trans>
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCloudRemove}>
+              <Trans>Remove from cloud</Trans>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
