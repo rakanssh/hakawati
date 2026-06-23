@@ -79,7 +79,6 @@ import {
   Plus,
   Play,
   Sparkles,
-  TrashIcon,
   UserRound,
   VenetianMask,
   WandSparkles,
@@ -150,13 +149,11 @@ function TaleCard({
   loading,
   disabled,
   onLoad,
-  onDeleteRemote,
 }: {
   item: LibraryTaleItem;
   loading: boolean;
   disabled: boolean;
   onLoad: (item: LibraryTaleItem) => void;
-  onDeleteRemote: (item: LibraryTaleItem) => void;
 }) {
   const { t } = useLingui();
   const isRemote = item.source === "remote";
@@ -211,19 +208,6 @@ function TaleCard({
               <VenetianMask className="size-3" />
             )}
           </Badge>
-          {isRemote ? (
-            <>
-              <Button
-                variant="secondary"
-                size="icon-sm"
-                className="absolute right-2 top-9 h-7 w-7 bg-background/80 backdrop-blur"
-                onClick={() => onDeleteRemote(item)}
-                aria-label={t`Delete cloud tale`}
-              >
-                <TrashIcon className="size-3.5" />
-              </Button>
-            </>
-          ) : null}
         </div>
       </CardHeader>
       <CardContent className="flex min-h-28 flex-col gap-1.5 p-2 sm:min-h-32 sm:gap-2 sm:p-2.5">
@@ -533,17 +517,6 @@ export default function Home() {
     }
   };
 
-  const handleDeleteRemoteTale = async (item: LibraryTaleItem) => {
-    if (item.source !== "remote") return;
-    if (!globalThis.confirm(t`Delete ${item.remoteTale.title}?`)) return;
-    try {
-      await tales.deleteLibraryTale(item);
-      toast.success(t`Cloud tale deleted`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : t`Sync failed`);
-    }
-  };
-
   const handleAccountClick = async () => {
     if (accountSettingsState || personalActive || !hostedProfile.baseUrl) {
       openSettings("cloud-sync");
@@ -840,7 +813,6 @@ export default function Home() {
                 }
                 disabled={hasIssues}
                 onLoad={handleLoadTale}
-                onDeleteRemote={handleDeleteRemoteTale}
               />
             ))}
           </Shelf>

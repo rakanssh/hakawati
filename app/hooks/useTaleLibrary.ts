@@ -153,18 +153,23 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
 
   const deleteLibraryTale = useCallback(
     async (item: LibraryTaleItem) => {
+      const transport = createSyncTransport({
+        profile,
+        accessToken: profile.mode === "hosted" ? accessToken.trim() : undefined,
+      });
       if (item.source === "local") {
+        if (item.sync && canReachProfile) {
+          try {
+            await deleteRemoteTale(transport, item.sync.remoteTaleId);
+          } catch (error) {
+            setRemoteError(error);
+          }
+        }
         await local.deleteTale(item.localTale.id);
+        await refresh();
         return;
       }
-      await deleteRemoteTale(
-        createSyncTransport({
-          profile,
-          accessToken:
-            profile.mode === "hosted" ? accessToken.trim() : undefined,
-        }),
-        item.remoteTale.id,
-      );
+      await deleteRemoteTale(transport, item.remoteTale.id);
       await refresh();
     },
     [accessToken, local, profile, refresh],

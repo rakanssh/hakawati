@@ -478,6 +478,107 @@ describe("useTaleLibrary", () => {
 
     harness.cleanup();
   });
+
+  it("attempts cloud delete when deleting a linked local tale", async () => {
+    const localDelete = vi.fn();
+    taleHookMocks.useTalesList.mockReturnValue({
+      items: [localTale("local-1")],
+      page: 1,
+      limit: 6,
+      total: 1,
+      setPage: vi.fn(),
+      setLimit: vi.fn(),
+      loading: false,
+      error: null,
+      refresh: vi.fn(),
+      loadIntoGame: vi.fn(),
+      deleteTale: localDelete,
+      saveAsScenario: vi.fn(),
+    });
+    syncRepoMocks.getSyncProfile.mockResolvedValue({ enabled: true });
+    syncRepoMocks.listTaleSyncStates.mockResolvedValue([
+      {
+        profileId: "hosted",
+        localTaleId: "local-1",
+        remoteTaleId: "remote-1",
+        contentRev: "2",
+        metadataRev: "3",
+        lastSyncedAt: 1,
+        pendingStatus: "idle",
+        lastErrorCode: null,
+      },
+    ]);
+    const harness = renderHarness();
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      await harness.controls.deleteLibraryTale(harness.controls.items[0]);
+    });
+
+    expect(syncServiceMocks.deleteRemoteTale).toHaveBeenCalledWith(
+      {},
+      "remote-1",
+    );
+    expect(localDelete).toHaveBeenCalledWith("local-1");
+
+    harness.cleanup();
+  });
+
+  it("does not let remote delete failure block linked local tale deletion", async () => {
+    const localDelete = vi.fn();
+    taleHookMocks.useTalesList.mockReturnValue({
+      items: [localTale("local-1")],
+      page: 1,
+      limit: 6,
+      total: 1,
+      setPage: vi.fn(),
+      setLimit: vi.fn(),
+      loading: false,
+      error: null,
+      refresh: vi.fn(),
+      loadIntoGame: vi.fn(),
+      deleteTale: localDelete,
+      saveAsScenario: vi.fn(),
+    });
+    syncRepoMocks.getSyncProfile.mockResolvedValue({ enabled: true });
+    syncRepoMocks.listTaleSyncStates.mockResolvedValue([
+      {
+        profileId: "hosted",
+        localTaleId: "local-1",
+        remoteTaleId: "remote-1",
+        contentRev: "2",
+        metadataRev: "3",
+        lastSyncedAt: 1,
+        pendingStatus: "idle",
+        lastErrorCode: null,
+      },
+    ]);
+    syncServiceMocks.deleteRemoteTale.mockRejectedValueOnce(
+      new Error("offline"),
+    );
+    const harness = renderHarness();
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      await harness.controls.deleteLibraryTale(harness.controls.items[0]);
+    });
+
+    expect(syncServiceMocks.deleteRemoteTale).toHaveBeenCalledWith(
+      {},
+      "remote-1",
+    );
+    expect(localDelete).toHaveBeenCalledWith("local-1");
+
+    harness.cleanup();
+  });
 });
 
 function localTale(id: string): TaleHead {
