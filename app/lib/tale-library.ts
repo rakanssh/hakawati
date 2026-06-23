@@ -9,6 +9,7 @@ export type LibraryTaleItem =
       sync?: {
         profileId: string;
         remoteTaleId: string;
+        metadataRev: string | null;
         status: TaleSyncState["pendingStatus"];
         lastErrorCode: string | null;
         remoteTale?: RemoteTale;
@@ -44,6 +45,7 @@ export function mergeTaleLibrary(input: {
               sync: {
                 profileId: syncState.profileId,
                 remoteTaleId: syncState.remoteTaleId,
+                metadataRev: syncState.metadataRev,
                 status: syncState.pendingStatus,
                 lastErrorCode: syncState.lastErrorCode,
                 remoteTale: remoteById.get(syncState.remoteTaleId),

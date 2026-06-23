@@ -148,11 +148,15 @@ function TaleCard({
   item,
   loading,
   disabled,
+  syncActive,
+  syncStatusLoading,
   onLoad,
 }: {
   item: LibraryTaleItem;
   loading: boolean;
   disabled: boolean;
+  syncActive: boolean;
+  syncStatusLoading: boolean;
   onLoad: (item: LibraryTaleItem) => void;
 }) {
   const { t } = useLingui();
@@ -173,8 +177,10 @@ function TaleCard({
     : item.localTale.logCount;
   const thumbnail = isRemote ? null : item.localTale.thumbnail;
   const hasConflict =
-    item.source === "local" && item.sync?.status === "conflict";
-  const isSynced = isRemote || Boolean(item.sync);
+    syncActive && item.source === "local" && item.sync?.status === "conflict";
+  const isSynced = syncActive && (isRemote || Boolean(item.sync));
+  const syncStatusUnknown =
+    syncActive && item.source === "local" && !item.sync && syncStatusLoading;
   const statusLabel = hasConflict
     ? t`Needs review`
     : isSynced
@@ -196,18 +202,20 @@ function TaleCard({
               <Trans>Last played: {formatExactDateTime(updatedAt)}</Trans>
             </TooltipContent>
           </Tooltip>
-          <Badge
-            className="absolute right-2 top-2 bg-background/80 text-[10px] text-foreground backdrop-blur"
-            aria-label={statusLabel}
-          >
-            {hasConflict ? (
-              <Trans>Needs review</Trans>
-            ) : isSynced ? (
-              <Cloud className="size-3" />
-            ) : (
-              <VenetianMask className="size-3" />
-            )}
-          </Badge>
+          {syncActive && !syncStatusUnknown ? (
+            <Badge
+              className="absolute right-2 top-2 bg-background/80 text-[10px] text-foreground backdrop-blur"
+              aria-label={statusLabel}
+            >
+              {hasConflict ? (
+                <Trans>Needs review</Trans>
+              ) : isSynced ? (
+                <Cloud className="size-3" />
+              ) : (
+                <VenetianMask className="size-3" />
+              )}
+            </Badge>
+          ) : null}
         </div>
       </CardHeader>
       <CardContent className="flex min-h-28 flex-col gap-1.5 p-2 sm:min-h-32 sm:gap-2 sm:p-2.5">
@@ -812,6 +820,8 @@ export default function Home() {
                     : tale.remoteTale.id)
                 }
                 disabled={hasIssues}
+                syncActive={tales.syncActive}
+                syncStatusLoading={tales.syncStatesLoading}
                 onLoad={handleLoadTale}
               />
             ))}

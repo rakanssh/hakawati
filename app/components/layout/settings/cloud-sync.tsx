@@ -189,6 +189,7 @@ export default function SettingsCloudSync() {
   const cloudConfigured = hostedProfile.baseUrl.length > 0;
   const showSyncControls = hasAnySession || activeSyncMode === "personal";
   const canReviewUndecidedTales =
+    syncEnabled &&
     undecidedTales.length > 0 &&
     (syncUiKind === "signed-in" || syncUiKind === "personal");
 
@@ -354,6 +355,8 @@ export default function SettingsCloudSync() {
         await setSyncProfileDisabled(profile.id, "user_disabled");
         setSyncEnabled(false);
         setDisabledReason("user_disabled");
+        setUndecidedTales([]);
+        setResolverOpen(false);
         setStatus("");
         notifySyncChanged();
       });

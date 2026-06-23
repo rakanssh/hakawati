@@ -71,6 +71,8 @@ export default function TalesHome() {
     loading,
     error,
     remoteError,
+    syncActive,
+    syncStatesLoading,
     loadIntoGame,
     page,
     limit,
@@ -204,8 +206,16 @@ export default function TalesHome() {
             ? (item.remoteTale.entryCount ?? item.remoteTale.turnCount)
             : item.localTale.logCount;
           const hasConflict =
-            item.source === "local" && item.sync?.status === "conflict";
-          const isSynced = isRemote || Boolean(!isRemote && item.sync);
+            syncActive &&
+            item.source === "local" &&
+            item.sync?.status === "conflict";
+          const isSynced =
+            syncActive && (isRemote || Boolean(!isRemote && item.sync));
+          const syncStatusUnknown =
+            syncActive &&
+            item.source === "local" &&
+            !item.sync &&
+            syncStatesLoading;
           const statusLabel = hasConflict
             ? t`Needs review`
             : isSynced
@@ -297,18 +307,20 @@ export default function TalesHome() {
                       </Trans>
                     </TooltipContent>
                   </Tooltip>
-                  <Badge
-                    className="absolute left-1 top-8 z-10 h-5 bg-accent/60 px-2 text-xs text-muted-foreground"
-                    aria-label={statusLabel}
-                  >
-                    {hasConflict ? (
-                      <Trans>Needs review</Trans>
-                    ) : isSynced ? (
-                      <Cloud className="size-3" />
-                    ) : (
-                      <VenetianMask className="size-3" />
-                    )}
-                  </Badge>
+                  {syncActive && !syncStatusUnknown ? (
+                    <Badge
+                      className="absolute left-1 top-8 z-10 h-5 bg-accent/60 px-2 text-xs text-muted-foreground"
+                      aria-label={statusLabel}
+                    >
+                      {hasConflict ? (
+                        <Trans>Needs review</Trans>
+                      ) : isSynced ? (
+                        <Cloud className="size-3" />
+                      ) : (
+                        <VenetianMask className="size-3" />
+                      )}
+                    </Badge>
+                  ) : null}
                 </div>
               </CardHeader>
               <CardContent className="flex h-36 flex-col gap-2 px-2">

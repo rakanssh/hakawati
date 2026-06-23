@@ -5,6 +5,7 @@ import type { TalePackageV1 } from "@/types/export.type";
 import {
   canUploadCoverAssets,
   createSyncTransport,
+  deleteRemoteTale,
   importRemoteTalePackage,
   keepBothTalePackage,
   prepareHostedSync,
@@ -416,6 +417,22 @@ describe("sync transport", () => {
     expect(body.package.assets).toEqual([]);
     expect(body.package.tale.thumbnailAssetId).toBeUndefined();
     expect(body.package.turns[0].updatedAt).toBeUndefined();
+  });
+
+  it("deletes remote tales with baseMetadataRev", async () => {
+    const transport = {
+      get: vi.fn(),
+      post: vi.fn(),
+      put: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn(),
+    };
+
+    await deleteRemoteTale(transport, "remote-tale", 7);
+
+    expect(transport.delete).toHaveBeenCalledWith(
+      "/v1/tales/remote-tale?baseMetadataRev=7",
+    );
   });
 
   it("stores numeric server revisions as text after hosted upload", async () => {

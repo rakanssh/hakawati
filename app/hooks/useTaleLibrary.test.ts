@@ -154,6 +154,18 @@ describe("useTaleLibrary", () => {
       enabled: false,
       disabledReason: "user_disabled",
     });
+    syncRepoMocks.listTaleSyncStates.mockResolvedValue([
+      {
+        profileId: "hosted",
+        localTaleId: "local-1",
+        remoteTaleId: "remote-1",
+        contentRev: "2",
+        metadataRev: "3",
+        lastSyncedAt: 1,
+        pendingStatus: "idle",
+        lastErrorCode: null,
+      },
+    ]);
     const harness = renderHarness();
 
     await act(async () => {
@@ -162,9 +174,12 @@ describe("useTaleLibrary", () => {
     });
 
     expect(syncServiceMocks.listRemoteTales).not.toHaveBeenCalled();
+    expect(syncRepoMocks.listTaleSyncStates).not.toHaveBeenCalled();
+    expect(harness.controls.syncActive).toBe(false);
     expect(harness.controls.items).toMatchObject([
       { source: "local", localTale: { id: "local-1" } },
     ]);
+    expect(harness.controls.items[0]).not.toHaveProperty("sync");
 
     harness.cleanup();
   });
@@ -179,6 +194,8 @@ describe("useTaleLibrary", () => {
     });
 
     expect(syncServiceMocks.listRemoteTales).not.toHaveBeenCalled();
+    expect(syncRepoMocks.listTaleSyncStates).not.toHaveBeenCalled();
+    expect(harness.controls.syncActive).toBe(false);
     expect(harness.controls.items).toMatchObject([
       { source: "local", localTale: { id: "local-1" } },
     ]);
@@ -204,6 +221,35 @@ describe("useTaleLibrary", () => {
     harness.cleanup();
   });
 
+  it("ignores local sync metadata when cloud cannot be reached", async () => {
+    syncStoreState.accessToken = "";
+    syncRepoMocks.listTaleSyncStates.mockResolvedValue([
+      {
+        profileId: "hosted",
+        localTaleId: "local-1",
+        remoteTaleId: "remote-1",
+        contentRev: "2",
+        metadataRev: "3",
+        lastSyncedAt: 1,
+        pendingStatus: "idle",
+        lastErrorCode: null,
+      },
+    ]);
+    const harness = renderHarness();
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(syncRepoMocks.listTaleSyncStates).not.toHaveBeenCalled();
+    expect(syncServiceMocks.listRemoteTales).not.toHaveBeenCalled();
+    expect(harness.controls.syncActive).toBe(false);
+    expect(harness.controls.items[0]).not.toHaveProperty("sync");
+
+    harness.cleanup();
+  });
+
   it("resumes remote fetching when the profile is enabled again", async () => {
     syncRepoMocks.getSyncProfile.mockResolvedValueOnce({
       enabled: false,
@@ -224,6 +270,7 @@ describe("useTaleLibrary", () => {
     });
 
     expect(syncServiceMocks.listRemoteTales).toHaveBeenCalledTimes(1);
+    expect(enabledHarness.controls.syncActive).toBe(true);
     enabledHarness.cleanup();
   });
 
@@ -284,6 +331,42 @@ describe("useTaleLibrary", () => {
         }),
       ]),
     );
+
+    harness.cleanup();
+  });
+
+  it("waits for the first remote list when sync is reachable", async () => {
+    let resolveRemote!: (page: {
+      items: unknown[];
+      nextCursor: string | null;
+    }) => void;
+    syncRepoMocks.getSyncProfile.mockResolvedValue({ enabled: true });
+    syncServiceMocks.listRemoteTales.mockReturnValue(
+      new Promise((resolve) => {
+        resolveRemote = resolve;
+      }),
+    );
+    const harness = renderHarness();
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(harness.controls.loading).toBe(true);
+    expect(harness.controls.items).toEqual([]);
+
+    await act(async () => {
+      resolveRemote({ items: [], nextCursor: null });
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(harness.controls.loading).toBe(false);
+    expect(harness.controls.items).toMatchObject([
+      { source: "local", localTale: { id: "local-1" } },
+    ]);
+    expect(harness.controls.syncActive).toBe(true);
 
     harness.cleanup();
   });
@@ -474,6 +557,7 @@ describe("useTaleLibrary", () => {
     expect(syncServiceMocks.deleteRemoteTale).toHaveBeenCalledWith(
       {},
       "remote-1",
+      1,
     );
 
     harness.cleanup();
@@ -522,7 +606,55 @@ describe("useTaleLibrary", () => {
     expect(syncServiceMocks.deleteRemoteTale).toHaveBeenCalledWith(
       {},
       "remote-1",
+      3,
     );
+    expect(localDelete).toHaveBeenCalledWith("local-1");
+
+    harness.cleanup();
+  });
+
+  it("skips cloud delete when sync is disabled", async () => {
+    const localDelete = vi.fn();
+    taleHookMocks.useTalesList.mockReturnValue({
+      items: [localTale("local-1")],
+      page: 1,
+      limit: 6,
+      total: 1,
+      setPage: vi.fn(),
+      setLimit: vi.fn(),
+      loading: false,
+      error: null,
+      refresh: vi.fn(),
+      loadIntoGame: vi.fn(),
+      deleteTale: localDelete,
+      saveAsScenario: vi.fn(),
+    });
+    syncRepoMocks.getSyncProfile.mockResolvedValue({
+      enabled: false,
+      disabledReason: "user_disabled",
+    });
+    const harness = renderHarness();
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      await harness.controls.deleteLibraryTale({
+        source: "local",
+        localTale: localTale("local-1"),
+        sync: {
+          profileId: "hosted",
+          remoteTaleId: "remote-1",
+          metadataRev: "3",
+          status: "idle",
+          lastErrorCode: null,
+        },
+      });
+    });
+
+    expect(syncServiceMocks.deleteRemoteTale).not.toHaveBeenCalled();
     expect(localDelete).toHaveBeenCalledWith("local-1");
 
     harness.cleanup();
@@ -574,6 +706,7 @@ describe("useTaleLibrary", () => {
     expect(syncServiceMocks.deleteRemoteTale).toHaveBeenCalledWith(
       {},
       "remote-1",
+      3,
     );
     expect(localDelete).toHaveBeenCalledWith("local-1");
 

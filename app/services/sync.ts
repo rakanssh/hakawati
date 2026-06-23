@@ -578,8 +578,11 @@ export async function downloadRemoteTalePackage(
 export async function deleteRemoteTale(
   transport: SyncTransport,
   remoteTaleId: string,
+  baseMetadataRev: number,
 ): Promise<void> {
-  await transport.delete(`/v1/tales/${encodeURIComponent(remoteTaleId)}`);
+  await transport.delete(
+    `/v1/tales/${encodeURIComponent(remoteTaleId)}?baseMetadataRev=${baseMetadataRev}`,
+  );
 }
 
 export function toSyncTalePackage(
