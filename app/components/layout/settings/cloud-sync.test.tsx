@@ -388,7 +388,7 @@ describe("SettingsCloudSync storage usage", () => {
         device("device-3", "Phone"),
       ])
       .mockResolvedValueOnce([device("device-3", "Phone")]);
-    syncServiceMocks.registerSyncDevice.mockRejectedValueOnce(
+    syncServiceMocks.registerSyncDevice.mockRejectedValue(
       new Error("Device limit reached"),
     );
     const view = render();

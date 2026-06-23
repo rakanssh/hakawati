@@ -43,9 +43,14 @@ import {
   canSyncNewTales,
   type NewTaleSyncPolicy,
 } from "@/services/new-tale-sync";
-import { getSyncProfile } from "@/repositories/sync.repository";
 import {
+  getSyncProfile,
+  upsertSyncProfile,
+} from "@/repositories/sync.repository";
+import {
+  createSyncTransport,
   prepareHostedSync,
+  registerSyncDevice,
   signInHostedSync,
   type SyncProfile,
 } from "@/services/sync";
@@ -352,6 +357,7 @@ export default function Home() {
   const tales = useTaleLibrary(1, 6);
   const scenarios = useScenariosList(1, 6);
   const hasLoadedRef = useRef(false);
+  const autoRegisterDeviceKeyRef = useRef("");
   const cloudBaseUrl = useSyncSettingsStore((state) => state.cloudBaseUrl);
   const personalBaseUrl = useSyncSettingsStore(
     (state) => state.personalBaseUrl,
@@ -446,6 +452,11 @@ export default function Home() {
     }),
     [accountId, cloudBaseUrl, deviceId, hostedDeviceIdsByAccountId],
   );
+  const canRegisterHostedDevice =
+    activeSyncMode === "hosted" &&
+    hostedProfile.baseUrl.length > 0 &&
+    deviceName.trim().length > 0 &&
+    devicePlatform.trim().length > 0;
 
   useEffect(() => {
     let disposed = false;
@@ -475,6 +486,58 @@ export default function Home() {
       removeListener();
     };
   }, [hostedProfile.id]);
+
+  useEffect(() => {
+    if (
+      homeSyncProfile?.disabledReason !== "device_limit" ||
+      !canRegisterHostedDevice ||
+      !accountLabel.trim() ||
+      !hostedProfile.deviceId ||
+      accessToken.trim().length === 0 ||
+      (accessTokenExpiresAt !== null && accessTokenExpiresAt <= Date.now())
+    ) {
+      return;
+    }
+
+    const currentDeviceId = hostedProfile.deviceId;
+    const key = `${accountId}:${currentDeviceId}`;
+    if (autoRegisterDeviceKeyRef.current === key) return;
+    autoRegisterDeviceKeyRef.current = key;
+
+    void (async () => {
+      const appVersion = await getVersion().catch(() => "0.15.0");
+      await registerSyncDevice(
+        createSyncTransport({
+          profile: hostedProfile,
+          accessToken: accessToken.trim(),
+        }),
+        {
+          id: currentDeviceId,
+          name: deviceName.trim(),
+          platform: devicePlatform.trim(),
+          appVersion,
+        },
+      );
+      await upsertSyncProfile({
+        ...hostedProfile,
+        enabled: true,
+        disabledReason: null,
+      });
+      setHomeSyncProfile({ enabled: true, disabledReason: null });
+      wakeSyncBackground();
+      notifySyncChanged();
+    })().catch(() => undefined);
+  }, [
+    accessToken,
+    accessTokenExpiresAt,
+    accountId,
+    accountLabel,
+    canRegisterHostedDevice,
+    deviceName,
+    devicePlatform,
+    homeSyncProfile?.disabledReason,
+    hostedProfile,
+  ]);
 
   useEffect(() => {
     let disposed = false;
