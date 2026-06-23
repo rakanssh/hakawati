@@ -15,7 +15,6 @@ type SyncSettingsPersistedState = Pick<
   | "accountId"
   | "accountDisplayName"
   | "accountEmail"
-  | "accountEmailVerified"
   | "hostedDeviceIdsByAccountId"
 >;
 
@@ -32,7 +31,6 @@ export interface SyncSettingsStore {
   accountId: string;
   accountDisplayName: string;
   accountEmail: string;
-  accountEmailVerified: boolean | null;
   hostedDeviceIdsByAccountId: Record<string, string>;
   hostedRefreshFailed: boolean;
   setCloudBaseUrl: (baseUrl: string) => void;
@@ -48,7 +46,6 @@ export interface SyncSettingsStore {
     id?: string | null;
     displayName?: string | null;
     email?: string | null;
-    emailVerified?: boolean | null;
   }) => void;
   setHostedRefreshFailed: (hostedRefreshFailed: boolean) => void;
   clearSession: () => void;
@@ -81,7 +78,6 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
       accountId: "",
       accountDisplayName: "",
       accountEmail: "",
-      accountEmailVerified: null,
       hostedDeviceIdsByAccountId: {},
       hostedRefreshFailed: false,
       setCloudBaseUrl: (cloudBaseUrl) => set({ cloudBaseUrl }),
@@ -113,7 +109,6 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
             accountId,
             accountDisplayName: account.displayName ?? "",
             accountEmail: account.email ?? "",
-            accountEmailVerified: account.emailVerified ?? null,
             hostedDeviceIdsByAccountId,
           };
         }),
@@ -128,7 +123,6 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
           accountId: "",
           accountDisplayName: "",
           accountEmail: "",
-          accountEmailVerified: null,
         }),
       setDeviceId: (deviceId) => set({ deviceId }),
       getOrCreateHostedDeviceId: (accountId) => {
@@ -161,7 +155,6 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
         accountId: state.accountId,
         accountDisplayName: state.accountDisplayName,
         accountEmail: state.accountEmail,
-        accountEmailVerified: state.accountEmailVerified,
         hostedDeviceIdsByAccountId: state.hostedDeviceIdsByAccountId,
       }),
     },

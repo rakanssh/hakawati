@@ -1152,7 +1152,6 @@ describe("sync transport", () => {
       .mockResolvedValueOnce(
         jsonResponse({
           id: "account-1",
-          emailVerified: true,
           emailNormalized: "user@example.com",
           displayName: null,
           avatarUrl: null,
@@ -1228,7 +1227,6 @@ describe("sync transport", () => {
       .mockResolvedValueOnce(
         jsonResponse({
           id: "account-1",
-          emailVerified: true,
           emailNormalized: "user@example.com",
           displayName: null,
           avatarUrl: null,
@@ -1438,7 +1436,6 @@ describe("sync transport", () => {
       put: vi.fn(),
       patch: vi.fn().mockResolvedValue({
         id: "account-1",
-        emailVerified: true,
         emailNormalized: "player@example.com",
         displayName: "Player",
         avatarUrl: null,

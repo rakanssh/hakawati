@@ -134,7 +134,6 @@ export type HostedSignInResult = {
 
 export type HostedAccount = {
   id: string;
-  emailVerified: boolean;
   emailNormalized: string | null;
   displayName: string | null;
   avatarUrl: string | null;

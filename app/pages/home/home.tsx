@@ -632,7 +632,6 @@ export default function Home() {
         id: prepared.account.id,
         displayName: prepared.account.displayName,
         email: prepared.account.emailNormalized,
-        emailVerified: prepared.account.emailVerified,
       });
       setActiveSyncMode("hosted");
       if (!prepared.device) {

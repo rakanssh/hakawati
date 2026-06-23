@@ -13,7 +13,6 @@ describe("useSyncSettingsStore", () => {
       accountId: "",
       accountDisplayName: "",
       accountEmail: "",
-      accountEmailVerified: null,
       hostedDeviceIdsByAccountId: {},
     });
   });

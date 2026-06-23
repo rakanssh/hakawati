@@ -157,9 +157,6 @@ export default function SettingsCloudSync() {
     (state) => state.accountDisplayName,
   );
   const accountEmail = useSyncSettingsStore((state) => state.accountEmail);
-  const accountEmailVerified = useSyncSettingsStore(
-    (state) => state.accountEmailVerified,
-  );
   const setCloudBaseUrl = useSyncSettingsStore(
     (state) => state.setCloudBaseUrl,
   );
@@ -436,7 +433,6 @@ export default function SettingsCloudSync() {
         id: account.id,
         displayName: account.displayName,
         email: account.emailNormalized,
-        emailVerified: account.emailVerified,
       });
       setStatus(t`Profile completed`);
       toast.success(t`Profile completed`);
@@ -490,7 +486,6 @@ export default function SettingsCloudSync() {
         id: result.account.id,
         displayName: result.account.displayName,
         email: result.account.emailNormalized,
-        emailVerified: result.account.emailVerified,
       });
       setSyncEnabled(Boolean(result.device));
       setDisabledReason(result.device ? null : "device_limit");
@@ -560,7 +555,6 @@ export default function SettingsCloudSync() {
         id: result.account.id,
         displayName: result.account.displayName,
         email: result.account.emailNormalized,
-        emailVerified: result.account.emailVerified,
       });
       if (!result.device) {
         setSyncEnabled(false);
@@ -742,14 +736,6 @@ export default function SettingsCloudSync() {
                     <Trans>Not signed in</Trans>
                   )}
                 </div>
-                {accountEmailVerified === false ? (
-                  <div className="flex min-w-0 items-center gap-1.5 text-sm text-amber-700 dark:text-amber-300">
-                    <AlertTriangle className="size-3.5 shrink-0" />
-                    <span className="truncate">
-                      <Trans>Email not verified</Trans>
-                    </span>
-                  </div>
-                ) : null}
               </div>
               <div className="mt-1 grid gap-0.5 text-sm">
                 <div

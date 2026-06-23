@@ -34,7 +34,6 @@ const syncStoreState = vi.hoisted(() => ({
   devicePlatform: "windows",
   accountDisplayName: "Player",
   accountEmail: "player@example.com",
-  accountEmailVerified: true as boolean | null,
   setCloudBaseUrl: vi.fn(),
   setPersonalBaseUrl: vi.fn(),
   setActiveSyncMode: vi.fn(),
