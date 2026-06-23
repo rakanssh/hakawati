@@ -45,4 +45,14 @@ describe("getSyncUiKind", () => {
       }),
     ).toBe("sign-in-required");
   });
+
+  it("shows device limit before sign-in recovery prompts", () => {
+    expect(
+      getSyncUiKind({
+        ...base,
+        accountLabel: "Rakan",
+        disabledReason: "device_limit",
+      }),
+    ).toBe("device-limit");
+  });
 });

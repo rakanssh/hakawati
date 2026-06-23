@@ -6,8 +6,10 @@ import {
   canUploadCoverAssets,
   createSyncTransport,
   deleteRemoteTale,
+  fetchHostedAccountUsage,
   importRemoteTalePackage,
   keepBothTalePackage,
+  listHostedDevices,
   prepareHostedSync,
   pushTaleContentBatch,
   pushTaleMetadataPatch,
@@ -19,6 +21,7 @@ import {
   SyncHttpError,
   toSyncTalePackage,
   updateHostedAccountProfile,
+  unregisterHostedDevice,
   uploadTalePackage,
   applyRemoteTalePackage,
 } from "./sync";
@@ -466,6 +469,50 @@ describe("sync transport", () => {
         metadataRev: "9",
         pendingStatus: "idle",
       }),
+    );
+  });
+
+  it("does not link a local tale when hosted upload rejects an unregistered device", async () => {
+    taleRepo.exportTalePackage.mockResolvedValueOnce(samplePackage());
+    const transport = {
+      get: vi.fn(),
+      post: vi
+        .fn()
+        .mockRejectedValue(
+          new SyncHttpError(
+            "Register this device before using cloud saves",
+            403,
+            "403",
+          ),
+        ),
+      put: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn(),
+    };
+
+    await expect(
+      uploadTalePackage({
+        profile: {
+          id: "cloud",
+          baseUrl: "https://sync.example",
+          mode: "hosted",
+        },
+        transport,
+        localTaleId: "local-tale",
+        idempotencyKey: "idem-upload",
+      }),
+    ).rejects.toThrow("Register this device before using cloud saves");
+
+    expect(syncRepo.upsertTaleSyncState).not.toHaveBeenCalled();
+    expect(syncRepo.setTaleSyncStatus).toHaveBeenCalledWith({
+      profileId: "cloud",
+      localTaleId: "local-tale",
+      pendingStatus: "error",
+      lastErrorCode: "403",
+    });
+    expect(syncRepo.setSyncProfileDisabled).toHaveBeenCalledWith(
+      "cloud",
+      "device_limit",
     );
   });
 
@@ -1402,6 +1449,62 @@ describe("sync transport", () => {
       displayName: "Player",
     });
     expect(account.displayName).toBe("Player");
+  });
+
+  it("fetches hosted account usage", async () => {
+    const transport = {
+      get: vi.fn().mockResolvedValue({
+        tales: { used: 2, limit: 25 },
+        storage: { usedBytes: 1024, limitBytes: 50 * 1024 * 1024 },
+      }),
+      post: vi.fn(),
+      put: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn(),
+    };
+
+    await expect(fetchHostedAccountUsage(transport)).resolves.toEqual({
+      tales: { used: 2, limit: 25 },
+      storage: { usedBytes: 1024, limitBytes: 50 * 1024 * 1024 },
+    });
+    expect(transport.get).toHaveBeenCalledWith("/v1/accounts/me/usage");
+  });
+
+  it("lists hosted devices", async () => {
+    const devices = [
+      {
+        id: "device-1",
+        name: "Laptop",
+        platform: "windows",
+        appVersion: "0.15.2",
+        createdAt: "2026-06-21T00:00:00.000Z",
+        lastSeenAt: "2026-06-22T00:00:00.000Z",
+      },
+    ];
+    const transport = {
+      get: vi.fn().mockResolvedValue(devices),
+      post: vi.fn(),
+      put: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn(),
+    };
+
+    await expect(listHostedDevices(transport)).resolves.toEqual(devices);
+    expect(transport.get).toHaveBeenCalledWith("/v1/devices");
+  });
+
+  it("unregisters a hosted device", async () => {
+    const transport = {
+      get: vi.fn(),
+      post: vi.fn(),
+      put: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn().mockResolvedValue(null),
+    };
+
+    await unregisterHostedDevice(transport, "device/2");
+
+    expect(transport.delete).toHaveBeenCalledWith("/v1/devices/device%2F2");
   });
 
   it("imports a remote tale package and links local sync state", async () => {

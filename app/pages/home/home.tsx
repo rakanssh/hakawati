@@ -423,12 +423,10 @@ export default function Home() {
   const signedIn =
     syncUiKind === "signed-in" ||
     syncUiKind === "profile-incomplete" ||
-    syncUiKind === "sync-off";
-  const accountSettingsState =
-    signedIn ||
-    syncUiKind === "personal" ||
-    syncUiKind === "reconnecting" ||
+    syncUiKind === "sync-off" ||
     syncUiKind === "device-limit";
+  const accountSettingsState =
+    signedIn || syncUiKind === "personal" || syncUiKind === "reconnecting";
 
   const hostedProfile = useMemo<SyncProfile>(
     () => ({
@@ -716,6 +714,8 @@ export default function Home() {
                 <Trans>Restoring session</Trans>
               ) : syncUiKind === "personal" ? (
                 <Trans>Personal server</Trans>
+              ) : syncUiKind === "device-limit" ? (
+                <Trans>Device limit reached</Trans>
               ) : (
                 <Trans>Local profile</Trans>
               )}

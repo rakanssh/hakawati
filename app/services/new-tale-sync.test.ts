@@ -105,7 +105,7 @@ describe("new tale sync preference", () => {
   });
 
   it("keeps hosted tales sync-intended when only cached account state remains", async () => {
-    syncStoreMock.getState.mockReturnValueOnce({
+    syncStoreMock.getState.mockReturnValue({
       activeSyncMode: "hosted",
       cloudBaseUrl: "https://sync.example",
       personalBaseUrl: "",

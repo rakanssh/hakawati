@@ -3,10 +3,12 @@ import {
   getSyncProfile,
   listTaleSyncPreferences,
   listTaleSyncStates,
+  setSyncProfileDisabled,
 } from "@/repositories/sync.repository";
 import {
   createSyncTransport,
   listAllRemoteTales,
+  listHostedDevices,
   syncLinkedTale,
   uploadTalePackage,
   type SyncProfile,
@@ -76,6 +78,13 @@ export function useSyncBackground(dbReady: boolean) {
           accessToken:
             activeProfile.mode === "hosted" ? accessToken.trim() : undefined,
         });
+        if (activeProfile.mode === "hosted") {
+          const devices = await listHostedDevices(transport);
+          if (!devices.some((device) => device.id === activeProfile.deviceId)) {
+            await setSyncProfileDisabled(activeProfile.id, "device_limit");
+            return;
+          }
+        }
         const [remoteTales, syncStates, syncPreferences] = await Promise.all([
           listAllRemoteTales(transport),
           listTaleSyncStates(activeProfile.id),

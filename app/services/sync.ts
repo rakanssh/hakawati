@@ -141,6 +141,17 @@ export type HostedAccount = {
   updatedAt: string;
 };
 
+export type HostedAccountUsage = {
+  tales: {
+    used: number;
+    limit: number;
+  };
+  storage: {
+    usedBytes: number;
+    limitBytes: number;
+  };
+};
+
 export type SyncDevice = {
   id: string;
   name: string;
@@ -168,6 +179,7 @@ export type RemoteTale = {
   metadataRev: number;
   turnCount: number;
   entryCount?: number;
+  storageBytes?: number;
   updatedAt: string;
   lastEntryPreview: string | null;
 };
@@ -203,6 +215,14 @@ function isDeviceLimitError(error: unknown): boolean {
     error.status === 403 &&
     (error.code === "device_limit_exceeded" ||
       error.message.toLowerCase().includes("device limit"))
+  );
+}
+
+function isUnregisteredDeviceError(error: unknown): boolean {
+  return (
+    error instanceof SyncHttpError &&
+    error.status === 403 &&
+    error.message.toLowerCase().includes("register this device")
   );
 }
 
@@ -516,6 +536,14 @@ export async function getHostedAccount(
   return bodyValue(await transport.get("/v1/accounts/me")) as HostedAccount;
 }
 
+export async function fetchHostedAccountUsage(
+  transport: SyncTransport,
+): Promise<HostedAccountUsage> {
+  return bodyValue(
+    await transport.get("/v1/accounts/me/usage"),
+  ) as HostedAccountUsage;
+}
+
 export async function updateHostedAccountProfile(
   transport: SyncTransport,
   input: { displayName: string },
@@ -536,6 +564,19 @@ export async function registerSyncDevice(
       appVersion: device.appVersion,
     }),
   ) as SyncDevice;
+}
+
+export async function listHostedDevices(
+  transport: SyncTransport,
+): Promise<SyncDevice[]> {
+  return (await transport.get("/v1/devices")) as SyncDevice[];
+}
+
+export async function unregisterHostedDevice(
+  transport: SyncTransport,
+  deviceId: string,
+): Promise<void> {
+  await transport.delete(`/v1/devices/${encodeURIComponent(deviceId)}`);
 }
 
 export async function listRemoteTales(
@@ -930,16 +971,6 @@ export async function uploadTalePackage(input: {
   capabilities?: SyncCapabilities;
 }): Promise<void> {
   await upsertSyncProfile(input.profile);
-  await upsertTaleSyncState({
-    profileId: input.profile.id,
-    localTaleId: input.localTaleId,
-    remoteTaleId: input.localTaleId,
-    contentRev: null,
-    metadataRev: null,
-    lastSyncedAt: null,
-    pendingStatus: "push",
-    lastErrorCode: null,
-  });
 
   try {
     const pkg = await exportTalePackage(input.localTaleId);
@@ -965,6 +996,12 @@ export async function uploadTalePackage(input: {
       metadataRev: null,
     });
   } catch (error) {
+    if (
+      input.profile.mode === "hosted" &&
+      (isDeviceLimitError(error) || isUnregisteredDeviceError(error))
+    ) {
+      await setSyncProfileDisabled(input.profile.id, "device_limit");
+    }
     await setTaleSyncFailure(
       {
         profileId: input.profile.id,

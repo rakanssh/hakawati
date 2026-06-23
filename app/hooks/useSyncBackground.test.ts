@@ -11,6 +11,7 @@ const syncRepoMocks = vi.hoisted(() => ({
   getSyncProfile: vi.fn(),
   listTaleSyncPreferences: vi.fn(),
   listTaleSyncStates: vi.fn(),
+  setSyncProfileDisabled: vi.fn(),
 }));
 
 const syncServiceMocks = vi.hoisted(() => {
@@ -31,6 +32,7 @@ const syncServiceMocks = vi.hoisted(() => {
   return {
     createSyncTransport: vi.fn(() => ({ transport: true })),
     listAllRemoteTales,
+    listHostedDevices: vi.fn(),
     listRemoteTales,
     syncLinkedTale: vi.fn(),
     uploadTalePackage: vi.fn(),
@@ -107,8 +109,10 @@ describe("useSyncBackground", () => {
       deviceId: "device-1",
     });
     syncRepoMocks.getSyncProfile.mockResolvedValue({ enabled: true });
+    syncRepoMocks.setSyncProfileDisabled.mockResolvedValue(undefined);
     syncRepoMocks.listTaleSyncPreferences.mockResolvedValue([]);
     syncRepoMocks.listTaleSyncStates.mockResolvedValue([]);
+    syncServiceMocks.listHostedDevices.mockResolvedValue([{ id: "device-1" }]);
     syncServiceMocks.listRemoteTales.mockResolvedValue({
       items: [],
       nextCursor: null,
@@ -173,6 +177,24 @@ describe("useSyncBackground", () => {
     expect(syncServiceMocks.listRemoteTales).toHaveBeenCalledTimes(1);
 
     enabledHarness.cleanup();
+  });
+
+  it("turns hosted sync off when the current device is not registered", async () => {
+    syncServiceMocks.listHostedDevices.mockResolvedValueOnce([
+      { id: "other-device" },
+    ]);
+    const harness = renderHarness();
+
+    await harness.flush();
+
+    expect(syncRepoMocks.setSyncProfileDisabled).toHaveBeenCalledWith(
+      "hosted",
+      "device_limit",
+    );
+    expect(syncServiceMocks.listRemoteTales).not.toHaveBeenCalled();
+    expect(syncServiceMocks.uploadTalePackage).not.toHaveBeenCalled();
+
+    harness.cleanup();
   });
 
   it("uploads sync-preferred local tales that are not linked yet", async () => {

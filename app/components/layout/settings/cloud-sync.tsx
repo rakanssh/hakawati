@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
-import { AlertTriangle, Cloud, LogOut, Power } from "lucide-react";
+import {
+  AlertTriangle,
+  Cloud,
+  CloudOff,
+  HardDrive,
+  LogOut,
+  MonitorSmartphone,
+  Power,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
@@ -22,6 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import {
   SettingsField,
   SettingsPanel,
@@ -36,11 +45,17 @@ import {
 } from "@/repositories/sync.repository";
 import {
   createSyncTransport,
+  fetchHostedAccountUsage,
+  listHostedDevices,
   prepareHostedSync,
   fetchSyncCapabilities,
+  registerSyncDevice,
   signInHostedSync,
   updateHostedAccountProfile,
+  type HostedAccountUsage,
+  type SyncDevice,
   type SyncProfile,
+  unregisterHostedDevice,
 } from "@/services/sync";
 import {
   addSyncChangedListener,
@@ -57,10 +72,14 @@ import {
   listUndecidedTales,
   type UndecidedTale,
 } from "@/services/new-tale-sync";
+import { useTaleLibrary } from "@/hooks/useTaleLibrary";
+import type { LibraryTaleItem } from "@/lib/tale-library";
+import { formatBytes, formatExactDateTime } from "@/lib/utils";
 
 const HOSTED_PROFILE_ID = "hosted";
 const PERSONAL_PROFILE_ID = "personal";
 const PROFILE_UPDATE_TIMEOUT_MS = 15_000;
+const HOSTED_DEVICE_LIMIT = 2;
 
 function avatarInitial(label: string) {
   return (label.trim()[0] ?? "?").toUpperCase();
@@ -77,6 +96,38 @@ function withTimeout<T>(work: Promise<T>, timeoutMs: number): Promise<T> {
     ),
   ]);
 }
+
+function formatMegabytes(bytes: number) {
+  const value = bytes / (1024 * 1024);
+  return `${value.toFixed(value === 0 || value >= 10 ? 0 : 1)} MB`;
+}
+
+function usagePercent(used: number, limit: number) {
+  if (limit <= 0) return 0;
+  return Math.min(100, Math.max(0, (used / limit) * 100));
+}
+
+function cloudStorageItem(item: LibraryTaleItem) {
+  if (item.source === "remote") {
+    return {
+      key: `remote-${item.remoteTale.id}`,
+      name: item.remoteTale.title,
+      updatedAt: item.remoteTale.updatedAt,
+      storageBytes: item.remoteTale.storageBytes ?? 0,
+      item,
+    };
+  }
+  if (!item.sync?.remoteTale) return null;
+  return {
+    key: `local-${item.localTale.id}`,
+    name: item.localTale.name,
+    updatedAt: item.sync.remoteTale.updatedAt,
+    storageBytes: item.sync.remoteTale.storageBytes ?? 0,
+    item,
+  };
+}
+
+type CloudStorageItem = NonNullable<ReturnType<typeof cloudStorageItem>>;
 
 export default function SettingsCloudSync() {
   const { t } = useLingui();
@@ -129,6 +180,22 @@ export default function SettingsCloudSync() {
   const [disabledReason, setDisabledReason] = useState<string | null>(null);
   const [undecidedTales, setUndecidedTales] = useState<UndecidedTale[]>([]);
   const [resolverOpen, setResolverOpen] = useState(false);
+  const [storageOpen, setStorageOpen] = useState(false);
+  const [devicesOpen, setDevicesOpen] = useState(false);
+  const [accountUsage, setAccountUsage] = useState<HostedAccountUsage | null>(
+    null,
+  );
+  const [usageError, setUsageError] = useState<unknown>(null);
+  const [hostedDevices, setHostedDevices] = useState<SyncDevice[]>([]);
+  const [devicesLoading, setDevicesLoading] = useState(false);
+  const [devicesError, setDevicesError] = useState<unknown>(null);
+  const [removingCloudTale, setRemovingCloudTale] = useState<string | null>(
+    null,
+  );
+  const [unregisteringDevice, setUnregisteringDevice] = useState<string | null>(
+    null,
+  );
+  const taleLibrary = useTaleLibrary(1, 100);
 
   const hostedProfile = useMemo<SyncProfile>(
     () => ({
@@ -192,15 +259,41 @@ export default function SettingsCloudSync() {
     syncEnabled &&
     undecidedTales.length > 0 &&
     (syncUiKind === "signed-in" || syncUiKind === "personal");
+  const showHostedUsage =
+    activeSyncMode === "hosted" &&
+    syncEnabled &&
+    syncUiKind === "signed-in" &&
+    hasUsableToken;
+  const showHostedDevices =
+    activeSyncMode === "hosted" &&
+    hasUsableToken &&
+    hostedProfile.baseUrl.length > 0 &&
+    Boolean(accountLabel);
+  const currentDeviceRegistered = hostedDevices.some(
+    (device) => device.id === deviceId.trim(),
+  );
+  const storageItems = useMemo(
+    () =>
+      taleLibrary.items
+        .map(cloudStorageItem)
+        .filter((item): item is CloudStorageItem => item !== null),
+    [taleLibrary.items],
+  );
 
-  useEffect(() => {
-    getSyncProfile(profile.id)
+  const refreshProfileState = useCallback(() => {
+    void getSyncProfile(profile.id)
       .then((stored) => {
         setSyncEnabled(stored?.enabled === true);
         setDisabledReason(stored?.disabledReason ?? null);
       })
       .catch(() => undefined);
   }, [profile.id]);
+
+  useEffect(() => {
+    refreshProfileState();
+    const removeListener = addSyncChangedListener(refreshProfileState);
+    return removeListener;
+  }, [refreshProfileState]);
 
   const refreshUndecidedTales = useCallback(
     async (
@@ -226,6 +319,65 @@ export default function SettingsCloudSync() {
     });
     return removeListener;
   }, [refreshUndecidedTales]);
+
+  const refreshHostedUsage = useCallback(async () => {
+    if (!showHostedUsage) {
+      setAccountUsage(null);
+      setUsageError(null);
+      return;
+    }
+    try {
+      setAccountUsage(
+        await fetchHostedAccountUsage(
+          createSyncTransport({
+            profile: hostedProfile,
+            accessToken: accessToken.trim(),
+          }),
+        ),
+      );
+      setUsageError(null);
+    } catch (error) {
+      setUsageError(error);
+    }
+  }, [accessToken, hostedProfile, showHostedUsage]);
+
+  useEffect(() => {
+    void refreshHostedUsage();
+    const removeListener = addSyncChangedListener(() => {
+      void refreshHostedUsage();
+    });
+    return removeListener;
+  }, [refreshHostedUsage]);
+
+  const refreshHostedDevices = useCallback(async () => {
+    if (!showHostedDevices) {
+      setHostedDevices([]);
+      setDevicesError(null);
+      return [];
+    }
+    setDevicesLoading(true);
+    try {
+      const devices = await listHostedDevices(
+        createSyncTransport({
+          profile: hostedProfile,
+          accessToken: accessToken.trim(),
+        }),
+      );
+      setHostedDevices(devices);
+      setDevicesError(null);
+      return devices;
+    } catch (error) {
+      setDevicesError(error);
+      return [];
+    } finally {
+      setDevicesLoading(false);
+    }
+  }, [accessToken, hostedProfile, showHostedDevices]);
+
+  useEffect(() => {
+    if (!devicesOpen) return;
+    void refreshHostedDevices();
+  }, [devicesOpen, refreshHostedDevices]);
 
   async function signInForToken() {
     const result = await signInHostedSync({ profile: hostedProfile });
@@ -454,6 +606,74 @@ export default function SettingsCloudSync() {
     });
   }
 
+  async function removeCloudStorageItem(item: CloudStorageItem) {
+    setRemovingCloudTale(item.key);
+    try {
+      await taleLibrary.removeLibraryTaleFromCloud(item.item);
+      await refreshHostedUsage();
+      toast.success(t`Removed from cloud`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t`Failed to remove from cloud`,
+      );
+    } finally {
+      setRemovingCloudTale(null);
+    }
+  }
+
+  async function registerCurrentDeviceAfterFreeSlot() {
+    if (!canConnect || !hasUsableToken) return false;
+    const transport = createSyncTransport({
+      profile: hostedProfile,
+      accessToken: accessToken.trim(),
+    });
+    const appVersion = await getVersion().catch(() => "0.15.0");
+    await registerSyncDevice(transport, {
+      id: deviceId.trim(),
+      name: deviceName.trim(),
+      platform: devicePlatform.trim(),
+      appVersion,
+    });
+    await upsertSyncProfile({
+      ...hostedProfile,
+      enabled: true,
+      disabledReason: null,
+    });
+    setSyncEnabled(true);
+    setDisabledReason(null);
+    setStatus(t`Cloud sync connected`);
+    wakeSyncBackground();
+    notifySyncChanged();
+    return true;
+  }
+
+  async function unregisterDevice(device: SyncDevice) {
+    if (device.id === deviceId.trim()) return;
+    setUnregisteringDevice(device.id);
+    try {
+      const transport = createSyncTransport({
+        profile: hostedProfile,
+        accessToken: accessToken.trim(),
+      });
+      await unregisterHostedDevice(transport, device.id);
+      const devices = await listHostedDevices(transport);
+      setHostedDevices(devices);
+      setDevicesError(null);
+      if (!devices.some((item) => item.id === deviceId.trim())) {
+        await registerCurrentDeviceAfterFreeSlot();
+        setHostedDevices(await listHostedDevices(transport));
+      }
+      toast.success(t`Device unregistered`);
+    } catch (error) {
+      setDevicesError(error);
+      toast.error(
+        error instanceof Error ? error.message : t`Failed to update devices`,
+      );
+    } finally {
+      setUnregisteringDevice(null);
+    }
+  }
+
   return (
     <SettingsStack>
       <SettingsPanel
@@ -464,7 +684,7 @@ export default function SettingsCloudSync() {
           </span>
         }
       >
-        <div className="flex flex-col gap-3 border-t border-border/70 pt-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-t border-border/70 pt-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <Avatar className="size-10 border border-border/70">
               <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
@@ -541,10 +761,31 @@ export default function SettingsCloudSync() {
                     {syncUiStatus}
                   </div>
                 ) : null}
+                {showHostedUsage && accountUsage ? (
+                  <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
+                    <HardDrive className="size-3.5 shrink-0" />
+                    <div className="grid min-w-0 gap-0.5">
+                      <span className="truncate">
+                        {accountUsage.tales.used}/{accountUsage.tales.limit}{" "}
+                        <Trans>tales</Trans>
+                      </span>
+                      <span className="truncate">
+                        {formatMegabytes(accountUsage.storage.usedBytes)} /{" "}
+                        {formatMegabytes(accountUsage.storage.limitBytes)}{" "}
+                        <Trans>storage</Trans>
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
+                {showHostedUsage && usageError ? (
+                  <div className="truncate text-muted-foreground">
+                    <Trans>Storage usage is unavailable.</Trans>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 2xl:justify-end">
             {needsBrowserLogin ? (
               <Button
                 variant="default"
@@ -584,6 +825,29 @@ export default function SettingsCloudSync() {
                 disabled={busy !== null}
               >
                 <Trans>Review undecided tales</Trans>
+              </Button>
+            ) : null}
+            {showHostedUsage ? (
+              <Button
+                variant="secondary"
+                onClick={() => setStorageOpen(true)}
+                disabled={busy !== null}
+              >
+                <HardDrive className="size-4" />
+                <Trans>Manage storage</Trans>
+              </Button>
+            ) : null}
+            {showHostedDevices ? (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setDevicesLoading(true);
+                  setDevicesOpen(true);
+                }}
+                disabled={busy !== null}
+              >
+                <MonitorSmartphone className="size-4" />
+                <Trans>Manage devices</Trans>
               </Button>
             ) : null}
           </div>
@@ -731,6 +995,202 @@ export default function SettingsCloudSync() {
               <Trans>Sync all</Trans>
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={storageOpen} onOpenChange={setStorageOpen}>
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              <Trans>Manage storage</Trans>
+            </DialogTitle>
+            <DialogDescription>
+              <Trans>
+                Free up space by removing cloud copies (tales will stay on this
+                device).
+              </Trans>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            {accountUsage ? (
+              <div className="grid gap-3 border border-border/70 p-3 text-sm">
+                <div className="grid gap-1.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-muted-foreground">
+                      <Trans>Tales</Trans>
+                    </span>
+                    <span className="shrink-0 tabular-nums">
+                      {accountUsage.tales.used}/{accountUsage.tales.limit}
+                    </span>
+                  </div>
+                  <Progress
+                    aria-label={t`Tale usage`}
+                    value={usagePercent(
+                      accountUsage.tales.used,
+                      accountUsage.tales.limit,
+                    )}
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-muted-foreground">
+                      <Trans>Storage</Trans>
+                    </span>
+                    <span className="shrink-0 tabular-nums">
+                      {formatMegabytes(accountUsage.storage.usedBytes)} /{" "}
+                      {formatMegabytes(accountUsage.storage.limitBytes)}
+                    </span>
+                  </div>
+                  <Progress
+                    aria-label={t`Storage usage`}
+                    value={usagePercent(
+                      accountUsage.storage.usedBytes,
+                      accountUsage.storage.limitBytes,
+                    )}
+                  />
+                </div>
+              </div>
+            ) : null}
+            {taleLibrary.remoteLoading ? (
+              <div className="text-sm text-muted-foreground">
+                <Trans>Loading...</Trans>
+              </div>
+            ) : null}
+            {taleLibrary.remoteError ? (
+              <div className="text-sm text-muted-foreground">
+                <Trans>Cloud tales are unavailable.</Trans>
+              </div>
+            ) : null}
+            <div className="max-h-[50vh] overflow-y-auto pe-1">
+              <div className="grid gap-2">
+                {storageItems.map((storageItem) => (
+                  <div
+                    key={storageItem.key}
+                    className="grid gap-2 border border-border/70 p-2 sm:grid-cols-[1fr_auto] sm:items-center"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate font-medium">
+                        {storageItem.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatBytes(storageItem.storageBytes)} -{" "}
+                        {formatExactDateTime(storageItem.updatedAt)}
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => void removeCloudStorageItem(storageItem)}
+                      disabled={removingCloudTale !== null}
+                    >
+                      <CloudOff className="size-4" />
+                      <Trans>Remove from cloud</Trans>
+                    </Button>
+                  </div>
+                ))}
+                {!taleLibrary.remoteLoading && storageItems.length === 0 ? (
+                  <div className="border border-dashed border-border/80 p-3 text-center text-sm text-muted-foreground">
+                    <Trans>No cloud tales.</Trans>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={devicesOpen} onOpenChange={setDevicesOpen}>
+        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              <Trans>Manage devices</Trans>
+            </DialogTitle>
+            <DialogDescription>
+              <Trans>Unregister old devices to free a sync slot.</Trans>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid gap-1.5 border border-border/70 p-3 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-muted-foreground">
+                  <Trans>Devices</Trans>
+                </span>
+                <span className="shrink-0 tabular-nums">
+                  {hostedDevices.length}/{HOSTED_DEVICE_LIMIT}
+                </span>
+              </div>
+              <Progress
+                aria-label={t`Device usage`}
+                value={usagePercent(hostedDevices.length, HOSTED_DEVICE_LIMIT)}
+              />
+              {!devicesLoading && !currentDeviceRegistered ? (
+                <div className="text-xs text-muted-foreground">
+                  <Trans>This device is not registered.</Trans>
+                </div>
+              ) : null}
+            </div>
+            {devicesLoading ? (
+              <div className="text-sm text-muted-foreground">
+                <Trans>Loading...</Trans>
+              </div>
+            ) : null}
+            {devicesError ? (
+              <div className="text-sm text-muted-foreground">
+                <Trans>Devices are unavailable.</Trans>
+              </div>
+            ) : null}
+            <div className="max-h-[50vh] overflow-y-auto pe-1">
+              <div className="grid gap-2">
+                {hostedDevices.map((device) => {
+                  const isCurrent = device.id === deviceId.trim();
+                  return (
+                    <div
+                      key={device.id}
+                      className="grid gap-2 border border-border/70 p-2 sm:grid-cols-[1fr_auto] sm:items-center"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                          <div className="truncate font-medium">
+                            {device.name}
+                          </div>
+                          {isCurrent ? (
+                            <Badge variant="outline">
+                              <Trans>Current</Trans>
+                            </Badge>
+                          ) : null}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {device.platform} - {device.appVersion}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          <Trans>Last seen</Trans>{" "}
+                          {formatExactDateTime(device.lastSeenAt)}
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void unregisterDevice(device)}
+                        disabled={isCurrent || unregisteringDevice !== null}
+                      >
+                        <MonitorSmartphone className="size-4" />
+                        {isCurrent ? (
+                          <Trans>Current device</Trans>
+                        ) : (
+                          <Trans>Unregister</Trans>
+                        )}
+                      </Button>
+                    </div>
+                  );
+                })}
+                {!devicesLoading && hostedDevices.length === 0 ? (
+                  <div className="border border-dashed border-border/80 p-3 text-center text-sm text-muted-foreground">
+                    <Trans>No registered devices.</Trans>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
