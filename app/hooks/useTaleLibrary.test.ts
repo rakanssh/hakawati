@@ -63,6 +63,8 @@ const syncStoreState = vi.hoisted(() => ({
   accessToken: "token",
   accessTokenExpiresAt: null as number | null,
   deviceId: "device-1",
+  accountId: "account-1",
+  hostedDeviceIdsByAccountId: { "account-1": "device-1" },
 }));
 
 vi.mock("@/hooks/useTales", () => taleHookMocks);
@@ -120,6 +122,8 @@ describe("useTaleLibrary", () => {
       accessToken: "token",
       accessTokenExpiresAt: null,
       deviceId: "device-1",
+      accountId: "account-1",
+      hostedDeviceIdsByAccountId: { "account-1": "device-1" },
     });
     taleHookMocks.useTalesList.mockReturnValue({
       items: [localTale("local-1")],

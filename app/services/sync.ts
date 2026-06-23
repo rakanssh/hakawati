@@ -558,7 +558,8 @@ export async function registerSyncDevice(
   device: RegisterSyncDeviceInput,
 ): Promise<SyncDevice> {
   return bodyValue(
-    await transport.put(`/v1/devices/${encodeURIComponent(device.id)}`, {
+    await transport.put("/v1/devices/current", {
+      clientDeviceId: device.id,
       name: device.name,
       platform: device.platform,
       appVersion: device.appVersion,
@@ -927,7 +928,8 @@ function toLocalTalePackage(
 export async function prepareHostedSync(input: {
   profile: SyncProfile;
   accessToken: string;
-  device: RegisterSyncDeviceInput;
+  device: Omit<RegisterSyncDeviceInput, "id">;
+  getDeviceIdForAccount: (accountId: string) => string;
 }): Promise<{
   capabilities: SyncCapabilities;
   authConfig: HostedAuthConfig;
@@ -935,19 +937,27 @@ export async function prepareHostedSync(input: {
   device: SyncDevice | null;
   transport: SyncTransport;
 }> {
-  const profile = { ...input.profile, deviceId: input.device.id };
-  await upsertSyncProfile(profile);
-  const publicTransport = createSyncTransport({ profile });
+  const publicTransport = createSyncTransport({ profile: input.profile });
   const capabilities = await fetchSyncCapabilities(publicTransport);
   const authConfig = await fetchHostedAuthConfig(publicTransport);
+  const accountTransport = createSyncTransport({
+    profile: input.profile,
+    accessToken: input.accessToken,
+  });
+  const account = await getHostedAccount(accountTransport);
+  const deviceId = input.getDeviceIdForAccount(account.id);
+  const profile = { ...input.profile, deviceId };
+  await upsertSyncProfile(profile);
   const transport = createSyncTransport({
     profile,
     accessToken: input.accessToken,
   });
-  const account = await getHostedAccount(transport);
   let device: SyncDevice;
   try {
-    device = await registerSyncDevice(transport, input.device);
+    device = await registerSyncDevice(transport, {
+      ...input.device,
+      id: deviceId,
+    });
   } catch (error) {
     if (isDeviceLimitError(error)) {
       await setSyncProfileDisabled(profile.id, "device_limit");

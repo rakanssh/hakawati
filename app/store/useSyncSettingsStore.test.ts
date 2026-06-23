@@ -10,9 +10,11 @@ describe("useSyncSettingsStore", () => {
       accessTokenExpiresAt: null,
       hasRefreshToken: false,
       hostedRefreshFailed: false,
+      accountId: "",
       accountDisplayName: "",
       accountEmail: "",
       accountEmailVerified: null,
+      hostedDeviceIdsByAccountId: {},
     });
   });
 
@@ -38,7 +40,9 @@ describe("useSyncSettingsStore", () => {
       accessTokenExpiresAt: 123,
       hasRefreshToken: true,
       hostedRefreshFailed: true,
+      accountId: "account-1",
       accountDisplayName: "Player",
+      hostedDeviceIdsByAccountId: { "account-1": "device-1" },
     });
 
     useSyncSettingsStore.getState().clearSession();
@@ -48,7 +52,29 @@ describe("useSyncSettingsStore", () => {
       accessToken: "",
       accessTokenExpiresAt: null,
       hasRefreshToken: false,
+      accountId: "",
       accountDisplayName: "",
+      hostedDeviceIdsByAccountId: { "account-1": "device-1" },
+    });
+  });
+
+  it("keeps hosted device ids scoped by account", () => {
+    const first = useSyncSettingsStore
+      .getState()
+      .getOrCreateHostedDeviceId("account-1");
+    const second = useSyncSettingsStore
+      .getState()
+      .getOrCreateHostedDeviceId("account-2");
+
+    expect(first).not.toBe(second);
+    expect(
+      useSyncSettingsStore.getState().getOrCreateHostedDeviceId("account-1"),
+    ).toBe(first);
+    expect(partialize(useSyncSettingsStore.getState())).toMatchObject({
+      hostedDeviceIdsByAccountId: {
+        "account-1": first,
+        "account-2": second,
+      },
     });
   });
 });

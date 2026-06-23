@@ -53,6 +53,10 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
     (state) => state.accessTokenExpiresAt,
   );
   const deviceId = useSyncSettingsStore((state) => state.deviceId);
+  const accountId = useSyncSettingsStore((state) => state.accountId);
+  const hostedDeviceIdsByAccountId = useSyncSettingsStore(
+    (state) => state.hostedDeviceIdsByAccountId,
+  );
   const [remoteTales, setRemoteTales] = useState<RemoteTale[]>([]);
   const [syncStates, setSyncStates] = useState<TaleSyncState[]>([]);
   const [syncStatesHydrated, setSyncStatesHydrated] = useState(false);
@@ -70,9 +74,21 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
           ? personalBaseUrl.trim()
           : cloudBaseUrl.trim(),
       mode: activeSyncMode,
-      deviceId: activeSyncMode === "hosted" ? deviceId.trim() : null,
+      deviceId:
+        activeSyncMode === "hosted"
+          ? accountId
+            ? (hostedDeviceIdsByAccountId[accountId] ?? deviceId).trim()
+            : deviceId.trim()
+          : null,
     }),
-    [activeSyncMode, cloudBaseUrl, deviceId, personalBaseUrl],
+    [
+      accountId,
+      activeSyncMode,
+      cloudBaseUrl,
+      deviceId,
+      hostedDeviceIdsByAccountId,
+      personalBaseUrl,
+    ],
   );
   const tokenExpired =
     accessTokenExpiresAt !== null && accessTokenExpiresAt <= Date.now();

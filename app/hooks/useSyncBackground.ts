@@ -31,6 +31,10 @@ export function useSyncBackground(dbReady: boolean) {
     (state) => state.accessTokenExpiresAt,
   );
   const deviceId = useSyncSettingsStore((state) => state.deviceId);
+  const accountId = useSyncSettingsStore((state) => state.accountId);
+  const hostedDeviceIdsByAccountId = useSyncSettingsStore(
+    (state) => state.hostedDeviceIdsByAccountId,
+  );
   const runningRef = useRef(false);
   const rerunRef = useRef(false);
 
@@ -43,9 +47,21 @@ export function useSyncBackground(dbReady: boolean) {
           ? personalBaseUrl.trim()
           : cloudBaseUrl.trim(),
       mode: activeSyncMode,
-      deviceId: activeSyncMode === "hosted" ? deviceId.trim() : null,
+      deviceId:
+        activeSyncMode === "hosted"
+          ? accountId
+            ? (hostedDeviceIdsByAccountId[accountId] ?? deviceId).trim()
+            : deviceId.trim()
+          : null,
     }),
-    [activeSyncMode, cloudBaseUrl, deviceId, personalBaseUrl],
+    [
+      accountId,
+      activeSyncMode,
+      cloudBaseUrl,
+      deviceId,
+      hostedDeviceIdsByAccountId,
+      personalBaseUrl,
+    ],
   );
 
   const syncOnce = useCallback(

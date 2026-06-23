@@ -23,6 +23,8 @@ const syncStoreState = vi.hoisted(() => ({
   accessTokenExpiresAt: Date.now() - 1,
   hasRefreshToken: true,
   deviceId: "device-1",
+  accountId: "account-1",
+  hostedDeviceIdsByAccountId: { "account-1": "device-1" },
   setAccessToken: vi.fn(),
   setHasRefreshToken: vi.fn(),
   setHostedRefreshFailed: vi.fn(),
@@ -80,6 +82,8 @@ describe("useHostedTokenRefresh", () => {
       accessTokenExpiresAt: Date.now() - 1,
       hasRefreshToken: true,
       deviceId: "device-1",
+      accountId: "account-1",
+      hostedDeviceIdsByAccountId: { "account-1": "device-1" },
     });
     syncRepoMocks.getSyncProfile.mockResolvedValue({ enabled: true });
     secretStoreMocks.getHostedRefreshToken.mockResolvedValue("refresh-token");

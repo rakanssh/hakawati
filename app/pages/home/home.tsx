@@ -368,6 +368,10 @@ export default function Home() {
     (state) => state.hostedRefreshFailed,
   );
   const deviceId = useSyncSettingsStore((state) => state.deviceId);
+  const accountId = useSyncSettingsStore((state) => state.accountId);
+  const hostedDeviceIdsByAccountId = useSyncSettingsStore(
+    (state) => state.hostedDeviceIdsByAccountId,
+  );
   const deviceName = useSyncSettingsStore((state) => state.deviceName);
   const devicePlatform = useSyncSettingsStore((state) => state.devicePlatform);
   const accountDisplayName = useSyncSettingsStore(
@@ -376,6 +380,9 @@ export default function Home() {
   const accountEmail = useSyncSettingsStore((state) => state.accountEmail);
   const setAccessToken = useSyncSettingsStore((state) => state.setAccessToken);
   const setAccount = useSyncSettingsStore((state) => state.setAccount);
+  const getOrCreateHostedDeviceId = useSyncSettingsStore(
+    (state) => state.getOrCreateHostedDeviceId,
+  );
   const setActiveSyncMode = useSyncSettingsStore(
     (state) => state.setActiveSyncMode,
   );
@@ -433,9 +440,11 @@ export default function Home() {
       id: HOSTED_PROFILE_ID,
       baseUrl: cloudBaseUrl.trim(),
       mode: "hosted",
-      deviceId: deviceId.trim(),
+      deviceId: accountId
+        ? (hostedDeviceIdsByAccountId[accountId] ?? deviceId).trim()
+        : deviceId.trim(),
     }),
-    [cloudBaseUrl, deviceId],
+    [accountId, cloudBaseUrl, deviceId, hostedDeviceIdsByAccountId],
   );
 
   useEffect(() => {
@@ -549,13 +558,14 @@ export default function Home() {
         profile: hostedProfile,
         accessToken: result.accessToken,
         device: {
-          id: deviceId.trim(),
           name: deviceName.trim(),
           platform: devicePlatform.trim(),
           appVersion,
         },
+        getDeviceIdForAccount: getOrCreateHostedDeviceId,
       });
       setAccount({
+        id: prepared.account.id,
         displayName: prepared.account.displayName,
         email: prepared.account.emailNormalized,
         emailVerified: prepared.account.emailVerified,

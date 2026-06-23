@@ -13,6 +13,7 @@ import {
   prepareHostedSync,
   pushTaleContentBatch,
   pushTaleMetadataPatch,
+  registerSyncDevice,
   refreshHostedSync,
   replaceRemoteTalePackage,
   remoteTaleChanged,
@@ -1178,11 +1179,11 @@ describe("sync transport", () => {
       },
       accessToken: "token",
       device: {
-        id: "device-1",
         name: "Laptop",
         platform: "windows",
         appVersion: "0.15.0",
       },
+      getDeviceIdForAccount: vi.fn(() => "device-1"),
     });
 
     expect(result.account.id).toBe("account-1");
@@ -1195,12 +1196,18 @@ describe("sync transport", () => {
     );
     expect(http.fetch).toHaveBeenNthCalledWith(
       4,
-      "https://sync.example/v1/devices/device-1",
+      "https://sync.example/v1/devices/current",
       expect.objectContaining({
         method: "PUT",
         headers: expect.objectContaining({
           Authorization: "Bearer token",
           "X-Hakawati-Device-Id": "device-1",
+        }),
+        body: JSON.stringify({
+          clientDeviceId: "device-1",
+          name: "Laptop",
+          platform: "windows",
+          appVersion: "0.15.0",
         }),
       }),
     );
@@ -1243,11 +1250,11 @@ describe("sync transport", () => {
       },
       accessToken: "token",
       device: {
-        id: "device-1",
         name: "Laptop",
         platform: "windows",
         appVersion: "0.15.0",
       },
+      getDeviceIdForAccount: vi.fn(() => "device-1"),
     });
 
     expect(result.account.id).toBe("account-1");
@@ -1491,6 +1498,39 @@ describe("sync transport", () => {
 
     await expect(listHostedDevices(transport)).resolves.toEqual(devices);
     expect(transport.get).toHaveBeenCalledWith("/v1/devices");
+  });
+
+  it("registers the current hosted device", async () => {
+    const device = {
+      id: "device-1",
+      name: "Laptop",
+      platform: "windows",
+      appVersion: "0.15.2",
+      createdAt: "2026-06-21T00:00:00.000Z",
+      lastSeenAt: "2026-06-22T00:00:00.000Z",
+    };
+    const transport = {
+      get: vi.fn(),
+      post: vi.fn(),
+      put: vi.fn().mockResolvedValue(device),
+      patch: vi.fn(),
+      delete: vi.fn(),
+    };
+
+    await expect(
+      registerSyncDevice(transport, {
+        id: "device-1",
+        name: "Laptop",
+        platform: "windows",
+        appVersion: "0.15.2",
+      }),
+    ).resolves.toEqual(device);
+    expect(transport.put).toHaveBeenCalledWith("/v1/devices/current", {
+      clientDeviceId: "device-1",
+      name: "Laptop",
+      platform: "windows",
+      appVersion: "0.15.2",
+    });
   });
 
   it("unregisters a hosted device", async () => {

@@ -147,6 +147,10 @@ export default function SettingsCloudSync() {
     (state) => state.hostedRefreshFailed,
   );
   const deviceId = useSyncSettingsStore((state) => state.deviceId);
+  const accountId = useSyncSettingsStore((state) => state.accountId);
+  const hostedDeviceIdsByAccountId = useSyncSettingsStore(
+    (state) => state.hostedDeviceIdsByAccountId,
+  );
   const deviceName = useSyncSettingsStore((state) => state.deviceName);
   const devicePlatform = useSyncSettingsStore((state) => state.devicePlatform);
   const accountDisplayName = useSyncSettingsStore(
@@ -167,6 +171,9 @@ export default function SettingsCloudSync() {
   );
   const setAccessToken = useSyncSettingsStore((state) => state.setAccessToken);
   const setAccount = useSyncSettingsStore((state) => state.setAccount);
+  const getOrCreateHostedDeviceId = useSyncSettingsStore(
+    (state) => state.getOrCreateHostedDeviceId,
+  );
   const clearSession = useSyncSettingsStore((state) => state.clearSession);
   const setDeviceName = useSyncSettingsStore((state) => state.setDeviceName);
   const setDevicePlatform = useSyncSettingsStore(
@@ -202,9 +209,11 @@ export default function SettingsCloudSync() {
       id: HOSTED_PROFILE_ID,
       baseUrl: cloudBaseUrl.trim(),
       mode: "hosted",
-      deviceId: deviceId.trim(),
+      deviceId: accountId
+        ? (hostedDeviceIdsByAccountId[accountId] ?? deviceId).trim()
+        : deviceId.trim(),
     }),
-    [cloudBaseUrl, deviceId],
+    [accountId, cloudBaseUrl, deviceId, hostedDeviceIdsByAccountId],
   );
   const personalProfile = useMemo<SyncProfile>(
     () => ({
@@ -270,7 +279,7 @@ export default function SettingsCloudSync() {
     hostedProfile.baseUrl.length > 0 &&
     Boolean(accountLabel);
   const currentDeviceRegistered = hostedDevices.some(
-    (device) => device.id === deviceId.trim(),
+    (device) => device.id === hostedProfile.deviceId,
   );
   const storageItems = useMemo(
     () =>
@@ -423,6 +432,7 @@ export default function SettingsCloudSync() {
         PROFILE_UPDATE_TIMEOUT_MS,
       );
       setAccount({
+        id: account.id,
         displayName: account.displayName,
         email: account.emailNormalized,
         emailVerified: account.emailVerified,
@@ -465,17 +475,18 @@ export default function SettingsCloudSync() {
         profile: hostedProfile,
         accessToken: token,
         device: {
-          id: deviceId.trim(),
           name: deviceName.trim(),
           platform: devicePlatform.trim(),
           appVersion,
         },
+        getDeviceIdForAccount: getOrCreateHostedDeviceId,
       });
       const label =
         result.account.emailNormalized ??
         result.account.displayName ??
         result.account.id;
       setAccount({
+        id: result.account.id,
         displayName: result.account.displayName,
         email: result.account.emailNormalized,
         emailVerified: result.account.emailVerified,
@@ -538,11 +549,17 @@ export default function SettingsCloudSync() {
         profile: hostedProfile,
         accessToken: token,
         device: {
-          id: deviceId.trim(),
           name: deviceName.trim(),
           platform: devicePlatform.trim(),
           appVersion,
         },
+        getDeviceIdForAccount: getOrCreateHostedDeviceId,
+      });
+      setAccount({
+        id: result.account.id,
+        displayName: result.account.displayName,
+        email: result.account.emailNormalized,
+        emailVerified: result.account.emailVerified,
       });
       if (!result.device) {
         setSyncEnabled(false);
@@ -622,14 +639,16 @@ export default function SettingsCloudSync() {
   }
 
   async function registerCurrentDeviceAfterFreeSlot() {
-    if (!canConnect || !hasUsableToken) return false;
+    if (!canConnect || !hasUsableToken || !hostedProfile.deviceId) {
+      return false;
+    }
     const transport = createSyncTransport({
       profile: hostedProfile,
       accessToken: accessToken.trim(),
     });
     const appVersion = await getVersion().catch(() => "0.15.0");
     await registerSyncDevice(transport, {
-      id: deviceId.trim(),
+      id: hostedProfile.deviceId,
       name: deviceName.trim(),
       platform: devicePlatform.trim(),
       appVersion,
@@ -648,7 +667,7 @@ export default function SettingsCloudSync() {
   }
 
   async function unregisterDevice(device: SyncDevice) {
-    if (device.id === deviceId.trim()) return;
+    if (device.id === hostedProfile.deviceId) return;
     setUnregisteringDevice(device.id);
     try {
       const transport = createSyncTransport({
@@ -659,7 +678,7 @@ export default function SettingsCloudSync() {
       const devices = await listHostedDevices(transport);
       setHostedDevices(devices);
       setDevicesError(null);
-      if (!devices.some((item) => item.id === deviceId.trim())) {
+      if (!devices.some((item) => item.id === hostedProfile.deviceId)) {
         await registerCurrentDeviceAfterFreeSlot();
         setHostedDevices(await listHostedDevices(transport));
       }
@@ -1142,7 +1161,7 @@ export default function SettingsCloudSync() {
             <div className="max-h-[50vh] overflow-y-auto pe-1">
               <div className="grid gap-2">
                 {hostedDevices.map((device) => {
-                  const isCurrent = device.id === deviceId.trim();
+                  const isCurrent = device.id === hostedProfile.deviceId;
                   return (
                     <div
                       key={device.id}

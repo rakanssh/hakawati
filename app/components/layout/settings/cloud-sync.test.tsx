@@ -28,6 +28,8 @@ const syncStoreState = vi.hoisted(() => ({
   hasRefreshToken: true,
   hostedRefreshFailed: false,
   deviceId: "device-1",
+  accountId: "account-1",
+  hostedDeviceIdsByAccountId: { "account-1": "device-1" },
   deviceName: "Laptop",
   devicePlatform: "windows",
   accountDisplayName: "Player",
@@ -38,6 +40,9 @@ const syncStoreState = vi.hoisted(() => ({
   setActiveSyncMode: vi.fn(),
   setAccessToken: vi.fn(),
   setAccount: vi.fn(),
+  getOrCreateHostedDeviceId: vi.fn((accountId: string) =>
+    accountId === "account-1" ? "device-1" : `device-${accountId}`,
+  ),
   clearSession: vi.fn(),
   setDeviceName: vi.fn(),
   setDevicePlatform: vi.fn(),
@@ -176,10 +181,16 @@ describe("SettingsCloudSync storage usage", () => {
       activeSyncMode: "hosted",
       accessToken: "token",
       accessTokenExpiresAt: null,
+      accountId: "account-1",
+      hostedDeviceIdsByAccountId: { "account-1": "device-1" },
       accountDisplayName: "Player",
       accountEmail: "player@example.com",
       hasRefreshToken: true,
     });
+    syncStoreState.getOrCreateHostedDeviceId.mockImplementation(
+      (accountId: string) =>
+        accountId === "account-1" ? "device-1" : `device-${accountId}`,
+    );
     syncRepoMocks.getSyncProfile.mockResolvedValue({
       enabled: true,
       disabledReason: null,

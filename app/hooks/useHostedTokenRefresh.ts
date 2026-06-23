@@ -22,6 +22,10 @@ export function useHostedTokenRefresh(dbReady: boolean) {
     (state) => state.hasRefreshToken,
   );
   const deviceId = useSyncSettingsStore((state) => state.deviceId);
+  const accountId = useSyncSettingsStore((state) => state.accountId);
+  const hostedDeviceIdsByAccountId = useSyncSettingsStore(
+    (state) => state.hostedDeviceIdsByAccountId,
+  );
   const setAccessToken = useSyncSettingsStore((state) => state.setAccessToken);
   const setHasRefreshToken = useSyncSettingsStore(
     (state) => state.setHasRefreshToken,
@@ -36,9 +40,11 @@ export function useHostedTokenRefresh(dbReady: boolean) {
       id: HOSTED_PROFILE_ID,
       baseUrl: cloudBaseUrl.trim(),
       mode: "hosted",
-      deviceId: deviceId.trim(),
+      deviceId: accountId
+        ? (hostedDeviceIdsByAccountId[accountId] ?? deviceId).trim()
+        : deviceId.trim(),
     }),
-    [cloudBaseUrl, deviceId],
+    [accountId, cloudBaseUrl, deviceId, hostedDeviceIdsByAccountId],
   );
 
   useEffect(() => {

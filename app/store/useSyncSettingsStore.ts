@@ -12,9 +12,11 @@ type SyncSettingsPersistedState = Pick<
   | "deviceId"
   | "deviceName"
   | "devicePlatform"
+  | "accountId"
   | "accountDisplayName"
   | "accountEmail"
   | "accountEmailVerified"
+  | "hostedDeviceIdsByAccountId"
 >;
 
 export interface SyncSettingsStore {
@@ -27,9 +29,11 @@ export interface SyncSettingsStore {
   deviceId: string;
   deviceName: string;
   devicePlatform: string;
+  accountId: string;
   accountDisplayName: string;
   accountEmail: string;
   accountEmailVerified: boolean | null;
+  hostedDeviceIdsByAccountId: Record<string, string>;
   hostedRefreshFailed: boolean;
   setCloudBaseUrl: (baseUrl: string) => void;
   setPersonalBaseUrl: (baseUrl: string) => void;
@@ -41,6 +45,7 @@ export interface SyncSettingsStore {
   ) => void;
   setHasRefreshToken: (hasRefreshToken: boolean) => void;
   setAccount: (account: {
+    id?: string | null;
     displayName?: string | null;
     email?: string | null;
     emailVerified?: boolean | null;
@@ -48,6 +53,7 @@ export interface SyncSettingsStore {
   setHostedRefreshFailed: (hostedRefreshFailed: boolean) => void;
   clearSession: () => void;
   setDeviceId: (deviceId: string) => void;
+  getOrCreateHostedDeviceId: (accountId: string) => string;
   setDeviceName: (deviceName: string) => void;
   setDevicePlatform: (devicePlatform: string) => void;
 }
@@ -62,7 +68,7 @@ function defaultDeviceName() {
 
 export const useSyncSettingsStore = create<SyncSettingsStore>()(
   persist<SyncSettingsStore, [], [], SyncSettingsPersistedState>(
-    (set) => ({
+    (set, get) => ({
       cloudBaseUrl: "",
       personalBaseUrl: "",
       activeSyncMode: "hosted",
@@ -72,9 +78,11 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
       deviceId: createDeviceId(),
       deviceName: defaultDeviceName(),
       devicePlatform: defaultDeviceName(),
+      accountId: "",
       accountDisplayName: "",
       accountEmail: "",
       accountEmailVerified: null,
+      hostedDeviceIdsByAccountId: {},
       hostedRefreshFailed: false,
       setCloudBaseUrl: (cloudBaseUrl) => set({ cloudBaseUrl }),
       setPersonalBaseUrl: (personalBaseUrl) => set({ personalBaseUrl }),
@@ -92,10 +100,22 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
         })),
       setHasRefreshToken: (hasRefreshToken) => set({ hasRefreshToken }),
       setAccount: (account) =>
-        set({
-          accountDisplayName: account.displayName ?? "",
-          accountEmail: account.email ?? "",
-          accountEmailVerified: account.emailVerified ?? null,
+        set((state) => {
+          const accountId = account.id ?? state.accountId;
+          const hostedDeviceIdsByAccountId =
+            accountId && !state.hostedDeviceIdsByAccountId[accountId]
+              ? {
+                  ...state.hostedDeviceIdsByAccountId,
+                  [accountId]: createDeviceId(),
+                }
+              : state.hostedDeviceIdsByAccountId;
+          return {
+            accountId,
+            accountDisplayName: account.displayName ?? "",
+            accountEmail: account.email ?? "",
+            accountEmailVerified: account.emailVerified ?? null,
+            hostedDeviceIdsByAccountId,
+          };
         }),
       setHostedRefreshFailed: (hostedRefreshFailed) =>
         set({ hostedRefreshFailed }),
@@ -105,11 +125,24 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
           accessTokenExpiresAt: null,
           hasRefreshToken: false,
           hostedRefreshFailed: false,
+          accountId: "",
           accountDisplayName: "",
           accountEmail: "",
           accountEmailVerified: null,
         }),
       setDeviceId: (deviceId) => set({ deviceId }),
+      getOrCreateHostedDeviceId: (accountId) => {
+        const existing = get().hostedDeviceIdsByAccountId[accountId];
+        if (existing) return existing;
+        const deviceId = createDeviceId();
+        set((state) => ({
+          hostedDeviceIdsByAccountId: {
+            ...state.hostedDeviceIdsByAccountId,
+            [accountId]: deviceId,
+          },
+        }));
+        return deviceId;
+      },
       setDeviceName: (deviceName) => set({ deviceName }),
       setDevicePlatform: (devicePlatform) => set({ devicePlatform }),
     }),
@@ -125,9 +158,11 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
         deviceId: state.deviceId,
         deviceName: state.deviceName,
         devicePlatform: state.devicePlatform,
+        accountId: state.accountId,
         accountDisplayName: state.accountDisplayName,
         accountEmail: state.accountEmail,
         accountEmailVerified: state.accountEmailVerified,
+        hostedDeviceIdsByAccountId: state.hostedDeviceIdsByAccountId,
       }),
     },
   ),

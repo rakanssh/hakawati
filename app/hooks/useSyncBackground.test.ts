@@ -46,6 +46,8 @@ const syncStoreState = vi.hoisted(() => ({
   accessToken: "token",
   accessTokenExpiresAt: null as number | null,
   deviceId: "device-1",
+  accountId: "account-1",
+  hostedDeviceIdsByAccountId: { "account-1": "device-1" },
 }));
 
 vi.mock("@/repositories/sync.repository", () => syncRepoMocks);
@@ -107,6 +109,8 @@ describe("useSyncBackground", () => {
       accessToken: "token",
       accessTokenExpiresAt: null,
       deviceId: "device-1",
+      accountId: "account-1",
+      hostedDeviceIdsByAccountId: { "account-1": "device-1" },
     });
     syncRepoMocks.getSyncProfile.mockResolvedValue({ enabled: true });
     syncRepoMocks.setSyncProfileDisabled.mockResolvedValue(undefined);
