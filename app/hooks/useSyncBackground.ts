@@ -47,6 +47,7 @@ export function useSyncBackground(dbReady: boolean) {
           ? personalBaseUrl.trim()
           : cloudBaseUrl.trim(),
       mode: activeSyncMode,
+      accountId: activeSyncMode === "hosted" ? accountId || null : null,
       deviceId:
         activeSyncMode === "hosted"
           ? accountId
@@ -95,6 +96,7 @@ export function useSyncBackground(dbReady: boolean) {
             activeProfile.mode === "hosted" ? accessToken.trim() : undefined,
         });
         if (activeProfile.mode === "hosted") {
+          if (!activeProfile.accountId) return;
           const devices = await listHostedDevices(transport);
           if (!devices.some((device) => device.id === activeProfile.deviceId)) {
             await setSyncProfileDisabled(activeProfile.id, "device_limit");
@@ -103,8 +105,8 @@ export function useSyncBackground(dbReady: boolean) {
         }
         const [remoteTales, syncStates, syncPreferences] = await Promise.all([
           listAllRemoteTales(transport),
-          listTaleSyncStates(activeProfile.id),
-          listTaleSyncPreferences(activeProfile.id),
+          listTaleSyncStates(activeProfile.id, activeProfile.accountId),
+          listTaleSyncPreferences(activeProfile.id, activeProfile.accountId),
         ]);
         const remoteById = new Map(remoteTales.map((tale) => [tale.id, tale]));
         const stateByLocalId = new Map(

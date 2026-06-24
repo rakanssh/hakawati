@@ -446,6 +446,7 @@ export default function Home() {
       id: HOSTED_PROFILE_ID,
       baseUrl: cloudBaseUrl.trim(),
       mode: "hosted",
+      accountId: accountId || null,
       deviceId: accountId
         ? (hostedDeviceIdsByAccountId[accountId] ?? deviceId).trim()
         : deviceId.trim(),

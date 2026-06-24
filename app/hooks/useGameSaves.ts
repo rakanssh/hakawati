@@ -43,6 +43,7 @@ async function markLinkedTaleForPush(taleId: string) {
     pushableStates.map((state) =>
       setTaleSyncStatus({
         profileId: state.profileId,
+        accountId: state.accountId,
         localTaleId: taleId,
         pendingStatus: "push",
         lastErrorCode: null,

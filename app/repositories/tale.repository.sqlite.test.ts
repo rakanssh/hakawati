@@ -84,6 +84,8 @@ const migrationFiles = [
   "003_add_prompt_components.sql",
   "004_split_tale_storage.sql",
   "005_add_sync_metadata.sql",
+  "006_sync_profile_controls.sql",
+  "007_account_scoped_sync_metadata.sql",
 ];
 
 function applyMigration(db: TestDatabase, index: number) {
@@ -485,6 +487,88 @@ describe("tale repository SQLite storage", () => {
     expect(tale?.stats[0].value).toBe(12);
     expect(tale?.inventory[0].name).toBe("Lantern");
     expect(tale?.undoStack[0].id).toBe("undo-1");
+  });
+
+  it("scopes hosted sync state and preferences by account", async () => {
+    applyMigrations(dbState.current!);
+    const taleId = await createEmptyTale();
+    const {
+      getTaleSyncState,
+      listTaleSyncPreferences,
+      listTaleSyncStates,
+      setTaleSyncPreference,
+      upsertSyncProfile,
+      upsertTaleSyncState,
+    } = await import("./sync.repository");
+
+    await upsertSyncProfile({
+      id: "hosted",
+      baseUrl: "https://sync.example",
+      mode: "hosted",
+      deviceId: "device-1",
+    });
+    await upsertTaleSyncState({
+      profileId: "hosted",
+      accountId: "account-a",
+      localTaleId: taleId,
+      remoteTaleId: "remote-a",
+      contentRev: "1",
+      metadataRev: "1",
+      lastSyncedAt: 1,
+      pendingStatus: "idle",
+      lastErrorCode: null,
+    });
+    await upsertTaleSyncState({
+      profileId: "hosted",
+      accountId: "account-b",
+      localTaleId: taleId,
+      remoteTaleId: "remote-b",
+      contentRev: "2",
+      metadataRev: "2",
+      lastSyncedAt: 2,
+      pendingStatus: "push",
+      lastErrorCode: null,
+    });
+    await setTaleSyncPreference({
+      profileId: "hosted",
+      accountId: "account-a",
+      localTaleId: taleId,
+      policy: "private",
+    });
+    await setTaleSyncPreference({
+      profileId: "hosted",
+      accountId: "account-b",
+      localTaleId: taleId,
+      policy: "sync",
+    });
+
+    expect(
+      (await listTaleSyncStates("hosted", "account-a")).map(
+        (state) => state.remoteTaleId,
+      ),
+    ).toEqual(["remote-a"]);
+    expect(
+      (await listTaleSyncStates("hosted", "account-b")).map(
+        (state) => state.remoteTaleId,
+      ),
+    ).toEqual(["remote-b"]);
+    expect(
+      await getTaleSyncState({
+        profileId: "hosted",
+        accountId: "account-c",
+        localTaleId: taleId,
+      }),
+    ).toBeNull();
+    expect(
+      (await listTaleSyncPreferences("hosted", "account-a")).map(
+        (preference) => preference.policy,
+      ),
+    ).toEqual(["private"]);
+    expect(
+      (await listTaleSyncPreferences("hosted", "account-b")).map(
+        (preference) => preference.policy,
+      ),
+    ).toEqual(["sync"]);
   });
 
   it("rejects turn replacement when requested entry anchors are missing", async () => {

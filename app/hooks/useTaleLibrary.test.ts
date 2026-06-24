@@ -650,6 +650,7 @@ describe("useTaleLibrary", () => {
 
     expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledWith({
       profileId: "hosted",
+      accountId: "account-1",
       localTaleId: "local-1",
       policy: "sync",
     });
@@ -693,10 +694,12 @@ describe("useTaleLibrary", () => {
     );
     expect(syncRepoMocks.deleteTaleSyncState).toHaveBeenCalledWith({
       profileId: "hosted",
+      accountId: "account-1",
       localTaleId: "local-1",
     });
     expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledWith({
       profileId: "hosted",
+      accountId: "account-1",
       localTaleId: "local-1",
       policy: "private",
     });
@@ -740,10 +743,12 @@ describe("useTaleLibrary", () => {
     );
     expect(syncRepoMocks.deleteTaleSyncState).toHaveBeenCalledWith({
       profileId: "hosted",
+      accountId: "account-1",
       localTaleId: "local-imported",
     });
     expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledWith({
       profileId: "hosted",
+      accountId: "account-1",
       localTaleId: "local-imported",
       policy: "private",
     });
@@ -783,10 +788,12 @@ describe("useTaleLibrary", () => {
 
     expect(syncRepoMocks.deleteTaleSyncState).toHaveBeenCalledWith({
       profileId: "hosted",
+      accountId: "account-1",
       localTaleId: "local-1",
     });
     expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledWith({
       profileId: "hosted",
+      accountId: "account-1",
       localTaleId: "local-1",
       policy: "private",
     });

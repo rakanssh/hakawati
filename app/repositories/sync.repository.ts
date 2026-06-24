@@ -14,6 +14,7 @@ export type TaleSyncPolicy = "sync" | "private";
 
 export type TaleSyncState = {
   profileId: string;
+  accountId?: string | null;
   localTaleId: string;
   remoteTaleId: string;
   contentRev: string | null;
@@ -36,6 +37,7 @@ type SyncProfileRow = {
 
 type TaleSyncStateRow = {
   profile_id: string;
+  account_id: string;
   local_tale_id: string;
   remote_tale_id: string;
   content_rev: string | null;
@@ -47,6 +49,7 @@ type TaleSyncStateRow = {
 
 type TaleSyncPreferenceRow = {
   profile_id: string | null;
+  account_id: string;
   local_tale_id: string;
   policy: TaleSyncPolicy;
   created_at: number;
@@ -67,6 +70,7 @@ function mapProfile(row: SyncProfileRow): SyncProfile {
 function mapState(row: TaleSyncStateRow): TaleSyncState {
   return {
     profileId: row.profile_id,
+    accountId: row.account_id || null,
     localTaleId: row.local_tale_id,
     remoteTaleId: row.remote_tale_id,
     contentRev: row.content_rev,
@@ -80,6 +84,7 @@ function mapState(row: TaleSyncStateRow): TaleSyncState {
 function mapPreference(row: TaleSyncPreferenceRow) {
   return {
     profileId: row.profile_id,
+    accountId: row.account_id || null,
     localTaleId: row.local_tale_id,
     policy: row.policy,
     createdAt: row.created_at,
@@ -176,15 +181,16 @@ export async function listSyncProfiles(): Promise<SyncProfile[]> {
 
 export async function getTaleSyncState(input: {
   profileId: string;
+  accountId?: string | null;
   localTaleId: string;
 }): Promise<TaleSyncState | null> {
   return enqueueLocalOperation(async () => {
     const db = await getDb();
     const rows = await db.select<TaleSyncStateRow[]>(
       `SELECT * FROM tale_sync_state
-       WHERE profile_id = ? AND local_tale_id = ?
+       WHERE profile_id = ? AND account_id = ? AND local_tale_id = ?
        LIMIT 1`,
-      [input.profileId, input.localTaleId],
+      [input.profileId, accountScope(input.accountId), input.localTaleId],
     );
     return rows[0] ? mapState(rows[0]) : null;
   });
@@ -192,12 +198,13 @@ export async function getTaleSyncState(input: {
 
 export async function listTaleSyncStates(
   profileId: string,
+  accountId?: string | null,
 ): Promise<TaleSyncState[]> {
   return enqueueLocalOperation(async () => {
     const db = await getDb();
     const rows = await db.select<TaleSyncStateRow[]>(
-      `SELECT * FROM tale_sync_state WHERE profile_id = ?`,
-      [profileId],
+      `SELECT * FROM tale_sync_state WHERE profile_id = ? AND account_id = ?`,
+      [profileId, accountScope(accountId)],
     );
     return rows.map(mapState);
   });
@@ -222,6 +229,7 @@ export async function upsertTaleSyncState(state: TaleSyncState): Promise<void> {
     await db.execute(
       `INSERT INTO tale_sync_state (
          profile_id,
+         account_id,
          local_tale_id,
          remote_tale_id,
          content_rev,
@@ -230,8 +238,8 @@ export async function upsertTaleSyncState(state: TaleSyncState): Promise<void> {
          pending_status,
          last_error_code
        )
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(profile_id, local_tale_id) DO UPDATE SET
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(profile_id, account_id, local_tale_id) DO UPDATE SET
          remote_tale_id = excluded.remote_tale_id,
          content_rev = excluded.content_rev,
          metadata_rev = excluded.metadata_rev,
@@ -240,6 +248,7 @@ export async function upsertTaleSyncState(state: TaleSyncState): Promise<void> {
          last_error_code = excluded.last_error_code`,
       [
         state.profileId,
+        accountScope(state.accountId),
         state.localTaleId,
         state.remoteTaleId,
         state.contentRev,
@@ -254,20 +263,22 @@ export async function upsertTaleSyncState(state: TaleSyncState): Promise<void> {
 
 export async function deleteTaleSyncState(input: {
   profileId: string;
+  accountId?: string | null;
   localTaleId: string;
 }): Promise<void> {
   await enqueueLocalWrite(async () => {
     const db = await getDb();
     await db.execute(
       `DELETE FROM tale_sync_state
-       WHERE profile_id = ? AND local_tale_id = ?`,
-      [input.profileId, input.localTaleId],
+       WHERE profile_id = ? AND account_id = ? AND local_tale_id = ?`,
+      [input.profileId, accountScope(input.accountId), input.localTaleId],
     );
   });
 }
 
 export async function setTaleSyncStatus(input: {
   profileId: string;
+  accountId?: string | null;
   localTaleId: string;
   pendingStatus: TaleSyncStatus;
   lastErrorCode?: string | null;
@@ -277,11 +288,12 @@ export async function setTaleSyncStatus(input: {
     await db.execute(
       `UPDATE tale_sync_state
        SET pending_status = ?, last_error_code = ?
-       WHERE profile_id = ? AND local_tale_id = ?`,
+       WHERE profile_id = ? AND account_id = ? AND local_tale_id = ?`,
       [
         input.pendingStatus,
         input.lastErrorCode ?? null,
         input.profileId,
+        accountScope(input.accountId),
         input.localTaleId,
       ],
     );
@@ -290,6 +302,7 @@ export async function setTaleSyncStatus(input: {
 
 export async function setTaleSyncPreference(input: {
   profileId?: string | null;
+  accountId?: string | null;
   localTaleId: string;
   policy: TaleSyncPolicy;
 }): Promise<void> {
@@ -299,43 +312,64 @@ export async function setTaleSyncPreference(input: {
     await db.execute(
       `INSERT INTO tale_sync_preferences (
          profile_id,
+         account_id,
          local_tale_id,
          policy,
          created_at,
          updated_at
        )
-       VALUES (?, ?, ?, ?, ?)
-       ON CONFLICT(profile_id, local_tale_id) DO UPDATE SET
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(profile_id, account_id, local_tale_id) DO UPDATE SET
          policy = excluded.policy,
          updated_at = excluded.updated_at`,
-      [input.profileId ?? null, input.localTaleId, input.policy, now, now],
+      [
+        input.profileId ?? null,
+        accountScope(input.accountId),
+        input.localTaleId,
+        input.policy,
+        now,
+        now,
+      ],
     );
   });
 }
 
 export async function getTaleSyncPreference(input: {
   profileId?: string | null;
+  accountId?: string | null;
   localTaleId: string;
 }) {
   return enqueueLocalOperation(async () => {
     const db = await getDb();
     const rows = await db.select<TaleSyncPreferenceRow[]>(
       `SELECT * FROM tale_sync_preferences
-       WHERE profile_id IS ? AND local_tale_id = ?
+       WHERE profile_id IS ? AND account_id = ? AND local_tale_id = ?
        LIMIT 1`,
-      [input.profileId ?? null, input.localTaleId],
+      [
+        input.profileId ?? null,
+        accountScope(input.accountId),
+        input.localTaleId,
+      ],
     );
     return rows[0] ? mapPreference(rows[0]) : null;
   });
 }
 
-export async function listTaleSyncPreferences(profileId?: string | null) {
+export async function listTaleSyncPreferences(
+  profileId?: string | null,
+  accountId?: string | null,
+) {
   return enqueueLocalOperation(async () => {
     const db = await getDb();
     const rows = await db.select<TaleSyncPreferenceRow[]>(
-      `SELECT * FROM tale_sync_preferences WHERE profile_id IS ?`,
-      [profileId ?? null],
+      `SELECT * FROM tale_sync_preferences
+       WHERE profile_id IS ? AND account_id = ?`,
+      [profileId ?? null, accountScope(accountId)],
     );
     return rows.map(mapPreference);
   });
+}
+
+function accountScope(accountId?: string | null) {
+  return accountId?.trim() ?? "";
 }

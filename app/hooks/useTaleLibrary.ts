@@ -74,6 +74,7 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
           ? personalBaseUrl.trim()
           : cloudBaseUrl.trim(),
       mode: activeSyncMode,
+      accountId: activeSyncMode === "hosted" ? accountId || null : null,
       deviceId:
         activeSyncMode === "hosted"
           ? accountId
@@ -95,7 +96,8 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
   const hostedTokenOk = accessToken.trim().length > 0 && !tokenExpired;
   const canReachProfile =
     profile.baseUrl.length > 0 &&
-    (profile.mode === "personal" || hostedTokenOk);
+    (profile.mode === "personal" ||
+      (hostedTokenOk && Boolean(profile.accountId)));
 
   const refreshRemote = useCallback(async () => {
     setSyncListReady(!canReachProfile);
@@ -126,7 +128,7 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
       profileEnabled = true;
       setSyncActive(true);
       try {
-        setSyncStates(await listTaleSyncStates(profile.id));
+        setSyncStates(await listTaleSyncStates(profile.id, profile.accountId));
       } catch {
         setSyncStates([]);
       } finally {
@@ -246,13 +248,14 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
       if (!syncActive || item.source !== "local" || item.sync) return;
       await setTaleSyncPreference({
         profileId: profile.id,
+        accountId: profile.accountId,
         localTaleId: item.localTale.id,
         policy: "sync",
       });
       wakeSyncBackground();
       await refresh();
     },
-    [profile.id, refresh, syncActive],
+    [profile.accountId, profile.id, refresh, syncActive],
   );
 
   const removeLibraryTaleFromCloud = useCallback(
@@ -288,9 +291,14 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
         }
       }
 
-      await deleteTaleSyncState({ profileId: profile.id, localTaleId });
+      await deleteTaleSyncState({
+        profileId: profile.id,
+        accountId: profile.accountId,
+        localTaleId,
+      });
       await setTaleSyncPreference({
         profileId: profile.id,
+        accountId: profile.accountId,
         localTaleId,
         policy: "private",
       });

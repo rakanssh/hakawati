@@ -43,6 +43,7 @@ describe("new tale sync preference", () => {
       personalBaseUrl: "",
       accessToken: "token",
       accessTokenExpiresAt: null,
+      accountId: "account-1",
       accountDisplayName: "",
       accountEmail: "",
     });
@@ -62,6 +63,7 @@ describe("new tale sync preference", () => {
 
     expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledWith({
       profileId: "hosted",
+      accountId: "account-1",
       localTaleId: "local-1",
       policy: "sync",
     });
@@ -80,6 +82,7 @@ describe("new tale sync preference", () => {
 
     expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledWith({
       profileId: "hosted",
+      accountId: "account-1",
       localTaleId: "local-1",
       policy: "private",
     });
@@ -111,6 +114,7 @@ describe("new tale sync preference", () => {
       personalBaseUrl: "",
       accessToken: "",
       accessTokenExpiresAt: null,
+      accountId: "account-1",
       accountDisplayName: "",
       accountEmail: "user@example.com",
     });
@@ -119,6 +123,7 @@ describe("new tale sync preference", () => {
 
     expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledWith({
       profileId: "hosted",
+      accountId: "account-1",
       localTaleId: "local-1",
       policy: "sync",
     });
@@ -168,7 +173,7 @@ describe("new tale sync preference", () => {
       { localTaleId: "pending-sync", policy: "sync" },
     ]);
 
-    await expect(listUndecidedTales("hosted")).resolves.toEqual([
+    await expect(listUndecidedTales("hosted", "account-1")).resolves.toEqual([
       {
         id: "undecided",
         name: "Undecided",
@@ -176,20 +181,30 @@ describe("new tale sync preference", () => {
         updatedAt: 30,
       },
     ]);
+    expect(syncRepoMocks.listTaleSyncStates).toHaveBeenCalledWith(
+      "hosted",
+      "account-1",
+    );
+    expect(syncRepoMocks.listTaleSyncPreferences).toHaveBeenCalledWith(
+      "hosted",
+      "account-1",
+    );
   });
 
   it("decides one tale and wakes sync only for sync choices", async () => {
-    await decideTaleSyncPreference("hosted", "local-1", "private");
+    await decideTaleSyncPreference("hosted", "account-1", "local-1", "private");
     expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledWith({
       profileId: "hosted",
+      accountId: "account-1",
       localTaleId: "local-1",
       policy: "private",
     });
     expect(syncWakeMocks.wakeSyncBackground).not.toHaveBeenCalled();
 
-    await decideTaleSyncPreference("hosted", "local-2", "sync");
+    await decideTaleSyncPreference("hosted", "account-1", "local-2", "sync");
     expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledWith({
       profileId: "hosted",
+      accountId: "account-1",
       localTaleId: "local-2",
       policy: "sync",
     });
@@ -199,6 +214,7 @@ describe("new tale sync preference", () => {
   it("decides all tales and wakes sync for sync choices", async () => {
     await decideAllTaleSyncPreferences(
       "hosted",
+      "account-1",
       ["local-1", "local-2"],
       "sync",
     );
@@ -206,11 +222,13 @@ describe("new tale sync preference", () => {
     expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledTimes(2);
     expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledWith({
       profileId: "hosted",
+      accountId: "account-1",
       localTaleId: "local-1",
       policy: "sync",
     });
     expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledWith({
       profileId: "hosted",
+      accountId: "account-1",
       localTaleId: "local-2",
       policy: "sync",
     });

@@ -22,6 +22,7 @@ export type SyncProfile = {
   id: string;
   baseUrl: string;
   mode: SyncMode;
+  accountId?: string | null;
   deviceId?: string | null;
   enabled?: boolean;
   disabledReason?: SyncDisabledReason | null;
@@ -781,7 +782,7 @@ function syncFailureStatus(error: unknown): "conflict" | "error" {
 }
 
 async function setTaleSyncFailure(
-  input: { profileId: string; localTaleId: string },
+  input: { profileId: string; accountId?: string | null; localTaleId: string },
   error: unknown,
 ) {
   await setTaleSyncStatus({
@@ -793,6 +794,7 @@ async function setTaleSyncFailure(
 
 async function setTaleSynced(input: {
   profileId: string;
+  accountId?: string | null;
   localTaleId: string;
   result: Record<string, unknown>;
   remoteTaleId: string;
@@ -801,6 +803,7 @@ async function setTaleSynced(input: {
 }) {
   await upsertTaleSyncState({
     profileId: input.profileId,
+    accountId: input.accountId,
     localTaleId: input.localTaleId,
     remoteTaleId:
       typeof input.result.id === "string"
@@ -823,6 +826,7 @@ export async function syncLinkedTale(input: {
 }): Promise<LinkedTaleSyncResult> {
   const state = await getTaleSyncState({
     profileId: input.profile.id,
+    accountId: input.profile.accountId,
     localTaleId: input.localTaleId,
   });
   if (!state || state.remoteTaleId !== input.remoteTale.id) {
@@ -836,6 +840,7 @@ export async function syncLinkedTale(input: {
   if (remoteChanged && hasLocalPendingWork(state)) {
     await setTaleSyncStatus({
       profileId: input.profile.id,
+      accountId: input.profile.accountId,
       localTaleId: input.localTaleId,
       pendingStatus: "conflict",
       lastErrorCode: "remote_changed",
@@ -853,6 +858,7 @@ export async function syncLinkedTale(input: {
     } catch (error) {
       await setTaleSyncStatus({
         profileId: input.profile.id,
+        accountId: input.profile.accountId,
         localTaleId: input.localTaleId,
         pendingStatus: "error",
         lastErrorCode:
@@ -946,7 +952,7 @@ export async function prepareHostedSync(input: {
   });
   const account = await getHostedAccount(accountTransport);
   const deviceId = input.getDeviceIdForAccount(account.id);
-  const profile = { ...input.profile, deviceId };
+  const profile = { ...input.profile, accountId: account.id, deviceId };
   await upsertSyncProfile(profile);
   const transport = createSyncTransport({
     profile,
@@ -999,6 +1005,7 @@ export async function uploadTalePackage(input: {
     );
     await setTaleSynced({
       profileId: input.profile.id,
+      accountId: input.profile.accountId,
       localTaleId: input.localTaleId,
       result,
       remoteTaleId: input.localTaleId,
@@ -1015,6 +1022,7 @@ export async function uploadTalePackage(input: {
     await setTaleSyncFailure(
       {
         profileId: input.profile.id,
+        accountId: input.profile.accountId,
         localTaleId: input.localTaleId,
       },
       error,
@@ -1033,6 +1041,7 @@ export async function replaceRemoteTalePackage(input: {
 }): Promise<unknown> {
   const state = await getTaleSyncState({
     profileId: input.profile.id,
+    accountId: input.profile.accountId,
     localTaleId: input.localTaleId,
   });
   if (!state) {
@@ -1067,6 +1076,7 @@ export async function replaceRemoteTalePackage(input: {
     );
     await setTaleSynced({
       profileId: input.profile.id,
+      accountId: input.profile.accountId,
       localTaleId: input.localTaleId,
       result,
       remoteTaleId: state.remoteTaleId,
@@ -1078,6 +1088,7 @@ export async function replaceRemoteTalePackage(input: {
     await setTaleSyncFailure(
       {
         profileId: input.profile.id,
+        accountId: input.profile.accountId,
         localTaleId: input.localTaleId,
       },
       error,
@@ -1095,6 +1106,7 @@ export async function pushTaleContentBatch(input: {
 }): Promise<unknown> {
   const state = await getTaleSyncState({
     profileId: input.profile.id,
+    accountId: input.profile.accountId,
     localTaleId: input.localTaleId,
   });
   if (!state) {
@@ -1120,6 +1132,7 @@ export async function pushTaleContentBatch(input: {
     );
     await setTaleSynced({
       profileId: input.profile.id,
+      accountId: input.profile.accountId,
       localTaleId: input.localTaleId,
       result,
       remoteTaleId: state.remoteTaleId,
@@ -1131,6 +1144,7 @@ export async function pushTaleContentBatch(input: {
     await setTaleSyncFailure(
       {
         profileId: input.profile.id,
+        accountId: input.profile.accountId,
         localTaleId: input.localTaleId,
       },
       error,
@@ -1146,6 +1160,7 @@ export async function pushTaleMetadataPatch(input: {
 }): Promise<unknown> {
   const state = await getTaleSyncState({
     profileId: input.profile.id,
+    accountId: input.profile.accountId,
     localTaleId: input.localTaleId,
   });
   if (!state) {
@@ -1167,6 +1182,7 @@ export async function pushTaleMetadataPatch(input: {
     );
     await setTaleSynced({
       profileId: input.profile.id,
+      accountId: input.profile.accountId,
       localTaleId: input.localTaleId,
       result,
       remoteTaleId: state.remoteTaleId,
@@ -1178,6 +1194,7 @@ export async function pushTaleMetadataPatch(input: {
     await setTaleSyncFailure(
       {
         profileId: input.profile.id,
+        accountId: input.profile.accountId,
         localTaleId: input.localTaleId,
       },
       error,
@@ -1231,6 +1248,7 @@ export async function importRemoteTalePackage(input: {
 
   await upsertTaleSyncState({
     profileId: input.profile.id,
+    accountId: input.profile.accountId,
     localTaleId,
     remoteTaleId: remote.id,
     contentRev: rev(remote.contentRev),
@@ -1250,6 +1268,7 @@ export async function applyRemoteTalePackage(input: {
 }): Promise<void> {
   const state = await getTaleSyncState({
     profileId: input.profile.id,
+    accountId: input.profile.accountId,
     localTaleId: input.localTaleId,
   });
   if (!state) {
@@ -1266,6 +1285,7 @@ export async function applyRemoteTalePackage(input: {
   );
   await upsertTaleSyncState({
     profileId: input.profile.id,
+    accountId: input.profile.accountId,
     localTaleId: input.localTaleId,
     remoteTaleId: remote.id,
     contentRev: rev(remote.contentRev),

@@ -25,6 +25,8 @@ export async function canSyncNewTales() {
     settings.activeSyncMode === "personal"
       ? PERSONAL_PROFILE_ID
       : HOSTED_PROFILE_ID;
+  const accountId =
+    settings.activeSyncMode === "hosted" ? settings.accountId || null : null;
   const baseUrl =
     settings.activeSyncMode === "personal"
       ? settings.personalBaseUrl.trim()
@@ -38,6 +40,7 @@ export async function canSyncNewTales() {
   const storedProfile = await getSyncProfile(profileId).catch(() => null);
   return (
     baseUrl.length > 0 &&
+    (settings.activeSyncMode === "personal" || Boolean(accountId)) &&
     (settings.activeSyncMode === "personal" || hostedReady) &&
     storedProfile?.enabled === true
   );
@@ -52,9 +55,12 @@ export async function markNewTaleSyncPreference(
     settings.activeSyncMode === "personal"
       ? PERSONAL_PROFILE_ID
       : HOSTED_PROFILE_ID;
+  const accountId =
+    settings.activeSyncMode === "hosted" ? settings.accountId || null : null;
   if (policy === "private") {
     await setTaleSyncPreference({
       profileId,
+      accountId,
       localTaleId,
       policy: "private",
     });
@@ -65,6 +71,7 @@ export async function markNewTaleSyncPreference(
 
   await setTaleSyncPreference({
     profileId,
+    accountId,
     localTaleId,
     policy: "sync",
   });
@@ -73,6 +80,7 @@ export async function markNewTaleSyncPreference(
 
 export async function listUndecidedTales(
   profileId: string,
+  accountId?: string | null,
 ): Promise<UndecidedTale[]> {
   const first = await getAllTales(1, 100);
   const pages = [first];
@@ -81,8 +89,8 @@ export async function listUndecidedTales(
   }
 
   const [syncStates, syncPreferences] = await Promise.all([
-    listTaleSyncStates(profileId),
-    listTaleSyncPreferences(profileId),
+    listTaleSyncStates(profileId, accountId),
+    listTaleSyncPreferences(profileId, accountId),
   ]);
   const decidedIds = new Set([
     ...syncStates.map((state) => state.localTaleId),
@@ -102,21 +110,23 @@ export async function listUndecidedTales(
 
 export async function decideTaleSyncPreference(
   profileId: string,
+  accountId: string | null | undefined,
   localTaleId: string,
   policy: "sync" | "private",
 ) {
-  await setTaleSyncPreference({ profileId, localTaleId, policy });
+  await setTaleSyncPreference({ profileId, accountId, localTaleId, policy });
   if (policy === "sync") wakeSyncBackground();
 }
 
 export async function decideAllTaleSyncPreferences(
   profileId: string,
+  accountId: string | null | undefined,
   localTaleIds: string[],
   policy: "sync" | "private",
 ) {
   await Promise.all(
     localTaleIds.map((localTaleId) =>
-      setTaleSyncPreference({ profileId, localTaleId, policy }),
+      setTaleSyncPreference({ profileId, accountId, localTaleId, policy }),
     ),
   );
   if (policy === "sync") wakeSyncBackground();

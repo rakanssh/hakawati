@@ -209,6 +209,7 @@ export default function SettingsCloudSync() {
       id: HOSTED_PROFILE_ID,
       baseUrl: cloudBaseUrl.trim(),
       mode: "hosted",
+      accountId: accountId || null,
       deviceId: accountId
         ? (hostedDeviceIdsByAccountId[accountId] ?? deviceId).trim()
         : deviceId.trim(),
@@ -313,7 +314,7 @@ export default function SettingsCloudSync() {
         if (profileId === profile.id) setUndecidedTales([]);
         return [];
       }
-      const tales = await listUndecidedTales(profileId);
+      const tales = await listUndecidedTales(profileId, profile.accountId);
       if (profileId === profile.id || options.open) setUndecidedTales(tales);
       if (options.open && tales.length > 0) setResolverOpen(true);
       return tales;
@@ -607,7 +608,12 @@ export default function SettingsCloudSync() {
 
   async function decideOne(taleId: string, policy: "sync" | "private") {
     await run(`${policy}-${taleId}`, async () => {
-      await decideTaleSyncPreference(profile.id, taleId, policy);
+      await decideTaleSyncPreference(
+        profile.id,
+        profile.accountId,
+        taleId,
+        policy,
+      );
       await refreshUndecidedTales();
       notifySyncChanged();
     });
@@ -616,7 +622,12 @@ export default function SettingsCloudSync() {
   async function decideAll(policy: "sync" | "private") {
     await run(`${policy}-all`, async () => {
       const ids = undecidedTales.map((tale) => tale.id);
-      await decideAllTaleSyncPreferences(profile.id, ids, policy);
+      await decideAllTaleSyncPreferences(
+        profile.id,
+        profile.accountId,
+        ids,
+        policy,
+      );
       setUndecidedTales([]);
       setResolverOpen(false);
       notifySyncChanged();
