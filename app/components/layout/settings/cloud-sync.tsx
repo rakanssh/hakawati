@@ -316,7 +316,7 @@ export default function SettingsCloudSync() {
       if (options.open && tales.length > 0) setResolverOpen(true);
       return tales;
     },
-    [profile.baseUrl.length, profile.id, syncEnabled],
+    [profile.accountId, profile.baseUrl.length, profile.id, syncEnabled],
   );
 
   useEffect(() => {
