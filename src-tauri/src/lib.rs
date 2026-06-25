@@ -59,18 +59,6 @@ pub fn run() {
                 sql: include_str!("../migrations/005_add_sync_metadata.sql"),
                 kind: MigrationKind::Up,
             },
-            Migration {
-                version: 6,
-                description: "sync_profile_controls",
-                sql: include_str!("../migrations/006_sync_profile_controls.sql"),
-                kind: MigrationKind::Up,
-            },
-            Migration {
-                version: 7,
-                description: "account_scoped_sync_metadata",
-                sql: include_str!("../migrations/007_account_scoped_sync_metadata.sql"),
-                kind: MigrationKind::Up,
-            },
         ];
 
         app.handle().plugin(

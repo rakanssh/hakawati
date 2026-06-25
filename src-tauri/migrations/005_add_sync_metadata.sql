@@ -4,6 +4,10 @@ CREATE TABLE
         base_url TEXT NOT NULL,
         mode TEXT NOT NULL CHECK (mode IN ('hosted', 'personal')),
         device_id TEXT,
+        enabled INTEGER NOT NULL DEFAULT 1,
+        disabled_reason TEXT CHECK (
+            disabled_reason IN ('device_limit', 'signed_out', 'user_disabled')
+        ),
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
     );
@@ -11,6 +15,7 @@ CREATE TABLE
 CREATE TABLE
     IF NOT EXISTS tale_sync_state (
         profile_id TEXT NOT NULL,
+        account_id TEXT NOT NULL DEFAULT '',
         local_tale_id TEXT NOT NULL,
         remote_tale_id TEXT NOT NULL,
         content_rev TEXT,
@@ -20,12 +25,32 @@ CREATE TABLE
             pending_status IN ('idle', 'push', 'pull', 'conflict', 'error')
         ),
         last_error_code TEXT,
-        PRIMARY KEY (profile_id, local_tale_id),
+        PRIMARY KEY (profile_id, account_id, local_tale_id),
         FOREIGN KEY (profile_id) REFERENCES sync_profiles (id) ON DELETE CASCADE,
         FOREIGN KEY (local_tale_id) REFERENCES tales (id) ON DELETE CASCADE
     );
 
 CREATE INDEX IF NOT EXISTS idx_tale_sync_state_status ON tale_sync_state (
     profile_id,
+    account_id,
     pending_status
+);
+
+CREATE TABLE
+    IF NOT EXISTS tale_sync_preferences (
+        profile_id TEXT NOT NULL,
+        account_id TEXT NOT NULL DEFAULT '',
+        local_tale_id TEXT NOT NULL,
+        policy TEXT NOT NULL CHECK (policy IN ('sync', 'private')),
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (profile_id, account_id, local_tale_id),
+        FOREIGN KEY (profile_id) REFERENCES sync_profiles (id) ON DELETE CASCADE,
+        FOREIGN KEY (local_tale_id) REFERENCES tales (id) ON DELETE CASCADE
+    );
+
+CREATE INDEX IF NOT EXISTS idx_tale_sync_preferences_policy ON tale_sync_preferences (
+    profile_id,
+    account_id,
+    policy
 );

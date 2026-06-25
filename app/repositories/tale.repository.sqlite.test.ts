@@ -84,8 +84,6 @@ const migrationFiles = [
   "003_add_prompt_components.sql",
   "004_split_tale_storage.sql",
   "005_add_sync_metadata.sql",
-  "006_sync_profile_controls.sql",
-  "007_account_scoped_sync_metadata.sql",
 ];
 
 function applyMigration(db: TestDatabase, index: number) {
