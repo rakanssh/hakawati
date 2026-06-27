@@ -13,7 +13,7 @@ import {
 } from "@/store/useSettingsStore";
 import { useLLM } from "@/hooks/useLLM";
 import { usePersistTale } from "@/hooks/useGameSaves";
-import { LogEntryMode, LogEntryRole } from "@/types/log.type";
+import { LogEntry, LogEntryMode, LogEntryRole } from "@/types/log.type";
 import { LLMAction } from "@/services/llm/schema";
 import { Action } from "@/lib/play-utils";
 
@@ -32,13 +32,35 @@ interface UsePlaySessionReturn {
   handleContinue: () => void;
   handleRetry: () => void;
   handleUndo: () => void;
+  handleRedo: () => void;
   handleStop: () => void;
   executeLlmSend: (
     message: string,
     mode: LogEntryMode,
-    append?: boolean,
-  ) => Promise<void>;
+    options?: ExecuteLlmSendOptions,
+  ) => Promise<LogEntry | null>;
 }
+
+type ExecuteLlmSendOptions = {
+  continueChain?: boolean;
+  persistence?: GenerationPersistence;
+};
+
+type GenerationPersistence =
+  | {
+      type: "new-turn";
+      pendingEntries: LogEntry[];
+      leadingEntries?: LogEntry[];
+      fallbackToAppend?: boolean;
+      cancelEntryCount?: number;
+    }
+  | { type: "continuation"; leadingEntries?: LogEntry[] }
+  | {
+      type: "retry-turn";
+      previousEntries: LogEntry[];
+      leadingEntries?: LogEntry[];
+    }
+  | { type: "retry-entry"; previousEntry: LogEntry };
 
 function isAbortError(error: unknown): boolean {
   if (!error) return false;
@@ -135,6 +157,133 @@ function isRestorableActionMode(
   );
 }
 
+function hasVisibleGeneratedText(entry: LogEntry | null | undefined): boolean {
+  return Boolean(entry?.text.trim());
+}
+
+type GenerationPersistenceActions = {
+  taleId: string;
+  getLog: () => LogEntry[];
+  removeGeneratedPlaceholder: () => void;
+  removeTrailingEntries: (entries?: LogEntry[]) => void;
+  restoreLogEntry: (entry: LogEntry) => void;
+  saveTurn: (
+    taleId: string,
+    entries: LogEntry[],
+    createdAt?: number,
+  ) => Promise<void>;
+  completePendingTurn: (
+    taleId: string,
+    pendingEntries: LogEntry[],
+    entries: LogEntry[],
+    createdAt?: number,
+    fallbackToAppend?: boolean,
+  ) => Promise<void>;
+  retryTurn: (
+    taleId: string,
+    previousEntries: LogEntry[],
+    entries: LogEntry[],
+    createdAt?: number,
+  ) => Promise<void>;
+  retryEntry: (
+    taleId: string,
+    previousEntry: LogEntry,
+    replacementEntry: LogEntry,
+  ) => Promise<void>;
+  undoToEntryCount: (taleId: string, entryCount?: number) => Promise<void>;
+};
+
+async function persistGeneratedResponse({
+  persistence,
+  finalGmEntry,
+  sendAborted,
+  actions,
+}: {
+  persistence: GenerationPersistence;
+  finalGmEntry: LogEntry | null;
+  sendAborted: boolean;
+  actions: GenerationPersistenceActions;
+}): Promise<"saved" | "cancelled" | "missing"> {
+  if (sendAborted && !hasVisibleGeneratedText(finalGmEntry)) {
+    actions.removeGeneratedPlaceholder();
+
+    if (persistence.type === "new-turn") {
+      if (persistence.cancelEntryCount !== undefined) {
+        actions.removeTrailingEntries(
+          persistence.leadingEntries ?? persistence.pendingEntries,
+        );
+        await actions.undoToEntryCount(
+          actions.taleId,
+          persistence.cancelEntryCount,
+        );
+      }
+      return "cancelled";
+    }
+
+    if (persistence.type === "continuation") {
+      actions.removeTrailingEntries(persistence.leadingEntries);
+      return "cancelled";
+    }
+
+    if (persistence.type === "retry-turn") {
+      const restoredEntry = persistence.previousEntries.at(-1);
+      if (restoredEntry) actions.restoreLogEntry(restoredEntry);
+      return "cancelled";
+    }
+
+    actions.restoreLogEntry(persistence.previousEntry);
+    return "cancelled";
+  }
+
+  if (!finalGmEntry) return "missing";
+
+  const latestLog = actions.getLog();
+  const resolveEntries = (entries: LogEntry[] = []) =>
+    entries.map(
+      (candidate) =>
+        latestLog.find((logEntry) => logEntry.id === candidate.id) ?? candidate,
+    );
+
+  if (persistence.type === "new-turn") {
+    const pendingEntries = resolveEntries(persistence.pendingEntries);
+    const leadingEntries = resolveEntries(
+      persistence.leadingEntries ?? persistence.pendingEntries,
+    );
+    await actions.completePendingTurn(
+      actions.taleId,
+      pendingEntries,
+      [...leadingEntries, finalGmEntry],
+      Date.now(),
+      persistence.fallbackToAppend ?? false,
+    );
+    return "saved";
+  }
+
+  if (persistence.type === "continuation") {
+    await actions.saveTurn(actions.taleId, [
+      ...resolveEntries(persistence.leadingEntries),
+      finalGmEntry,
+    ]);
+    return "saved";
+  }
+
+  if (persistence.type === "retry-turn") {
+    await actions.retryTurn(
+      actions.taleId,
+      resolveEntries(persistence.previousEntries),
+      [...resolveEntries(persistence.leadingEntries), finalGmEntry],
+    );
+    return "saved";
+  }
+
+  await actions.retryEntry(
+    actions.taleId,
+    persistence.previousEntry,
+    finalGmEntry,
+  );
+  return "saved";
+}
+
 export function usePlaySession(
   options: UsePlaySessionOptions = {},
 ): UsePlaySessionReturn {
@@ -147,11 +296,21 @@ export function usePlaySession(
   });
 
   const { send, loading, cancel } = useLLM();
-  const { save, saving } = usePersistTale();
+  const {
+    saveTurn,
+    completePendingTurn,
+    retryTurn,
+    editEntry,
+    retryEntry,
+    undoToEntryCount,
+    redoEntry,
+    saving,
+  } = usePersistTale();
   const narratorConfig = useSettingsStore((state) => state.modelRoles.narrator);
   const randomSeed = useSettingsStore((state) => state.randomSeed);
 
-  const { addLog, updateLogEntry, removeLastLogEntry } = useTaleStore();
+  const { addLog, updateLogEntry, removeLastLogEntry, restoreLogEntry } =
+    useTaleStore();
 
   const taleId = useTaleStore((state) => state.id);
 
@@ -160,14 +319,29 @@ export function usePlaySession(
     cancel();
   }, [cancel, loading]);
 
+  const removeTrailingEntries = useCallback(
+    (entries: LogEntry[] = []) => {
+      for (const entry of [...entries].reverse()) {
+        if (useTaleStore.getState().log.at(-1)?.id !== entry.id) continue;
+        removeLastLogEntry();
+      }
+    },
+    [removeLastLogEntry],
+  );
+
   const executeLlmSend = useCallback(
-    async (message: string, mode: LogEntryMode, append = false) => {
+    async (
+      message: string,
+      mode: LogEntryMode,
+      options: ExecuteLlmSendOptions = {},
+    ) => {
       if (!isModelRoleConfigured(narratorConfig)) {
         console.error("Narrator model not configured.");
         toast.error("No narrator model selected. Choose one in Settings.");
-        return;
+        return null;
       }
 
+      const continueChain = options.continueChain ?? false;
       let payloadText = message;
       if (mode === LogEntryMode.CONTINUE) {
         const currentLog = useTaleStore.getState().log;
@@ -176,17 +350,17 @@ export function usePlaySession(
           .find((e) => e.role === LogEntryRole.GM);
         if (!lastGm) {
           console.error("No GM entry to continue.");
-          return;
+          return null;
         }
         payloadText = lastGm.text;
       }
 
       let gmResponseId: string;
-      if (append) {
+      if (continueChain) {
         const lastEntry = useTaleStore.getState().log.at(-1);
         if (!lastEntry || lastEntry.role !== LogEntryRole.GM) {
           console.error("No GM entry to continue.");
-          return;
+          return null;
         }
         const chainId = lastEntry.chainId ?? lastEntry.id;
         gmResponseId = nanoid();
@@ -211,6 +385,8 @@ export function usePlaySession(
       let storyContent = "";
       let thinkingContent = "";
       let rafId: number | null = null;
+      let sendError: unknown = null;
+      let sendAborted = false;
       const flushResponse = () => {
         rafId = null;
         updateLogEntry(gmResponseId, {
@@ -230,7 +406,7 @@ export function usePlaySession(
       };
 
       try {
-        await send(
+        const sendResult = await send(
           { text: payloadText, mode },
           {
             onStoryStream: (storyChunk) => {
@@ -270,6 +446,27 @@ export function usePlaySession(
             },
           },
         );
+        if (sendResult.status === "aborted") {
+          sendAborted = true;
+          sendError = sendResult.error;
+        } else if (sendResult.status === "error") {
+          sendError = sendResult.error;
+        }
+      } catch (error) {
+        sendError = error;
+        if (isAbortError(error)) {
+          sendAborted = true;
+        }
+        if (!isAbortError(error)) {
+          console.error("LLM Error:", error);
+          updateLogEntry(gmResponseId, {
+            error,
+            ...(thinkingContent ? { thinking: thinkingContent } : {}),
+            ...(storyContent.length === 0
+              ? { text: "An error occurred while processing your request." }
+              : {}),
+          });
+        }
       } finally {
         if (rafId !== null) {
           const cancelRaf = globalThis.cancelAnimationFrame;
@@ -284,19 +481,70 @@ export function usePlaySession(
         }
       }
 
+      const persistence: GenerationPersistence = options.persistence ?? {
+        type: "continuation",
+      };
+      const currentLog = useTaleStore.getState().log;
+      const finalGmEntry =
+        currentLog.find((entry) => entry.id === gmResponseId) ?? null;
+      const removeGeneratedPlaceholder = () => {
+        const currentLog = useTaleStore.getState().log;
+        if (currentLog.at(-1)?.id === gmResponseId) {
+          removeLastLogEntry();
+        }
+      };
+      const isEmptyAbort =
+        sendAborted && !hasVisibleGeneratedText(finalGmEntry);
+
       try {
-        await save(taleId);
+        const result = await persistGeneratedResponse({
+          persistence,
+          finalGmEntry,
+          sendAborted,
+          actions: {
+            taleId,
+            getLog: () => useTaleStore.getState().log,
+            removeGeneratedPlaceholder,
+            removeTrailingEntries,
+            restoreLogEntry,
+            saveTurn,
+            completePendingTurn,
+            retryTurn,
+            retryEntry,
+            undoToEntryCount,
+          },
+        });
+        if (result === "cancelled") return null;
+        if (result === "missing") return null;
         onSaveComplete?.();
       } catch (error) {
-        console.error("Failed to save tale:", error);
+        console.error(
+          isEmptyAbort
+            ? "Failed to cancel aborted tale generation:"
+            : "Failed to save tale:",
+          error,
+        );
         toast.error("Failed to save progress");
+        if (isEmptyAbort) return null;
       }
+
+      if (sendError && !isAbortError(sendError)) {
+        return finalGmEntry;
+      }
+      return finalGmEntry;
     },
     [
       narratorConfig,
       addLog,
       updateLogEntry,
-      save,
+      removeLastLogEntry,
+      restoreLogEntry,
+      saveTurn,
+      completePendingTurn,
+      retryTurn,
+      retryEntry,
+      undoToEntryCount,
+      removeTrailingEntries,
       taleId,
       send,
       onSaveComplete,
@@ -304,18 +552,26 @@ export function usePlaySession(
   );
 
   const handleContinue = useCallback(() => {
-    if (loading) return;
+    if (loading || saving) return;
     const lastEntry = useTaleStore.getState().log.at(-1);
     if (lastEntry?.role !== LogEntryRole.GM) return;
+    const nextText = lastEntry.text + " ";
     updateLogEntry(lastEntry.id, {
-      text: lastEntry.text + " ",
+      text: nextText,
     });
-    void executeLlmSend("", LogEntryMode.CONTINUE, true);
-  }, [loading, executeLlmSend, updateLogEntry]);
+    void editEntry(taleId, lastEntry.id, { text: nextText }).catch((error) => {
+      console.error("Failed to save edited log entry:", error);
+      toast.error("Failed to save progress");
+    });
+    void executeLlmSend("", LogEntryMode.CONTINUE, {
+      continueChain: true,
+      persistence: { type: "continuation" },
+    });
+  }, [loading, saving, executeLlmSend, editEntry, taleId, updateLogEntry]);
 
   const handleSubmit = useCallback(async () => {
     if (!input.trim()) return;
-    if (loading) return;
+    if (loading || saving) return;
     if (!isModelRoleConfigured(narratorConfig)) {
       toast.error("No narrator model selected. Choose one in Settings.");
       return;
@@ -328,38 +584,78 @@ export function usePlaySession(
 
     if (logMode === LogEntryMode.STORY) {
       // For "Story" Input, faux GM entry followed by continue prompt.
+      const previousLogCount = useTaleStore.getState().totalLogCount;
       const lastChainId = useTaleStore.getState().log.at(-1)?.chainId;
-      addLog({
+      const storyEntry: LogEntry = {
         id: nanoid(),
         role: LogEntryRole.GM,
-        text: "\n\n" + finalMessage,
+        text: "\n\n" + finalMessage + " ",
         mode: LogEntryMode.STORY,
         chainId: lastChainId,
-      });
+      };
+      addLog(storyEntry);
       setInput("");
-      handleContinue();
+      try {
+        await saveTurn(taleId, [storyEntry]);
+      } catch (error) {
+        console.error("Failed to save pending story entry:", error);
+        removeTrailingEntries([storyEntry]);
+        setInput(input);
+        toast.error("Failed to save progress");
+        return;
+      }
+      void executeLlmSend("", LogEntryMode.CONTINUE, {
+        continueChain: true,
+        persistence: {
+          type: "new-turn",
+          pendingEntries: [storyEntry],
+          leadingEntries: [storyEntry],
+          cancelEntryCount: previousLogCount,
+        },
+      });
     } else {
-      addLog({
+      const previousLogCount = useTaleStore.getState().totalLogCount;
+      const playerEntry: LogEntry = {
         id: nanoid(),
         role: LogEntryRole.PLAYER,
         text: finalMessage,
         mode: logMode,
-      });
+      };
+      addLog(playerEntry);
       setInput("");
-      void executeLlmSend(finalMessage, logMode);
+      try {
+        await saveTurn(taleId, [playerEntry]);
+      } catch (error) {
+        console.error("Failed to save pending player entry:", error);
+        removeTrailingEntries([playerEntry]);
+        setInput(input);
+        toast.error("Failed to save progress");
+        return;
+      }
+      void executeLlmSend(finalMessage, logMode, {
+        persistence: {
+          type: "new-turn",
+          pendingEntries: [playerEntry],
+          leadingEntries: [playerEntry],
+          cancelEntryCount: previousLogCount,
+        },
+      });
     }
   }, [
     input,
     narratorConfig,
     loading,
+    saving,
     action,
     addLog,
+    saveTurn,
     executeLlmSend,
-    handleContinue,
+    removeTrailingEntries,
+    taleId,
   ]);
 
   const handleRetry = useCallback(() => {
-    if (loading) return;
+    if (loading || saving) return;
     randomSeed();
 
     const stateLog = useTaleStore.getState().log;
@@ -375,16 +671,29 @@ export function usePlaySession(
         (lastEntry.chainId ?? lastEntry.id)
     ) {
       removeLastLogEntry();
-      void executeLlmSend("", LogEntryMode.CONTINUE, true);
+      void executeLlmSend("", LogEntryMode.CONTINUE, {
+        continueChain: true,
+        persistence: { type: "retry-entry", previousEntry: lastEntry },
+      });
       return;
     }
     if (prevEntry?.role === LogEntryRole.PLAYER) {
       removeLastLogEntry();
-      void executeLlmSend(prevEntry.text, prevEntry.mode ?? LogEntryMode.STORY);
+      void executeLlmSend(
+        prevEntry.text,
+        prevEntry.mode ?? LogEntryMode.STORY,
+        {
+          persistence: {
+            type: "retry-turn",
+            previousEntries: [prevEntry, lastEntry],
+            leadingEntries: [prevEntry],
+          },
+        },
+      );
       return;
     }
     console.warn("Cannot retry, log state is not as expected.");
-  }, [loading, executeLlmSend, removeLastLogEntry, randomSeed]);
+  }, [loading, saving, executeLlmSend, removeLastLogEntry, randomSeed]);
 
   const handleUndo = useCallback(() => {
     if (loading || saving) return;
@@ -393,6 +702,10 @@ export function usePlaySession(
     if (!lastEntry) return;
 
     useTaleStore.getState().undo();
+    void undoToEntryCount(taleId).catch((error) => {
+      console.error("Failed to save undo:", error);
+      toast.error("Failed to save progress");
+    });
 
     if (lastEntry.role !== LogEntryRole.PLAYER) {
       setInput("");
@@ -408,7 +721,20 @@ export function usePlaySession(
         type: restoredMode,
       }));
     }
-  }, [loading, saving]);
+  }, [loading, saving, taleId, undoToEntryCount]);
+
+  const handleRedo = useCallback(() => {
+    if (loading || saving) return;
+
+    const lastUndone = useTaleStore.getState().undoStack.at(-1);
+    if (!lastUndone) return;
+
+    useTaleStore.getState().redo();
+    void redoEntry(taleId, lastUndone).catch((error) => {
+      console.error("Failed to save redo:", error);
+      toast.error("Failed to save progress");
+    });
+  }, [redoEntry, loading, saving, taleId]);
 
   return {
     input,
@@ -421,6 +747,7 @@ export function usePlaySession(
     handleContinue,
     handleRetry,
     handleUndo,
+    handleRedo,
     handleStop,
     executeLlmSend,
   };

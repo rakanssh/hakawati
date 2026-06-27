@@ -47,6 +47,7 @@ export interface TaleStoreType {
   removeStoryCard: (id: string) => void;
   clearStoryCards: () => void;
   addLog: (log: LogEntry) => void;
+  restoreLogEntry: (log: LogEntry) => void;
   removeLastLogEntry: () => void;
   updateLogEntry: (id: string, updates: Partial<LogEntry>) => void;
   modifyStat: (name: string, value: number) => void;
@@ -201,6 +202,34 @@ const redoEntryActions = (
   return { stats: newStats, inventory: newInventory };
 };
 
+function appendLogEntry(
+  state: TaleStoreType,
+  log: LogEntry,
+): Pick<TaleStoreType, "log" | "totalLogCount" | "oldestLoadedIndex"> {
+  const newLog = [...state.log, log];
+  const newTotalLogCount = state.totalLogCount + 1;
+
+  if (newLog.length > MAX_WINDOW_SIZE) {
+    const entriesToKeep = state.logWindowSize;
+    const trimmed = newLog.slice(-entriesToKeep);
+
+    return {
+      log: trimmed,
+      totalLogCount: newTotalLogCount,
+      oldestLoadedIndex: newTotalLogCount - entriesToKeep,
+    };
+  }
+
+  return {
+    log: newLog,
+    totalLogCount: newTotalLogCount,
+    oldestLoadedIndex: Math.min(
+      state.oldestLoadedIndex,
+      Math.max(0, newTotalLogCount - newLog.length),
+    ),
+  };
+}
+
 export const useTaleStore = create<TaleStoreType>()((set) => ({
   id: uuidv4(),
   gameMode: GameMode.STORY_TELLER,
@@ -289,25 +318,18 @@ export const useTaleStore = create<TaleStoreType>()((set) => ({
   undoStack: [],
   addLog: (log: LogEntry) =>
     set((state) => {
-      const newLog = [...state.log, log];
-      const newTotalLogCount = state.totalLogCount + 1;
-
-      if (newLog.length > MAX_WINDOW_SIZE) {
-        const entriesToKeep = state.logWindowSize;
-        const trimmed = newLog.slice(-entriesToKeep);
-        const newOldestLoadedIndex = newTotalLogCount - entriesToKeep;
-
-        return {
-          log: trimmed,
-          totalLogCount: newTotalLogCount,
-          oldestLoadedIndex: newOldestLoadedIndex,
-          undoStack: [],
-        };
-      }
+      return {
+        ...appendLogEntry(state, log),
+        undoStack: [],
+      };
+    }),
+  restoreLogEntry: (log: LogEntry) =>
+    set((state) => {
+      const stateChanges = redoEntryActions(state, log);
 
       return {
-        log: newLog,
-        totalLogCount: newTotalLogCount,
+        ...stateChanges,
+        ...appendLogEntry(state, log),
         undoStack: [],
       };
     }),
@@ -414,10 +436,17 @@ export const useTaleStore = create<TaleStoreType>()((set) => ({
 
       const newUndoStack = [...state.undoStack, lastLog];
       const limitedUndoStack = newUndoStack.slice(-MAX_UNDO_STACK);
+      const nextLog = state.log.slice(0, -1);
+      const newTotalLogCount = Math.max(0, state.totalLogCount - 1);
 
       return {
         ...stateChanges,
-        log: state.log.slice(0, -1),
+        log: nextLog,
+        totalLogCount: newTotalLogCount,
+        oldestLoadedIndex: Math.min(
+          state.oldestLoadedIndex,
+          Math.max(0, newTotalLogCount - nextLog.length),
+        ),
         undoStack: limitedUndoStack,
       };
     });
@@ -427,10 +456,17 @@ export const useTaleStore = create<TaleStoreType>()((set) => ({
       const lastUndone = state.undoStack[state.undoStack.length - 1];
       if (!lastUndone) return {};
       const stateChanges = redoEntryActions(state, lastUndone);
+      const nextLog = [...state.log, lastUndone];
+      const newTotalLogCount = state.totalLogCount + 1;
 
       return {
         ...stateChanges,
-        log: [...state.log, lastUndone],
+        log: nextLog,
+        totalLogCount: newTotalLogCount,
+        oldestLoadedIndex: Math.min(
+          state.oldestLoadedIndex,
+          Math.max(0, newTotalLogCount - nextLog.length),
+        ),
         undoStack: state.undoStack.slice(0, -1),
       };
     });

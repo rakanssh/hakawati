@@ -25,3 +25,4 @@ THIRD_PARTY_LICENSES*.md
 
 .env
 .env.*
+!.env.example

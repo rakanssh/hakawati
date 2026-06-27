@@ -1,50 +1,240 @@
 import { useCallback, useState, useRef } from "react";
-import { persistCurrentTale, getTaleById } from "@/services/tale.service";
-import { updateTaleDTO } from "@/types/tale.type";
-import { useTaleStore } from "@/store/useTaleStore";
+import {
+  completePendingTaleTurn,
+  commitTaleTurn,
+  editTaleLogEntry,
+  getTaleById,
+  persistCurrentTale,
+  redoTaleLogEntry,
+  retryTaleLogEntry,
+  retryTaleTurn,
+  undoTaleLogToEntryCount,
+  type TaleMutableSnapshot,
+} from "@/services/tale.service";
+import type { LogEntry } from "@/types/log.type";
+import { DEFAULT_WINDOW_SIZE, useTaleStore } from "@/store/useTaleStore";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
+import {
+  listSyncStatesForLocalTale,
+  setTaleSyncStatus,
+} from "@/repositories/sync.repository";
+import { wakeSyncBackground } from "@/services/sync-wakeup";
+
+function snapshotMutableTale(): TaleMutableSnapshot {
+  const state = useTaleStore.getState();
+  return {
+    name: state.name,
+    description: state.description,
+    components: state.components,
+    storyCards: state.storyCards,
+    stats: state.stats,
+    inventory: state.inventory,
+    gameMode: state.gameMode,
+    undoStack: state.undoStack,
+  };
+}
+
+async function markLinkedTaleForPush(taleId: string) {
+  const states = await listSyncStatesForLocalTale(taleId);
+  const pushableStates = states.filter(
+    (state) => state.pendingStatus !== "conflict",
+  );
+  await Promise.all(
+    pushableStates.map((state) =>
+      setTaleSyncStatus({
+        profileId: state.profileId,
+        accountId: state.accountId,
+        localTaleId: taleId,
+        pendingStatus: "push",
+        lastErrorCode: null,
+      }),
+    ),
+  );
+  if (pushableStates.length > 0) wakeSyncBackground();
+}
 
 export function usePersistTale() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [lastSaveSuccess, setLastSaveSuccess] = useState(false);
+  const pendingSaveCountRef = useRef(0);
 
-  const save = useCallback(async (taleId: string) => {
+  const runPersist = useCallback(async (operation: () => Promise<void>) => {
+    pendingSaveCountRef.current += 1;
     setSaving(true);
     setLastSaveSuccess(false);
-    const state = useTaleStore.getState();
-    const tale: updateTaleDTO = {
-      id: taleId,
-      name: state.name,
-      description: state.description,
-      thumbnail: null,
-      components: state.components,
-      storyCards: state.storyCards,
-      stats: state.stats,
-      inventory: state.inventory,
-      log: state.log,
-      gameMode: state.gameMode,
-      undoStack: state.undoStack,
-    };
     setError(null);
     try {
-      await persistCurrentTale({
-        id: taleId,
-        tale,
-        oldestLoadedIndex: state.oldestLoadedIndex,
-        totalLogCount: state.totalLogCount,
-      });
+      await operation();
       setLastSaveSuccess(true);
       setTimeout(() => setLastSaveSuccess(false), 2000);
     } catch (e) {
       setError(e);
       throw e;
     } finally {
-      setSaving(false);
+      pendingSaveCountRef.current = Math.max(
+        0,
+        pendingSaveCountRef.current - 1,
+      );
+      setSaving(pendingSaveCountRef.current > 0);
     }
   }, []);
 
-  return { save, saving, error, lastSaveSuccess } as const;
+  const runTalePersist = useCallback(
+    async (taleId: string, operation: () => Promise<void>) => {
+      await runPersist(async () => {
+        await operation();
+        await markLinkedTaleForPush(taleId);
+      });
+    },
+    [runPersist],
+  );
+
+  const save = useCallback(
+    async (taleId: string) => {
+      await runTalePersist(taleId, () =>
+        persistCurrentTale({
+          id: taleId,
+          tale: snapshotMutableTale(),
+        }),
+      );
+    },
+    [runTalePersist],
+  );
+
+  const saveTurn = useCallback(
+    async (taleId: string, entries: LogEntry[], createdAt = Date.now()) => {
+      await runTalePersist(taleId, () =>
+        commitTaleTurn({
+          id: taleId,
+          tale: snapshotMutableTale(),
+          entries,
+          createdAt,
+        }),
+      );
+    },
+    [runTalePersist],
+  );
+
+  const completePendingTurn = useCallback(
+    async (
+      taleId: string,
+      pendingEntries: LogEntry[],
+      entries: LogEntry[],
+      createdAt = Date.now(),
+      fallbackToAppend = false,
+    ) => {
+      await runTalePersist(taleId, () =>
+        completePendingTaleTurn({
+          id: taleId,
+          tale: snapshotMutableTale(),
+          pendingEntries,
+          entries,
+          createdAt,
+          fallbackToAppend,
+        }),
+      );
+    },
+    [runTalePersist],
+  );
+
+  const retryTurn = useCallback(
+    async (
+      taleId: string,
+      previousEntries: LogEntry[],
+      entries: LogEntry[],
+      createdAt = Date.now(),
+    ) => {
+      await runTalePersist(taleId, () =>
+        retryTaleTurn({
+          id: taleId,
+          tale: snapshotMutableTale(),
+          previousEntries,
+          entries,
+          createdAt,
+        }),
+      );
+    },
+    [runTalePersist],
+  );
+
+  const undoToEntryCount = useCallback(
+    async (taleId: string, entryCount?: number) => {
+      const state = useTaleStore.getState();
+      await runTalePersist(taleId, () =>
+        undoTaleLogToEntryCount({
+          id: taleId,
+          tale: snapshotMutableTale(),
+          entryCount: entryCount ?? state.totalLogCount,
+        }),
+      );
+    },
+    [runTalePersist],
+  );
+
+  const editEntry = useCallback(
+    async (
+      taleId: string,
+      entryId: string,
+      patch: Partial<Omit<LogEntry, "id">>,
+    ) => {
+      await runTalePersist(taleId, () =>
+        editTaleLogEntry({
+          id: taleId,
+          tale: snapshotMutableTale(),
+          entryId,
+          patch,
+        }),
+      );
+    },
+    [runTalePersist],
+  );
+
+  const retryEntry = useCallback(
+    async (
+      taleId: string,
+      previousEntry: LogEntry,
+      replacementEntry: LogEntry,
+    ) => {
+      await runTalePersist(taleId, () =>
+        retryTaleLogEntry({
+          id: taleId,
+          tale: snapshotMutableTale(),
+          previousEntry,
+          replacementEntry,
+        }),
+      );
+    },
+    [runTalePersist],
+  );
+
+  const redoEntry = useCallback(
+    async (taleId: string, entry: LogEntry, createdAt = Date.now()) => {
+      await runTalePersist(taleId, () =>
+        redoTaleLogEntry({
+          id: taleId,
+          tale: snapshotMutableTale(),
+          entry,
+          createdAt,
+        }),
+      );
+    },
+    [runTalePersist],
+  );
+
+  return {
+    save,
+    saveTurn,
+    completePendingTurn,
+    retryTurn,
+    undoToEntryCount,
+    editEntry,
+    retryEntry,
+    redoEntry,
+    saving,
+    error,
+    lastSaveSuccess,
+  } as const;
 }
 
 export function useLoadTale() {
@@ -65,8 +255,6 @@ export function useLoadTale() {
     setError(null);
 
     try {
-      useTaleStore.getState().resetLogWindow();
-
       const tale = await getTaleById(taleId);
 
       if (loadingIdRef.current !== myToken) {
@@ -88,7 +276,8 @@ export function useLoadTale() {
         undoStack: tale.undoStack,
         totalLogCount: tale.totalLogCount,
         oldestLoadedIndex: tale.oldestLoadedIndex,
-        logWindowSize: tale.log.length < 200 ? tale.log.length : 200,
+        logWindowSize: DEFAULT_WINDOW_SIZE,
+        isLoadingOlderEntries: false,
       });
 
       useLastPlayedStore.getState().setLastPlayedTaleId(taleId);

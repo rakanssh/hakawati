@@ -20,6 +20,7 @@ export function MobileBottomNav() {
     "appearance",
     "ai-setup",
     "generation",
+    "cloud-sync",
   ];
 
   if (!isMobilePlatform) return null;

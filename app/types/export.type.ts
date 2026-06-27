@@ -1,5 +1,9 @@
-import type { Scenario } from "./context.type";
-import { PromptComponentType } from "./context.type";
+import type { PromptComponent, Scenario, StoryCard } from "./context.type";
+import { GameMode, PromptComponentType } from "./context.type";
+import type { LogEntry } from "./log.type";
+import { LogEntryMode, LogEntryRole } from "./log.type";
+import type { Item } from "./item.type";
+import type { Stat } from "./stats.type";
 import { z } from "zod";
 
 export type ExportEnvelope<
@@ -113,4 +117,122 @@ export const ScenarioV2Schema = z.object({
   version: z.literal(2),
   exportedAt: z.string(),
   data: ScenarioExportDataV2Schema,
+});
+
+export type TalePackageV1 = {
+  format: "hakawati-tale-package";
+  formatVersion: 1;
+  exportedAt: string;
+  tale: {
+    id: string;
+    title: string;
+    description: string;
+    gameMode: GameMode;
+    thumbnailAssetId?: string;
+    createdAt: number;
+    updatedAt: number;
+    schemaVersion: number;
+  };
+  state: {
+    stateSchemaVersion: number;
+    data: {
+      components: PromptComponent[];
+      storyCards: StoryCard[];
+      gm: {
+        stats: Stat[];
+        inventory: Item[];
+        scratchpad: Record<string, unknown>;
+      };
+    };
+  };
+  turns: Array<{
+    id: string;
+    seq: number;
+    createdAt: number;
+    updatedAt?: number;
+    entries: LogEntry[];
+  }>;
+  assets: Array<{
+    id: string;
+    role: "thumbnail";
+    contentType: string;
+    dataBase64: string;
+  }>;
+};
+
+export const InventoryItemV1Schema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+});
+
+export const TaleLogEntryV1Schema = z
+  .object({
+    id: z.string(),
+    role: z.enum([LogEntryRole.PLAYER, LogEntryRole.GM]),
+    mode: z
+      .enum([
+        LogEntryMode.SAY,
+        LogEntryMode.DO,
+        LogEntryMode.STORY,
+        LogEntryMode.DIRECT,
+        LogEntryMode.CONTINUE,
+      ])
+      .optional(),
+    text: z.string(),
+    thinking: z.string().optional(),
+    isActionError: z.boolean().optional(),
+    actions: z.array(z.unknown()).optional(),
+    chainId: z.string().optional(),
+    error: z.unknown().optional(),
+  })
+  .passthrough();
+
+export const TaleStateDataV1Schema = z.object({
+  components: z.array(PromptComponentV2Schema),
+  storyCards: z.array(StoryCardV2Schema),
+  gm: z.object({
+    stats: z.array(StatV1Schema),
+    inventory: z.array(InventoryItemV1Schema),
+    scratchpad: z.record(z.string(), z.unknown()).default({}),
+  }),
+});
+
+export const TalePackageV1Schema = z.object({
+  format: z.literal("hakawati-tale-package"),
+  formatVersion: z.literal(1),
+  exportedAt: z.string(),
+  tale: z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string(),
+    gameMode: z.enum([GameMode.GM, GameMode.STORY_TELLER]),
+    thumbnailAssetId: z.string().optional(),
+    createdAt: z.number(),
+    updatedAt: z.number(),
+    schemaVersion: z.number(),
+  }),
+  state: z.object({
+    stateSchemaVersion: z.number(),
+    data: TaleStateDataV1Schema,
+  }),
+  turns: z.array(
+    z.object({
+      id: z.string(),
+      seq: z.number(),
+      createdAt: z.number(),
+      updatedAt: z.number().optional(),
+      entries: z.array(TaleLogEntryV1Schema),
+    }),
+  ),
+  assets: z
+    .array(
+      z.object({
+        id: z.string(),
+        role: z.literal("thumbnail"),
+        contentType: z.string(),
+        dataBase64: z.string(),
+      }),
+    )
+    .default([]),
 });

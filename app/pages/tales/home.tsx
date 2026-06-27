@@ -10,10 +10,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "@tanstack/react-router";
-import { useTalesList } from "@/hooks/useTales";
+import { useTaleLibrary } from "@/hooks/useTaleLibrary";
+import { useLoadTale } from "@/hooks/useGameSaves";
+import { TaleConflictDialog } from "@/components/tales/tale-conflict-dialog";
 import {
   bytesToObjectUrl,
   formatExactDateTime,
@@ -33,16 +36,28 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   ArrowLeftIcon,
+  Cloud,
+  CloudOff,
+  CloudUpload,
   FilePlus2Icon,
   PencilIcon,
   TrashIcon,
+  VenetianMask,
 } from "lucide-react";
+import { toast } from "sonner";
 import placeholderImage from "@/assets/scen-ph.png";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
+import type { LibraryTaleItem } from "@/lib/tale-library";
+import type { TaleConflictChoice } from "@/hooks/useTaleLibrary";
 
 type PendingTaleDelete = {
-  id: string;
+  item: LibraryTaleItem;
+  name: string;
+};
+
+type PendingCloudRemove = {
+  item: LibraryTaleItem;
   name: string;
 };
 
@@ -52,18 +67,32 @@ export default function TalesHome() {
   const [pendingDelete, setPendingDelete] = useState<PendingTaleDelete | null>(
     null,
   );
+  const [pendingCloudRemove, setPendingCloudRemove] =
+    useState<PendingCloudRemove | null>(null);
+  const [search, setSearch] = useState("");
+  const [conflictItem, setConflictItem] = useState<LibraryTaleItem | null>(
+    null,
+  );
+  const [resolvingConflict, setResolvingConflict] = useState(false);
+  const { load: loadResolvedTale } = useLoadTale();
   const {
     items,
     loading,
     error,
+    remoteError,
+    syncActive,
+    syncStatesLoading,
     loadIntoGame,
     page,
     limit,
     total,
     setPage,
-    deleteTale,
+    deleteLibraryTale,
+    removeLibraryTaleFromCloud,
+    resolveConflict,
     saveAsScenario,
-  } = useTalesList();
+    syncLibraryTale,
+  } = useTaleLibrary();
 
   const handleClickDelete = (tale: PendingTaleDelete) => {
     setPendingDelete(tale);
@@ -71,15 +100,83 @@ export default function TalesHome() {
 
   const confirmDelete = async () => {
     if (!pendingDelete) return;
-    await deleteTale(pendingDelete.id);
+    await deleteLibraryTale(pendingDelete.item);
     setPendingDelete(null);
+  };
+
+  const confirmCloudRemove = async () => {
+    if (!pendingCloudRemove) return;
+    try {
+      await removeLibraryTaleFromCloud(pendingCloudRemove.item);
+      toast.success(t`Removed from cloud`);
+      setPendingCloudRemove(null);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t`Failed to remove from cloud`,
+      );
+    }
+  };
+
+  const handleSyncToCloud = async (item: LibraryTaleItem) => {
+    try {
+      await syncLibraryTale(item);
+      toast.success(t`Sync queued`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t`Failed to queue sync`,
+      );
+    }
   };
 
   const handleSaveAsScenario = async (id: string) => {
     await saveAsScenario(id);
   };
 
-  // no-op
+  const handleLoad = async (item: LibraryTaleItem) => {
+    if (item.source === "local" && item.sync?.status === "conflict") {
+      setConflictItem(item);
+      return;
+    }
+    await loadIntoGame(item);
+    navigate({ to: "/play" });
+  };
+
+  const handleResolveConflict = async (choice: TaleConflictChoice) => {
+    if (!conflictItem || conflictItem.source !== "local") return;
+    setResolvingConflict(true);
+    try {
+      const taleId = await resolveConflict(conflictItem, choice);
+      await loadResolvedTale(taleId);
+      setConflictItem(null);
+      toast.success(t`Conflict resolved`);
+      navigate({ to: "/play" });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t`Failed to resolve conflict`,
+      );
+    } finally {
+      setResolvingConflict(false);
+    }
+  };
+
+  const query = search.trim().toLowerCase();
+  const visibleItems = query
+    ? items.filter((item) => {
+        const text =
+          item.source === "remote"
+            ? [
+                item.remoteTale.title,
+                item.remoteTale.description,
+                item.remoteTale.lastEntryPreview,
+              ].join(" ")
+            : [
+                item.localTale.name,
+                item.localTale.description,
+                item.localTale.lastLogEntry?.text,
+              ].join(" ");
+        return text.toLowerCase().includes(query);
+      })
+    : items;
 
   return (
     <div className="mx-auto w-full max-w-screen-2xl py-5 flex flex-col gap-4 px-3">
@@ -102,6 +199,12 @@ export default function TalesHome() {
         </div>
       </div>
       <Separator />
+      <Input
+        value={search}
+        onChange={(event) => setSearch(event.target.value)}
+        placeholder={t`Search tales`}
+        className="max-w-md"
+      />
       {loading && (
         <div className="text-sm text-muted-foreground">
           <Trans>Loading...</Trans>
@@ -112,20 +215,50 @@ export default function TalesHome() {
           <Trans>Failed to load tales.</Trans>
         </div>
       )}
+      {Boolean(remoteError) && (
+        <div className="text-sm text-muted-foreground">
+          <Trans>Cloud tales are unavailable.</Trans>
+        </div>
+      )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {items.map(
-          ({
-            id,
-            name,
-            description,
-            lastLogEntry,
-            thumbnail,
-            scenarioHead,
-            updatedAt,
-            logCount,
-          }) => (
+        {visibleItems.map((item) => {
+          const isRemote = item.source === "remote";
+          const id = isRemote ? item.remoteTale.id : item.localTale.id;
+          const name = isRemote ? item.remoteTale.title : item.localTale.name;
+          const description = isRemote
+            ? (item.remoteTale.lastEntryPreview ??
+              item.remoteTale.description ??
+              "")
+            : (item.localTale.lastLogEntry?.text ??
+              item.localTale.description ??
+              "");
+          const thumbnail = isRemote ? null : item.localTale.thumbnail;
+          const scenarioHead = isRemote ? null : item.localTale.scenarioHead;
+          const updatedAt = isRemote
+            ? Date.parse(item.remoteTale.updatedAt) || 0
+            : item.localTale.updatedAt;
+          const entryCount = isRemote
+            ? (item.remoteTale.entryCount ?? item.remoteTale.turnCount)
+            : item.localTale.logCount;
+          const hasConflict =
+            syncActive &&
+            item.source === "local" &&
+            item.sync?.status === "conflict";
+          const isSynced =
+            syncActive && (isRemote || Boolean(!isRemote && item.sync));
+          const syncStatusUnknown =
+            syncActive &&
+            item.source === "local" &&
+            !item.sync &&
+            syncStatesLoading;
+          const statusLabel = hasConflict
+            ? t`Needs review`
+            : isSynced
+              ? t`Cloud`
+              : t`Local`;
+          return (
             <Card
-              key={id}
+              key={isRemote ? `remote-${id}` : `local-${id}`}
               className="flex flex-col gap-1 pt-0 pb-2 border-accent/50"
             >
               <CardHeader className="p-0 m-0">
@@ -149,7 +282,7 @@ export default function TalesHome() {
                         <Button
                           variant="secondary"
                           size="icon"
-                          className="h-6 w-6 rounded-full pb-1.5 bg-accent/50"
+                          className="h-6 w-6 rounded-full bg-accent/50 pb-1.5"
                           aria-label={t`Tale actions`}
                         >
                           ...
@@ -160,11 +293,13 @@ export default function TalesHome() {
                         side="bottom"
                         sideOffset={4}
                       >
-                        {scenarioHead?.id && (
+                        {!isRemote && scenarioHead?.id && (
                           <DropdownMenuItem
                             onSelect={(e) => e.preventDefault()}
                             onClick={() =>
-                              navigate({ to: `/scenarios/${scenarioHead?.id}` })
+                              navigate({
+                                to: `/scenarios/${scenarioHead?.id}`,
+                              })
                             }
                             className="text-xs"
                           >
@@ -172,7 +307,7 @@ export default function TalesHome() {
                             <Trans>Scenario</Trans>
                           </DropdownMenuItem>
                         )}
-                        {!scenarioHead?.id && (
+                        {!isRemote && !scenarioHead?.id && (
                           <DropdownMenuItem
                             onSelect={(e) => e.preventDefault()}
                             onClick={() => handleSaveAsScenario(id)}
@@ -182,9 +317,34 @@ export default function TalesHome() {
                             <Trans>Save as Scenario</Trans>
                           </DropdownMenuItem>
                         )}
+                        {syncActive && isSynced ? (
+                          <DropdownMenuItem
+                            onSelect={(e) => e.preventDefault()}
+                            onClick={() =>
+                              setPendingCloudRemove({ item, name })
+                            }
+                            className="text-xs"
+                          >
+                            <CloudOff className="w-4 h-4 me-2" />{" "}
+                            <Trans>Remove from cloud</Trans>
+                          </DropdownMenuItem>
+                        ) : null}
+                        {syncActive &&
+                        !isRemote &&
+                        !item.sync &&
+                        !syncStatusUnknown ? (
+                          <DropdownMenuItem
+                            onSelect={(e) => e.preventDefault()}
+                            onClick={() => void handleSyncToCloud(item)}
+                            className="text-xs"
+                          >
+                            <CloudUpload className="w-4 h-4 me-2" />{" "}
+                            <Trans>Sync to cloud</Trans>
+                          </DropdownMenuItem>
+                        ) : null}
                         <DropdownMenuItem
                           onSelect={(e) => e.preventDefault()}
-                          onClick={() => handleClickDelete({ id, name })}
+                          onClick={() => handleClickDelete({ item, name })}
                           variant="destructive"
                           className="text-xs"
                         >
@@ -196,8 +356,9 @@ export default function TalesHome() {
                   </div>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Badge className="absolute top-1 left-1 text-xs text-muted-foreground bg-accent/50">
-                        {formatRelativeTime(updatedAt)}
+                      <Badge className="absolute left-1 top-1 z-10 h-5 bg-accent/60 px-2 text-xs text-muted-foreground">
+                        {formatRelativeTime(updatedAt)} · {entryCount}{" "}
+                        {entryCount === 1 ? t`entry` : t`entries`}
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent side="top">
@@ -206,9 +367,20 @@ export default function TalesHome() {
                       </Trans>
                     </TooltipContent>
                   </Tooltip>
-                  <Badge className="absolute left-1 top-8 h-5 bg-accent/50 px-2 text-xs text-muted-foreground">
-                    {logCount} {logCount === 1 ? t`turn` : t`turns`}
-                  </Badge>
+                  {syncActive && !syncStatusUnknown ? (
+                    <Badge
+                      className="absolute left-1 top-8 z-10 h-5 bg-accent/60 px-2 text-xs text-muted-foreground"
+                      aria-label={statusLabel}
+                    >
+                      {hasConflict ? (
+                        <Trans>Needs review</Trans>
+                      ) : isSynced ? (
+                        <Cloud className="size-3" />
+                      ) : (
+                        <VenetianMask className="size-3" />
+                      )}
+                    </Badge>
+                  ) : null}
                 </div>
               </CardHeader>
               <CardContent className="flex h-36 flex-col gap-2 px-2">
@@ -216,23 +388,29 @@ export default function TalesHome() {
                   {name}
                 </span>
                 <p className="line-clamp-3 min-h-0 flex-1 rounded-xs text-sm text-muted-foreground">
-                  {lastLogEntry?.text ?? description}
+                  {description}
                 </p>
 
                 <Button
-                  onClick={async () => {
-                    await loadIntoGame(id);
-                    navigate({ to: "/play" });
-                  }}
+                  onClick={() => handleLoad(item)}
                   className="mt-auto w-full"
                 >
                   <Trans>Load Tale</Trans>
                 </Button>
               </CardContent>
             </Card>
-          ),
-        )}
+          );
+        })}
       </div>
+      <TaleConflictDialog
+        item={conflictItem}
+        open={Boolean(conflictItem)}
+        resolving={resolvingConflict}
+        onOpenChange={(open) => {
+          if (!open && !resolvingConflict) setConflictItem(null);
+        }}
+        onResolve={handleResolveConflict}
+      />
       {total > limit && (
         <div className="flex items-center justify-end gap-2">
           <Button
@@ -269,8 +447,8 @@ export default function TalesHome() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               <Trans>
-                This will permanently delete {pendingDelete?.name} and its saved
-                history. This action cannot be undone.
+                This will permanently delete {pendingDelete?.name}. This action
+                cannot be undone.
               </Trans>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -283,6 +461,34 @@ export default function TalesHome() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               <Trans>Delete</Trans>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog
+        open={Boolean(pendingCloudRemove)}
+        onOpenChange={(open) => {
+          if (!open) setPendingCloudRemove(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              <Trans>Remove from cloud?</Trans>
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <Trans>
+                This keeps the tale on this device and removes it from cloud
+                sync.
+              </Trans>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              <Trans>Cancel</Trans>
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmCloudRemove}>
+              <Trans>Remove from cloud</Trans>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

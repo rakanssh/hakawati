@@ -7,6 +7,43 @@ import { buildMessage } from "@/services/llm/promptBuilder";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { LogEntryMode } from "@/types";
 
+export type LlmSendResult =
+  | { status: "completed" }
+  | { status: "aborted"; error: unknown }
+  | { status: "error"; error: unknown };
+
+function abortedResult(signal: AbortSignal): LlmSendResult {
+  return { status: "aborted", error: signal.reason ?? new Error("Aborted") };
+}
+
+function isAbortError(error: unknown): boolean {
+  if (!error) return false;
+  if (error instanceof Error) {
+    const text = `${error.name} ${error.message}`.toLowerCase();
+    return (
+      error.name === "AbortError" ||
+      text.includes("abort") ||
+      text.includes("cancel")
+    );
+  }
+  if (typeof error === "string") {
+    const text = error.toLowerCase();
+    return text.includes("abort") || text.includes("cancel");
+  }
+  if (typeof error === "object") {
+    const obj = error as Record<string, unknown>;
+    const text = `${String(obj.name ?? "")} ${String(
+      obj.message ?? "",
+    )} ${String(obj.code ?? "")}`.toLowerCase();
+    return (
+      obj.name === "AbortError" ||
+      text.includes("abort") ||
+      text.includes("cancel")
+    );
+  }
+  return false;
+}
+
 export function useLLM() {
   const [loading, setLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -23,7 +60,7 @@ export function useLLM() {
       onActionParseError: () => void;
       onError: (error: unknown) => void;
     },
-  ) => {
+  ): Promise<LlmSendResult> => {
     if (abortRef.current && !abortRef.current.signal.aborted) {
       abortRef.current.abort();
     }
@@ -72,12 +109,18 @@ export function useLLM() {
       console.debug(
         `Sending request to ${model.id} with game mode: ${gameMode} and API URL: ${config.baseUrl}`,
       );
-      const res = await sendRoleChat("narrator", req, abortRef.current?.signal);
+      const res = await sendRoleChat("narrator", req, controller.signal);
+      if (controller.signal.aborted) {
+        return abortedResult(controller.signal);
+      }
 
       if (res.iterator) {
         const decoder = createDecoder(gameMode);
         const stream = decoder.decode(res.iterator);
         for await (const chunk of stream) {
+          if (controller.signal.aborted) {
+            return abortedResult(controller.signal);
+          }
           if ("actionParseError" in chunk && chunk.actionParseError) {
             callbacks.onActionParseError();
           } else {
@@ -94,6 +137,9 @@ export function useLLM() {
           }
         }
       } else {
+        if (controller.signal.aborted) {
+          return abortedResult(controller.signal);
+        }
         if (res.content) {
           callbacks.onStoryStream(res.content);
         }
@@ -111,8 +157,16 @@ export function useLLM() {
         }
         console.debug(`Response from ${model.id}:`, res);
       }
+      if (controller.signal.aborted) {
+        return abortedResult(controller.signal);
+      }
+      return { status: "completed" };
     } catch (e) {
+      if (isAbortError(e)) {
+        return { status: "aborted", error: e };
+      }
       callbacks.onError(e);
+      return { status: "error", error: e };
     } finally {
       if (abortRef.current === controller) {
         setLoading(false);

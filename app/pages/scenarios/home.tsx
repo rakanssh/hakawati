@@ -19,6 +19,8 @@ import {
   useScenariosImport,
 } from "@/hooks/useScenarios";
 import { initTaleFromScenario } from "@/services/scenario.service";
+import { canSyncNewTales } from "@/services/new-tale-sync";
+import { addSyncChangedListener } from "@/services/sync-wakeup";
 import { useLoadTale } from "@/hooks/useGameSaves";
 import {
   bytesToObjectUrl,
@@ -37,6 +39,7 @@ import {
   TrashIcon,
   ClipboardIcon,
   Sparkles,
+  VenetianMask,
 } from "lucide-react";
 import placeholderImage from "@/assets/scen-ph.png";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +51,7 @@ import {
 import { toast } from "sonner";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { GenerateScenarioDialog } from "@/components/scenario";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type PendingScenarioDelete = {
   id: string;
@@ -64,6 +67,7 @@ export default function ScenariosHome() {
   const { exportById } = useScenariosExport();
   const { importFromClipboard } = useScenariosImport();
   const [generateOpen, setGenerateOpen] = useState(false);
+  const [canStartPrivate, setCanStartPrivate] = useState(false);
   const [pendingDelete, setPendingDelete] =
     useState<PendingScenarioDelete | null>(null);
   const confirmDelete = async () => {
@@ -71,6 +75,22 @@ export default function ScenariosHome() {
     await remove(pendingDelete.id);
     setPendingDelete(null);
   };
+
+  useEffect(() => {
+    let disposed = false;
+    const refreshPrivateStart = () => {
+      canSyncNewTales().then((canSync) => {
+        if (!disposed) setCanStartPrivate(canSync);
+      });
+    };
+
+    refreshPrivateStart();
+    const removeListener = addSyncChangedListener(refreshPrivateStart);
+    return () => {
+      disposed = true;
+      removeListener();
+    };
+  }, []);
 
   return (
     <div className="mx-auto w-full max-w-screen-2xl py-5 flex flex-col gap-4 px-3">
@@ -222,16 +242,39 @@ export default function ScenariosHome() {
                 <p className="line-clamp-3 min-h-0 flex-1 rounded-xs text-sm text-muted-foreground">
                   {description}
                 </p>
-                <Button
-                  onClick={async () => {
-                    const taleId = await initTaleFromScenario(id);
-                    await loadTale(taleId);
-                    navigate({ to: "/play" });
-                  }}
-                  className="mt-auto w-full"
+                <div
+                  className={
+                    canStartPrivate
+                      ? "mt-auto grid grid-cols-[1fr_auto] gap-1"
+                      : "mt-auto grid"
+                  }
                 >
-                  <Trans>New Tale</Trans>
-                </Button>
+                  <Button
+                    onClick={async () => {
+                      const taleId = await initTaleFromScenario(id);
+                      await loadTale(taleId);
+                      navigate({ to: "/play" });
+                    }}
+                  >
+                    <Trans>New Tale</Trans>
+                  </Button>
+                  {canStartPrivate ? (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={async () => {
+                        const taleId = await initTaleFromScenario(id, {
+                          syncPolicy: "private",
+                        });
+                        await loadTale(taleId);
+                        navigate({ to: "/play" });
+                      }}
+                      aria-label={t`Start local-only tale`}
+                    >
+                      <VenetianMask className="h-4 w-4" />
+                    </Button>
+                  ) : null}
+                </div>
               </CardContent>
             </Card>
           );

@@ -1,5 +1,6 @@
 import { getDb } from "@/services/db";
 import { normalizePromptComponents } from "@/lib/prompt-components";
+import { enqueueLocalWrite } from "@/lib/local-write-queue";
 import { parseJsonValue, toUint8Array } from "@/lib/repository-utils";
 import {
   Scenario,
@@ -81,41 +82,43 @@ export async function upsertScenario(
   input: Scenario,
   id?: string,
 ): Promise<string> {
-  const db = await getDb();
   const now = Date.now();
   const scenarioId = id ?? uuidv4();
   const row = toRow(scenarioId, input, now);
-  await db.execute(
-    `INSERT INTO scenarios (id, name, initial_game_mode, initial_description, initial_author_note, initial_stats, initial_inventory, initial_story_cards, components, thumbnail_data, opening_text, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-       name=excluded.name,
-       initial_game_mode=excluded.initial_game_mode,
-       initial_description=excluded.initial_description,
-       initial_author_note=excluded.initial_author_note,
-       initial_stats=excluded.initial_stats,
-       initial_inventory=excluded.initial_inventory,
-       initial_story_cards=excluded.initial_story_cards,
-       components=excluded.components,
-       thumbnail_data=excluded.thumbnail_data,
-       opening_text=excluded.opening_text,
-       updated_at=excluded.updated_at`,
-    [
-      row.id,
-      row.name,
-      row.initial_game_mode,
-      row.initial_description,
-      row.initial_author_note,
-      row.initial_stats,
-      row.initial_inventory,
-      row.initial_story_cards,
-      row.components ?? "[]",
-      row.thumbnail_data ?? null,
-      row.opening_text ?? "",
-      row.created_at,
-      row.updated_at,
-    ],
-  );
+  await enqueueLocalWrite(async () => {
+    const db = await getDb();
+    await db.execute(
+      `INSERT INTO scenarios (id, name, initial_game_mode, initial_description, initial_author_note, initial_stats, initial_inventory, initial_story_cards, components, thumbnail_data, opening_text, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+         name=excluded.name,
+         initial_game_mode=excluded.initial_game_mode,
+         initial_description=excluded.initial_description,
+         initial_author_note=excluded.initial_author_note,
+         initial_stats=excluded.initial_stats,
+         initial_inventory=excluded.initial_inventory,
+         initial_story_cards=excluded.initial_story_cards,
+         components=excluded.components,
+         thumbnail_data=excluded.thumbnail_data,
+         opening_text=excluded.opening_text,
+         updated_at=excluded.updated_at`,
+      [
+        row.id,
+        row.name,
+        row.initial_game_mode,
+        row.initial_description,
+        row.initial_author_note,
+        row.initial_stats,
+        row.initial_inventory,
+        row.initial_story_cards,
+        row.components ?? "[]",
+        row.thumbnail_data ?? null,
+        row.opening_text ?? "",
+        row.created_at,
+        row.updated_at,
+      ],
+    );
+  });
   return scenarioId;
 }
 
@@ -144,8 +147,10 @@ export async function listScenarios(): Promise<
 }
 
 export async function deleteScenario(id: string): Promise<void> {
-  const db = await getDb();
-  await db.execute(`DELETE FROM scenarios WHERE id = ?`, [id]);
+  await enqueueLocalWrite(async () => {
+    const db = await getDb();
+    await db.execute(`DELETE FROM scenarios WHERE id = ?`, [id]);
+  });
 }
 
 export async function getScenarios(

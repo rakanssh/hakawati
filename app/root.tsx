@@ -27,7 +27,9 @@ import { Titlebar } from "./components/layout";
 import { MobileBottomNav } from "./components/layout/mobile-bottom-nav";
 import { isTauriEnvironment, useUpdateStore } from "./store/useUpdateStore";
 import { useDbReady } from "./hooks/useDbReady";
+import { useHostedTokenRefresh } from "./hooks/useHostedTokenRefresh";
 import { useIsMobile } from "./hooks/useIsMobile";
+import { useSyncBackground } from "./hooks/useSyncBackground";
 
 export default function AppShell() {
   const checkForUpdates = useUpdateStore((state) => state.checkForUpdates);
@@ -35,6 +37,8 @@ export default function AppShell() {
   const { isReady: dbReady, error: dbError } = useDbReady();
   const { isMobilePlatform } = useIsMobile();
   const routerState = useRouterState();
+  useHostedTokenRefresh(dbReady);
+  useSyncBackground(dbReady);
 
   const pathname = routerState.location.pathname;
   const isPlayRoute = pathname?.startsWith("/play");
