@@ -63,10 +63,16 @@ function defaultDeviceName() {
   return globalThis.navigator?.platform || "Hakawati device";
 }
 
+export function defaultCloudBaseUrl(
+  value = import.meta.env.VITE_HAKAWATI_SYNC_SERVER_URL,
+) {
+  return value?.trim() ?? "";
+}
+
 export const useSyncSettingsStore = create<SyncSettingsStore>()(
   persist<SyncSettingsStore, [], [], SyncSettingsPersistedState>(
     (set, get) => ({
-      cloudBaseUrl: "",
+      cloudBaseUrl: defaultCloudBaseUrl(),
       personalBaseUrl: "",
       activeSyncMode: "hosted",
       accessToken: "",
@@ -157,6 +163,18 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
         accountEmail: state.accountEmail,
         hostedDeviceIdsByAccountId: state.hostedDeviceIdsByAccountId,
       }),
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as
+          | Partial<SyncSettingsPersistedState>
+          | undefined;
+        return {
+          ...currentState,
+          ...persisted,
+          cloudBaseUrl: persisted?.cloudBaseUrl?.trim()
+            ? persisted.cloudBaseUrl
+            : currentState.cloudBaseUrl,
+        };
+      },
     },
   ),
 );

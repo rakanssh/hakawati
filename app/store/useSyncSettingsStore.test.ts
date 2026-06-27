@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { useSyncSettingsStore } from "./useSyncSettingsStore";
+import {
+  defaultCloudBaseUrl,
+  useSyncSettingsStore,
+} from "./useSyncSettingsStore";
 
 const partialize = useSyncSettingsStore.persist.getOptions().partialize!;
+const merge = useSyncSettingsStore.persist.getOptions().merge!;
 
 describe("useSyncSettingsStore", () => {
   beforeEach(() => {
@@ -74,6 +78,24 @@ describe("useSyncSettingsStore", () => {
         "account-1": first,
         "account-2": second,
       },
+    });
+  });
+
+  it("uses the configured hosted sync server when stored settings are blank", () => {
+    expect(defaultCloudBaseUrl(" https://sync.example/ ")).toBe(
+      "https://sync.example/",
+    );
+
+    expect(
+      merge(
+        { cloudBaseUrl: "" },
+        {
+          ...useSyncSettingsStore.getState(),
+          cloudBaseUrl: "https://env.example",
+        },
+      ),
+    ).toMatchObject({
+      cloudBaseUrl: "https://env.example",
     });
   });
 });
