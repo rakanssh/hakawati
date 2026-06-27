@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Cloud sync for tales, including sign-in, device registration, and background syncing across devices.
+- Library controls to sync or unsync individual tales, keep tales private, and resolve sync conflicts.
+- Build-time configuration for the default hosted sync server.
+
+### Changed
+
+- Reworked tale storage so larger tales load, save, and recover play history more smoothly.
+- Improved tale deletion and sync cleanup across local and remote copies.
+
+### Fixed
+
+- Prevented migration checksum errors from line-ending differences in earlier Windows builds.
+
 ## [v0.15.2] - 2026-06-11
 
 ### Fixed
