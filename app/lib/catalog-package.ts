@@ -1,9 +1,7 @@
 import { z } from "zod";
 import {
   CATALOG_AGE_RATINGS,
-  CATALOG_CATEGORIES,
   type CatalogAgeRating,
-  type CatalogCategory,
   type CatalogStartSource,
   type ScenarioPackage,
 } from "@/types/catalog.type";
@@ -13,10 +11,13 @@ import {
   packageContentToScenarioContent,
   scenarioContentToPackage,
 } from "@/lib/scenario-content";
+import {
+  CATALOG_MAX_TAGS,
+  CATALOG_MAX_TAG_LENGTH,
+  normalizeCatalogTags,
+} from "@/lib/catalog-tags";
 
 const SCENARIO_PACKAGE_MAX_BYTES = 512 * 1024;
-const CATALOG_MAX_TAGS = 12;
-const CATALOG_MAX_TAG_LENGTH = 32;
 
 const nonBlankString = (max: number) => z.string().trim().min(1).max(max);
 const optionalString = (max: number) => z.string().trim().max(max).optional();
@@ -80,10 +81,13 @@ const scenarioPackageSchema = z.object({
       title: nonBlankString(160),
       summary: nonBlankString(600),
       language: nonBlankString(16).regex(/^[A-Za-z0-9-]+$/),
-      category: z.enum(CATALOG_CATEGORIES),
       tags: z
         .array(nonBlankString(CATALOG_MAX_TAG_LENGTH))
-        .max(CATALOG_MAX_TAGS),
+        .min(1)
+        .max(CATALOG_MAX_TAGS)
+        .refine((tags) => tags.every((tag) => /^[a-z0-9-]+$/.test(tag)), {
+          message: "Tags must use lowercase letters, numbers, and hyphens",
+        }),
       ageRating: z.enum(CATALOG_AGE_RATINGS),
       initialGameMode: z.enum(["story_teller", "gm"]),
       description: z.string().trim().max(4000).default(""),
@@ -96,21 +100,9 @@ export type ScenarioPackageMetadata = {
   title?: string;
   summary?: string;
   language?: string;
-  category?: CatalogCategory;
   tags?: string[];
   ageRating?: CatalogAgeRating;
 };
-
-export function normalizeCatalogTags(tags: string[] = []): string[] {
-  return [
-    ...new Set(
-      tags
-        .flatMap((tag) => tag.split(","))
-        .map((tag) => tag.trim().toLowerCase())
-        .filter(Boolean),
-    ),
-  ];
-}
 
 export function parseScenarioPackage(value: unknown): ScenarioPackage {
   const sizeBytes = new TextEncoder().encode(JSON.stringify(value)).byteLength;
@@ -144,7 +136,6 @@ export function buildScenarioPackage(
       title,
       summary: metadata.summary?.trim() || scenario.description.trim() || title,
       language: metadata.language?.trim() || "en",
-      category: metadata.category ?? "other",
       tags: normalizeCatalogTags(metadata.tags),
       ageRating: metadata.ageRating ?? "general",
       initialGameMode: scenario.initialGameMode,

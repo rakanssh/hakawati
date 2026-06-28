@@ -20,19 +20,20 @@ import {
 } from "@/components/ui/select";
 import {
   CATALOG_AGE_RATINGS,
-  CATALOG_CATEGORIES,
   type CatalogAgeRating,
-  type CatalogCategory,
 } from "@/types/catalog.type";
 import type { Scenario } from "@/types/context.type";
 import type { ScenarioPackageMetadata } from "@/lib/catalog-package";
 import { Trans } from "@lingui/react/macro";
+import { CatalogTagInput } from "@/components/catalog/CatalogTagInput";
+import type { CatalogClientState } from "@/hooks/useCatalogScenarios";
 
 type PublishScenarioDialogProps = {
   open: boolean;
   scenario: Scenario | null;
   updating: boolean;
   thumbnailUploads: boolean;
+  catalog: CatalogClientState;
   onOpenChange: (open: boolean) => void;
   onPublish: (input: {
     metadata: ScenarioPackageMetadata;
@@ -49,15 +50,15 @@ export function PublishScenarioDialog({
   scenario,
   updating,
   thumbnailUploads,
+  catalog,
   onOpenChange,
   onPublish,
 }: PublishScenarioDialogProps) {
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [language, setLanguage] = useState(defaultLanguage);
-  const [category, setCategory] = useState<CatalogCategory>("other");
   const [ageRating, setAgeRating] = useState<CatalogAgeRating>("general");
-  const [tags, setTags] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -66,13 +67,14 @@ export function PublishScenarioDialog({
     setTitle(scenario.name);
     setSummary(scenario.description);
     setLanguage(defaultLanguage());
-    setCategory("other");
     setAgeRating("general");
-    setTags("");
+    setTags([]);
     setThumbnailFile(null);
   }, [open, scenario]);
 
-  const canSubmit = Boolean(title.trim() && summary.trim() && language.trim());
+  const canSubmit = Boolean(
+    title.trim() && summary.trim() && language.trim() && tags.length > 0,
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -103,12 +105,8 @@ export function PublishScenarioDialog({
                   title,
                   summary,
                   language,
-                  category,
                   ageRating,
-                  tags: tags
-                    .split(",")
-                    .map((tag) => tag.trim())
-                    .filter(Boolean),
+                  tags,
                 },
                 thumbnailFile,
               });
@@ -146,27 +144,7 @@ export function PublishScenarioDialog({
               onChange={(e) => setSummary(e.target.value)}
             />
           </div>
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="grid gap-2">
-              <Label>
-                <Trans>Category</Trans>
-              </Label>
-              <Select
-                value={category}
-                onValueChange={(value) => setCategory(value as CatalogCategory)}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATALOG_CATEGORIES.map((item) => (
-                    <SelectItem key={item} value={item}>
-                      {item.replaceAll("_", " ")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="grid gap-3 md:grid-cols-[1fr_2fr]">
             <div className="grid gap-2">
               <Label>
                 <Trans>Age rating</Trans>
@@ -193,10 +171,14 @@ export function PublishScenarioDialog({
               <Label>
                 <Trans>Tags</Trans>
               </Label>
-              <Input
+              <CatalogTagInput
                 value={tags}
+                onChange={setTags}
+                client={catalog}
+                language={language}
+                ageRating={ageRating}
                 placeholder="magic, city"
-                onChange={(e) => setTags(e.target.value)}
+                required
               />
             </div>
           </div>

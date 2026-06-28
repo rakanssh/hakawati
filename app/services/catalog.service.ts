@@ -5,6 +5,8 @@ import type {
   CatalogScenarioDetail,
   CatalogScenarioPage,
   CatalogSort,
+  CatalogTagSort,
+  CatalogTagSuggestionPage,
   CatalogStartResponse,
   CoverAssetReference,
   ScenarioPackage,
@@ -16,6 +18,7 @@ import {
   parseScenarioPackage,
   type ScenarioPackageMetadata,
 } from "@/lib/catalog-package";
+import { normalizeCatalogTags } from "@/lib/catalog-tags";
 import { scenarioContentToTaleSeed } from "@/lib/scenario-content";
 import { initTale } from "@/services/tale.service";
 import {
@@ -50,9 +53,18 @@ export type CatalogListOptions = {
   limit?: number;
   cursor?: string;
   sort?: CatalogSort;
-  category?: string;
   language?: string;
+  ageRating?: string;
   tag?: string[];
+};
+
+export type CatalogTagListOptions = {
+  q?: string;
+  tag?: string[];
+  language?: string;
+  ageRating?: string;
+  sort?: CatalogTagSort;
+  limit?: number;
 };
 
 export type CatalogThumbnailUpload = {
@@ -185,6 +197,17 @@ export async function listOwnedCatalogScenarios(
   return bodyValue(
     await transport.get(`/v1/catalog/me/scenarios${suffix}`),
   ) as CatalogScenarioPage;
+}
+
+export async function listCatalogTags(
+  transport: CatalogTransport,
+  options: CatalogTagListOptions = {},
+): Promise<CatalogTagSuggestionPage> {
+  const query = catalogTagQuery(options);
+  const suffix = query ? `?${query}` : "";
+  return bodyValue(
+    await transport.get(`/v1/catalog/tags${suffix}`),
+  ) as CatalogTagSuggestionPage;
 }
 
 export async function getCatalogScenario(
@@ -396,9 +419,20 @@ function catalogListQuery(options: CatalogListOptions): string {
   if (options.limit) query.set("limit", String(options.limit));
   if (options.cursor) query.set("cursor", options.cursor);
   if (options.sort) query.set("sort", options.sort);
-  if (options.category) query.set("category", options.category);
   if (options.language) query.set("language", options.language);
-  for (const tag of options.tag ?? []) query.append("tag", tag);
+  if (options.ageRating) query.set("ageRating", options.ageRating);
+  for (const tag of normalizeCatalogTags(options.tag)) query.append("tag", tag);
+  return query.toString();
+}
+
+function catalogTagQuery(options: CatalogTagListOptions): string {
+  const query = new URLSearchParams();
+  if (options.q?.trim()) query.set("q", options.q.trim());
+  if (options.language) query.set("language", options.language);
+  if (options.ageRating) query.set("ageRating", options.ageRating);
+  if (options.sort) query.set("sort", options.sort);
+  if (options.limit) query.set("limit", String(options.limit));
+  for (const tag of normalizeCatalogTags(options.tag)) query.append("tag", tag);
   return query.toString();
 }
 

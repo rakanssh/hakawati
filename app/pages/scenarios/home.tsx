@@ -81,13 +81,14 @@ import {
   useScenarioPublishLinks,
 } from "@/hooks/useCatalogScenarios";
 import {
-  CATALOG_CATEGORIES,
+  CATALOG_AGE_RATINGS,
   CATALOG_SORTS,
   type CatalogScenarioDetail,
   type CatalogScenarioRecord,
 } from "@/types/catalog.type";
 import { getScenarioById } from "@/services/scenario.service";
 import type { Scenario } from "@/types/context.type";
+import { CatalogTagInput } from "@/components/catalog/CatalogTagInput";
 
 type PendingScenarioDelete = {
   id: string;
@@ -95,7 +96,7 @@ type PendingScenarioDelete = {
 };
 
 const catalogFilterControlClass =
-  "h-9 rounded-full border-border/60 bg-muted/40 px-4 shadow-none hover:bg-muted/70 focus-visible:ring-1";
+  "h-9 rounded-xs border-input bg-background px-3 shadow-xs";
 
 function catalogAssetUrl(baseUrl: string, path: string | null | undefined) {
   if (!path) return placeholderImage;
@@ -144,8 +145,15 @@ function CatalogScenarioCard({
             {scenario.title}
           </span>
           <Badge variant="secondary" className="shrink-0 text-xs">
-            {scenario.category.replaceAll("_", " ")}
+            {scenario.ageRating}
           </Badge>
+        </div>
+        <div className="flex min-h-5 flex-wrap gap-1">
+          {scenario.tags.slice(0, 3).map((tag) => (
+            <Badge key={tag} variant="outline" className="text-xs">
+              {tag}
+            </Badge>
+          ))}
         </div>
         <p className="line-clamp-3 min-h-0 flex-1 text-sm text-muted-foreground">
           {scenario.summary}
@@ -606,7 +614,7 @@ export default function ScenariosHome() {
                 <SelectTrigger className={`${catalogFilterControlClass} w-36`}>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="rounded-lg">
+                <SelectContent>
                   {CATALOG_SORTS.map((sort) => (
                     <SelectItem key={sort} value={sort}>
                       {sort.replaceAll("_", " ")}
@@ -615,42 +623,51 @@ export default function ScenariosHome() {
                 </SelectContent>
               </Select>
               <Select
-                value={discover.filters.category ?? "all"}
-                onValueChange={(category) =>
+                value={discover.filters.ageRating ?? "all"}
+                onValueChange={(ageRating) =>
                   discover.setFilters((current) => ({
                     ...current,
-                    category: category === "all" ? undefined : category,
+                    ageRating: ageRating === "all" ? undefined : ageRating,
                   }))
                 }
               >
                 <SelectTrigger className={`${catalogFilterControlClass} w-40`}>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="rounded-lg">
+                <SelectContent>
                   <SelectItem value="all">
-                    <Trans>All categories</Trans>
+                    <Trans>All ages</Trans>
                   </SelectItem>
-                  {CATALOG_CATEGORIES.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category.replaceAll("_", " ")}
+                  {CATALOG_AGE_RATINGS.map((ageRating) => (
+                    <SelectItem key={ageRating} value={ageRating}>
+                      {ageRating}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <Input
                 className={`${catalogFilterControlClass} w-48`}
-                value={discover.filters.tag?.join(", ") ?? ""}
-                placeholder="tag"
+                value={discover.filters.language ?? ""}
+                placeholder="language"
                 onChange={(event) =>
                   discover.setFilters((current) => ({
                     ...current,
-                    tag: event.target.value
-                      .split(",")
-                      .map((tag) => tag.trim())
-                      .filter(Boolean),
+                    language: event.target.value.trim() || undefined,
                   }))
                 }
               />
+              <div className="w-80 max-w-full">
+                <CatalogTagInput
+                  value={discover.filters.tag ?? []}
+                  onChange={(tag) =>
+                    discover.setFilters((current) => ({ ...current, tag }))
+                  }
+                  client={catalog}
+                  language={discover.filters.language}
+                  ageRating={discover.filters.ageRating}
+                  placeholder="Add tag"
+                />
+              </div>
             </div>
             {discover.loading ? (
               <div className="text-sm text-muted-foreground">
@@ -758,9 +775,6 @@ export default function ScenariosHome() {
                 {viewingCatalog.summary}
               </p>
               <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">
-                  {viewingCatalog.category.replaceAll("_", " ")}
-                </Badge>
                 <Badge variant="outline">{viewingCatalog.language}</Badge>
                 <Badge variant="outline">{viewingCatalog.ageRating}</Badge>
                 {viewingCatalog.tags.map((tag) => (
@@ -820,6 +834,7 @@ export default function ScenariosHome() {
           pendingPublish && linkByLocalId.get(pendingPublish.id),
         )}
         thumbnailUploads={catalog.thumbnailUploads}
+        catalog={catalog}
         onOpenChange={(open) => {
           if (!open) setPendingPublish(null);
         }}

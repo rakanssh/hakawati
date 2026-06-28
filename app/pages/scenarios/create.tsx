@@ -156,6 +156,7 @@ export default function ScenarioCreate() {
         scenario={pendingPublish}
         updating={false}
         thumbnailUploads={catalog.thumbnailUploads}
+        catalog={catalog}
         onOpenChange={(open) => {
           if (open) return;
           setPendingPublish(null);

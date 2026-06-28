@@ -4,6 +4,8 @@ import type { ScenarioPackage } from "@/types/catalog.type";
 import {
   CatalogHttpError,
   createCatalogTransport,
+  listCatalogScenarios,
+  listCatalogTags,
   publishScenarioDraft,
   startCatalogScenario,
 } from "./catalog.service";
@@ -40,7 +42,6 @@ const packageFixture = (): ScenarioPackage => ({
     title: "Iron Gate",
     summary: "A gate waits.",
     language: "en",
-    category: "fantasy",
     tags: ["gate"],
     ageRating: "general",
     initialGameMode: GameMode.STORY_TELLER,
@@ -135,7 +136,7 @@ describe("catalog service", () => {
         thumbnail: null,
         content: packageFixture().scenario.content,
       },
-      metadata: { summary: "A gate waits.", category: "fantasy" },
+      metadata: { summary: "A gate waits.", tags: ["gate"] },
     });
 
     expect(transport.post).toHaveBeenCalledWith(
@@ -145,6 +146,7 @@ describe("catalog service", () => {
           format: "hakawati-scenario-package",
           scenario: expect.objectContaining({
             content: packageFixture().scenario.content,
+            tags: ["gate"],
           }),
         }),
       }),
@@ -183,7 +185,7 @@ describe("catalog service", () => {
         thumbnail: null,
         content: packageFixture().scenario.content,
       },
-      metadata: { summary: "A gate waits." },
+      metadata: { summary: "A gate waits.", tags: ["gate"] },
     });
 
     expect(transport.post).toHaveBeenCalledWith(
@@ -210,5 +212,48 @@ describe("catalog service", () => {
       status: 400,
       code: "invalid_scenario_package",
     } satisfies Partial<CatalogHttpError>);
+  });
+
+  it("sends repeated tag filters when listing catalog scenarios", async () => {
+    const transport = {
+      get: vi.fn().mockResolvedValueOnce({ items: [], nextCursor: null }),
+      patch: vi.fn(),
+      post: vi.fn(),
+    };
+
+    await listCatalogScenarios(transport, {
+      sort: "popular",
+      tag: ["Sci Fi", "scripted"],
+      language: "en",
+      ageRating: "teen",
+    });
+
+    expect(transport.get).toHaveBeenCalledWith(
+      "/v1/catalog/scenarios?sort=popular&language=en&ageRating=teen&tag=sci-fi&tag=scripted",
+    );
+  });
+
+  it("lists tag suggestions with refinement filters", async () => {
+    const transport = {
+      get: vi.fn().mockResolvedValueOnce({
+        items: [{ tag: "sci-fi", count: 50 }],
+      }),
+      patch: vi.fn(),
+      post: vi.fn(),
+    };
+
+    await expect(
+      listCatalogTags(transport, {
+        q: "sc",
+        tag: ["Scripted"],
+        language: "en",
+        ageRating: "teen",
+        sort: "hot",
+        limit: 20,
+      }),
+    ).resolves.toEqual({ items: [{ tag: "sci-fi", count: 50 }] });
+    expect(transport.get).toHaveBeenCalledWith(
+      "/v1/catalog/tags?q=sc&language=en&ageRating=teen&sort=hot&limit=20&tag=scripted",
+    );
   });
 });

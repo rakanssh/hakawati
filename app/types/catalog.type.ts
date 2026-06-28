@@ -1,17 +1,5 @@
 import type { ScenarioContent } from "./context.type";
 
-export const CATALOG_CATEGORIES = [
-  "fantasy",
-  "sci_fi",
-  "horror",
-  "mystery",
-  "romance",
-  "slice_of_life",
-  "historical",
-  "fandom",
-  "other",
-] as const;
-
 export const CATALOG_AGE_RATINGS = ["general", "teen", "mature"] as const;
 
 export const CATALOG_SORTS = [
@@ -21,9 +9,11 @@ export const CATALOG_SORTS = [
   "most_started",
 ] as const;
 
-export type CatalogCategory = (typeof CATALOG_CATEGORIES)[number];
+export const CATALOG_TAG_SORTS = ["popular", "hot", "name"] as const;
+
 export type CatalogAgeRating = (typeof CATALOG_AGE_RATINGS)[number];
 export type CatalogSort = (typeof CATALOG_SORTS)[number];
+export type CatalogTagSort = (typeof CATALOG_TAG_SORTS)[number];
 export type CatalogScenarioStatus =
   | "published"
   | "unpublished"
@@ -37,7 +27,6 @@ export type ScenarioPackage = {
     title: string;
     summary: string;
     language: string;
-    category: CatalogCategory;
     tags: string[];
     ageRating: CatalogAgeRating;
     initialGameMode: "story_teller" | "gm";
@@ -65,7 +54,6 @@ export type CatalogScenarioRecord = {
   title: string;
   summary: string;
   language: string;
-  category: CatalogCategory;
   tags: string[];
   ageRating: CatalogAgeRating;
   author: {
@@ -85,6 +73,15 @@ export type CatalogScenarioDetail = CatalogScenarioRecord & {
 export type CatalogScenarioPage = {
   items: CatalogScenarioRecord[];
   nextCursor: string | null;
+};
+
+export type CatalogTagSuggestion = {
+  tag: string;
+  count: number;
+};
+
+export type CatalogTagSuggestionPage = {
+  items: CatalogTagSuggestion[];
 };
 
 export type CatalogStartSource = {

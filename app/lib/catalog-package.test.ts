@@ -42,14 +42,14 @@ describe("catalog package", () => {
       {
         summary: "A gate waits.",
         language: "EN",
-        category: "fantasy",
-        tags: ["Magic", "magic,city"],
+        tags: ["Magic", "city"],
         ageRating: "teen",
       },
     );
 
     expect(pkg.format).toBe("hakawati-scenario-package");
     expect(pkg.scenario.tags).toEqual(["magic", "city"]);
+    expect("category" in pkg.scenario).toBe(false);
     expect(pkg.scenario.content).toEqual([
       expect.objectContaining({
         type: "prompt_component",
@@ -72,8 +72,7 @@ describe("catalog package", () => {
           title: "Old",
           summary: "Old split package.",
           language: "en",
-          category: "other",
-          tags: [],
+          tags: ["old"],
           ageRating: "general",
           initialGameMode: GameMode.STORY_TELLER,
           description: "",
@@ -84,7 +83,7 @@ describe("catalog package", () => {
     ).toThrow();
   });
 
-  it("rejects more than twelve public tags", () => {
+  it("requires at least one public tag", () => {
     expect(() =>
       buildScenarioPackage(
         {
@@ -104,7 +103,33 @@ describe("catalog package", () => {
           ],
         },
         {
-          tags: Array.from({ length: 13 }, (_, index) => `tag-${index}`),
+          tags: [],
+        },
+      ),
+    ).toThrow();
+  });
+
+  it("rejects more than sixteen public tags", () => {
+    expect(() =>
+      buildScenarioPackage(
+        {
+          id: "local-1",
+          name: "Iron Gate",
+          initialGameMode: GameMode.STORY_TELLER,
+          description: "A public scenario.",
+          thumbnail: null,
+          content: [
+            {
+              type: "prompt_component",
+              version: 1,
+              id: "plot",
+              promptType: PromptComponentType.PLOT,
+              content: "The city remembers every gate.",
+            },
+          ],
+        },
+        {
+          tags: Array.from({ length: 17 }, (_, index) => `tag-${index}`),
         },
       ),
     ).toThrow();

@@ -5,6 +5,7 @@ import {
   createCatalogTransport,
   fetchCatalogCapabilities,
   getCatalogScenario,
+  listCatalogTags,
   listCatalogScenarios,
   listOwnedCatalogScenarios,
   publishScenarioDraft,
@@ -15,10 +16,14 @@ import {
   uploadPublicCatalogThumbnail,
   type CatalogCapabilities,
   type CatalogListOptions,
+  type CatalogTagListOptions,
   type CatalogTransport,
 } from "@/services/catalog.service";
 import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
-import type { CatalogScenarioRecord } from "@/types/catalog.type";
+import type {
+  CatalogScenarioRecord,
+  CatalogTagSuggestion,
+} from "@/types/catalog.type";
 import type { Scenario } from "@/types/context.type";
 import type { ScenarioPackageMetadata } from "@/lib/catalog-package";
 import { listScenarioPublishLinks } from "@/repositories/scenario-publish-link.repository";
@@ -112,8 +117,8 @@ export function useCatalogScenarioList(
   const [filters, setFilters] = useState<CatalogListOptions>({
     limit: initial.limit ?? 24,
     sort: initial.sort ?? "popular",
-    category: initial.category,
     language: initial.language,
+    ageRating: initial.ageRating,
     tag: initial.tag,
   });
   const [loading, setLoading] = useState(false);
@@ -237,6 +242,55 @@ export function useScenarioPublishLinks() {
   }, [refresh]);
 
   return { links, refresh } as const;
+}
+
+export function useCatalogTagSuggestions(
+  client: CatalogClientState,
+  options: CatalogTagListOptions,
+) {
+  const { ageRating, language, limit, q, sort, tag } = options;
+  const [items, setItems] = useState<CatalogTagSuggestion[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!client.enabled || !client.publicTransport) {
+      setItems([]);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    void listCatalogTags(client.publicTransport, {
+      ageRating,
+      language,
+      limit,
+      q,
+      sort,
+      tag,
+    })
+      .then((page) => {
+        if (!cancelled) setItems(page.items);
+      })
+      .catch(() => {
+        if (!cancelled) setItems([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    client.enabled,
+    client.publicTransport,
+    ageRating,
+    language,
+    limit,
+    q,
+    sort,
+    tag,
+  ]);
+
+  return { items, loading } as const;
 }
 
 export function useCatalogActions(client: CatalogClientState) {
