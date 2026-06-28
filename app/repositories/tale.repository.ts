@@ -1,5 +1,5 @@
 import { getDb, type Database } from "@/services/db";
-import { Tale, TaleHead } from "@/types/tale.type";
+import { Tale, TaleHead, TaleSourceMetadata } from "@/types/tale.type";
 import { LogEntry } from "@/types/log.type";
 import { normalizePromptComponents } from "@/lib/prompt-components";
 import { parseJsonValue, toUint8Array } from "@/lib/repository-utils";
@@ -144,6 +144,7 @@ function toTale(
     components: normalizePromptComponents(state.components),
     storyCards: state.storyCards,
     scenarioId: row.scenario_id ?? undefined,
+    ...(sourceFromRow(row) ? { source: sourceFromRow(row) } : {}),
     stats: state.gm.stats,
     inventory: state.gm.inventory,
     log,
@@ -155,6 +156,47 @@ function toTale(
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+function sourceFromRow(
+  row: Pick<
+    TaleRow,
+    | "source_type"
+    | "source_scenario_id"
+    | "source_scenario_version_id"
+    | "source_scenario_title"
+  >,
+): TaleSourceMetadata | undefined {
+  if (
+    (row.source_type !== "local" && row.source_type !== "catalog") ||
+    !row.source_scenario_id
+  ) {
+    return undefined;
+  }
+
+  return {
+    type: row.source_type,
+    scenarioId: row.source_scenario_id,
+    ...(row.source_scenario_version_id
+      ? { scenarioVersionId: row.source_scenario_version_id }
+      : {}),
+    ...(row.source_scenario_title
+      ? { scenarioTitle: row.source_scenario_title }
+      : {}),
+  };
+}
+
+function sourceColumns(source: TaleSourceMetadata | undefined) {
+  return {
+    sourceType: source?.type ?? null,
+    sourceScenarioId: source?.scenarioId ?? null,
+    sourceScenarioVersionId: source?.scenarioVersionId ?? null,
+    sourceScenarioTitle: source?.scenarioTitle ?? null,
+  };
+}
+
+function packageSource(input: TalePackageV1): TaleSourceMetadata | undefined {
+  return input.tale.source ?? input.state.data.source;
 }
 
 async function withTransaction<T>(
@@ -557,6 +599,7 @@ function prepareTalePackageWrite(input: TalePackageV1) {
 // Create once with scenario; later updates do not require scenarioId.
 export async function createTale(input: {
   scenarioId?: string;
+  source?: TaleSourceMetadata;
   name: Tale["name"];
   description: Tale["description"];
   thumbnail?: Uint8Array | null;
@@ -572,9 +615,11 @@ export async function createTale(input: {
   const now = Date.now();
 
   let scenarioId: string | undefined = undefined;
+  let scenarioTitle: string | undefined;
   if (input.scenarioId) {
     const scenario = await getScenario(input.scenarioId);
     scenarioId = scenario ? input.scenarioId : undefined;
+    scenarioTitle = scenario?.name;
   }
 
   const components = normalizePromptComponents(input.components);
@@ -586,8 +631,18 @@ export async function createTale(input: {
     thumbnail: input.thumbnail ?? null,
     authorNote: getAuthorNote(components),
     scenarioId: scenarioId ?? null,
+    source:
+      input.source ??
+      (scenarioId
+        ? ({
+            type: "local",
+            scenarioId,
+            ...(scenarioTitle ? { scenarioTitle } : {}),
+          } satisfies TaleSourceMetadata)
+        : undefined),
     gameMode: input.gameMode,
   };
+  const source = sourceColumns(metadata.source);
 
   await enqueueLocalWrite(async () => {
     const db = await getDb();
@@ -602,6 +657,10 @@ export async function createTale(input: {
         components,
         story_cards,
         scenario_id,
+        source_type,
+        source_scenario_id,
+        source_scenario_version_id,
+        source_scenario_title,
         stats,
         inventory,
         log,
@@ -612,7 +671,7 @@ export async function createTale(input: {
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           metadata.name,
@@ -622,6 +681,10 @@ export async function createTale(input: {
           LEGACY_JSON_PLACEHOLDER,
           LEGACY_JSON_PLACEHOLDER,
           metadata.scenarioId,
+          source.sourceType,
+          source.sourceScenarioId,
+          source.sourceScenarioVersionId,
+          source.sourceScenarioTitle,
           LEGACY_JSON_PLACEHOLDER,
           LEGACY_JSON_PLACEHOLDER,
           LEGACY_JSON_PLACEHOLDER,
@@ -1210,6 +1273,10 @@ type TaleHeadRow = {
   thumbnail_data?: Uint8Array | null;
   created_at: number;
   scenario_id: string | null;
+  source_type: "local" | "catalog" | null;
+  source_scenario_id: string | null;
+  source_scenario_version_id: string | null;
+  source_scenario_title: string | null;
   updated_at: number;
   log_count: number;
   last_log_entry: string | null;
@@ -1225,6 +1292,7 @@ async function mapTaleHeadRow(r: TaleHeadRow): Promise<TaleHead> {
     lastLogEntry: parseJsonValue<LogEntry>(r.last_log_entry),
     createdAt: r.created_at,
     scenarioId: r.scenario_id,
+    ...(sourceFromRow(r) ? { source: sourceFromRow(r) } : {}),
     updatedAt: r.updated_at,
     ...(r.scenario_id
       ? { scenarioHead: await getScenarioHead(r.scenario_id) }
@@ -1240,6 +1308,10 @@ function taleHeadSelect(whereClause = ""): string {
       t.thumbnail_data,
       t.created_at,
       t.scenario_id,
+      t.source_type,
+      t.source_scenario_id,
+      t.source_scenario_version_id,
+      t.source_scenario_title,
       t.updated_at,
       CASE
         WHEN ts.tale_id IS NULL AND json_valid(t.log)
@@ -1343,9 +1415,15 @@ export async function linkTaleToScenario(
     const db = await getDb();
     await db.execute(
       `UPDATE tales
-       SET scenario_id = ?, updated_at = ?, save_version = save_version + 1
+       SET scenario_id = ?,
+           source_type = 'local',
+           source_scenario_id = ?,
+           source_scenario_version_id = NULL,
+           source_scenario_title = (SELECT name FROM scenarios WHERE id = ?),
+           updated_at = ?,
+           save_version = save_version + 1
        WHERE id = ?`,
-      [scenarioId, Date.now(), taleId],
+      [scenarioId, scenarioId, scenarioId, Date.now(), taleId],
     );
   });
 }
@@ -1458,6 +1536,7 @@ export async function exportTalePackage(
           createdAt: row.created_at,
           updatedAt: row.updated_at,
           schemaVersion: row.schema_version ?? TALE_SCHEMA_VERSION,
+          ...(sourceFromRow(row) ? { source: sourceFromRow(row) } : {}),
         },
         state: {
           stateSchemaVersion:
@@ -1485,6 +1564,7 @@ export async function importTalePackage(
   options: { preserveId?: boolean; title?: string } = {},
 ): Promise<string> {
   const { payload, thumbnail, state, turns } = prepareTalePackageWrite(input);
+  const source = sourceColumns(packageSource(payload));
 
   const requestedId = options.preserveId ? payload.tale.id : uuidv4();
   let taleId = requestedId;
@@ -1505,6 +1585,10 @@ export async function importTalePackage(
         components,
         story_cards,
         scenario_id,
+        source_type,
+        source_scenario_id,
+        source_scenario_version_id,
+        source_scenario_title,
         stats,
         inventory,
         log,
@@ -1515,7 +1599,7 @@ export async function importTalePackage(
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, '[]', 1, ?, ?, ?)`,
+      VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, '[]', 1, ?, ?, ?)`,
         [
           taleId,
           options.title ?? payload.tale.title,
@@ -1524,6 +1608,10 @@ export async function importTalePackage(
           getAuthorNote(state.components),
           LEGACY_JSON_PLACEHOLDER,
           LEGACY_JSON_PLACEHOLDER,
+          source.sourceType,
+          source.sourceScenarioId,
+          source.sourceScenarioVersionId,
+          source.sourceScenarioTitle,
           LEGACY_JSON_PLACEHOLDER,
           LEGACY_JSON_PLACEHOLDER,
           LEGACY_JSON_PLACEHOLDER,
@@ -1549,6 +1637,7 @@ export async function replaceTaleWithPackage(
   options: { title?: string } = {},
 ): Promise<void> {
   const { payload, thumbnail, state, turns } = prepareTalePackageWrite(input);
+  const source = sourceColumns(packageSource(payload));
   const now = Date.now();
 
   await enqueueLocalWrite(async () => {
@@ -1563,6 +1652,10 @@ export async function replaceTaleWithPackage(
            author_note = ?,
            components = ?,
            story_cards = ?,
+           source_type = ?,
+           source_scenario_id = ?,
+           source_scenario_version_id = ?,
+           source_scenario_title = ?,
            stats = ?,
            inventory = ?,
            log = ?,
@@ -1579,6 +1672,10 @@ export async function replaceTaleWithPackage(
           getAuthorNote(state.components),
           LEGACY_JSON_PLACEHOLDER,
           LEGACY_JSON_PLACEHOLDER,
+          source.sourceType,
+          source.sourceScenarioId,
+          source.sourceScenarioVersionId,
+          source.sourceScenarioTitle,
           LEGACY_JSON_PLACEHOLDER,
           LEGACY_JSON_PLACEHOLDER,
           LEGACY_JSON_PLACEHOLDER,

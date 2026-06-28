@@ -31,6 +31,11 @@ import placeholderImage from "@/assets/scen-ph.png";
 import { useLoadTale } from "@/hooks/useGameSaves";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useScenariosList } from "@/hooks/useScenarios";
+import {
+  useCatalogActions,
+  useCatalogClient,
+  useCatalogScenarioList,
+} from "@/hooks/useCatalogScenarios";
 import { useTaleLibrary } from "@/hooks/useTaleLibrary";
 import {
   bytesToObjectUrl,
@@ -70,6 +75,7 @@ import { useTaleStore } from "@/store/useTaleStore";
 import { useUpdateStore } from "@/store/useUpdateStore";
 import { useVersionStore } from "@/store/useVersionStore";
 import type { ScenarioHead } from "@/types/context.type";
+import type { CatalogScenarioRecord } from "@/types/catalog.type";
 import type { LibraryTaleItem } from "@/lib/tale-library";
 import type { TaleConflictChoice } from "@/hooks/useTaleLibrary";
 import { getVersion } from "@tauri-apps/api/app";
@@ -147,6 +153,12 @@ function PreviewImage({
       className="h-20 w-full object-cover sm:h-28"
     />
   );
+}
+
+function catalogAssetUrl(baseUrl: string, path: string | null | undefined) {
+  if (!path) return placeholderImage;
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${baseUrl.replace(/\/+$/, "").replace(/\/v1$/, "")}${path}`;
 }
 
 function TaleCard({
@@ -243,6 +255,80 @@ function TaleCard({
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play />}
           <Trans>Load Tale</Trans>
         </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function PublicScenarioCard({
+  scenario,
+  baseUrl,
+  loading,
+  disabled,
+  canStartPrivate,
+  onStart,
+}: {
+  scenario: CatalogScenarioRecord;
+  baseUrl: string;
+  loading: boolean;
+  disabled: boolean;
+  canStartPrivate: boolean;
+  onStart: (
+    scenario: CatalogScenarioRecord,
+    syncPolicy?: NewTaleSyncPolicy,
+  ) => void;
+}) {
+  const { t } = useLingui();
+
+  return (
+    <Card className="w-[60vw] max-w-56 shrink-0 snap-start gap-0 overflow-hidden py-0 sm:w-60 sm:max-w-64 lg:w-64">
+      <CardHeader className="p-0">
+        <img
+          src={catalogAssetUrl(baseUrl, scenario.thumbnail?.downloadUrl)}
+          alt={t`${scenario.title} public scenario`}
+          className="h-20 w-full object-cover sm:h-28"
+        />
+      </CardHeader>
+      <CardContent className="flex min-h-28 flex-col gap-1.5 p-2 sm:min-h-32 sm:gap-2 sm:p-2.5">
+        <div className="min-w-0">
+          <div className="flex items-start gap-1.5">
+            <h3 className="min-w-0 flex-1 truncate font-semibold">
+              {scenario.title}
+            </h3>
+            <Badge variant="outline" className="shrink-0 text-[10px]">
+              {scenario.startCount} starts
+            </Badge>
+          </div>
+          <p className="mt-1 line-clamp-2 min-h-10 text-sm text-muted-foreground">
+            {scenario.summary}
+          </p>
+        </div>
+        <div
+          className={
+            canStartPrivate
+              ? "mt-auto grid grid-cols-[1fr_auto] gap-1"
+              : "mt-auto grid"
+          }
+        >
+          <Button
+            onClick={() => onStart(scenario)}
+            disabled={disabled || loading}
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play />}
+            <Trans>Start Tale</Trans>
+          </Button>
+          {canStartPrivate ? (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => onStart(scenario, "private")}
+              disabled={disabled || loading}
+              aria-label={t`Start local-only tale`}
+            >
+              <VenetianMask className="h-4 w-4" />
+            </Button>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
   );
@@ -346,6 +432,9 @@ export default function Home() {
   const [startingScenarioId, setStartingScenarioId] = useState<string | null>(
     null,
   );
+  const [startingPublicScenarioId, setStartingPublicScenarioId] = useState<
+    string | null
+  >(null);
   const nonPlayTabs: readonly GlobalSettingsSectionId[] = [
     "appearance",
     "ai-setup",
@@ -356,6 +445,12 @@ export default function Home() {
   const { load } = useLoadTale();
   const tales = useTaleLibrary(1, 6);
   const scenarios = useScenariosList(1, 6);
+  const catalog = useCatalogClient();
+  const publicScenarios = useCatalogScenarioList(catalog, {
+    limit: 6,
+    sort: "popular",
+  });
+  const catalogActions = useCatalogActions(catalog);
   const hasLoadedRef = useRef(false);
   const autoRegisterDeviceKeyRef = useRef("");
   const cloudBaseUrl = useSyncSettingsStore((state) => state.cloudBaseUrl);
@@ -668,6 +763,24 @@ export default function Home() {
     }
   };
 
+  const handleStartPublicScenario = async (
+    scenario: CatalogScenarioRecord,
+    syncPolicy?: NewTaleSyncPolicy,
+  ) => {
+    setStartingPublicScenarioId(scenario.id);
+    try {
+      const taleId = await catalogActions.start(scenario.id, syncPolicy);
+      await load(taleId);
+      navigate({ to: "/play" });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t`Failed to start scenario`,
+      );
+    } finally {
+      setStartingPublicScenarioId(null);
+    }
+  };
+
   useEffect(() => {
     if (hasLoadedRef.current) return;
     hasLoadedRef.current = true;
@@ -900,8 +1013,53 @@ export default function Home() {
             ))}
           </Shelf>
 
+          {catalog.enabled ? (
+            <Shelf
+              title={<Trans>Public Scenarios</Trans>}
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate({ to: "/scenarios" })}
+                >
+                  <Trans>Discover</Trans>
+                  <ChevronRight className="rtl:rotate-180" />
+                </Button>
+              }
+            >
+              {publicScenarios.loading && (
+                <ShelfState>
+                  <Trans>Loading...</Trans>
+                </ShelfState>
+              )}
+              {Boolean(publicScenarios.error) && (
+                <ShelfState>
+                  <Trans>Public scenarios are unavailable.</Trans>
+                </ShelfState>
+              )}
+              {!publicScenarios.loading &&
+                !publicScenarios.error &&
+                publicScenarios.items.length === 0 && (
+                  <ShelfState>
+                    <Trans>No public scenarios yet.</Trans>
+                  </ShelfState>
+                )}
+              {publicScenarios.items.map((scenario) => (
+                <PublicScenarioCard
+                  key={scenario.id}
+                  scenario={scenario}
+                  baseUrl={catalog.baseUrl}
+                  loading={startingPublicScenarioId === scenario.id}
+                  disabled={hasIssues}
+                  canStartPrivate={canStartPrivate}
+                  onStart={handleStartPublicScenario}
+                />
+              ))}
+            </Shelf>
+          ) : null}
+
           <Shelf
-            title={<Trans>Latest Scenarios</Trans>}
+            title={<Trans>Your Scenarios</Trans>}
             action={
               <>
                 <DropdownMenu>

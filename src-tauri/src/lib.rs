@@ -268,6 +268,12 @@ pub fn run() {
                 sql: include_str!("../migrations/005_add_sync_metadata.sql"),
                 kind: MigrationKind::Up,
             },
+            Migration {
+                version: 6,
+                description: "add_scenario_content_catalog_metadata",
+                sql: include_str!("../migrations/006_add_scenario_content_catalog_metadata.sql"),
+                kind: MigrationKind::Up,
+            },
         ];
 
         app.handle().plugin(

@@ -20,6 +20,7 @@ export default function ScenarioEdit() {
   const { scenario, setScenario, load, save, saving } = useScenarioEditor();
 
   const {
+    fields,
     addStat,
     updateStat,
     removeStat,
@@ -85,7 +86,7 @@ export default function ScenarioEdit() {
       />
       <Separator />
       <PromptComponentsEditor
-        components={scenario.components}
+        components={fields.components}
         allowedTypes={SCENARIO_COMPONENT_TYPES}
         gameMode={scenario.initialGameMode}
         onAdd={addComponent}
@@ -94,21 +95,21 @@ export default function ScenarioEdit() {
       />
       <Separator />
       <StatsEditor
-        stats={scenario.initialStats}
+        stats={fields.initialStats}
         onAdd={addStat}
         onUpdate={updateStat}
         onRemove={removeStat}
       />
       <Separator />
       <InventoryEditor
-        items={scenario.initialInventory}
+        items={fields.initialInventory}
         onAdd={addInventoryItem}
         onUpdate={updateInventoryItem}
         onRemove={removeInventoryItem}
       />
       <Separator />
       <StorybookEditor
-        entries={scenario.initialStoryCards}
+        entries={fields.initialStoryCards}
         onAdd={addStoryCard}
         onUpdate={updateStoryCard}
         onRemove={removeStoryCard}

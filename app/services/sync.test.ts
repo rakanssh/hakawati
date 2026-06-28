@@ -270,6 +270,34 @@ describe("sync transport", () => {
     expect(personalPackage.tale.thumbnailAssetId).toBeUndefined();
   });
 
+  it("preserves tale source metadata inside synced state data", () => {
+    const syncPackage = toSyncTalePackage(
+      {
+        ...samplePackage(),
+        tale: {
+          ...samplePackage().tale,
+          source: {
+            type: "catalog",
+            scenarioId: "catalog-1",
+            scenarioVersionId: "version-1",
+            scenarioTitle: "Iron Gate",
+          },
+        },
+      },
+      { mode: "hosted" },
+    );
+
+    expect(syncPackage.state.data).toMatchObject({
+      source: {
+        type: "catalog",
+        scenarioId: "catalog-1",
+        scenarioVersionId: "version-1",
+        scenarioTitle: "Iron Gate",
+      },
+    });
+    expect("source" in syncPackage.tale).toBe(false);
+  });
+
   it("keeps account, device, provider, and session fields out of sync packages", () => {
     const syncPackage = toSyncTalePackage(
       {

@@ -84,6 +84,7 @@ const migrationFiles = [
   "003_add_prompt_components.sql",
   "004_split_tale_storage.sql",
   "005_add_sync_metadata.sql",
+  "006_add_scenario_content_catalog_metadata.sql",
 ];
 
 function applyMigration(db: TestDatabase, index: number) {
@@ -485,6 +486,190 @@ describe("tale repository SQLite storage", () => {
     expect(tale?.stats[0].value).toBe(12);
     expect(tale?.inventory[0].name).toBe("Lantern");
     expect(tale?.undoStack[0].id).toBe("undo-1");
+  });
+
+  it("migrates legacy scenarios to content and backfills local tale source", () => {
+    const db = dbState.current!;
+    applyMigrations(db, 5);
+
+    db.raw
+      .prepare(
+        `INSERT INTO scenarios (
+          id,
+          name,
+          thumbnail_data,
+          initial_game_mode,
+          initial_description,
+          initial_author_note,
+          initial_stats,
+          initial_inventory,
+          initial_story_cards,
+          opening_text,
+          created_at,
+          updated_at,
+          components
+        )
+        VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        "scenario-1",
+        "Iron Gate",
+        GameMode.STORY_TELLER,
+        "A gate waits.",
+        "Keep it tense.",
+        JSON.stringify([{ name: "Nerve", value: 5, range: [0, 10] }]),
+        JSON.stringify(["Iron key"]),
+        JSON.stringify([
+          {
+            id: "gatekeeper",
+            title: "Gatekeeper",
+            triggers: ["gatekeeper"],
+            content: "The gatekeeper remembers.",
+            category: "Character",
+            isPinned: false,
+          },
+        ]),
+        "Rain needles the gate.",
+        100,
+        200,
+        JSON.stringify([
+          {
+            id: "plot",
+            type: "plot",
+            content: "A gate waits.",
+            createdAt: 100,
+            updatedAt: 200,
+          },
+        ]),
+      );
+    db.raw
+      .prepare(
+        `INSERT INTO tales (
+          id,
+          name,
+          description,
+          thumbnail_data,
+          author_note,
+          story_cards,
+          scenario_id,
+          stats,
+          inventory,
+          undo_stack,
+          log,
+          game_mode,
+          created_at,
+          updated_at,
+          components
+        )
+        VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        "tale-1",
+        "Iron Gate Tale",
+        "A local tale.",
+        "",
+        "[]",
+        "scenario-1",
+        "[]",
+        "[]",
+        "[]",
+        "[]",
+        GameMode.STORY_TELLER,
+        300,
+        400,
+        "[]",
+      );
+
+    applyMigration(db, 5);
+
+    const scenarioRow = db.raw
+      .prepare("SELECT content FROM scenarios WHERE id = ?")
+      .get("scenario-1") as { content: string };
+    const content = JSON.parse(scenarioRow.content) as Array<{
+      type: string;
+      id: string;
+      name?: string;
+      title?: string;
+    }>;
+    const taleRow = db.raw
+      .prepare(
+        `SELECT source_type, source_scenario_id
+         FROM tales
+         WHERE id = ?`,
+      )
+      .get("tale-1") as {
+      source_type: string;
+      source_scenario_id: string;
+    };
+
+    expect(content).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "prompt_component", id: "plot" }),
+        expect.objectContaining({ type: "story_card", id: "gatekeeper" }),
+        expect.objectContaining({
+          type: "stat",
+          id: "stat-nerve-1",
+          name: "Nerve",
+        }),
+        expect.objectContaining({
+          type: "inventory_item",
+          id: "inventory_item-iron-key-1",
+          name: "Iron key",
+        }),
+      ]),
+    );
+    expect(taleRow).toEqual({
+      source_type: "local",
+      source_scenario_id: "scenario-1",
+    });
+  });
+
+  it("preserves tale source metadata through packages", async () => {
+    applyMigrations(dbState.current!);
+    const { createTale, exportTalePackage, getTale, importTalePackage } =
+      await import("./tale.repository");
+
+    const taleId = await createTale({
+      name: "Catalog Tale",
+      description: "Started from catalog.",
+      thumbnail: null,
+      components: [],
+      storyCards: [],
+      source: {
+        type: "catalog",
+        scenarioId: "catalog-1",
+        scenarioVersionId: "version-1",
+        scenarioTitle: "Iron Gate",
+      },
+      stats: [],
+      inventory: [],
+      log: [gmEntry("opening", "Rain needles the gate.")],
+      gameMode: GameMode.STORY_TELLER,
+      undoStack: [],
+    });
+
+    const exported = await exportTalePackage(taleId);
+    const importedId = await importTalePackage(exported);
+    const fallbackImportedId = await importTalePackage({
+      ...exported,
+      tale: {
+        ...exported.tale,
+        source: undefined,
+      },
+      state: {
+        ...exported.state,
+        data: {
+          ...exported.state.data,
+          source: exported.tale.source,
+        },
+      },
+    });
+
+    expect((await getTale(taleId))?.source).toEqual(exported.tale.source);
+    expect((await getTale(importedId))?.source).toEqual(exported.tale.source);
+    expect((await getTale(fallbackImportedId))?.source).toEqual(
+      exported.tale.source,
+    );
   });
 
   it("scopes hosted sync state and preferences by account", async () => {

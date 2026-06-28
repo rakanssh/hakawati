@@ -657,6 +657,7 @@ export function toSyncTalePackage(
       data: {
         components: pkg.state.data.components,
         storyCards: pkg.state.data.storyCards,
+        ...(pkg.tale.source ? { source: pkg.tale.source } : {}),
         gm: {
           stats: pkg.state.data.gm.stats,
           inventory: pkg.state.data.gm.inventory,

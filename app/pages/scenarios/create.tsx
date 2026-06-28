@@ -1,9 +1,13 @@
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useScenarioEditor } from "@/hooks/useScenarios";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
-import { ScenarioBasicsFields } from "@/components/scenario/ScenarioBasicsFields";
+import {
+  PublishScenarioDialog,
+  ScenarioBasicsFields,
+} from "@/components/scenario";
 import { GameModeField } from "@/components/scenario/GameModeField";
 import { StatsEditor } from "@/components/scenario/StatsEditor";
 import { InventoryEditor } from "@/components/scenario/InventoryEditor";
@@ -13,10 +17,22 @@ import { useScenarioForm } from "@/hooks/useScenarioForm";
 import { SCENARIO_COMPONENT_TYPES } from "@/lib/prompt-components";
 import { Scenario } from "@/types";
 import { ArrowLeftIcon } from "lucide-react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
+import {
+  useCatalogActions,
+  useCatalogClient,
+} from "@/hooks/useCatalogScenarios";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export default function ScenarioCreate() {
   const navigate = useNavigate();
+  const { t } = useLingui();
+  const catalog = useCatalogClient();
+  const catalogActions = useCatalogActions(catalog);
+  const canPublishOnCreate = catalog.enabled && catalog.signedIn;
+  const [publishAfterCreate, setPublishAfterCreate] = useState(false);
+  const [pendingPublish, setPendingPublish] = useState<Scenario | null>(null);
   const importedScenario = useRouterState({
     select: (s) =>
       // @ts-expect-error - importedScenario is not typed
@@ -27,7 +43,12 @@ export default function ScenarioCreate() {
   const { scenario, setScenario, save, saving } =
     useScenarioEditor(importedScenario);
 
+  useEffect(() => {
+    if (!canPublishOnCreate) setPublishAfterCreate(false);
+  }, [canPublishOnCreate]);
+
   const {
+    fields,
     addStat,
     updateStat,
     removeStat,
@@ -56,15 +77,32 @@ export default function ScenarioCreate() {
             <Trans>Create Scenario</Trans>
           </Label>
         </div>
-        <Button
-          disabled={saving}
-          onClick={async () => {
-            await save();
-            navigate({ to: `/scenarios` });
-          }}
-        >
-          <Trans>Save Scenario</Trans>
-        </Button>
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          {canPublishOnCreate ? (
+            <label className="flex h-10 items-center gap-2 rounded-xs border border-input bg-background/40 px-3 text-sm font-medium hover:bg-accent">
+              <Checkbox
+                checked={publishAfterCreate}
+                onCheckedChange={(checked) =>
+                  setPublishAfterCreate(checked === true)
+                }
+              />
+              <Trans>Publish</Trans>
+            </label>
+          ) : null}
+          <Button
+            disabled={saving}
+            onClick={async () => {
+              const id = await save();
+              if (publishAfterCreate && canPublishOnCreate) {
+                setPendingPublish({ ...scenario, id });
+                return;
+              }
+              navigate({ to: `/scenarios` });
+            }}
+          >
+            <Trans>Create</Trans>
+          </Button>
+        </div>
       </div>
       <Separator />
       <ScenarioBasicsFields
@@ -85,7 +123,7 @@ export default function ScenarioCreate() {
       />
       <Separator />
       <PromptComponentsEditor
-        components={scenario.components}
+        components={fields.components}
         allowedTypes={SCENARIO_COMPONENT_TYPES}
         gameMode={scenario.initialGameMode}
         onAdd={addComponent}
@@ -94,24 +132,53 @@ export default function ScenarioCreate() {
       />
       <Separator />
       <StatsEditor
-        stats={scenario.initialStats}
+        stats={fields.initialStats}
         onAdd={addStat}
         onUpdate={updateStat}
         onRemove={removeStat}
       />
       <Separator />
       <InventoryEditor
-        items={scenario.initialInventory}
+        items={fields.initialInventory}
         onAdd={addInventoryItem}
         onUpdate={updateInventoryItem}
         onRemove={removeInventoryItem}
       />
       <Separator />
       <StorybookEditor
-        entries={scenario.initialStoryCards}
+        entries={fields.initialStoryCards}
         onAdd={addStoryCard}
         onUpdate={updateStoryCard}
         onRemove={removeStoryCard}
+      />
+      <PublishScenarioDialog
+        open={Boolean(pendingPublish)}
+        scenario={pendingPublish}
+        updating={false}
+        thumbnailUploads={catalog.thumbnailUploads}
+        onOpenChange={(open) => {
+          if (open) return;
+          setPendingPublish(null);
+          navigate({ to: `/scenarios` });
+        }}
+        onPublish={async ({ metadata, thumbnailFile }) => {
+          if (!pendingPublish) return;
+          try {
+            await catalogActions.publish({
+              scenario: pendingPublish,
+              metadata,
+              thumbnailFile,
+            });
+            toast.success(t`Scenario published`);
+          } catch (error) {
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : t`Failed to publish scenario`,
+            );
+            throw error;
+          }
+        }}
       />
     </div>
   );

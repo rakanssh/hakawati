@@ -25,6 +25,7 @@ import type { TalePackageV1 } from "@/types/export.type";
 import { TalePackageV1Schema } from "@/types/export.type";
 import { normalizePromptComponents } from "@/lib/prompt-components";
 import { normalizeStoryCard } from "@/lib/story-card-utils";
+import { legacyScenarioToContent } from "@/lib/scenario-content";
 import {
   createTaleCurrentState,
   createTaleSessionState,
@@ -60,6 +61,7 @@ function sessionFromSnapshot(tale: TaleMutableSnapshot) {
 export async function initTale(tale: createTaleDTO): Promise<string> {
   const id = await createTale({
     scenarioId: tale.scenarioId,
+    source: tale.source,
     name: tale.name,
     description: tale.description,
     thumbnail: tale.thumbnail,
@@ -287,14 +289,16 @@ export async function saveAsScenario(taleId: string): Promise<string> {
     name: tale.name,
     initialGameMode: tale.gameMode,
     description: tale.description,
-    components: normalizePromptComponents(
-      tale.components.filter(
-        (component) => component.type !== PromptComponentType.OPENING,
+    content: legacyScenarioToContent({
+      components: normalizePromptComponents(
+        tale.components.filter(
+          (component) => component.type !== PromptComponentType.OPENING,
+        ),
       ),
-    ),
-    initialStats: tale.stats,
-    initialInventory: tale.inventory.map((item) => item.name),
-    initialStoryCards: tale.storyCards.map(normalizeStoryCard),
+      initialStats: tale.stats,
+      initialInventory: tale.inventory.map((item) => item.name),
+      initialStoryCards: tale.storyCards.map(normalizeStoryCard),
+    }),
     thumbnail: tale.thumbnail,
   };
 
