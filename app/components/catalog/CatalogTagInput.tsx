@@ -10,15 +10,13 @@ import {
 } from "@/components/ui/popover";
 import { useCatalogTagSuggestions } from "@/hooks/useCatalogScenarios";
 import type { CatalogClientState } from "@/hooks/useCatalogScenarios";
-import type { CatalogAgeRating, CatalogTagSort } from "@/types/catalog.type";
+import type { CatalogTagSort } from "@/types/catalog.type";
 import { splitCatalogTagInput, validateCatalogTags } from "@/lib/catalog-tags";
 
 type CatalogTagInputProps = {
   value: string[];
   onChange: (tags: string[]) => void;
   client: CatalogClientState;
-  language?: string;
-  ageRating?: CatalogAgeRating | string;
   sort?: CatalogTagSort;
   placeholder?: string;
   required?: boolean;
@@ -28,8 +26,6 @@ export function CatalogTagInput({
   value,
   onChange,
   client,
-  language,
-  ageRating,
   sort = "popular",
   placeholder = "Add tag",
   required = false,
@@ -43,12 +39,10 @@ export function CatalogTagInput({
       () => ({
         q: input,
         tag: value,
-        language,
-        ageRating,
         sort,
         limit: 8,
       }),
-      [ageRating, input, language, sort, value],
+      [input, sort, value],
     ),
   );
   const remainingSuggestions = suggestions.items.filter(

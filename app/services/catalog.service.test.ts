@@ -41,9 +41,7 @@ const packageFixture = (): ScenarioPackage => ({
   scenario: {
     title: "Iron Gate",
     summary: "A gate waits.",
-    language: "en",
     tags: ["gate"],
-    ageRating: "general",
     initialGameMode: GameMode.STORY_TELLER,
     description: "A public scenario.",
     content: [
@@ -151,6 +149,11 @@ describe("catalog service", () => {
         }),
       }),
     );
+    const payload = transport.post.mock.calls[0][1] as {
+      package: ScenarioPackage;
+    };
+    expect("language" in payload.package.scenario).toBe(false);
+    expect("ageRating" in payload.package.scenario).toBe(false);
     expect(publishLinks.upsertScenarioPublishLink).toHaveBeenCalledWith({
       localScenarioId: "local-1",
       catalogScenarioId: "catalog-1",
@@ -224,12 +227,10 @@ describe("catalog service", () => {
     await listCatalogScenarios(transport, {
       sort: "popular",
       tag: ["Sci Fi", "scripted"],
-      language: "en",
-      ageRating: "teen",
     });
 
     expect(transport.get).toHaveBeenCalledWith(
-      "/v1/catalog/scenarios?sort=popular&language=en&ageRating=teen&tag=sci-fi&tag=scripted",
+      "/v1/catalog/scenarios?sort=popular&tag=sci-fi&tag=scripted",
     );
   });
 
@@ -246,14 +247,12 @@ describe("catalog service", () => {
       listCatalogTags(transport, {
         q: "sc",
         tag: ["Scripted"],
-        language: "en",
-        ageRating: "teen",
         sort: "hot",
         limit: 20,
       }),
     ).resolves.toEqual({ items: [{ tag: "sci-fi", count: 50 }] });
     expect(transport.get).toHaveBeenCalledWith(
-      "/v1/catalog/tags?q=sc&language=en&ageRating=teen&sort=hot&limit=20&tag=scripted",
+      "/v1/catalog/tags?q=sc&sort=hot&limit=20&tag=scripted",
     );
   });
 });

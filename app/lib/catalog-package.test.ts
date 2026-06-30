@@ -41,15 +41,15 @@ describe("catalog package", () => {
       },
       {
         summary: "A gate waits.",
-        language: "EN",
         tags: ["Magic", "city"],
-        ageRating: "teen",
       },
     );
 
     expect(pkg.format).toBe("hakawati-scenario-package");
     expect(pkg.scenario.tags).toEqual(["magic", "city"]);
     expect("category" in pkg.scenario).toBe(false);
+    expect("language" in pkg.scenario).toBe(false);
+    expect("ageRating" in pkg.scenario).toBe(false);
     expect(pkg.scenario.content).toEqual([
       expect.objectContaining({
         type: "prompt_component",
@@ -71,9 +71,7 @@ describe("catalog package", () => {
         scenario: {
           title: "Old",
           summary: "Old split package.",
-          language: "en",
           tags: ["old"],
-          ageRating: "general",
           initialGameMode: GameMode.STORY_TELLER,
           description: "",
           components: [],

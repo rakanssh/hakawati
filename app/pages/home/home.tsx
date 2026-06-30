@@ -42,6 +42,7 @@ import {
   formatExactDateTime,
   formatRelativeTime,
 } from "@/lib/utils";
+import { imageBadgeClass } from "@/lib/card-badges";
 import { getSyncUiKind } from "@/lib/sync-ui";
 import { initTaleFromScenario } from "@/services/scenario.service";
 import {
@@ -211,8 +212,9 @@ function TaleCard({
           <PreviewImage thumbnail={thumbnail} alt={t`${title} tale`} />
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge className="absolute left-2 top-2 bg-background/80 text-foreground backdrop-blur">
-                {formatRelativeTime(updatedAt)}
+              <Badge className={`absolute left-1 top-1 ${imageBadgeClass}`}>
+                {formatRelativeTime(updatedAt)} - {entryCount}{" "}
+                {entryCount === 1 ? t`entry` : t`entries`}
               </Badge>
             </TooltipTrigger>
             <TooltipContent side="top">
@@ -221,7 +223,7 @@ function TaleCard({
           </Tooltip>
           {syncActive && !syncStatusUnknown ? (
             <Badge
-              className="absolute right-2 top-2 bg-background/80 text-[10px] text-foreground backdrop-blur"
+              className={`absolute bottom-1 right-1 ${imageBadgeClass}`}
               aria-label={statusLabel}
             >
               {hasConflict ? (
@@ -237,12 +239,7 @@ function TaleCard({
       </CardHeader>
       <CardContent className="flex min-h-28 flex-col gap-1.5 p-2 sm:min-h-32 sm:gap-2 sm:p-2.5">
         <div className="min-w-0">
-          <div className="flex items-start gap-1.5">
-            <h3 className="min-w-0 flex-1 truncate font-semibold">{title}</h3>
-            <Badge variant="outline" className="shrink-0 text-[10px]">
-              {entryCount} {entryCount === 1 ? t`entry` : t`entries`}
-            </Badge>
-          </div>
+          <h3 className="truncate font-semibold">{title}</h3>
           <p className="mt-1 line-clamp-2 min-h-10 text-sm text-muted-foreground">
             {description}
           </p>
@@ -283,11 +280,20 @@ function PublicScenarioCard({
   return (
     <Card className="w-[60vw] max-w-56 shrink-0 snap-start gap-0 overflow-hidden py-0 sm:w-60 sm:max-w-64 lg:w-64">
       <CardHeader className="p-0">
-        <img
-          src={catalogAssetUrl(baseUrl, scenario.thumbnail?.downloadUrl)}
-          alt={t`${scenario.title} public scenario`}
-          className="h-20 w-full object-cover sm:h-28"
-        />
+        <div className="relative">
+          <img
+            src={catalogAssetUrl(baseUrl, scenario.thumbnail?.downloadUrl)}
+            alt={t`${scenario.title} public scenario`}
+            className="h-20 w-full object-cover sm:h-28"
+          />
+          <Badge className={`absolute left-1 top-1 ${imageBadgeClass}`}>
+            {formatRelativeTime(
+              Date.parse(scenario.publishedAt ?? scenario.updatedAt) || 0,
+            )}{" "}
+            - {scenario.startCount}{" "}
+            {scenario.startCount === 1 ? t`start` : t`starts`}
+          </Badge>
+        </div>
       </CardHeader>
       <CardContent className="flex min-h-28 flex-col gap-1.5 p-2 sm:min-h-32 sm:gap-2 sm:p-2.5">
         <div className="min-w-0">
@@ -295,9 +301,6 @@ function PublicScenarioCard({
             <h3 className="min-w-0 flex-1 truncate font-semibold">
               {scenario.title}
             </h3>
-            <Badge variant="outline" className="shrink-0 text-[10px]">
-              {scenario.startCount} starts
-            </Badge>
           </div>
           <p className="mt-1 line-clamp-2 min-h-10 text-sm text-muted-foreground">
             {scenario.summary}
@@ -359,7 +362,7 @@ function ScenarioCard({
           />
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge className="absolute left-2 top-2 bg-background/80 text-foreground backdrop-blur">
+              <Badge className={`absolute left-1 top-1 ${imageBadgeClass}`}>
                 {formatRelativeTime(scenario.updatedAt)}
               </Badge>
             </TooltipTrigger>

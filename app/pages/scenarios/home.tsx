@@ -18,7 +18,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "@tanstack/react-router";
 import {
   useScenariosList,
@@ -31,6 +30,7 @@ import { addSyncChangedListener } from "@/services/sync-wakeup";
 import { useLoadTale } from "@/hooks/useGameSaves";
 import {
   bytesToObjectUrl,
+  cn,
   formatExactDateTime,
   formatRelativeTime,
 } from "@/lib/utils";
@@ -41,30 +41,31 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
   ArrowLeftIcon,
   PencilIcon,
   TrashIcon,
   ClipboardIcon,
   FlagIcon,
+  MoreHorizontalIcon,
   Sparkles,
+  SlidersHorizontalIcon,
   UploadCloudIcon,
   VenetianMask,
 } from "lucide-react";
 import placeholderImage from "@/assets/scen-ph.png";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -81,7 +82,6 @@ import {
   useScenarioPublishLinks,
 } from "@/hooks/useCatalogScenarios";
 import {
-  CATALOG_AGE_RATINGS,
   CATALOG_SORTS,
   type CatalogScenarioDetail,
   type CatalogScenarioRecord,
@@ -89,14 +89,12 @@ import {
 import { getScenarioById } from "@/services/scenario.service";
 import type { Scenario } from "@/types/context.type";
 import { CatalogTagInput } from "@/components/catalog/CatalogTagInput";
+import { imageBadgeClass, imageMenuButtonClass } from "@/lib/card-badges";
 
 type PendingScenarioDelete = {
   id: string;
   name: string;
 };
-
-const catalogFilterControlClass =
-  "h-9 rounded-xs border-input bg-background px-3 shadow-xs";
 
 function catalogAssetUrl(baseUrl: string, path: string | null | undefined) {
   if (!path) return placeholderImage;
@@ -110,6 +108,7 @@ function CatalogScenarioCard({
   actions,
   onView,
   onStart,
+  onStartPrivate,
   onReport,
   onUnpublish,
   onThumbnail,
@@ -119,12 +118,20 @@ function CatalogScenarioCard({
   actions: "discover" | "published";
   onView?: (scenario: CatalogScenarioRecord) => void;
   onStart?: (scenario: CatalogScenarioRecord) => void;
+  onStartPrivate?: (scenario: CatalogScenarioRecord) => void;
   onReport?: (scenario: CatalogScenarioRecord) => void;
   onUnpublish?: (scenario: CatalogScenarioRecord) => void;
   onThumbnail?: (scenario: CatalogScenarioRecord, file: File) => void;
 }) {
+  const catalogDate = Date.parse(scenario.publishedAt ?? scenario.updatedAt);
+  const dateLabel = formatRelativeTime(
+    Number.isNaN(catalogDate) ? 0 : catalogDate,
+  );
+  const startsLabel =
+    scenario.startCount === 1 ? "1 start" : `${scenario.startCount} starts`;
+
   return (
-    <Card className="flex flex-col gap-1 pt-0 pb-2 border-accent/50">
+    <Card className="flex flex-col gap-1 overflow-hidden border-accent/50 pt-0 pb-2">
       <CardHeader className="p-0 m-0">
         <div className="relative">
           <img
@@ -132,81 +139,114 @@ function CatalogScenarioCard({
             alt={`${scenario.title} thumbnail`}
             className="h-48 w-full object-cover"
           />
-          {actions === "published" ? (
-            <Badge className="absolute left-1 top-1 bg-background/80 text-xs text-foreground">
-              {scenario.status}
-            </Badge>
-          ) : null}
-        </div>
-      </CardHeader>
-      <CardContent className="flex h-44 flex-col gap-2 px-2">
-        <div className="flex items-center gap-2">
-          <span className="line-clamp-1 min-w-0 flex-1 text-sm font-semibold">
-            {scenario.title}
-          </span>
-          <Badge variant="secondary" className="shrink-0 text-xs">
-            {scenario.ageRating}
+          <div className="absolute right-1.5 top-0.5 z-10">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  className={imageMenuButtonClass}
+                  aria-label="Scenario actions"
+                >
+                  <MoreHorizontalIcon className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" side="bottom" sideOffset={4}>
+                <DropdownMenuItem onClick={() => onView?.(scenario)}>
+                  <Trans>View</Trans>
+                </DropdownMenuItem>
+                {actions === "discover" ? (
+                  <DropdownMenuItem onClick={() => onReport?.(scenario)}>
+                    <FlagIcon className="h-4 w-4" />
+                    <Trans>Report</Trans>
+                  </DropdownMenuItem>
+                ) : null}
+                {actions === "published" && onThumbnail ? (
+                  <DropdownMenuItem
+                    asChild
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <label>
+                      <Trans>Thumbnail</Trans>
+                      <input
+                        className="hidden"
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) onThumbnail(scenario, file);
+                          event.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
+                  </DropdownMenuItem>
+                ) : null}
+                {actions === "published" ? (
+                  <DropdownMenuItem onClick={() => onUnpublish?.(scenario)}>
+                    <Trans>Unpublish</Trans>
+                  </DropdownMenuItem>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge className={`absolute left-1 top-1 ${imageBadgeClass}`}>
+                {dateLabel} - {startsLabel}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              {formatExactDateTime(Number.isNaN(catalogDate) ? 0 : catalogDate)}
+            </TooltipContent>
+          </Tooltip>
+          <Badge
+            className={`absolute bottom-1 left-1 max-w-[calc(100%-0.5rem)] ${imageBadgeClass}`}
+          >
+            <span className="truncate">{scenario.author.displayName}</span>
           </Badge>
         </div>
-        <div className="flex min-h-5 flex-wrap gap-1">
+      </CardHeader>
+      <CardContent
+        className={cn(
+          "flex flex-col gap-1.5 px-2",
+          actions === "discover" && "h-36",
+        )}
+      >
+        <span className="line-clamp-1 min-w-0 text-sm font-semibold">
+          {scenario.title}
+        </span>
+        <div className="flex flex-wrap gap-1">
           {scenario.tags.slice(0, 3).map((tag) => (
             <Badge key={tag} variant="outline" className="text-xs">
               {tag}
             </Badge>
           ))}
         </div>
-        <p className="line-clamp-3 min-h-0 flex-1 text-sm text-muted-foreground">
+        <p className="line-clamp-2 min-h-0 flex-1 text-sm leading-snug text-muted-foreground">
           {scenario.summary}
         </p>
-        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-          <span className="truncate">{scenario.author.displayName}</span>
-          <span className="shrink-0">{scenario.startCount} starts</span>
-        </div>
         {actions === "discover" ? (
-          <div className="mt-auto grid grid-cols-[auto_1fr_auto] gap-1">
-            <Button variant="outline" onClick={() => onView?.(scenario)}>
-              <Trans>View</Trans>
-            </Button>
+          <div
+            className={cn(
+              "mt-auto grid",
+              onStartPrivate && "grid-cols-[1fr_auto] gap-1",
+            )}
+          >
             <Button onClick={() => onStart?.(scenario)}>
               <Trans>Start Tale</Trans>
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => onReport?.(scenario)}
-              aria-label="Report scenario"
-            >
-              <FlagIcon className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <div className="mt-auto flex flex-wrap gap-1">
-            {onThumbnail ? (
-              <Button asChild variant="outline" size="sm">
-                <label>
-                  <Trans>Thumbnail</Trans>
-                  <input
-                    className="hidden"
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file) onThumbnail(scenario, file);
-                      event.currentTarget.value = "";
-                    }}
-                  />
-                </label>
+            {onStartPrivate ? (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => onStartPrivate(scenario)}
+                aria-label="Start local-only tale"
+              >
+                <VenetianMask className="h-4 w-4" />
               </Button>
             ) : null}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onUnpublish?.(scenario)}
-            >
-              <Trans>Unpublish</Trans>
-            </Button>
           </div>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );
@@ -232,6 +272,8 @@ export default function ScenariosHome() {
   );
   const [generateOpen, setGenerateOpen] = useState(false);
   const [canStartPrivate, setCanStartPrivate] = useState(false);
+  const [activeTab, setActiveTab] = useState("local");
+  const [filterOpen, setFilterOpen] = useState(false);
   const [pendingDelete, setPendingDelete] =
     useState<PendingScenarioDelete | null>(null);
   const [pendingPublish, setPendingPublish] = useState<Scenario | null>(null);
@@ -338,9 +380,18 @@ export default function ScenariosHome() {
     };
   }, []);
 
+  useEffect(() => {
+    if (
+      (activeTab === "discover" && !catalog.enabled) ||
+      (activeTab === "published" && (!catalog.enabled || !catalog.signedIn))
+    ) {
+      setActiveTab("local");
+    }
+  }, [activeTab, catalog.enabled, catalog.signedIn]);
+
   return (
     <div className="mx-auto w-full max-w-screen-2xl py-5 flex flex-col gap-4 px-3">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex gap-4">
           {/* back button */}
           <Button
@@ -359,7 +410,7 @@ export default function ScenariosHome() {
             </span>
           </div>
         </div>
-        <div className="flex flex-col md:flex-row gap-2">
+        <div className="grid grid-cols-[1fr_1fr_auto] gap-2 sm:flex sm:flex-row">
           <Button
             onClick={async () => {
               try {
@@ -388,32 +439,86 @@ export default function ScenariosHome() {
         </div>
       </div>
 
-      <Separator />
-      <Tabs defaultValue="local" className="gap-4">
-        <TabsList className="h-auto w-full justify-start gap-5 rounded-none border-b bg-transparent p-0">
-          <TabsTrigger
-            value="local"
-            className="flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 py-3 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-          >
-            <Trans>Local</Trans>
-          </TabsTrigger>
-          {catalog.enabled ? (
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4">
+        <div className="flex flex-col gap-2 border-y py-2 md:flex-row md:items-center md:justify-between">
+          <TabsList className="h-auto w-full justify-start gap-5 rounded-none bg-transparent p-0 md:w-auto">
             <TabsTrigger
-              value="discover"
-              className="flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 py-3 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              value="local"
+              className="flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
             >
-              <Trans>Discover</Trans>
+              <Trans>Local</Trans>
             </TabsTrigger>
+            {catalog.enabled ? (
+              <TabsTrigger
+                value="discover"
+                className="flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              >
+                <Trans>Discover</Trans>
+              </TabsTrigger>
+            ) : null}
+            {catalog.enabled && catalog.signedIn ? (
+              <TabsTrigger
+                value="published"
+                className="flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              >
+                <Trans>Published</Trans>
+              </TabsTrigger>
+            ) : null}
+          </TabsList>
+          {activeTab === "discover" && catalog.enabled ? (
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 md:min-w-[32rem]">
+              <CatalogTagInput
+                value={discover.filters.tag ?? []}
+                onChange={(tag) =>
+                  discover.setFilters((current) => ({ ...current, tag }))
+                }
+                client={catalog}
+                placeholder="Search tags"
+              />
+              <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label={t`Sort scenarios`}
+                  >
+                    <SlidersHorizontalIcon className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="pb-6">
+                  <SheetHeader>
+                    <SheetTitle>
+                      <Trans>Sort scenarios</Trans>
+                    </SheetTitle>
+                  </SheetHeader>
+                  <div className="grid gap-2 px-4">
+                    {CATALOG_SORTS.map((sort) => (
+                      <Button
+                        key={sort}
+                        variant={
+                          discover.filters.sort === sort ||
+                          (!discover.filters.sort && sort === "popular")
+                            ? "default"
+                            : "outline"
+                        }
+                        className="justify-start"
+                        onClick={() => {
+                          discover.setFilters((current) => ({
+                            ...current,
+                            sort: sort as (typeof CATALOG_SORTS)[number],
+                          }));
+                          setFilterOpen(false);
+                        }}
+                      >
+                        {sort.replaceAll("_", " ")}
+                      </Button>
+                    ))}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
           ) : null}
-          {catalog.enabled && catalog.signedIn ? (
-            <TabsTrigger
-              value="published"
-              className="flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 py-3 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
-            >
-              <Trans>Published</Trans>
-            </TabsTrigger>
-          ) : null}
-        </TabsList>
+        </div>
         <TabsContent value="local" className="grid gap-4">
           {loading && (
             <div className="text-sm text-muted-foreground">
@@ -456,10 +561,10 @@ export default function ScenariosHome() {
                             <Button
                               variant="secondary"
                               size="icon"
-                              className="h-6 w-6 rounded-full pb-1.5 bg-accent/50"
+                              className={imageMenuButtonClass}
                               aria-label={t`Scenario actions`}
                             >
-                              ...
+                              <MoreHorizontalIcon className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent
@@ -512,13 +617,17 @@ export default function ScenariosHome() {
                         </DropdownMenu>
                       </div>
                       {linked ? (
-                        <Badge className="absolute bottom-1 left-1 text-xs bg-accent/80 text-accent-foreground">
+                        <Badge
+                          className={`absolute bottom-1 left-1 ${imageBadgeClass}`}
+                        >
                           <Trans>Published</Trans>
                         </Badge>
                       ) : null}
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Badge className="absolute top-1 left-1 text-xs text-muted-foreground bg-accent/50">
+                          <Badge
+                            className={`absolute left-1 top-1 ${imageBadgeClass}`}
+                          >
                             {formatRelativeTime(updatedAt)}
                           </Badge>
                         </TooltipTrigger>
@@ -530,8 +639,8 @@ export default function ScenariosHome() {
                       </Tooltip>
                     </div>
                   </CardHeader>
-                  <CardContent className="flex h-36 flex-col gap-2 px-2">
-                    <span className="line-clamp-2 min-h-9 text-sm font-semibold leading-snug">
+                  <CardContent className="flex h-36 flex-col gap-1.5 px-2">
+                    <span className="line-clamp-2 text-sm font-semibold leading-snug">
                       {name}
                     </span>
                     <p className="line-clamp-3 min-h-0 flex-1 rounded-xs text-sm text-muted-foreground">
@@ -601,74 +710,6 @@ export default function ScenariosHome() {
         </TabsContent>
         {catalog.enabled ? (
           <TabsContent value="discover" className="grid gap-4">
-            <div className="flex flex-wrap items-center gap-2 border-b pb-4">
-              <Select
-                value={discover.filters.sort ?? "popular"}
-                onValueChange={(sort) =>
-                  discover.setFilters((current) => ({
-                    ...current,
-                    sort: sort as (typeof CATALOG_SORTS)[number],
-                  }))
-                }
-              >
-                <SelectTrigger className={`${catalogFilterControlClass} w-36`}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATALOG_SORTS.map((sort) => (
-                    <SelectItem key={sort} value={sort}>
-                      {sort.replaceAll("_", " ")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={discover.filters.ageRating ?? "all"}
-                onValueChange={(ageRating) =>
-                  discover.setFilters((current) => ({
-                    ...current,
-                    ageRating: ageRating === "all" ? undefined : ageRating,
-                  }))
-                }
-              >
-                <SelectTrigger className={`${catalogFilterControlClass} w-40`}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">
-                    <Trans>All ages</Trans>
-                  </SelectItem>
-                  {CATALOG_AGE_RATINGS.map((ageRating) => (
-                    <SelectItem key={ageRating} value={ageRating}>
-                      {ageRating}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                className={`${catalogFilterControlClass} w-48`}
-                value={discover.filters.language ?? ""}
-                placeholder="language"
-                onChange={(event) =>
-                  discover.setFilters((current) => ({
-                    ...current,
-                    language: event.target.value.trim() || undefined,
-                  }))
-                }
-              />
-              <div className="w-80 max-w-full">
-                <CatalogTagInput
-                  value={discover.filters.tag ?? []}
-                  onChange={(tag) =>
-                    discover.setFilters((current) => ({ ...current, tag }))
-                  }
-                  client={catalog}
-                  language={discover.filters.language}
-                  ageRating={discover.filters.ageRating}
-                  placeholder="Add tag"
-                />
-              </div>
-            </div>
             {discover.loading ? (
               <div className="text-sm text-muted-foreground">
                 <Trans>Loading...</Trans>
@@ -688,6 +729,11 @@ export default function ScenariosHome() {
                   actions="discover"
                   onView={viewPublicScenario}
                   onStart={(item) => void startPublicScenario(item)}
+                  onStartPrivate={
+                    canStartPrivate
+                      ? (item) => void startPublicScenario(item, "private")
+                      : undefined
+                  }
                   onReport={reportPublicScenario}
                 />
               ))}
@@ -775,8 +821,6 @@ export default function ScenariosHome() {
                 {viewingCatalog.summary}
               </p>
               <div className="flex flex-wrap gap-2">
-                <Badge variant="outline">{viewingCatalog.language}</Badge>
-                <Badge variant="outline">{viewingCatalog.ageRating}</Badge>
                 {viewingCatalog.tags.map((tag) => (
                   <Badge key={tag} variant="outline">
                     {tag}

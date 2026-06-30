@@ -11,17 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  CATALOG_AGE_RATINGS,
-  type CatalogAgeRating,
-} from "@/types/catalog.type";
 import type { Scenario } from "@/types/context.type";
 import type { ScenarioPackageMetadata } from "@/lib/catalog-package";
 import { Trans } from "@lingui/react/macro";
@@ -41,10 +30,6 @@ type PublishScenarioDialogProps = {
   }) => Promise<void>;
 };
 
-function defaultLanguage() {
-  return navigator.language?.split("-")[0] || "en";
-}
-
 export function PublishScenarioDialog({
   open,
   scenario,
@@ -56,8 +41,6 @@ export function PublishScenarioDialog({
 }: PublishScenarioDialogProps) {
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
-  const [language, setLanguage] = useState(defaultLanguage);
-  const [ageRating, setAgeRating] = useState<CatalogAgeRating>("general");
   const [tags, setTags] = useState<string[]>([]);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -66,15 +49,11 @@ export function PublishScenarioDialog({
     if (!open || !scenario) return;
     setTitle(scenario.name);
     setSummary(scenario.description);
-    setLanguage(defaultLanguage());
-    setAgeRating("general");
     setTags([]);
     setThumbnailFile(null);
   }, [open, scenario]);
 
-  const canSubmit = Boolean(
-    title.trim() && summary.trim() && language.trim() && tags.length > 0,
-  );
+  const canSubmit = Boolean(title.trim() && summary.trim() && tags.length > 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -104,8 +83,6 @@ export function PublishScenarioDialog({
                 metadata: {
                   title,
                   summary,
-                  language,
-                  ageRating,
                   tags,
                 },
                 thumbnailFile,
@@ -116,22 +93,12 @@ export function PublishScenarioDialog({
             }
           }}
         >
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3">
             <div className="grid gap-2">
               <Label>
                 <Trans>Title</Trans>
               </Label>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-            </div>
-            <div className="grid gap-2">
-              <Label>
-                <Trans>Language</Trans>
-              </Label>
-              <Input
-                value={language}
-                maxLength={16}
-                onChange={(e) => setLanguage(e.target.value)}
-              />
             </div>
           </div>
           <div className="grid gap-2">
@@ -144,29 +111,7 @@ export function PublishScenarioDialog({
               onChange={(e) => setSummary(e.target.value)}
             />
           </div>
-          <div className="grid gap-3 md:grid-cols-[1fr_2fr]">
-            <div className="grid gap-2">
-              <Label>
-                <Trans>Age rating</Trans>
-              </Label>
-              <Select
-                value={ageRating}
-                onValueChange={(value) =>
-                  setAgeRating(value as CatalogAgeRating)
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATALOG_AGE_RATINGS.map((item) => (
-                    <SelectItem key={item} value={item}>
-                      {item}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="grid gap-3">
             <div className="grid gap-2">
               <Label>
                 <Trans>Tags</Trans>
@@ -175,8 +120,6 @@ export function PublishScenarioDialog({
                 value={tags}
                 onChange={setTags}
                 client={catalog}
-                language={language}
-                ageRating={ageRating}
                 placeholder="magic, city"
                 required
               />

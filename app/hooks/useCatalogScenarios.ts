@@ -117,8 +117,6 @@ export function useCatalogScenarioList(
   const [filters, setFilters] = useState<CatalogListOptions>({
     limit: initial.limit ?? 24,
     sort: initial.sort ?? "popular",
-    language: initial.language,
-    ageRating: initial.ageRating,
     tag: initial.tag,
   });
   const [loading, setLoading] = useState(false);
@@ -248,7 +246,7 @@ export function useCatalogTagSuggestions(
   client: CatalogClientState,
   options: CatalogTagListOptions,
 ) {
-  const { ageRating, language, limit, q, sort, tag } = options;
+  const { limit, q, sort, tag } = options;
   const [items, setItems] = useState<CatalogTagSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -260,8 +258,6 @@ export function useCatalogTagSuggestions(
     let cancelled = false;
     setLoading(true);
     void listCatalogTags(client.publicTransport, {
-      ageRating,
-      language,
       limit,
       q,
       sort,
@@ -279,16 +275,7 @@ export function useCatalogTagSuggestions(
     return () => {
       cancelled = true;
     };
-  }, [
-    client.enabled,
-    client.publicTransport,
-    ageRating,
-    language,
-    limit,
-    q,
-    sort,
-    tag,
-  ]);
+  }, [client.enabled, client.publicTransport, limit, q, sort, tag]);
 
   return { items, loading } as const;
 }

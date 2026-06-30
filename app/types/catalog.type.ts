@@ -1,7 +1,5 @@
 import type { ScenarioContent } from "./context.type";
 
-export const CATALOG_AGE_RATINGS = ["general", "teen", "mature"] as const;
-
 export const CATALOG_SORTS = [
   "popular",
   "newest",
@@ -11,7 +9,6 @@ export const CATALOG_SORTS = [
 
 export const CATALOG_TAG_SORTS = ["popular", "hot", "name"] as const;
 
-export type CatalogAgeRating = (typeof CATALOG_AGE_RATINGS)[number];
 export type CatalogSort = (typeof CATALOG_SORTS)[number];
 export type CatalogTagSort = (typeof CATALOG_TAG_SORTS)[number];
 export type CatalogScenarioStatus =
@@ -26,9 +23,7 @@ export type ScenarioPackage = {
   scenario: {
     title: string;
     summary: string;
-    language: string;
     tags: string[];
-    ageRating: CatalogAgeRating;
     initialGameMode: "story_teller" | "gm";
     description: string;
     content: ScenarioContent[];
@@ -53,9 +48,7 @@ export type CatalogScenarioRecord = {
   status: CatalogScenarioStatus;
   title: string;
   summary: string;
-  language: string;
   tags: string[];
-  ageRating: CatalogAgeRating;
   author: {
     displayName: string;
   };

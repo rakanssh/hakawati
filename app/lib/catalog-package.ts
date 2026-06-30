@@ -1,7 +1,5 @@
 import { z } from "zod";
 import {
-  CATALOG_AGE_RATINGS,
-  type CatalogAgeRating,
   type CatalogStartSource,
   type ScenarioPackage,
 } from "@/types/catalog.type";
@@ -80,7 +78,6 @@ const scenarioPackageSchema = z.object({
     .object({
       title: nonBlankString(160),
       summary: nonBlankString(600),
-      language: nonBlankString(16).regex(/^[A-Za-z0-9-]+$/),
       tags: z
         .array(nonBlankString(CATALOG_MAX_TAG_LENGTH))
         .min(1)
@@ -88,7 +85,6 @@ const scenarioPackageSchema = z.object({
         .refine((tags) => tags.every((tag) => /^[a-z0-9-]+$/.test(tag)), {
           message: "Tags must use lowercase letters, numbers, and hyphens",
         }),
-      ageRating: z.enum(CATALOG_AGE_RATINGS),
       initialGameMode: z.enum(["story_teller", "gm"]),
       description: z.string().trim().max(4000).default(""),
       content: z.array(scenarioContentSchema),
@@ -99,9 +95,7 @@ const scenarioPackageSchema = z.object({
 export type ScenarioPackageMetadata = {
   title?: string;
   summary?: string;
-  language?: string;
   tags?: string[];
-  ageRating?: CatalogAgeRating;
 };
 
 export function parseScenarioPackage(value: unknown): ScenarioPackage {
@@ -135,9 +129,7 @@ export function buildScenarioPackage(
     scenario: {
       title,
       summary: metadata.summary?.trim() || scenario.description.trim() || title,
-      language: metadata.language?.trim() || "en",
       tags: normalizeCatalogTags(metadata.tags),
-      ageRating: metadata.ageRating ?? "general",
       initialGameMode: scenario.initialGameMode,
       description: scenario.description,
       content: scenarioContentToPackage(scenario.content),

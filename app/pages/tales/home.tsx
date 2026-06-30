@@ -40,6 +40,7 @@ import {
   CloudOff,
   CloudUpload,
   FilePlus2Icon,
+  MoreHorizontalIcon,
   PencilIcon,
   TrashIcon,
   VenetianMask,
@@ -50,6 +51,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { LibraryTaleItem } from "@/lib/tale-library";
 import type { TaleConflictChoice } from "@/hooks/useTaleLibrary";
+import { imageBadgeClass, imageMenuButtonClass } from "@/lib/card-badges";
 
 type PendingTaleDelete = {
   item: LibraryTaleItem;
@@ -282,10 +284,10 @@ export default function TalesHome() {
                         <Button
                           variant="secondary"
                           size="icon"
-                          className="h-6 w-6 rounded-full bg-accent/50 pb-1.5"
+                          className={imageMenuButtonClass}
                           aria-label={t`Tale actions`}
                         >
-                          ...
+                          <MoreHorizontalIcon className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
@@ -356,8 +358,10 @@ export default function TalesHome() {
                   </div>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Badge className="absolute left-1 top-1 z-10 h-5 bg-accent/60 px-2 text-xs text-muted-foreground">
-                        {formatRelativeTime(updatedAt)} · {entryCount}{" "}
+                      <Badge
+                        className={`absolute left-1 top-1 ${imageBadgeClass}`}
+                      >
+                        {formatRelativeTime(updatedAt)} - {entryCount}{" "}
                         {entryCount === 1 ? t`entry` : t`entries`}
                       </Badge>
                     </TooltipTrigger>
@@ -369,7 +373,7 @@ export default function TalesHome() {
                   </Tooltip>
                   {syncActive && !syncStatusUnknown ? (
                     <Badge
-                      className="absolute left-1 top-8 z-10 h-5 bg-accent/60 px-2 text-xs text-muted-foreground"
+                      className={`absolute bottom-1 right-1 ${imageBadgeClass}`}
                       aria-label={statusLabel}
                     >
                       {hasConflict ? (
@@ -383,8 +387,8 @@ export default function TalesHome() {
                   ) : null}
                 </div>
               </CardHeader>
-              <CardContent className="flex h-36 flex-col gap-2 px-2">
-                <span className="line-clamp-2 min-h-9 text-sm font-semibold leading-snug">
+              <CardContent className="flex h-36 flex-col gap-1.5 px-2">
+                <span className="line-clamp-2 text-sm font-semibold leading-snug">
                   {name}
                 </span>
                 <p className="line-clamp-3 min-h-0 flex-1 rounded-xs text-sm text-muted-foreground">

@@ -53,16 +53,12 @@ export type CatalogListOptions = {
   limit?: number;
   cursor?: string;
   sort?: CatalogSort;
-  language?: string;
-  ageRating?: string;
   tag?: string[];
 };
 
 export type CatalogTagListOptions = {
   q?: string;
   tag?: string[];
-  language?: string;
-  ageRating?: string;
   sort?: CatalogTagSort;
   limit?: number;
 };
@@ -419,8 +415,6 @@ function catalogListQuery(options: CatalogListOptions): string {
   if (options.limit) query.set("limit", String(options.limit));
   if (options.cursor) query.set("cursor", options.cursor);
   if (options.sort) query.set("sort", options.sort);
-  if (options.language) query.set("language", options.language);
-  if (options.ageRating) query.set("ageRating", options.ageRating);
   for (const tag of normalizeCatalogTags(options.tag)) query.append("tag", tag);
   return query.toString();
 }
@@ -428,8 +422,6 @@ function catalogListQuery(options: CatalogListOptions): string {
 function catalogTagQuery(options: CatalogTagListOptions): string {
   const query = new URLSearchParams();
   if (options.q?.trim()) query.set("q", options.q.trim());
-  if (options.language) query.set("language", options.language);
-  if (options.ageRating) query.set("ageRating", options.ageRating);
   if (options.sort) query.set("sort", options.sort);
   if (options.limit) query.set("limit", String(options.limit));
   for (const tag of normalizeCatalogTags(options.tag)) query.append("tag", tag);
