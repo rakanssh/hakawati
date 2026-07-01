@@ -2,6 +2,8 @@ import { fetch } from "@tauri-apps/plugin-http";
 import { nanoid } from "nanoid";
 import { LogEntryRole } from "@/types/log.type";
 import type {
+  CatalogOwnedScenarioDetail,
+  CatalogOwnedScenarioPage,
   CatalogScenarioDetail,
   CatalogScenarioPage,
   CatalogSort,
@@ -187,12 +189,12 @@ export async function listCatalogScenarios(
 export async function listOwnedCatalogScenarios(
   transport: CatalogTransport,
   options: Pick<CatalogListOptions, "limit" | "cursor"> = {},
-): Promise<CatalogScenarioPage> {
+): Promise<CatalogOwnedScenarioPage> {
   const query = catalogListQuery(options);
   const suffix = query ? `?${query}` : "";
   return bodyValue(
     await transport.get(`/v1/catalog/me/scenarios${suffix}`),
-  ) as CatalogScenarioPage;
+  ) as CatalogOwnedScenarioPage;
 }
 
 export async function listCatalogTags(
@@ -215,6 +217,21 @@ export async function getCatalogScenario(
       `/v1/catalog/scenarios/${encodeURIComponent(scenarioId)}`,
     ),
   ) as CatalogScenarioDetail;
+  return {
+    ...detail,
+    package: parseScenarioPackage(detail.package),
+  };
+}
+
+export async function getOwnedCatalogScenario(
+  transport: CatalogTransport,
+  scenarioId: string,
+): Promise<CatalogOwnedScenarioDetail> {
+  const detail = bodyValue(
+    await transport.get(
+      `/v1/catalog/me/scenarios/${encodeURIComponent(scenarioId)}`,
+    ),
+  ) as CatalogOwnedScenarioDetail;
   return {
     ...detail,
     package: parseScenarioPackage(detail.package),
@@ -259,7 +276,7 @@ export async function startCatalogScenario(
 export async function createCatalogScenario(
   transport: CatalogTransport,
   input: { package: ScenarioPackage; thumbnailAssetId?: string | null },
-): Promise<CatalogScenarioDetail> {
+): Promise<CatalogOwnedScenarioDetail> {
   return bodyValue(
     await transport.post("/v1/catalog/scenarios", {
       package: input.package,
@@ -267,14 +284,14 @@ export async function createCatalogScenario(
         ? { thumbnailAssetId: input.thumbnailAssetId }
         : {}),
     }),
-  ) as CatalogScenarioDetail;
+  ) as CatalogOwnedScenarioDetail;
 }
 
 export async function publishCatalogScenarioVersion(
   transport: CatalogTransport,
   scenarioId: string,
   input: { package: ScenarioPackage; thumbnailAssetId?: string | null },
-): Promise<CatalogScenarioDetail> {
+): Promise<CatalogOwnedScenarioDetail> {
   return bodyValue(
     await transport.post(
       `/v1/catalog/scenarios/${encodeURIComponent(scenarioId)}/versions`,
@@ -285,20 +302,20 @@ export async function publishCatalogScenarioVersion(
           : {}),
       },
     ),
-  ) as CatalogScenarioDetail;
+  ) as CatalogOwnedScenarioDetail;
 }
 
 export async function updateCatalogScenarioMetadata(
   transport: CatalogTransport,
   scenarioId: string,
   input: { thumbnailAssetId: string | null },
-): Promise<CatalogScenarioDetail> {
+): Promise<CatalogOwnedScenarioDetail> {
   return bodyValue(
     await transport.patch(
       `/v1/catalog/scenarios/${encodeURIComponent(scenarioId)}`,
       input,
     ),
-  ) as CatalogScenarioDetail;
+  ) as CatalogOwnedScenarioDetail;
 }
 
 export async function unpublishCatalogScenario(
@@ -332,7 +349,7 @@ export async function publishScenarioDraft(input: {
   scenario: Scenario;
   metadata: ScenarioPackageMetadata;
   thumbnailAssetId?: string | null;
-}): Promise<CatalogScenarioDetail> {
+}): Promise<CatalogOwnedScenarioDetail> {
   const pkg = buildScenarioPackage(input.scenario, input.metadata);
   const link = await getScenarioPublishLink(input.localScenarioId);
   const detail = link

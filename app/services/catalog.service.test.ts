@@ -4,8 +4,11 @@ import type { ScenarioPackage } from "@/types/catalog.type";
 import {
   CatalogHttpError,
   createCatalogTransport,
+  getCatalogScenario,
+  getOwnedCatalogScenario,
   listCatalogScenarios,
   listCatalogTags,
+  listOwnedCatalogScenarios,
   publishScenarioDraft,
   startCatalogScenario,
 } from "./catalog.service";
@@ -232,6 +235,107 @@ describe("catalog service", () => {
     expect(transport.get).toHaveBeenCalledWith(
       "/v1/catalog/scenarios?sort=popular&tag=sci-fi&tag=scripted",
     );
+  });
+
+  it("accepts moderation on owned catalog scenario list responses", async () => {
+    const transport = {
+      get: vi.fn().mockResolvedValueOnce({
+        items: [
+          {
+            id: "catalog-1",
+            currentVersionId: "version-1",
+            status: "hidden",
+            title: "Iron Gate",
+            summary: "A gate waits.",
+            tags: ["gate"],
+            author: { displayName: "Rakan" },
+            thumbnail: null,
+            viewCount: 0,
+            startCount: 0,
+            updatedAt: "2026-07-01T00:00:00.000Z",
+            publishedAt: "2026-07-01T00:00:00.000Z",
+            moderation: {
+              status: "rejected",
+              reason: "Blocked by catalog moderation.",
+              moderatedAt: "2026-07-01T00:01:00.000Z",
+            },
+          },
+        ],
+        nextCursor: null,
+      }),
+      patch: vi.fn(),
+      post: vi.fn(),
+    };
+
+    await expect(listOwnedCatalogScenarios(transport)).resolves.toMatchObject({
+      items: [
+        {
+          moderation: {
+            status: "rejected",
+            reason: "Blocked by catalog moderation.",
+          },
+        },
+      ],
+    });
+  });
+
+  it("loads owned catalog details through the owned endpoint", async () => {
+    const transport = {
+      get: vi.fn().mockResolvedValueOnce({
+        id: "catalog-1",
+        currentVersionId: "version-1",
+        status: "hidden",
+        title: "Iron Gate",
+        summary: "A gate waits.",
+        tags: ["gate"],
+        author: { displayName: "Rakan" },
+        thumbnail: null,
+        viewCount: 0,
+        startCount: 0,
+        updatedAt: "2026-07-01T00:00:00.000Z",
+        publishedAt: "2026-07-01T00:00:00.000Z",
+        moderation: {
+          status: "rejected",
+          reason: "Blocked by catalog moderation.",
+          moderatedAt: "2026-07-01T00:01:00.000Z",
+        },
+        package: packageFixture(),
+      }),
+      patch: vi.fn(),
+      post: vi.fn(),
+    };
+
+    await getOwnedCatalogScenario(transport, "catalog-1");
+
+    expect(transport.get).toHaveBeenCalledWith(
+      "/v1/catalog/me/scenarios/catalog-1",
+    );
+  });
+
+  it("does not require moderation on public catalog details", async () => {
+    const transport = {
+      get: vi.fn().mockResolvedValueOnce({
+        id: "catalog-1",
+        currentVersionId: "version-1",
+        status: "published",
+        title: "Iron Gate",
+        summary: "A gate waits.",
+        tags: ["gate"],
+        author: { displayName: "Rakan" },
+        thumbnail: null,
+        viewCount: 0,
+        startCount: 0,
+        updatedAt: "2026-07-01T00:00:00.000Z",
+        publishedAt: "2026-07-01T00:00:00.000Z",
+        package: packageFixture(),
+      }),
+      patch: vi.fn(),
+      post: vi.fn(),
+    };
+
+    const detail = await getCatalogScenario(transport, "catalog-1");
+
+    expect("moderation" in detail).toBe(false);
   });
 
   it("lists tag suggestions with refinement filters", async () => {

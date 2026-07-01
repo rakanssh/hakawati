@@ -5,6 +5,7 @@ import {
   createCatalogTransport,
   fetchCatalogCapabilities,
   getCatalogScenario,
+  getOwnedCatalogScenario,
   listCatalogTags,
   listCatalogScenarios,
   listOwnedCatalogScenarios,
@@ -21,6 +22,7 @@ import {
 } from "@/services/catalog.service";
 import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
 import type {
+  CatalogOwnedScenarioRecord,
   CatalogScenarioRecord,
   CatalogTagSuggestion,
 } from "@/types/catalog.type";
@@ -178,7 +180,7 @@ export function useCatalogScenarioList(
 }
 
 export function usePublishedCatalogScenarios(client: CatalogClientState) {
-  const [items, setItems] = useState<CatalogScenarioRecord[]>([]);
+  const [items, setItems] = useState<CatalogOwnedScenarioRecord[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -289,6 +291,14 @@ export function useCatalogActions(client: CatalogClientState) {
     [client.publicTransport],
   );
 
+  const viewOwned = useCallback(
+    async (scenarioId: string) => {
+      if (!client.authTransport) throw new Error("Sign in to view scenarios");
+      return getOwnedCatalogScenario(client.authTransport, scenarioId);
+    },
+    [client.authTransport],
+  );
+
   const start = useCallback(
     async (scenarioId: string, syncPolicy?: NewTaleSyncPolicy) => {
       if (!client.publicTransport) throw new Error("Catalog is not configured");
@@ -366,7 +376,15 @@ export function useCatalogActions(client: CatalogClientState) {
     [client.authTransport, client.publicTransport],
   );
 
-  return { view, start, publish, updateThumbnail, unpublish, report } as const;
+  return {
+    view,
+    viewOwned,
+    start,
+    publish,
+    updateThumbnail,
+    unpublish,
+    report,
+  } as const;
 }
 
 async function fileToCatalogThumbnail(file: File) {

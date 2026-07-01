@@ -16,6 +16,7 @@ export type CatalogScenarioStatus =
   | "unpublished"
   | "hidden"
   | "removed";
+export type CatalogModerationStatus = "approved" | "rejected" | "needs_review";
 
 export type ScenarioPackage = {
   format: "hakawati-scenario-package";
@@ -65,6 +66,25 @@ export type CatalogScenarioDetail = CatalogScenarioRecord & {
 
 export type CatalogScenarioPage = {
   items: CatalogScenarioRecord[];
+  nextCursor: string | null;
+};
+
+export type CatalogOwnedModeration = {
+  status: CatalogModerationStatus;
+  reason: string | null;
+  moderatedAt: string | null;
+};
+
+export type CatalogOwnedScenarioRecord = CatalogScenarioRecord & {
+  moderation: CatalogOwnedModeration;
+};
+
+export type CatalogOwnedScenarioDetail = CatalogOwnedScenarioRecord & {
+  package: ScenarioPackage;
+};
+
+export type CatalogOwnedScenarioPage = {
+  items: CatalogOwnedScenarioRecord[];
   nextCursor: string | null;
 };
 

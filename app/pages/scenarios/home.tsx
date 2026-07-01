@@ -10,13 +10,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -83,7 +76,7 @@ import {
 } from "@/hooks/useCatalogScenarios";
 import {
   CATALOG_SORTS,
-  type CatalogScenarioDetail,
+  type CatalogOwnedScenarioRecord,
   type CatalogScenarioRecord,
 } from "@/types/catalog.type";
 import { getScenarioById } from "@/services/scenario.service";
@@ -96,10 +89,20 @@ type PendingScenarioDelete = {
   name: string;
 };
 
+type CatalogCardScenario = CatalogScenarioRecord | CatalogOwnedScenarioRecord;
+
 function catalogAssetUrl(baseUrl: string, path: string | null | undefined) {
   if (!path) return placeholderImage;
   if (/^https?:\/\//i.test(path)) return path;
   return `${baseUrl.replace(/\/+$/, "").replace(/\/v1$/, "")}${path}`;
+}
+
+function hiddenByModeration(scenario: CatalogCardScenario) {
+  return (
+    scenario.status === "hidden" &&
+    "moderation" in scenario &&
+    scenario.moderation.status === "rejected"
+  );
 }
 
 function CatalogScenarioCard({
@@ -114,14 +117,14 @@ function CatalogScenarioCard({
   onThumbnail,
 }: {
   baseUrl: string;
-  scenario: CatalogScenarioRecord;
+  scenario: CatalogCardScenario;
   actions: "discover" | "published";
-  onView?: (scenario: CatalogScenarioRecord) => void;
-  onStart?: (scenario: CatalogScenarioRecord) => void;
-  onStartPrivate?: (scenario: CatalogScenarioRecord) => void;
-  onReport?: (scenario: CatalogScenarioRecord) => void;
-  onUnpublish?: (scenario: CatalogScenarioRecord) => void;
-  onThumbnail?: (scenario: CatalogScenarioRecord, file: File) => void;
+  onView?: (scenario: CatalogCardScenario) => void;
+  onStart?: (scenario: CatalogCardScenario) => void;
+  onStartPrivate?: (scenario: CatalogCardScenario) => void;
+  onReport?: (scenario: CatalogCardScenario) => void;
+  onUnpublish?: (scenario: CatalogCardScenario) => void;
+  onThumbnail?: (scenario: CatalogCardScenario, file: File) => void;
 }) {
   const catalogDate = Date.parse(scenario.publishedAt ?? scenario.updatedAt);
   const dateLabel = formatRelativeTime(
@@ -129,9 +132,23 @@ function CatalogScenarioCard({
   );
   const startsLabel =
     scenario.startCount === 1 ? "1 start" : `${scenario.startCount} starts`;
+  const isModerationHidden = hiddenByModeration(scenario);
 
   return (
-    <Card className="flex flex-col gap-1 overflow-hidden border-accent/50 pt-0 pb-2">
+    <Card
+      role="button"
+      tabIndex={0}
+      onClick={() => onView?.(scenario)}
+      onKeyDown={(event) => {
+        if (event.currentTarget !== event.target) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onView?.(scenario);
+        }
+      }}
+      className="flex cursor-pointer flex-col gap-1 overflow-hidden border-accent/50 pt-0 pb-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      aria-label={`View ${scenario.title}`}
+    >
       <CardHeader className="p-0 m-0">
         <div className="relative">
           <img
@@ -139,7 +156,10 @@ function CatalogScenarioCard({
             alt={`${scenario.title} thumbnail`}
             className="h-48 w-full object-cover"
           />
-          <div className="absolute right-1.5 top-0.5 z-10">
+          <div
+            className="absolute right-1.5 top-0.5 z-10"
+            onClick={(event) => event.stopPropagation()}
+          >
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -200,10 +220,19 @@ function CatalogScenarioCard({
             </TooltipContent>
           </Tooltip>
           <Badge
-            className={`absolute bottom-1 left-1 max-w-[calc(100%-0.5rem)] ${imageBadgeClass}`}
+            className={cn(
+              "absolute bottom-1 left-1",
+              isModerationHidden ? "max-w-[55%]" : "max-w-[calc(100%-0.5rem)]",
+              imageBadgeClass,
+            )}
           >
             <span className="truncate">{scenario.author.displayName}</span>
           </Badge>
+          {isModerationHidden ? (
+            <Badge className={`absolute bottom-1 right-1 ${imageBadgeClass}`}>
+              <Trans>Hidden by moderation</Trans>
+            </Badge>
+          ) : null}
         </div>
       </CardHeader>
       <CardContent
@@ -232,14 +261,22 @@ function CatalogScenarioCard({
               onStartPrivate && "grid-cols-[1fr_auto] gap-1",
             )}
           >
-            <Button onClick={() => onStart?.(scenario)}>
+            <Button
+              onClick={(event) => {
+                event.stopPropagation();
+                onStart?.(scenario);
+              }}
+            >
               <Trans>Start Tale</Trans>
             </Button>
             {onStartPrivate ? (
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => onStartPrivate(scenario)}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onStartPrivate(scenario);
+                }}
                 aria-label="Start local-only tale"
               >
                 <VenetianMask className="h-4 w-4" />
@@ -277,8 +314,6 @@ export default function ScenariosHome() {
   const [pendingDelete, setPendingDelete] =
     useState<PendingScenarioDelete | null>(null);
   const [pendingPublish, setPendingPublish] = useState<Scenario | null>(null);
-  const [viewingCatalog, setViewingCatalog] =
-    useState<CatalogScenarioDetail | null>(null);
   const confirmDelete = async () => {
     if (!pendingDelete) return;
     await remove(pendingDelete.id);
@@ -313,15 +348,12 @@ export default function ScenariosHome() {
       );
     }
   };
-  const viewPublicScenario = async (scenario: CatalogScenarioRecord) => {
-    try {
-      setViewingCatalog(await catalogActions.view(scenario.id));
-      await discover.refresh();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t`Failed to load scenario`,
-      );
-    }
+  const viewPublicScenario = (scenario: CatalogCardScenario, owned = false) => {
+    navigate({
+      to: owned
+        ? `/scenarios/catalog/${scenario.id}?owned=1`
+        : `/scenarios/catalog/${scenario.id}`,
+    });
   };
   const reportPublicScenario = async (scenario: CatalogScenarioRecord) => {
     const reason = window.prompt(t`Report reason`);
@@ -770,6 +802,7 @@ export default function ScenariosHome() {
                   baseUrl={catalog.baseUrl}
                   scenario={scenario}
                   actions="published"
+                  onView={(item) => viewPublicScenario(item, true)}
                   onUnpublish={unpublishPublicScenario}
                   onThumbnail={
                     catalog.thumbnailUploads ? updatePublicThumbnail : undefined
@@ -791,55 +824,6 @@ export default function ScenariosHome() {
           </TabsContent>
         ) : null}
       </Tabs>
-      <Dialog
-        open={Boolean(viewingCatalog)}
-        onOpenChange={(open) => {
-          if (!open) setViewingCatalog(null);
-        }}
-      >
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{viewingCatalog?.title}</DialogTitle>
-            <DialogDescription>
-              {viewingCatalog?.author.displayName}
-              {viewingCatalog?.publishedAt
-                ? ` - ${formatExactDateTime(Date.parse(viewingCatalog.publishedAt))}`
-                : ""}
-            </DialogDescription>
-          </DialogHeader>
-          {viewingCatalog ? (
-            <div className="grid gap-4">
-              <img
-                src={catalogAssetUrl(
-                  catalog.baseUrl,
-                  viewingCatalog.thumbnail?.downloadUrl,
-                )}
-                alt={`${viewingCatalog.title} thumbnail`}
-                className="max-h-64 w-full object-cover"
-              />
-              <p className="text-sm text-muted-foreground">
-                {viewingCatalog.summary}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {viewingCatalog.tags.map((tag) => (
-                  <Badge key={tag} variant="outline">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-              <Button
-                onClick={() => {
-                  const scenario = viewingCatalog;
-                  setViewingCatalog(null);
-                  void startPublicScenario(scenario);
-                }}
-              >
-                <Trans>Start Tale</Trans>
-              </Button>
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
       <AlertDialog
         open={Boolean(pendingDelete)}
         onOpenChange={(open) => {
