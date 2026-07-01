@@ -11,8 +11,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "@tanstack/react-router";
 import { useTaleLibrary } from "@/hooks/useTaleLibrary";
 import { useLoadTale } from "@/hooks/useGameSaves";
@@ -62,6 +60,10 @@ type PendingCloudRemove = {
   item: LibraryTaleItem;
   name: string;
 };
+
+const libraryGridClass =
+  "grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))]";
+const cardActionButtonClass = "h-8";
 
 export default function TalesHome() {
   const navigate = useNavigate();
@@ -181,32 +183,33 @@ export default function TalesHome() {
     : items;
 
   return (
-    <div className="mx-auto w-full max-w-screen-2xl py-5 flex flex-col gap-4 px-3">
-      <div className="flex gap-4">
-        {/* back button */}
+    <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5 px-3 py-4 sm:px-4 lg:px-6">
+      <div className="flex items-center gap-4">
         <Button
-          variant="default"
+          variant="outline"
+          size="icon"
           onClick={() => navigate({ to: "/" })}
-          className="mt-1.5"
         >
           <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
         </Button>
-        <div className="flex flex-col">
-          <Label className="text-xl">
+        <div className="text-sm text-muted-foreground">
+          <span className="text-primary">
+            <Trans>Home</Trans>
+          </span>
+          <span className="px-2">/</span>
+          <span>
             <Trans>Tales</Trans>
-          </Label>
-          <span className="text-sm text-muted-foreground">
-            <Trans>Browse and load saved tales</Trans>
           </span>
         </div>
       </div>
-      <Separator />
-      <Input
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        placeholder={t`Search tales`}
-        className="max-w-md"
-      />
+      <div className="border-y py-2">
+        <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder={t`Search tales`}
+          className="max-w-md"
+        />
+      </div>
       {loading && (
         <div className="text-sm text-muted-foreground">
           <Trans>Loading...</Trans>
@@ -222,7 +225,7 @@ export default function TalesHome() {
           <Trans>Cloud tales are unavailable.</Trans>
         </div>
       )}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className={libraryGridClass}>
         {visibleItems.map((item) => {
           const isRemote = item.source === "remote";
           const id = isRemote ? item.remoteTale.id : item.localTale.id;
@@ -261,7 +264,7 @@ export default function TalesHome() {
           return (
             <Card
               key={isRemote ? `remote-${id}` : `local-${id}`}
-              className="flex flex-col gap-1 pt-0 pb-2 border-accent/50"
+              className="flex flex-col gap-0 overflow-hidden border-accent/50 p-0 transition-colors hover:border-accent"
             >
               <CardHeader className="p-0 m-0">
                 <div className="relative">
@@ -269,13 +272,13 @@ export default function TalesHome() {
                     <img
                       src={bytesToObjectUrl(thumbnail as unknown as Uint8Array)}
                       alt={t`${name} thumbnail`}
-                      className="h-48 w-full object-cover"
+                      className="aspect-[2/1] w-full object-cover"
                     />
                   ) : (
                     <img
                       src={placeholderImage}
                       alt={t`${name} thumbnail`}
-                      className="h-48 w-full object-cover"
+                      className="aspect-[2/1] w-full object-cover"
                     />
                   )}
                   <div className="absolute right-1.5 top-0.5 z-10">
@@ -387,17 +390,18 @@ export default function TalesHome() {
                   ) : null}
                 </div>
               </CardHeader>
-              <CardContent className="flex h-36 flex-col gap-1.5 px-2">
-                <span className="line-clamp-2 text-sm font-semibold leading-snug">
+              <CardContent className="flex flex-1 flex-col gap-2 p-3">
+                <span className="line-clamp-1 min-w-0 text-sm font-semibold">
                   {name}
                 </span>
-                <p className="line-clamp-3 min-h-0 flex-1 rounded-xs text-sm text-muted-foreground">
+                <p className="line-clamp-3 min-h-[3.6rem] flex-1 rounded-xs text-sm leading-snug text-muted-foreground">
                   {description}
                 </p>
 
                 <Button
+                  size="sm"
                   onClick={() => handleLoad(item)}
-                  className="mt-auto w-full"
+                  className={`mt-auto w-full ${cardActionButtonClass}`}
                 >
                   <Trans>Load Tale</Trans>
                 </Button>

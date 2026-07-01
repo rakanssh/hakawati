@@ -10,7 +10,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { useNavigate } from "@tanstack/react-router";
 import {
   useScenariosList,
@@ -46,6 +45,7 @@ import {
   TrashIcon,
   ClipboardIcon,
   FlagIcon,
+  Loader2,
   MoreHorizontalIcon,
   Sparkles,
   SlidersHorizontalIcon,
@@ -90,6 +90,13 @@ type PendingScenarioDelete = {
 };
 
 type CatalogCardScenario = CatalogScenarioRecord | CatalogOwnedScenarioRecord;
+type ScenarioTab = "local" | "discover" | "published";
+
+const libraryGridClass =
+  "grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))]";
+const cardActionButtonClass = "h-8";
+const scenarioCardBodyClass =
+  "flex h-[9.75rem] flex-col gap-1.5 px-2.5 pb-2.5 pt-2";
 
 function catalogAssetUrl(baseUrl: string, path: string | null | undefined) {
   if (!path) return placeholderImage;
@@ -102,6 +109,50 @@ function hiddenByModeration(scenario: CatalogCardScenario) {
     scenario.status === "hidden" &&
     "moderation" in scenario &&
     scenario.moderation.status === "rejected"
+  );
+}
+
+function scenarioTabFromSearch(): ScenarioTab {
+  const tab = new URLSearchParams(window.location.search).get("tab");
+  return tab === "discover" || tab === "published" ? tab : "local";
+}
+
+function replaceScenarioTabSearch(tab: ScenarioTab) {
+  const url = new URL(window.location.href);
+  if (tab === "local") {
+    url.searchParams.delete("tab");
+  } else {
+    url.searchParams.set("tab", tab);
+  }
+  window.history.replaceState(
+    window.history.state,
+    "",
+    `${url.pathname}${url.search}${url.hash}`,
+  );
+}
+
+function TagPreview({ tags, limit = 3 }: { tags: string[]; limit?: number }) {
+  const visible = tags.slice(0, limit);
+  const extra = tags.length - visible.length;
+  if (!visible.length) return null;
+
+  return (
+    <div className="flex h-6 min-w-0 gap-1 overflow-hidden">
+      {visible.map((tag) => (
+        <Badge
+          key={tag}
+          variant="outline"
+          className="h-6 max-w-28 shrink-0 truncate text-xs"
+        >
+          {tag}
+        </Badge>
+      ))}
+      {extra > 0 ? (
+        <Badge variant="outline" className="h-6 shrink-0 text-xs">
+          +{extra}
+        </Badge>
+      ) : null}
+    </div>
   );
 }
 
@@ -126,9 +177,9 @@ function CatalogScenarioCard({
   onUnpublish?: (scenario: CatalogCardScenario) => void;
   onThumbnail?: (scenario: CatalogCardScenario, file: File) => void;
 }) {
-  const catalogDate = Date.parse(scenario.publishedAt ?? scenario.updatedAt);
+  const catalogDateMs = Date.parse(scenario.publishedAt ?? scenario.updatedAt);
   const dateLabel = formatRelativeTime(
-    Number.isNaN(catalogDate) ? 0 : catalogDate,
+    Number.isNaN(catalogDateMs) ? 0 : catalogDateMs,
   );
   const startsLabel =
     scenario.startCount === 1 ? "1 start" : `${scenario.startCount} starts`;
@@ -146,7 +197,7 @@ function CatalogScenarioCard({
           onView?.(scenario);
         }
       }}
-      className="flex cursor-pointer flex-col gap-1 overflow-hidden border-accent/50 pt-0 pb-2 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="flex cursor-pointer flex-col gap-0 overflow-hidden border-accent/50 p-0 transition-colors hover:border-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       aria-label={`View ${scenario.title}`}
     >
       <CardHeader className="p-0 m-0">
@@ -154,7 +205,7 @@ function CatalogScenarioCard({
           <img
             src={catalogAssetUrl(baseUrl, scenario.thumbnail?.downloadUrl)}
             alt={`${scenario.title} thumbnail`}
-            className="h-48 w-full object-cover"
+            className="aspect-[2/1] w-full object-cover"
           />
           <div
             className="absolute right-1.5 top-0.5 z-10"
@@ -216,7 +267,9 @@ function CatalogScenarioCard({
               </Badge>
             </TooltipTrigger>
             <TooltipContent side="top">
-              {formatExactDateTime(Number.isNaN(catalogDate) ? 0 : catalogDate)}
+              {formatExactDateTime(
+                Number.isNaN(catalogDateMs) ? 0 : catalogDateMs,
+              )}
             </TooltipContent>
           </Tooltip>
           <Badge
@@ -235,25 +288,21 @@ function CatalogScenarioCard({
           ) : null}
         </div>
       </CardHeader>
-      <CardContent
-        className={cn(
-          "flex flex-col gap-1.5 px-2",
-          actions === "discover" && "h-36",
-        )}
-      >
+      <CardContent className={scenarioCardBodyClass}>
         <span className="line-clamp-1 min-w-0 text-sm font-semibold">
           {scenario.title}
         </span>
-        <div className="flex flex-wrap gap-1">
-          {scenario.tags.slice(0, 3).map((tag) => (
-            <Badge key={tag} variant="outline" className="text-xs">
-              {tag}
-            </Badge>
-          ))}
-        </div>
-        <p className="line-clamp-2 min-h-0 flex-1 text-sm leading-snug text-muted-foreground">
+        <p
+          className={cn(
+            "text-sm leading-snug text-muted-foreground",
+            actions === "published"
+              ? "line-clamp-3 min-h-[3.6rem]"
+              : "line-clamp-2 min-h-10",
+          )}
+        >
           {scenario.summary}
         </p>
+        <TagPreview tags={scenario.tags} />
         {actions === "discover" ? (
           <div
             className={cn(
@@ -262,6 +311,8 @@ function CatalogScenarioCard({
             )}
           >
             <Button
+              size="sm"
+              className={cardActionButtonClass}
               onClick={(event) => {
                 event.stopPropagation();
                 onStart?.(scenario);
@@ -272,7 +323,7 @@ function CatalogScenarioCard({
             {onStartPrivate ? (
               <Button
                 variant="outline"
-                size="icon"
+                size="icon-sm"
                 onClick={(event) => {
                   event.stopPropagation();
                   onStartPrivate(scenario);
@@ -309,11 +360,33 @@ export default function ScenariosHome() {
   );
   const [generateOpen, setGenerateOpen] = useState(false);
   const [canStartPrivate, setCanStartPrivate] = useState(false);
-  const [activeTab, setActiveTab] = useState("local");
+  const [activeTab, setActiveTab] = useState<ScenarioTab>(
+    scenarioTabFromSearch,
+  );
   const [filterOpen, setFilterOpen] = useState(false);
   const [pendingDelete, setPendingDelete] =
     useState<PendingScenarioDelete | null>(null);
   const [pendingPublish, setPendingPublish] = useState<Scenario | null>(null);
+  const setScenarioTab = (value: string) => {
+    const next: ScenarioTab =
+      value === "discover" || value === "published" ? value : "local";
+    setActiveTab(next);
+    replaceScenarioTabSearch(next);
+  };
+  const importScenario = async () => {
+    try {
+      const scenario = await importFromClipboard();
+      navigate({
+        to: "/scenarios/new",
+        state: (prev) => ({
+          ...(prev ?? {}),
+          importedScenario: scenario,
+        }),
+      });
+    } catch (_e) {
+      toast.error("Failed to import scenario from clipboard");
+    }
+  };
   const confirmDelete = async () => {
     if (!pendingDelete) return;
     await remove(pendingDelete.id);
@@ -413,55 +486,53 @@ export default function ScenariosHome() {
   }, []);
 
   useEffect(() => {
+    const catalogAvailabilityPending = Boolean(
+      catalog.baseUrl && !catalog.capabilities && !catalog.error,
+    );
+    if (catalogAvailabilityPending) return;
     if (
       (activeTab === "discover" && !catalog.enabled) ||
       (activeTab === "published" && (!catalog.enabled || !catalog.signedIn))
     ) {
       setActiveTab("local");
+      replaceScenarioTabSearch("local");
     }
-  }, [activeTab, catalog.enabled, catalog.signedIn]);
+  }, [
+    activeTab,
+    catalog.baseUrl,
+    catalog.capabilities,
+    catalog.enabled,
+    catalog.error,
+    catalog.signedIn,
+  ]);
+
+  const showCatalogControls =
+    (activeTab === "discover" && catalog.enabled) ||
+    (activeTab === "published" && catalog.enabled && catalog.signedIn);
+  const catalogToolbar = activeTab === "published" ? published : discover;
 
   return (
-    <div className="mx-auto w-full max-w-screen-2xl py-5 flex flex-col gap-4 px-3">
+    <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5 px-3 py-4 sm:px-4 lg:px-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex gap-4">
-          {/* back button */}
+        <div className="flex items-center gap-4">
           <Button
-            variant="default"
+            variant="outline"
+            size="icon"
             onClick={() => navigate({ to: "/" })}
-            className="mt-1.5"
           >
             <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
           </Button>
-          <div className="flex flex-col">
-            <Label className="text-xl">
+          <div className="text-sm text-muted-foreground">
+            <span className="text-primary">
+              <Trans>Home</Trans>
+            </span>
+            <span className="px-2">/</span>
+            <span>
               <Trans>Scenarios</Trans>
-            </Label>
-            <span className="text-sm text-muted-foreground">
-              <Trans>Browse and manage your scenarios</Trans>
             </span>
           </div>
         </div>
-        <div className="grid grid-cols-[1fr_1fr_auto] gap-2 sm:flex sm:flex-row">
-          <Button
-            onClick={async () => {
-              try {
-                const scenario = await importFromClipboard();
-                navigate({
-                  to: "/scenarios/new",
-                  state: (prev) => ({
-                    ...(prev ?? {}),
-                    importedScenario: scenario,
-                  }),
-                });
-              } catch (_e) {
-                toast.error("Failed to import scenario from clipboard");
-              }
-            }}
-          >
-            <Trans>Import</Trans>
-          </Button>
-
+        <div className="grid grid-cols-[1fr_auto] gap-2 sm:flex sm:flex-row">
           <Button onClick={() => navigate({ to: "/scenarios/new" })}>
             <Trans>Create</Trans>
           </Button>
@@ -471,19 +542,19 @@ export default function ScenariosHome() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4">
-        <div className="flex flex-col gap-2 border-y py-2 md:flex-row md:items-center md:justify-between">
-          <TabsList className="h-auto w-full justify-start gap-5 rounded-none bg-transparent p-0 md:w-auto">
+      <Tabs value={activeTab} onValueChange={setScenarioTab} className="gap-4">
+        <div className="grid gap-2 border-y py-2 md:grid-cols-[22rem_minmax(0,1fr)] md:items-center">
+          <TabsList className="h-auto w-full justify-start gap-3 rounded-none bg-transparent p-0 md:w-[22rem]">
             <TabsTrigger
               value="local"
-              className="flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              className="min-w-24 flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-3 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
             >
               <Trans>Local</Trans>
             </TabsTrigger>
             {catalog.enabled ? (
               <TabsTrigger
                 value="discover"
-                className="flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="min-w-24 flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-3 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
                 <Trans>Discover</Trans>
               </TabsTrigger>
@@ -491,22 +562,40 @@ export default function ScenariosHome() {
             {catalog.enabled && catalog.signedIn ? (
               <TabsTrigger
                 value="published"
-                className="flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="min-w-24 flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-3 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
                 <Trans>Published</Trans>
               </TabsTrigger>
             ) : null}
           </TabsList>
-          {activeTab === "discover" && catalog.enabled ? (
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 md:min-w-[32rem]">
-              <CatalogTagInput
-                value={discover.filters.tag ?? []}
-                onChange={(tag) =>
-                  discover.setFilters((current) => ({ ...current, tag }))
-                }
-                client={catalog}
-                placeholder="Search tags"
-              />
+          {activeTab === "local" ? (
+            <div className="flex md:justify-end">
+              <Button className="w-full sm:w-auto" onClick={importScenario}>
+                <Trans>Import</Trans>
+              </Button>
+            </div>
+          ) : null}
+          {showCatalogControls ? (
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 md:justify-self-end md:w-full md:max-w-[34rem]">
+              <div className="relative min-w-0">
+                <CatalogTagInput
+                  value={catalogToolbar.filters.tag ?? []}
+                  onChange={(tag) =>
+                    catalogToolbar.setFilters((current) => ({
+                      ...current,
+                      tag,
+                    }))
+                  }
+                  client={catalog}
+                  placeholder="Search scenarios or tags"
+                />
+                {catalogToolbar.loading ? (
+                  <Loader2
+                    className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground"
+                    aria-label={t`Loading scenarios`}
+                  />
+                ) : null}
+              </div>
               <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
                 <SheetTrigger asChild>
                   <Button
@@ -528,14 +617,14 @@ export default function ScenariosHome() {
                       <Button
                         key={sort}
                         variant={
-                          discover.filters.sort === sort ||
-                          (!discover.filters.sort && sort === "popular")
+                          catalogToolbar.filters.sort === sort ||
+                          (!catalogToolbar.filters.sort && sort === "popular")
                             ? "default"
                             : "outline"
                         }
                         className="justify-start"
                         onClick={() => {
-                          discover.setFilters((current) => ({
+                          catalogToolbar.setFilters((current) => ({
                             ...current,
                             sort: sort as (typeof CATALOG_SORTS)[number],
                           }));
@@ -562,13 +651,13 @@ export default function ScenariosHome() {
               <Trans>Failed to load scenarios.</Trans>
             </div>
           )}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className={libraryGridClass}>
             {items.map(({ id, name, description, thumbnail, updatedAt }) => {
               const linked = linkByLocalId.get(id);
               return (
                 <Card
                   key={id}
-                  className="flex flex-col gap-1 pt-0 pb-2 border-accent/50"
+                  className="flex flex-col gap-0 overflow-hidden border-accent/50 p-0 transition-colors hover:border-accent"
                 >
                   <CardHeader className="p-0 m-0">
                     <div className="relative">
@@ -578,13 +667,13 @@ export default function ScenariosHome() {
                             thumbnail as unknown as Uint8Array,
                           )}
                           alt={t`${name} thumbnail`}
-                          className="h-48 w-full object-cover"
+                          className="aspect-[2/1] w-full object-cover"
                         />
                       ) : (
                         <img
                           src={placeholderImage}
                           alt={t`${name} thumbnail`}
-                          className="h-48 w-full object-cover"
+                          className="aspect-[2/1] w-full object-cover"
                         />
                       )}
                       <div className="absolute right-1.5 top-0.5 z-10">
@@ -671,11 +760,11 @@ export default function ScenariosHome() {
                       </Tooltip>
                     </div>
                   </CardHeader>
-                  <CardContent className="flex h-36 flex-col gap-1.5 px-2">
-                    <span className="line-clamp-2 text-sm font-semibold leading-snug">
+                  <CardContent className={scenarioCardBodyClass}>
+                    <span className="line-clamp-1 min-w-0 text-sm font-semibold">
                       {name}
                     </span>
-                    <p className="line-clamp-3 min-h-0 flex-1 rounded-xs text-sm text-muted-foreground">
+                    <p className="line-clamp-3 min-h-[3.6rem] rounded-xs text-sm leading-snug text-muted-foreground">
                       {description}
                     </p>
                     <div
@@ -686,6 +775,8 @@ export default function ScenariosHome() {
                       }
                     >
                       <Button
+                        size="sm"
+                        className={cardActionButtonClass}
                         onClick={async () => {
                           const taleId = await initTaleFromScenario(id);
                           await loadTale(taleId);
@@ -697,7 +788,7 @@ export default function ScenariosHome() {
                       {canStartPrivate ? (
                         <Button
                           variant="outline"
-                          size="icon"
+                          size="icon-sm"
                           onClick={async () => {
                             const taleId = await initTaleFromScenario(id, {
                               syncPolicy: "private",
@@ -742,17 +833,12 @@ export default function ScenariosHome() {
         </TabsContent>
         {catalog.enabled ? (
           <TabsContent value="discover" className="grid gap-4">
-            {discover.loading ? (
-              <div className="text-sm text-muted-foreground">
-                <Trans>Loading...</Trans>
-              </div>
-            ) : null}
             {discover.error ? (
               <div className="text-sm text-destructive">
                 <Trans>Failed to load public scenarios.</Trans>
               </div>
             ) : null}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className={libraryGridClass}>
               {discover.items.map((scenario) => (
                 <CatalogScenarioCard
                   key={scenario.id}
@@ -785,17 +871,12 @@ export default function ScenariosHome() {
         ) : null}
         {catalog.enabled && catalog.signedIn ? (
           <TabsContent value="published" className="grid gap-4">
-            {published.loading ? (
-              <div className="text-sm text-muted-foreground">
-                <Trans>Loading...</Trans>
-              </div>
-            ) : null}
             {published.error ? (
               <div className="text-sm text-destructive">
                 <Trans>Failed to load published scenarios.</Trans>
               </div>
             ) : null}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className={libraryGridClass}>
               {published.items.map((scenario) => (
                 <CatalogScenarioCard
                   key={scenario.id}

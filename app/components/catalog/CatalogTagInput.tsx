@@ -97,7 +97,11 @@ export function CatalogTagInput({
               }}
             />
           </PopoverAnchor>
-          <PopoverContent align="start" className="w-64 p-1">
+          <PopoverContent
+            align="start"
+            className="w-64 p-1"
+            onOpenAutoFocus={(event) => event.preventDefault()}
+          >
             {remainingSuggestions.map((item) => (
               <Button
                 key={item.tag}

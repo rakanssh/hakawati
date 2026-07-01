@@ -179,9 +179,17 @@ export function useCatalogScenarioList(
   } as const;
 }
 
-export function usePublishedCatalogScenarios(client: CatalogClientState) {
+export function usePublishedCatalogScenarios(
+  client: CatalogClientState,
+  initial: CatalogListOptions = {},
+) {
   const [items, setItems] = useState<CatalogOwnedScenarioRecord[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [filters, setFilters] = useState<CatalogListOptions>({
+    limit: initial.limit ?? 24,
+    sort: initial.sort ?? "popular",
+    tag: initial.tag,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
 
@@ -194,7 +202,10 @@ export function usePublishedCatalogScenarios(client: CatalogClientState) {
     setLoading(true);
     setError(null);
     try {
-      const page = await listOwnedCatalogScenarios(client.authTransport);
+      const page = await listOwnedCatalogScenarios(
+        client.authTransport,
+        filters,
+      );
       setItems(page.items);
       setNextCursor(page.nextCursor);
     } catch (err) {
@@ -204,7 +215,7 @@ export function usePublishedCatalogScenarios(client: CatalogClientState) {
     } finally {
       setLoading(false);
     }
-  }, [client.authTransport, client.enabled]);
+  }, [client.authTransport, client.enabled, filters]);
 
   const loadMore = useCallback(async () => {
     if (!client.enabled || !client.authTransport || !nextCursor) return;
@@ -212,6 +223,7 @@ export function usePublishedCatalogScenarios(client: CatalogClientState) {
     setError(null);
     try {
       const page = await listOwnedCatalogScenarios(client.authTransport, {
+        ...filters,
         cursor: nextCursor,
       });
       setItems((current) => [...current, ...page.items]);
@@ -221,13 +233,22 @@ export function usePublishedCatalogScenarios(client: CatalogClientState) {
     } finally {
       setLoading(false);
     }
-  }, [client.authTransport, client.enabled, nextCursor]);
+  }, [client.authTransport, client.enabled, filters, nextCursor]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  return { items, nextCursor, loading, error, refresh, loadMore } as const;
+  return {
+    items,
+    nextCursor,
+    filters,
+    setFilters,
+    loading,
+    error,
+    refresh,
+    loadMore,
+  } as const;
 }
 
 export function useScenarioPublishLinks() {

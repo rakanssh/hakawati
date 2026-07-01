@@ -138,7 +138,9 @@ export default function ScenarioCatalogDetails() {
       window.history.back();
       return;
     }
-    navigate({ to: "/scenarios" });
+    navigate({
+      to: owned ? "/scenarios?tab=published" : "/scenarios?tab=discover",
+    });
   };
 
   const startScenario = async (syncPolicy?: "default" | "private") => {
@@ -165,7 +167,7 @@ export default function ScenarioCatalogDetails() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-screen-xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8">
+    <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5 px-3 py-4 sm:px-4 lg:px-6">
       <div className="flex items-center gap-4">
         <Button variant="outline" size="icon" onClick={goBack}>
           <ArrowLeftIcon className="h-4 w-4 rtl:rotate-180" />

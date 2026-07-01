@@ -237,6 +237,23 @@ describe("catalog service", () => {
     );
   });
 
+  it("sends repeated tag filters when listing owned catalog scenarios", async () => {
+    const transport = {
+      get: vi.fn().mockResolvedValueOnce({ items: [], nextCursor: null }),
+      patch: vi.fn(),
+      post: vi.fn(),
+    };
+
+    await listOwnedCatalogScenarios(transport, {
+      sort: "updated",
+      tag: ["Sci Fi", "scripted"],
+    });
+
+    expect(transport.get).toHaveBeenCalledWith(
+      "/v1/catalog/me/scenarios?sort=updated&tag=sci-fi&tag=scripted",
+    );
+  });
+
   it("accepts moderation on owned catalog scenario list responses", async () => {
     const transport = {
       get: vi.fn().mockResolvedValueOnce({

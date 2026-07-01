@@ -1,4 +1,3 @@
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -64,22 +63,29 @@ export default function ScenarioCreate() {
   } = useScenarioForm(scenario, setScenario);
 
   return (
-    <div className="container mx-auto py-10 flex flex-col gap-4 max-w-2xl">
+    <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5 px-3 py-4 sm:px-4 lg:px-6">
       <div className="flex items-center justify-between">
-        <div className="flex gap-4">
+        <div className="flex items-center gap-4">
           <Button
-            variant="default"
+            variant="outline"
+            size="icon"
             onClick={() => navigate({ to: `/scenarios` })}
           >
             <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
           </Button>
-          <Label className="text-xl">
-            <Trans>Create Scenario</Trans>
-          </Label>
+          <div className="text-sm text-muted-foreground">
+            <span className="text-primary">
+              <Trans>Scenarios</Trans>
+            </span>
+            <span className="px-2">/</span>
+            <span>
+              <Trans>Create</Trans>
+            </span>
+          </div>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-3">
           {canPublishOnCreate ? (
-            <label className="flex h-10 items-center gap-2 rounded-xs border border-input bg-background/40 px-3 text-sm font-medium hover:bg-accent">
+            <label className="flex h-9 items-center gap-2 rounded-xs border border-input bg-background/40 px-3 text-sm font-medium hover:bg-accent">
               <Checkbox
                 checked={publishAfterCreate}
                 onCheckedChange={(checked) =>
@@ -105,52 +111,54 @@ export default function ScenarioCreate() {
         </div>
       </div>
       <Separator />
-      <ScenarioBasicsFields
-        name={scenario.name}
-        thumbnail={scenario.thumbnail}
-        description={scenario.description}
-        onNameChange={(name) => setScenario({ ...scenario, name })}
-        onThumbnailChange={(bytes) =>
-          setScenario({ ...scenario, thumbnail: bytes })
-        }
-        onDescriptionChange={(text) =>
-          setScenario({ ...scenario, description: text })
-        }
-      />
-      <GameModeField
-        value={scenario.initialGameMode}
-        onChange={(v) => setScenario({ ...scenario, initialGameMode: v })}
-      />
-      <Separator />
-      <PromptComponentsEditor
-        components={fields.components}
-        allowedTypes={SCENARIO_COMPONENT_TYPES}
-        gameMode={scenario.initialGameMode}
-        onAdd={addComponent}
-        onUpdate={updateComponent}
-        onRemove={removeComponent}
-      />
-      <Separator />
-      <StatsEditor
-        stats={fields.initialStats}
-        onAdd={addStat}
-        onUpdate={updateStat}
-        onRemove={removeStat}
-      />
-      <Separator />
-      <InventoryEditor
-        items={fields.initialInventory}
-        onAdd={addInventoryItem}
-        onUpdate={updateInventoryItem}
-        onRemove={removeInventoryItem}
-      />
-      <Separator />
-      <StorybookEditor
-        entries={fields.initialStoryCards}
-        onAdd={addStoryCard}
-        onUpdate={updateStoryCard}
-        onRemove={removeStoryCard}
-      />
+      <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+        <ScenarioBasicsFields
+          name={scenario.name}
+          thumbnail={scenario.thumbnail}
+          description={scenario.description}
+          onNameChange={(name) => setScenario({ ...scenario, name })}
+          onThumbnailChange={(bytes) =>
+            setScenario({ ...scenario, thumbnail: bytes })
+          }
+          onDescriptionChange={(text) =>
+            setScenario({ ...scenario, description: text })
+          }
+        />
+        <GameModeField
+          value={scenario.initialGameMode}
+          onChange={(v) => setScenario({ ...scenario, initialGameMode: v })}
+        />
+        <Separator />
+        <PromptComponentsEditor
+          components={fields.components}
+          allowedTypes={SCENARIO_COMPONENT_TYPES}
+          gameMode={scenario.initialGameMode}
+          onAdd={addComponent}
+          onUpdate={updateComponent}
+          onRemove={removeComponent}
+        />
+        <Separator />
+        <StatsEditor
+          stats={fields.initialStats}
+          onAdd={addStat}
+          onUpdate={updateStat}
+          onRemove={removeStat}
+        />
+        <Separator />
+        <InventoryEditor
+          items={fields.initialInventory}
+          onAdd={addInventoryItem}
+          onUpdate={updateInventoryItem}
+          onRemove={removeInventoryItem}
+        />
+        <Separator />
+        <StorybookEditor
+          entries={fields.initialStoryCards}
+          onAdd={addStoryCard}
+          onUpdate={updateStoryCard}
+          onRemove={removeStoryCard}
+        />
+      </div>
       <PublishScenarioDialog
         open={Boolean(pendingPublish)}
         scenario={pendingPublish}

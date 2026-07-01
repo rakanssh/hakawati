@@ -263,6 +263,7 @@ function PublicScenarioCard({
   loading,
   disabled,
   canStartPrivate,
+  onView,
   onStart,
 }: {
   scenario: CatalogScenarioRecord;
@@ -270,6 +271,7 @@ function PublicScenarioCard({
   loading: boolean;
   disabled: boolean;
   canStartPrivate: boolean;
+  onView: (scenario: CatalogScenarioRecord) => void;
   onStart: (
     scenario: CatalogScenarioRecord,
     syncPolicy?: NewTaleSyncPolicy,
@@ -278,7 +280,20 @@ function PublicScenarioCard({
   const { t } = useLingui();
 
   return (
-    <Card className="w-[60vw] max-w-56 shrink-0 snap-start gap-0 overflow-hidden py-0 sm:w-60 sm:max-w-64 lg:w-64">
+    <Card
+      role="button"
+      tabIndex={0}
+      onClick={() => onView(scenario)}
+      onKeyDown={(event) => {
+        if (event.currentTarget !== event.target) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onView(scenario);
+        }
+      }}
+      className="w-[60vw] max-w-56 shrink-0 snap-start cursor-pointer gap-0 overflow-hidden py-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:w-60 sm:max-w-64 lg:w-64"
+      aria-label={t`View ${scenario.title}`}
+    >
       <CardHeader className="p-0">
         <div className="relative">
           <img
@@ -314,7 +329,10 @@ function PublicScenarioCard({
           }
         >
           <Button
-            onClick={() => onStart(scenario)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onStart(scenario);
+            }}
             disabled={disabled || loading}
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play />}
@@ -324,7 +342,10 @@ function PublicScenarioCard({
             <Button
               variant="outline"
               size="icon"
-              onClick={() => onStart(scenario, "private")}
+              onClick={(event) => {
+                event.stopPropagation();
+                onStart(scenario, "private");
+              }}
               disabled={disabled || loading}
               aria-label={t`Start local-only tale`}
             >
@@ -342,18 +363,33 @@ function ScenarioCard({
   loading,
   disabled,
   canStartPrivate,
+  onView,
   onStart,
 }: {
   scenario: ScenarioHead;
   loading: boolean;
   disabled: boolean;
   canStartPrivate: boolean;
+  onView: (id: string) => void;
   onStart: (id: string, syncPolicy?: NewTaleSyncPolicy) => void;
 }) {
   const { t } = useLingui();
 
   return (
-    <Card className="w-[60vw] max-w-56 shrink-0 snap-start gap-0 overflow-hidden py-0 sm:w-60 sm:max-w-64 lg:w-64">
+    <Card
+      role="button"
+      tabIndex={0}
+      onClick={() => onView(scenario.id)}
+      onKeyDown={(event) => {
+        if (event.currentTarget !== event.target) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onView(scenario.id);
+        }
+      }}
+      className="w-[60vw] max-w-56 shrink-0 snap-start cursor-pointer gap-0 overflow-hidden py-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:w-60 sm:max-w-64 lg:w-64"
+      aria-label={t`Open ${scenario.name}`}
+    >
       <CardHeader className="p-0">
         <div className="relative">
           <PreviewImage
@@ -389,7 +425,10 @@ function ScenarioCard({
           }
         >
           <Button
-            onClick={() => onStart(scenario.id)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onStart(scenario.id);
+            }}
             disabled={disabled || loading}
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play />}
@@ -399,7 +438,10 @@ function ScenarioCard({
             <Button
               variant="outline"
               size="icon"
-              onClick={() => onStart(scenario.id, "private")}
+              onClick={(event) => {
+                event.stopPropagation();
+                onStart(scenario.id, "private");
+              }}
               disabled={disabled || loading}
               aria-label={t`Start local-only tale`}
             >
@@ -1023,7 +1065,7 @@ export default function Home() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate({ to: "/scenarios" })}
+                  onClick={() => navigate({ to: "/scenarios?tab=discover" })}
                 >
                   <Trans>Discover</Trans>
                   <ChevronRight className="rtl:rotate-180" />
@@ -1055,6 +1097,9 @@ export default function Home() {
                   loading={startingPublicScenarioId === scenario.id}
                   disabled={hasIssues}
                   canStartPrivate={canStartPrivate}
+                  onView={(item) =>
+                    navigate({ to: `/scenarios/catalog/${item.id}` })
+                  }
                   onStart={handleStartPublicScenario}
                 />
               ))}
@@ -1122,6 +1167,7 @@ export default function Home() {
                 loading={startingScenarioId === scenario.id}
                 disabled={hasIssues}
                 canStartPrivate={canStartPrivate}
+                onView={(id) => navigate({ to: `/scenarios/${id}` })}
                 onStart={handleStartScenario}
               />
             ))}

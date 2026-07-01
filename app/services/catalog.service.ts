@@ -188,7 +188,7 @@ export async function listCatalogScenarios(
 
 export async function listOwnedCatalogScenarios(
   transport: CatalogTransport,
-  options: Pick<CatalogListOptions, "limit" | "cursor"> = {},
+  options: CatalogListOptions = {},
 ): Promise<CatalogOwnedScenarioPage> {
   const query = catalogListQuery(options);
   const suffix = query ? `?${query}` : "";
