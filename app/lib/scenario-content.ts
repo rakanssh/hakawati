@@ -143,7 +143,7 @@ export function normalizeScenarioContent(content: unknown): ScenarioContent[] {
         version: 1,
         id: item.id.trim() || nanoid(12),
         promptType: item.promptType,
-        content: item.content.trim(),
+        content: item.content,
       };
     }
 
@@ -348,13 +348,20 @@ export function scenarioContentToTaleSeed(
 export function scenarioContentToPackage(
   content: ScenarioContent[],
 ): ScenarioContent[] {
-  return normalizeScenarioContent(content).filter((item) => {
-    if (item.type === "prompt_component") return item.content.length > 0;
-    if (item.type === "story_card") {
-      return item.title.length > 0 && item.content.length > 0;
-    }
-    return item.name.length > 0;
-  });
+  return normalizeScenarioContent(content)
+    .map((item): ScenarioContent => {
+      if (item.type === "prompt_component") {
+        return { ...item, content: item.content.trim() };
+      }
+      return item;
+    })
+    .filter((item) => {
+      if (item.type === "prompt_component") return item.content.length > 0;
+      if (item.type === "story_card") {
+        return item.title.length > 0 && item.content.length > 0;
+      }
+      return item.name.length > 0;
+    });
 }
 
 export function packageContentToScenarioContent(

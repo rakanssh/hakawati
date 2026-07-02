@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  normalizeScenarioContent,
   legacyScenarioToContent,
   scenarioContentToEditorFields,
   scenarioContentToPackage,
@@ -110,6 +111,28 @@ describe("scenario content", () => {
       expect.objectContaining({
         type: "inventory_item",
         name: "Compass",
+      }),
+    ]);
+  });
+
+  it("preserves prompt component whitespace while editing", () => {
+    const content = normalizeScenarioContent([
+      {
+        type: "prompt_component",
+        version: 1,
+        id: "plot",
+        promptType: PromptComponentType.PLOT,
+        content: "first ",
+      },
+    ]);
+
+    expect(scenarioContentToEditorFields(content).components[0].content).toBe(
+      "first ",
+    );
+    expect(scenarioContentToPackage(content)).toEqual([
+      expect.objectContaining({
+        type: "prompt_component",
+        content: "first",
       }),
     ]);
   });
