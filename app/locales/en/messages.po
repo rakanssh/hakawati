@@ -2732,3 +2732,18 @@ msgstr "You..."
 #: app/data/quickstart-presets.ts:20
 msgid "Zombies"
 msgstr "Zombies"
+
+#: app/pages/scenarios/catalog-details.tsx
+#: app/pages/scenarios/home.tsx
+msgid "Awaiting moderation"
+msgstr "Awaiting moderation"
+
+#: app/pages/scenarios/catalog-details.tsx
+#: app/pages/scenarios/create.tsx
+#: app/pages/scenarios/home.tsx
+msgid "Scenario submitted for moderation"
+msgstr "Scenario submitted for moderation"
+
+#: app/pages/scenarios/catalog-details.tsx
+msgid "This version stays private until it is approved."
+msgstr "This version stays private until it is approved."

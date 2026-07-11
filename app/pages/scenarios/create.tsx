@@ -173,12 +173,16 @@ export default function ScenarioCreate() {
         onPublish={async ({ metadata, thumbnailFile }) => {
           if (!pendingPublish) return;
           try {
-            await catalogActions.publish({
+            const result = await catalogActions.publish({
               scenario: pendingPublish,
               metadata,
               thumbnailFile,
             });
-            toast.success(t`Scenario published`);
+            toast.success(
+              result.moderation.status === "needs_review"
+                ? t`Scenario submitted for moderation`
+                : t`Scenario published`,
+            );
           } catch (error) {
             toast.error(
               error instanceof Error

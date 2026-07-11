@@ -2732,3 +2732,18 @@ msgstr "افعل..."
 #: app/data/quickstart-presets.ts:20
 msgid "Zombies"
 msgstr "زومبي"
+
+#: app/pages/scenarios/catalog-details.tsx
+#: app/pages/scenarios/home.tsx
+msgid "Awaiting moderation"
+msgstr "بانتظار المراجعة"
+
+#: app/pages/scenarios/catalog-details.tsx
+#: app/pages/scenarios/create.tsx
+#: app/pages/scenarios/home.tsx
+msgid "Scenario submitted for moderation"
+msgstr "تم إرسال السيناريو للمراجعة"
+
+#: app/pages/scenarios/catalog-details.tsx
+msgid "This version stays private until it is approved."
+msgstr "ستبقى هذه النسخة خاصة حتى تتم الموافقة عليها."

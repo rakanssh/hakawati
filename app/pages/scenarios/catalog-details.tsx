@@ -49,6 +49,14 @@ function hiddenByModeration(
   );
 }
 
+function awaitingModeration(
+  scenario: CatalogDetail | null,
+): scenario is CatalogOwnedScenarioDetail {
+  return (
+    ownedScenario(scenario) && scenario.moderation.status === "needs_review"
+  );
+}
+
 function formatDateOnly(dateInput: Date | string | number) {
   return formatExactDateTime(dateInput, undefined, {
     hour: undefined,
@@ -80,7 +88,9 @@ export default function ScenarioCatalogDetails() {
     : 0;
   const validDateMs = Number.isNaN(dateMs) ? 0 : dateMs;
   const isModerationHidden = hiddenByModeration(scenario);
-  const moderationReason = isModerationHidden
+  const isAwaitingModeration = awaitingModeration(scenario);
+  const isModerationUnavailable = isModerationHidden || isAwaitingModeration;
+  const moderationReason = isModerationUnavailable
     ? scenario.moderation.reason
     : null;
   const visibleTags = scenario?.tags.slice(0, 8) ?? [];
@@ -250,8 +260,24 @@ export default function ScenarioCatalogDetails() {
                     </p>
                   ) : null}
                 </div>
+              ) : isAwaitingModeration ? (
+                <div className="rounded-xs border border-border bg-muted/20 p-3 text-sm">
+                  <div className="font-medium">
+                    <Trans>Awaiting moderation</Trans>
+                  </div>
+                  <p className="mt-1 text-muted-foreground">
+                    <Trans>
+                      This version stays private until it is approved.
+                    </Trans>
+                  </p>
+                  {moderationReason ? (
+                    <p className="mt-1 text-muted-foreground">
+                      {moderationReason}
+                    </p>
+                  ) : null}
+                </div>
               ) : null}
-              {isModerationHidden ? (
+              {isModerationUnavailable ? (
                 localLink ? (
                   <div className="grid gap-2 sm:grid-cols-2">
                     <Button
@@ -318,7 +344,11 @@ export default function ScenarioCatalogDetails() {
             });
             setScenario(updated);
             await publishLinks.refresh();
-            toast.success(t`Scenario update published`);
+            toast.success(
+              updated.moderation.status === "needs_review"
+                ? t`Scenario submitted for moderation`
+                : t`Scenario update published`,
+            );
           } catch (err) {
             toast.error(
               err instanceof Error

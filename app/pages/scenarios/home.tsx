@@ -112,6 +112,12 @@ function hiddenByModeration(scenario: CatalogCardScenario) {
   );
 }
 
+function awaitingModeration(scenario: CatalogCardScenario) {
+  return (
+    "moderation" in scenario && scenario.moderation.status === "needs_review"
+  );
+}
+
 function scenarioTabFromSearch(): ScenarioTab {
   const tab = new URLSearchParams(window.location.search).get("tab");
   return tab === "discover" || tab === "published" ? tab : "local";
@@ -184,6 +190,8 @@ function CatalogScenarioCard({
   const startsLabel =
     scenario.startCount === 1 ? "1 start" : `${scenario.startCount} starts`;
   const isModerationHidden = hiddenByModeration(scenario);
+  const isAwaitingModeration = awaitingModeration(scenario);
+  const hasModerationBadge = isModerationHidden || isAwaitingModeration;
 
   return (
     <Card
@@ -275,7 +283,7 @@ function CatalogScenarioCard({
           <Badge
             className={cn(
               "absolute bottom-1 left-1",
-              isModerationHidden ? "max-w-[55%]" : "max-w-[calc(100%-0.5rem)]",
+              hasModerationBadge ? "max-w-[55%]" : "max-w-[calc(100%-0.5rem)]",
               imageBadgeClass,
             )}
           >
@@ -284,6 +292,10 @@ function CatalogScenarioCard({
           {isModerationHidden ? (
             <Badge className={`absolute bottom-1 right-1 ${imageBadgeClass}`}>
               <Trans>Hidden by moderation</Trans>
+            </Badge>
+          ) : isAwaitingModeration ? (
+            <Badge className={`absolute bottom-1 right-1 ${imageBadgeClass}`}>
+              <Trans>Awaiting moderation</Trans>
             </Badge>
           ) : null}
         </div>
@@ -950,15 +962,17 @@ export default function ScenariosHome() {
         onPublish={async ({ metadata, thumbnailFile }) => {
           if (!pendingPublish) return;
           try {
-            await catalogActions.publish({
+            const result = await catalogActions.publish({
               scenario: pendingPublish,
               metadata,
               thumbnailFile,
             });
             toast.success(
-              linkByLocalId.get(pendingPublish.id)
-                ? t`Scenario update published`
-                : t`Scenario published`,
+              result.moderation.status === "needs_review"
+                ? t`Scenario submitted for moderation`
+                : linkByLocalId.get(pendingPublish.id)
+                  ? t`Scenario update published`
+                  : t`Scenario published`,
             );
             await refreshCatalogState();
           } catch (error) {
