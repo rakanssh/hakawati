@@ -9,11 +9,14 @@ All notable changes to this project are documented in this file.
 - Cloud sync for tales, including sign-in, device registration, and background syncing across devices.
 - Library controls to sync or unsync individual tales, keep tales private, and resolve sync conflicts.
 - Build-time configuration for the default hosted sync server.
+- Public catalog of scenarios with tag filtering, publishing, updates, and moderation.
+- The ability for logged in users to publish their own scenarios for others to play.
 
 ### Changed
 
 - Reworked tale storage so larger tales load, save, and recover play history more smoothly.
 - Improved tale deletion and sync cleanup across local and remote copies.
+- Redesigned scenario and catalog pages for consistency
 
 ### Fixed
 

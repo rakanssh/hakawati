@@ -6,7 +6,10 @@
   <a href="https://github.com/rakanssh/hakawati/releases"><img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey" alt="Platform"></a>
 </p>
 
-Hakawati is an AI-powered, text-based RPG. Bring your own OpenAI-Compatible endpoint (Cloud or local), and start an on-demand, interactive, text-based adventure!
+Hakawati is a local-first, AI-powered text RPG. Bring your own
+OpenAI-compatible endpoint (cloud or local) and start an interactive adventure.
+An optional Hakawati Cloud account adds cross-device tale sync and access to the
+public scenario catalog; neither is required for local play.
 
 > ℹ️ The client is in an early experimental stage. Expect bugs! (right click -> refresh app may resolve the occasional issue.)
 
@@ -53,8 +56,22 @@ Standard AI text-based adventure. Works with any model.
 - Self-contained application — download (or build) and run.
 - Supports OpenAI-compatible endpoints (including OpenRouter metadata such as pricing/token limits). Works with local servers and tools like Ollama, LocalAI, and LLM Studio.
 - Scenario builder to create and save templates for new tales. Supports sharing scenarios via import/export to the clipboard.
+- Optional cross-device tale sync through Hakawati Cloud.
+- Public scenario discovery, publishing, reporting, and starting tales from
+  approved community scenarios. Public catalog packages are copied into local
+  tales and do not remain dependent on the server.
 - Persistence using an easily editable/queryable local SQLite database.
 - Flexible model configuration with adjustable sampling parameters.
+
+### Local-first and cloud boundaries
+
+Hakawati's gameplay, local scenarios, tales, imports/exports, and bring-your-own
+inference settings live in the open-source client. Hakawati Cloud is an optional
+service for accounts, remote tale copies, and the public scenario catalog.
+Cloud failures must not block local authoring or play.
+
+Private cloud saves use server-side encryption at rest. Public catalog scenarios are intentionally public and
+pass through pre-publication moderation before they appear in discovery.
 
 ## How to Play
 
@@ -172,8 +189,8 @@ Planned areas of exploration include:
 
 - Scenario scripting (allow inserting variables/options in scenarios and prompting the user to fill or select them when starting a tale)
 - AI-generated/assisted story cards.
-- Cross-device sync.
 - Mobile support.
+- Operational hardening for the optional cloud service and catalog.
 
 ## License
 
