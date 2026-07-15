@@ -6,8 +6,6 @@ type SyncSettingsPersistedState = Pick<
   | "cloudBaseUrl"
   | "personalBaseUrl"
   | "activeSyncMode"
-  | "accessToken"
-  | "accessTokenExpiresAt"
   | "hasRefreshToken"
   | "deviceId"
   | "deviceName"
@@ -69,6 +67,16 @@ export function defaultCloudBaseUrl(
   return value?.trim() ?? "";
 }
 
+function stripPersistedAccessToken(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+  const safe = { ...(value as Record<string, unknown>) };
+  delete safe.accessToken;
+  delete safe.accessTokenExpiresAt;
+  return safe;
+}
+
 export const useSyncSettingsStore = create<SyncSettingsStore>()(
   persist<SyncSettingsStore, [], [], SyncSettingsPersistedState>(
     (set, get) => ({
@@ -86,7 +94,21 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
       accountEmail: "",
       hostedDeviceIdsByAccountId: {},
       hostedRefreshFailed: false,
-      setCloudBaseUrl: (cloudBaseUrl) => set({ cloudBaseUrl }),
+      setCloudBaseUrl: (cloudBaseUrl) =>
+        set((state) =>
+          cloudBaseUrl === state.cloudBaseUrl
+            ? { cloudBaseUrl }
+            : {
+                cloudBaseUrl,
+                accessToken: "",
+                accessTokenExpiresAt: null,
+                hasRefreshToken: false,
+                hostedRefreshFailed: false,
+                accountId: "",
+                accountDisplayName: "",
+                accountEmail: "",
+              },
+        ),
       setPersonalBaseUrl: (personalBaseUrl) => set({ personalBaseUrl }),
       setActiveSyncMode: (activeSyncMode) => set({ activeSyncMode }),
       setAccessToken: (
@@ -148,12 +170,13 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
     }),
     {
       name: "sync-settings",
+      version: 1,
+      migrate: (persistedState) =>
+        stripPersistedAccessToken(persistedState) as SyncSettingsPersistedState,
       partialize: (state) => ({
         cloudBaseUrl: state.cloudBaseUrl,
         personalBaseUrl: state.personalBaseUrl,
         activeSyncMode: state.activeSyncMode,
-        accessToken: state.accessToken,
-        accessTokenExpiresAt: state.accessTokenExpiresAt,
         hasRefreshToken: state.hasRefreshToken,
         deviceId: state.deviceId,
         deviceName: state.deviceName,
@@ -165,11 +188,17 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as
-          | Partial<SyncSettingsPersistedState>
+          | (Partial<SyncSettingsStore> & {
+              accessToken?: unknown;
+              accessTokenExpiresAt?: unknown;
+            })
           | undefined;
+        const safePersisted = stripPersistedAccessToken(persisted);
         return {
           ...currentState,
-          ...persisted,
+          ...safePersisted,
+          accessToken: "",
+          accessTokenExpiresAt: null,
           cloudBaseUrl: persisted?.cloudBaseUrl?.trim()
             ? persisted.cloudBaseUrl
             : currentState.cloudBaseUrl,

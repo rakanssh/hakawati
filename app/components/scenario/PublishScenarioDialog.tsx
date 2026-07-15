@@ -10,12 +10,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import type { Scenario } from "@/types/context.type";
 import type { ScenarioPackageMetadata } from "@/lib/catalog-package";
 import { Trans } from "@lingui/react/macro";
 import { CatalogTagInput } from "@/components/catalog/CatalogTagInput";
 import type { CatalogClientState } from "@/hooks/useCatalogScenarios";
+import {
+  fetchCurrentCatalogPolicies,
+  publishingAcceptanceFor,
+  type CatalogCurrentPolicies,
+  type CatalogPublishingAcceptance,
+} from "@/services/catalog.service";
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 type PublishScenarioDialogProps = {
   open: boolean;
@@ -27,6 +35,7 @@ type PublishScenarioDialogProps = {
   onPublish: (input: {
     metadata: ScenarioPackageMetadata;
     thumbnailFile?: File | null;
+    policyAcceptance: CatalogPublishingAcceptance;
   }) => Promise<void>;
 };
 
@@ -43,6 +52,9 @@ export function PublishScenarioDialog({
   const [summary, setSummary] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [policies, setPolicies] = useState<CatalogCurrentPolicies | null>(null);
+  const [policiesError, setPoliciesError] = useState(false);
+  const [policiesAccepted, setPoliciesAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -51,9 +63,33 @@ export function PublishScenarioDialog({
     setSummary(scenario.description);
     setTags([]);
     setThumbnailFile(null);
-  }, [open, scenario]);
+    setPolicies(null);
+    setPoliciesError(false);
+    setPoliciesAccepted(false);
+    if (!catalog.publicTransport) {
+      setPoliciesError(true);
+      return;
+    }
+    let cancelled = false;
+    void fetchCurrentCatalogPolicies(catalog.publicTransport)
+      .then((current) => {
+        if (!cancelled) setPolicies(current);
+      })
+      .catch(() => {
+        if (!cancelled) setPoliciesError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [catalog.publicTransport, open, scenario]);
 
-  const canSubmit = Boolean(title.trim() && summary.trim() && tags.length > 0);
+  const canSubmit = Boolean(
+    title.trim() &&
+      summary.trim() &&
+      tags.length > 0 &&
+      policies &&
+      policiesAccepted,
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -77,6 +113,7 @@ export function PublishScenarioDialog({
           onSubmit={async (event) => {
             event.preventDefault();
             if (!canSubmit) return;
+            const policyAcceptance = publishingAcceptanceFor(policies!);
             setSubmitting(true);
             try {
               await onPublish({
@@ -86,6 +123,7 @@ export function PublishScenarioDialog({
                   tags,
                 },
                 thumbnailFile,
+                policyAcceptance,
               });
               onOpenChange(false);
             } finally {
@@ -139,6 +177,54 @@ export function PublishScenarioDialog({
               />
             </div>
           ) : null}
+          <div className="grid gap-2 rounded-xs border p-3 text-sm">
+            {policiesError ? (
+              <p className="text-destructive">
+                <Trans>Publishing policies could not be loaded.</Trans>
+              </p>
+            ) : policies ? (
+              <div className="flex items-start gap-2">
+                <Checkbox
+                  id="publishing-policy-acceptance"
+                  checked={policiesAccepted}
+                  onCheckedChange={(checked) =>
+                    setPoliciesAccepted(checked === true)
+                  }
+                />
+                <div className="grid gap-1 leading-relaxed">
+                  <Label htmlFor="publishing-policy-acceptance">
+                    <Trans>
+                      I agree to the publishing rules and understand that public
+                      scenarios are moderated and may be removed.
+                    </Trans>
+                  </Label>
+                  <div className="flex flex-wrap gap-x-3">
+                    {policies.policies
+                      .filter((policy) => policy.requiredForPublishing)
+                      .map((policy) => (
+                        <Button
+                          key={policy.key}
+                          type="button"
+                          variant="link"
+                          className="h-auto p-0 text-xs"
+                          onClick={() => void openUrl(policy.url)}
+                        >
+                          {policy.key === "terms" ? (
+                            <Trans>Terms of Service</Trans>
+                          ) : (
+                            <Trans>Community Guidelines</Trans>
+                          )}
+                        </Button>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-muted-foreground">
+                <Trans>Loading publishing policies...</Trans>
+              </p>
+            )}
+          </div>
           <DialogFooter>
             <Button
               type="button"

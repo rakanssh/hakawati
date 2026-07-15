@@ -261,6 +261,52 @@ export async function upsertTaleSyncState(state: TaleSyncState): Promise<void> {
   });
 }
 
+export async function upsertTaleSyncStateIfTaleVersion(
+  state: TaleSyncState,
+  expectedSaveVersion: number,
+): Promise<boolean> {
+  return enqueueLocalWrite(async () => {
+    const db = await getDb();
+    const result = await db.execute(
+      `INSERT INTO tale_sync_state (
+         profile_id,
+         account_id,
+         local_tale_id,
+         remote_tale_id,
+         content_rev,
+         metadata_rev,
+         last_synced_at,
+         pending_status,
+         last_error_code
+       )
+       SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
+       FROM tales
+       WHERE id = ? AND save_version = ?
+       ON CONFLICT(profile_id, account_id, local_tale_id) DO UPDATE SET
+         remote_tale_id = excluded.remote_tale_id,
+         content_rev = excluded.content_rev,
+         metadata_rev = excluded.metadata_rev,
+         last_synced_at = excluded.last_synced_at,
+         pending_status = excluded.pending_status,
+         last_error_code = excluded.last_error_code`,
+      [
+        state.profileId,
+        accountScope(state.accountId),
+        state.localTaleId,
+        state.remoteTaleId,
+        state.contentRev,
+        state.metadataRev,
+        state.lastSyncedAt,
+        state.pendingStatus,
+        state.lastErrorCode,
+        state.localTaleId,
+        expectedSaveVersion,
+      ],
+    );
+    return result.rowsAffected > 0;
+  });
+}
+
 export async function deleteTaleSyncState(input: {
   profileId: string;
   accountId?: string | null;

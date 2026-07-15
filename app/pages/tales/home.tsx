@@ -104,8 +104,13 @@ export default function TalesHome() {
 
   const confirmDelete = async () => {
     if (!pendingDelete) return;
-    await deleteLibraryTale(pendingDelete.item);
-    setPendingDelete(null);
+    try {
+      await deleteLibraryTale(pendingDelete.item);
+      toast.success(t`Tale deleted`);
+      setPendingDelete(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t`Delete failed`);
+    }
   };
 
   const confirmCloudRemove = async () => {

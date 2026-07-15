@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  acceptCurrentCatalogPolicies,
+  blockCatalogPublisher,
   canUploadCatalogThumbnails,
+  canPublishScenarioCatalog,
   canUseScenarioCatalog,
   createCatalogTransport,
   fetchCatalogCapabilities,
@@ -17,6 +20,7 @@ import {
   uploadPublicCatalogThumbnail,
   type CatalogCapabilities,
   type CatalogListOptions,
+  type CatalogPublishingAcceptance,
   type CatalogTagListOptions,
   type CatalogTransport,
 } from "@/services/catalog.service";
@@ -36,6 +40,7 @@ export type CatalogClientState = {
   baseUrl: string;
   signedIn: boolean;
   enabled: boolean;
+  publishingEnabled: boolean;
   thumbnailUploads: boolean;
   loading: boolean;
   error: unknown;
@@ -44,6 +49,12 @@ export type CatalogClientState = {
   authTransport: CatalogTransport | null;
   refreshCapabilities: () => Promise<void>;
 };
+
+export function selectCatalogReadTransport(
+  client: Pick<CatalogClientState, "authTransport" | "publicTransport">,
+) {
+  return client.authTransport ?? client.publicTransport;
+}
 
 export function useCatalogClient(): CatalogClientState {
   const cloudBaseUrl = useSyncSettingsStore((state) => state.cloudBaseUrl);
@@ -100,6 +111,9 @@ export function useCatalogClient(): CatalogClientState {
     baseUrl,
     signedIn,
     enabled: Boolean(baseUrl && canUseScenarioCatalog(capabilities)),
+    publishingEnabled: Boolean(
+      baseUrl && canPublishScenarioCatalog(capabilities),
+    ),
     thumbnailUploads: canUploadCatalogThumbnails(capabilities),
     loading,
     error,
@@ -114,6 +128,7 @@ export function useCatalogScenarioList(
   client: CatalogClientState,
   initial: CatalogListOptions = {},
 ) {
+  const readTransport = selectCatalogReadTransport(client);
   const [items, setItems] = useState<CatalogScenarioRecord[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [filters, setFilters] = useState<CatalogListOptions>({
@@ -125,7 +140,7 @@ export function useCatalogScenarioList(
   const [error, setError] = useState<unknown>(null);
 
   const refresh = useCallback(async () => {
-    if (!client.enabled || !client.publicTransport) {
+    if (!client.enabled || !readTransport) {
       setItems([]);
       setNextCursor(null);
       return;
@@ -133,7 +148,7 @@ export function useCatalogScenarioList(
     setLoading(true);
     setError(null);
     try {
-      const page = await listCatalogScenarios(client.publicTransport, filters);
+      const page = await listCatalogScenarios(readTransport, filters);
       setItems(page.items);
       setNextCursor(page.nextCursor);
     } catch (err) {
@@ -143,14 +158,14 @@ export function useCatalogScenarioList(
     } finally {
       setLoading(false);
     }
-  }, [client.enabled, client.publicTransport, filters]);
+  }, [client.enabled, filters, readTransport]);
 
   const loadMore = useCallback(async () => {
-    if (!client.enabled || !client.publicTransport || !nextCursor) return;
+    if (!client.enabled || !readTransport || !nextCursor) return;
     setLoading(true);
     setError(null);
     try {
-      const page = await listCatalogScenarios(client.publicTransport, {
+      const page = await listCatalogScenarios(readTransport, {
         ...filters,
         cursor: nextCursor,
       });
@@ -161,7 +176,7 @@ export function useCatalogScenarioList(
     } finally {
       setLoading(false);
     }
-  }, [client.enabled, client.publicTransport, filters, nextCursor]);
+  }, [client.enabled, filters, nextCursor, readTransport]);
 
   useEffect(() => {
     void refresh();
@@ -304,12 +319,14 @@ export function useCatalogTagSuggestions(
 }
 
 export function useCatalogActions(client: CatalogClientState) {
+  const readTransport = selectCatalogReadTransport(client);
+
   const view = useCallback(
     async (scenarioId: string) => {
-      if (!client.publicTransport) throw new Error("Catalog is not configured");
-      return getCatalogScenario(client.publicTransport, scenarioId);
+      if (!readTransport) throw new Error("Catalog is not configured");
+      return getCatalogScenario(readTransport, scenarioId);
     },
-    [client.publicTransport],
+    [readTransport],
   );
 
   const viewOwned = useCallback(
@@ -322,12 +339,12 @@ export function useCatalogActions(client: CatalogClientState) {
 
   const start = useCallback(
     async (scenarioId: string, syncPolicy?: NewTaleSyncPolicy) => {
-      if (!client.publicTransport) throw new Error("Catalog is not configured");
-      return startCatalogScenario(client.publicTransport, scenarioId, {
+      if (!readTransport) throw new Error("Catalog is not configured");
+      return startCatalogScenario(readTransport, scenarioId, {
         syncPolicy,
       });
     },
-    [client.publicTransport],
+    [readTransport],
   );
 
   const publish = useCallback(
@@ -335,9 +352,16 @@ export function useCatalogActions(client: CatalogClientState) {
       scenario: Scenario;
       metadata: ScenarioPackageMetadata;
       thumbnailFile?: File | null;
+      policyAcceptance: CatalogPublishingAcceptance;
     }) => {
       if (!client.authTransport)
         throw new Error("Sign in to publish scenarios");
+      if (!client.publishingEnabled)
+        throw new Error("Publishing is currently unavailable");
+      await acceptCurrentCatalogPolicies(
+        client.authTransport,
+        input.policyAcceptance,
+      );
       const thumbnailAssetId =
         input.thumbnailFile && client.thumbnailUploads
           ? (
@@ -355,7 +379,7 @@ export function useCatalogActions(client: CatalogClientState) {
         ...(thumbnailAssetId ? { thumbnailAssetId } : {}),
       });
     },
-    [client.authTransport, client.thumbnailUploads],
+    [client.authTransport, client.publishingEnabled, client.thumbnailUploads],
   );
 
   const updateThumbnail = useCallback(
@@ -397,6 +421,14 @@ export function useCatalogActions(client: CatalogClientState) {
     [client.authTransport, client.publicTransport],
   );
 
+  const blockPublisher = useCallback(
+    async (publisherId: string) => {
+      if (!client.authTransport) throw new Error("Sign in to block publishers");
+      return blockCatalogPublisher(client.authTransport, publisherId);
+    },
+    [client.authTransport],
+  );
+
   return {
     view,
     viewOwned,
@@ -405,6 +437,7 @@ export function useCatalogActions(client: CatalogClientState) {
     updateThumbnail,
     unpublish,
     report,
+    blockPublisher,
   } as const;
 }
 

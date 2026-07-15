@@ -2,14 +2,18 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { GameMode, PromptComponentType } from "@/types/context.type";
 import type { ScenarioPackage } from "@/types/catalog.type";
 import {
+  acceptCurrentCatalogPolicies,
+  blockCatalogPublisher,
   CatalogHttpError,
   createCatalogTransport,
+  fetchCurrentCatalogPolicies,
   getCatalogScenario,
   getOwnedCatalogScenario,
   listCatalogScenarios,
   listCatalogTags,
   listOwnedCatalogScenarios,
   publishScenarioDraft,
+  publishingAcceptanceFor,
   startCatalogScenario,
 } from "./catalog.service";
 
@@ -70,6 +74,25 @@ function jsonResponse(body: unknown, ok = true, status = 200) {
 describe("catalog service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it("blocks a catalog publisher", async () => {
+    const transport = {
+      get: vi.fn(),
+      patch: vi.fn(),
+      post: vi.fn().mockResolvedValue({
+        publisherId: "publisher-1",
+        blocked: true,
+      }),
+    };
+
+    await expect(
+      blockCatalogPublisher(transport, "publisher-1"),
+    ).resolves.toEqual({ publisherId: "publisher-1", blocked: true });
+    expect(transport.post).toHaveBeenCalledWith(
+      "/v1/catalog/publishers/publisher-1/block",
+      {},
+    );
   });
 
   it("creates a local tale from catalog start without saving a local scenario", async () => {
@@ -220,6 +243,65 @@ describe("catalog service", () => {
     } satisfies Partial<CatalogHttpError>);
   });
 
+  it("preserves structured API error details", async () => {
+    http.fetch.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          code: "policy_acceptance_required",
+          message: "Accept policies.",
+          details: { missingPolicies: ["terms"] },
+          requestId: "request-1",
+        },
+        false,
+        409,
+      ),
+    );
+
+    await expect(
+      createCatalogTransport({ baseUrl: "https://cloud.example" }).post(
+        "/v1/catalog/scenarios",
+        {},
+      ),
+    ).rejects.toMatchObject({
+      code: "policy_acceptance_required",
+      details: { missingPolicies: ["terms"] },
+      requestId: "request-1",
+    });
+  });
+
+  it("loads and accepts the server's current publishing policy versions", async () => {
+    const transport = {
+      get: vi.fn().mockResolvedValueOnce({
+        policies: [
+          {
+            key: "terms",
+            version: "2026-07-14",
+            url: "https://hakawati.net/terms",
+            requiredForPublishing: true,
+          },
+          {
+            key: "community_guidelines",
+            version: "2026-07-14",
+            url: "https://hakawati.net/community-guidelines",
+            requiredForPublishing: true,
+          },
+        ],
+        publishingRequires: ["terms", "community_guidelines"],
+      }),
+      patch: vi.fn(),
+      post: vi.fn(),
+    };
+
+    const current = await fetchCurrentCatalogPolicies(transport);
+    const acceptance = publishingAcceptanceFor(current);
+    await acceptCurrentCatalogPolicies(transport, acceptance);
+
+    expect(transport.post).toHaveBeenCalledWith("/v1/policy-acceptances", {
+      termsVersion: "2026-07-14",
+      communityGuidelinesVersion: "2026-07-14",
+    });
+  });
+
   it("sends repeated tag filters when listing catalog scenarios", async () => {
     const transport = {
       get: vi.fn().mockResolvedValueOnce({ items: [], nextCursor: null }),
@@ -265,7 +347,7 @@ describe("catalog service", () => {
             title: "Iron Gate",
             summary: "A gate waits.",
             tags: ["gate"],
-            author: { displayName: "Rakan" },
+            author: { id: "author-1", displayName: "Rakan" },
             thumbnail: null,
             viewCount: 0,
             startCount: 0,
@@ -305,7 +387,7 @@ describe("catalog service", () => {
         title: "Iron Gate",
         summary: "A gate waits.",
         tags: ["gate"],
-        author: { displayName: "Rakan" },
+        author: { id: "author-1", displayName: "Rakan" },
         thumbnail: null,
         viewCount: 0,
         startCount: 0,
@@ -338,7 +420,7 @@ describe("catalog service", () => {
         title: "Iron Gate",
         summary: "A gate waits.",
         tags: ["gate"],
-        author: { displayName: "Rakan" },
+        author: { id: "author-1", displayName: "Rakan" },
         thumbnail: null,
         viewCount: 0,
         startCount: 0,

@@ -1,0 +1,35 @@
+{
+  "fixture": "v0.15.2-release.db",
+  "sourceAppVersion": "0.15.2",
+  "sourceSchemaVersion": 3,
+  "generatedBy": "scripts/generate-v0152-migration-fixture.cjs",
+  "generatedAt": "2026-07-14T00:00:00.000Z",
+  "byteSize": 57344,
+  "sha256": "526c9a12e3d0411952da872c32ee26afd45af8a41fc00ebfee23b534cc418ed1",
+  "rowCounts": {
+    "scenarios": 1,
+    "tales": 3,
+    "legacyLogEntries": 12,
+    "expectedTaleStatesAfterUpgrade": 3,
+    "expectedTaleSessionsAfterUpgrade": 3,
+    "expectedTaleTurnsAfterUpgrade": 12
+  },
+  "representativeContentHashes": {
+    "scenario.components": "ea2e2e53a91cbac580c9242e14b20ce75cc74f051f549e63b93fe66dbeee8ad0",
+    "tale-completed.log": "dd440cce8a7bf6cc0e9e41f58ea17c5e151c97d1fbe142453bdbaf7af070d9d6",
+    "tale-arabic.story_cards": "62d8ac66aec6c2beecf7f5b1f446d1181942c8befa63a7d396b091ba3e0bab39"
+  },
+  "coverage": {
+    "completedPlay": "tale-completed",
+    "interruptedPlay": "tale-interrupted",
+    "arabicEnglish": [
+      "scenario-iron-gate",
+      "tale-arabic"
+    ],
+    "characterNames": [
+      "Maryam / مريم",
+      "Salim / سالم"
+    ],
+    "settingsStorage": "v0.15.2 settings are localStorage-backed, not SQLite"
+  }
+}

@@ -22,6 +22,7 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "fixtures:generate:v0152": "node scripts/generate-v0152-migration-fixture.cjs",
     "licenses:generate": "npm run licenses:npm && npm run licenses:cargo",
     "licenses:npm": "node scripts/generate-licenses.cjs",
     "licenses:cargo": "cd src-tauri && cargo about generate about.hbs -o ../THIRD_PARTY_LICENSES-rust.md",

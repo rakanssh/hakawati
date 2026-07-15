@@ -204,8 +204,8 @@ async function withTransaction<T>(
   run: () => Promise<T>,
 ): Promise<T> {
   void db;
-  // ponytail: tauri-plugin-sql uses a pool; BEGIN/COMMIT across separate calls
-  // can land on different connections. enqueueLocalWrite is the write lock.
+  // tauri-plugin-sql owns a pool, so cross-call BEGIN/COMMIT is not reliable.
+  // enqueueLocalWrite is the single local writer for these composite writes.
   return run();
 }
 
@@ -214,6 +214,18 @@ async function withReadTransaction<T>(
   run: () => Promise<T>,
 ): Promise<T> {
   return run();
+}
+
+async function markLinkedTaleForPush(
+  db: Database,
+  taleId: string,
+): Promise<void> {
+  await db.execute(
+    `UPDATE tale_sync_state
+     SET pending_status = 'push', last_error_code = NULL
+     WHERE local_tale_id = ? AND pending_status <> 'conflict'`,
+    [taleId],
+  );
 }
 
 async function selectTaleRow(
@@ -764,6 +776,7 @@ export async function replaceCurrentState(
     const now = Date.now();
     await withTransaction(db, async () => {
       await requireTaleRow(db, taleId);
+      await markLinkedTaleForPush(db, taleId);
       await replaceState(db, taleId, state, now);
       if (session) {
         await replaceSession(db, taleId, session, now);
@@ -787,6 +800,7 @@ export async function appendTurn(
     const now = Date.now();
     await withTransaction(db, async () => {
       await requireTaleRow(db, taleId);
+      await markLinkedTaleForPush(db, taleId);
       const nextSeq = (await selectTurnCount(db, taleId)) + 1;
       const entryStartIndex = await selectLogCount(db, taleId);
       await insertTurn(db, taleId, turn, nextSeq, entryStartIndex, now);
@@ -810,6 +824,7 @@ export async function replaceTurns(
     const now = Date.now();
     await withTransaction(db, async () => {
       await requireTaleRow(db, taleId);
+      await markLinkedTaleForPush(db, taleId);
       await db.execute(`DELETE FROM tale_turns WHERE tale_id = ?`, [taleId]);
       await insertTurns(db, taleId, turns, 1, 0, now);
       await refreshTaleLogSummary(db, taleId);
@@ -833,6 +848,7 @@ export async function replaceTurn(
     const now = Date.now();
     await withTransaction(db, async () => {
       await requireTaleRow(db, taleId);
+      await markLinkedTaleForPush(db, taleId);
       const rows = await db.select<TaleTurnRow[]>(
         `SELECT * FROM tale_turns WHERE tale_id = ? AND seq = ? LIMIT 1`,
         [taleId, turnSeq],
@@ -876,6 +892,7 @@ export async function replaceTurnContainingEntries(
     const now = Date.now();
     await withTransaction(db, async () => {
       await requireTaleRow(db, taleId);
+      await markLinkedTaleForPush(db, taleId);
       const requestedEntryIds = Array.from(new Set(entryIds));
       if (requestedEntryIds.length === 0) {
         throw new Error("Cannot replace tale turn without entry anchors");
@@ -965,6 +982,7 @@ export async function trimLogToEntryCount(
 
     await withTransaction(db, async () => {
       await requireTaleRow(db, taleId);
+      await markLinkedTaleForPush(db, taleId);
       const currentCount = await selectLogCount(db, taleId);
       if (nextEntryCount < currentCount) {
         const partialRows = await db.select<TaleTurnRow[]>(
@@ -1029,6 +1047,7 @@ export async function updateLogEntry(
     const now = Date.now();
     await withTransaction(db, async () => {
       await requireTaleRow(db, taleId);
+      await markLinkedTaleForPush(db, taleId);
       const rows = await selectTurnRowsForEntryIds(db, taleId, [entryId]);
       const row = rows[0];
       if (!row) throw new Error("Tale log entry not found");
@@ -1072,6 +1091,7 @@ export async function replaceLogEntryInTurn(
     const now = Date.now();
     await withTransaction(db, async () => {
       await requireTaleRow(db, taleId);
+      await markLinkedTaleForPush(db, taleId);
       const rows = await selectTurnRowsForEntryIds(db, taleId, [entryId]);
       if (rows.length !== 1) {
         throw new Error("Tale log entry turn not found");
@@ -1125,6 +1145,7 @@ export async function updateTaleCurrentData(
     const db = await getDb();
     await withTransaction(db, async () => {
       await requireTaleRow(db, input.id);
+      await markLinkedTaleForPush(db, input.id);
       await db.execute(
         `UPDATE tales SET
            name = ?,
@@ -1220,6 +1241,14 @@ export async function getTale(id: string): Promise<Tale | null> {
   return enqueueLocalOperation(async () => {
     const db = await getDb();
     return withReadTransaction(db, () => selectTaleAggregate(db, id));
+  });
+}
+
+export async function getTaleSaveVersion(taleId: string): Promise<number> {
+  return enqueueLocalOperation(async () => {
+    const db = await getDb();
+    const row = await requireTaleRow(db, taleId);
+    return Number(row.save_version ?? 1);
   });
 }
 
@@ -1634,16 +1663,22 @@ export async function importTalePackage(
 export async function replaceTaleWithPackage(
   taleId: string,
   input: TalePackageV1,
-  options: { title?: string } = {},
-): Promise<void> {
+  options: { title?: string; expectedSaveVersion?: number } = {},
+): Promise<boolean> {
   const { payload, thumbnail, state, turns } = prepareTalePackageWrite(input);
   const source = sourceColumns(packageSource(payload));
   const now = Date.now();
 
-  await enqueueLocalWrite(async () => {
+  return enqueueLocalWrite(async () => {
     const db = await getDb();
-    await withTransaction(db, async () => {
-      await requireTaleRow(db, taleId);
+    return withTransaction(db, async () => {
+      const current = await requireTaleRow(db, taleId);
+      if (
+        options.expectedSaveVersion !== undefined &&
+        Number(current.save_version ?? 1) !== options.expectedSaveVersion
+      ) {
+        return false;
+      }
       await db.execute(
         `UPDATE tales SET
            name = ?,
@@ -1693,6 +1728,7 @@ export async function replaceTaleWithPackage(
       await insertTurns(db, taleId, turns, 1, 0, now);
       await refreshTaleLogSummary(db, taleId);
       await replaceSession(db, taleId, createTaleSessionState(), now);
+      return true;
     });
   });
 }

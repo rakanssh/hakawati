@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   completePendingTaleTurn,
   commitTaleTurn,
@@ -14,10 +14,6 @@ import {
 import type { LogEntry } from "@/types/log.type";
 import { DEFAULT_WINDOW_SIZE, useTaleStore } from "@/store/useTaleStore";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
-import {
-  listSyncStatesForLocalTale,
-  setTaleSyncStatus,
-} from "@/repositories/sync.repository";
 import { wakeSyncBackground } from "@/services/sync-wakeup";
 
 function snapshotMutableTale(): TaleMutableSnapshot {
@@ -34,30 +30,19 @@ function snapshotMutableTale(): TaleMutableSnapshot {
   };
 }
 
-async function markLinkedTaleForPush(taleId: string) {
-  const states = await listSyncStatesForLocalTale(taleId);
-  const pushableStates = states.filter(
-    (state) => state.pendingStatus !== "conflict",
-  );
-  await Promise.all(
-    pushableStates.map((state) =>
-      setTaleSyncStatus({
-        profileId: state.profileId,
-        accountId: state.accountId,
-        localTaleId: taleId,
-        pendingStatus: "push",
-        lastErrorCode: null,
-      }),
-    ),
-  );
-  if (pushableStates.length > 0) wakeSyncBackground();
-}
-
 export function usePersistTale() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [lastSaveSuccess, setLastSaveSuccess] = useState(false);
   const pendingSaveCountRef = useRef(0);
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+    },
+    [],
+  );
 
   const runPersist = useCallback(async (operation: () => Promise<void>) => {
     pendingSaveCountRef.current += 1;
@@ -67,7 +52,11 @@ export function usePersistTale() {
     try {
       await operation();
       setLastSaveSuccess(true);
-      setTimeout(() => setLastSaveSuccess(false), 2000);
+      if (successTimerRef.current) clearTimeout(successTimerRef.current);
+      successTimerRef.current = setTimeout(() => {
+        successTimerRef.current = null;
+        setLastSaveSuccess(false);
+      }, 2000);
     } catch (e) {
       setError(e);
       throw e;
@@ -81,10 +70,10 @@ export function usePersistTale() {
   }, []);
 
   const runTalePersist = useCallback(
-    async (taleId: string, operation: () => Promise<void>) => {
+    async (_taleId: string, operation: () => Promise<void>) => {
       await runPersist(async () => {
         await operation();
-        await markLinkedTaleForPush(taleId);
+        wakeSyncBackground();
       });
     },
     [runPersist],

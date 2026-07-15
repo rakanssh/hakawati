@@ -1,5 +1,10 @@
 import { fetch } from "@tauri-apps/plugin-http";
 import { nanoid } from "nanoid";
+import {
+  asApiObject,
+  parseApiError,
+  parseApiResponseBody,
+} from "@/services/api-error";
 import { LogEntryRole } from "@/types/log.type";
 import type {
   CatalogOwnedScenarioDetail,
@@ -31,14 +36,14 @@ import {
   getScenarioPublishLink,
   upsertScenarioPublishLink,
 } from "@/repositories/scenario-publish-link.repository";
+import {
+  cloudFeatureAvailable,
+  HAKAWATI_CLIENT_HEADERS,
+  parseCloudCapabilities,
+  type CloudCapabilities,
+} from "@/services/cloud-capabilities";
 
-export type CatalogCapabilities = {
-  features?: Record<string, "enabled" | "disabled" | "unsupported" | string>;
-  scenarioCatalog?: {
-    packageFormatVersion?: number;
-    thumbnailUploads?: "enabled" | "disabled" | "unsupported" | string;
-  };
-};
+export type CatalogCapabilities = CloudCapabilities;
 
 export type CatalogTransport = {
   get(path: string): Promise<unknown>;
@@ -72,39 +77,38 @@ export type CatalogThumbnailUpload = {
   height?: number;
 };
 
+export type CatalogPolicyKey = "terms" | "privacy" | "community_guidelines";
+
+export type CatalogPolicy = {
+  key: CatalogPolicyKey;
+  version: string;
+  url: string;
+  requiredForPublishing: boolean;
+};
+
+export type CatalogCurrentPolicies = {
+  policies: CatalogPolicy[];
+  publishingRequires: CatalogPolicyKey[];
+};
+
+export type CatalogPublishingAcceptance = {
+  termsVersion: string;
+  communityGuidelinesVersion: string;
+};
+
 export class CatalogHttpError extends Error {
   constructor(
     message: string,
     readonly status: number,
     readonly code = String(status),
+    readonly details?: Record<string, unknown>,
+    readonly requestId?: string,
   ) {
     super(message);
   }
 }
 
-function bodyValue(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object"
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-function errorCode(value: unknown, status: number): string {
-  const payload = bodyValue(value);
-  return typeof payload.code === "string"
-    ? payload.code
-    : typeof payload.type === "string"
-      ? payload.type
-      : String(status);
-}
-
-function parseResponseBody(text: string): unknown {
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
-  }
-}
+const bodyValue = asApiObject;
 
 function catalogBaseUrl(value: string): string {
   return value.replace(/\/+$/, "").replace(/\/v1$/, "");
@@ -124,19 +128,22 @@ export function createCatalogTransport({
     const response = await fetch(`${base}${path}`, {
       method,
       headers: {
+        ...HAKAWATI_CLIENT_HEADERS,
         ...(body === undefined ? {} : { "Content-Type": "application/json" }),
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
     const text = await response.text();
-    const data = parseResponseBody(text);
+    const data = parseApiResponseBody(text);
     if (!response.ok) {
-      const payload = bodyValue(data);
+      const error = parseApiError(data, response.status, text);
       throw new CatalogHttpError(
-        typeof payload.message === "string" ? payload.message : text,
+        error.message,
         response.status,
-        errorCode(data, response.status),
+        error.code,
+        error.details,
+        error.requestId,
       );
     }
     return data;
@@ -149,20 +156,86 @@ export function createCatalogTransport({
   };
 }
 
+export async function fetchCurrentCatalogPolicies(
+  transport: CatalogTransport,
+): Promise<CatalogCurrentPolicies> {
+  const value = bodyValue(await transport.get("/v1/policies/current"));
+  const policies = Array.isArray(value.policies)
+    ? value.policies.map(parseCatalogPolicy)
+    : [];
+  const publishingRequires = Array.isArray(value.publishingRequires)
+    ? value.publishingRequires.filter(isCatalogPolicyKey)
+    : [];
+  if (policies.length === 0 || publishingRequires.length === 0) {
+    throw new CatalogHttpError(
+      "The server returned an invalid publishing policy contract.",
+      503,
+      "policies_invalid",
+    );
+  }
+  const current = { policies, publishingRequires };
+  publishingAcceptanceFor(current);
+  return current;
+}
+
+export function publishingAcceptanceFor(
+  current: CatalogCurrentPolicies,
+): CatalogPublishingAcceptance {
+  const terms = current.policies.find((policy) => policy.key === "terms");
+  const communityGuidelines = current.policies.find(
+    (policy) => policy.key === "community_guidelines",
+  );
+  if (!terms || !communityGuidelines) {
+    throw new CatalogHttpError(
+      "The publishing policies are incomplete.",
+      503,
+      "policies_invalid",
+    );
+  }
+  return {
+    termsVersion: terms.version,
+    communityGuidelinesVersion: communityGuidelines.version,
+  };
+}
+
+export async function acceptCurrentCatalogPolicies(
+  transport: CatalogTransport,
+  acceptance: CatalogPublishingAcceptance,
+): Promise<void> {
+  await transport.post("/v1/policy-acceptances", acceptance);
+}
+
 export async function fetchCatalogCapabilities(
   transport: CatalogTransport,
 ): Promise<CatalogCapabilities> {
-  return bodyValue(
-    await transport.get("/v1/capabilities"),
-  ) as CatalogCapabilities;
+  const capabilities = parseCloudCapabilities(
+    bodyValue(await transport.get("/v1/capabilities")),
+  );
+  if (!capabilities) {
+    throw new CatalogHttpError(
+      "The cloud server returned an invalid compatibility contract.",
+      503,
+      "capabilities_invalid",
+    );
+  }
+  return capabilities;
 }
 
 export function canUseScenarioCatalog(
   capabilities: CatalogCapabilities | null | undefined,
 ): boolean {
   return (
-    capabilities?.features?.scenarioCatalog === "enabled" &&
-    capabilities.scenarioCatalog?.packageFormatVersion === 1
+    cloudFeatureAvailable(capabilities, "catalogRead") &&
+    capabilities?.scenarioCatalog.packageFormatVersion === 1
+  );
+}
+
+export function canPublishScenarioCatalog(
+  capabilities: CatalogCapabilities | null | undefined,
+): boolean {
+  return (
+    canUseScenarioCatalog(capabilities) &&
+    cloudFeatureAvailable(capabilities, "publishing")
   );
 }
 
@@ -171,7 +244,8 @@ export function canUploadCatalogThumbnails(
 ): boolean {
   return (
     canUseScenarioCatalog(capabilities) &&
-    capabilities?.scenarioCatalog?.thumbnailUploads === "enabled"
+    cloudFeatureAvailable(capabilities, "coverStorage") &&
+    capabilities?.scenarioCatalog.thumbnailUploads === "enabled"
   );
 }
 
@@ -341,6 +415,48 @@ export async function reportCatalogScenario(
       input,
     ),
   ) as { id: string; status: string };
+}
+
+export async function blockCatalogPublisher(
+  transport: CatalogTransport,
+  publisherId: string,
+): Promise<{ publisherId: string; blocked: true }> {
+  return bodyValue(
+    await transport.post(
+      `/v1/catalog/publishers/${encodeURIComponent(publisherId)}/block`,
+      {},
+    ),
+  ) as { publisherId: string; blocked: true };
+}
+
+function isCatalogPolicyKey(value: unknown): value is CatalogPolicyKey {
+  return (
+    value === "terms" || value === "privacy" || value === "community_guidelines"
+  );
+}
+
+function parseCatalogPolicy(value: unknown): CatalogPolicy {
+  const policy = bodyValue(value);
+  if (
+    !isCatalogPolicyKey(policy.key) ||
+    typeof policy.version !== "string" ||
+    !policy.version.trim() ||
+    typeof policy.url !== "string" ||
+    !policy.url.trim() ||
+    typeof policy.requiredForPublishing !== "boolean"
+  ) {
+    throw new CatalogHttpError(
+      "The server returned an invalid publishing policy.",
+      503,
+      "policies_invalid",
+    );
+  }
+  return {
+    key: policy.key,
+    version: policy.version,
+    url: policy.url,
+    requiredForPublishing: policy.requiredForPublishing,
+  };
 }
 
 export async function publishScenarioDraft(input: {

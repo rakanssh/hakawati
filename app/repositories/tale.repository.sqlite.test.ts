@@ -13,7 +13,10 @@ import type { TaleMutableSnapshot } from "@/services/tale.service";
 type SqlParam = string | number | bigint | Uint8Array | null;
 
 type TestDatabase = {
-  execute: (sql: string, params?: SqlParam[]) => Promise<void>;
+  execute: (
+    sql: string,
+    params?: SqlParam[],
+  ) => Promise<{ rowsAffected: number }>;
   select: <T>(sql: string, params?: SqlParam[]) => Promise<T>;
   close: () => void;
   raw: DatabaseSync;
@@ -55,8 +58,9 @@ function createAdapter(): TestDatabase {
         transactionOpen = true;
       }
 
+      let rowsAffected = 0;
       try {
-        raw.prepare(sql).run(...params);
+        rowsAffected = Number(raw.prepare(sql).run(...params).changes);
       } catch (error) {
         if (command === "ROLLBACK" && !transactionOpen) {
           throw new Error("cannot rollback - no transaction is active");
@@ -67,6 +71,7 @@ function createAdapter(): TestDatabase {
           transactionOpen = false;
         }
       }
+      return { rowsAffected };
     },
     async select<T>(sql: string, params: SqlParam[] = []) {
       selectSql.push(sql);
@@ -752,6 +757,117 @@ describe("tale repository SQLite storage", () => {
         (preference) => preference.policy,
       ),
     ).toEqual(["sync"]);
+  });
+
+  it("marks every non-conflicted link for push before a local turn write", async () => {
+    applyMigrations(dbState.current!);
+    const taleId = await createEmptyTale();
+    const { appendTurn } = await import("./tale.repository");
+    const { listTaleSyncStates, upsertSyncProfile, upsertTaleSyncState } =
+      await import("./sync.repository");
+
+    await upsertSyncProfile({
+      id: "hosted",
+      baseUrl: "https://sync.example",
+      mode: "hosted",
+      deviceId: "device-1",
+    });
+
+    await upsertTaleSyncState({
+      profileId: "hosted",
+      accountId: "account-a",
+      localTaleId: taleId,
+      remoteTaleId: "remote-a",
+      contentRev: "1",
+      metadataRev: "1",
+      lastSyncedAt: 1,
+      pendingStatus: "idle",
+      lastErrorCode: "old_error",
+    });
+    await upsertTaleSyncState({
+      profileId: "hosted",
+      accountId: "account-b",
+      localTaleId: taleId,
+      remoteTaleId: "remote-b",
+      contentRev: "2",
+      metadataRev: "2",
+      lastSyncedAt: 2,
+      pendingStatus: "conflict",
+      lastErrorCode: "content_conflict",
+    });
+
+    await appendTurn(
+      taleId,
+      { entries: [playerEntry("player-1")], createdAt: 300 },
+      emptyState(),
+      createTaleSessionState(),
+    );
+
+    expect(await listTaleSyncStates("hosted", "account-a")).toMatchObject([
+      { pendingStatus: "push", lastErrorCode: null },
+    ]);
+    expect(await listTaleSyncStates("hosted", "account-b")).toMatchObject([
+      { pendingStatus: "conflict", lastErrorCode: "content_conflict" },
+    ]);
+  });
+
+  it("does not acknowledge a sync result after the local tale changes", async () => {
+    applyMigrations(dbState.current!);
+    const taleId = await createEmptyTale();
+    const { appendTurn, getTaleSaveVersion } = await import(
+      "./tale.repository"
+    );
+    const {
+      getTaleSyncState,
+      upsertSyncProfile,
+      upsertTaleSyncStateIfTaleVersion,
+    } = await import("./sync.repository");
+
+    await upsertSyncProfile({
+      id: "hosted",
+      baseUrl: "https://sync.example",
+      mode: "hosted",
+      deviceId: "device-1",
+    });
+    const uploadedVersion = await getTaleSaveVersion(taleId);
+    const state = {
+      profileId: "hosted",
+      accountId: "account-a",
+      localTaleId: taleId,
+      remoteTaleId: "remote-a",
+      contentRev: "1",
+      metadataRev: "1",
+      lastSyncedAt: 1,
+      pendingStatus: "idle" as const,
+      lastErrorCode: null,
+    };
+
+    await expect(
+      upsertTaleSyncStateIfTaleVersion(state, uploadedVersion),
+    ).resolves.toBe(true);
+    await appendTurn(
+      taleId,
+      { entries: [playerEntry("player-1")], createdAt: 300 },
+      emptyState(),
+      createTaleSessionState(),
+    );
+
+    await expect(
+      upsertTaleSyncStateIfTaleVersion(
+        { ...state, contentRev: "2", lastSyncedAt: 2 },
+        uploadedVersion,
+      ),
+    ).resolves.toBe(false);
+    await expect(
+      getTaleSyncState({
+        profileId: "hosted",
+        accountId: "account-a",
+        localTaleId: taleId,
+      }),
+    ).resolves.toMatchObject({
+      contentRev: "1",
+      pendingStatus: "push",
+    });
   });
 
   it("rejects turn replacement when requested entry anchors are missing", async () => {

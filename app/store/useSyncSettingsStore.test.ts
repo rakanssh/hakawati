@@ -6,9 +6,11 @@ import {
 
 const partialize = useSyncSettingsStore.persist.getOptions().partialize!;
 const merge = useSyncSettingsStore.persist.getOptions().merge!;
+const migrate = useSyncSettingsStore.persist.getOptions().migrate!;
 
 describe("useSyncSettingsStore", () => {
   beforeEach(() => {
+    localStorage.clear();
     useSyncSettingsStore.setState({
       accessToken: "",
       accessTokenExpiresAt: null,
@@ -21,7 +23,7 @@ describe("useSyncSettingsStore", () => {
     });
   });
 
-  it("persists only the hosted refresh-token marker", () => {
+  it("keeps access tokens in memory and persists only the refresh marker", () => {
     const persisted = partialize({
       ...useSyncSettingsStore.getState(),
       accessToken: "token",
@@ -29,12 +31,68 @@ describe("useSyncSettingsStore", () => {
       hasRefreshToken: true,
     });
 
-    expect(persisted).toMatchObject({
-      accessToken: "token",
-      accessTokenExpiresAt: 123,
+    expect(persisted).toMatchObject({ hasRefreshToken: true });
+    expect(persisted).not.toHaveProperty("accessToken");
+    expect(persisted).not.toHaveProperty("accessTokenExpiresAt");
+    expect(persisted).not.toHaveProperty("refreshToken");
+  });
+
+  it("does not rehydrate access tokens written by older releases", () => {
+    expect(
+      merge(
+        {
+          accessToken: "legacy-token",
+          accessTokenExpiresAt: 123,
+          hasRefreshToken: true,
+        },
+        {
+          ...useSyncSettingsStore.getState(),
+          accessToken: "in-memory-token",
+          accessTokenExpiresAt: 456,
+        },
+      ),
+    ).toMatchObject({
+      accessToken: "",
+      accessTokenExpiresAt: null,
       hasRefreshToken: true,
     });
-    expect(persisted).not.toHaveProperty("refreshToken");
+    expect(
+      migrate(
+        {
+          accessToken: "legacy-token",
+          accessTokenExpiresAt: 123,
+          hasRefreshToken: true,
+        },
+        0,
+      ),
+    ).toEqual({ hasRefreshToken: true });
+  });
+
+  it("rewrites legacy browser storage without the access token", async () => {
+    localStorage.setItem(
+      "sync-settings",
+      JSON.stringify({
+        state: {
+          accessToken: "legacy-token",
+          accessTokenExpiresAt: 123,
+          hasRefreshToken: true,
+        },
+        version: 0,
+      }),
+    );
+
+    await useSyncSettingsStore.persist.rehydrate();
+
+    const stored = JSON.parse(
+      localStorage.getItem("sync-settings") ?? "{}",
+    ) as {
+      state?: Record<string, unknown>;
+      version?: number;
+    };
+    expect(stored.version).toBe(1);
+    expect(stored.state).toMatchObject({ hasRefreshToken: true });
+    expect(stored.state).not.toHaveProperty("accessToken");
+    expect(stored.state).not.toHaveProperty("accessTokenExpiresAt");
   });
 
   it("does not keep a token after sign-out", () => {
@@ -51,13 +109,40 @@ describe("useSyncSettingsStore", () => {
     useSyncSettingsStore.getState().clearSession();
 
     expect(useSyncSettingsStore.getState().hostedRefreshFailed).toBe(false);
-    expect(partialize(useSyncSettingsStore.getState())).toMatchObject({
-      accessToken: "",
-      accessTokenExpiresAt: null,
+    const persisted = partialize(useSyncSettingsStore.getState());
+    expect(persisted).toMatchObject({
       hasRefreshToken: false,
       accountId: "",
       accountDisplayName: "",
       hostedDeviceIdsByAccountId: { "account-1": "device-1" },
+    });
+    expect(persisted).not.toHaveProperty("accessToken");
+    expect(persisted).not.toHaveProperty("accessTokenExpiresAt");
+  });
+
+  it("clears hosted credentials when the hosted server changes", () => {
+    useSyncSettingsStore.setState({
+      cloudBaseUrl: "https://old.example",
+      accessToken: "token",
+      accessTokenExpiresAt: 123,
+      hasRefreshToken: true,
+      hostedRefreshFailed: true,
+      accountId: "account-1",
+      accountDisplayName: "Player",
+      accountEmail: "player@example.com",
+    });
+
+    useSyncSettingsStore.getState().setCloudBaseUrl("https://new.example");
+
+    expect(useSyncSettingsStore.getState()).toMatchObject({
+      cloudBaseUrl: "https://new.example",
+      accessToken: "",
+      accessTokenExpiresAt: null,
+      hasRefreshToken: false,
+      hostedRefreshFailed: false,
+      accountId: "",
+      accountDisplayName: "",
+      accountEmail: "",
     });
   });
 

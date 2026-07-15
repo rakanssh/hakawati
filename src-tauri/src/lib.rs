@@ -1,6 +1,23 @@
+mod migration_backup;
 mod oauth_loopback;
 mod secret_store;
 mod speech_recorder;
+
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct MigrationRecoveryStatus {
+    message: String,
+    app_data_dir: String,
+}
+
+struct MigrationRecoveryState(Option<MigrationRecoveryStatus>);
+
+#[tauri::command]
+fn migration_recovery_status(
+    state: tauri::State<'_, MigrationRecoveryState>,
+) -> Option<MigrationRecoveryStatus> {
+    state.0.clone()
+}
 
 use std::{future::Future, path::Path};
 
@@ -111,6 +128,8 @@ fn hex_to_bytes(hex: &str) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::Value;
+    use sha2::{Digest, Sha256};
     use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
@@ -208,6 +227,211 @@ mod tests {
             assert_eq!(rows, expected);
         });
     }
+
+    #[test]
+    fn upgrades_and_restores_the_v0152_release_fixture_without_data_loss() {
+        run_async_command(async {
+            let root = std::env::temp_dir().join(format!(
+                "hakawati-v0152-upgrade-{}-{}",
+                std::process::id(),
+                SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos()
+            ));
+            std::fs::create_dir_all(&root).unwrap();
+            let db_path = root.join("hakawati.db");
+            let fixture = include_bytes!("../fixtures/v0.15.2-release.db");
+            let manifest: Value =
+                serde_json::from_str(include_str!("../fixtures/v0.15.2-release.manifest.json"))
+                    .unwrap();
+            std::fs::write(&db_path, fixture).unwrap();
+
+            assert_eq!(manifest["sourceSchemaVersion"], 3);
+            assert_eq!(manifest["byteSize"], fixture.len());
+            assert_eq!(manifest["sha256"], format!("{:x}", Sha256::digest(fixture)));
+            assert_fixture_source_state(&db_path, &manifest).await;
+
+            let marker = migration_backup::prepare_pre_migration_backup(&db_path, &root)
+                .await
+                .unwrap()
+                .unwrap();
+            repair_legacy_migration_checksums(&db_path).await.unwrap();
+
+            let pool = sqlx::sqlite::SqlitePoolOptions::new()
+                .max_connections(1)
+                .connect(&sqlite_url(&db_path))
+                .await
+                .unwrap();
+            for (version, description, migration) in [
+                (
+                    4_i64,
+                    "split_tale_storage",
+                    include_str!("../migrations/004_split_tale_storage.sql"),
+                ),
+                (
+                    5_i64,
+                    "add_sync_metadata",
+                    include_str!("../migrations/005_add_sync_metadata.sql"),
+                ),
+                (
+                    6_i64,
+                    "add_scenario_catalog_content",
+                    include_str!("../migrations/006_add_scenario_content_catalog_metadata.sql"),
+                ),
+            ] {
+                sqlx::raw_sql(migration).execute(&pool).await.unwrap();
+                sqlx::query(
+                    "INSERT INTO _sqlx_migrations (
+                        version, description, success, checksum, execution_time
+                     ) VALUES (?, ?, 1, X'00', 0)",
+                )
+                .bind(version)
+                .bind(description)
+                .execute(&pool)
+                .await
+                .unwrap();
+            }
+
+            assert_eq!(table_count(&pool, "scenarios").await, 1);
+            assert_eq!(table_count(&pool, "tales").await, 3);
+            assert_eq!(table_count(&pool, "tale_states").await, 3);
+            assert_eq!(table_count(&pool, "tale_sessions").await, 3);
+            assert_eq!(table_count(&pool, "tale_turns").await, 12);
+
+            let scenario_components: String = sqlx::query_scalar(
+                "SELECT components FROM scenarios WHERE id = 'scenario-iron-gate'",
+            )
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+            assert_eq!(
+                sha256_text(&scenario_components),
+                manifest["representativeContentHashes"]["scenario.components"]
+                    .as_str()
+                    .unwrap()
+            );
+
+            let arabic_story_cards: String = sqlx::query_scalar(
+                "SELECT json_extract(state_json, '$.storyCards')
+                 FROM tale_states WHERE tale_id = 'tale-arabic'",
+            )
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+            assert_eq!(
+                sha256_text(&arabic_story_cards),
+                manifest["representativeContentHashes"]["tale-arabic.story_cards"]
+                    .as_str()
+                    .unwrap()
+            );
+
+            let turn_entries: Vec<String> = sqlx::query_scalar(
+                "SELECT entries_json FROM tale_turns
+                 WHERE tale_id = 'tale-completed' ORDER BY seq",
+            )
+            .fetch_all(&pool)
+            .await
+            .unwrap();
+            let reconstructed_log = Value::Array(
+                turn_entries
+                    .iter()
+                    .flat_map(|entries| serde_json::from_str::<Vec<Value>>(entries).unwrap())
+                    .collect(),
+            );
+            let legacy_log: String =
+                sqlx::query_scalar("SELECT log FROM tales WHERE id = 'tale-completed'")
+                    .fetch_one(&pool)
+                    .await
+                    .unwrap();
+            assert_eq!(
+                sha256_text(&legacy_log),
+                manifest["representativeContentHashes"]["tale-completed.log"]
+                    .as_str()
+                    .unwrap()
+            );
+            assert_eq!(
+                reconstructed_log,
+                serde_json::from_str::<Value>(&legacy_log).unwrap()
+            );
+
+            let has_arabic: i64 = sqlx::query_scalar(
+                "SELECT EXISTS(
+                    SELECT 1 FROM tale_states
+                    WHERE tale_id = 'tale-arabic' AND state_json LIKE '%مريم%'
+                 )",
+            )
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+            assert_eq!(has_arabic, 1);
+            pool.close().await;
+
+            assert!(
+                migration_backup::prepare_pre_migration_backup(&db_path, &root)
+                    .await
+                    .unwrap()
+                    .is_none()
+            );
+            assert!(!root.join("migration-attempt.json").exists());
+            assert!(root
+                .join(format!(
+                    "migration-attempt-{}.completed.json",
+                    marker.attempt_id
+                ))
+                .exists());
+
+            std::fs::copy(&marker.backup_path, &db_path).unwrap();
+            assert_fixture_source_state(&db_path, &manifest).await;
+            assert_eq!(
+                std::fs::read(&db_path).unwrap(),
+                std::fs::read(&marker.backup_path).unwrap()
+            );
+
+            std::fs::remove_dir_all(root).unwrap();
+        });
+    }
+
+    async fn assert_fixture_source_state(db_path: &Path, manifest: &Value) {
+        let pool = sqlx::sqlite::SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect(&sqlite_url(db_path))
+            .await
+            .unwrap();
+        let version: i64 = sqlx::query_scalar(
+            "SELECT COALESCE(MAX(version), 0) FROM _sqlx_migrations WHERE success = 1",
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(version, 3);
+        assert_eq!(table_count(&pool, "scenarios").await, 1);
+        assert_eq!(table_count(&pool, "tales").await, 3);
+
+        let components: String =
+            sqlx::query_scalar("SELECT components FROM scenarios WHERE id = 'scenario-iron-gate'")
+                .fetch_one(&pool)
+                .await
+                .unwrap();
+        assert_eq!(
+            sha256_text(&components),
+            manifest["representativeContentHashes"]["scenario.components"]
+                .as_str()
+                .unwrap()
+        );
+        pool.close().await;
+    }
+
+    async fn table_count(pool: &sqlx::SqlitePool, table: &str) -> i64 {
+        sqlx::query_scalar(&format!("SELECT COUNT(*) FROM {table}"))
+            .fetch_one(pool)
+            .await
+            .unwrap()
+    }
+
+    fn sha256_text(value: &str) -> String {
+        format!("{:x}", Sha256::digest(value.as_bytes()))
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -230,11 +454,33 @@ pub fn run() {
         let db_path = app_data_dir.join(db_name);
         let db_url = sqlite_url(&db_path);
 
-        let repair_db_path = db_path.clone();
-        if let Err(error) = run_async_command(async move {
-            repair_legacy_migration_checksums(&repair_db_path).await
-        }) {
-            eprintln!("Unable to repair legacy migration checksums: {error}");
+        let backup_db_path = db_path.clone();
+        let backup_app_data_dir = app_data_dir.clone();
+        let mut recovery_error = run_async_command(async move {
+            migration_backup::prepare_pre_migration_backup(&backup_db_path, &backup_app_data_dir)
+                .await
+        })
+        .err()
+        .map(|message| MigrationRecoveryStatus {
+            message,
+            app_data_dir: app_data_dir.to_string_lossy().into_owned(),
+        });
+
+        if recovery_error.is_none() {
+            let repair_db_path = db_path.clone();
+            recovery_error = run_async_command(async move {
+                repair_legacy_migration_checksums(&repair_db_path).await
+            })
+            .err()
+            .map(|error| MigrationRecoveryStatus {
+                message: format!("Unable to prepare the existing database migration: {error}"),
+                app_data_dir: app_data_dir.to_string_lossy().into_owned(),
+            });
+        }
+
+        app.manage(MigrationRecoveryState(recovery_error.clone()));
+        if recovery_error.is_some() {
+            return Ok(());
         }
 
         let migrations = vec![
@@ -300,6 +546,7 @@ pub fn run() {
         .manage(speech_recorder::SpeechRecorderState::default())
         .invoke_handler(tauri::generate_handler![
             greet,
+            migration_recovery_status,
             oauth_loopback::start_oauth_loopback,
             oauth_loopback::wait_oauth_loopback,
             secret_store::set_hosted_refresh_token,

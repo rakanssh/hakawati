@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
+  deleteTaleSyncState,
   getSyncProfile,
   listTaleSyncPreferences,
   listTaleSyncStates,
   setSyncProfileDisabled,
+  setTaleSyncPreference,
+  upsertTaleSyncState,
 } from "@/repositories/sync.repository";
 import {
+  assertSyncAvailable,
   createSyncTransport,
+  fetchSyncCapabilities,
   listAllRemoteTales,
   listHostedDevices,
   syncLinkedTale,
@@ -95,6 +100,8 @@ export function useSyncBackground(dbReady: boolean) {
           accessToken:
             activeProfile.mode === "hosted" ? accessToken.trim() : undefined,
         });
+        const capabilities = await fetchSyncCapabilities(transport);
+        assertSyncAvailable(capabilities);
         if (activeProfile.mode === "hosted") {
           if (!activeProfile.accountId) return;
           const devices = await listHostedDevices(transport);
@@ -115,17 +122,49 @@ export function useSyncBackground(dbReady: boolean) {
 
         for (const preference of syncPreferences) {
           if (preference.policy !== "sync") continue;
-          const state = stateByLocalId.get(preference.localTaleId);
+          let state = stateByLocalId.get(preference.localTaleId);
+          const recoverableRemote = remoteById.get(preference.localTaleId);
+          if (!state && recoverableRemote) {
+            state = {
+              profileId: activeProfile.id,
+              accountId: activeProfile.accountId,
+              localTaleId: preference.localTaleId,
+              remoteTaleId: recoverableRemote.id,
+              contentRev: String(recoverableRemote.contentRev),
+              metadataRev: String(recoverableRemote.metadataRev),
+              lastSyncedAt: null,
+              pendingStatus: "push",
+              lastErrorCode: null,
+            };
+            await upsertTaleSyncState(state);
+            syncStates.push(state);
+            stateByLocalId.set(state.localTaleId, state);
+          }
           const hasRemoteLink = state
             ? remoteById.has(state.remoteTaleId)
             : false;
           if (hasRemoteLink) continue;
+          if (state) {
+            await setTaleSyncPreference({
+              profileId: activeProfile.id,
+              accountId: activeProfile.accountId,
+              localTaleId: state.localTaleId,
+              policy: "private",
+            });
+            await deleteTaleSyncState({
+              profileId: activeProfile.id,
+              accountId: activeProfile.accountId,
+              localTaleId: state.localTaleId,
+            });
+            continue;
+          }
           try {
             await uploadTalePackage({
               profile: activeProfile,
               transport,
               localTaleId: preference.localTaleId,
-              idempotencyKey: `upload-${preference.localTaleId}-${Date.now()}`,
+              idempotencyKey: `upload-${activeProfile.id}-${activeProfile.accountId ?? "personal"}-${preference.localTaleId}`,
+              capabilities,
             });
           } catch (error) {
             console.warn("Background tale upload failed", error);
@@ -141,7 +180,8 @@ export function useSyncBackground(dbReady: boolean) {
               transport,
               localTaleId: state.localTaleId,
               remoteTale,
-              idempotencyKey: `sync-${state.localTaleId}-${Date.now()}`,
+              idempotencyKey: `sync-${activeProfile.id}-${state.localTaleId}-${state.contentRev ?? "0"}-${state.metadataRev ?? "0"}`,
+              capabilities,
             });
           } catch (error) {
             console.warn("Background sync failed", error);

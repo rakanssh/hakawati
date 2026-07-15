@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/sheet";
 import {
   ArrowLeftIcon,
+  BanIcon,
   PencilIcon,
   TrashIcon,
   ClipboardIcon,
@@ -170,6 +171,7 @@ function CatalogScenarioCard({
   onStart,
   onStartPrivate,
   onReport,
+  onBlockPublisher,
   onUnpublish,
   onThumbnail,
 }: {
@@ -180,6 +182,7 @@ function CatalogScenarioCard({
   onStart?: (scenario: CatalogCardScenario) => void;
   onStartPrivate?: (scenario: CatalogCardScenario) => void;
   onReport?: (scenario: CatalogCardScenario) => void;
+  onBlockPublisher?: (scenario: CatalogCardScenario) => void;
   onUnpublish?: (scenario: CatalogCardScenario) => void;
   onThumbnail?: (scenario: CatalogCardScenario, file: File) => void;
 }) {
@@ -238,6 +241,12 @@ function CatalogScenarioCard({
                   <DropdownMenuItem onClick={() => onReport?.(scenario)}>
                     <FlagIcon className="h-4 w-4" />
                     <Trans>Report</Trans>
+                  </DropdownMenuItem>
+                ) : null}
+                {actions === "discover" && onBlockPublisher ? (
+                  <DropdownMenuItem onClick={() => onBlockPublisher(scenario)}>
+                    <BanIcon className="h-4 w-4" />
+                    <Trans>Block publisher</Trans>
                   </DropdownMenuItem>
                 ) : null}
                 {actions === "published" && onThumbnail ? (
@@ -449,6 +458,26 @@ export default function ScenariosHome() {
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : t`Failed to submit report`,
+      );
+    }
+  };
+  const blockPublicScenarioPublisher = async (
+    scenario: CatalogScenarioRecord,
+  ) => {
+    if (
+      !window.confirm(
+        t`Block ${scenario.author.displayName}? You will no longer see their scenarios.`,
+      )
+    ) {
+      return;
+    }
+    try {
+      await catalogActions.blockPublisher(scenario.author.id);
+      toast.success(t`Publisher blocked`);
+      await discover.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t`Failed to block publisher`,
       );
     }
   };
@@ -865,6 +894,9 @@ export default function ScenariosHome() {
                       : undefined
                   }
                   onReport={reportPublicScenario}
+                  onBlockPublisher={
+                    catalog.signedIn ? blockPublicScenarioPublisher : undefined
+                  }
                 />
               ))}
             </div>
@@ -959,13 +991,14 @@ export default function ScenariosHome() {
         onOpenChange={(open) => {
           if (!open) setPendingPublish(null);
         }}
-        onPublish={async ({ metadata, thumbnailFile }) => {
+        onPublish={async ({ metadata, thumbnailFile, policyAcceptance }) => {
           if (!pendingPublish) return;
           try {
             const result = await catalogActions.publish({
               scenario: pendingPublish,
               metadata,
               thumbnailFile,
+              policyAcceptance,
             });
             toast.success(
               result.moderation.status === "needs_review"

@@ -51,6 +51,7 @@ export type CatalogScenarioRecord = {
   summary: string;
   tags: string[];
   author: {
+    id: string;
     displayName: string;
   };
   thumbnail: CoverAssetReference | null;

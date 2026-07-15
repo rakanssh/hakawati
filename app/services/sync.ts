@@ -2,7 +2,13 @@ import { fetch } from "@tauri-apps/plugin-http";
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
+  asApiObject,
+  parseApiError,
+  parseApiResponseBody,
+} from "@/services/api-error";
+import {
   exportTalePackage,
+  getTaleSaveVersion,
   importTalePackage,
   replaceTaleWithPackage,
 } from "@/repositories/tale.repository";
@@ -12,9 +18,16 @@ import {
   setTaleSyncStatus,
   upsertSyncProfile,
   upsertTaleSyncState,
+  upsertTaleSyncStateIfTaleVersion,
   type TaleSyncState,
 } from "@/repositories/sync.repository";
 import type { TalePackageV1 } from "@/types/export.type";
+import {
+  cloudFeatureAvailable,
+  HAKAWATI_CLIENT_HEADERS,
+  parseCloudCapabilities,
+  type CloudCapabilities,
+} from "@/services/cloud-capabilities";
 
 export type SyncMode = "hosted" | "personal";
 
@@ -59,11 +72,7 @@ export type SyncTransportOptions = {
   deviceId?: string;
 };
 
-export type SyncCapabilities = {
-  server?: string;
-  cloudSaveProtocol?: number;
-  features?: Record<string, "enabled" | "disabled" | "unsupported" | string>;
-};
+export type SyncCapabilities = CloudCapabilities;
 
 export type SyncTalePackageV1 = {
   format: "hakawati-tale-package";
@@ -112,6 +121,7 @@ type OAuthLoopbackStart = {
 };
 
 type OidcDiscovery = {
+  issuer?: string;
   authorization_endpoint?: string;
   token_endpoint?: string;
 };
@@ -213,8 +223,7 @@ function isDeviceLimitError(error: unknown): boolean {
   return (
     error instanceof SyncHttpError &&
     error.status === 403 &&
-    (error.code === "device_limit_exceeded" ||
-      error.message.toLowerCase().includes("device limit"))
+    error.code === "device_limit_exceeded"
   );
 }
 
@@ -222,24 +231,11 @@ function isUnregisteredDeviceError(error: unknown): boolean {
   return (
     error instanceof SyncHttpError &&
     error.status === 403 &&
-    error.message.toLowerCase().includes("register this device")
+    error.code === "device_not_registered"
   );
 }
 
-function bodyValue(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object"
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-function errorCode(value: unknown, status: number): string {
-  const payload = bodyValue(value);
-  return typeof payload.code === "string"
-    ? payload.code
-    : typeof payload.type === "string"
-      ? payload.type
-      : String(status);
-}
+const bodyValue = asApiObject;
 
 function rev(value: unknown): string | null {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -266,17 +262,51 @@ function metadataRevNumber(value: string | null): number {
   return parsed;
 }
 
-function parseResponseBody(text: string): unknown {
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
-  }
-}
-
 function syncBaseUrl(value: string): string {
   return value.replace(/\/+$/, "").replace(/\/v1$/, "");
+}
+
+function requireSecureHostedUrl(value: string, label: string): URL {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error(`${label} is not a valid URL`);
+  }
+  const developmentLoopback =
+    import.meta.env.DEV &&
+    url.protocol === "http:" &&
+    (url.hostname === "localhost" || url.hostname === "127.0.0.1");
+  if (url.protocol !== "https:" && !developmentLoopback) {
+    throw new Error(`${label} must use HTTPS`);
+  }
+  return url;
+}
+
+function validateOidcDiscovery(
+  configuredIssuer: string,
+  discovery: OidcDiscovery,
+): void {
+  const issuer = requireSecureHostedUrl(configuredIssuer, "OIDC issuer");
+  if (
+    discovery.issuer &&
+    discovery.issuer.replace(/\/+$/, "") !==
+      configuredIssuer.replace(/\/+$/, "")
+  ) {
+    throw new Error(
+      "OIDC discovery issuer does not match the configured issuer",
+    );
+  }
+  for (const [label, value] of [
+    ["OIDC authorization endpoint", discovery.authorization_endpoint],
+    ["OIDC token endpoint", discovery.token_endpoint],
+  ] as const) {
+    if (!value) continue;
+    const endpoint = requireSecureHostedUrl(value, label);
+    if (endpoint.origin !== issuer.origin) {
+      throw new Error(`${label} must share the configured issuer origin`);
+    }
+  }
 }
 
 function base64ToBytes(value: string): Uint8Array {
@@ -304,6 +334,9 @@ export function createSyncTransport({
   deviceId,
 }: SyncTransportOptions): SyncTransport {
   const base = syncBaseUrl(profile.baseUrl);
+  if (profile.mode === "hosted") {
+    requireSecureHostedUrl(base, "Hosted cloud URL");
+  }
   const syncDeviceId = deviceId ?? profile.deviceId ?? undefined;
 
   async function request(
@@ -313,6 +346,7 @@ export function createSyncTransport({
     options: SyncWriteOptions = {},
   ): Promise<unknown> {
     const headers: Record<string, string> = {
+      ...HAKAWATI_CLIENT_HEADERS,
       ...(body === undefined ? {} : { "Content-Type": "application/json" }),
       ...(profile.mode === "hosted" && accessToken
         ? { Authorization: `Bearer ${accessToken}` }
@@ -330,14 +364,10 @@ export function createSyncTransport({
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
     const text = await response.text();
-    const data = parseResponseBody(text);
+    const data = parseApiResponseBody(text);
     if (!response.ok) {
-      const payload = bodyValue(data);
-      throw new SyncHttpError(
-        typeof payload.message === "string" ? payload.message : text,
-        response.status,
-        errorCode(data, response.status),
-      );
+      const error = parseApiError(data, response.status, text);
+      throw new SyncHttpError(error.message, response.status, error.code);
     }
     return data;
   }
@@ -354,7 +384,17 @@ export function createSyncTransport({
 export async function fetchSyncCapabilities(
   transport: SyncTransport,
 ): Promise<SyncCapabilities> {
-  return bodyValue(await transport.get("/v1/capabilities")) as SyncCapabilities;
+  const capabilities = parseCloudCapabilities(
+    bodyValue(await transport.get("/v1/capabilities")),
+  );
+  if (!capabilities) {
+    throw new SyncHttpError(
+      "The cloud server returned an invalid compatibility contract.",
+      503,
+      "capabilities_invalid",
+    );
+  }
+  return capabilities;
 }
 
 export async function fetchHostedAuthConfig(
@@ -402,9 +442,10 @@ export async function signInHostedSync(input: {
   timeoutMs?: number;
 }): Promise<HostedSignInResult> {
   const transport = createSyncTransport({ profile: input.profile });
-  await fetchSyncCapabilities(transport);
+  assertSyncAvailable(await fetchSyncCapabilities(transport));
   const authConfig = await fetchHostedAuthConfig(transport);
   const discovery = await fetchOidcDiscovery(authConfig.issuer);
+  validateOidcDiscovery(authConfig.issuer, discovery);
   if (!discovery.authorization_endpoint || !discovery.token_endpoint) {
     throw new Error("OIDC discovery did not return sign-in endpoints");
   }
@@ -492,6 +533,7 @@ export async function refreshHostedSync(input: {
   await fetchSyncCapabilities(transport);
   const authConfig = await fetchHostedAuthConfig(transport);
   const discovery = await fetchOidcDiscovery(authConfig.issuer);
+  validateOidcDiscovery(authConfig.issuer, discovery);
   if (!discovery.token_endpoint) {
     throw new Error("OIDC discovery did not return a token endpoint");
   }
@@ -671,10 +713,17 @@ export function toSyncTalePackage(
 }
 
 export function canUploadCoverAssets(capabilities: SyncCapabilities): boolean {
-  return (
-    capabilities.features?.coverAssets === "enabled" ||
-    capabilities.features?.thumbnails === "enabled"
-  );
+  return cloudFeatureAvailable(capabilities, "coverStorage");
+}
+
+export function assertSyncAvailable(capabilities: SyncCapabilities) {
+  if (!cloudFeatureAvailable(capabilities, "sync")) {
+    throw new SyncHttpError(
+      "Cloud sync is unavailable for this Hakawati version.",
+      503,
+      "sync_unavailable",
+    );
+  }
 }
 
 function localThumbnailAsset(pkg: TalePackageV1) {
@@ -733,6 +782,7 @@ async function toUploadSyncPackage(input: {
 }): Promise<SyncTalePackageV1> {
   const capabilities =
     input.capabilities ?? (await fetchSyncCapabilities(input.transport));
+  assertSyncAvailable(capabilities);
   const coverAsset =
     input.profile.mode === "hosted" && canUploadCoverAssets(capabilities)
       ? localThumbnailAsset(input.localPackage)
@@ -775,6 +825,63 @@ function hasLocalPendingWork(state: TaleSyncState) {
   return state.pendingStatus === "push" || state.pendingStatus === "error";
 }
 
+function stableJson(value: unknown): string {
+  if (value === undefined) return '"__undefined__"';
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableJson(item)).join(",")}]`;
+  }
+  const record = value as Record<string, unknown>;
+  return `{${Object.keys(record)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${stableJson(record[key])}`)
+    .join(",")}}`;
+}
+
+function comparableTalePackage(pkg: TalePackageV1) {
+  return {
+    tale: {
+      id: pkg.tale.id,
+      title: pkg.tale.title,
+      description: pkg.tale.description,
+      gameMode: pkg.tale.gameMode,
+      source: pkg.tale.source,
+    },
+    state: pkg.state,
+    turns: pkg.turns,
+  };
+}
+
+async function reconcileAmbiguousSuccessfulSync(input: {
+  profile: SyncProfile;
+  transport: SyncTransport;
+  state: TaleSyncState;
+  localTaleId: string;
+}): Promise<boolean> {
+  const expectedSaveVersion = await getTaleSaveVersion(input.localTaleId);
+  const [localPackage, remote] = await Promise.all([
+    exportTalePackage(input.localTaleId),
+    downloadRemoteTalePackage(input.transport, input.state.remoteTaleId),
+  ]);
+  const remotePackage = toLocalTalePackage(remote.package);
+  if (
+    stableJson(comparableTalePackage(localPackage)) !==
+    stableJson(comparableTalePackage(remotePackage))
+  ) {
+    return false;
+  }
+  return setTaleSynced({
+    profileId: input.profile.id,
+    accountId: input.profile.accountId,
+    localTaleId: input.localTaleId,
+    result: remote,
+    remoteTaleId: remote.id,
+    contentRev: input.state.contentRev,
+    metadataRev: input.state.metadataRev,
+    expectedSaveVersion,
+  });
+}
+
 function syncFailureStatus(error: unknown): "conflict" | "error" {
   return error instanceof SyncHttpError && error.status === 409
     ? "conflict"
@@ -800,21 +907,25 @@ async function setTaleSynced(input: {
   remoteTaleId: string;
   contentRev: string | null;
   metadataRev: string | null;
+  expectedSaveVersion: number;
 }) {
-  await upsertTaleSyncState({
-    profileId: input.profileId,
-    accountId: input.accountId,
-    localTaleId: input.localTaleId,
-    remoteTaleId:
-      typeof input.result.id === "string"
-        ? input.result.id
-        : input.remoteTaleId,
-    contentRev: rev(input.result.contentRev) ?? input.contentRev,
-    metadataRev: rev(input.result.metadataRev) ?? input.metadataRev,
-    lastSyncedAt: Date.now(),
-    pendingStatus: "idle",
-    lastErrorCode: null,
-  });
+  return upsertTaleSyncStateIfTaleVersion(
+    {
+      profileId: input.profileId,
+      accountId: input.accountId,
+      localTaleId: input.localTaleId,
+      remoteTaleId:
+        typeof input.result.id === "string"
+          ? input.result.id
+          : input.remoteTaleId,
+      contentRev: rev(input.result.contentRev) ?? input.contentRev,
+      metadataRev: rev(input.result.metadataRev) ?? input.metadataRev,
+      lastSyncedAt: Date.now(),
+      pendingStatus: "idle",
+      lastErrorCode: null,
+    },
+    input.expectedSaveVersion,
+  );
 }
 
 export async function syncLinkedTale(input: {
@@ -823,6 +934,7 @@ export async function syncLinkedTale(input: {
   localTaleId: string;
   remoteTale: RemoteTale;
   idempotencyKey: string;
+  capabilities?: SyncCapabilities;
 }): Promise<LinkedTaleSyncResult> {
   const state = await getTaleSyncState({
     profileId: input.profile.id,
@@ -837,6 +949,19 @@ export async function syncLinkedTale(input: {
   }
 
   const remoteChanged = remoteTaleChanged(state, input.remoteTale);
+  if (
+    remoteChanged &&
+    state.pendingStatus === "error" &&
+    state.lastErrorCode === "sync_failed" &&
+    (await reconcileAmbiguousSuccessfulSync({
+      profile: input.profile,
+      transport: input.transport,
+      state,
+      localTaleId: input.localTaleId,
+    }))
+  ) {
+    return "pushed";
+  }
   if (remoteChanged && hasLocalPendingWork(state)) {
     await setTaleSyncStatus({
       profileId: input.profile.id,
@@ -850,17 +975,18 @@ export async function syncLinkedTale(input: {
 
   if (remoteChanged) {
     try {
-      await applyRemoteTalePackage({
+      const applied = await applyRemoteTalePackage({
         profile: input.profile,
         transport: input.transport,
         localTaleId: input.localTaleId,
       });
+      if (!applied) return "conflict";
     } catch (error) {
       await setTaleSyncStatus({
         profileId: input.profile.id,
         accountId: input.profile.accountId,
         localTaleId: input.localTaleId,
-        pendingStatus: "error",
+        pendingStatus: syncFailureStatus(error),
         lastErrorCode:
           error instanceof SyncHttpError ? error.code : "sync_failed",
       });
@@ -889,6 +1015,7 @@ export async function syncLinkedTale(input: {
       transport: input.transport,
       localTaleId: input.localTaleId,
       idempotencyKey: input.idempotencyKey,
+      capabilities: input.capabilities,
     });
     return "pushed";
   }
@@ -945,6 +1072,7 @@ export async function prepareHostedSync(input: {
 }> {
   const publicTransport = createSyncTransport({ profile: input.profile });
   const capabilities = await fetchSyncCapabilities(publicTransport);
+  assertSyncAvailable(capabilities);
   const authConfig = await fetchHostedAuthConfig(publicTransport);
   const accountTransport = createSyncTransport({
     profile: input.profile,
@@ -989,6 +1117,7 @@ export async function uploadTalePackage(input: {
   await upsertSyncProfile(input.profile);
 
   try {
+    const expectedSaveVersion = await getTaleSaveVersion(input.localTaleId);
     const pkg = await exportTalePackage(input.localTaleId);
     const syncPackage = await toUploadSyncPackage({
       profile: input.profile,
@@ -1011,6 +1140,7 @@ export async function uploadTalePackage(input: {
       remoteTaleId: input.localTaleId,
       contentRev: null,
       metadataRev: null,
+      expectedSaveVersion,
     });
   } catch (error) {
     if (
@@ -1048,6 +1178,7 @@ export async function replaceRemoteTalePackage(input: {
     throw new Error("Tale is not linked to this sync profile");
   }
 
+  const expectedSaveVersion = await getTaleSaveVersion(input.localTaleId);
   const pkg = await exportTalePackage(input.localTaleId);
   try {
     const syncPackage = await toUploadSyncPackage({
@@ -1082,6 +1213,7 @@ export async function replaceRemoteTalePackage(input: {
       remoteTaleId: state.remoteTaleId,
       contentRev: state.contentRev,
       metadataRev: state.metadataRev,
+      expectedSaveVersion,
     });
     return result;
   } catch (error) {
@@ -1113,6 +1245,7 @@ export async function pushTaleContentBatch(input: {
     throw new Error("Tale is not linked to this sync profile");
   }
 
+  const expectedSaveVersion = await getTaleSaveVersion(input.localTaleId);
   const pkg = await exportTalePackage(input.localTaleId);
   const syncPackage = toSyncTalePackage(pkg, { mode: input.profile.mode });
   const baseContentRev = contentRevNumber(state.contentRev);
@@ -1138,6 +1271,7 @@ export async function pushTaleContentBatch(input: {
       remoteTaleId: state.remoteTaleId,
       contentRev: state.contentRev,
       metadataRev: state.metadataRev,
+      expectedSaveVersion,
     });
     return result;
   } catch (error) {
@@ -1167,6 +1301,7 @@ export async function pushTaleMetadataPatch(input: {
     throw new Error("Tale is not linked to this sync profile");
   }
 
+  const expectedSaveVersion = await getTaleSaveVersion(input.localTaleId);
   const pkg = await exportTalePackage(input.localTaleId);
   try {
     const result = bodyValue(
@@ -1174,9 +1309,11 @@ export async function pushTaleMetadataPatch(input: {
         `/v1/tales/${encodeURIComponent(state.remoteTaleId)}/metadata`,
         {
           baseMetadataRev: metadataRevNumber(state.metadataRev),
-          title: pkg.tale.title,
-          description: pkg.tale.description,
-          gameMode: pkg.tale.gameMode,
+          patch: {
+            title: pkg.tale.title,
+            description: pkg.tale.description,
+            gameMode: pkg.tale.gameMode,
+          },
         },
       ),
     );
@@ -1188,6 +1325,7 @@ export async function pushTaleMetadataPatch(input: {
       remoteTaleId: state.remoteTaleId,
       contentRev: state.contentRev,
       metadataRev: state.metadataRev,
+      expectedSaveVersion,
     });
     return result;
   } catch (error) {
@@ -1208,6 +1346,7 @@ export async function keepBothTalePackage(input: {
   transport: SyncTransport;
   localTaleId: string;
   idempotencyKey: string;
+  capabilities?: SyncCapabilities;
 }): Promise<string> {
   const pkg = await exportTalePackage(input.localTaleId);
   const copyId = await importTalePackage(pkg, {
@@ -1218,6 +1357,7 @@ export async function keepBothTalePackage(input: {
     transport: input.transport,
     localTaleId: copyId,
     idempotencyKey: input.idempotencyKey,
+    capabilities: input.capabilities,
   });
   await applyRemoteTalePackage({
     profile: input.profile,
@@ -1265,7 +1405,7 @@ export async function applyRemoteTalePackage(input: {
   profile: SyncProfile;
   transport: SyncTransport;
   localTaleId: string;
-}): Promise<void> {
+}): Promise<boolean> {
   const state = await getTaleSyncState({
     profileId: input.profile.id,
     accountId: input.profile.accountId,
@@ -1275,23 +1415,39 @@ export async function applyRemoteTalePackage(input: {
     throw new Error("Tale is not linked to this sync profile");
   }
 
+  const expectedSaveVersion = await getTaleSaveVersion(input.localTaleId);
   const remote = await downloadRemoteTalePackage(
     input.transport,
     state.remoteTaleId,
   );
-  await replaceTaleWithPackage(
+  const replaced = await replaceTaleWithPackage(
     input.localTaleId,
     toLocalTalePackage(remote.package),
+    { expectedSaveVersion },
   );
-  await upsertTaleSyncState({
-    profileId: input.profile.id,
-    accountId: input.profile.accountId,
-    localTaleId: input.localTaleId,
-    remoteTaleId: remote.id,
-    contentRev: rev(remote.contentRev),
-    metadataRev: rev(remote.metadataRev),
-    lastSyncedAt: Date.now(),
-    pendingStatus: "idle",
-    lastErrorCode: null,
-  });
+  if (replaced === false) {
+    await setTaleSyncStatus({
+      profileId: input.profile.id,
+      accountId: input.profile.accountId,
+      localTaleId: input.localTaleId,
+      pendingStatus: "conflict",
+      lastErrorCode: "local_changed",
+    });
+    return false;
+  }
+  await upsertTaleSyncStateIfTaleVersion(
+    {
+      profileId: input.profile.id,
+      accountId: input.profile.accountId,
+      localTaleId: input.localTaleId,
+      remoteTaleId: remote.id,
+      contentRev: rev(remote.contentRev),
+      metadataRev: rev(remote.metadataRev),
+      lastSyncedAt: Date.now(),
+      pendingStatus: "idle",
+      lastErrorCode: null,
+    },
+    expectedSaveVersion + 1,
+  );
+  return true;
 }

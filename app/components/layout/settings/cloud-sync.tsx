@@ -78,6 +78,7 @@ import { formatBytes, formatExactDateTime } from "@/lib/utils";
 
 const HOSTED_PROFILE_ID = "hosted";
 const PERSONAL_PROFILE_ID = "personal";
+const PERSONAL_SYNC_ENABLED = false;
 const PROFILE_UPDATE_TIMEOUT_MS = 15_000;
 const HOSTED_DEVICE_LIMIT = 2;
 
@@ -135,7 +136,10 @@ export default function SettingsCloudSync() {
   const personalBaseUrl = useSyncSettingsStore(
     (state) => state.personalBaseUrl,
   );
-  const activeSyncMode = useSyncSettingsStore((state) => state.activeSyncMode);
+  const configuredSyncMode = useSyncSettingsStore(
+    (state) => state.activeSyncMode,
+  );
+  const activeSyncMode = PERSONAL_SYNC_ENABLED ? configuredSyncMode : "hosted";
   const accessToken = useSyncSettingsStore((state) => state.accessToken);
   const accessTokenExpiresAt = useSyncSettingsStore(
     (state) => state.accessTokenExpiresAt,
@@ -411,6 +415,20 @@ export default function SettingsCloudSync() {
     }
     setStatus(t`Signed out`);
     notifySyncChanged();
+  }
+
+  function changeHostedCloudUrl(nextUrl: string) {
+    if (nextUrl === cloudBaseUrl) return;
+    if (hasAnySession) {
+      void deleteHostedRefreshToken(HOSTED_PROFILE_ID).catch(() => undefined);
+      clearSession();
+      void setSyncProfileDisabled(HOSTED_PROFILE_ID, "signed_out").catch(
+        () => undefined,
+      );
+      setStatus(t`Cloud URL changed. Sign in again to continue.`);
+      notifySyncChanged();
+    }
+    setCloudBaseUrl(nextUrl);
   }
 
   async function completeProfile() {
@@ -881,7 +899,9 @@ export default function SettingsCloudSync() {
                 <SettingsField label={<Trans>Cloud URL</Trans>}>
                   <Input
                     value={cloudBaseUrl}
-                    onChange={(event) => setCloudBaseUrl(event.target.value)}
+                    onChange={(event) =>
+                      changeHostedCloudUrl(event.target.value)
+                    }
                     placeholder={t`https://sync.example.com`}
                   />
                 </SettingsField>
@@ -900,37 +920,41 @@ export default function SettingsCloudSync() {
               </div>
             </AccordionContent>
           </AccordionItem>
-          <AccordionItem value="personal">
-            <AccordionTrigger>
-              <Trans>Personal sync server</Trans>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <SettingsField label={<Trans>Personal Sync URL</Trans>}>
-                  <Input
-                    value={personalBaseUrl}
-                    onChange={(event) => setPersonalBaseUrl(event.target.value)}
-                    placeholder={t`http://192.168.1.20:8787`}
-                  />
-                </SettingsField>
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={connectPersonal}
-                  disabled={!personalProfile.baseUrl || busy !== null}
-                >
-                  <Cloud className="size-4" />
-                  <Trans>Connect Personal Sync</Trans>
-                </Button>
-                {activeSyncMode === "personal" ? (
-                  <Badge variant="outline">
-                    <Trans>Personal active</Trans>
-                  </Badge>
-                ) : null}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
+          {PERSONAL_SYNC_ENABLED ? (
+            <AccordionItem value="personal">
+              <AccordionTrigger>
+                <Trans>Personal sync server</Trans>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <SettingsField label={<Trans>Personal Sync URL</Trans>}>
+                    <Input
+                      value={personalBaseUrl}
+                      onChange={(event) =>
+                        setPersonalBaseUrl(event.target.value)
+                      }
+                      placeholder={t`http://192.168.1.20:8787`}
+                    />
+                  </SettingsField>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={connectPersonal}
+                    disabled={!personalProfile.baseUrl || busy !== null}
+                  >
+                    <Cloud className="size-4" />
+                    <Trans>Connect Personal Sync</Trans>
+                  </Button>
+                  {activeSyncMode === "personal" ? (
+                    <Badge variant="outline">
+                      <Trans>Personal active</Trans>
+                    </Badge>
+                  ) : null}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          ) : null}
         </Accordion>
       </SettingsPanel>
 

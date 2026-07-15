@@ -25,6 +25,7 @@ import {
   unregisterHostedDevice,
   uploadTalePackage,
   applyRemoteTalePackage,
+  type SyncCapabilities,
 } from "./sync";
 
 const http = vi.hoisted(() => ({
@@ -41,8 +42,15 @@ const opener = vi.hoisted(() => ({
 
 const taleRepo = vi.hoisted(() => ({
   exportTalePackage: vi.fn(),
+  getTaleSaveVersion: vi.fn(async () => 1),
   importTalePackage: vi.fn(),
-  replaceTaleWithPackage: vi.fn(),
+  replaceTaleWithPackage: vi.fn(
+    async (
+      _taleId: string,
+      _pkg: TalePackageV1,
+      _options?: { expectedSaveVersion?: number },
+    ) => true,
+  ),
 }));
 
 const syncRepo = vi.hoisted(() => ({
@@ -51,6 +59,7 @@ const syncRepo = vi.hoisted(() => ({
   setTaleSyncStatus: vi.fn(),
   upsertSyncProfile: vi.fn(),
   upsertTaleSyncState: vi.fn(),
+  upsertTaleSyncStateIfTaleVersion: vi.fn(async () => true),
 }));
 
 vi.mock("@tauri-apps/plugin-http", () => ({
@@ -67,6 +76,7 @@ vi.mock("@tauri-apps/plugin-opener", () => ({
 
 vi.mock("@/repositories/tale.repository", () => ({
   exportTalePackage: taleRepo.exportTalePackage,
+  getTaleSaveVersion: taleRepo.getTaleSaveVersion,
   importTalePackage: taleRepo.importTalePackage,
   replaceTaleWithPackage: taleRepo.replaceTaleWithPackage,
 }));
@@ -168,6 +178,8 @@ describe("sync transport", () => {
         headers: {
           "Content-Type": "application/json",
           Authorization: "Bearer token",
+          "X-Hakawati-Api-Version": "1",
+          "X-Hakawati-Client-Version": "0.15.2",
           "X-Hakawati-Device-Id": "device-1",
           "Idempotency-Key": "idem-1",
         },
@@ -195,6 +207,8 @@ describe("sync transport", () => {
       expect.objectContaining({
         headers: {
           "Content-Type": "application/json",
+          "X-Hakawati-Api-Version": "1",
+          "X-Hakawati-Client-Version": "0.15.2",
           "Idempotency-Key": "idem-2",
         },
       }),
@@ -374,7 +388,7 @@ describe("sync transport", () => {
       transport,
       localTaleId: "local-tale",
       idempotencyKey: "idem-upload",
-      capabilities: { features: { coverAssets: "enabled" } },
+      capabilities: capabilitiesFixture(),
     });
 
     expect(transport.post).toHaveBeenNthCalledWith(
@@ -413,10 +427,8 @@ describe("sync transport", () => {
     expect(createBody.package.assets[0]?.dataBase64).toBeUndefined();
   });
 
-  it("accepts legacy thumbnail capability for hosted cover uploads", () => {
-    expect(canUploadCoverAssets({ features: { thumbnails: "enabled" } })).toBe(
-      true,
-    );
+  it("uses the explicit cover-storage capability for hosted uploads", () => {
+    expect(canUploadCoverAssets(capabilitiesFixture())).toBe(true);
   });
 
   it("uses the sync mapper for personal uploads instead of raw local export", async () => {
@@ -442,7 +454,7 @@ describe("sync transport", () => {
       transport,
       localTaleId: "local-tale",
       idempotencyKey: "idem-upload",
-      capabilities: { features: { coverAssets: "unsupported" } },
+      capabilities: capabilitiesFixture("unavailable"),
     });
 
     const body = transport.post.mock.calls[0][1];
@@ -490,14 +502,16 @@ describe("sync transport", () => {
       transport,
       localTaleId: "local-tale",
       idempotencyKey: "idem-upload",
+      capabilities: capabilitiesFixture("unavailable"),
     });
 
-    expect(syncRepo.upsertTaleSyncState).toHaveBeenLastCalledWith(
+    expect(syncRepo.upsertTaleSyncStateIfTaleVersion).toHaveBeenLastCalledWith(
       expect.objectContaining({
         contentRev: "7",
         metadataRev: "9",
         pendingStatus: "idle",
       }),
+      1,
     );
   });
 
@@ -511,7 +525,7 @@ describe("sync transport", () => {
           new SyncHttpError(
             "Register this device before using cloud saves",
             403,
-            "403",
+            "device_not_registered",
           ),
         ),
       put: vi.fn(),
@@ -529,15 +543,16 @@ describe("sync transport", () => {
         transport,
         localTaleId: "local-tale",
         idempotencyKey: "idem-upload",
+        capabilities: capabilitiesFixture(),
       }),
     ).rejects.toThrow("Register this device before using cloud saves");
 
-    expect(syncRepo.upsertTaleSyncState).not.toHaveBeenCalled();
+    expect(syncRepo.upsertTaleSyncStateIfTaleVersion).not.toHaveBeenCalled();
     expect(syncRepo.setTaleSyncStatus).toHaveBeenCalledWith({
       profileId: "cloud",
       localTaleId: "local-tale",
       pendingStatus: "error",
-      lastErrorCode: "403",
+      lastErrorCode: "device_not_registered",
     });
     expect(syncRepo.setSyncProfileDisabled).toHaveBeenCalledWith(
       "cloud",
@@ -578,6 +593,7 @@ describe("sync transport", () => {
       transport,
       localTaleId: "local-tale",
       idempotencyKey: "idem-replace",
+      capabilities: capabilitiesFixture("unavailable"),
     });
 
     expect(transport.put).toHaveBeenCalledWith(
@@ -588,7 +604,7 @@ describe("sync transport", () => {
       }),
       { idempotencyKey: "idem-replace" },
     );
-    expect(syncRepo.upsertTaleSyncState).toHaveBeenLastCalledWith(
+    expect(syncRepo.upsertTaleSyncStateIfTaleVersion).toHaveBeenLastCalledWith(
       expect.objectContaining({
         remoteTaleId: "remote-tale",
         contentRev: "13",
@@ -596,6 +612,7 @@ describe("sync transport", () => {
         pendingStatus: "idle",
         lastErrorCode: null,
       }),
+      1,
     );
   });
 
@@ -633,6 +650,7 @@ describe("sync transport", () => {
       localTaleId: "local-tale",
       idempotencyKey: "idem-force-replace",
       forceReplace: true,
+      capabilities: capabilitiesFixture("unavailable"),
     });
 
     const [, body] = transport.put.mock.calls[0];
@@ -708,13 +726,14 @@ describe("sync transport", () => {
       }),
       { idempotencyKey: "idem-content" },
     );
-    expect(syncRepo.upsertTaleSyncState).toHaveBeenLastCalledWith(
+    expect(syncRepo.upsertTaleSyncStateIfTaleVersion).toHaveBeenLastCalledWith(
       expect.objectContaining({
         contentRev: "3",
         metadataRev: "3",
         pendingStatus: "idle",
         lastErrorCode: null,
       }),
+      1,
     );
   });
 
@@ -844,17 +863,20 @@ describe("sync transport", () => {
       "/v1/tales/remote-tale/metadata",
       {
         baseMetadataRev: 3,
-        title: "Local Tale",
-        description: "Has a local thumbnail.",
-        gameMode: GameMode.STORY_TELLER,
+        patch: {
+          title: "Local Tale",
+          description: "Has a local thumbnail.",
+          gameMode: GameMode.STORY_TELLER,
+        },
       },
     );
-    expect(syncRepo.upsertTaleSyncState).toHaveBeenLastCalledWith(
+    expect(syncRepo.upsertTaleSyncStateIfTaleVersion).toHaveBeenLastCalledWith(
       expect.objectContaining({
         contentRev: "2",
         metadataRev: "4",
         pendingStatus: "idle",
       }),
+      1,
     );
   });
 
@@ -940,6 +962,7 @@ describe("sync transport", () => {
         lastEntryPreview: null,
       },
       idempotencyKey: "idem-sync",
+      capabilities: capabilitiesFixture("unavailable"),
     });
 
     expect(result).toBe("pulled");
@@ -948,14 +971,78 @@ describe("sync transport", () => {
       expect.objectContaining({
         format: "hakawati-tale-package",
       }),
+      { expectedSaveVersion: 1 },
     );
-    expect(syncRepo.upsertTaleSyncState).toHaveBeenLastCalledWith(
+    expect(syncRepo.upsertTaleSyncStateIfTaleVersion).toHaveBeenLastCalledWith(
       expect.objectContaining({
         contentRev: "4",
         metadataRev: "3",
         pendingStatus: "idle",
       }),
+      2,
     );
+  });
+
+  it("does not overwrite a local save made while a remote pull is downloading", async () => {
+    syncRepo.getTaleSyncState.mockResolvedValue({
+      profileId: "cloud",
+      localTaleId: "local-tale",
+      remoteTaleId: "remote-tale",
+      contentRev: "2",
+      metadataRev: "3",
+      lastSyncedAt: 1,
+      pendingStatus: "idle",
+      lastErrorCode: null,
+    });
+    taleRepo.replaceTaleWithPackage.mockResolvedValueOnce(false);
+    const transport = {
+      get: vi.fn().mockResolvedValue({
+        id: "remote-tale",
+        contentRev: 4,
+        metadataRev: 3,
+        turnCount: 1,
+        package: toSyncTalePackage(samplePackage(), { mode: "hosted" }),
+      }),
+      post: vi.fn(),
+      put: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn(),
+    };
+
+    const result = await syncLinkedTale({
+      profile: {
+        id: "cloud",
+        baseUrl: "https://sync.example",
+        mode: "hosted",
+      },
+      transport,
+      localTaleId: "local-tale",
+      remoteTale: {
+        id: "remote-tale",
+        title: "Remote Tale",
+        description: null,
+        gameMode: GameMode.STORY_TELLER,
+        coverAssetId: null,
+        thumbnailAssetId: null,
+        contentRev: 4,
+        metadataRev: 3,
+        turnCount: 1,
+        updatedAt: "2026-06-19T00:00:00.000Z",
+        lastEntryPreview: null,
+      },
+      idempotencyKey: "idem-sync",
+      capabilities: capabilitiesFixture("unavailable"),
+    });
+
+    expect(result).toBe("conflict");
+    expect(syncRepo.setTaleSyncStatus).toHaveBeenCalledWith({
+      profileId: "cloud",
+      accountId: undefined,
+      localTaleId: "local-tale",
+      pendingStatus: "conflict",
+      lastErrorCode: "local_changed",
+    });
+    expect(syncRepo.upsertTaleSyncStateIfTaleVersion).not.toHaveBeenCalled();
   });
 
   it("marks idle linked tales as error when automatic pull fails", async () => {
@@ -1147,6 +1234,7 @@ describe("sync transport", () => {
         lastEntryPreview: null,
       },
       idempotencyKey: "idem-sync",
+      capabilities: capabilitiesFixture("unavailable"),
     });
 
     expect(result).toBe("pushed");
@@ -1167,7 +1255,7 @@ describe("sync transport", () => {
 
   it("bootstraps hosted sync through capabilities, auth, account, and device registration", async () => {
     http.fetch
-      .mockResolvedValueOnce(jsonResponse({ cloudSaveProtocol: 1 }))
+      .mockResolvedValueOnce(jsonResponse(capabilitiesFixture()))
       .mockResolvedValueOnce(
         jsonResponse({
           provider: "logto",
@@ -1242,7 +1330,7 @@ describe("sync transport", () => {
 
   it("keeps hosted account signed in but disables sync when device limit is reached", async () => {
     http.fetch
-      .mockResolvedValueOnce(jsonResponse({ cloudSaveProtocol: 1 }))
+      .mockResolvedValueOnce(jsonResponse(capabilitiesFixture()))
       .mockResolvedValueOnce(
         jsonResponse({
           provider: "logto",
@@ -1265,7 +1353,13 @@ describe("sync transport", () => {
       .mockResolvedValueOnce({
         ok: false,
         status: 403,
-        text: () => Promise.resolve("Device limit reached"),
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({
+              code: "device_limit_exceeded",
+              message: "Device limit reached",
+            }),
+          ),
       });
 
     const result = await prepareHostedSync({
@@ -1293,7 +1387,7 @@ describe("sync transport", () => {
 
   it("signs in with PKCE through the loopback callback", async () => {
     http.fetch
-      .mockResolvedValueOnce(jsonResponse({ cloudSaveProtocol: 1 }))
+      .mockResolvedValueOnce(jsonResponse(capabilitiesFixture()))
       .mockResolvedValueOnce(
         jsonResponse({
           provider: "logto",
@@ -1363,7 +1457,7 @@ describe("sync transport", () => {
 
   it("refreshes hosted tokens without opening the browser", async () => {
     http.fetch
-      .mockResolvedValueOnce(jsonResponse({ cloudSaveProtocol: 1 }))
+      .mockResolvedValueOnce(jsonResponse(capabilitiesFixture()))
       .mockResolvedValueOnce(
         jsonResponse({
           provider: "logto",
@@ -1412,7 +1506,7 @@ describe("sync transport", () => {
 
   it("surfaces OIDC token exchange errors", async () => {
     http.fetch
-      .mockResolvedValueOnce(jsonResponse({ cloudSaveProtocol: 1 }))
+      .mockResolvedValueOnce(jsonResponse(capabilitiesFixture()))
       .mockResolvedValueOnce(
         jsonResponse({
           provider: "logto",
@@ -1665,6 +1759,7 @@ describe("sync transport", () => {
       transport,
       localTaleId: "local-tale",
       idempotencyKey: "idem-copy",
+      capabilities: capabilitiesFixture("unavailable"),
     });
 
     expect(copyId).toBe("local-copy");
@@ -1680,8 +1775,9 @@ describe("sync transport", () => {
     expect(taleRepo.replaceTaleWithPackage).toHaveBeenCalledWith(
       "local-tale",
       expect.objectContaining({ format: "hakawati-tale-package" }),
+      { expectedSaveVersion: 1 },
     );
-    expect(syncRepo.upsertTaleSyncState).toHaveBeenLastCalledWith(
+    expect(syncRepo.upsertTaleSyncStateIfTaleVersion).toHaveBeenLastCalledWith(
       expect.objectContaining({
         localTaleId: "local-tale",
         remoteTaleId: "remote-tale",
@@ -1689,6 +1785,7 @@ describe("sync transport", () => {
         metadataRev: "9",
         pendingStatus: "idle",
       }),
+      2,
     );
   });
 
@@ -1734,11 +1831,12 @@ describe("sync transport", () => {
     expect(taleRepo.replaceTaleWithPackage).toHaveBeenCalledWith(
       "local-tale",
       expect.objectContaining({ format: "hakawati-tale-package" }),
+      { expectedSaveVersion: 1 },
     );
     const replacementPackage = taleRepo.replaceTaleWithPackage.mock.calls[0][1];
     expect(replacementPackage.assets).toEqual([]);
     expect(replacementPackage.tale.thumbnailAssetId).toBeUndefined();
-    expect(syncRepo.upsertTaleSyncState).toHaveBeenLastCalledWith(
+    expect(syncRepo.upsertTaleSyncStateIfTaleVersion).toHaveBeenLastCalledWith(
       expect.objectContaining({
         localTaleId: "local-tale",
         remoteTaleId: "remote-tale",
@@ -1747,6 +1845,34 @@ describe("sync transport", () => {
         pendingStatus: "idle",
         lastErrorCode: null,
       }),
+      2,
     );
   });
 });
+
+function capabilitiesFixture(
+  coverStorage: "available" | "unavailable" = "available",
+): SyncCapabilities {
+  return {
+    server: "hakawati-cloud",
+    apiVersion: "1",
+    minimumClientVersion: "0.15.2",
+    compatibility: { state: "compatible" },
+    cloudSaveProtocol: 1,
+    features: {
+      sync: { state: "available" },
+      catalogRead: { state: "available" },
+      coverStorage: { state: coverStorage },
+      publishing: { state: "available" },
+    },
+    limits: {
+      maxPackageBytes: 1024,
+      maxStateBytes: 1024,
+    },
+    scenarioCatalog: {
+      packageFormatVersion: 1,
+      thumbnailUploads:
+        coverStorage === "available" ? "enabled" : "storage-not-configured",
+    },
+  };
+}

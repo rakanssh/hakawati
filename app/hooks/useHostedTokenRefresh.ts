@@ -56,15 +56,19 @@ export function useHostedTokenRefresh(dbReady: boolean) {
     ) {
       return;
     }
+    let cancelled = false;
 
     const refresh = async () => {
       const migrated = await migrateStoredHostedRefreshToken(profile.id);
+      if (cancelled) return;
       if (migrated) setHasRefreshToken(true);
       if (!hasRefreshToken && !migrated) return;
 
       const storedProfile = await getSyncProfile(profile.id).catch(() => null);
+      if (cancelled) return;
       if (storedProfile?.enabled !== true) return;
       const refreshToken = await getHostedRefreshToken(profile.id);
+      if (cancelled) return;
       if (!refreshToken) {
         setHasRefreshToken(false);
         setHostedRefreshFailed(true);
@@ -75,8 +79,10 @@ export function useHostedTokenRefresh(dbReady: boolean) {
         profile,
         refreshToken,
       });
+      if (cancelled) return;
       if (result.refreshToken) {
         await setHostedRefreshToken(profile.id, result.refreshToken);
+        if (cancelled) return;
       }
       const nextExpiresAt =
         result.expiresIn && result.expiresIn > 0
@@ -97,7 +103,10 @@ export function useHostedTokenRefresh(dbReady: boolean) {
           setHostedRefreshFailed(true);
         });
       }, refreshIn);
-      return () => window.clearTimeout(timer);
+      return () => {
+        cancelled = true;
+        window.clearTimeout(timer);
+      };
     }
 
     const key = `${profile.baseUrl}:${hasRefreshToken}:${accessTokenExpiresAt ?? 0}`;
@@ -105,9 +114,13 @@ export function useHostedTokenRefresh(dbReady: boolean) {
     triedKeyRef.current = key;
 
     void refresh().catch((error) => {
+      if (cancelled) return;
       console.info("Hosted sync token refresh skipped", error);
       setHostedRefreshFailed(true);
     });
+    return () => {
+      cancelled = true;
+    };
   }, [
     accessToken,
     accessTokenExpiresAt,

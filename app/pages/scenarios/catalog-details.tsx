@@ -334,13 +334,14 @@ export default function ScenarioCatalogDetails() {
         onOpenChange={(open) => {
           if (!open) setPendingPublish(null);
         }}
-        onPublish={async ({ metadata, thumbnailFile }) => {
+        onPublish={async ({ metadata, thumbnailFile, policyAcceptance }) => {
           if (!pendingPublish) return;
           try {
             const updated = await publish({
               scenario: pendingPublish,
               metadata,
               thumbnailFile,
+              policyAcceptance,
             });
             setScenario(updated);
             await publishLinks.refresh();

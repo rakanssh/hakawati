@@ -8,10 +8,13 @@ import {
 import { useSyncBackground } from "./useSyncBackground";
 
 const syncRepoMocks = vi.hoisted(() => ({
+  deleteTaleSyncState: vi.fn(),
   getSyncProfile: vi.fn(),
   listTaleSyncPreferences: vi.fn(),
   listTaleSyncStates: vi.fn(),
   setSyncProfileDisabled: vi.fn(),
+  setTaleSyncPreference: vi.fn(),
+  upsertTaleSyncState: vi.fn(),
 }));
 
 const syncServiceMocks = vi.hoisted(() => {
@@ -30,7 +33,9 @@ const syncServiceMocks = vi.hoisted(() => {
     return items;
   });
   return {
+    assertSyncAvailable: vi.fn(),
     createSyncTransport: vi.fn(() => ({ transport: true })),
+    fetchSyncCapabilities: vi.fn(),
     listAllRemoteTales,
     listHostedDevices: vi.fn(),
     listRemoteTales,
@@ -114,8 +119,32 @@ describe("useSyncBackground", () => {
     });
     syncRepoMocks.getSyncProfile.mockResolvedValue({ enabled: true });
     syncRepoMocks.setSyncProfileDisabled.mockResolvedValue(undefined);
+    syncRepoMocks.deleteTaleSyncState.mockResolvedValue(undefined);
+    syncRepoMocks.setTaleSyncPreference.mockResolvedValue(undefined);
     syncRepoMocks.listTaleSyncPreferences.mockResolvedValue([]);
     syncRepoMocks.listTaleSyncStates.mockResolvedValue([]);
+    syncRepoMocks.upsertTaleSyncState.mockResolvedValue(undefined);
+    syncServiceMocks.fetchSyncCapabilities.mockResolvedValue({
+      server: "hakawati-cloud",
+      apiVersion: "1",
+      minimumClientVersion: "0.0.0",
+      compatibility: { state: "compatible" },
+      cloudSaveProtocol: 1,
+      features: {
+        sync: { state: "available" },
+        catalogRead: { state: "available" },
+        coverStorage: { state: "available" },
+        publishing: { state: "available" },
+      },
+      limits: {
+        maxPackageBytes: 1_000_000,
+        maxStateBytes: 1_000_000,
+      },
+      scenarioCatalog: {
+        packageFormatVersion: 1,
+        thumbnailUploads: "presigned",
+      },
+    });
     syncServiceMocks.listHostedDevices.mockResolvedValue([{ id: "device-1" }]);
     syncServiceMocks.listRemoteTales.mockResolvedValue({
       items: [],
@@ -215,6 +244,71 @@ describe("useSyncBackground", () => {
       expect.objectContaining({ localTaleId: "local-sync" }),
     );
 
+    harness.cleanup();
+  });
+
+  it("keeps a local copy private when its linked cloud tale was deleted", async () => {
+    syncRepoMocks.listTaleSyncPreferences.mockResolvedValue([
+      { localTaleId: "local-1", policy: "sync" },
+    ]);
+    syncRepoMocks.listTaleSyncStates.mockResolvedValue([
+      {
+        profileId: "hosted",
+        accountId: "account-1",
+        localTaleId: "local-1",
+        remoteTaleId: "remote-deleted",
+        pendingStatus: "idle",
+      },
+    ]);
+    const harness = renderHarness();
+
+    await harness.flush();
+
+    expect(syncServiceMocks.uploadTalePackage).not.toHaveBeenCalled();
+    expect(syncRepoMocks.deleteTaleSyncState).toHaveBeenCalledWith({
+      profileId: "hosted",
+      accountId: "account-1",
+      localTaleId: "local-1",
+    });
+    expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledWith({
+      profileId: "hosted",
+      accountId: "account-1",
+      localTaleId: "local-1",
+      policy: "private",
+    });
+    expect(
+      syncRepoMocks.setTaleSyncPreference.mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      syncRepoMocks.deleteTaleSyncState.mock.invocationCallOrder[0],
+    );
+
+    harness.cleanup();
+  });
+
+  it("keeps the remote link when making the local copy private fails", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    syncRepoMocks.listTaleSyncPreferences.mockResolvedValue([
+      { localTaleId: "local-1", policy: "sync" },
+    ]);
+    syncRepoMocks.listTaleSyncStates.mockResolvedValue([
+      {
+        profileId: "hosted",
+        accountId: "account-1",
+        localTaleId: "local-1",
+        remoteTaleId: "remote-deleted",
+        pendingStatus: "idle",
+      },
+    ]);
+    syncRepoMocks.setTaleSyncPreference.mockRejectedValueOnce(
+      new Error("preference write failed"),
+    );
+    const harness = renderHarness();
+
+    await harness.flush();
+
+    expect(syncRepoMocks.deleteTaleSyncState).not.toHaveBeenCalled();
+    expect(syncServiceMocks.uploadTalePackage).not.toHaveBeenCalled();
+    warn.mockRestore();
     harness.cleanup();
   });
 

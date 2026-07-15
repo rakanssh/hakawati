@@ -37,8 +37,10 @@ const syncServiceMocks = vi.hoisted(() => {
   });
   return {
     applyRemoteTalePackage: vi.fn(),
+    assertSyncAvailable: vi.fn(),
     createSyncTransport: vi.fn(() => ({})),
     deleteRemoteTale: vi.fn(),
+    fetchSyncCapabilities: vi.fn(),
     importRemoteTalePackage: vi.fn(),
     keepBothTalePackage: vi.fn(),
     listAllRemoteTales,
@@ -142,6 +144,27 @@ describe("useTaleLibrary", () => {
     syncRepoMocks.listTaleSyncStates.mockResolvedValue([]);
     syncRepoMocks.setTaleSyncPreference.mockResolvedValue(undefined);
     syncRepoMocks.deleteTaleSyncState.mockResolvedValue(undefined);
+    syncServiceMocks.fetchSyncCapabilities.mockResolvedValue({
+      server: "hakawati-cloud",
+      apiVersion: "1",
+      minimumClientVersion: "0.0.0",
+      compatibility: { state: "compatible" },
+      cloudSaveProtocol: 1,
+      features: {
+        sync: { state: "available" },
+        catalogRead: { state: "available" },
+        coverStorage: { state: "available" },
+        publishing: { state: "available" },
+      },
+      limits: {
+        maxPackageBytes: 1_000_000,
+        maxStateBytes: 1_000_000,
+      },
+      scenarioCatalog: {
+        packageFormatVersion: 1,
+        thumbnailUploads: "presigned",
+      },
+    });
     syncServiceMocks.listRemoteTales.mockResolvedValue({
       items: [],
       nextCursor: null,
@@ -839,7 +862,7 @@ describe("useTaleLibrary", () => {
     harness.cleanup();
   });
 
-  it("skips cloud delete when sync is disabled", async () => {
+  it("keeps a linked local tale when sync is disabled", async () => {
     const localDelete = vi.fn();
     taleHookMocks.useTalesList.mockReturnValue({
       items: [localTale("local-1")],
@@ -867,26 +890,28 @@ describe("useTaleLibrary", () => {
     });
 
     await act(async () => {
-      await harness.controls.deleteLibraryTale({
-        source: "local",
-        localTale: localTale("local-1"),
-        sync: {
-          profileId: "hosted",
-          remoteTaleId: "remote-1",
-          metadataRev: "3",
-          status: "idle",
-          lastErrorCode: null,
-        },
-      });
+      await expect(
+        harness.controls.deleteLibraryTale({
+          source: "local",
+          localTale: localTale("local-1"),
+          sync: {
+            profileId: "hosted",
+            remoteTaleId: "remote-1",
+            metadataRev: "3",
+            status: "idle",
+            lastErrorCode: null,
+          },
+        }),
+      ).rejects.toThrow("Reconnect cloud sync");
     });
 
     expect(syncServiceMocks.deleteRemoteTale).not.toHaveBeenCalled();
-    expect(localDelete).toHaveBeenCalledWith("local-1");
+    expect(localDelete).not.toHaveBeenCalled();
 
     harness.cleanup();
   });
 
-  it("does not let remote delete failure block linked local tale deletion", async () => {
+  it("does not delete a linked local tale when remote deletion fails", async () => {
     const localDelete = vi.fn();
     taleHookMocks.useTalesList.mockReturnValue({
       items: [localTale("local-1")],
@@ -925,16 +950,18 @@ describe("useTaleLibrary", () => {
       await Promise.resolve();
     });
 
-    await act(async () => {
-      await harness.controls.deleteLibraryTale(harness.controls.items[0]);
-    });
+    await expect(
+      act(async () => {
+        await harness.controls.deleteLibraryTale(harness.controls.items[0]);
+      }),
+    ).rejects.toThrow("offline");
 
     expect(syncServiceMocks.deleteRemoteTale).toHaveBeenCalledWith(
       {},
       "remote-1",
       3,
     );
-    expect(localDelete).toHaveBeenCalledWith("local-1");
+    expect(localDelete).not.toHaveBeenCalled();
 
     harness.cleanup();
   });

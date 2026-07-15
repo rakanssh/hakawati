@@ -170,13 +170,14 @@ export default function ScenarioCreate() {
           setPendingPublish(null);
           navigate({ to: `/scenarios` });
         }}
-        onPublish={async ({ metadata, thumbnailFile }) => {
+        onPublish={async ({ metadata, thumbnailFile, policyAcceptance }) => {
           if (!pendingPublish) return;
           try {
             const result = await catalogActions.publish({
               scenario: pendingPublish,
               metadata,
               thumbnailFile,
+              policyAcceptance,
             });
             toast.success(
               result.moderation.status === "needs_review"
