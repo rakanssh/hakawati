@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
 import {
   AlertTriangle,
@@ -49,6 +49,7 @@ import {
   listHostedDevices,
   prepareHostedSync,
   fetchSyncCapabilities,
+  isHostedSignInCancelledError,
   registerSyncDevice,
   signInHostedSync,
   updateHostedAccountProfile,
@@ -181,6 +182,9 @@ export default function SettingsCloudSync() {
     (state) => state.setDevicePlatform,
   );
   const [busy, setBusy] = useState<string | null>(null);
+  const [signInController, setSignInController] =
+    useState<AbortController | null>(null);
+  const signInControllerRef = useRef<AbortController | null>(null);
   const [profileBusy, setProfileBusy] = useState(false);
   const [profileDisplayName, setProfileDisplayName] = useState("");
   const [status, setStatus] = useState<string>("");
@@ -391,17 +395,43 @@ export default function SettingsCloudSync() {
   }, [devicesOpen, refreshHostedDevices]);
 
   async function signInForToken() {
-    const result = await signInHostedSync({ profile: hostedProfile });
-    if (result.refreshToken) {
-      await setHostedRefreshToken(HOSTED_PROFILE_ID, result.refreshToken);
+    const controller = new AbortController();
+    signInControllerRef.current = controller;
+    setSignInController(controller);
+    try {
+      const result = await signInHostedSync({
+        profile: hostedProfile,
+        signal: controller.signal,
+      });
+      if (result.refreshToken) {
+        await setHostedRefreshToken(HOSTED_PROFILE_ID, result.refreshToken);
+      }
+      const expiresAt =
+        result.expiresIn && result.expiresIn > 0
+          ? Date.now() + result.expiresIn * 1000
+          : null;
+      setAccessToken(
+        result.accessToken,
+        expiresAt,
+        Boolean(result.refreshToken),
+      );
+      return result.accessToken;
+    } finally {
+      if (signInControllerRef.current === controller) {
+        signInControllerRef.current = null;
+      }
+      setSignInController((current) =>
+        current === controller ? null : current,
+      );
     }
-    const expiresAt =
-      result.expiresIn && result.expiresIn > 0
-        ? Date.now() + result.expiresIn * 1000
-        : null;
-    setAccessToken(result.accessToken, expiresAt, Boolean(result.refreshToken));
-    return result.accessToken;
   }
+
+  useEffect(
+    () => () => {
+      signInControllerRef.current?.abort();
+    },
+    [],
+  );
 
   function signOut() {
     void deleteHostedRefreshToken(HOSTED_PROFILE_ID).catch(() => undefined);
@@ -468,6 +498,10 @@ export default function SettingsCloudSync() {
     try {
       await action();
     } catch (error) {
+      if (isHostedSignInCancelledError(error)) {
+        setStatus("");
+        return;
+      }
       const message = error instanceof Error ? error.message : t`Sync failed`;
       if (message.toLowerCase().includes("device limit")) {
         setSyncEnabled(false);
@@ -957,6 +991,32 @@ export default function SettingsCloudSync() {
           ) : null}
         </Accordion>
       </SettingsPanel>
+
+      <Dialog
+        open={Boolean(signInController)}
+        onOpenChange={(open) => {
+          if (!open) signInController?.abort();
+        }}
+      >
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>
+              <Trans>Connecting...</Trans>
+            </DialogTitle>
+            <DialogDescription>
+              <Trans>
+                Finish signing in through your browser. You can cancel and keep
+                using Hakawati at any time.
+              </Trans>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => signInController?.abort()}>
+              <Trans>Cancel</Trans>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={resolverOpen} onOpenChange={setResolverOpen}>
         <DialogContent>

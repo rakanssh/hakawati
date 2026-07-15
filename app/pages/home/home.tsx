@@ -14,6 +14,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Tooltip,
@@ -55,6 +63,7 @@ import {
 } from "@/repositories/sync.repository";
 import {
   createSyncTransport,
+  isHostedSignInCancelledError,
   prepareHostedSync,
   registerSyncDevice,
   signInHostedSync,
@@ -469,6 +478,9 @@ export default function Home() {
   const [whatsNewOpen, setWhatsNewOpen] = useState(false);
   const [loadingTaleId, setLoadingTaleId] = useState<string | null>(null);
   const [accountBusy, setAccountBusy] = useState(false);
+  const [signInController, setSignInController] =
+    useState<AbortController | null>(null);
+  const signInControllerRef = useRef<AbortController | null>(null);
   const [conflictItem, setConflictItem] = useState<LibraryTaleItem | null>(
     null,
   );
@@ -743,8 +755,16 @@ export default function Home() {
     }
 
     setAccountBusy(true);
+    const controller = new AbortController();
+    signInControllerRef.current = controller;
+    setSignInController(controller);
     try {
-      const result = await signInHostedSync({ profile: hostedProfile });
+      const result = await signInHostedSync({
+        profile: hostedProfile,
+        signal: controller.signal,
+      });
+      signInControllerRef.current = null;
+      setSignInController(null);
       if (result.refreshToken) {
         await setHostedRefreshToken(HOSTED_PROFILE_ID, result.refreshToken);
       }
@@ -786,11 +806,26 @@ export default function Home() {
       openSettings("cloud-sync");
       toast.success(t`Cloud sync connected`);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t`Sync failed`);
+      if (!isHostedSignInCancelledError(error)) {
+        toast.error(error instanceof Error ? error.message : t`Sync failed`);
+      }
     } finally {
+      if (signInControllerRef.current === controller) {
+        signInControllerRef.current = null;
+      }
+      setSignInController((current) =>
+        current === controller ? null : current,
+      );
       setAccountBusy(false);
     }
   };
+
+  useEffect(
+    () => () => {
+      signInControllerRef.current?.abort();
+    },
+    [],
+  );
 
   const handleStartScenario = async (
     id: string,
@@ -1291,6 +1326,28 @@ export default function Home() {
         defaultTab={settingsTab}
         visibleTabs={nonPlayTabs}
       />
+      <Dialog
+        open={Boolean(signInController)}
+        onOpenChange={(open) => {
+          if (!open) signInController?.abort();
+        }}
+      >
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>
+              <Trans>Connecting...</Trans>
+            </DialogTitle>
+            <DialogDescription>
+              <Trans>Finish signing in through your browser.</Trans>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => signInController?.abort()}>
+              <Trans>Cancel</Trans>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <GenerateScenarioDialog
         open={generateOpen}
         onOpenChange={setGenerateOpen}

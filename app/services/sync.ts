@@ -142,6 +142,19 @@ export type HostedSignInResult = {
   refreshToken?: string;
 };
 
+export class HostedSignInCancelledError extends Error {
+  constructor() {
+    super("Sign-in cancelled");
+    this.name = "HostedSignInCancelledError";
+  }
+}
+
+export function isHostedSignInCancelledError(
+  error: unknown,
+): error is HostedSignInCancelledError {
+  return error instanceof HostedSignInCancelledError;
+}
+
 export type HostedAccount = {
   id: string;
   emailNormalized: string | null;
@@ -437,9 +450,16 @@ async function fetchOidcDiscovery(issuer: string): Promise<OidcDiscovery> {
   return (await response.json()) as OidcDiscovery;
 }
 
+async function cancelOAuthLoopback(id: string): Promise<void> {
+  await Promise.resolve(invoke("cancel_oauth_loopback", { id })).catch(
+    () => undefined,
+  );
+}
+
 export async function signInHostedSync(input: {
   profile: SyncProfile;
   timeoutMs?: number;
+  signal?: AbortSignal;
 }): Promise<HostedSignInResult> {
   const transport = createSyncTransport({ profile: input.profile });
   assertSyncAvailable(await fetchSyncCapabilities(transport));
@@ -470,13 +490,36 @@ export async function signInHostedSync(input: {
     authUrl.searchParams.set("resource", authConfig.audience);
   }
 
-  await openUrl(authUrl);
-  const callback = new URL(
-    await invoke<string>("wait_oauth_loopback", {
+  let removeAbortListener: () => void = () => {};
+  let callbackValue: string;
+  const cancelled = new Promise<never>((_, reject) => {
+    if (!input.signal) return;
+    const onAbort = () => {
+      void cancelOAuthLoopback(loopback.id).finally(() =>
+        reject(new HostedSignInCancelledError()),
+      );
+    };
+    input.signal.addEventListener("abort", onAbort, { once: true });
+    removeAbortListener = () =>
+      input.signal?.removeEventListener("abort", onAbort);
+    if (input.signal.aborted) onAbort();
+  });
+  try {
+    await Promise.race([openUrl(authUrl), cancelled]);
+    const waitForCallback = invoke<string>("wait_oauth_loopback", {
       id: loopback.id,
       timeoutMs: input.timeoutMs ?? 120_000,
-    }),
-  );
+    });
+    callbackValue = await Promise.race([waitForCallback, cancelled]);
+  } catch (error) {
+    if (input.signal?.aborted) throw new HostedSignInCancelledError();
+    throw error;
+  } finally {
+    removeAbortListener();
+    await cancelOAuthLoopback(loopback.id);
+  }
+
+  const callback = new URL(callbackValue);
   if (callback.searchParams.get("state") !== state) {
     throw new Error("Sign-in state did not match");
   }

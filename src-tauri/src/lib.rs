@@ -549,6 +549,7 @@ pub fn run() {
             migration_recovery_status,
             oauth_loopback::start_oauth_loopback,
             oauth_loopback::wait_oauth_loopback,
+            oauth_loopback::cancel_oauth_loopback,
             secret_store::set_hosted_refresh_token,
             secret_store::get_hosted_refresh_token,
             secret_store::delete_hosted_refresh_token,
