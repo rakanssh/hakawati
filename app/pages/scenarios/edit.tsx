@@ -1,4 +1,3 @@
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { useScenarioEditor } from "@/hooks/useScenarios";
@@ -15,7 +14,7 @@ import { SCENARIO_COMPONENT_TYPES } from "@/lib/prompt-components";
 import { ArrowLeftIcon } from "lucide-react";
 import { Trans } from "@lingui/react/macro";
 export default function ScenarioEdit() {
-  const { id } = useParams({ from: "/scenarios/$id" });
+  const { id } = useParams({ from: "/scenarios/$id/edit" });
   const navigate = useNavigate();
   const { scenario, setScenario, load, save, saving } = useScenarioEditor();
 
@@ -41,79 +40,96 @@ export default function ScenarioEdit() {
 
   const handleSave = async () => {
     await save();
-    navigate({ to: `/scenarios` });
+    navigate({ to: `/scenarios/${id}` });
   };
 
   return (
-    <div className="container mx-auto py-10 flex flex-col gap-4 max-w-2xl">
-      <div className="flex items-center justify-between">
-        <div className="flex gap-4">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-3 py-4 sm:px-5 sm:py-6 lg:px-6">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
           <Button
-            variant="default"
-            onClick={() => navigate({ to: `/scenarios` })}
+            variant="outline"
+            size="icon"
+            onClick={() => navigate({ to: `/scenarios/${id}` })}
+            aria-label="Back to scenario details"
           >
-            <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
+            <ArrowLeftIcon className="size-4 rtl:rotate-180" />
           </Button>
-          <Label className="text-xl">
-            <Trans>Edit Scenario</Trans>
-          </Label>
+          <div className="min-w-0 text-sm text-muted-foreground">
+            <span className="text-primary">
+              <Trans>Your scenarios</Trans>
+            </span>
+            <span className="px-2">/</span>
+            <span>
+              <Trans>Edit</Trans>
+            </span>
+          </div>
         </div>
         <Button
           disabled={saving}
+          className="w-full sm:w-auto"
           onClick={async () => {
             await handleSave();
           }}
         >
           <Trans>Save Scenario</Trans>
         </Button>
-      </div>
+      </header>
       <Separator />
-      <ScenarioBasicsFields
-        name={scenario.name}
-        thumbnail={scenario.thumbnail}
-        description={scenario.description}
-        onNameChange={(name) => setScenario({ ...scenario, name })}
-        onThumbnailChange={(bytes) =>
-          setScenario({ ...scenario, thumbnail: bytes })
-        }
-        onDescriptionChange={(text) =>
-          setScenario({ ...scenario, description: text })
-        }
-      />
-      <GameModeField
-        value={scenario.initialGameMode}
-        onChange={(v) => setScenario({ ...scenario, initialGameMode: v })}
-      />
-      <Separator />
-      <PromptComponentsEditor
-        components={fields.components}
-        allowedTypes={SCENARIO_COMPONENT_TYPES}
-        gameMode={scenario.initialGameMode}
-        onAdd={addComponent}
-        onUpdate={updateComponent}
-        onRemove={removeComponent}
-      />
-      <Separator />
-      <StatsEditor
-        stats={fields.initialStats}
-        onAdd={addStat}
-        onUpdate={updateStat}
-        onRemove={removeStat}
-      />
-      <Separator />
-      <InventoryEditor
-        items={fields.initialInventory}
-        onAdd={addInventoryItem}
-        onUpdate={updateInventoryItem}
-        onRemove={removeInventoryItem}
-      />
-      <Separator />
-      <StorybookEditor
-        entries={fields.initialStoryCards}
-        onAdd={addStoryCard}
-        onUpdate={updateStoryCard}
-        onRemove={removeStoryCard}
-      />
+      <main className="flex w-full max-w-3xl flex-col gap-4">
+        <div className="grid gap-1">
+          <h1 className="text-2xl font-semibold sm:text-3xl">
+            <Trans>Edit Scenario</Trans>
+          </h1>
+          <p className="text-base text-muted-foreground">{scenario.name}</p>
+        </div>
+        <ScenarioBasicsFields
+          name={scenario.name}
+          thumbnail={scenario.thumbnail}
+          description={scenario.description}
+          onNameChange={(name) => setScenario({ ...scenario, name })}
+          onThumbnailChange={(bytes) =>
+            setScenario({ ...scenario, thumbnail: bytes })
+          }
+          onDescriptionChange={(text) =>
+            setScenario({ ...scenario, description: text })
+          }
+        />
+        <GameModeField
+          value={scenario.initialGameMode}
+          onChange={(v) => setScenario({ ...scenario, initialGameMode: v })}
+        />
+        <Separator />
+        <PromptComponentsEditor
+          components={fields.components}
+          allowedTypes={SCENARIO_COMPONENT_TYPES}
+          gameMode={scenario.initialGameMode}
+          onAdd={addComponent}
+          onUpdate={updateComponent}
+          onRemove={removeComponent}
+        />
+        <Separator />
+        <StatsEditor
+          stats={fields.initialStats}
+          onAdd={addStat}
+          onUpdate={updateStat}
+          onRemove={removeStat}
+        />
+        <Separator />
+        <InventoryEditor
+          items={fields.initialInventory}
+          onAdd={addInventoryItem}
+          onUpdate={updateInventoryItem}
+          onRemove={removeInventoryItem}
+        />
+        <Separator />
+        <StorybookEditor
+          entries={fields.initialStoryCards}
+          onAdd={addStoryCard}
+          onUpdate={updateStoryCard}
+          onRemove={removeStoryCard}
+        />
+      </main>
     </div>
   );
 }

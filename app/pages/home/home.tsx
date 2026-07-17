@@ -7,7 +7,6 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,11 +23,9 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { GenerateScenarioDialog } from "@/components/scenario";
+  GenerateScenarioDialog,
+  ScenarioPreviewCard,
+} from "@/components/scenario";
 import { TaleConflictDialog } from "@/components/tales/tale-conflict-dialog";
 import {
   SettingsModal,
@@ -40,23 +37,13 @@ import { useLoadTale } from "@/hooks/useGameSaves";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useScenariosList } from "@/hooks/useScenarios";
 import {
-  useCatalogActions,
   useCatalogClient,
   useCatalogScenarioList,
 } from "@/hooks/useCatalogScenarios";
 import { useTaleLibrary } from "@/hooks/useTaleLibrary";
-import {
-  bytesToObjectUrl,
-  formatExactDateTime,
-  formatRelativeTime,
-} from "@/lib/utils";
+import { bytesToObjectUrl } from "@/lib/utils";
 import { imageBadgeClass } from "@/lib/card-badges";
 import { getSyncUiKind } from "@/lib/sync-ui";
-import { initTaleFromScenario } from "@/services/scenario.service";
-import {
-  canSyncNewTales,
-  type NewTaleSyncPolicy,
-} from "@/services/new-tale-sync";
 import {
   getSyncProfile,
   upsertSyncProfile,
@@ -101,7 +88,6 @@ import {
   Play,
   Sparkles,
   UserRound,
-  VenetianMask,
   WandSparkles,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -149,22 +135,6 @@ function ShelfState({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PreviewImage({
-  thumbnail,
-  alt,
-}: {
-  thumbnail?: Uint8Array | null;
-  alt: string;
-}) {
-  return (
-    <img
-      src={thumbnail ? bytesToObjectUrl(thumbnail) : placeholderImage}
-      alt={alt}
-      className="h-20 w-full object-cover sm:h-28"
-    />
-  );
-}
-
 function catalogAssetUrl(baseUrl: string, path: string | null | undefined) {
   if (!path) return placeholderImage;
   if (/^https?:\/\//i.test(path)) return path;
@@ -196,12 +166,6 @@ function TaleCard({
     : item.localTale.lastLogEntry?.text ||
       item.localTale.description ||
       t`No description yet.`;
-  const updatedAt = isRemote
-    ? Date.parse(item.remoteTale.updatedAt) || 0
-    : item.localTale.updatedAt;
-  const entryCount = isRemote
-    ? (item.remoteTale.entryCount ?? item.remoteTale.turnCount)
-    : item.localTale.logCount;
   const thumbnail = isRemote ? null : item.localTale.thumbnail;
   const hasConflict =
     syncActive && item.source === "local" && item.sync?.status === "conflict";
@@ -215,251 +179,84 @@ function TaleCard({
       : t`Local`;
 
   return (
-    <Card className="w-[60vw] max-w-56 shrink-0 snap-start gap-0 overflow-hidden py-0 sm:w-60 sm:max-w-64 lg:w-64">
-      <CardHeader className="p-0">
-        <div className="relative">
-          <PreviewImage thumbnail={thumbnail} alt={t`${title} tale`} />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge className={`absolute left-1 top-1 ${imageBadgeClass}`}>
-                {formatRelativeTime(updatedAt)} - {entryCount}{" "}
-                {entryCount === 1 ? t`entry` : t`entries`}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <Trans>Last played: {formatExactDateTime(updatedAt)}</Trans>
-            </TooltipContent>
-          </Tooltip>
-          {syncActive && !syncStatusUnknown ? (
-            <Badge
-              className={`absolute bottom-1 right-1 ${imageBadgeClass}`}
-              aria-label={statusLabel}
-            >
-              {hasConflict ? (
-                <Trans>Needs review</Trans>
-              ) : isSynced ? (
-                <Cloud className="size-3" />
-              ) : (
-                <VenetianMask className="size-3" />
-              )}
-            </Badge>
-          ) : null}
-        </div>
-      </CardHeader>
-      <CardContent className="flex min-h-28 flex-col gap-1.5 p-2 sm:min-h-32 sm:gap-2 sm:p-2.5">
-        <div className="min-w-0">
-          <h3 className="truncate font-semibold">{title}</h3>
-          <p className="mt-1 line-clamp-2 min-h-10 text-sm text-muted-foreground">
-            {description}
-          </p>
-        </div>
-        <Button
-          className="mt-auto w-full"
-          onClick={() => onLoad(item)}
-          disabled={disabled || loading}
-        >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play />}
-          <Trans>Load Tale</Trans>
-        </Button>
-      </CardContent>
-    </Card>
+    <ScenarioPreviewCard
+      variant="shelf"
+      title={title}
+      summary={description}
+      imageSrc={thumbnail ? bytesToObjectUrl(thumbnail) : placeholderImage}
+      imageAlt={t`${title} tale`}
+      ariaLabel={t`Load ${title}`}
+      disabled={disabled || loading}
+      imageBadges={
+        !loading && syncActive && !syncStatusUnknown ? (
+          <Badge
+            className={`${imageBadgeClass} ${
+              hasConflict ? "text-destructive" : ""
+            }`}
+          >
+            {statusLabel}
+          </Badge>
+        ) : null
+      }
+      footer={
+        loading ? (
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Loader2 className="size-3 animate-spin" />
+            <Trans>Loading…</Trans>
+          </span>
+        ) : null
+      }
+      onOpen={() => onLoad(item)}
+    />
   );
 }
 
 function PublicScenarioCard({
   scenario,
   baseUrl,
-  loading,
-  disabled,
-  canStartPrivate,
   onView,
-  onStart,
 }: {
   scenario: CatalogScenarioRecord;
   baseUrl: string;
-  loading: boolean;
-  disabled: boolean;
-  canStartPrivate: boolean;
   onView: (scenario: CatalogScenarioRecord) => void;
-  onStart: (
-    scenario: CatalogScenarioRecord,
-    syncPolicy?: NewTaleSyncPolicy,
-  ) => void;
 }) {
   const { t } = useLingui();
-
   return (
-    <Card
-      role="button"
-      tabIndex={0}
-      onClick={() => onView(scenario)}
-      onKeyDown={(event) => {
-        if (event.currentTarget !== event.target) return;
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onView(scenario);
-        }
-      }}
-      className="w-[60vw] max-w-56 shrink-0 snap-start cursor-pointer gap-0 overflow-hidden py-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:w-60 sm:max-w-64 lg:w-64"
-      aria-label={t`View ${scenario.title}`}
-    >
-      <CardHeader className="p-0">
-        <div className="relative">
-          <img
-            src={catalogAssetUrl(baseUrl, scenario.thumbnail?.downloadUrl)}
-            alt={t`${scenario.title} public scenario`}
-            className="h-20 w-full object-cover sm:h-28"
-          />
-          <Badge className={`absolute left-1 top-1 ${imageBadgeClass}`}>
-            {formatRelativeTime(
-              Date.parse(scenario.publishedAt ?? scenario.updatedAt) || 0,
-            )}{" "}
-            - {scenario.startCount}{" "}
-            {scenario.startCount === 1 ? t`start` : t`starts`}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="flex min-h-28 flex-col gap-1.5 p-2 sm:min-h-32 sm:gap-2 sm:p-2.5">
-        <div className="min-w-0">
-          <div className="flex items-start gap-1.5">
-            <h3 className="min-w-0 flex-1 truncate font-semibold">
-              {scenario.title}
-            </h3>
-          </div>
-          <p className="mt-1 line-clamp-2 min-h-10 text-sm text-muted-foreground">
-            {scenario.summary}
-          </p>
-        </div>
-        <div
-          className={
-            canStartPrivate
-              ? "mt-auto grid grid-cols-[1fr_auto] gap-1"
-              : "mt-auto grid"
-          }
-        >
-          <Button
-            onClick={(event) => {
-              event.stopPropagation();
-              onStart(scenario);
-            }}
-            disabled={disabled || loading}
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play />}
-            <Trans>Start Tale</Trans>
-          </Button>
-          {canStartPrivate ? (
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={(event) => {
-                event.stopPropagation();
-                onStart(scenario, "private");
-              }}
-              disabled={disabled || loading}
-              aria-label={t`Start local-only tale`}
-            >
-              <VenetianMask className="h-4 w-4" />
-            </Button>
-          ) : null}
-        </div>
-      </CardContent>
-    </Card>
+    <ScenarioPreviewCard
+      variant="shelf"
+      title={scenario.title}
+      summary={scenario.summary}
+      imageSrc={catalogAssetUrl(baseUrl, scenario.thumbnail?.downloadUrl)}
+      imageAlt={t`${scenario.title} public scenario`}
+      ariaLabel={t`View ${scenario.title}`}
+      onOpen={() => onView(scenario)}
+    />
   );
 }
 
 function ScenarioCard({
   scenario,
-  loading,
-  disabled,
-  canStartPrivate,
   onView,
-  onStart,
 }: {
   scenario: ScenarioHead;
-  loading: boolean;
-  disabled: boolean;
-  canStartPrivate: boolean;
   onView: (id: string) => void;
-  onStart: (id: string, syncPolicy?: NewTaleSyncPolicy) => void;
 }) {
   const { t } = useLingui();
 
   return (
-    <Card
-      role="button"
-      tabIndex={0}
-      onClick={() => onView(scenario.id)}
-      onKeyDown={(event) => {
-        if (event.currentTarget !== event.target) return;
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onView(scenario.id);
-        }
-      }}
-      className="w-[60vw] max-w-56 shrink-0 snap-start cursor-pointer gap-0 overflow-hidden py-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:w-60 sm:max-w-64 lg:w-64"
-      aria-label={t`Open ${scenario.name}`}
-    >
-      <CardHeader className="p-0">
-        <div className="relative">
-          <PreviewImage
-            thumbnail={scenario.thumbnail}
-            alt={t`${scenario.name} scenario`}
-          />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge className={`absolute left-1 top-1 ${imageBadgeClass}`}>
-                {formatRelativeTime(scenario.updatedAt)}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <Trans>
-                Last updated: {formatExactDateTime(scenario.updatedAt)}
-              </Trans>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      </CardHeader>
-      <CardContent className="flex min-h-28 flex-col gap-1.5 p-2 sm:min-h-32 sm:gap-2 sm:p-2.5">
-        <div className="min-w-0">
-          <h3 className="truncate font-semibold">{scenario.name}</h3>
-          <p className="mt-1 line-clamp-2 min-h-10 text-sm text-muted-foreground">
-            {scenario.description || t`No description yet.`}
-          </p>
-        </div>
-        <div
-          className={
-            canStartPrivate
-              ? "mt-auto grid grid-cols-[1fr_auto] gap-1"
-              : "mt-auto grid"
-          }
-        >
-          <Button
-            onClick={(event) => {
-              event.stopPropagation();
-              onStart(scenario.id);
-            }}
-            disabled={disabled || loading}
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play />}
-            <Trans>New Tale</Trans>
-          </Button>
-          {canStartPrivate ? (
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={(event) => {
-                event.stopPropagation();
-                onStart(scenario.id, "private");
-              }}
-              disabled={disabled || loading}
-              aria-label={t`Start local-only tale`}
-            >
-              <VenetianMask className="h-4 w-4" />
-            </Button>
-          ) : null}
-        </div>
-      </CardContent>
-    </Card>
+    <ScenarioPreviewCard
+      variant="shelf"
+      title={scenario.name}
+      summary={scenario.description || t`No description yet.`}
+      imageSrc={
+        scenario.thumbnail
+          ? bytesToObjectUrl(scenario.thumbnail)
+          : placeholderImage
+      }
+      imageAlt={t`${scenario.name} scenario`}
+      ariaLabel={t`Open ${scenario.name}`}
+      onOpen={() => onView(scenario.id)}
+    />
   );
 }
 
@@ -485,13 +282,6 @@ export default function Home() {
     null,
   );
   const [resolvingConflict, setResolvingConflict] = useState(false);
-  const [canStartPrivate, setCanStartPrivate] = useState(false);
-  const [startingScenarioId, setStartingScenarioId] = useState<string | null>(
-    null,
-  );
-  const [startingPublicScenarioId, setStartingPublicScenarioId] = useState<
-    string | null
-  >(null);
   const nonPlayTabs: readonly GlobalSettingsSectionId[] = [
     "appearance",
     "ai-setup",
@@ -507,7 +297,6 @@ export default function Home() {
     limit: 6,
     sort: "popular",
   });
-  const catalogActions = useCatalogActions(catalog);
   const hasLoadedRef = useRef(false);
   const autoRegisterDeviceKeyRef = useRef("");
   const cloudBaseUrl = useSyncSettingsStore((state) => state.cloudBaseUrl);
@@ -692,22 +481,6 @@ export default function Home() {
     hostedProfile,
   ]);
 
-  useEffect(() => {
-    let disposed = false;
-    const refreshPrivateStart = () => {
-      canSyncNewTales().then((canSync) => {
-        if (!disposed) setCanStartPrivate(canSync);
-      });
-    };
-
-    refreshPrivateStart();
-    const removeListener = addSyncChangedListener(refreshPrivateStart);
-    return () => {
-      disposed = true;
-      removeListener();
-    };
-  }, [syncUiKind]);
-
   const openSettings = (tab: GlobalSettingsSectionId) => {
     setSettingsTab(tab);
     setSettingsOpen(true);
@@ -826,40 +599,6 @@ export default function Home() {
     },
     [],
   );
-
-  const handleStartScenario = async (
-    id: string,
-    syncPolicy?: NewTaleSyncPolicy,
-  ) => {
-    setStartingScenarioId(id);
-    try {
-      const taleId = await initTaleFromScenario(id, { syncPolicy });
-      await load(taleId);
-      navigate({ to: "/play" });
-    } catch (_error) {
-      toast.error(t`Failed to load scenarios.`);
-    } finally {
-      setStartingScenarioId(null);
-    }
-  };
-
-  const handleStartPublicScenario = async (
-    scenario: CatalogScenarioRecord,
-    syncPolicy?: NewTaleSyncPolicy,
-  ) => {
-    setStartingPublicScenarioId(scenario.id);
-    try {
-      const taleId = await catalogActions.start(scenario.id, syncPolicy);
-      await load(taleId);
-      navigate({ to: "/play" });
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t`Failed to start scenario`,
-      );
-    } finally {
-      setStartingPublicScenarioId(null);
-    }
-  };
 
   useEffect(() => {
     if (hasLoadedRef.current) return;
@@ -1129,13 +868,9 @@ export default function Home() {
                   key={scenario.id}
                   scenario={scenario}
                   baseUrl={catalog.baseUrl}
-                  loading={startingPublicScenarioId === scenario.id}
-                  disabled={hasIssues}
-                  canStartPrivate={canStartPrivate}
                   onView={(item) =>
                     navigate({ to: `/scenarios/catalog/${item.id}` })
                   }
-                  onStart={handleStartPublicScenario}
                 />
               ))}
             </Shelf>
@@ -1199,11 +934,7 @@ export default function Home() {
               <ScenarioCard
                 key={scenario.id}
                 scenario={scenario}
-                loading={startingScenarioId === scenario.id}
-                disabled={hasIssues}
-                canStartPrivate={canStartPrivate}
                 onView={(id) => navigate({ to: `/scenarios/${id}` })}
-                onStart={handleStartScenario}
               />
             ))}
           </Shelf>

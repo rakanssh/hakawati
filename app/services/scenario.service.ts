@@ -1,6 +1,7 @@
 import {
   upsertScenario,
   getScenario,
+  getScenarioHead,
   listScenarios,
   deleteScenario,
   getScenarios,
@@ -56,6 +57,12 @@ export async function getScenarioById(id: string): Promise<Scenario | null> {
   if (!scenario) return null;
 
   return scenario;
+}
+
+export async function getScenarioHeadById(
+  id: string,
+): Promise<ScenarioHead | null> {
+  return getScenarioHead(id);
 }
 
 export async function listAllScenarios(): Promise<

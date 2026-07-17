@@ -9,23 +9,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useNavigate } from "@tanstack/react-router";
 import {
   useScenariosList,
   useScenariosExport,
   useScenariosImport,
 } from "@/hooks/useScenarios";
-import { initTaleFromScenario } from "@/services/scenario.service";
-import { canSyncNewTales } from "@/services/new-tale-sync";
-import { addSyncChangedListener } from "@/services/sync-wakeup";
-import { useLoadTale } from "@/hooks/useGameSaves";
-import {
-  bytesToObjectUrl,
-  cn,
-  formatExactDateTime,
-  formatRelativeTime,
-} from "@/lib/utils";
+import { bytesToObjectUrl } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,21 +41,16 @@ import {
   Sparkles,
   SlidersHorizontalIcon,
   UploadCloudIcon,
-  VenetianMask,
 } from "lucide-react";
 import placeholderImage from "@/assets/scen-ph.png";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   GenerateScenarioDialog,
   PublishScenarioDialog,
+  ScenarioPreviewCard,
 } from "@/components/scenario";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -95,10 +80,6 @@ type ScenarioTab = "local" | "discover" | "published";
 
 const libraryGridClass =
   "grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))]";
-const cardActionButtonClass = "h-8";
-const scenarioCardBodyClass =
-  "flex h-[9.75rem] flex-col gap-1.5 px-2.5 pb-2.5 pt-2";
-
 function catalogAssetUrl(baseUrl: string, path: string | null | undefined) {
   if (!path) return placeholderImage;
   if (/^https?:\/\//i.test(path)) return path;
@@ -168,8 +149,6 @@ function CatalogScenarioCard({
   scenario,
   actions,
   onView,
-  onStart,
-  onStartPrivate,
   onReport,
   onBlockPublisher,
   onUnpublish,
@@ -179,185 +158,93 @@ function CatalogScenarioCard({
   scenario: CatalogCardScenario;
   actions: "discover" | "published";
   onView?: (scenario: CatalogCardScenario) => void;
-  onStart?: (scenario: CatalogCardScenario) => void;
-  onStartPrivate?: (scenario: CatalogCardScenario) => void;
   onReport?: (scenario: CatalogCardScenario) => void;
   onBlockPublisher?: (scenario: CatalogCardScenario) => void;
   onUnpublish?: (scenario: CatalogCardScenario) => void;
   onThumbnail?: (scenario: CatalogCardScenario, file: File) => void;
 }) {
-  const catalogDateMs = Date.parse(scenario.publishedAt ?? scenario.updatedAt);
-  const dateLabel = formatRelativeTime(
-    Number.isNaN(catalogDateMs) ? 0 : catalogDateMs,
-  );
-  const startsLabel =
-    scenario.startCount === 1 ? "1 start" : `${scenario.startCount} starts`;
   const isModerationHidden = hiddenByModeration(scenario);
   const isAwaitingModeration = awaitingModeration(scenario);
-  const hasModerationBadge = isModerationHidden || isAwaitingModeration;
 
   return (
-    <Card
-      role="button"
-      tabIndex={0}
-      onClick={() => onView?.(scenario)}
-      onKeyDown={(event) => {
-        if (event.currentTarget !== event.target) return;
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onView?.(scenario);
-        }
-      }}
-      className="flex cursor-pointer flex-col gap-0 overflow-hidden border-accent/50 p-0 transition-colors hover:border-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      aria-label={`View ${scenario.title}`}
-    >
-      <CardHeader className="p-0 m-0">
-        <div className="relative">
-          <img
-            src={catalogAssetUrl(baseUrl, scenario.thumbnail?.downloadUrl)}
-            alt={`${scenario.title} thumbnail`}
-            className="aspect-[2/1] w-full object-cover"
-          />
-          <div
-            className="absolute right-1.5 top-0.5 z-10"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  className={imageMenuButtonClass}
-                  aria-label="Scenario actions"
-                >
-                  <MoreHorizontalIcon className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" side="bottom" sideOffset={4}>
-                <DropdownMenuItem onClick={() => onView?.(scenario)}>
-                  <Trans>View</Trans>
-                </DropdownMenuItem>
-                {actions === "discover" ? (
-                  <DropdownMenuItem onClick={() => onReport?.(scenario)}>
-                    <FlagIcon className="h-4 w-4" />
-                    <Trans>Report</Trans>
-                  </DropdownMenuItem>
-                ) : null}
-                {actions === "discover" && onBlockPublisher ? (
-                  <DropdownMenuItem onClick={() => onBlockPublisher(scenario)}>
-                    <BanIcon className="h-4 w-4" />
-                    <Trans>Block publisher</Trans>
-                  </DropdownMenuItem>
-                ) : null}
-                {actions === "published" && onThumbnail ? (
-                  <DropdownMenuItem
-                    asChild
-                    onSelect={(e) => e.preventDefault()}
-                  >
-                    <label>
-                      <Trans>Thumbnail</Trans>
-                      <input
-                        className="hidden"
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp"
-                        onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          if (file) onThumbnail(scenario, file);
-                          event.currentTarget.value = "";
-                        }}
-                      />
-                    </label>
-                  </DropdownMenuItem>
-                ) : null}
-                {actions === "published" ? (
-                  <DropdownMenuItem onClick={() => onUnpublish?.(scenario)}>
-                    <Trans>Unpublish</Trans>
-                  </DropdownMenuItem>
-                ) : null}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge className={`absolute left-1 top-1 ${imageBadgeClass}`}>
-                {dateLabel} - {startsLabel}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              {formatExactDateTime(
-                Number.isNaN(catalogDateMs) ? 0 : catalogDateMs,
-              )}
-            </TooltipContent>
-          </Tooltip>
-          <Badge
-            className={cn(
-              "absolute bottom-1 left-1",
-              hasModerationBadge ? "max-w-[55%]" : "max-w-[calc(100%-0.5rem)]",
-              imageBadgeClass,
-            )}
-          >
+    <ScenarioPreviewCard
+      title={scenario.title}
+      summary={scenario.summary}
+      imageSrc={catalogAssetUrl(baseUrl, scenario.thumbnail?.downloadUrl)}
+      imageAlt={`${scenario.title} thumbnail`}
+      ariaLabel={`View ${scenario.title}`}
+      imageBadges={
+        <>
+          <Badge className={`${imageBadgeClass} max-w-full`}>
             <span className="truncate">{scenario.author.displayName}</span>
           </Badge>
           {isModerationHidden ? (
-            <Badge className={`absolute bottom-1 right-1 ${imageBadgeClass}`}>
-              <Trans>Hidden by moderation</Trans>
+            <Badge className={imageBadgeClass}>
+              <Trans>Hidden</Trans>
             </Badge>
           ) : isAwaitingModeration ? (
-            <Badge className={`absolute bottom-1 right-1 ${imageBadgeClass}`}>
-              <Trans>Awaiting moderation</Trans>
+            <Badge className={imageBadgeClass}>
+              <Trans>In review</Trans>
             </Badge>
           ) : null}
-        </div>
-      </CardHeader>
-      <CardContent className={scenarioCardBodyClass}>
-        <span className="line-clamp-1 min-w-0 text-sm font-semibold">
-          {scenario.title}
-        </span>
-        <p
-          className={cn(
-            "text-sm leading-snug text-muted-foreground",
-            actions === "published"
-              ? "line-clamp-3 min-h-[3.6rem]"
-              : "line-clamp-2 min-h-10",
-          )}
-        >
-          {scenario.summary}
-        </p>
-        <TagPreview tags={scenario.tags} />
-        {actions === "discover" ? (
-          <div
-            className={cn(
-              "mt-auto grid",
-              onStartPrivate && "grid-cols-[1fr_auto] gap-1",
-            )}
-          >
+        </>
+      }
+      menu={
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button
-              size="sm"
-              className={cardActionButtonClass}
-              onClick={(event) => {
-                event.stopPropagation();
-                onStart?.(scenario);
-              }}
+              variant="secondary"
+              size="icon"
+              className={imageMenuButtonClass}
+              aria-label="Scenario actions"
             >
-              <Trans>Start Tale</Trans>
+              <MoreHorizontalIcon className="h-4 w-4" />
             </Button>
-            {onStartPrivate ? (
-              <Button
-                variant="outline"
-                size="icon-sm"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onStartPrivate(scenario);
-                }}
-                aria-label="Start local-only tale"
-              >
-                <VenetianMask className="h-4 w-4" />
-              </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" side="bottom" sideOffset={4}>
+            <DropdownMenuItem onClick={() => onView?.(scenario)}>
+              <Trans>View</Trans>
+            </DropdownMenuItem>
+            {actions === "discover" ? (
+              <DropdownMenuItem onClick={() => onReport?.(scenario)}>
+                <FlagIcon className="h-4 w-4" />
+                <Trans>Report</Trans>
+              </DropdownMenuItem>
             ) : null}
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
+            {actions === "discover" && onBlockPublisher ? (
+              <DropdownMenuItem onClick={() => onBlockPublisher(scenario)}>
+                <BanIcon className="h-4 w-4" />
+                <Trans>Block publisher</Trans>
+              </DropdownMenuItem>
+            ) : null}
+            {actions === "published" && onThumbnail ? (
+              <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
+                <label>
+                  <Trans>Thumbnail</Trans>
+                  <input
+                    className="hidden"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) onThumbnail(scenario, file);
+                      event.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+              </DropdownMenuItem>
+            ) : null}
+            {actions === "published" ? (
+              <DropdownMenuItem onClick={() => onUnpublish?.(scenario)}>
+                <Trans>Unpublish</Trans>
+              </DropdownMenuItem>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      }
+      footer={<TagPreview tags={scenario.tags} limit={2} />}
+      onOpen={() => onView?.(scenario)}
+    />
   );
 }
 
@@ -366,7 +253,6 @@ export default function ScenariosHome() {
   const { items, loading, error, page, limit, total, setPage, remove } =
     useScenariosList();
   const navigate = useNavigate();
-  const { load: loadTale } = useLoadTale();
   const { exportById } = useScenariosExport();
   const { importFromClipboard } = useScenariosImport();
   const catalog = useCatalogClient();
@@ -380,7 +266,6 @@ export default function ScenariosHome() {
     [publishLinks.links],
   );
   const [generateOpen, setGenerateOpen] = useState(false);
-  const [canStartPrivate, setCanStartPrivate] = useState(false);
   const [activeTab, setActiveTab] = useState<ScenarioTab>(
     scenarioTabFromSearch,
   );
@@ -427,20 +312,6 @@ export default function ScenariosHome() {
       publishLinks.refresh(),
       discover.refresh(),
     ]);
-  };
-  const startPublicScenario = async (
-    scenario: CatalogScenarioRecord,
-    syncPolicy?: "default" | "private",
-  ) => {
-    try {
-      const taleId = await catalogActions.start(scenario.id, syncPolicy);
-      await loadTale(taleId);
-      navigate({ to: "/play" });
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t`Failed to start scenario`,
-      );
-    }
   };
   const viewPublicScenario = (scenario: CatalogCardScenario, owned = false) => {
     navigate({
@@ -509,22 +380,6 @@ export default function ScenariosHome() {
       );
     }
   };
-
-  useEffect(() => {
-    let disposed = false;
-    const refreshPrivateStart = () => {
-      canSyncNewTales().then((canSync) => {
-        if (!disposed) setCanStartPrivate(canSync);
-      });
-    };
-
-    refreshPrivateStart();
-    const removeListener = addSyncChangedListener(refreshPrivateStart);
-    return () => {
-      disposed = true;
-      removeListener();
-    };
-  }, []);
 
   useEffect(() => {
     const catalogAvailabilityPending = Boolean(
@@ -693,158 +548,90 @@ export default function ScenariosHome() {
             </div>
           )}
           <div className={libraryGridClass}>
-            {items.map(({ id, name, description, thumbnail, updatedAt }) => {
+            {items.map(({ id, name, description, thumbnail }) => {
               const linked = linkByLocalId.get(id);
               return (
-                <Card
+                <ScenarioPreviewCard
                   key={id}
-                  className="flex flex-col gap-0 overflow-hidden border-accent/50 p-0 transition-colors hover:border-accent"
-                >
-                  <CardHeader className="p-0 m-0">
-                    <div className="relative">
-                      {thumbnail ? (
-                        <img
-                          src={bytesToObjectUrl(
-                            thumbnail as unknown as Uint8Array,
-                          )}
-                          alt={t`${name} thumbnail`}
-                          className="aspect-[2/1] w-full object-cover"
-                        />
-                      ) : (
-                        <img
-                          src={placeholderImage}
-                          alt={t`${name} thumbnail`}
-                          className="aspect-[2/1] w-full object-cover"
-                        />
-                      )}
-                      <div className="absolute right-1.5 top-0.5 z-10">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="secondary"
-                              size="icon"
-                              className={imageMenuButtonClass}
-                              aria-label={t`Scenario actions`}
-                            >
-                              <MoreHorizontalIcon className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            align="end"
-                            side="bottom"
-                            sideOffset={4}
-                          >
-                            <DropdownMenuItem
-                              onSelect={(e) => e.preventDefault()}
-                              onClick={() =>
-                                navigate({ to: `/scenarios/${id}` })
-                              }
-                              className="text-xs"
-                            >
-                              <PencilIcon className="w-4 h-4 me-2" />{" "}
-                              <Trans>Edit</Trans>
-                            </DropdownMenuItem>
-                            {catalog.enabled && catalog.signedIn ? (
-                              <DropdownMenuItem
-                                onSelect={(e) => e.preventDefault()}
-                                onClick={() => void openPublish(id)}
-                                className="text-xs"
-                              >
-                                <UploadCloudIcon className="w-4 h-4 me-2" />{" "}
-                                {linked ? (
-                                  <Trans>Publish update</Trans>
-                                ) : (
-                                  <Trans>Publish</Trans>
-                                )}
-                              </DropdownMenuItem>
-                            ) : null}
-                            <DropdownMenuItem
-                              onSelect={(e) => e.preventDefault()}
-                              onClick={() => exportById(id)}
-                              className="text-xs"
-                            >
-                              <ClipboardIcon className="w-4 h-4 me-2" />{" "}
-                              <Trans>Export JSON</Trans>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onSelect={(e) => e.preventDefault()}
-                              onClick={() => setPendingDelete({ id, name })}
-                              variant="destructive"
-                              className="text-xs"
-                            >
-                              <TrashIcon className="w-4 h-4 me-2" />{" "}
-                              <Trans>Delete</Trans>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      {linked ? (
-                        <Badge
-                          className={`absolute bottom-1 left-1 ${imageBadgeClass}`}
-                        >
-                          <Trans>Published</Trans>
-                        </Badge>
-                      ) : null}
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge
-                            className={`absolute left-1 top-1 ${imageBadgeClass}`}
-                          >
-                            {formatRelativeTime(updatedAt)}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent side="top">
-                          <Trans>
-                            Last updated: {formatExactDateTime(updatedAt)}
-                          </Trans>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                  </CardHeader>
-                  <CardContent className={scenarioCardBodyClass}>
-                    <span className="line-clamp-1 min-w-0 text-sm font-semibold">
-                      {name}
-                    </span>
-                    <p className="line-clamp-3 min-h-[3.6rem] rounded-xs text-sm leading-snug text-muted-foreground">
-                      {description}
-                    </p>
-                    <div
-                      className={
-                        canStartPrivate
-                          ? "mt-auto grid grid-cols-[1fr_auto] gap-1"
-                          : "mt-auto grid"
-                      }
-                    >
-                      <Button
-                        size="sm"
-                        className={cardActionButtonClass}
-                        onClick={async () => {
-                          const taleId = await initTaleFromScenario(id);
-                          await loadTale(taleId);
-                          navigate({ to: "/play" });
-                        }}
-                      >
-                        <Trans>New Tale</Trans>
-                      </Button>
-                      {canStartPrivate ? (
+                  title={name}
+                  summary={description || t`No description yet.`}
+                  imageSrc={
+                    thumbnail
+                      ? bytesToObjectUrl(thumbnail as unknown as Uint8Array)
+                      : placeholderImage
+                  }
+                  imageAlt={t`${name} thumbnail`}
+                  ariaLabel={t`View ${name}`}
+                  imageBadges={
+                    linked ? (
+                      <Badge className={imageBadgeClass}>
+                        <Trans>Published</Trans>
+                      </Badge>
+                    ) : null
+                  }
+                  menu={
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
                         <Button
-                          variant="outline"
-                          size="icon-sm"
-                          onClick={async () => {
-                            const taleId = await initTaleFromScenario(id, {
-                              syncPolicy: "private",
-                            });
-                            await loadTale(taleId);
-                            navigate({ to: "/play" });
-                          }}
-                          aria-label={t`Start local-only tale`}
+                          variant="secondary"
+                          size="icon"
+                          className={imageMenuButtonClass}
+                          aria-label={t`Scenario actions`}
                         >
-                          <VenetianMask className="h-4 w-4" />
+                          <MoreHorizontalIcon className="h-4 w-4" />
                         </Button>
-                      ) : null}
-                    </div>
-                  </CardContent>
-                </Card>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        side="bottom"
+                        sideOffset={4}
+                      >
+                        <DropdownMenuItem
+                          onSelect={(e) => e.preventDefault()}
+                          onClick={() =>
+                            navigate({ to: `/scenarios/${id}/edit` })
+                          }
+                          className="text-xs"
+                        >
+                          <PencilIcon className="w-4 h-4 me-2" />{" "}
+                          <Trans>Edit</Trans>
+                        </DropdownMenuItem>
+                        {catalog.enabled && catalog.signedIn ? (
+                          <DropdownMenuItem
+                            onSelect={(e) => e.preventDefault()}
+                            onClick={() => void openPublish(id)}
+                            className="text-xs"
+                          >
+                            <UploadCloudIcon className="w-4 h-4 me-2" />{" "}
+                            {linked ? (
+                              <Trans>Publish update</Trans>
+                            ) : (
+                              <Trans>Publish</Trans>
+                            )}
+                          </DropdownMenuItem>
+                        ) : null}
+                        <DropdownMenuItem
+                          onSelect={(e) => e.preventDefault()}
+                          onClick={() => exportById(id)}
+                          className="text-xs"
+                        >
+                          <ClipboardIcon className="w-4 h-4 me-2" />{" "}
+                          <Trans>Export JSON</Trans>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onSelect={(e) => e.preventDefault()}
+                          onClick={() => setPendingDelete({ id, name })}
+                          variant="destructive"
+                          className="text-xs"
+                        >
+                          <TrashIcon className="w-4 h-4 me-2" />{" "}
+                          <Trans>Delete</Trans>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  }
+                  onOpen={() => navigate({ to: `/scenarios/${id}` })}
+                />
               );
             })}
           </div>
@@ -887,12 +674,6 @@ export default function ScenariosHome() {
                   scenario={scenario}
                   actions="discover"
                   onView={viewPublicScenario}
-                  onStart={(item) => void startPublicScenario(item)}
-                  onStartPrivate={
-                    canStartPrivate
-                      ? (item) => void startPublicScenario(item, "private")
-                      : undefined
-                  }
                   onReport={reportPublicScenario}
                   onBlockPublisher={
                     catalog.signedIn ? blockPublicScenarioPublisher : undefined

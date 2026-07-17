@@ -2,23 +2,25 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { ArrowLeftIcon, PlayIcon, VenetianMask } from "lucide-react";
+import { PlayIcon, VenetianMask } from "lucide-react";
 
 import placeholderImage from "@/assets/scen-ph.png";
+import {
+  PublishScenarioDialog,
+  ScenarioDetailsLayout,
+} from "@/components/scenario";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { PublishScenarioDialog } from "@/components/scenario";
 import {
   useCatalogActions,
   useCatalogClient,
   useScenarioPublishLinks,
 } from "@/hooks/useCatalogScenarios";
 import { useLoadTale } from "@/hooks/useGameSaves";
-import { addSyncChangedListener } from "@/services/sync-wakeup";
+import { formatExactDateTime } from "@/lib/utils";
 import { canSyncNewTales } from "@/services/new-tale-sync";
 import { getScenarioById } from "@/services/scenario.service";
-import { formatExactDateTime, formatRelativeTime } from "@/lib/utils";
+import { addSyncChangedListener } from "@/services/sync-wakeup";
 import type { Scenario } from "@/types/context.type";
 import type {
   CatalogOwnedScenarioDetail,
@@ -100,7 +102,7 @@ export default function ScenarioCatalogDetails() {
   const publishedLabel = scenario?.publishedAt
     ? formatDateOnly(scenario.publishedAt)
     : formatDateOnly(validDateMs);
-  const updatedLabel = scenario ? formatRelativeTime(scenario.updatedAt) : "";
+  const updatedLabel = scenario ? formatDateOnly(scenario.updatedAt) : "";
   const startsLabel =
     scenario?.startCount === 1
       ? t`1 start`
@@ -116,8 +118,8 @@ export default function ScenarioCatalogDetails() {
       .then((detail) => {
         if (!cancelled) setScenario(detail);
       })
-      .catch((err) => {
-        if (!cancelled) setError(err);
+      .catch((cause) => {
+        if (!cancelled) setError(cause);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -159,9 +161,9 @@ export default function ScenarioCatalogDetails() {
       const taleId = await start(scenario.id, syncPolicy);
       await loadTale(taleId);
       navigate({ to: "/play" });
-    } catch (err) {
+    } catch (cause) {
       toast.error(
-        err instanceof Error ? err.message : t`Failed to start scenario`,
+        cause instanceof Error ? cause.message : t`Failed to start scenario`,
       );
     }
   };
@@ -176,154 +178,136 @@ export default function ScenarioCatalogDetails() {
     setPendingPublish(localScenario);
   };
 
-  return (
-    <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5 px-3 py-4 sm:px-4 lg:px-6">
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="icon" onClick={goBack}>
-          <ArrowLeftIcon className="h-4 w-4 rtl:rotate-180" />
-        </Button>
-        <div className="text-sm text-muted-foreground">
-          <span className="text-primary">{sourceLabel}</span>
-          <span className="px-2">/</span>
-          <span>
-            <Trans>Scenario</Trans>
-          </span>
-        </div>
+  const notice = isModerationHidden ? (
+    <div className="rounded-xs border border-border bg-muted/20 p-3 text-sm">
+      <div className="font-medium">
+        <Trans>Hidden by moderation</Trans>
       </div>
-      <Separator />
+      {moderationReason ? (
+        <p className="mt-1 text-muted-foreground">{moderationReason}</p>
+      ) : null}
+    </div>
+  ) : isAwaitingModeration ? (
+    <div className="rounded-xs border border-border bg-muted/20 p-3 text-sm">
+      <div className="font-medium">
+        <Trans>Awaiting moderation</Trans>
+      </div>
+      <p className="mt-1 text-muted-foreground">
+        <Trans>This version stays private until it is approved.</Trans>
+      </p>
+      {moderationReason ? (
+        <p className="mt-1 text-muted-foreground">{moderationReason}</p>
+      ) : null}
+    </div>
+  ) : null;
+
+  return (
+    <>
       {loading ? (
-        <div className="text-sm text-muted-foreground">
+        <div className="mx-auto w-full max-w-5xl px-3 py-6 text-base text-muted-foreground sm:px-5 lg:px-6">
           <Trans>Loading...</Trans>
         </div>
       ) : null}
       {error ? (
-        <div className="text-sm text-destructive">
+        <div className="mx-auto w-full max-w-5xl px-3 py-6 text-base text-destructive sm:px-5 lg:px-6">
           <Trans>Failed to load scenario.</Trans>
         </div>
       ) : null}
       {scenario ? (
-        <>
-          <section className="grid gap-6 lg:grid-cols-[minmax(18rem,30rem)_minmax(0,1fr)] lg:items-center">
-            <div className="order-2 lg:order-1">
-              <div className="relative overflow-hidden rounded-xs border">
-                <img
-                  src={catalogAssetUrl(
-                    catalog.baseUrl,
-                    scenario.thumbnail?.downloadUrl,
-                  )}
-                  alt={t`${scenario.title} thumbnail`}
-                  className="aspect-[4/3] w-full object-cover"
-                />
-              </div>
-            </div>
-            <div className="order-1 grid gap-4 lg:order-2">
-              <div className="grid gap-1">
-                <h1 className="text-3xl font-semibold leading-tight sm:text-4xl">
-                  {scenario.title}
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  <Trans>by</Trans>{" "}
-                  <span className="text-primary">
-                    {scenario.author.displayName}
-                  </span>
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                <span>
-                  <Trans>Published</Trans> {publishedLabel}
-                </span>
-                <span aria-hidden="true">-</span>
-                <span>{startsLabel}</span>
-                <span aria-hidden="true">-</span>
-                <span>
-                  <Trans>Updated</Trans> {updatedLabel}
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {visibleTags.map((tag) => (
-                  <Badge key={tag} variant="outline">
-                    {tag}
-                  </Badge>
-                ))}
-                {hiddenTagCount ? (
-                  <Badge variant="outline">+{hiddenTagCount}</Badge>
+        <ScenarioDetailsLayout
+          breadcrumb={
+            <>
+              <span className="text-primary">{sourceLabel}</span>
+              <span className="px-2">/</span>
+              <span>
+                <Trans>Scenario</Trans>
+              </span>
+            </>
+          }
+          title={scenario.title}
+          imageSrc={catalogAssetUrl(
+            catalog.baseUrl,
+            scenario.thumbnail?.downloadUrl,
+          )}
+          imageAlt={t`${scenario.title} thumbnail`}
+          byline={
+            <>
+              <Trans>by</Trans>{" "}
+              <span className="text-primary">
+                {scenario.author.displayName}
+              </span>
+            </>
+          }
+          meta={
+            <>
+              <span>
+                <Trans>Published</Trans> {publishedLabel}
+              </span>
+              <span aria-hidden="true">·</span>
+              <span>{startsLabel}</span>
+              <span aria-hidden="true">·</span>
+              <span>
+                <Trans>Updated</Trans> {updatedLabel}
+              </span>
+            </>
+          }
+          tags={
+            <>
+              {visibleTags.map((tag) => (
+                <Badge key={tag} variant="outline">
+                  {tag}
+                </Badge>
+              ))}
+              {hiddenTagCount ? (
+                <Badge variant="outline">+{hiddenTagCount}</Badge>
+              ) : null}
+            </>
+          }
+          notice={notice}
+          actions={
+            isModerationUnavailable ? (
+              localLink ? (
+                <div className="grid gap-2 sm:flex sm:flex-wrap">
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      navigate({
+                        to: `/scenarios/${localLink.localScenarioId}/edit`,
+                      })
+                    }
+                  >
+                    <Trans>Edit local scenario</Trans>
+                  </Button>
+                  <Button onClick={() => void openPublishUpdate()}>
+                    <Trans>Publish update</Trans>
+                  </Button>
+                </div>
+              ) : (
+                <></>
+              )
+            ) : (
+              <div className="grid gap-2 sm:flex sm:flex-wrap">
+                <Button onClick={() => void startScenario()}>
+                  <PlayIcon className="size-4" />
+                  <Trans>Start Tale</Trans>
+                </Button>
+                {canStartPrivate ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => void startScenario("private")}
+                  >
+                    <VenetianMask className="size-4" />
+                    <Trans>Start Local</Trans>
+                  </Button>
                 ) : null}
               </div>
-              {isModerationHidden ? (
-                <div className="rounded-xs border border-border bg-muted/20 p-3 text-sm">
-                  <div className="font-medium">
-                    <Trans>Hidden by moderation</Trans>
-                  </div>
-                  {moderationReason ? (
-                    <p className="mt-1 text-muted-foreground">
-                      {moderationReason}
-                    </p>
-                  ) : null}
-                </div>
-              ) : isAwaitingModeration ? (
-                <div className="rounded-xs border border-border bg-muted/20 p-3 text-sm">
-                  <div className="font-medium">
-                    <Trans>Awaiting moderation</Trans>
-                  </div>
-                  <p className="mt-1 text-muted-foreground">
-                    <Trans>
-                      This version stays private until it is approved.
-                    </Trans>
-                  </p>
-                  {moderationReason ? (
-                    <p className="mt-1 text-muted-foreground">
-                      {moderationReason}
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
-              {isModerationUnavailable ? (
-                localLink ? (
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        navigate({
-                          to: `/scenarios/${localLink.localScenarioId}`,
-                        })
-                      }
-                    >
-                      <Trans>Edit local scenario</Trans>
-                    </Button>
-                    <Button onClick={() => void openPublishUpdate()}>
-                      <Trans>Publish update</Trans>
-                    </Button>
-                  </div>
-                ) : null
-              ) : (
-                <div className="grid gap-2 sm:grid-cols-[minmax(0,16rem)_minmax(0,12rem)]">
-                  <Button onClick={() => void startScenario()}>
-                    <PlayIcon className="h-4 w-4" />
-                    <Trans>Start Tale</Trans>
-                  </Button>
-                  {canStartPrivate ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => void startScenario("private")}
-                    >
-                      <VenetianMask className="h-4 w-4" />
-                      <Trans>Start Local</Trans>
-                    </Button>
-                  ) : null}
-                </div>
-              )}
-            </div>
-          </section>
-          <Separator />
-          <section className="grid gap-3">
-            <h2 className="text-xl font-semibold">
-              <Trans>Summary</Trans>
-            </h2>
-            <p className="max-w-[70ch] whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-              {scenario.summary}
-            </p>
-          </section>
-        </>
+            )
+          }
+          summaryHeading={<Trans>Summary</Trans>}
+          summary={scenario.summary}
+          backLabel={t`Back to scenarios`}
+          onBack={goBack}
+        />
       ) : null}
       <PublishScenarioDialog
         open={Boolean(pendingPublish)}
@@ -350,16 +334,16 @@ export default function ScenarioCatalogDetails() {
                 ? t`Scenario submitted for moderation`
                 : t`Scenario update published`,
             );
-          } catch (err) {
+          } catch (cause) {
             toast.error(
-              err instanceof Error
-                ? err.message
+              cause instanceof Error
+                ? cause.message
                 : t`Failed to publish scenario`,
             );
-            throw err;
+            throw cause;
           }
         }}
       />
-    </div>
+    </>
   );
 }
