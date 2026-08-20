@@ -79,11 +79,6 @@ const serviceMocks = vi.hoisted(() => ({
   undoTaleLogToEntryCount: vi.fn(),
 }));
 
-const syncRepoMocks = vi.hoisted(() => ({
-  listSyncStatesForLocalTale: vi.fn(),
-  setTaleSyncStatus: vi.fn(),
-}));
-
 const syncWakeMocks = vi.hoisted(() => ({
   wakeSyncBackground: vi.fn(),
 }));
@@ -103,7 +98,6 @@ vi.mock("@/store/useLastPlayedStore", () => ({
 
 vi.mock("@/services/tale.service", () => serviceMocks);
 
-vi.mock("@/repositories/sync.repository", () => syncRepoMocks);
 vi.mock("@/services/sync-wakeup", () => syncWakeMocks);
 
 import { useLoadTale, usePersistTale } from "./useGameSaves";
@@ -307,30 +301,8 @@ describe("usePersistTale", () => {
     });
   });
 
-  it("marks linked tales for push after local turn save succeeds", async () => {
+  it("wakes background sync after the repository marks and saves a turn", async () => {
     serviceMocks.commitTaleTurn.mockResolvedValueOnce(undefined);
-    syncRepoMocks.listSyncStatesForLocalTale.mockResolvedValueOnce([
-      {
-        profileId: "hosted",
-        localTaleId: "tale-1",
-        remoteTaleId: "remote-1",
-        contentRev: "1",
-        metadataRev: "1",
-        lastSyncedAt: 1,
-        pendingStatus: "idle",
-        lastErrorCode: null,
-      },
-      {
-        profileId: "personal",
-        localTaleId: "tale-1",
-        remoteTaleId: "remote-2",
-        contentRev: "1",
-        metadataRev: "1",
-        lastSyncedAt: 1,
-        pendingStatus: "conflict",
-        lastErrorCode: "content_conflict",
-      },
-    ]);
     const harness = renderPersistHarness();
 
     await act(async () => {
@@ -342,13 +314,6 @@ describe("usePersistTale", () => {
     });
 
     expect(serviceMocks.commitTaleTurn).toHaveBeenCalledOnce();
-    expect(syncRepoMocks.setTaleSyncStatus).toHaveBeenCalledOnce();
-    expect(syncRepoMocks.setTaleSyncStatus).toHaveBeenCalledWith({
-      profileId: "hosted",
-      localTaleId: "tale-1",
-      pendingStatus: "push",
-      lastErrorCode: null,
-    });
     expect(syncWakeMocks.wakeSyncBackground).toHaveBeenCalledOnce();
 
     harness.cleanup();

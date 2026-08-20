@@ -9,25 +9,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "@tanstack/react-router";
 import { useTaleLibrary } from "@/hooks/useTaleLibrary";
 import { useLoadTale } from "@/hooks/useGameSaves";
 import { TaleConflictDialog } from "@/components/tales/tale-conflict-dialog";
-import {
-  bytesToObjectUrl,
-  formatExactDateTime,
-  formatRelativeTime,
-} from "@/lib/utils";
+import { bytesToObjectUrl } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { ScenarioPreviewCard } from "@/components/scenario";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,13 +25,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   ArrowLeftIcon,
-  Cloud,
   CloudOff,
   CloudUpload,
   FilePlus2Icon,
+  MoreHorizontalIcon,
   PencilIcon,
   TrashIcon,
-  VenetianMask,
 } from "lucide-react";
 import { toast } from "sonner";
 import placeholderImage from "@/assets/scen-ph.png";
@@ -50,6 +38,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { LibraryTaleItem } from "@/lib/tale-library";
 import type { TaleConflictChoice } from "@/hooks/useTaleLibrary";
+import { imageBadgeClass, imageMenuButtonClass } from "@/lib/card-badges";
 
 type PendingTaleDelete = {
   item: LibraryTaleItem;
@@ -61,6 +50,8 @@ type PendingCloudRemove = {
   name: string;
 };
 
+const libraryGridClass =
+  "grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))]";
 export default function TalesHome() {
   const navigate = useNavigate();
   const { t } = useLingui();
@@ -100,8 +91,13 @@ export default function TalesHome() {
 
   const confirmDelete = async () => {
     if (!pendingDelete) return;
-    await deleteLibraryTale(pendingDelete.item);
-    setPendingDelete(null);
+    try {
+      await deleteLibraryTale(pendingDelete.item);
+      toast.success(t`Tale deleted`);
+      setPendingDelete(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t`Delete failed`);
+    }
   };
 
   const confirmCloudRemove = async () => {
@@ -179,32 +175,33 @@ export default function TalesHome() {
     : items;
 
   return (
-    <div className="mx-auto w-full max-w-screen-2xl py-5 flex flex-col gap-4 px-3">
-      <div className="flex gap-4">
-        {/* back button */}
+    <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5 px-3 py-4 sm:px-4 lg:px-6">
+      <div className="flex items-center gap-4">
         <Button
-          variant="default"
+          variant="outline"
+          size="icon"
           onClick={() => navigate({ to: "/" })}
-          className="mt-1.5"
         >
           <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
         </Button>
-        <div className="flex flex-col">
-          <Label className="text-xl">
+        <div className="text-sm text-muted-foreground">
+          <span className="text-primary">
+            <Trans>Home</Trans>
+          </span>
+          <span className="px-2">/</span>
+          <span>
             <Trans>Tales</Trans>
-          </Label>
-          <span className="text-sm text-muted-foreground">
-            <Trans>Browse and load saved tales</Trans>
           </span>
         </div>
       </div>
-      <Separator />
-      <Input
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        placeholder={t`Search tales`}
-        className="max-w-md"
-      />
+      <div className="border-y py-2">
+        <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder={t`Search tales`}
+          className="max-w-md"
+        />
+      </div>
       {loading && (
         <div className="text-sm text-muted-foreground">
           <Trans>Loading...</Trans>
@@ -220,7 +217,7 @@ export default function TalesHome() {
           <Trans>Cloud tales are unavailable.</Trans>
         </div>
       )}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className={libraryGridClass}>
         {visibleItems.map((item) => {
           const isRemote = item.source === "remote";
           const id = isRemote ? item.remoteTale.id : item.localTale.id;
@@ -234,12 +231,6 @@ export default function TalesHome() {
               "");
           const thumbnail = isRemote ? null : item.localTale.thumbnail;
           const scenarioHead = isRemote ? null : item.localTale.scenarioHead;
-          const updatedAt = isRemote
-            ? Date.parse(item.remoteTale.updatedAt) || 0
-            : item.localTale.updatedAt;
-          const entryCount = isRemote
-            ? (item.remoteTale.entryCount ?? item.remoteTale.turnCount)
-            : item.localTale.logCount;
           const hasConflict =
             syncActive &&
             item.source === "local" &&
@@ -257,148 +248,102 @@ export default function TalesHome() {
               ? t`Cloud`
               : t`Local`;
           return (
-            <Card
+            <ScenarioPreviewCard
               key={isRemote ? `remote-${id}` : `local-${id}`}
-              className="flex flex-col gap-1 pt-0 pb-2 border-accent/50"
-            >
-              <CardHeader className="p-0 m-0">
-                <div className="relative">
-                  {thumbnail ? (
-                    <img
-                      src={bytesToObjectUrl(thumbnail as unknown as Uint8Array)}
-                      alt={t`${name} thumbnail`}
-                      className="h-48 w-full object-cover"
-                    />
-                  ) : (
-                    <img
-                      src={placeholderImage}
-                      alt={t`${name} thumbnail`}
-                      className="h-48 w-full object-cover"
-                    />
-                  )}
-                  <div className="absolute right-1.5 top-0.5 z-10">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="secondary"
-                          size="icon"
-                          className="h-6 w-6 rounded-full bg-accent/50 pb-1.5"
-                          aria-label={t`Tale actions`}
-                        >
-                          ...
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        side="bottom"
-                        sideOffset={4}
-                      >
-                        {!isRemote && scenarioHead?.id && (
-                          <DropdownMenuItem
-                            onSelect={(e) => e.preventDefault()}
-                            onClick={() =>
-                              navigate({
-                                to: `/scenarios/${scenarioHead?.id}`,
-                              })
-                            }
-                            className="text-xs"
-                          >
-                            <PencilIcon className="w-4 h-4 me-2" />{" "}
-                            <Trans>Scenario</Trans>
-                          </DropdownMenuItem>
-                        )}
-                        {!isRemote && !scenarioHead?.id && (
-                          <DropdownMenuItem
-                            onSelect={(e) => e.preventDefault()}
-                            onClick={() => handleSaveAsScenario(id)}
-                            className="text-xs"
-                          >
-                            <FilePlus2Icon className="w-4 h-4 me-2" />{" "}
-                            <Trans>Save as Scenario</Trans>
-                          </DropdownMenuItem>
-                        )}
-                        {syncActive && isSynced ? (
-                          <DropdownMenuItem
-                            onSelect={(e) => e.preventDefault()}
-                            onClick={() =>
-                              setPendingCloudRemove({ item, name })
-                            }
-                            className="text-xs"
-                          >
-                            <CloudOff className="w-4 h-4 me-2" />{" "}
-                            <Trans>Remove from cloud</Trans>
-                          </DropdownMenuItem>
-                        ) : null}
-                        {syncActive &&
-                        !isRemote &&
-                        !item.sync &&
-                        !syncStatusUnknown ? (
-                          <DropdownMenuItem
-                            onSelect={(e) => e.preventDefault()}
-                            onClick={() => void handleSyncToCloud(item)}
-                            className="text-xs"
-                          >
-                            <CloudUpload className="w-4 h-4 me-2" />{" "}
-                            <Trans>Sync to cloud</Trans>
-                          </DropdownMenuItem>
-                        ) : null}
-                        <DropdownMenuItem
-                          onSelect={(e) => e.preventDefault()}
-                          onClick={() => handleClickDelete({ item, name })}
-                          variant="destructive"
-                          className="text-xs"
-                        >
-                          <TrashIcon className="w-4 h-4 me-2" />{" "}
-                          <Trans>Delete</Trans>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge className="absolute left-1 top-1 z-10 h-5 bg-accent/60 px-2 text-xs text-muted-foreground">
-                        {formatRelativeTime(updatedAt)} · {entryCount}{" "}
-                        {entryCount === 1 ? t`entry` : t`entries`}
-                      </Badge>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      <Trans>
-                        Last played: {formatExactDateTime(updatedAt)}
-                      </Trans>
-                    </TooltipContent>
-                  </Tooltip>
-                  {syncActive && !syncStatusUnknown ? (
-                    <Badge
-                      className="absolute left-1 top-8 z-10 h-5 bg-accent/60 px-2 text-xs text-muted-foreground"
-                      aria-label={statusLabel}
+              title={name}
+              summary={description || t`No description yet.`}
+              imageSrc={
+                thumbnail
+                  ? bytesToObjectUrl(thumbnail as unknown as Uint8Array)
+                  : placeholderImage
+              }
+              imageAlt={t`${name} thumbnail`}
+              ariaLabel={t`Load ${name}`}
+              imageBadges={
+                syncActive && !syncStatusUnknown ? (
+                  <Badge
+                    className={`${imageBadgeClass} ${
+                      hasConflict ? "text-destructive" : ""
+                    }`}
+                  >
+                    {statusLabel}
+                  </Badge>
+                ) : null
+              }
+              menu={
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className={imageMenuButtonClass}
+                      aria-label={t`Tale actions`}
                     >
-                      {hasConflict ? (
-                        <Trans>Needs review</Trans>
-                      ) : isSynced ? (
-                        <Cloud className="size-3" />
-                      ) : (
-                        <VenetianMask className="size-3" />
-                      )}
-                    </Badge>
-                  ) : null}
-                </div>
-              </CardHeader>
-              <CardContent className="flex h-36 flex-col gap-2 px-2">
-                <span className="line-clamp-2 min-h-9 text-sm font-semibold leading-snug">
-                  {name}
-                </span>
-                <p className="line-clamp-3 min-h-0 flex-1 rounded-xs text-sm text-muted-foreground">
-                  {description}
-                </p>
-
-                <Button
-                  onClick={() => handleLoad(item)}
-                  className="mt-auto w-full"
-                >
-                  <Trans>Load Tale</Trans>
-                </Button>
-              </CardContent>
-            </Card>
+                      <MoreHorizontalIcon className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" side="bottom" sideOffset={4}>
+                    {!isRemote && scenarioHead?.id && (
+                      <DropdownMenuItem
+                        onSelect={(e) => e.preventDefault()}
+                        onClick={() =>
+                          navigate({
+                            to: `/scenarios/${scenarioHead?.id}`,
+                          })
+                        }
+                        className="text-xs"
+                      >
+                        <PencilIcon className="w-4 h-4 me-2" />{" "}
+                        <Trans>Scenario</Trans>
+                      </DropdownMenuItem>
+                    )}
+                    {!isRemote && !scenarioHead?.id && (
+                      <DropdownMenuItem
+                        onSelect={(e) => e.preventDefault()}
+                        onClick={() => handleSaveAsScenario(id)}
+                        className="text-xs"
+                      >
+                        <FilePlus2Icon className="w-4 h-4 me-2" />{" "}
+                        <Trans>Save as Scenario</Trans>
+                      </DropdownMenuItem>
+                    )}
+                    {syncActive && isSynced ? (
+                      <DropdownMenuItem
+                        onSelect={(e) => e.preventDefault()}
+                        onClick={() => setPendingCloudRemove({ item, name })}
+                        className="text-xs"
+                      >
+                        <CloudOff className="w-4 h-4 me-2" />{" "}
+                        <Trans>Remove from cloud</Trans>
+                      </DropdownMenuItem>
+                    ) : null}
+                    {syncActive &&
+                    !isRemote &&
+                    !item.sync &&
+                    !syncStatusUnknown ? (
+                      <DropdownMenuItem
+                        onSelect={(e) => e.preventDefault()}
+                        onClick={() => void handleSyncToCloud(item)}
+                        className="text-xs"
+                      >
+                        <CloudUpload className="w-4 h-4 me-2" />{" "}
+                        <Trans>Sync to cloud</Trans>
+                      </DropdownMenuItem>
+                    ) : null}
+                    <DropdownMenuItem
+                      onSelect={(e) => e.preventDefault()}
+                      onClick={() => handleClickDelete({ item, name })}
+                      variant="destructive"
+                      className="text-xs"
+                    >
+                      <TrashIcon className="w-4 h-4 me-2" />{" "}
+                      <Trans>Delete</Trans>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              }
+              onOpen={() => void handleLoad(item)}
+            />
           );
         })}
       </div>

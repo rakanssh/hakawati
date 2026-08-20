@@ -13,6 +13,11 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. js-lingui-explicit-id
+#: app/hooks/useSyncBackground.ts:182
+msgid "Failed to upload tale to cloud"
+msgstr "Failed to upload tale to cloud"
+
 #: app/data/quickstart-presets.ts:476
 #~ msgid " {characterName} has a rational explanation ready. It is not fitting the facts as neatly as it should."
 #~ msgstr " {characterName} has a rational explanation ready. It is not fitting the facts as neatly as it should."
@@ -2732,3 +2737,38 @@ msgstr "You..."
 #: app/data/quickstart-presets.ts:20
 msgid "Zombies"
 msgstr "Zombies"
+
+#: app/pages/scenarios/catalog-details.tsx
+#: app/pages/scenarios/home.tsx
+msgid "Awaiting moderation"
+msgstr "Awaiting moderation"
+
+#: app/pages/scenarios/catalog-details.tsx
+#: app/pages/scenarios/create.tsx
+#: app/pages/scenarios/home.tsx
+msgid "Scenario submitted for moderation"
+msgstr "Scenario submitted for moderation"
+
+#: app/pages/scenarios/catalog-details.tsx
+msgid "This version stays private until it is approved."
+msgstr "This version stays private until it is approved."
+
+#: app/components/scenario/PublishScenarioDialog.tsx
+msgid "Publishing policies could not be loaded."
+msgstr "Publishing policies could not be loaded."
+
+#: app/components/scenario/PublishScenarioDialog.tsx
+msgid "I agree to the publishing rules and understand that public scenarios are moderated and may be removed."
+msgstr "I agree to the publishing rules and understand that public scenarios are moderated and may be removed."
+
+#: app/components/scenario/PublishScenarioDialog.tsx
+msgid "Terms of Service"
+msgstr "Terms of Service"
+
+#: app/components/scenario/PublishScenarioDialog.tsx
+msgid "Community Guidelines"
+msgstr "Community Guidelines"
+
+#: app/components/scenario/PublishScenarioDialog.tsx
+msgid "Loading publishing policies..."
+msgstr "Loading publishing policies..."

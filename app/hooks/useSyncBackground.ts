@@ -1,12 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { i18n } from "@lingui/core";
+import { toast } from "sonner";
+import { createUploadIdempotencyKey } from "@/lib/sync-idempotency";
 import {
+  deleteTaleSyncState,
   getSyncProfile,
   listTaleSyncPreferences,
   listTaleSyncStates,
   setSyncProfileDisabled,
+  setTaleSyncPreference,
+  upsertTaleSyncState,
 } from "@/repositories/sync.repository";
 import {
+  assertSyncAvailable,
   createSyncTransport,
+  fetchSyncCapabilities,
   listAllRemoteTales,
   listHostedDevices,
   syncLinkedTale,
@@ -37,6 +45,7 @@ export function useSyncBackground(dbReady: boolean) {
   );
   const runningRef = useRef(false);
   const rerunRef = useRef(false);
+  const notifiedUploadOperationKeysRef = useRef(new Set<string>());
 
   const profile = useMemo<SyncProfile>(
     () => ({
@@ -95,6 +104,8 @@ export function useSyncBackground(dbReady: boolean) {
           accessToken:
             activeProfile.mode === "hosted" ? accessToken.trim() : undefined,
         });
+        const capabilities = await fetchSyncCapabilities(transport);
+        assertSyncAvailable(capabilities);
         if (activeProfile.mode === "hosted") {
           if (!activeProfile.accountId) return;
           const devices = await listHostedDevices(transport);
@@ -109,26 +120,73 @@ export function useSyncBackground(dbReady: boolean) {
           listTaleSyncPreferences(activeProfile.id, activeProfile.accountId),
         ]);
         const remoteById = new Map(remoteTales.map((tale) => [tale.id, tale]));
+        const remoteBySourceId = new Map(
+          remoteTales.map((tale) => [tale.sourceTaleId, tale]),
+        );
         const stateByLocalId = new Map(
           syncStates.map((state) => [state.localTaleId, state]),
         );
 
         for (const preference of syncPreferences) {
           if (preference.policy !== "sync") continue;
-          const state = stateByLocalId.get(preference.localTaleId);
+          let state = stateByLocalId.get(preference.localTaleId);
+          const recoverableRemote = remoteBySourceId.get(
+            preference.localTaleId,
+          );
+          if (!state && recoverableRemote) {
+            state = {
+              profileId: activeProfile.id,
+              accountId: activeProfile.accountId,
+              localTaleId: preference.localTaleId,
+              remoteTaleId: recoverableRemote.id,
+              contentRev: String(recoverableRemote.contentRev),
+              metadataRev: String(recoverableRemote.metadataRev),
+              lastSyncedAt: null,
+              pendingStatus: "push",
+              lastErrorCode: null,
+            };
+            await upsertTaleSyncState(state);
+            syncStates.push(state);
+            stateByLocalId.set(state.localTaleId, state);
+          }
           const hasRemoteLink = state
             ? remoteById.has(state.remoteTaleId)
             : false;
           if (hasRemoteLink) continue;
+          if (state) {
+            await setTaleSyncPreference({
+              profileId: activeProfile.id,
+              accountId: activeProfile.accountId,
+              localTaleId: state.localTaleId,
+              policy: "private",
+            });
+            await deleteTaleSyncState({
+              profileId: activeProfile.id,
+              accountId: activeProfile.accountId,
+              localTaleId: state.localTaleId,
+            });
+            continue;
+          }
+          const idempotencyKey = await createUploadIdempotencyKey(
+            activeProfile.id,
+            activeProfile.accountId ?? "personal",
+            preference.localTaleId,
+            preference.updatedAt,
+          );
           try {
             await uploadTalePackage({
               profile: activeProfile,
               transport,
               localTaleId: preference.localTaleId,
-              idempotencyKey: `upload-${preference.localTaleId}-${Date.now()}`,
+              idempotencyKey,
+              capabilities,
             });
           } catch (error) {
             console.warn("Background tale upload failed", error);
+            if (!notifiedUploadOperationKeysRef.current.has(idempotencyKey)) {
+              notifiedUploadOperationKeysRef.current.add(idempotencyKey);
+              toast.error(i18n._("Failed to upload tale to cloud"));
+            }
           }
         }
 
@@ -141,7 +199,8 @@ export function useSyncBackground(dbReady: boolean) {
               transport,
               localTaleId: state.localTaleId,
               remoteTale,
-              idempotencyKey: `sync-${state.localTaleId}-${Date.now()}`,
+              idempotencyKey: `sync-${activeProfile.id}-${state.localTaleId}-${state.contentRev ?? "0"}-${state.metadataRev ?? "0"}`,
+              capabilities,
             });
           } catch (error) {
             console.warn("Background sync failed", error);

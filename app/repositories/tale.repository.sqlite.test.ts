@@ -13,7 +13,10 @@ import type { TaleMutableSnapshot } from "@/services/tale.service";
 type SqlParam = string | number | bigint | Uint8Array | null;
 
 type TestDatabase = {
-  execute: (sql: string, params?: SqlParam[]) => Promise<void>;
+  execute: (
+    sql: string,
+    params?: SqlParam[],
+  ) => Promise<{ rowsAffected: number }>;
   select: <T>(sql: string, params?: SqlParam[]) => Promise<T>;
   close: () => void;
   raw: DatabaseSync;
@@ -55,8 +58,9 @@ function createAdapter(): TestDatabase {
         transactionOpen = true;
       }
 
+      let rowsAffected = 0;
       try {
-        raw.prepare(sql).run(...params);
+        rowsAffected = Number(raw.prepare(sql).run(...params).changes);
       } catch (error) {
         if (command === "ROLLBACK" && !transactionOpen) {
           throw new Error("cannot rollback - no transaction is active");
@@ -67,6 +71,7 @@ function createAdapter(): TestDatabase {
           transactionOpen = false;
         }
       }
+      return { rowsAffected };
     },
     async select<T>(sql: string, params: SqlParam[] = []) {
       selectSql.push(sql);
@@ -84,6 +89,7 @@ const migrationFiles = [
   "003_add_prompt_components.sql",
   "004_split_tale_storage.sql",
   "005_add_sync_metadata.sql",
+  "006_add_scenario_content_catalog_metadata.sql",
 ];
 
 function applyMigration(db: TestDatabase, index: number) {
@@ -487,6 +493,190 @@ describe("tale repository SQLite storage", () => {
     expect(tale?.undoStack[0].id).toBe("undo-1");
   });
 
+  it("migrates legacy scenarios to content and backfills local tale source", () => {
+    const db = dbState.current!;
+    applyMigrations(db, 5);
+
+    db.raw
+      .prepare(
+        `INSERT INTO scenarios (
+          id,
+          name,
+          thumbnail_data,
+          initial_game_mode,
+          initial_description,
+          initial_author_note,
+          initial_stats,
+          initial_inventory,
+          initial_story_cards,
+          opening_text,
+          created_at,
+          updated_at,
+          components
+        )
+        VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        "scenario-1",
+        "Iron Gate",
+        GameMode.STORY_TELLER,
+        "A gate waits.",
+        "Keep it tense.",
+        JSON.stringify([{ name: "Nerve", value: 5, range: [0, 10] }]),
+        JSON.stringify(["Iron key"]),
+        JSON.stringify([
+          {
+            id: "gatekeeper",
+            title: "Gatekeeper",
+            triggers: ["gatekeeper"],
+            content: "The gatekeeper remembers.",
+            category: "Character",
+            isPinned: false,
+          },
+        ]),
+        "Rain needles the gate.",
+        100,
+        200,
+        JSON.stringify([
+          {
+            id: "plot",
+            type: "plot",
+            content: "A gate waits.",
+            createdAt: 100,
+            updatedAt: 200,
+          },
+        ]),
+      );
+    db.raw
+      .prepare(
+        `INSERT INTO tales (
+          id,
+          name,
+          description,
+          thumbnail_data,
+          author_note,
+          story_cards,
+          scenario_id,
+          stats,
+          inventory,
+          undo_stack,
+          log,
+          game_mode,
+          created_at,
+          updated_at,
+          components
+        )
+        VALUES (?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        "tale-1",
+        "Iron Gate Tale",
+        "A local tale.",
+        "",
+        "[]",
+        "scenario-1",
+        "[]",
+        "[]",
+        "[]",
+        "[]",
+        GameMode.STORY_TELLER,
+        300,
+        400,
+        "[]",
+      );
+
+    applyMigration(db, 5);
+
+    const scenarioRow = db.raw
+      .prepare("SELECT content FROM scenarios WHERE id = ?")
+      .get("scenario-1") as { content: string };
+    const content = JSON.parse(scenarioRow.content) as Array<{
+      type: string;
+      id: string;
+      name?: string;
+      title?: string;
+    }>;
+    const taleRow = db.raw
+      .prepare(
+        `SELECT source_type, source_scenario_id
+         FROM tales
+         WHERE id = ?`,
+      )
+      .get("tale-1") as {
+      source_type: string;
+      source_scenario_id: string;
+    };
+
+    expect(content).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ type: "prompt_component", id: "plot" }),
+        expect.objectContaining({ type: "story_card", id: "gatekeeper" }),
+        expect.objectContaining({
+          type: "stat",
+          id: "stat-nerve-1",
+          name: "Nerve",
+        }),
+        expect.objectContaining({
+          type: "inventory_item",
+          id: "inventory_item-iron-key-1",
+          name: "Iron key",
+        }),
+      ]),
+    );
+    expect(taleRow).toEqual({
+      source_type: "local",
+      source_scenario_id: "scenario-1",
+    });
+  });
+
+  it("preserves tale source metadata through packages", async () => {
+    applyMigrations(dbState.current!);
+    const { createTale, exportTalePackage, getTale, importTalePackage } =
+      await import("./tale.repository");
+
+    const taleId = await createTale({
+      name: "Catalog Tale",
+      description: "Started from catalog.",
+      thumbnail: null,
+      components: [],
+      storyCards: [],
+      source: {
+        type: "catalog",
+        scenarioId: "catalog-1",
+        scenarioVersionId: "version-1",
+        scenarioTitle: "Iron Gate",
+      },
+      stats: [],
+      inventory: [],
+      log: [gmEntry("opening", "Rain needles the gate.")],
+      gameMode: GameMode.STORY_TELLER,
+      undoStack: [],
+    });
+
+    const exported = await exportTalePackage(taleId);
+    const importedId = await importTalePackage(exported);
+    const fallbackImportedId = await importTalePackage({
+      ...exported,
+      tale: {
+        ...exported.tale,
+        source: undefined,
+      },
+      state: {
+        ...exported.state,
+        data: {
+          ...exported.state.data,
+          source: exported.tale.source,
+        },
+      },
+    });
+
+    expect((await getTale(taleId))?.source).toEqual(exported.tale.source);
+    expect((await getTale(importedId))?.source).toEqual(exported.tale.source);
+    expect((await getTale(fallbackImportedId))?.source).toEqual(
+      exported.tale.source,
+    );
+  });
+
   it("scopes hosted sync state and preferences by account", async () => {
     applyMigrations(dbState.current!);
     const taleId = await createEmptyTale();
@@ -567,6 +757,150 @@ describe("tale repository SQLite storage", () => {
         (preference) => preference.policy,
       ),
     ).toEqual(["sync"]);
+  });
+
+  it("retains an unchanged sync preference generation and advances policy transitions", async () => {
+    applyMigrations(dbState.current!);
+    const taleId = await createEmptyTale();
+    const { getTaleSyncPreference, setTaleSyncPreference, upsertSyncProfile } =
+      await import("./sync.repository");
+    const scope = {
+      profileId: "hosted",
+      accountId: "account-a",
+      localTaleId: taleId,
+    };
+    const now = vi.spyOn(Date, "now").mockReturnValue(1_000);
+
+    try {
+      await upsertSyncProfile({
+        id: "hosted",
+        baseUrl: "https://sync.example",
+        mode: "hosted",
+        deviceId: "device-1",
+      });
+      await setTaleSyncPreference({ ...scope, policy: "sync" });
+      await setTaleSyncPreference({ ...scope, policy: "sync" });
+      expect((await getTaleSyncPreference(scope))?.updatedAt).toBe(1_000);
+
+      await setTaleSyncPreference({ ...scope, policy: "private" });
+      expect((await getTaleSyncPreference(scope))?.updatedAt).toBe(1_001);
+
+      await setTaleSyncPreference({ ...scope, policy: "sync" });
+      expect((await getTaleSyncPreference(scope))?.updatedAt).toBe(1_002);
+    } finally {
+      now.mockRestore();
+    }
+  });
+
+  it("marks every non-conflicted link for push before a local turn write", async () => {
+    applyMigrations(dbState.current!);
+    const taleId = await createEmptyTale();
+    const { appendTurn } = await import("./tale.repository");
+    const { listTaleSyncStates, upsertSyncProfile, upsertTaleSyncState } =
+      await import("./sync.repository");
+
+    await upsertSyncProfile({
+      id: "hosted",
+      baseUrl: "https://sync.example",
+      mode: "hosted",
+      deviceId: "device-1",
+    });
+
+    await upsertTaleSyncState({
+      profileId: "hosted",
+      accountId: "account-a",
+      localTaleId: taleId,
+      remoteTaleId: "remote-a",
+      contentRev: "1",
+      metadataRev: "1",
+      lastSyncedAt: 1,
+      pendingStatus: "idle",
+      lastErrorCode: "old_error",
+    });
+    await upsertTaleSyncState({
+      profileId: "hosted",
+      accountId: "account-b",
+      localTaleId: taleId,
+      remoteTaleId: "remote-b",
+      contentRev: "2",
+      metadataRev: "2",
+      lastSyncedAt: 2,
+      pendingStatus: "conflict",
+      lastErrorCode: "content_conflict",
+    });
+
+    await appendTurn(
+      taleId,
+      { entries: [playerEntry("player-1")], createdAt: 300 },
+      emptyState(),
+      createTaleSessionState(),
+    );
+
+    expect(await listTaleSyncStates("hosted", "account-a")).toMatchObject([
+      { pendingStatus: "push", lastErrorCode: null },
+    ]);
+    expect(await listTaleSyncStates("hosted", "account-b")).toMatchObject([
+      { pendingStatus: "conflict", lastErrorCode: "content_conflict" },
+    ]);
+  });
+
+  it("does not acknowledge a sync result after the local tale changes", async () => {
+    applyMigrations(dbState.current!);
+    const taleId = await createEmptyTale();
+    const { appendTurn, getTaleSaveVersion } = await import(
+      "./tale.repository"
+    );
+    const {
+      getTaleSyncState,
+      upsertSyncProfile,
+      upsertTaleSyncStateIfTaleVersion,
+    } = await import("./sync.repository");
+
+    await upsertSyncProfile({
+      id: "hosted",
+      baseUrl: "https://sync.example",
+      mode: "hosted",
+      deviceId: "device-1",
+    });
+    const uploadedVersion = await getTaleSaveVersion(taleId);
+    const state = {
+      profileId: "hosted",
+      accountId: "account-a",
+      localTaleId: taleId,
+      remoteTaleId: "remote-a",
+      contentRev: "1",
+      metadataRev: "1",
+      lastSyncedAt: 1,
+      pendingStatus: "idle" as const,
+      lastErrorCode: null,
+    };
+
+    await expect(
+      upsertTaleSyncStateIfTaleVersion(state, uploadedVersion),
+    ).resolves.toBe(true);
+    await appendTurn(
+      taleId,
+      { entries: [playerEntry("player-1")], createdAt: 300 },
+      emptyState(),
+      createTaleSessionState(),
+    );
+
+    await expect(
+      upsertTaleSyncStateIfTaleVersion(
+        { ...state, contentRev: "2", lastSyncedAt: 2 },
+        uploadedVersion,
+      ),
+    ).resolves.toBe(false);
+    await expect(
+      getTaleSyncState({
+        profileId: "hosted",
+        accountId: "account-a",
+        localTaleId: taleId,
+      }),
+    ).resolves.toMatchObject({
+      contentRev: "1",
+      pendingStatus: "push",
+    });
   });
 
   it("rejects turn replacement when requested entry anchors are missing", async () => {

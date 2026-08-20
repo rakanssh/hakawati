@@ -177,6 +177,7 @@ describe("SettingsCloudSync storage usage", () => {
     ).IS_REACT_ACT_ENVIRONMENT = true;
     vi.clearAllMocks();
     Object.assign(syncStoreState, {
+      personalBaseUrl: "",
       activeSyncMode: "hosted",
       accessToken: "token",
       accessTokenExpiresAt: null,
@@ -205,6 +206,22 @@ describe("SettingsCloudSync storage usage", () => {
     syncServiceMocks.unregisterHostedDevice.mockResolvedValue(undefined);
     syncServiceMocks.registerSyncDevice.mockResolvedValue(device("device-1"));
     taleLibraryMocks.removeLibraryTaleFromCloud.mockResolvedValue(undefined);
+  });
+
+  it("hides personal sync even when an old preference selected it", async () => {
+    Object.assign(syncStoreState, {
+      personalBaseUrl: "http://personal.example",
+      activeSyncMode: "personal",
+    });
+
+    const view = render();
+    await flush();
+
+    expect(view.container.textContent).not.toContain("Personal sync server");
+    expect(view.container.textContent).not.toContain("Connect Personal Sync");
+    expect(view.container.textContent).toContain("Cloud sync on");
+
+    view.cleanup();
   });
 
   it("shows hosted usage limits", async () => {

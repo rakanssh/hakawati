@@ -26,3 +26,12 @@ THIRD_PARTY_LICENSES*.md
 .env
 .env.*
 !.env.example
+
+# Local planning and agent artifacts
+/.agents/
+/.codex/
+/.gstack/
+/.kiro/
+/.superpowers/
+/artifacts/
+/docs/superpowers/

@@ -9,24 +9,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "@tanstack/react-router";
 import {
   useScenariosList,
   useScenariosExport,
   useScenariosImport,
 } from "@/hooks/useScenarios";
-import { initTaleFromScenario } from "@/services/scenario.service";
-import { canSyncNewTales } from "@/services/new-tale-sync";
-import { addSyncChangedListener } from "@/services/sync-wakeup";
-import { useLoadTale } from "@/hooks/useGameSaves";
-import {
-  bytesToObjectUrl,
-  formatExactDateTime,
-  formatRelativeTime,
-} from "@/lib/utils";
+import { bytesToObjectUrl } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,105 +23,412 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
   ArrowLeftIcon,
+  BanIcon,
   PencilIcon,
   TrashIcon,
   ClipboardIcon,
+  FlagIcon,
+  Loader2,
+  MoreHorizontalIcon,
   Sparkles,
-  VenetianMask,
+  SlidersHorizontalIcon,
+  UploadCloudIcon,
 } from "lucide-react";
 import placeholderImage from "@/assets/scen-ph.png";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { GenerateScenarioDialog } from "@/components/scenario";
-import { useEffect, useState } from "react";
+import {
+  GenerateScenarioDialog,
+  PublishScenarioDialog,
+  ScenarioPreviewCard,
+} from "@/components/scenario";
+import { useEffect, useMemo, useState } from "react";
+import {
+  useCatalogActions,
+  useCatalogClient,
+  useCatalogScenarioList,
+  usePublishedCatalogScenarios,
+  useScenarioPublishLinks,
+} from "@/hooks/useCatalogScenarios";
+import {
+  CATALOG_SORTS,
+  type CatalogOwnedScenarioRecord,
+  type CatalogScenarioRecord,
+} from "@/types/catalog.type";
+import { getScenarioById } from "@/services/scenario.service";
+import type { Scenario } from "@/types/context.type";
+import { CatalogTagInput } from "@/components/catalog/CatalogTagInput";
+import { imageBadgeClass, imageMenuButtonClass } from "@/lib/card-badges";
 
 type PendingScenarioDelete = {
   id: string;
   name: string;
 };
 
+type CatalogCardScenario = CatalogScenarioRecord | CatalogOwnedScenarioRecord;
+type ScenarioTab = "local" | "discover" | "published";
+
+const libraryGridClass =
+  "grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))]";
+function catalogAssetUrl(baseUrl: string, path: string | null | undefined) {
+  if (!path) return placeholderImage;
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${baseUrl.replace(/\/+$/, "").replace(/\/v1$/, "")}${path}`;
+}
+
+function hiddenByModeration(scenario: CatalogCardScenario) {
+  return (
+    scenario.status === "hidden" &&
+    "moderation" in scenario &&
+    scenario.moderation.status === "rejected"
+  );
+}
+
+function awaitingModeration(scenario: CatalogCardScenario) {
+  return (
+    "moderation" in scenario && scenario.moderation.status === "needs_review"
+  );
+}
+
+function scenarioTabFromSearch(): ScenarioTab {
+  const tab = new URLSearchParams(window.location.search).get("tab");
+  return tab === "discover" || tab === "published" ? tab : "local";
+}
+
+function replaceScenarioTabSearch(tab: ScenarioTab) {
+  const url = new URL(window.location.href);
+  if (tab === "local") {
+    url.searchParams.delete("tab");
+  } else {
+    url.searchParams.set("tab", tab);
+  }
+  window.history.replaceState(
+    window.history.state,
+    "",
+    `${url.pathname}${url.search}${url.hash}`,
+  );
+}
+
+function TagPreview({ tags, limit = 3 }: { tags: string[]; limit?: number }) {
+  const visible = tags.slice(0, limit);
+  const extra = tags.length - visible.length;
+  if (!visible.length) return null;
+
+  return (
+    <div className="flex h-6 min-w-0 gap-1 overflow-hidden">
+      {visible.map((tag) => (
+        <Badge
+          key={tag}
+          variant="outline"
+          className="h-6 max-w-28 shrink-0 truncate text-xs"
+        >
+          {tag}
+        </Badge>
+      ))}
+      {extra > 0 ? (
+        <Badge variant="outline" className="h-6 shrink-0 text-xs">
+          +{extra}
+        </Badge>
+      ) : null}
+    </div>
+  );
+}
+
+function CatalogScenarioCard({
+  baseUrl,
+  scenario,
+  actions,
+  onView,
+  onReport,
+  onBlockPublisher,
+  onUnpublish,
+  onThumbnail,
+}: {
+  baseUrl: string;
+  scenario: CatalogCardScenario;
+  actions: "discover" | "published";
+  onView?: (scenario: CatalogCardScenario) => void;
+  onReport?: (scenario: CatalogCardScenario) => void;
+  onBlockPublisher?: (scenario: CatalogCardScenario) => void;
+  onUnpublish?: (scenario: CatalogCardScenario) => void;
+  onThumbnail?: (scenario: CatalogCardScenario, file: File) => void;
+}) {
+  const isModerationHidden = hiddenByModeration(scenario);
+  const isAwaitingModeration = awaitingModeration(scenario);
+
+  return (
+    <ScenarioPreviewCard
+      title={scenario.title}
+      summary={scenario.summary}
+      imageSrc={catalogAssetUrl(baseUrl, scenario.thumbnail?.downloadUrl)}
+      imageAlt={`${scenario.title} thumbnail`}
+      ariaLabel={`View ${scenario.title}`}
+      imageBadges={
+        <>
+          <Badge className={`${imageBadgeClass} max-w-full`}>
+            <span className="truncate">{scenario.author.displayName}</span>
+          </Badge>
+          {isModerationHidden ? (
+            <Badge className={imageBadgeClass}>
+              <Trans>Hidden</Trans>
+            </Badge>
+          ) : isAwaitingModeration ? (
+            <Badge className={imageBadgeClass}>
+              <Trans>In review</Trans>
+            </Badge>
+          ) : null}
+        </>
+      }
+      menu={
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="secondary"
+              size="icon"
+              className={imageMenuButtonClass}
+              aria-label="Scenario actions"
+            >
+              <MoreHorizontalIcon className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" side="bottom" sideOffset={4}>
+            <DropdownMenuItem onClick={() => onView?.(scenario)}>
+              <Trans>View</Trans>
+            </DropdownMenuItem>
+            {actions === "discover" ? (
+              <DropdownMenuItem onClick={() => onReport?.(scenario)}>
+                <FlagIcon className="h-4 w-4" />
+                <Trans>Report</Trans>
+              </DropdownMenuItem>
+            ) : null}
+            {actions === "discover" && onBlockPublisher ? (
+              <DropdownMenuItem onClick={() => onBlockPublisher(scenario)}>
+                <BanIcon className="h-4 w-4" />
+                <Trans>Block publisher</Trans>
+              </DropdownMenuItem>
+            ) : null}
+            {actions === "published" && onThumbnail ? (
+              <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
+                <label>
+                  <Trans>Thumbnail</Trans>
+                  <input
+                    className="hidden"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) onThumbnail(scenario, file);
+                      event.currentTarget.value = "";
+                    }}
+                  />
+                </label>
+              </DropdownMenuItem>
+            ) : null}
+            {actions === "published" ? (
+              <DropdownMenuItem onClick={() => onUnpublish?.(scenario)}>
+                <Trans>Unpublish</Trans>
+              </DropdownMenuItem>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      }
+      footer={<TagPreview tags={scenario.tags} limit={2} />}
+      onOpen={() => onView?.(scenario)}
+    />
+  );
+}
+
 export default function ScenariosHome() {
   const { t } = useLingui();
   const { items, loading, error, page, limit, total, setPage, remove } =
     useScenariosList();
   const navigate = useNavigate();
-  const { load: loadTale } = useLoadTale();
   const { exportById } = useScenariosExport();
   const { importFromClipboard } = useScenariosImport();
+  const catalog = useCatalogClient();
+  const discover = useCatalogScenarioList(catalog, { limit: 24 });
+  const published = usePublishedCatalogScenarios(catalog);
+  const publishLinks = useScenarioPublishLinks();
+  const catalogActions = useCatalogActions(catalog);
+  const linkByLocalId = useMemo(
+    () =>
+      new Map(publishLinks.links.map((link) => [link.localScenarioId, link])),
+    [publishLinks.links],
+  );
   const [generateOpen, setGenerateOpen] = useState(false);
-  const [canStartPrivate, setCanStartPrivate] = useState(false);
+  const [activeTab, setActiveTab] = useState<ScenarioTab>(
+    scenarioTabFromSearch,
+  );
+  const [filterOpen, setFilterOpen] = useState(false);
   const [pendingDelete, setPendingDelete] =
     useState<PendingScenarioDelete | null>(null);
+  const [pendingPublish, setPendingPublish] = useState<Scenario | null>(null);
+  const setScenarioTab = (value: string) => {
+    const next: ScenarioTab =
+      value === "discover" || value === "published" ? value : "local";
+    setActiveTab(next);
+    replaceScenarioTabSearch(next);
+  };
+  const importScenario = async () => {
+    try {
+      const scenario = await importFromClipboard();
+      navigate({
+        to: "/scenarios/new",
+        state: (prev) => ({
+          ...(prev ?? {}),
+          importedScenario: scenario,
+        }),
+      });
+    } catch (_e) {
+      toast.error("Failed to import scenario from clipboard");
+    }
+  };
   const confirmDelete = async () => {
     if (!pendingDelete) return;
     await remove(pendingDelete.id);
     setPendingDelete(null);
   };
+  const openPublish = async (id: string) => {
+    const scenario = await getScenarioById(id);
+    if (!scenario) {
+      toast.error(t`Scenario not found`);
+      return;
+    }
+    setPendingPublish(scenario);
+  };
+  const refreshCatalogState = async () => {
+    await Promise.all([
+      published.refresh(),
+      publishLinks.refresh(),
+      discover.refresh(),
+    ]);
+  };
+  const viewPublicScenario = (scenario: CatalogCardScenario, owned = false) => {
+    navigate({
+      to: owned
+        ? `/scenarios/catalog/${scenario.id}?owned=1`
+        : `/scenarios/catalog/${scenario.id}`,
+    });
+  };
+  const reportPublicScenario = async (scenario: CatalogScenarioRecord) => {
+    const reason = window.prompt(t`Report reason`);
+    if (!reason?.trim()) return;
+    try {
+      await catalogActions.report(scenario.id, reason.trim());
+      toast.success(t`Report submitted`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t`Failed to submit report`,
+      );
+    }
+  };
+  const blockPublicScenarioPublisher = async (
+    scenario: CatalogScenarioRecord,
+  ) => {
+    if (
+      !window.confirm(
+        t`Block ${scenario.author.displayName}? You will no longer see their scenarios.`,
+      )
+    ) {
+      return;
+    }
+    try {
+      await catalogActions.blockPublisher(scenario.author.id);
+      toast.success(t`Publisher blocked`);
+      await discover.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t`Failed to block publisher`,
+      );
+    }
+  };
+  const unpublishPublicScenario = async (scenario: CatalogScenarioRecord) => {
+    try {
+      await catalogActions.unpublish(scenario.id);
+      toast.success(t`Scenario unpublished`);
+      await published.refresh();
+      await discover.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t`Failed to unpublish scenario`,
+      );
+    }
+  };
+  const updatePublicThumbnail = async (
+    scenario: CatalogScenarioRecord,
+    file: File,
+  ) => {
+    try {
+      await catalogActions.updateThumbnail(scenario.id, file);
+      toast.success(t`Thumbnail updated`);
+      await published.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t`Failed to update thumbnail`,
+      );
+    }
+  };
 
   useEffect(() => {
-    let disposed = false;
-    const refreshPrivateStart = () => {
-      canSyncNewTales().then((canSync) => {
-        if (!disposed) setCanStartPrivate(canSync);
-      });
-    };
+    const catalogAvailabilityPending = Boolean(
+      catalog.baseUrl && !catalog.capabilities && !catalog.error,
+    );
+    if (catalogAvailabilityPending) return;
+    if (
+      (activeTab === "discover" && !catalog.enabled) ||
+      (activeTab === "published" && (!catalog.enabled || !catalog.signedIn))
+    ) {
+      setActiveTab("local");
+      replaceScenarioTabSearch("local");
+    }
+  }, [
+    activeTab,
+    catalog.baseUrl,
+    catalog.capabilities,
+    catalog.enabled,
+    catalog.error,
+    catalog.signedIn,
+  ]);
 
-    refreshPrivateStart();
-    const removeListener = addSyncChangedListener(refreshPrivateStart);
-    return () => {
-      disposed = true;
-      removeListener();
-    };
-  }, []);
+  const showCatalogControls =
+    (activeTab === "discover" && catalog.enabled) ||
+    (activeTab === "published" && catalog.enabled && catalog.signedIn);
+  const catalogToolbar = activeTab === "published" ? published : discover;
 
   return (
-    <div className="mx-auto w-full max-w-screen-2xl py-5 flex flex-col gap-4 px-3">
-      <div className="flex items-center justify-between">
-        <div className="flex gap-4">
-          {/* back button */}
+    <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5 px-3 py-4 sm:px-4 lg:px-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
           <Button
-            variant="default"
+            variant="outline"
+            size="icon"
             onClick={() => navigate({ to: "/" })}
-            className="mt-1.5"
           >
             <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
           </Button>
-          <div className="flex flex-col">
-            <Label className="text-xl">
+          <div className="text-sm text-muted-foreground">
+            <span className="text-primary">
+              <Trans>Home</Trans>
+            </span>
+            <span className="px-2">/</span>
+            <span>
               <Trans>Scenarios</Trans>
-            </Label>
-            <span className="text-sm text-muted-foreground">
-              <Trans>Browse and manage your scenarios</Trans>
             </span>
           </div>
         </div>
-        <div className="flex flex-col md:flex-row gap-2">
-          <Button
-            onClick={async () => {
-              try {
-                const scenario = await importFromClipboard();
-                navigate({
-                  to: "/scenarios/new",
-                  state: (prev) => ({
-                    ...(prev ?? {}),
-                    importedScenario: scenario,
-                  }),
-                });
-              } catch (_e) {
-                toast.error("Failed to import scenario from clipboard");
-              }
-            }}
-          >
-            <Trans>Import</Trans>
-          </Button>
-
+        <div className="grid grid-cols-[1fr_auto] gap-2 sm:flex sm:flex-row">
           <Button onClick={() => navigate({ to: "/scenarios/new" })}>
             <Trans>Create</Trans>
           </Button>
@@ -142,49 +438,147 @@ export default function ScenariosHome() {
         </div>
       </div>
 
-      <Separator />
-      {loading && (
-        <div className="text-sm text-muted-foreground">
-          <Trans>Loading...</Trans>
-        </div>
-      )}
-      {Boolean(error) && (
-        <div className="text-sm text-destructive">
-          <Trans>Failed to load scenarios.</Trans>
-        </div>
-      )}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {items.map(({ id, name, description, thumbnail, updatedAt }) => {
-          return (
-            <Card
-              key={id}
-              className="flex flex-col gap-1 pt-0 pb-2 border-accent/50"
+      <Tabs value={activeTab} onValueChange={setScenarioTab} className="gap-4">
+        <div className="grid gap-2 border-y py-2 md:grid-cols-[22rem_minmax(0,1fr)] md:items-center">
+          <TabsList className="h-auto w-full justify-start gap-3 rounded-none bg-transparent p-0 md:w-[22rem]">
+            <TabsTrigger
+              value="local"
+              className="min-w-24 flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-3 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
             >
-              <CardHeader className="p-0 m-0">
-                <div className="relative">
-                  {thumbnail ? (
-                    <img
-                      src={bytesToObjectUrl(thumbnail as unknown as Uint8Array)}
-                      alt={t`${name} thumbnail`}
-                      className="h-48 w-full object-cover"
-                    />
-                  ) : (
-                    <img
-                      src={placeholderImage}
-                      alt={t`${name} thumbnail`}
-                      className="h-48 w-full object-cover"
-                    />
-                  )}
-                  <div className="absolute right-1.5 top-0.5 z-10">
+              <Trans>Local</Trans>
+            </TabsTrigger>
+            {catalog.enabled ? (
+              <TabsTrigger
+                value="discover"
+                className="min-w-24 flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-3 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              >
+                <Trans>Discover</Trans>
+              </TabsTrigger>
+            ) : null}
+            {catalog.enabled && catalog.signedIn ? (
+              <TabsTrigger
+                value="published"
+                className="min-w-24 flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-3 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              >
+                <Trans>Published</Trans>
+              </TabsTrigger>
+            ) : null}
+          </TabsList>
+          {activeTab === "local" ? (
+            <div className="flex md:justify-end">
+              <Button className="w-full sm:w-auto" onClick={importScenario}>
+                <Trans>Import</Trans>
+              </Button>
+            </div>
+          ) : null}
+          {showCatalogControls ? (
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 md:justify-self-end md:w-full md:max-w-[34rem]">
+              <div className="relative min-w-0">
+                <CatalogTagInput
+                  value={catalogToolbar.filters.tag ?? []}
+                  onChange={(tag) =>
+                    catalogToolbar.setFilters((current) => ({
+                      ...current,
+                      tag,
+                    }))
+                  }
+                  client={catalog}
+                  placeholder="Search scenarios or tags"
+                />
+                {catalogToolbar.loading ? (
+                  <Loader2
+                    className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground"
+                    aria-label={t`Loading scenarios`}
+                  />
+                ) : null}
+              </div>
+              <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label={t`Sort scenarios`}
+                  >
+                    <SlidersHorizontalIcon className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="pb-6">
+                  <SheetHeader>
+                    <SheetTitle>
+                      <Trans>Sort scenarios</Trans>
+                    </SheetTitle>
+                  </SheetHeader>
+                  <div className="grid gap-2 px-4">
+                    {CATALOG_SORTS.map((sort) => (
+                      <Button
+                        key={sort}
+                        variant={
+                          catalogToolbar.filters.sort === sort ||
+                          (!catalogToolbar.filters.sort && sort === "popular")
+                            ? "default"
+                            : "outline"
+                        }
+                        className="justify-start"
+                        onClick={() => {
+                          catalogToolbar.setFilters((current) => ({
+                            ...current,
+                            sort: sort as (typeof CATALOG_SORTS)[number],
+                          }));
+                          setFilterOpen(false);
+                        }}
+                      >
+                        {sort.replaceAll("_", " ")}
+                      </Button>
+                    ))}
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+          ) : null}
+        </div>
+        <TabsContent value="local" className="grid gap-4">
+          {loading && (
+            <div className="text-sm text-muted-foreground">
+              <Trans>Loading...</Trans>
+            </div>
+          )}
+          {Boolean(error) && (
+            <div className="text-sm text-destructive">
+              <Trans>Failed to load scenarios.</Trans>
+            </div>
+          )}
+          <div className={libraryGridClass}>
+            {items.map(({ id, name, description, thumbnail }) => {
+              const linked = linkByLocalId.get(id);
+              return (
+                <ScenarioPreviewCard
+                  key={id}
+                  title={name}
+                  summary={description || t`No description yet.`}
+                  imageSrc={
+                    thumbnail
+                      ? bytesToObjectUrl(thumbnail as unknown as Uint8Array)
+                      : placeholderImage
+                  }
+                  imageAlt={t`${name} thumbnail`}
+                  ariaLabel={t`View ${name}`}
+                  imageBadges={
+                    linked ? (
+                      <Badge className={imageBadgeClass}>
+                        <Trans>Published</Trans>
+                      </Badge>
+                    ) : null
+                  }
+                  menu={
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
                           variant="secondary"
                           size="icon"
-                          className="h-6 w-6 rounded-full pb-1.5 bg-accent/50"
+                          className={imageMenuButtonClass}
                           aria-label={t`Scenario actions`}
                         >
-                          ...
+                          <MoreHorizontalIcon className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
@@ -194,12 +588,28 @@ export default function ScenariosHome() {
                       >
                         <DropdownMenuItem
                           onSelect={(e) => e.preventDefault()}
-                          onClick={() => navigate({ to: `/scenarios/${id}` })}
+                          onClick={() =>
+                            navigate({ to: `/scenarios/${id}/edit` })
+                          }
                           className="text-xs"
                         >
                           <PencilIcon className="w-4 h-4 me-2" />{" "}
                           <Trans>Edit</Trans>
                         </DropdownMenuItem>
+                        {catalog.enabled && catalog.signedIn ? (
+                          <DropdownMenuItem
+                            onSelect={(e) => e.preventDefault()}
+                            onClick={() => void openPublish(id)}
+                            className="text-xs"
+                          >
+                            <UploadCloudIcon className="w-4 h-4 me-2" />{" "}
+                            {linked ? (
+                              <Trans>Publish update</Trans>
+                            ) : (
+                              <Trans>Publish</Trans>
+                            )}
+                          </DropdownMenuItem>
+                        ) : null}
                         <DropdownMenuItem
                           onSelect={(e) => e.preventDefault()}
                           onClick={() => exportById(id)}
@@ -219,90 +629,107 @@ export default function ScenariosHome() {
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </div>
-                  {/* Top left date */}{" "}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge className="absolute top-1 left-1 text-xs text-muted-foreground bg-accent/50">
-                        {formatRelativeTime(updatedAt)}
-                      </Badge>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      <Trans>
-                        Last updated: {formatExactDateTime(updatedAt)}
-                      </Trans>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </CardHeader>
-              <CardContent className="flex h-36 flex-col gap-2 px-2">
-                <span className="line-clamp-2 min-h-9 text-sm font-semibold leading-snug">
-                  {name}
-                </span>
-                <p className="line-clamp-3 min-h-0 flex-1 rounded-xs text-sm text-muted-foreground">
-                  {description}
-                </p>
-                <div
-                  className={
-                    canStartPrivate
-                      ? "mt-auto grid grid-cols-[1fr_auto] gap-1"
-                      : "mt-auto grid"
                   }
+                  onOpen={() => navigate({ to: `/scenarios/${id}` })}
+                />
+              );
+            })}
+          </div>
+          {total > limit && (
+            <div className="flex items-center justify-end gap-2 ">
+              <Button
+                variant="secondary"
+                disabled={page <= 1}
+                onClick={() => setPage(Math.max(1, page - 1))}
+              >
+                <Trans>Prev</Trans>
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                <Trans>
+                  Page {page} of {Math.max(1, Math.ceil(total / limit) || 1)}
+                </Trans>
+              </span>
+              <Button
+                variant="secondary"
+                disabled={page * limit >= total}
+                onClick={() => setPage(page + 1)}
+              >
+                <Trans>Next</Trans>
+              </Button>
+            </div>
+          )}
+        </TabsContent>
+        {catalog.enabled ? (
+          <TabsContent value="discover" className="grid gap-4">
+            {discover.error ? (
+              <div className="text-sm text-destructive">
+                <Trans>Failed to load public scenarios.</Trans>
+              </div>
+            ) : null}
+            <div className={libraryGridClass}>
+              {discover.items.map((scenario) => (
+                <CatalogScenarioCard
+                  key={scenario.id}
+                  baseUrl={catalog.baseUrl}
+                  scenario={scenario}
+                  actions="discover"
+                  onView={viewPublicScenario}
+                  onReport={reportPublicScenario}
+                  onBlockPublisher={
+                    catalog.signedIn ? blockPublicScenarioPublisher : undefined
+                  }
+                />
+              ))}
+            </div>
+            {discover.nextCursor ? (
+              <div className="flex justify-end">
+                <Button
+                  variant="secondary"
+                  disabled={discover.loading}
+                  onClick={() => void discover.loadMore()}
                 >
-                  <Button
-                    onClick={async () => {
-                      const taleId = await initTaleFromScenario(id);
-                      await loadTale(taleId);
-                      navigate({ to: "/play" });
-                    }}
-                  >
-                    <Trans>New Tale</Trans>
-                  </Button>
-                  {canStartPrivate ? (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={async () => {
-                        const taleId = await initTaleFromScenario(id, {
-                          syncPolicy: "private",
-                        });
-                        await loadTale(taleId);
-                        navigate({ to: "/play" });
-                      }}
-                      aria-label={t`Start local-only tale`}
-                    >
-                      <VenetianMask className="h-4 w-4" />
-                    </Button>
-                  ) : null}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-      {total > limit && (
-        <div className="flex items-center justify-end gap-2 ">
-          <Button
-            variant="secondary"
-            disabled={page <= 1}
-            onClick={() => setPage(Math.max(1, page - 1))}
-          >
-            <Trans>Prev</Trans>
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            <Trans>
-              Page {page} of {Math.max(1, Math.ceil(total / limit) || 1)}
-            </Trans>
-          </span>
-          <Button
-            variant="secondary"
-            disabled={page * limit >= total}
-            onClick={() => setPage(page + 1)}
-          >
-            <Trans>Next</Trans>
-          </Button>
-        </div>
-      )}
+                  <Trans>Load more</Trans>
+                </Button>
+              </div>
+            ) : null}
+          </TabsContent>
+        ) : null}
+        {catalog.enabled && catalog.signedIn ? (
+          <TabsContent value="published" className="grid gap-4">
+            {published.error ? (
+              <div className="text-sm text-destructive">
+                <Trans>Failed to load published scenarios.</Trans>
+              </div>
+            ) : null}
+            <div className={libraryGridClass}>
+              {published.items.map((scenario) => (
+                <CatalogScenarioCard
+                  key={scenario.id}
+                  baseUrl={catalog.baseUrl}
+                  scenario={scenario}
+                  actions="published"
+                  onView={(item) => viewPublicScenario(item, true)}
+                  onUnpublish={unpublishPublicScenario}
+                  onThumbnail={
+                    catalog.thumbnailUploads ? updatePublicThumbnail : undefined
+                  }
+                />
+              ))}
+            </div>
+            {published.nextCursor ? (
+              <div className="flex justify-end">
+                <Button
+                  variant="secondary"
+                  disabled={published.loading}
+                  onClick={() => void published.loadMore()}
+                >
+                  <Trans>Load more</Trans>
+                </Button>
+              </div>
+            ) : null}
+          </TabsContent>
+        ) : null}
+      </Tabs>
       <AlertDialog
         open={Boolean(pendingDelete)}
         onOpenChange={(open) => {
@@ -334,6 +761,44 @@ export default function ScenariosHome() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <PublishScenarioDialog
+        open={Boolean(pendingPublish)}
+        scenario={pendingPublish}
+        updating={Boolean(
+          pendingPublish && linkByLocalId.get(pendingPublish.id),
+        )}
+        thumbnailUploads={catalog.thumbnailUploads}
+        catalog={catalog}
+        onOpenChange={(open) => {
+          if (!open) setPendingPublish(null);
+        }}
+        onPublish={async ({ metadata, thumbnailFile, policyAcceptance }) => {
+          if (!pendingPublish) return;
+          try {
+            const result = await catalogActions.publish({
+              scenario: pendingPublish,
+              metadata,
+              thumbnailFile,
+              policyAcceptance,
+            });
+            toast.success(
+              result.moderation.status === "needs_review"
+                ? t`Scenario submitted for moderation`
+                : linkByLocalId.get(pendingPublish.id)
+                  ? t`Scenario update published`
+                  : t`Scenario published`,
+            );
+            await refreshCatalogState();
+          } catch (error) {
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : t`Failed to publish scenario`,
+            );
+            throw error;
+          }
+        }}
+      />
       <GenerateScenarioDialog
         open={generateOpen}
         onOpenChange={setGenerateOpen}

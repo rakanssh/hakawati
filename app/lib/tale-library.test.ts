@@ -81,6 +81,7 @@ function localTale(id: string, name: string, updatedAt: number): TaleHead {
 function remoteTale(id: string, title: string, updatedAt: number): RemoteTale {
   return {
     id,
+    sourceTaleId: id,
     title,
     description: null,
     gameMode: GameMode.STORY_TELLER,

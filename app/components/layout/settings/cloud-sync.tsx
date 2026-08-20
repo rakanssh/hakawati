@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
 import {
   AlertTriangle,
@@ -49,6 +49,7 @@ import {
   listHostedDevices,
   prepareHostedSync,
   fetchSyncCapabilities,
+  isHostedSignInCancelledError,
   registerSyncDevice,
   signInHostedSync,
   updateHostedAccountProfile,
@@ -78,6 +79,7 @@ import { formatBytes, formatExactDateTime } from "@/lib/utils";
 
 const HOSTED_PROFILE_ID = "hosted";
 const PERSONAL_PROFILE_ID = "personal";
+const PERSONAL_SYNC_ENABLED = false;
 const PROFILE_UPDATE_TIMEOUT_MS = 15_000;
 const HOSTED_DEVICE_LIMIT = 2;
 
@@ -135,7 +137,10 @@ export default function SettingsCloudSync() {
   const personalBaseUrl = useSyncSettingsStore(
     (state) => state.personalBaseUrl,
   );
-  const activeSyncMode = useSyncSettingsStore((state) => state.activeSyncMode);
+  const configuredSyncMode = useSyncSettingsStore(
+    (state) => state.activeSyncMode,
+  );
+  const activeSyncMode = PERSONAL_SYNC_ENABLED ? configuredSyncMode : "hosted";
   const accessToken = useSyncSettingsStore((state) => state.accessToken);
   const accessTokenExpiresAt = useSyncSettingsStore(
     (state) => state.accessTokenExpiresAt,
@@ -177,6 +182,9 @@ export default function SettingsCloudSync() {
     (state) => state.setDevicePlatform,
   );
   const [busy, setBusy] = useState<string | null>(null);
+  const [signInController, setSignInController] =
+    useState<AbortController | null>(null);
+  const signInControllerRef = useRef<AbortController | null>(null);
   const [profileBusy, setProfileBusy] = useState(false);
   const [profileDisplayName, setProfileDisplayName] = useState("");
   const [status, setStatus] = useState<string>("");
@@ -387,17 +395,43 @@ export default function SettingsCloudSync() {
   }, [devicesOpen, refreshHostedDevices]);
 
   async function signInForToken() {
-    const result = await signInHostedSync({ profile: hostedProfile });
-    if (result.refreshToken) {
-      await setHostedRefreshToken(HOSTED_PROFILE_ID, result.refreshToken);
+    const controller = new AbortController();
+    signInControllerRef.current = controller;
+    setSignInController(controller);
+    try {
+      const result = await signInHostedSync({
+        profile: hostedProfile,
+        signal: controller.signal,
+      });
+      if (result.refreshToken) {
+        await setHostedRefreshToken(HOSTED_PROFILE_ID, result.refreshToken);
+      }
+      const expiresAt =
+        result.expiresIn && result.expiresIn > 0
+          ? Date.now() + result.expiresIn * 1000
+          : null;
+      setAccessToken(
+        result.accessToken,
+        expiresAt,
+        Boolean(result.refreshToken),
+      );
+      return result.accessToken;
+    } finally {
+      if (signInControllerRef.current === controller) {
+        signInControllerRef.current = null;
+      }
+      setSignInController((current) =>
+        current === controller ? null : current,
+      );
     }
-    const expiresAt =
-      result.expiresIn && result.expiresIn > 0
-        ? Date.now() + result.expiresIn * 1000
-        : null;
-    setAccessToken(result.accessToken, expiresAt, Boolean(result.refreshToken));
-    return result.accessToken;
   }
+
+  useEffect(
+    () => () => {
+      signInControllerRef.current?.abort();
+    },
+    [],
+  );
 
   function signOut() {
     void deleteHostedRefreshToken(HOSTED_PROFILE_ID).catch(() => undefined);
@@ -411,6 +445,20 @@ export default function SettingsCloudSync() {
     }
     setStatus(t`Signed out`);
     notifySyncChanged();
+  }
+
+  function changeHostedCloudUrl(nextUrl: string) {
+    if (nextUrl === cloudBaseUrl) return;
+    if (hasAnySession) {
+      void deleteHostedRefreshToken(HOSTED_PROFILE_ID).catch(() => undefined);
+      clearSession();
+      void setSyncProfileDisabled(HOSTED_PROFILE_ID, "signed_out").catch(
+        () => undefined,
+      );
+      setStatus(t`Cloud URL changed. Sign in again to continue.`);
+      notifySyncChanged();
+    }
+    setCloudBaseUrl(nextUrl);
   }
 
   async function completeProfile() {
@@ -450,6 +498,10 @@ export default function SettingsCloudSync() {
     try {
       await action();
     } catch (error) {
+      if (isHostedSignInCancelledError(error)) {
+        setStatus("");
+        return;
+      }
       const message = error instanceof Error ? error.message : t`Sync failed`;
       if (message.toLowerCase().includes("device limit")) {
         setSyncEnabled(false);
@@ -881,7 +933,9 @@ export default function SettingsCloudSync() {
                 <SettingsField label={<Trans>Cloud URL</Trans>}>
                   <Input
                     value={cloudBaseUrl}
-                    onChange={(event) => setCloudBaseUrl(event.target.value)}
+                    onChange={(event) =>
+                      changeHostedCloudUrl(event.target.value)
+                    }
                     placeholder={t`https://sync.example.com`}
                   />
                 </SettingsField>
@@ -900,39 +954,69 @@ export default function SettingsCloudSync() {
               </div>
             </AccordionContent>
           </AccordionItem>
-          <AccordionItem value="personal">
-            <AccordionTrigger>
-              <Trans>Personal sync server</Trans>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <SettingsField label={<Trans>Personal Sync URL</Trans>}>
-                  <Input
-                    value={personalBaseUrl}
-                    onChange={(event) => setPersonalBaseUrl(event.target.value)}
-                    placeholder={t`http://192.168.1.20:8787`}
-                  />
-                </SettingsField>
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={connectPersonal}
-                  disabled={!personalProfile.baseUrl || busy !== null}
-                >
-                  <Cloud className="size-4" />
-                  <Trans>Connect Personal Sync</Trans>
-                </Button>
-                {activeSyncMode === "personal" ? (
-                  <Badge variant="outline">
-                    <Trans>Personal active</Trans>
-                  </Badge>
-                ) : null}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
+          {PERSONAL_SYNC_ENABLED ? (
+            <AccordionItem value="personal">
+              <AccordionTrigger>
+                <Trans>Personal sync server</Trans>
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <SettingsField label={<Trans>Personal Sync URL</Trans>}>
+                    <Input
+                      value={personalBaseUrl}
+                      onChange={(event) =>
+                        setPersonalBaseUrl(event.target.value)
+                      }
+                      placeholder={t`http://192.168.1.20:8787`}
+                    />
+                  </SettingsField>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={connectPersonal}
+                    disabled={!personalProfile.baseUrl || busy !== null}
+                  >
+                    <Cloud className="size-4" />
+                    <Trans>Connect Personal Sync</Trans>
+                  </Button>
+                  {activeSyncMode === "personal" ? (
+                    <Badge variant="outline">
+                      <Trans>Personal active</Trans>
+                    </Badge>
+                  ) : null}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          ) : null}
         </Accordion>
       </SettingsPanel>
+
+      <Dialog
+        open={Boolean(signInController)}
+        onOpenChange={(open) => {
+          if (!open) signInController?.abort();
+        }}
+      >
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>
+              <Trans>Connecting...</Trans>
+            </DialogTitle>
+            <DialogDescription>
+              <Trans>
+                Finish signing in through your browser. You can cancel and keep
+                using Hakawati at any time.
+              </Trans>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => signInController?.abort()}>
+              <Trans>Cancel</Trans>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={resolverOpen} onOpenChange={setResolverOpen}>
         <DialogContent>

@@ -13,6 +13,11 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. js-lingui-explicit-id
+#: app/hooks/useSyncBackground.ts:182
+msgid "Failed to upload tale to cloud"
+msgstr "تعذّر رفع الحكاية إلى السحابة"
+
 #: app/data/quickstart-presets.ts:476
 #~ msgid " {characterName} has a rational explanation ready. It is not fitting the facts as neatly as it should."
 #~ msgstr " جهّز {characterName} تفسيراً منطقياً. لكنه لا يتناسب مع الحقائق بدقة كما ينبغي."
@@ -2732,3 +2737,38 @@ msgstr "افعل..."
 #: app/data/quickstart-presets.ts:20
 msgid "Zombies"
 msgstr "زومبي"
+
+#: app/pages/scenarios/catalog-details.tsx
+#: app/pages/scenarios/home.tsx
+msgid "Awaiting moderation"
+msgstr "بانتظار المراجعة"
+
+#: app/pages/scenarios/catalog-details.tsx
+#: app/pages/scenarios/create.tsx
+#: app/pages/scenarios/home.tsx
+msgid "Scenario submitted for moderation"
+msgstr "تم إرسال السيناريو للمراجعة"
+
+#: app/pages/scenarios/catalog-details.tsx
+msgid "This version stays private until it is approved."
+msgstr "ستبقى هذه النسخة خاصة حتى تتم الموافقة عليها."
+
+#: app/components/scenario/PublishScenarioDialog.tsx
+msgid "Publishing policies could not be loaded."
+msgstr "تعذر تحميل سياسات النشر."
+
+#: app/components/scenario/PublishScenarioDialog.tsx
+msgid "I agree to the publishing rules and understand that public scenarios are moderated and may be removed."
+msgstr "أوافق على قواعد النشر وأفهم أن السيناريوهات العامة تخضع للمراجعة وقد تتم إزالتها."
+
+#: app/components/scenario/PublishScenarioDialog.tsx
+msgid "Terms of Service"
+msgstr "شروط الخدمة"
+
+#: app/components/scenario/PublishScenarioDialog.tsx
+msgid "Community Guidelines"
+msgstr "إرشادات المجتمع"
+
+#: app/components/scenario/PublishScenarioDialog.tsx
+msgid "Loading publishing policies..."
+msgstr "جارٍ تحميل سياسات النشر..."

@@ -12,6 +12,8 @@ import Play from "./pages/play";
 import ScenariosHome from "./pages/scenarios/home";
 import ScenarioCreate from "./pages/scenarios/create.tsx";
 import ScenarioEdit from "./pages/scenarios/edit.tsx";
+import ScenarioDetails from "./pages/scenarios/details.tsx";
+import ScenarioCatalogDetails from "./pages/scenarios/catalog-details.tsx";
 import TalesHome from "./pages/tales/home";
 import { QuickstartPage } from "./components/quickstart";
 
@@ -54,8 +56,18 @@ const routeTree = RootRoute.addChildren([
   }),
   createRoute({
     getParentRoute: () => RootRoute,
-    path: "scenarios/$id",
+    path: "scenarios/catalog/$id",
+    component: ScenarioCatalogDetails,
+  }),
+  createRoute({
+    getParentRoute: () => RootRoute,
+    path: "scenarios/$id/edit",
     component: ScenarioEdit,
+  }),
+  createRoute({
+    getParentRoute: () => RootRoute,
+    path: "scenarios/$id",
+    component: ScenarioDetails,
   }),
 ]);
 

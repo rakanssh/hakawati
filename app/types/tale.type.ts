@@ -7,6 +7,13 @@ import {
   StoryCard,
 } from "./context.type";
 
+export type TaleSourceMetadata = {
+  type: "local" | "catalog";
+  scenarioId: string;
+  scenarioVersionId?: string | null;
+  scenarioTitle?: string | null;
+};
+
 export type Tale = {
   id: string;
   name: string;
@@ -15,6 +22,7 @@ export type Tale = {
   components: PromptComponent[];
   storyCards: StoryCard[];
   scenarioId?: string;
+  source?: TaleSourceMetadata;
   stats: Stat[];
   inventory: Item[];
   log: LogEntry[];
@@ -33,6 +41,7 @@ export type TaleHead = {
   thumbnail?: Uint8Array | null;
   createdAt: number;
   scenarioId: string | null;
+  source?: TaleSourceMetadata;
   logCount: number;
   updatedAt: number;
   lastLogEntry: LogEntry | null;

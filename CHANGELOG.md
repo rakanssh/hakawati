@@ -9,15 +9,22 @@ All notable changes to this project are documented in this file.
 - Cloud sync for tales, including sign-in, device registration, and background syncing across devices.
 - Library controls to sync or unsync individual tales, keep tales private, and resolve sync conflicts.
 - Build-time configuration for the default hosted sync server.
+- Public catalog of scenarios with tag filtering, publishing, updates, reporting, and publisher blocking.
+- The ability for signed-in users to publish their own scenarios for others to play.
+- Automatic safety backups before database upgrades, with recovery guidance if an upgrade cannot complete.
 
 ### Changed
 
 - Reworked tale storage so larger tales load, save, and recover play history more smoothly.
 - Improved tale deletion and sync cleanup across local and remote copies.
+- Redesigned scenario and catalog pages for consistency.
 
 ### Fixed
 
 - Prevented migration checksum errors from line-ending differences in earlier Windows builds.
+- Cloud tales can be uploaded again after their remote copy is removed instead of remaining stuck in a queued retry loop.
+- Background upload failures now show a localized notification while automatic retries continue.
+- Local tales remain linked to the correct cloud copy when the server assigns a new remote ID.
 
 ## [v0.15.2] - 2026-06-11
 
