@@ -1492,7 +1492,11 @@ export async function importTalePackage(
 export async function replaceTaleWithPackage(
   taleId: string,
   input: TalePackageV1,
-  options: { title?: string; expectedSaveVersion?: number } = {},
+  options: {
+    title?: string;
+    expectedSaveVersion?: number;
+    canReplace?: () => boolean;
+  } = {},
 ): Promise<boolean> {
   const { payload, thumbnail, state, turns } = prepareTalePackageWrite(input);
   const source = sourceColumns(packageSource(payload));
@@ -1503,8 +1507,9 @@ export async function replaceTaleWithPackage(
     return withTransaction(db, async (db) => {
       const current = await requireTaleRow(db, taleId);
       if (
-        options.expectedSaveVersion !== undefined &&
-        Number(current.save_version ?? 1) !== options.expectedSaveVersion
+        (options.expectedSaveVersion !== undefined &&
+          Number(current.save_version ?? 1) !== options.expectedSaveVersion) ||
+        options.canReplace?.() === false
       ) {
         return false;
       }

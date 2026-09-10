@@ -7,6 +7,7 @@ import {
   wakeSyncBackground,
 } from "@/services/sync-wakeup";
 import { useSyncBackground } from "./useSyncBackground";
+import { useTaleStore } from "@/store/useTaleStore";
 
 i18n.load("en", {});
 i18n.activate("en");
@@ -52,6 +53,7 @@ const toastMocks = vi.hoisted(() => ({
 
 vi.mock("@/repositories/sync.repository", () => syncRepoMocks);
 vi.mock("@/services/sync", () => syncServiceMocks);
+vi.mock("@/prompts", () => ({ getActiveStorytellerPrompt: () => "" }));
 vi.mock("@/store/useSyncSettingsStore", () => ({
   useSyncSettingsStore: (selector: (state: typeof syncStoreState) => unknown) =>
     selector(syncStoreState),
@@ -430,6 +432,14 @@ describe("useSyncBackground", () => {
         remoteTale: expect.objectContaining({ id: "remote-1" }),
       }),
     );
+
+    const { canPull } = syncServiceMocks.syncLinkedTale.mock.calls[0][0];
+    useTaleStore.setState({ id: "other-tale", loadingTaleId: null });
+    expect(canPull()).toBe(true);
+    useTaleStore.setState({ loadingTaleId: "local-1" });
+    expect(canPull()).toBe(false);
+    useTaleStore.setState({ id: "local-1", loadingTaleId: null });
+    expect(canPull()).toBe(false);
 
     harness.cleanup();
   });

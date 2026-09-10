@@ -23,6 +23,7 @@ import {
 } from "@/services/sync";
 import { addSyncWakeListener, notifySyncChanged } from "@/services/sync-wakeup";
 import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
+import { useTaleStore } from "@/store/useTaleStore";
 
 const HOSTED_PROFILE_ID = "hosted";
 const PERSONAL_PROFILE_ID = "personal";
@@ -218,6 +219,13 @@ export function useSyncBackground(dbReady: boolean) {
               remoteTale,
               idempotencyKey: `sync-${activeProfile.id}-${state.localTaleId}-${state.contentRev ?? "0"}-${state.metadataRev ?? "0"}`,
               capabilities,
+              canPull: () => {
+                const active = useTaleStore.getState();
+                return (
+                  active.id !== state.localTaleId &&
+                  active.loadingTaleId !== state.localTaleId
+                );
+              },
             });
           } catch (error) {
             if (signal.aborted) return;

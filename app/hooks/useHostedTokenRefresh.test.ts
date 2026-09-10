@@ -31,7 +31,10 @@ const syncStoreState = vi.hoisted(() => ({
 }));
 
 vi.mock("@/repositories/sync.repository", () => syncRepoMocks);
-vi.mock("@/services/sync", () => syncServiceMocks);
+vi.mock("@/services/sync", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/services/sync")>()),
+  ...syncServiceMocks,
+}));
 vi.mock("@/services/secret-store", () => secretStoreMocks);
 vi.mock("@/store/useSyncSettingsStore", () => ({
   useSyncSettingsStore: (selector: (state: typeof syncStoreState) => unknown) =>
@@ -39,6 +42,7 @@ vi.mock("@/store/useSyncSettingsStore", () => ({
 }));
 
 import { useHostedTokenRefresh } from "./useHostedTokenRefresh";
+import { SyncHttpError } from "@/services/sync";
 
 function renderHarness(dbReady = true) {
   const container = document.createElement("div");
@@ -160,16 +164,73 @@ describe("useHostedTokenRefresh", () => {
     },
   );
 
-  it("marks the hosted session when silent refresh fails", async () => {
+  it("requires sign-in for a rejected refresh token without retrying", async () => {
+    vi.useFakeTimers();
     syncServiceMocks.refreshHostedSync.mockRejectedValueOnce(
-      new Error("invalid_grant"),
+      new SyncHttpError("Refresh token revoked", 400, "invalid_grant"),
     );
 
     const harness = renderHarness();
     await harness.flush();
 
     expect(syncStoreState.setHostedRefreshFailed).toHaveBeenCalledWith(true);
+    await act(async () => {
+      window.dispatchEvent(new Event("online"));
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    expect(syncServiceMocks.refreshHostedSync).toHaveBeenCalledOnce();
 
+    harness.cleanup();
+  });
+
+  it("recovers an expired session after a temporary network failure", async () => {
+    vi.useFakeTimers();
+    syncServiceMocks.refreshHostedSync.mockRejectedValueOnce(
+      new TypeError("Failed to fetch"),
+    );
+
+    const harness = renderHarness();
+    await harness.flush();
+    expect(syncServiceMocks.refreshHostedSync).toHaveBeenCalledOnce();
+    expect(syncStoreState.setHostedRefreshFailed).toHaveBeenLastCalledWith(
+      false,
+    );
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    expect(syncServiceMocks.refreshHostedSync).toHaveBeenCalledTimes(2);
+    expect(syncStoreState.setAccessToken).toHaveBeenCalledWith(
+      "new-token",
+      expect.any(Number),
+      true,
+    );
+
+    harness.cleanup();
+  });
+
+  it("retries immediately when online and cancels the pending retry on logout", async () => {
+    vi.useFakeTimers();
+    syncServiceMocks.refreshHostedSync.mockRejectedValue(
+      new SyncHttpError("Service unavailable", 503),
+    );
+    const harness = renderHarness();
+    await harness.flush();
+
+    await act(async () => {
+      window.dispatchEvent(new Event("online"));
+    });
+    expect(syncServiceMocks.refreshHostedSync).toHaveBeenCalledTimes(2);
+
+    syncStoreState.hasRefreshToken = false;
+    syncStoreState.accessToken = "";
+    harness.rerender();
+    await harness.flush();
+    await act(async () => {
+      window.dispatchEvent(new Event("online"));
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    expect(syncServiceMocks.refreshHostedSync).toHaveBeenCalledTimes(2);
     harness.cleanup();
   });
 

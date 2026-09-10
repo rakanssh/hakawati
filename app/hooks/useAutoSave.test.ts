@@ -1,14 +1,16 @@
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useAutoSave } from "./useAutoSave";
+import { flushPendingAutoSaves, useAutoSave } from "./useAutoSave";
 
 function deferred() {
   let resolve!: () => void;
-  const promise = new Promise<void>((done) => {
+  let reject!: (error: Error) => void;
+  const promise = new Promise<void>((done, fail) => {
     resolve = done;
+    reject = fail;
   });
-  return { promise, resolve };
+  return { promise, resolve, reject };
 }
 
 function renderAutoSave(save: (data: number) => Promise<void>) {
@@ -132,6 +134,93 @@ describe("useAutoSave", () => {
       expect(harness.current.hasUnsavedChanges).toBe(false);
     } finally {
       harness.cleanup();
+    }
+  });
+
+  it("keeps failed edits available for another close or update attempt", async () => {
+    const save = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("Disk full"))
+      .mockResolvedValue(undefined);
+    const harness = renderAutoSave(save);
+    try {
+      harness.render(1);
+      await act(async () => {
+        await expect(flushPendingAutoSaves()).rejects.toThrow("Disk full");
+      });
+      expect(harness.current.hasUnsavedChanges).toBe(true);
+      await act(flushPendingAutoSaves);
+      expect(save.mock.calls.map(([data]) => data)).toEqual([1, 1]);
+      expect(harness.current.hasUnsavedChanges).toBe(false);
+    } finally {
+      harness.cleanup();
+    }
+  });
+
+  it("waits for an in-flight save and then flushes newer edits before closing", async () => {
+    const first = deferred();
+    const save = vi
+      .fn()
+      .mockReturnValueOnce(first.promise)
+      .mockResolvedValue(undefined);
+    const harness = renderAutoSave(save);
+    try {
+      harness.render(1);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(100);
+      });
+      const closed = vi.fn();
+      const closing = flushPendingAutoSaves().then(closed);
+      harness.render(2);
+      expect(closed).not.toHaveBeenCalled();
+      await act(async () => {
+        first.resolve();
+        await closing;
+      });
+      expect(save.mock.calls.map(([data]) => data)).toEqual([1, 2]);
+      expect(closed).toHaveBeenCalledOnce();
+    } finally {
+      harness.cleanup();
+    }
+  });
+
+  it("refuses to close during generation and flushes after generation stops", async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    const harness = renderAutoSave(save);
+    try {
+      harness.render(1, true);
+      await expect(flushPendingAutoSaves()).rejects.toThrow("Stop generation");
+      expect(save).not.toHaveBeenCalled();
+      harness.render(1, false);
+      await act(flushPendingAutoSaves);
+      expect(save).toHaveBeenCalledWith(1);
+    } finally {
+      harness.cleanup();
+    }
+  });
+
+  it("keeps a failed departing page's save available for retry before closing", async () => {
+    const pending = deferred();
+    const save = vi
+      .fn()
+      .mockReturnValueOnce(pending.promise)
+      .mockResolvedValue(undefined);
+    const errorLog = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const harness = renderAutoSave(save);
+    harness.render(1);
+    harness.cleanup();
+    try {
+      const closing = expect(flushPendingAutoSaves()).rejects.toThrow(
+        "Disk full",
+      );
+      pending.reject(new Error("Disk full"));
+      await closing;
+      await flushPendingAutoSaves();
+      expect(save.mock.calls.map(([data]) => data)).toEqual([1, 1]);
+    } finally {
+      errorLog.mockRestore();
     }
   });
 });

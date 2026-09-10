@@ -138,51 +138,59 @@ describe("useLoadTale", () => {
     ]);
     expect(useTaleStore.getState().totalLogCount).toBe(1);
     expect(useTaleStore.getState().id).toBe("old-tale");
+    expect(useTaleStore.getState().loadingTaleId).toBeNull();
     expect(lastPlayedMocks.setLastPlayedTaleId).not.toHaveBeenCalled();
 
     harness.cleanup();
   });
 
-  it("does not reset the current log window while a superseded load is pending", async () => {
-    const staleLoad = deferred<ReturnType<typeof createLoadedTale>>();
-    serviceMocks.getTaleById
-      .mockReturnValueOnce(staleLoad.promise)
-      .mockResolvedValueOnce(createLoadedTale("fresh-tale", "fresh-entry"));
-    const harness = renderHarness(useLoadTale);
+  it.each([false, true])(
+    "ignores a superseded load across hook instances: %s",
+    async (separateHook) => {
+      const staleLoad = deferred<ReturnType<typeof createLoadedTale>>();
+      serviceMocks.getTaleById
+        .mockReturnValueOnce(staleLoad.promise)
+        .mockResolvedValueOnce(createLoadedTale("fresh-tale", "fresh-entry"));
+      const harness = renderHarness(useLoadTale);
+      const nextHarness = separateHook ? renderHarness(useLoadTale) : harness;
 
-    let staleLoadPromise: Promise<void> = Promise.resolve();
-    act(() => {
-      staleLoadPromise = harness.controls.load("stale-tale");
-    });
+      let staleLoadPromise: Promise<void> = Promise.resolve();
+      act(() => {
+        staleLoadPromise = harness.controls.load("stale-tale");
+      });
+      expect(useTaleStore.getState().loadingTaleId).toBe("stale-tale");
 
-    expect(useTaleStore.getState().log.map((entry) => entry.id)).toEqual([
-      "old-entry",
-    ]);
-    expect(useTaleStore.getState().totalLogCount).toBe(1);
+      expect(useTaleStore.getState().log.map((entry) => entry.id)).toEqual([
+        "old-entry",
+      ]);
+      expect(useTaleStore.getState().totalLogCount).toBe(1);
 
-    await act(async () => {
-      await harness.controls.load("fresh-tale");
-    });
+      await act(async () => {
+        await nextHarness.controls.load("fresh-tale");
+      });
 
-    expect(useTaleStore.getState().id).toBe("fresh-tale");
-    expect(useTaleStore.getState().log.map((entry) => entry.id)).toEqual([
-      "fresh-entry",
-    ]);
-    expect(useTaleStore.getState().totalLogCount).toBe(1);
+      expect(useTaleStore.getState().id).toBe("fresh-tale");
+      expect(useTaleStore.getState().loadingTaleId).toBeNull();
+      expect(useTaleStore.getState().log.map((entry) => entry.id)).toEqual([
+        "fresh-entry",
+      ]);
+      expect(useTaleStore.getState().totalLogCount).toBe(1);
 
-    staleLoad.resolve(createLoadedTale("stale-tale", "stale-entry"));
-    await act(async () => {
-      await staleLoadPromise;
-    });
+      staleLoad.resolve(createLoadedTale("stale-tale", "stale-entry"));
+      await act(async () => {
+        await staleLoadPromise;
+      });
 
-    expect(useTaleStore.getState().id).toBe("fresh-tale");
-    expect(useTaleStore.getState().log.map((entry) => entry.id)).toEqual([
-      "fresh-entry",
-    ]);
-    expect(useTaleStore.getState().totalLogCount).toBe(1);
+      expect(useTaleStore.getState().id).toBe("fresh-tale");
+      expect(useTaleStore.getState().log.map((entry) => entry.id)).toEqual([
+        "fresh-entry",
+      ]);
+      expect(useTaleStore.getState().totalLogCount).toBe(1);
 
-    harness.cleanup();
-  });
+      harness.cleanup();
+      if (separateHook) nextHarness.cleanup();
+    },
+  );
 
   it("ignores the first A request when switching A to B and back to A", async () => {
     const firstA = deferred<ReturnType<typeof createLoadedTale>>();

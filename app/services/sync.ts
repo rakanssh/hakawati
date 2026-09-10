@@ -614,11 +614,13 @@ export async function refreshHostedSync(input: {
     .json()
     .catch(() => null)) as TokenResponse | null;
   if (!tokenResponse.ok || !tokenBody?.access_token) {
-    throw new Error(
+    throw new SyncHttpError(
       tokenBody?.error_description ??
         tokenBody?.message ??
         tokenBody?.error ??
         "Hosted session refresh failed",
+      tokenResponse.status,
+      tokenBody?.error ?? "refresh_failed",
     );
   }
 
@@ -1008,6 +1010,7 @@ export async function syncLinkedTale(input: {
   remoteTale: RemoteTale;
   idempotencyKey: string;
   capabilities?: SyncCapabilities;
+  canPull?: () => boolean;
 }): Promise<LinkedTaleSyncResult> {
   const state = await getTaleSyncState({
     profileId: input.profile.id,
@@ -1052,6 +1055,7 @@ export async function syncLinkedTale(input: {
       transport: input.transport,
       localTaleId: input.localTaleId,
       requireClean: true,
+      canReplace: input.canPull,
     });
     if (!applied) return "conflict";
     return "pulled";
@@ -1386,6 +1390,7 @@ export async function applyRemoteTalePackage(input: {
   transport: SyncTransport;
   localTaleId: string;
   requireClean?: boolean;
+  canReplace?: () => boolean;
 }): Promise<boolean> {
   // Read the version before the link status. A save before this snapshot is
   // detected as dirty; a later save is rejected by the replacement CAS.
@@ -1401,7 +1406,9 @@ export async function applyRemoteTalePackage(input: {
 
   if (
     input.requireClean &&
-    (hasLocalPendingWork(state) || state.pendingStatus === "conflict")
+    (hasLocalPendingWork(state) ||
+      state.pendingStatus === "conflict" ||
+      input.canReplace?.() === false)
   ) {
     await setTaleSyncStatus({
       profileId: input.profile.id,
@@ -1439,7 +1446,12 @@ export async function applyRemoteTalePackage(input: {
   const replaced = await replaceTaleWithPackage(
     input.localTaleId,
     toLocalTalePackage(remote.package),
-    { expectedSaveVersion },
+    {
+      expectedSaveVersion,
+      // An open tale owns an in-memory snapshot, even before its next save.
+      // Recheck inside the write queue in case it opened during the download.
+      ...(input.canReplace ? { canReplace: input.canReplace } : {}),
+    },
   );
   if (replaced === false) {
     await setTaleSyncStatus({

@@ -5,6 +5,10 @@ import { Button } from "../ui/button";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import fez from "@/assets/fez-offwh-bg-sqc.svg";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useEffect } from "react";
+import { toast } from "sonner";
+import { flushPendingAutoSaves } from "@/hooks/useAutoSave";
+import { useUpdateStore } from "@/store/useUpdateStore";
 
 const titlebarButtonClass = "h-7 w-7 rounded-xs p-0";
 
@@ -21,6 +25,41 @@ export function Titlebar() {
   const isShowButtons = true;
   const { isMobilePlatform } = useIsMobile();
   const isPlayRoute = routerState.location.pathname?.startsWith("/play");
+  useEffect(() => {
+    if (isMobilePlatform || !("__TAURI_INTERNALS__" in window)) return;
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+    void getAppWindow()
+      .then((appWindow) =>
+        appWindow.onCloseRequested(async (event) => {
+          if (useUpdateStore.getState().phase === "installing") {
+            event.preventDefault();
+            return;
+          }
+          try {
+            await flushPendingAutoSaves();
+          } catch (error) {
+            event.preventDefault();
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : "Failed to save progress. Please try closing again.",
+            );
+          }
+        }),
+      )
+      .then((stop) => {
+        if (disposed) stop();
+        else unlisten = stop;
+      })
+      .catch((error) =>
+        console.error("Unable to register save on close:", error),
+      );
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, [isMobilePlatform]);
   if (isMobilePlatform) return null;
   return (
     <div

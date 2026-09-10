@@ -22,6 +22,7 @@ let olderEntriesRequest = 0;
 
 export interface TaleStoreType {
   id: string;
+  loadingTaleId: string | null;
   name: string;
   stats: Stat[];
   gameMode: GameMode;
@@ -236,6 +237,7 @@ function appendLogEntry(
 
 export const useTaleStore = create<TaleStoreType>()((set) => ({
   id: uuidv4(),
+  loadingTaleId: null,
   gameMode: GameMode.STORY_TELLER,
   name: "",
   description: "",

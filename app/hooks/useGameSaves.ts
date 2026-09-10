@@ -219,6 +219,8 @@ export function usePersistTale() {
   } as const;
 }
 
+let taleLoadGeneration = 0;
+
 export function useLoadTale() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -227,20 +229,28 @@ export function useLoadTale() {
 
   useEffect(
     () => () => {
-      loadGenerationRef.current += 1;
+      if (loadGenerationRef.current === taleLoadGeneration) {
+        taleLoadGeneration += 1;
+        useTaleStore.setState({ loadingTaleId: null });
+      }
       loadingIdRef.current = null;
     },
     [],
   );
 
   const load = useCallback(async (taleId: string) => {
-    if (loadingIdRef.current === taleId) {
+    if (
+      loadingIdRef.current === taleId &&
+      loadGenerationRef.current === taleLoadGeneration
+    ) {
       return;
     }
 
-    // If we switch tales mid-load, the previous load will be ignored via the token check below
+    // All load hooks share one active tale; only the latest request may install it.
     loadingIdRef.current = taleId;
-    const myToken = ++loadGenerationRef.current;
+    const myToken = ++taleLoadGeneration;
+    loadGenerationRef.current = myToken;
+    useTaleStore.setState({ loadingTaleId: taleId });
 
     setLoading(true);
     setError(null);
@@ -248,7 +258,7 @@ export function useLoadTale() {
     try {
       const tale = await getTaleById(taleId);
 
-      if (loadGenerationRef.current !== myToken) {
+      if (taleLoadGeneration !== myToken) {
         return;
       }
 
@@ -256,6 +266,7 @@ export function useLoadTale() {
 
       useTaleStore.setState({
         id: tale.id,
+        loadingTaleId: null,
         name: tale.name,
         description: tale.description,
         components: tale.components,
@@ -273,11 +284,14 @@ export function useLoadTale() {
 
       useLastPlayedStore.getState().setLastPlayedTaleId(taleId);
     } catch (e) {
-      if (loadGenerationRef.current === myToken) {
+      if (taleLoadGeneration === myToken) {
         setError(e);
         throw e;
       }
     } finally {
+      if (taleLoadGeneration === myToken) {
+        useTaleStore.setState({ loadingTaleId: null });
+      }
       if (loadGenerationRef.current === myToken) {
         setLoading(false);
         loadingIdRef.current = null;

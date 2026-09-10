@@ -30,9 +30,19 @@ import { useDbReady } from "./hooks/useDbReady";
 import { useHostedTokenRefresh } from "./hooks/useHostedTokenRefresh";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useSyncBackground } from "./hooks/useSyncBackground";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from "./components/ui/alert-dialog";
+import { Trans } from "@lingui/react/macro";
 
 export default function AppShell() {
   const checkForUpdates = useUpdateStore((state) => state.checkForUpdates);
+  const installingUpdate = useUpdateStore(
+    (state) => state.phase === "installing",
+  );
   const hasRunRef = useRef(false);
   const { isReady: dbReady, error: dbError } = useDbReady();
   const { isMobilePlatform } = useIsMobile();
@@ -94,6 +104,21 @@ export default function AppShell() {
         </div>
         <MobileBottomNav />
         <Toaster richColors expand position="top-right" />
+        <AlertDialog open={installingUpdate}>
+          <AlertDialogContent
+            onEscapeKeyDown={(event) => event.preventDefault()}
+          >
+            <AlertDialogTitle>
+              <Trans>Installing update…</Trans>
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <Trans>
+                Saving your progress. Hakawati will restart when the update is
+                ready.
+              </Trans>
+            </AlertDialogDescription>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </ThemeProvider>
   );

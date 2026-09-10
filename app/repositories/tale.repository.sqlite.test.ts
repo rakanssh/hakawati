@@ -1420,10 +1420,32 @@ describe("tale repository SQLite storage", () => {
       undoStack: [gmEntry("remote-undo")],
     });
 
-    await replaceTaleWithPackage(
-      localId,
-      await exportTalePackage(remoteSourceId),
+    const remotePackage = await exportTalePackage(remoteSourceId);
+    const { enqueueLocalOperation } = await import("@/lib/local-write-queue");
+    let open = false;
+    let openTale!: () => void;
+    const opening = enqueueLocalOperation(
+      () =>
+        new Promise<void>((resolve) => {
+          openTale = () => {
+            open = true;
+            resolve();
+          };
+        }),
     );
+    await Promise.resolve();
+    const automaticPull = replaceTaleWithPackage(localId, remotePackage, {
+      canReplace: () => !open,
+    });
+    openTale();
+    await opening;
+    expect(await automaticPull).toBe(false);
+    expect((await getTale(localId))?.log.map((entry) => entry.id)).toEqual([
+      "local-gm",
+    ]);
+
+    // Choosing the remote branch explicitly remains available after review.
+    expect(await replaceTaleWithPackage(localId, remotePackage)).toBe(true);
 
     const replaced = await getTale(localId);
     const sessionRow = db.raw

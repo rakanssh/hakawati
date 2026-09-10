@@ -5,11 +5,16 @@ import {
   migrateStoredHostedRefreshToken,
   setHostedRefreshToken,
 } from "@/services/secret-store";
-import { refreshHostedSync, type SyncProfile } from "@/services/sync";
+import {
+  refreshHostedSync,
+  SyncHttpError,
+  type SyncProfile,
+} from "@/services/sync";
 import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
 
 const HOSTED_PROFILE_ID = "hosted";
 const REFRESH_SKEW_MS = 60_000;
+const REFRESH_RETRY_MS = 60_000;
 
 export function useHostedTokenRefresh(dbReady: boolean) {
   const cloudBaseUrl = useSyncSettingsStore((state) => state.cloudBaseUrl);
@@ -56,6 +61,8 @@ export function useHostedTokenRefresh(dbReady: boolean) {
       return;
     }
     let cancelled = false;
+    let timer: number | undefined;
+    let retryPending = false;
 
     const refresh = async () => {
       const migrated = await migrateStoredHostedRefreshToken(profile.id);
@@ -91,32 +98,51 @@ export function useHostedTokenRefresh(dbReady: boolean) {
       setHostedRefreshFailed(false);
     };
 
+    const attemptRefresh = async () => {
+      retryPending = false;
+      try {
+        await refresh();
+      } catch (error) {
+        if (cancelled) return;
+        console.info("Hosted sync token refresh skipped", error);
+        const retryable =
+          !(error instanceof SyncHttpError) ||
+          error.status === 408 ||
+          error.status === 429 ||
+          error.status >= 500;
+        setHostedRefreshFailed(!retryable);
+        if (retryable) {
+          retryPending = true;
+          timer = window.setTimeout(() => {
+            void attemptRefresh();
+          }, REFRESH_RETRY_MS);
+        }
+      }
+    };
+
+    const retryWhenOnline = () => {
+      if (!retryPending) return;
+      window.clearTimeout(timer);
+      void attemptRefresh();
+    };
+
     // An access token with no advertised expiry has no meaningful refresh
     // deadline. Passing Infinity to setTimeout instead triggers it immediately.
     if (accessToken.trim().length > 0 && accessTokenExpiresAt === null) return;
     const expiresAt = accessTokenExpiresAt ?? 0;
     const refreshIn = expiresAt - Date.now() - REFRESH_SKEW_MS;
     if (accessToken.trim().length > 0 && refreshIn > 0) {
-      const timer = window.setTimeout(() => {
-        void refresh().catch((error) => {
-          if (cancelled) return;
-          console.info("Hosted sync token refresh skipped", error);
-          setHostedRefreshFailed(true);
-        });
+      timer = window.setTimeout(() => {
+        void attemptRefresh();
       }, refreshIn);
-      return () => {
-        cancelled = true;
-        window.clearTimeout(timer);
-      };
+    } else {
+      void attemptRefresh();
     }
-
-    void refresh().catch((error) => {
-      if (cancelled) return;
-      console.info("Hosted sync token refresh skipped", error);
-      setHostedRefreshFailed(true);
-    });
+    window.addEventListener("online", retryWhenOnline);
     return () => {
       cancelled = true;
+      window.clearTimeout(timer);
+      window.removeEventListener("online", retryWhenOnline);
     };
   }, [
     accessToken,

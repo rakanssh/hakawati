@@ -3,6 +3,7 @@ import { GameMode } from "@/types/context.type";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 import type { TalePackageV1 } from "@/types/export.type";
 import type { TaleSyncState } from "@/repositories/sync.repository";
+import { useTaleStore } from "@/store/useTaleStore";
 import {
   assertSyncAvailable,
   createSyncTransport,
@@ -45,8 +46,8 @@ const taleRepo = vi.hoisted(() => ({
     async (
       _taleId: string,
       _pkg: TalePackageV1,
-      _options?: { expectedSaveVersion?: number },
-    ) => true,
+      options?: { expectedSaveVersion?: number; canReplace?: () => boolean },
+    ) => options?.canReplace?.() !== false,
   ),
 }));
 
@@ -80,6 +81,7 @@ vi.mock("@/repositories/tale.repository", () => ({
 }));
 
 vi.mock("@/repositories/sync.repository", () => syncRepo);
+vi.mock("@/prompts", () => ({ getActiveStorytellerPrompt: () => "" }));
 
 function samplePackage(): TalePackageV1 {
   return {
@@ -156,6 +158,7 @@ function jsonResponse(body: unknown) {
 describe("sync transport", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    useTaleStore.setState({ id: "other-tale", loadingTaleId: null });
   });
 
   afterEach(() => {
@@ -1030,82 +1033,118 @@ describe("sync transport", () => {
     expect(remoteTaleChanged(state, { ...remote, id: "other" })).toBe(false);
   });
 
-  it("pulls listed remote changes when the linked local tale is idle", async () => {
-    syncRepo.getTaleSyncState
-      .mockResolvedValueOnce({
-        profileId: "cloud",
+  it.each(["closed", "loaded", "loading", "opened-during-download"])(
+    "handles automatic remote changes when the local tale is %s",
+    async (openState) => {
+      if (openState === "loaded") useTaleStore.setState({ id: "local-tale" });
+      if (openState === "loading")
+        useTaleStore.setState({ loadingTaleId: "local-tale" });
+      syncRepo.getTaleSyncState
+        .mockResolvedValueOnce({
+          profileId: "cloud",
+          localTaleId: "local-tale",
+          remoteTaleId: "remote-tale",
+          contentRev: "2",
+          metadataRev: "3",
+          lastSyncedAt: 1,
+          pendingStatus: "idle",
+          lastErrorCode: null,
+        })
+        .mockResolvedValueOnce({
+          profileId: "cloud",
+          localTaleId: "local-tale",
+          remoteTaleId: "remote-tale",
+          contentRev: "2",
+          metadataRev: "3",
+          lastSyncedAt: 1,
+          pendingStatus: "idle",
+          lastErrorCode: null,
+        });
+      const transport = {
+        ...transportFixture(),
+        get: vi.fn().mockImplementation(async () => {
+          if (openState === "opened-during-download") {
+            useTaleStore.setState({ loadingTaleId: "local-tale" });
+          }
+          return {
+            id: "remote-tale",
+            contentRev: 4,
+            metadataRev: 3,
+            turnCount: 1,
+            package: toSyncTalePackage(samplePackage(), { mode: "hosted" }),
+          };
+        }),
+      };
+
+      const result = await syncLinkedTale({
+        profile: {
+          id: "cloud",
+          baseUrl: "https://sync.example",
+          mode: "hosted",
+        },
+        transport,
         localTaleId: "local-tale",
-        remoteTaleId: "remote-tale",
-        contentRev: "2",
-        metadataRev: "3",
-        lastSyncedAt: 1,
-        pendingStatus: "idle",
-        lastErrorCode: null,
-      })
-      .mockResolvedValueOnce({
-        profileId: "cloud",
-        localTaleId: "local-tale",
-        remoteTaleId: "remote-tale",
-        contentRev: "2",
-        metadataRev: "3",
-        lastSyncedAt: 1,
-        pendingStatus: "idle",
-        lastErrorCode: null,
+        remoteTale: {
+          id: "remote-tale",
+          sourceTaleId: "local-tale",
+          title: "Remote Tale",
+          description: null,
+          gameMode: GameMode.STORY_TELLER,
+          coverAssetId: null,
+          thumbnailAssetId: null,
+          contentRev: 4,
+          metadataRev: 3,
+          turnCount: 1,
+          updatedAt: "2026-06-19T00:00:00.000Z",
+          lastEntryPreview: null,
+        },
+        canPull: () => {
+          const active = useTaleStore.getState();
+          return (
+            active.id !== "local-tale" && active.loadingTaleId !== "local-tale"
+          );
+        },
+        idempotencyKey: "idem-sync",
+        capabilities: capabilitiesFixture("unavailable"),
       });
-    const transport = {
-      ...transportFixture(),
-      get: vi.fn().mockResolvedValue({
-        id: "remote-tale",
-        contentRev: 4,
-        metadataRev: 3,
-        turnCount: 1,
-        package: toSyncTalePackage(samplePackage(), { mode: "hosted" }),
-      }),
-    };
 
-    const result = await syncLinkedTale({
-      profile: {
-        id: "cloud",
-        baseUrl: "https://sync.example",
-        mode: "hosted",
-      },
-      transport,
-      localTaleId: "local-tale",
-      remoteTale: {
-        id: "remote-tale",
-        sourceTaleId: "local-tale",
-        title: "Remote Tale",
-        description: null,
-        gameMode: GameMode.STORY_TELLER,
-        coverAssetId: null,
-        thumbnailAssetId: null,
-        contentRev: 4,
-        metadataRev: 3,
-        turnCount: 1,
-        updatedAt: "2026-06-19T00:00:00.000Z",
-        lastEntryPreview: null,
-      },
-      idempotencyKey: "idem-sync",
-      capabilities: capabilitiesFixture("unavailable"),
-    });
-
-    expect(result).toBe("pulled");
-    expect(taleRepo.replaceTaleWithPackage).toHaveBeenCalledWith(
-      "local-tale",
-      expect.objectContaining({
-        format: "hakawati-tale-package",
-      }),
-      { expectedSaveVersion: 1 },
-    );
-    expect(syncRepo.upsertTaleSyncStateIfTaleVersion).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        contentRev: "4",
-        metadataRev: "3",
-        pendingStatus: "idle",
-      }),
-      2,
-    );
-  });
+      if (openState !== "closed") {
+        expect(result).toBe("conflict");
+        expect(
+          syncRepo.upsertTaleSyncStateIfTaleVersion,
+        ).not.toHaveBeenCalled();
+        expect(syncRepo.setTaleSyncStatus).toHaveBeenCalledWith(
+          expect.objectContaining({
+            pendingStatus: "conflict",
+            lastErrorCode: "local_changed",
+          }),
+        );
+        if (openState !== "opened-during-download") {
+          expect(transport.get).not.toHaveBeenCalled();
+          expect(taleRepo.replaceTaleWithPackage).not.toHaveBeenCalled();
+        }
+        return;
+      }
+      expect(result).toBe("pulled");
+      expect(taleRepo.replaceTaleWithPackage).toHaveBeenCalledWith(
+        "local-tale",
+        expect.objectContaining({
+          format: "hakawati-tale-package",
+        }),
+        { expectedSaveVersion: 1, canReplace: expect.any(Function) },
+      );
+      expect(
+        syncRepo.upsertTaleSyncStateIfTaleVersion,
+      ).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          contentRev: "4",
+          metadataRev: "3",
+          pendingStatus: "idle",
+        }),
+        2,
+      );
+    },
+  );
 
   it("does not overwrite a local save made while a remote pull is downloading", async () => {
     syncRepo.getTaleSyncState.mockResolvedValue({
@@ -1283,7 +1322,7 @@ describe("sync transport", () => {
     expect(transport.post).not.toHaveBeenCalled();
   });
 
-  it("uploads offline history, state, and metadata edits in one complete snapshot", async () => {
+  it("uploads offline edits even while automatic pulls are blocked by an open tale", async () => {
     const pkg = samplePackage();
     pkg.turns[0].entries[0].text = "Edited an existing turn while offline.";
     pkg.state.data.gm.scratchpad = { note: "updated state" };
@@ -1338,6 +1377,7 @@ describe("sync transport", () => {
         updatedAt: "2026-06-19T00:00:00.000Z",
         lastEntryPreview: null,
       },
+      canPull: () => false,
       idempotencyKey: "idem-sync",
       capabilities: capabilitiesFixture("unavailable"),
     });
@@ -1755,54 +1795,77 @@ describe("sync transport", () => {
     },
   );
 
-  it("refreshes hosted tokens without opening the browser", async () => {
-    http.fetch
-      .mockResolvedValueOnce(jsonResponse(capabilitiesFixture()))
-      .mockResolvedValueOnce(
-        jsonResponse({
-          provider: "logto",
-          issuer: "https://auth.example/oidc",
-          audience: "hakawati",
-          clientId: "client",
-          scopes: ["openid", "profile"],
-        }),
-      )
-      .mockResolvedValueOnce(
-        jsonResponse({
-          token_endpoint: "https://auth.example/token",
-        }),
-      )
-      .mockResolvedValueOnce(
-        jsonResponse({
-          access_token: "new-access-token",
-          expires_in: 3600,
-          refresh_token: "new-refresh-token",
-          token_type: "Bearer",
-        }),
+  it.each([false, true])(
+    "refreshes hosted tokens with a revoked session: %s",
+    async (revoked) => {
+      http.fetch
+        .mockResolvedValueOnce(jsonResponse(capabilitiesFixture()))
+        .mockResolvedValueOnce(
+          jsonResponse({
+            provider: "logto",
+            issuer: "https://auth.example/oidc",
+            audience: "hakawati",
+            clientId: "client",
+            scopes: ["openid", "profile"],
+          }),
+        )
+        .mockResolvedValueOnce(
+          jsonResponse({
+            token_endpoint: "https://auth.example/token",
+          }),
+        )
+        .mockResolvedValueOnce(
+          revoked
+            ? {
+                ok: false,
+                status: 400,
+                json: async () => ({
+                  error: "invalid_grant",
+                  error_description: "Session revoked",
+                }),
+              }
+            : jsonResponse({
+                access_token: "new-access-token",
+                expires_in: 3600,
+                refresh_token: "new-refresh-token",
+                token_type: "Bearer",
+              }),
+        );
+
+      const request = refreshHostedSync({
+        profile: {
+          id: "cloud",
+          baseUrl: "https://sync.example",
+          mode: "hosted",
+        },
+        refreshToken: "refresh-token",
+      });
+
+      if (revoked) {
+        await expect(request).rejects.toMatchObject({
+          status: 400,
+          code: "invalid_grant",
+          message: "Session revoked",
+        });
+        expect(opener.openUrl).not.toHaveBeenCalled();
+        return;
+      }
+      const result = await request;
+
+      expect(opener.openUrl).not.toHaveBeenCalled();
+      expect(result).toMatchObject({
+        accessToken: "new-access-token",
+        expiresIn: 3600,
+        refreshToken: "new-refresh-token",
+      });
+      const tokenBody = new URLSearchParams(
+        String(http.fetch.mock.calls.at(-1)?.[1]?.body),
       );
-
-    const result = await refreshHostedSync({
-      profile: {
-        id: "cloud",
-        baseUrl: "https://sync.example",
-        mode: "hosted",
-      },
-      refreshToken: "refresh-token",
-    });
-
-    expect(opener.openUrl).not.toHaveBeenCalled();
-    expect(result).toMatchObject({
-      accessToken: "new-access-token",
-      expiresIn: 3600,
-      refreshToken: "new-refresh-token",
-    });
-    const tokenBody = new URLSearchParams(
-      String(http.fetch.mock.calls.at(-1)?.[1]?.body),
-    );
-    expect(tokenBody.get("grant_type")).toBe("refresh_token");
-    expect(tokenBody.get("refresh_token")).toBe("refresh-token");
-    expect(tokenBody.get("resource")).toBe("hakawati");
-  });
+      expect(tokenBody.get("grant_type")).toBe("refresh_token");
+      expect(tokenBody.get("refresh_token")).toBe("refresh-token");
+      expect(tokenBody.get("resource")).toBe("hakawati");
+    },
+  );
 
   it("surfaces OIDC token exchange errors", async () => {
     http.fetch

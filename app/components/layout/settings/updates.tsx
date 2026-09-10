@@ -115,7 +115,7 @@ export default function SettingsUpdates() {
             ) : null}
           </div>
         );
-      case "installing":
+      case "downloading":
         return (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="size-4 animate-spin" />
@@ -125,6 +125,8 @@ export default function SettingsUpdates() {
             ) : null}
           </div>
         );
+      case "installing":
+        return <Trans>Installing update…</Trans>;
       case "upToDate":
         return (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -169,6 +171,7 @@ export default function SettingsUpdates() {
             onClick={handleCheck}
             disabled={
               phase === "checking" ||
+              phase === "downloading" ||
               phase === "installing" ||
               phase === "unsupported"
             }
