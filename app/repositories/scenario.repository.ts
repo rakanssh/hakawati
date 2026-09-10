@@ -1,5 +1,5 @@
 import { getDb } from "@/services/db";
-import { enqueueLocalWrite } from "@/lib/local-write-queue";
+import { enqueueLocalOperation } from "@/lib/local-write-queue";
 import { parseJsonValue, toUint8Array } from "@/lib/repository-utils";
 import {
   legacyScenarioToContent,
@@ -8,7 +8,7 @@ import {
 } from "@/lib/scenario-content";
 import { Scenario, ScenarioHead, GameMode } from "@/types/context.type";
 import { ScenarioRow, PaginatedResponse } from "@/types/db.type";
-import { v4 as uuidv4 } from "uuid"; // TODO: replace with nanoid
+import { v4 as uuidv4 } from "uuid";
 
 function toRow(id: string, s: Scenario, ts: number): ScenarioRow {
   const content = normalizeScenarioContent(s.content);
@@ -70,7 +70,7 @@ export async function upsertScenario(
   const now = Date.now();
   const scenarioId = id ?? uuidv4();
   const row = toRow(scenarioId, input, now);
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     await db.execute(
       `INSERT INTO scenarios (id, name, initial_game_mode, initial_description, initial_author_note, initial_stats, initial_inventory, initial_story_cards, components, content, thumbnail_data, opening_text, created_at, updated_at)
@@ -119,22 +119,8 @@ export async function getScenario(id: string): Promise<Scenario | null> {
   return fromRow(rows[0]);
 }
 
-export async function listScenarios(): Promise<
-  Array<{ id: string; scenario: Scenario; updatedAt: number }>
-> {
-  const db = await getDb();
-  const rows = await db.select<ScenarioRow[]>(
-    `SELECT * FROM scenarios ORDER BY updated_at DESC`,
-  );
-  return rows.map((r) => ({
-    id: r.id,
-    scenario: fromRow(r),
-    updatedAt: r.updated_at,
-  }));
-}
-
 export async function deleteScenario(id: string): Promise<void> {
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     await db.execute(`DELETE FROM scenarios WHERE id = ?`, [id]);
   });

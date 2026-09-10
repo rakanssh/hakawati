@@ -13,6 +13,7 @@ import {
   replaceTaleWithPackage,
 } from "@/repositories/tale.repository";
 import {
+  acknowledgeTaleSyncWrite,
   getTaleSyncState,
   setSyncProfileDisabled,
   setTaleSyncStatus,
@@ -265,18 +266,13 @@ function rev(value: unknown): string | null {
     : null;
 }
 
-function contentRevNumber(value: string | null): number {
+function revisionNumber(
+  value: string | null,
+  kind: "content" | "metadata",
+): number {
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed < 1) {
-    throw new Error("Synced tale is missing a valid content revision");
-  }
-  return parsed;
-}
-
-function metadataRevNumber(value: string | null): number {
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed < 1) {
-    throw new Error("Synced tale is missing a valid metadata revision");
+    throw new Error(`Synced tale is missing a valid ${kind} revision`);
   }
   return parsed;
 }
@@ -1285,8 +1281,8 @@ export async function replaceRemoteTalePackage(input: {
       confirmReplace: true,
     };
     if (!input.forceReplace) {
-      body.baseContentRev = contentRevNumber(state.contentRev);
-      body.baseMetadataRev = metadataRevNumber(state.metadataRev);
+      body.baseContentRev = revisionNumber(state.contentRev, "content");
+      body.baseMetadataRev = revisionNumber(state.metadataRev, "metadata");
     }
     const result = bodyValue(
       await input.transport.put(
@@ -1295,15 +1291,12 @@ export async function replaceRemoteTalePackage(input: {
         { idempotencyKey: input.idempotencyKey },
       ),
     );
-    await setTaleSynced({
-      profileId: input.profile.id,
-      accountId: input.profile.accountId,
-      localTaleId: input.localTaleId,
-      result,
-      remoteTaleId: state.remoteTaleId,
-      contentRev: state.contentRev,
-      metadataRev: state.metadataRev,
+    input.transport.signal?.throwIfAborted();
+    await acknowledgeTaleSyncWrite({
+      expectedState: state,
       expectedSaveVersion,
+      contentRev: rev(result.contentRev) ?? state.contentRev,
+      metadataRev: rev(result.metadataRev) ?? state.metadataRev,
     });
     return result;
   } catch (error) {

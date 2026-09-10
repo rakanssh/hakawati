@@ -2,183 +2,9 @@ import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiPreset, ApiType } from "@/types/api.type";
-import { GameMode } from "@/types/context.type";
 import { LogEntryMode, LogEntryRole, type LogEntry } from "@/types/log.type";
-
-const taleStoreMocks = vi.hoisted(() => {
-  type MockTaleState = {
-    id: string;
-    name: string;
-    description: string;
-    components: unknown[];
-    storyCards: unknown[];
-    stats: { name: string; value: number; range: [number, number] }[];
-    inventory: { id: string; name: string; description?: string }[];
-    log: LogEntry[];
-    gameMode: string;
-    undoStack: LogEntry[];
-    totalLogCount: number;
-    oldestLoadedIndex: number;
-    logWindowSize: number;
-    isLoadingOlderEntries: boolean;
-    addLog: (entry: LogEntry) => void;
-    restoreLogEntry: (entry: LogEntry) => void;
-    updateLogEntry: (id: string, updates: Partial<LogEntry>) => void;
-    removeLastLogEntry: () => void;
-    modifyStat: (name: string, value: number) => void;
-    addToInventory: (itemName: string, itemDescription?: string) => void;
-    removeFromInventoryByName: (itemName: string) => void;
-    addToStats: (stat: {
-      name: string;
-      value: number;
-      range: [number, number];
-    }) => void;
-    undo: () => void;
-    redo: () => void;
-  };
-
-  function setState(
-    patch:
-      | Partial<MockTaleState>
-      | ((current: MockTaleState) => Partial<MockTaleState>),
-  ) {
-    Object.assign(state, typeof patch === "function" ? patch(state) : patch);
-  }
-
-  function createState(): MockTaleState {
-    return {
-      id: "",
-      name: "",
-      description: "",
-      components: [],
-      storyCards: [],
-      stats: [],
-      inventory: [],
-      log: [],
-      gameMode: "story_teller",
-      undoStack: [],
-      totalLogCount: 0,
-      oldestLoadedIndex: 0,
-      logWindowSize: 200,
-      isLoadingOlderEntries: false,
-      addLog: (entry) =>
-        setState((current) => ({
-          log: [...current.log, entry],
-          totalLogCount: current.totalLogCount + 1,
-          undoStack: [],
-        })),
-      restoreLogEntry: (entry) =>
-        setState((current) => ({
-          log: [...current.log, entry],
-          totalLogCount: current.totalLogCount + 1,
-          undoStack: [],
-        })),
-      updateLogEntry: (id, updates) =>
-        setState((current) => ({
-          log: current.log.map((entry) =>
-            entry.id === id ? { ...entry, ...updates } : entry,
-          ),
-        })),
-      removeLastLogEntry: () =>
-        setState((current) => ({
-          log: current.log.slice(0, -1),
-          totalLogCount: Math.max(0, current.totalLogCount - 1),
-          undoStack: [],
-        })),
-      modifyStat: (name, value) =>
-        setState((current) => ({
-          stats: current.stats.map((stat) =>
-            stat.name === name
-              ? {
-                  ...stat,
-                  value: Math.min(
-                    stat.range[1],
-                    Math.max(stat.range[0], stat.value + value),
-                  ),
-                }
-              : stat,
-          ),
-        })),
-      addToInventory: (itemName, itemDescription) =>
-        setState((current) => ({
-          inventory: [
-            ...current.inventory,
-            {
-              id: `item-${current.inventory.length + 1}`,
-              name: itemName,
-              description: itemDescription,
-            },
-          ],
-        })),
-      removeFromInventoryByName: (itemName) =>
-        setState((current) => ({
-          inventory: current.inventory.filter((item) => item.name !== itemName),
-        })),
-      addToStats: (stat) =>
-        setState((current) => ({ stats: [...current.stats, stat] })),
-      undo: vi.fn(),
-      redo: vi.fn(),
-    };
-  }
-
-  const state = createState();
-
-  function reset(patch: Partial<MockTaleState> = {}) {
-    Object.assign(state, createState(), patch);
-  }
-
-  const useTaleStore = Object.assign(
-    (selector?: (current: MockTaleState) => unknown) =>
-      selector ? selector(state) : state,
-    {
-      getState: () => state,
-      setState,
-    },
-  );
-
-  return { state, reset, useTaleStore };
-});
-
-const settingsStoreMocks = vi.hoisted(() => {
-  type MockModelConfig = {
-    apiType: string;
-    activePreset: string;
-    profiles: Record<string, unknown>;
-    baseUrl: string;
-    apiKey: string;
-    model: { id: string; name: string } | undefined;
-  };
-  type MockSettingsState = {
-    modelRoles: { narrator: MockModelConfig };
-    randomSeed: () => void;
-  };
-
-  const randomSeed = vi.fn();
-  const state: MockSettingsState = {
-    modelRoles: {
-      narrator: {
-        apiType: "openai",
-        activePreset: "generic",
-        profiles: {},
-        baseUrl: "https://example.test/v1",
-        apiKey: "",
-        model: { id: "narrator-model", name: "Narrator" },
-      },
-    },
-    randomSeed,
-  };
-
-  const useSettingsStore = Object.assign(
-    (selector?: (current: typeof state) => unknown) =>
-      selector ? selector(state) : state,
-    {
-      getState: () => state,
-      setState: (patch: Partial<typeof state>) => Object.assign(state, patch),
-    },
-  );
-
-  return { randomSeed, state, useSettingsStore };
-});
+import { useTaleStore } from "@/store/useTaleStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 const llmMocks = vi.hoisted(() => ({
   send: vi.fn(),
@@ -213,13 +39,12 @@ vi.mock("@/hooks/useGameSaves", () => ({
   }),
 }));
 
-vi.mock("@/store/useTaleStore", () => ({
-  useTaleStore: taleStoreMocks.useTaleStore,
-}));
+vi.mock("@/repositories/tale.repository", () => ({ getLogEntries: vi.fn() }));
+vi.mock("@/prompts", () => ({ getActiveStorytellerPrompt: () => "" }));
 
-vi.mock("@/store/useSettingsStore", () => ({
-  isModelRoleConfigured: () => true,
-  useSettingsStore: settingsStoreMocks.useSettingsStore,
+vi.mock("@lingui/core/macro", () => ({
+  msg: (value: TemplateStringsArray | string) =>
+    typeof value === "string" ? value : value.join(""),
 }));
 
 import { usePlaySession } from "./usePlaySession";
@@ -257,28 +82,20 @@ describe("usePlaySession", () => {
       globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
     ).IS_REACT_ACT_ENVIRONMENT = true;
     vi.clearAllMocks();
-    taleStoreMocks.reset({
+    useTaleStore.setState({
+      ...useTaleStore.getInitialState(),
       id: "tale-1",
       name: "Tale",
-      description: "",
-      components: [],
-      storyCards: [],
-      stats: [],
-      inventory: [],
-      log: [],
-      gameMode: GameMode.STORY_TELLER,
-      undoStack: [],
-      totalLogCount: 0,
-      oldestLoadedIndex: 0,
-      logWindowSize: 200,
       isLoadingOlderEntries: false,
     });
-    settingsStoreMocks.useSettingsStore.setState({
+    useSettingsStore.setState({
+      ...useSettingsStore.getInitialState(),
       modelRoles: {
+        ...useSettingsStore.getInitialState().modelRoles,
         narrator: {
+          ...useSettingsStore.getInitialState().modelRoles.narrator,
           apiType: ApiType.OPENAI,
           activePreset: ApiPreset.GENERIC,
-          profiles: {},
           baseUrl: "https://example.test/v1",
           apiKey: "",
           model: { id: "narrator-model", name: "Narrator" },
@@ -297,7 +114,7 @@ describe("usePlaySession", () => {
 
   it("retains before/after action state across multiple batches for exact undo", async () => {
     const key = { id: "key-1", name: "Key", description: "Opens the vault" };
-    taleStoreMocks.useTaleStore.setState({
+    useTaleStore.setState({
       stats: [{ name: "HP", value: 95, range: [0, 100] }],
       inventory: [key],
     });
@@ -352,18 +169,17 @@ describe("usePlaySession", () => {
         LogEntryMode.DO,
       );
     });
-    taleStoreMocks.reset({
+    useTaleStore.setState({
+      ...useTaleStore.getInitialState(),
       id: "tale-2",
-      log: [],
-      totalLogCount: 0,
       stats: [{ name: "HP", value: 100, range: [0, 100] }],
     });
     await act(async () => {
       complete();
       await pending;
     });
-    expect(taleStoreMocks.state.log).toEqual([]);
-    expect(taleStoreMocks.state.stats[0].value).toBe(100);
+    expect(useTaleStore.getState().log).toEqual([]);
+    expect(useTaleStore.getState().stats[0].value).toBe(100);
     expect(persistenceMocks.saveTurn).not.toHaveBeenCalled();
     expect(await pending).toBeNull();
     harness.cleanup();
@@ -408,8 +224,8 @@ describe("usePlaySession", () => {
     );
 
     expect(result).toBeNull();
-    expect(taleStoreMocks.state.log).toEqual([]);
-    expect(taleStoreMocks.state.totalLogCount).toBe(0);
+    expect(useTaleStore.getState().log).toEqual([]);
+    expect(useTaleStore.getState().totalLogCount).toBe(0);
     expect(persistenceMocks.saveTurn).not.toHaveBeenCalled();
     expect(persistenceMocks.completePendingTurn).not.toHaveBeenCalled();
     expect(persistenceMocks.undoToEntryCount).not.toHaveBeenCalled();
@@ -460,7 +276,7 @@ describe("usePlaySession", () => {
     ]);
     expect(finalizedEntries[1].text).toBe("The hinges scream.");
     expect(persistenceMocks.undoToEntryCount).not.toHaveBeenCalled();
-    expect(taleStoreMocks.state.log.map((entry) => entry.text)).toEqual([
+    expect(useTaleStore.getState().log.map((entry) => entry.text)).toEqual([
       "Open the door",
       "The hinges scream.",
     ]);
@@ -491,21 +307,22 @@ describe("usePlaySession", () => {
     );
     expect(persistenceMocks.undoToEntryCount).toHaveBeenCalledWith("tale-1", 0);
     expect(persistenceMocks.completePendingTurn).not.toHaveBeenCalled();
-    expect(taleStoreMocks.state.log).toEqual([]);
-    expect(taleStoreMocks.state.totalLogCount).toBe(0);
+    expect(useTaleStore.getState().log).toEqual([]);
+    expect(useTaleStore.getState().totalLogCount).toBe(0);
 
     harness.cleanup();
   });
 
   it("saves a partial continuation when continue generation aborts after text", async () => {
-    taleStoreMocks.reset({
+    useTaleStore.setState({
+      ...useTaleStore.getInitialState(),
       id: "tale-1",
       log: [
         {
           id: "gm-existing",
           role: LogEntryRole.GM,
           text: "The hall waits.",
-        } as LogEntry,
+        },
       ],
       totalLogCount: 1,
     });
@@ -532,7 +349,7 @@ describe("usePlaySession", () => {
     const savedEntries = persistenceMocks.saveTurn.mock.calls[0][1];
     expect(savedEntries).toHaveLength(1);
     expect(savedEntries[0].text).toBe(" A torch flickers.");
-    expect(taleStoreMocks.state.log.map((entry) => entry.text)).toEqual([
+    expect(useTaleStore.getState().log.map((entry) => entry.text)).toEqual([
       "The hall waits. ",
       " A torch flickers.",
     ]);
@@ -552,7 +369,8 @@ describe("usePlaySession", () => {
       role: LogEntryRole.GM,
       text: "It stays shut.",
     };
-    taleStoreMocks.reset({
+    useTaleStore.setState({
+      ...useTaleStore.getInitialState(),
       id: "tale-1",
       log: [playerEntry, oldGmEntry],
       totalLogCount: 2,
@@ -582,7 +400,7 @@ describe("usePlaySession", () => {
       "Open the door",
       "It opens halfway.",
     ]);
-    expect(taleStoreMocks.state.log.map((entry) => entry.text)).toEqual([
+    expect(useTaleStore.getState().log.map((entry) => entry.text)).toEqual([
       "Open the door",
       "It opens halfway.",
     ]);
@@ -602,7 +420,8 @@ describe("usePlaySession", () => {
       role: LogEntryRole.GM,
       text: "It stays shut.",
     };
-    taleStoreMocks.reset({
+    useTaleStore.setState({
+      ...useTaleStore.getInitialState(),
       id: "tale-1",
       log: [playerEntry, oldGmEntry],
       totalLogCount: 2,
@@ -620,8 +439,8 @@ describe("usePlaySession", () => {
 
     expect(persistenceMocks.retryTurn).not.toHaveBeenCalled();
     expect(persistenceMocks.retryEntry).not.toHaveBeenCalled();
-    expect(taleStoreMocks.state.log).toEqual([playerEntry, oldGmEntry]);
-    expect(taleStoreMocks.state.totalLogCount).toBe(2);
+    expect(useTaleStore.getState().log).toEqual([playerEntry, oldGmEntry]);
+    expect(useTaleStore.getState().totalLogCount).toBe(2);
 
     harness.cleanup();
   });

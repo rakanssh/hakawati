@@ -11,12 +11,23 @@ import {
   parseReleaseTag,
   validateReleaseFiles,
   validateStableDistribution,
-  validateTagRef,
 } from "./release-utils.mjs";
 
 const temporaryDirectories = [];
 const fixturePrefix = path.join(os.tmpdir(), "hakawati-release-");
 const scriptPath = (name) => fileURLToPath(new URL(name, import.meta.url));
+
+function runScript(root, name, args, env = {}) {
+  return spawnSync(process.execPath, [scriptPath(name), ...args], {
+    cwd: root,
+    env: {
+      ...process.env,
+      GITHUB_OUTPUT: path.join(root, "github-output"),
+      ...env,
+    },
+    encoding: "utf8",
+  });
+}
 
 async function createFixture(version = "1.0.0-1") {
   const root = await mkdtemp(fixturePrefix);
@@ -195,74 +206,57 @@ describe("release file consistency", () => {
       );
     },
   );
-
-  it("produces machine-readable beta metadata only after validation succeeds", async () => {
-    const root = await createFixture();
-    const output = path.join(root, "github-output");
-    const result = spawnSync(
-      process.execPath,
-      [scriptPath("release-validate.mjs"), "v1.0.0-1"],
-      {
-        cwd: root,
-        env: { ...process.env, GITHUB_OUTPUT: output },
-        encoding: "utf8",
-      },
-    );
-    expect(result.status, result.stderr).toBe(0);
-    expect(await readFile(output, "utf8")).toBe(
-      "tag=v1.0.0-1\nversion=1.0.0-1\nprerelease=true\n",
-    );
-  });
 });
 
 describe("manual release dispatch", () => {
-  it("accepts a GitHub tag ref", () => {
-    expect(() =>
-      validateTagRef(
-        {
-          GITHUB_REF_TYPE: "tag",
-          GITHUB_REF_NAME: "v1.0.0",
-          GITHUB_REF: "refs/tags/v1.0.0",
-        },
-        "v1.0.0",
-      ),
-    ).not.toThrow();
-  });
-
-  it("rejects a branch even if it has a version-shaped name", () => {
-    expect(() =>
-      validateTagRef(
-        {
-          GITHUB_REF_TYPE: "branch",
-          GITHUB_REF_NAME: "v1.0.0",
-          GITHUB_REF: "refs/heads/v1.0.0",
-        },
-        "v1.0.0",
-      ),
-    ).toThrow(/branch dispatch/);
-  });
-
-  it("rejects a branch dispatch before reading release files", async () => {
+  it("emits release metadata only when HEAD matches the selected tag", async () => {
     const root = await createFixture();
-    const output = path.join(root, "github-output");
-    const result = spawnSync(
-      process.execPath,
-      [scriptPath("release-validate.mjs"), "--tag-ref"],
-      {
+    const git = (...args) => {
+      const result = spawnSync("git", args, {
         cwd: root,
-        env: {
-          ...process.env,
-          GITHUB_REF_TYPE: "branch",
-          GITHUB_REF_NAME: "v1.0.0-1",
-          GITHUB_REF: "refs/heads/v1.0.0-1",
-          GITHUB_OUTPUT: output,
-        },
         encoding: "utf8",
-      },
+      });
+      expect(result.status, result.stderr).toBe(0);
+    };
+    git("init");
+    git("config", "user.name", "Release test");
+    git("config", "user.email", "release@example.test");
+    git("config", "commit.gpgsign", "false");
+    git("commit", "--allow-empty", "-m", "Release");
+    git("tag", "v1.0.0-1");
+    const env = {
+      GITHUB_REF_TYPE: "tag",
+      GITHUB_REF_NAME: "v1.0.0-1",
+      GITHUB_REF: "refs/tags/v1.0.0-1",
+    };
+    const result = runScript(root, "release-validate.mjs", ["--tag-ref"], env);
+    expect(result.status, result.stderr).toBe(0);
+    const output = path.join(root, "github-output");
+    const metadata = await readFile(output, "utf8");
+    expect(metadata).toBe("tag=v1.0.0-1\nversion=1.0.0-1\nprerelease=true\n");
+
+    git("commit", "--allow-empty", "-m", "Unreleased change");
+    const rejected = runScript(
+      root,
+      "release-validate.mjs",
+      ["--tag-ref"],
+      env,
     );
+    expect(rejected.status).toBe(1);
+    expect(rejected.stderr).toMatch(/does not match existing tag/);
+    expect(await readFile(output, "utf8")).toBe(metadata);
+  });
+
+  it("rejects a version-shaped branch without emitting release metadata", async () => {
+    const root = await createFixture();
+    const result = runScript(root, "release-validate.mjs", ["--tag-ref"], {
+      GITHUB_REF_TYPE: "branch",
+      GITHUB_REF_NAME: "v1.0.0-1",
+      GITHUB_REF: "refs/heads/v1.0.0-1",
+    });
     expect(result.status).toBe(1);
     expect(result.stderr).toMatch(/branch dispatch/);
-    await expect(readFile(output)).rejects.toThrow();
+    await expect(readFile(path.join(root, "github-output"))).rejects.toThrow();
   });
 });
 
@@ -280,7 +274,6 @@ describe("stable itch.io channels", () => {
     ["v1.0.0", { ...published, isPrerelease: true }],
     ["v1.0.0", { ...published, tagName: "v0.15.2" }],
     ["v1.0.0", { tagName: "v1.0.0" }],
-    ["v1.0.0-1", { ...published, tagName: "v1.0.0-1" }],
   ])(
     "blocks unsafe metadata for %s, including manual distribution",
     (tag, metadata) => {
@@ -293,22 +286,16 @@ describe("stable itch.io channels", () => {
   it("fails the distribution command for a beta accidentally marked stable on GitHub", async () => {
     const root = await createFixture();
     const metadataFile = path.join(root, "release.json");
-    const output = path.join(root, "github-output");
     await writeFile(
       metadataFile,
       JSON.stringify({ ...published, tagName: "v1.0.0-1" }),
     );
-    const result = spawnSync(
-      process.execPath,
-      [scriptPath("release-distribution.mjs"), "v1.0.0-1", metadataFile],
-      {
-        cwd: root,
-        env: { ...process.env, GITHUB_OUTPUT: output },
-        encoding: "utf8",
-      },
-    );
+    const result = runScript(root, "release-distribution.mjs", [
+      "v1.0.0-1",
+      metadataFile,
+    ]);
     expect(result.status).toBe(1);
     expect(result.stderr).toMatch(/published, stable/);
-    await expect(readFile(output)).rejects.toThrow();
+    await expect(readFile(path.join(root, "github-output"))).rejects.toThrow();
   });
 });

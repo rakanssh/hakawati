@@ -2,66 +2,8 @@ import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GameMode } from "@/types/context.type";
-import { LogEntryRole, type LogEntry } from "@/types/log.type";
-
-const taleStoreMocks = vi.hoisted(() => {
-  type MockTaleState = {
-    id: string;
-    name: string;
-    description: string;
-    components: unknown[];
-    storyCards: unknown[];
-    stats: unknown[];
-    inventory: unknown[];
-    log: LogEntry[];
-    gameMode: string;
-    undoStack: LogEntry[];
-    totalLogCount: number;
-    oldestLoadedIndex: number;
-    logWindowSize: number;
-    isLoadingOlderEntries: boolean;
-  };
-
-  function createState(): MockTaleState {
-    return {
-      id: "",
-      name: "",
-      description: "",
-      components: [],
-      storyCards: [],
-      stats: [],
-      inventory: [],
-      log: [],
-      gameMode: "story_teller",
-      undoStack: [],
-      totalLogCount: 0,
-      oldestLoadedIndex: 0,
-      logWindowSize: 200,
-      isLoadingOlderEntries: false,
-    };
-  }
-
-  const state = createState();
-
-  function setState(patch: Partial<MockTaleState>) {
-    Object.assign(state, patch);
-  }
-
-  function reset(patch: Partial<MockTaleState> = {}) {
-    Object.assign(state, createState(), patch);
-  }
-
-  const useTaleStore = Object.assign(
-    (selector?: (current: MockTaleState) => unknown) =>
-      selector ? selector(state) : state,
-    {
-      getState: () => state,
-      setState,
-    },
-  );
-
-  return { state, reset, useTaleStore };
-});
+import { LogEntryRole } from "@/types/log.type";
+import { useTaleStore } from "@/store/useTaleStore";
 
 const lastPlayedMocks = vi.hoisted(() => ({
   setLastPlayedTaleId: vi.fn(),
@@ -83,10 +25,8 @@ const syncWakeMocks = vi.hoisted(() => ({
   wakeSyncBackground: vi.fn(),
 }));
 
-vi.mock("@/store/useTaleStore", () => ({
-  DEFAULT_WINDOW_SIZE: 200,
-  useTaleStore: taleStoreMocks.useTaleStore,
-}));
+vi.mock("@/repositories/tale.repository", () => ({ getLogEntries: vi.fn() }));
+vi.mock("@/prompts", () => ({ getActiveStorytellerPrompt: () => "" }));
 
 vi.mock("@/store/useLastPlayedStore", () => ({
   useLastPlayedStore: {
@@ -102,40 +42,13 @@ vi.mock("@/services/sync-wakeup", () => syncWakeMocks);
 
 import { useLoadTale, usePersistTale } from "./useGameSaves";
 
-function renderLoadHarness() {
+function renderHarness<T>(useHook: () => T) {
   const container = document.createElement("div");
   document.body.appendChild(container);
-  let controls: ReturnType<typeof useLoadTale> | undefined;
+  let controls: T | undefined;
 
   function Harness() {
-    controls = useLoadTale();
-    return null;
-  }
-
-  const root = createRoot(container);
-  act(() => {
-    root.render(createElement(Harness));
-  });
-
-  return {
-    get controls() {
-      if (!controls) throw new Error("Harness did not render.");
-      return controls;
-    },
-    cleanup() {
-      act(() => root.unmount());
-      container.remove();
-    },
-  };
-}
-
-function renderPersistHarness() {
-  const container = document.createElement("div");
-  document.body.appendChild(container);
-  let controls: ReturnType<typeof usePersistTale> | undefined;
-
-  function Harness() {
-    controls = usePersistTale();
+    controls = useHook();
     return null;
   }
 
@@ -181,12 +94,10 @@ function createLoadedTale(id: string, entryId: string) {
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  let reject!: (reason?: unknown) => void;
-  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+  const promise = new Promise<T>((promiseResolve) => {
     resolve = promiseResolve;
-    reject = promiseReject;
   });
-  return { promise, reject, resolve };
+  return { promise, resolve };
 }
 
 describe("useLoadTale", () => {
@@ -195,14 +106,11 @@ describe("useLoadTale", () => {
       globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
     ).IS_REACT_ACT_ENVIRONMENT = true;
     vi.clearAllMocks();
-    taleStoreMocks.reset({
+    useTaleStore.setState({
+      ...useTaleStore.getInitialState(),
       id: "old-tale",
       name: "Old tale",
       description: "Existing state",
-      components: [],
-      storyCards: [],
-      stats: [],
-      inventory: [],
       log: [
         {
           id: "old-entry",
@@ -210,18 +118,14 @@ describe("useLoadTale", () => {
           text: "Existing log entry.",
         },
       ],
-      gameMode: GameMode.STORY_TELLER,
-      undoStack: [],
       totalLogCount: 1,
-      oldestLoadedIndex: 0,
-      logWindowSize: 200,
       isLoadingOlderEntries: false,
     });
   });
 
   it("does not reset the current log window when a load fails", async () => {
     serviceMocks.getTaleById.mockRejectedValueOnce(new Error("Tale not found"));
-    const harness = renderLoadHarness();
+    const harness = renderHarness(useLoadTale);
 
     await expect(
       act(async () => {
@@ -229,11 +133,11 @@ describe("useLoadTale", () => {
       }),
     ).rejects.toThrow("Tale not found");
 
-    expect(taleStoreMocks.state.log.map((entry) => entry.id)).toEqual([
+    expect(useTaleStore.getState().log.map((entry) => entry.id)).toEqual([
       "old-entry",
     ]);
-    expect(taleStoreMocks.state.totalLogCount).toBe(1);
-    expect(taleStoreMocks.state.id).toBe("old-tale");
+    expect(useTaleStore.getState().totalLogCount).toBe(1);
+    expect(useTaleStore.getState().id).toBe("old-tale");
     expect(lastPlayedMocks.setLastPlayedTaleId).not.toHaveBeenCalled();
 
     harness.cleanup();
@@ -244,38 +148,38 @@ describe("useLoadTale", () => {
     serviceMocks.getTaleById
       .mockReturnValueOnce(staleLoad.promise)
       .mockResolvedValueOnce(createLoadedTale("fresh-tale", "fresh-entry"));
-    const harness = renderLoadHarness();
+    const harness = renderHarness(useLoadTale);
 
     let staleLoadPromise: Promise<void> = Promise.resolve();
     act(() => {
       staleLoadPromise = harness.controls.load("stale-tale");
     });
 
-    expect(taleStoreMocks.state.log.map((entry) => entry.id)).toEqual([
+    expect(useTaleStore.getState().log.map((entry) => entry.id)).toEqual([
       "old-entry",
     ]);
-    expect(taleStoreMocks.state.totalLogCount).toBe(1);
+    expect(useTaleStore.getState().totalLogCount).toBe(1);
 
     await act(async () => {
       await harness.controls.load("fresh-tale");
     });
 
-    expect(taleStoreMocks.state.id).toBe("fresh-tale");
-    expect(taleStoreMocks.state.log.map((entry) => entry.id)).toEqual([
+    expect(useTaleStore.getState().id).toBe("fresh-tale");
+    expect(useTaleStore.getState().log.map((entry) => entry.id)).toEqual([
       "fresh-entry",
     ]);
-    expect(taleStoreMocks.state.totalLogCount).toBe(1);
+    expect(useTaleStore.getState().totalLogCount).toBe(1);
 
     staleLoad.resolve(createLoadedTale("stale-tale", "stale-entry"));
     await act(async () => {
       await staleLoadPromise;
     });
 
-    expect(taleStoreMocks.state.id).toBe("fresh-tale");
-    expect(taleStoreMocks.state.log.map((entry) => entry.id)).toEqual([
+    expect(useTaleStore.getState().id).toBe("fresh-tale");
+    expect(useTaleStore.getState().log.map((entry) => entry.id)).toEqual([
       "fresh-entry",
     ]);
-    expect(taleStoreMocks.state.totalLogCount).toBe(1);
+    expect(useTaleStore.getState().totalLogCount).toBe(1);
 
     harness.cleanup();
   });
@@ -288,7 +192,7 @@ describe("useLoadTale", () => {
       .mockReturnValueOnce(firstA.promise)
       .mockReturnValueOnce(loadB.promise)
       .mockReturnValueOnce(latestA.promise);
-    const harness = renderLoadHarness();
+    const harness = renderHarness(useLoadTale);
     let requests: Promise<void>[] = [];
     act(() => {
       requests = [
@@ -301,14 +205,14 @@ describe("useLoadTale", () => {
     await act(async () => {
       await requests[0];
     });
-    expect(taleStoreMocks.state.id).toBe("old-tale");
+    expect(useTaleStore.getState().id).toBe("old-tale");
     expect(harness.controls.loading).toBe(true);
     latestA.resolve(createLoadedTale("A", "latest-A"));
     loadB.resolve(createLoadedTale("B", "stale-B"));
     await act(async () => {
       await Promise.all(requests);
     });
-    expect(taleStoreMocks.state.log[0].id).toBe("latest-A");
+    expect(useTaleStore.getState().log[0].id).toBe("latest-A");
     expect(harness.controls.loading).toBe(false);
     harness.cleanup();
   });
@@ -316,7 +220,7 @@ describe("useLoadTale", () => {
   it("does not replace the game state after its load hook unmounts", async () => {
     const pending = deferred<ReturnType<typeof createLoadedTale>>();
     serviceMocks.getTaleById.mockReturnValueOnce(pending.promise);
-    const harness = renderLoadHarness();
+    const harness = renderHarness(useLoadTale);
     let request!: Promise<void>;
     act(() => {
       request = harness.controls.load("A");
@@ -324,7 +228,7 @@ describe("useLoadTale", () => {
     harness.cleanup();
     pending.resolve(createLoadedTale("A", "unmounted"));
     await request;
-    expect(taleStoreMocks.state.id).toBe("old-tale");
+    expect(useTaleStore.getState().id).toBe("old-tale");
     expect(lastPlayedMocks.setLastPlayedTaleId).not.toHaveBeenCalled();
   });
 });
@@ -335,41 +239,45 @@ describe("usePersistTale", () => {
       globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
     ).IS_REACT_ACT_ENVIRONMENT = true;
     vi.clearAllMocks();
-    taleStoreMocks.reset({
+    useTaleStore.setState({
+      ...useTaleStore.getInitialState(),
       id: "tale-1",
       name: "Linked tale",
-      description: "",
-      components: [],
-      storyCards: [],
-      stats: [],
-      inventory: [],
-      log: [],
-      gameMode: GameMode.STORY_TELLER,
       undoStack: [],
     });
   });
 
-  it("wakes background sync after the repository marks and saves a turn", async () => {
-    serviceMocks.commitTaleTurn.mockResolvedValueOnce(undefined);
-    const harness = renderPersistHarness();
+  it("wakes background sync only after a turn is persisted", async () => {
+    const persisted = deferred<void>();
+    serviceMocks.commitTaleTurn.mockReturnValueOnce(persisted.promise);
+    const harness = renderHarness(usePersistTale);
+    const entries = [{ id: "entry-1", role: LogEntryRole.PLAYER, text: "Go" }];
+    let saving!: Promise<void>;
+
+    act(() => {
+      saving = harness.controls.saveTurn("tale-1", entries, 123);
+    });
+    expect(serviceMocks.commitTaleTurn).toHaveBeenCalledWith({
+      id: "tale-1",
+      tale: expect.objectContaining({ name: "Linked tale" }),
+      entries,
+      createdAt: 123,
+    });
+    expect(syncWakeMocks.wakeSyncBackground).not.toHaveBeenCalled();
 
     await act(async () => {
-      await harness.controls.saveTurn(
-        "tale-1",
-        [{ id: "entry-1", role: LogEntryRole.PLAYER, text: "Go" }],
-        123,
-      );
+      persisted.resolve();
+      await saving;
     });
-
-    expect(serviceMocks.commitTaleTurn).toHaveBeenCalledOnce();
     expect(syncWakeMocks.wakeSyncBackground).toHaveBeenCalledOnce();
 
     harness.cleanup();
   });
 
   it("rejects a stale save callback instead of copying another tale's state", async () => {
-    const harness = renderPersistHarness();
-    taleStoreMocks.reset({
+    const harness = renderHarness(usePersistTale);
+    useTaleStore.setState({
+      ...useTaleStore.getInitialState(),
       id: "new-tale",
       name: "Must remain in the new tale",
     });
@@ -384,12 +292,16 @@ describe("usePersistTale", () => {
   });
 
   it("persists an explicit old-tale snapshot after the active tale changes", async () => {
-    const harness = renderPersistHarness();
+    const harness = renderHarness(usePersistTale);
     const snapshot = {
       ...createLoadedTale("tale-1", "entry-1"),
       name: "Captured edits",
     };
-    taleStoreMocks.reset({ id: "new-tale", name: "New tale" });
+    useTaleStore.setState({
+      ...useTaleStore.getInitialState(),
+      id: "new-tale",
+      name: "New tale",
+    });
     await act(async () => {
       await harness.controls.save("tale-1", snapshot);
     });
@@ -397,7 +309,7 @@ describe("usePersistTale", () => {
       id: "tale-1",
       tale: snapshot,
     });
-    expect(taleStoreMocks.state.name).toBe("New tale");
+    expect(useTaleStore.getState().name).toBe("New tale");
     harness.cleanup();
   });
 });

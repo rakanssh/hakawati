@@ -16,10 +16,7 @@ import {
   type TaleSessionState,
   type TaleTurn,
 } from "@/lib/tale-storage";
-import {
-  enqueueLocalOperation,
-  enqueueLocalWrite,
-} from "@/lib/local-write-queue";
+import { enqueueLocalOperation } from "@/lib/local-write-queue";
 import {
   GameMode,
   PromptComponent,
@@ -647,7 +644,7 @@ export async function createTale(input: {
   };
   const source = sourceColumns(metadata.source);
 
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     await withTransaction(db, async (db) => {
       await db.execute(
@@ -720,49 +717,12 @@ export async function createTale(input: {
   return id;
 }
 
-export async function updateTaleMetadata(
-  taleId: string,
-  patch: Partial<Pick<Tale, "name" | "description" | "gameMode" | "thumbnail">>,
-): Promise<void> {
-  await enqueueLocalWrite(async () => {
-    const db = await getDb();
-    const current = await selectTaleRow(db, taleId);
-    if (!current) throw new Error("Tale not found");
-
-    const nextName = patch.name ?? current.name;
-    const nextDescription = patch.description ?? current.description;
-    const nextGameMode = patch.gameMode ?? current.game_mode;
-    const nextThumbnail =
-      "thumbnail" in patch ? (patch.thumbnail ?? null) : current.thumbnail_data;
-    const now = Date.now();
-
-    await db.execute(
-      `UPDATE tales SET
-         name = ?,
-         description = ?,
-         thumbnail_data = ?,
-         game_mode = ?,
-         updated_at = ?,
-         save_version = save_version + 1
-       WHERE id = ?`,
-      [
-        nextName,
-        nextDescription,
-        nextThumbnail ?? null,
-        nextGameMode,
-        now,
-        taleId,
-      ],
-    );
-  });
-}
-
 export async function replaceCurrentState(
   taleId: string,
   state: TaleCurrentState,
   session?: TaleSessionState,
 ): Promise<void> {
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     const now = Date.now();
     await withTransaction(db, async (db) => {
@@ -786,7 +746,7 @@ export async function appendTurn(
   state: TaleCurrentState,
   session: TaleSessionState,
 ): Promise<void> {
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     const now = Date.now();
     await withTransaction(db, async (db) => {
@@ -810,7 +770,7 @@ export async function replaceTurns(
   taleId: string,
   turns: TaleTurn[],
 ): Promise<void> {
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     const now = Date.now();
     await withTransaction(db, async (db) => {
@@ -827,50 +787,6 @@ export async function replaceTurns(
   });
 }
 
-export async function replaceTurn(
-  taleId: string,
-  turnSeq: number,
-  turn: Pick<TaleTurn, "entries" | "createdAt">,
-  state: TaleCurrentState,
-  session: TaleSessionState,
-): Promise<void> {
-  await enqueueLocalWrite(async () => {
-    const db = await getDb();
-    const now = Date.now();
-    await withTransaction(db, async (db) => {
-      await requireTaleRow(db, taleId);
-      await markLinkedTaleForPush(db, taleId);
-      const rows = await db.select<TaleTurnRow[]>(
-        `SELECT * FROM tale_turns WHERE tale_id = ? AND seq = ? LIMIT 1`,
-        [taleId, turnSeq],
-      );
-      const existing = rows?.[0];
-      if (!existing) throw new Error("Tale turn not found");
-
-      await db.execute(`DELETE FROM tale_turns WHERE tale_id = ? AND seq = ?`, [
-        taleId,
-        turnSeq,
-      ]);
-      await insertTurn(
-        db,
-        taleId,
-        turn,
-        existing.seq,
-        existing.entry_start_index,
-        now,
-      );
-      await reindexTurns(db, taleId);
-      await refreshTaleLogSummary(db, taleId);
-      await replaceState(db, taleId, state, now);
-      await replaceSession(db, taleId, session, now);
-      await db.execute(
-        `UPDATE tales SET updated_at = ?, save_version = save_version + 1 WHERE id = ?`,
-        [now, taleId],
-      );
-    });
-  });
-}
-
 export async function replaceTurnContainingEntries(
   taleId: string,
   entryIds: string[],
@@ -878,7 +794,7 @@ export async function replaceTurnContainingEntries(
   state: TaleCurrentState,
   session: TaleSessionState,
 ): Promise<void> {
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     const now = Date.now();
     await withTransaction(db, async (db) => {
@@ -966,7 +882,7 @@ export async function trimLogToEntryCount(
   state: TaleCurrentState,
   session: TaleSessionState,
 ): Promise<void> {
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     const now = Date.now();
     const nextEntryCount = Math.max(0, entryCount);
@@ -1033,7 +949,7 @@ export async function updateLogEntry(
   state?: TaleCurrentState,
   session?: TaleSessionState,
 ): Promise<void> {
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     const now = Date.now();
     await withTransaction(db, async (db) => {
@@ -1077,7 +993,7 @@ export async function replaceLogEntryInTurn(
   state: TaleCurrentState,
   session: TaleSessionState,
 ): Promise<void> {
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     const now = Date.now();
     await withTransaction(db, async (db) => {
@@ -1132,7 +1048,7 @@ export async function updateTaleCurrentData(
     inventory: input.inventory,
   });
 
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     await withTransaction(db, async (db) => {
       await requireTaleRow(db, input.id);
@@ -1266,26 +1182,6 @@ export async function getTalePlayLoad(
   });
 }
 
-export async function listTalesForScenario(
-  scenarioId: string,
-): Promise<Tale[]> {
-  return enqueueLocalOperation(async () => {
-    const db = await getDb();
-    return withReadTransaction(db, async () => {
-      const rows = await db.select<TaleRow[]>(
-        `SELECT * FROM tales WHERE scenario_id = ? ORDER BY created_at DESC`,
-        [scenarioId],
-      );
-      const tales: Tale[] = [];
-      for (const row of rows) {
-        const tale = await selectTaleAggregate(db, row.id);
-        if (tale) tales.push(tale);
-      }
-      return tales;
-    });
-  });
-}
-
 type TaleHeadRow = {
   id: string;
   name: string;
@@ -1383,40 +1279,8 @@ export async function getTales(
   });
 }
 
-export async function getScenarioTales(
-  scenarioId: string,
-  page: number,
-  limit: number,
-): Promise<PaginatedResponse<TaleHead>> {
-  return enqueueLocalOperation(async () => {
-    const db = await getDb();
-    return withReadTransaction(db, async () => {
-      const rows = await db.select<TaleHeadRow[]>(
-        `${taleHeadSelect("WHERE t.scenario_id = ?")}
-        ORDER BY t.created_at DESC LIMIT ? OFFSET ?`,
-        [scenarioId, limit, (page - 1) * limit],
-      );
-      const countRows = await db.select<Array<{ count: number }>>(
-        `SELECT COUNT(*) as count FROM tales WHERE scenario_id = ?`,
-        [scenarioId],
-      );
-      const total = countRows?.[0]?.count ?? 0;
-      const data: TaleHead[] = [];
-      for (const row of rows) {
-        data.push(await mapTaleHeadRow(row));
-      }
-      return {
-        data,
-        total,
-        page,
-        limit,
-      };
-    });
-  });
-}
-
 export async function deleteTale(id: string): Promise<void> {
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     await withTransaction(db, async (db) => {
       await db.execute(`DELETE FROM tale_sessions WHERE tale_id = ?`, [id]);
@@ -1431,7 +1295,7 @@ export async function linkTaleToScenario(
   taleId: string,
   scenarioId: string,
 ): Promise<void> {
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     await db.execute(
       `UPDATE tales
@@ -1462,32 +1326,6 @@ export async function getLogEntries(
     });
   } catch (error) {
     console.error("Error fetching log entries:", error);
-    return [];
-  }
-}
-
-export async function getLogEntriesReverse(
-  taleId: string,
-  fromEnd: number,
-  limit: number,
-): Promise<LogEntry[]> {
-  if (fromEnd < 0 || limit <= 0) {
-    return [];
-  }
-
-  try {
-    return await enqueueLocalOperation(async () => {
-      const db = await getDb();
-      return withReadTransaction(db, async () => {
-        const count = await selectLogCount(db, taleId);
-        const startIndex = Math.max(0, count - fromEnd - limit);
-        const endIndex = count - fromEnd;
-        if (startIndex >= count || endIndex <= 0) return [];
-        return selectLogEntries(db, taleId, startIndex, endIndex - startIndex);
-      });
-    });
-  } catch (error) {
-    console.error("Error fetching log entries reverse:", error);
     return [];
   }
 }
@@ -1589,7 +1427,7 @@ export async function importTalePackage(
   const requestedId = options.preserveId ? payload.tale.id : uuidv4();
   let taleId = requestedId;
   const now = Date.now();
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     const existing = await selectTaleRow(db, requestedId);
     taleId = existing ? uuidv4() : requestedId;
@@ -1660,7 +1498,7 @@ export async function replaceTaleWithPackage(
   const source = sourceColumns(packageSource(payload));
   const now = Date.now();
 
-  return enqueueLocalWrite(async () => {
+  return enqueueLocalOperation(async () => {
     const db = await getDb();
     return withTransaction(db, async (db) => {
       const current = await requireTaleRow(db, taleId);

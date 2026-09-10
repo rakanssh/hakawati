@@ -140,7 +140,6 @@ const taleSections = [
 
 export type GlobalSettingsSectionId = (typeof globalSections)[number]["id"];
 export type TaleSettingsSectionId = (typeof taleSections)[number]["id"];
-export type SettingsTabId = GlobalSettingsSectionId | TaleSettingsSectionId;
 
 const DEFAULT_GLOBAL_SECTION: GlobalSettingsSectionId = "appearance";
 const DEFAULT_TALE_SECTION: TaleSettingsSectionId = "story";

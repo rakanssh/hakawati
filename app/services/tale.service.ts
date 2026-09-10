@@ -1,8 +1,6 @@
 import {
   appendTurn,
   createTale,
-  exportTalePackage,
-  importTalePackage,
   replaceLogEntryInTurn,
   replaceTurnContainingEntries,
   trimLogToEntryCount,
@@ -11,18 +9,14 @@ import {
   getTale,
   getTalePlayLoad,
   getTales,
-  getScenarioTales,
   deleteTale,
   linkTaleToScenario,
-  type TalePlayLoad,
 } from "@/repositories/tale.repository";
 import { saveScenario } from "@/services/scenario.service";
 import { PaginatedResponse } from "@/types/db.type";
 import { createTaleDTO, Tale, TaleHead } from "@/types/tale.type";
 import { PromptComponentType, Scenario } from "@/types/context.type";
 import type { LogEntry } from "@/types/log.type";
-import type { TalePackageV1 } from "@/types/export.type";
-import { TalePackageV1Schema } from "@/types/export.type";
 import { normalizePromptComponents } from "@/lib/prompt-components";
 import { normalizeStoryCard } from "@/lib/story-card-utils";
 import { legacyScenarioToContent } from "@/lib/scenario-content";
@@ -42,8 +36,6 @@ export type TaleMutableSnapshot = Pick<
   | "gameMode"
   | "undoStack"
 >;
-
-export type PlayTaleLoad = TalePlayLoad;
 
 function currentStateFromSnapshot(tale: TaleMutableSnapshot) {
   return createTaleCurrentState({
@@ -267,14 +259,6 @@ export async function getAllTales(
   return getTales(page, limit);
 }
 
-export async function getTalesForScenario(
-  scenarioId: string,
-  page: number,
-  limit: number,
-): Promise<PaginatedResponse<TaleHead>> {
-  return getScenarioTales(scenarioId, page, limit);
-}
-
 export async function deleteTaleById(id: string): Promise<void> {
   return deleteTale(id);
 }
@@ -306,24 +290,4 @@ export async function saveAsScenario(taleId: string): Promise<string> {
   await linkTaleToScenario(taleId, scenarioId);
 
   return scenarioId;
-}
-
-export async function buildTalePackage(taleId: string): Promise<TalePackageV1> {
-  return exportTalePackage(taleId);
-}
-
-export async function serializeTalePackage(taleId: string): Promise<string> {
-  const payload = await buildTalePackage(taleId);
-  return JSON.stringify(payload, null, 2);
-}
-
-export function deserializeTalePackage(json: string): TalePackageV1 {
-  return TalePackageV1Schema.parse(JSON.parse(json)) as TalePackageV1;
-}
-
-export async function importTalePackageJson(
-  json: string,
-  options?: { preserveId?: boolean; title?: string },
-): Promise<string> {
-  return importTalePackage(deserializeTalePackage(json), options);
 }

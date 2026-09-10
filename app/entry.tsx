@@ -9,9 +9,6 @@ import {
   type MigrationRecoveryStatus,
 } from "./components/migration-recovery-screen";
 
-// installDebugConsoleCapture();
-// TODO: Re-enable debug console when it's fixed
-
 // Load persisted language preference on startup
 const storedSettings = localStorage.getItem("settings");
 if (storedSettings) {

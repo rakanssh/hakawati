@@ -6,7 +6,7 @@ import {
   getScenarioById,
   getAllScenarios,
   deserializeScenarioExport,
-  serializeScenarioExportV2,
+  serializeScenarioExport,
 } from "@/services/scenario.service";
 import { useLoadTale } from "@/hooks/useGameSaves";
 import { GameMode, Scenario, ScenarioHead } from "@/types/context.type";
@@ -117,13 +117,13 @@ export function useScenariosExport() {
       toast.error("Scenario not found");
       return;
     }
-    const json = serializeScenarioExportV2(scenario);
+    const json = serializeScenarioExport(scenario);
     await copyTextToClipboard(json);
     toast.success("Scenario JSON copied to clipboard");
   }, []);
 
   const exportFromValue = useCallback(async (scenario: Scenario) => {
-    const json = serializeScenarioExportV2(scenario);
+    const json = serializeScenarioExport(scenario);
     await copyTextToClipboard(json);
     toast.success("Scenario JSON copied to clipboard");
   }, []);

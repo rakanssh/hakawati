@@ -53,6 +53,7 @@ export function usePersistTale() {
     setError(null);
     try {
       await operation();
+      wakeSyncBackground();
       setLastSaveSuccess(true);
       if (successTimerRef.current) clearTimeout(successTimerRef.current);
       successTimerRef.current = setTimeout(() => {
@@ -71,31 +72,21 @@ export function usePersistTale() {
     }
   }, []);
 
-  const runTalePersist = useCallback(
-    async (_taleId: string, operation: () => Promise<void>) => {
-      await runPersist(async () => {
-        await operation();
-        wakeSyncBackground();
-      });
-    },
-    [runPersist],
-  );
-
   const save = useCallback(
     async (taleId: string, snapshot?: TaleMutableSnapshot) => {
-      await runTalePersist(taleId, () =>
+      await runPersist(() =>
         persistCurrentTale({
           id: taleId,
           tale: snapshot ?? snapshotMutableTale(taleId),
         }),
       );
     },
-    [runTalePersist],
+    [runPersist],
   );
 
   const saveTurn = useCallback(
     async (taleId: string, entries: LogEntry[], createdAt = Date.now()) => {
-      await runTalePersist(taleId, () =>
+      await runPersist(() =>
         commitTaleTurn({
           id: taleId,
           tale: snapshotMutableTale(taleId),
@@ -104,7 +95,7 @@ export function usePersistTale() {
         }),
       );
     },
-    [runTalePersist],
+    [runPersist],
   );
 
   const completePendingTurn = useCallback(
@@ -115,7 +106,7 @@ export function usePersistTale() {
       createdAt = Date.now(),
       fallbackToAppend = false,
     ) => {
-      await runTalePersist(taleId, () =>
+      await runPersist(() =>
         completePendingTaleTurn({
           id: taleId,
           tale: snapshotMutableTale(taleId),
@@ -126,7 +117,7 @@ export function usePersistTale() {
         }),
       );
     },
-    [runTalePersist],
+    [runPersist],
   );
 
   const retryTurn = useCallback(
@@ -136,7 +127,7 @@ export function usePersistTale() {
       entries: LogEntry[],
       createdAt = Date.now(),
     ) => {
-      await runTalePersist(taleId, () =>
+      await runPersist(() =>
         retryTaleTurn({
           id: taleId,
           tale: snapshotMutableTale(taleId),
@@ -146,13 +137,13 @@ export function usePersistTale() {
         }),
       );
     },
-    [runTalePersist],
+    [runPersist],
   );
 
   const undoToEntryCount = useCallback(
     async (taleId: string, entryCount?: number) => {
       const state = useTaleStore.getState();
-      await runTalePersist(taleId, () =>
+      await runPersist(() =>
         undoTaleLogToEntryCount({
           id: taleId,
           tale: snapshotMutableTale(taleId),
@@ -160,7 +151,7 @@ export function usePersistTale() {
         }),
       );
     },
-    [runTalePersist],
+    [runPersist],
   );
 
   const editEntry = useCallback(
@@ -169,7 +160,7 @@ export function usePersistTale() {
       entryId: string,
       patch: Partial<Omit<LogEntry, "id">>,
     ) => {
-      await runTalePersist(taleId, () =>
+      await runPersist(() =>
         editTaleLogEntry({
           id: taleId,
           tale: snapshotMutableTale(taleId),
@@ -178,7 +169,7 @@ export function usePersistTale() {
         }),
       );
     },
-    [runTalePersist],
+    [runPersist],
   );
 
   const retryEntry = useCallback(
@@ -187,7 +178,7 @@ export function usePersistTale() {
       previousEntry: LogEntry,
       replacementEntry: LogEntry,
     ) => {
-      await runTalePersist(taleId, () =>
+      await runPersist(() =>
         retryTaleLogEntry({
           id: taleId,
           tale: snapshotMutableTale(taleId),
@@ -196,12 +187,12 @@ export function usePersistTale() {
         }),
       );
     },
-    [runTalePersist],
+    [runPersist],
   );
 
   const redoEntry = useCallback(
     async (taleId: string, entry: LogEntry, createdAt = Date.now()) => {
-      await runTalePersist(taleId, () =>
+      await runPersist(() =>
         redoTaleLogEntry({
           id: taleId,
           tale: snapshotMutableTale(taleId),
@@ -210,7 +201,7 @@ export function usePersistTale() {
         }),
       );
     },
-    [runTalePersist],
+    [runPersist],
   );
 
   return {

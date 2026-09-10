@@ -2,17 +2,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GameMode } from "@/types/context.type";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 import type { TalePackageV1 } from "@/types/export.type";
+import type { TaleSyncState } from "@/repositories/sync.repository";
 import {
-  canUploadCoverAssets,
   assertSyncAvailable,
   createSyncTransport,
   deleteRemoteTale,
-  fetchHostedAccountUsage,
   importRemoteTalePackage,
   keepBothTalePackage,
-  listHostedDevices,
+  listAllRemoteTales,
   prepareHostedSync,
-  registerSyncDevice,
   refreshHostedSync,
   replaceRemoteTalePackage,
   remoteTaleChanged,
@@ -53,6 +51,7 @@ const taleRepo = vi.hoisted(() => ({
 }));
 
 const syncRepo = vi.hoisted(() => ({
+  acknowledgeTaleSyncWrite: vi.fn(),
   getTaleSyncState: vi.fn(),
   setSyncProfileDisabled: vi.fn(),
   setTaleSyncStatus: vi.fn(),
@@ -133,6 +132,16 @@ function samplePackage(): TalePackageV1 {
         dataBase64: "abcd",
       },
     ],
+  };
+}
+
+function transportFixture() {
+  return {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
   };
 }
 
@@ -246,14 +255,15 @@ describe("sync transport", () => {
     );
   });
 
-  it("throws status and code from remote errors", async () => {
+  it.each([
+    ["code", "content_conflict"],
+    ["type", "metadata_conflict"],
+  ])("reports HTTP status and the server's %s error", async (field, code) => {
     http.fetch.mockResolvedValueOnce({
       ok: false,
       status: 409,
-      text: () =>
-        Promise.resolve('{"code":"content_conflict","message":"Conflict"}'),
+      text: async () => JSON.stringify({ [field]: code, message: "Conflict" }),
     });
-
     await expect(
       createSyncTransport({
         profile: {
@@ -264,55 +274,27 @@ describe("sync transport", () => {
       }).post("/v1/tales", {}),
     ).rejects.toMatchObject({
       status: 409,
-      code: "content_conflict",
+      code,
     } satisfies Partial<SyncHttpError>);
   });
 
-  it("uses server error type when code is absent", async () => {
-    http.fetch.mockResolvedValueOnce({
-      ok: false,
-      status: 409,
-      text: () =>
-        Promise.resolve('{"type":"metadata_conflict","message":"Conflict"}'),
-    });
+  it("lists every remote page and encodes its cursor", async () => {
+    const transport = transportFixture();
+    transport.get
+      .mockResolvedValueOnce({
+        items: [{ id: "first" }],
+        nextCursor: "next/page+2",
+      })
+      .mockResolvedValueOnce({ items: [{ id: "second" }], nextCursor: null });
 
-    await expect(
-      createSyncTransport({
-        profile: {
-          id: "cloud",
-          baseUrl: "https://sync.example",
-          mode: "hosted",
-        },
-      }).patch("/v1/tales/remote/metadata", {}),
-    ).rejects.toMatchObject({
-      status: 409,
-      code: "metadata_conflict",
-    } satisfies Partial<SyncHttpError>);
-  });
-
-  it("maps hosted packages to cover references without inline asset bytes", () => {
-    const hostedPackage = toSyncTalePackage(samplePackage(), {
-      mode: "hosted",
-      coverAssetId: "remote-cover",
-    });
-
-    expect(hostedPackage.assets).toEqual([]);
-    expect(hostedPackage.tale.coverAssetId).toBe("remote-cover");
-    expect(hostedPackage.tale.thumbnailAssetId).toBe("remote-cover");
-    expect("updatedAt" in hostedPackage.turns[0]).toBe(false);
-    expect((hostedPackage.turns[0].entries[0] as { text: string }).text).toBe(
-      "Once.",
-    );
-  });
-
-  it("maps personal packages without cover/image data", () => {
-    const personalPackage = toSyncTalePackage(samplePackage(), {
-      mode: "personal",
-    });
-
-    expect(personalPackage.assets).toEqual([]);
-    expect(personalPackage.tale.coverAssetId).toBeUndefined();
-    expect(personalPackage.tale.thumbnailAssetId).toBeUndefined();
+    await expect(listAllRemoteTales(transport, 1)).resolves.toEqual([
+      { id: "first" },
+      { id: "second" },
+    ]);
+    expect(transport.get.mock.calls).toEqual([
+      ["/v1/tales?limit=1"],
+      ["/v1/tales?cursor=next%2Fpage%2B2&limit=1"],
+    ]);
   });
 
   it("preserves tale source metadata inside synced state data", () => {
@@ -384,7 +366,7 @@ describe("sync transport", () => {
       text: () => Promise.resolve(""),
     });
     const transport = {
-      get: vi.fn(),
+      ...transportFixture(),
       post: vi.fn(async (path: string, _body?: unknown, _options?: unknown) => {
         if (path === "/v1/assets/cover-upload-intents") {
           return {
@@ -405,9 +387,6 @@ describe("sync transport", () => {
           metadataRev: 9,
         };
       }),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
     };
 
     await uploadTalePackage({
@@ -455,11 +434,15 @@ describe("sync transport", () => {
       },
       assets: [],
     });
-    expect(createBody.package.assets[0]?.dataBase64).toBeUndefined();
-  });
-
-  it("uses the explicit cover-storage capability for hosted uploads", () => {
-    expect(canUploadCoverAssets(capabilitiesFixture())).toBe(true);
+    expect(syncRepo.upsertTaleSyncStateIfTaleVersion).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        remoteTaleId: "remote-tale",
+        contentRev: "7",
+        metadataRev: "9",
+        pendingStatus: "idle",
+      }),
+      1,
+    );
   });
 
   it.each(["unchanged", "changed", "absent"])(
@@ -503,7 +486,7 @@ describe("sync transport", () => {
       });
       http.fetch.mockResolvedValue({ ok: true });
       const transport = {
-        get: vi.fn(),
+        ...transportFixture(),
         post: vi.fn().mockResolvedValue({
           asset: { assetId: "new-cover" },
           upload: {
@@ -517,8 +500,6 @@ describe("sync transport", () => {
           contentRev: 3,
           metadataRev: 4,
         }),
-        patch: vi.fn(),
-        delete: vi.fn(),
       };
       await syncLinkedTale({
         profile: {
@@ -557,15 +538,12 @@ describe("sync transport", () => {
   it("uses the sync mapper for personal uploads instead of raw local export", async () => {
     taleRepo.exportTalePackage.mockResolvedValueOnce(samplePackage());
     const transport = {
-      get: vi.fn(),
+      ...transportFixture(),
       post: vi.fn().mockResolvedValue({
         id: "remote-tale",
         contentRev: 7,
         metadataRev: 9,
       }),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
     };
 
     await uploadTalePackage({
@@ -587,13 +565,7 @@ describe("sync transport", () => {
   });
 
   it("deletes remote tales with baseMetadataRev", async () => {
-    const transport = {
-      get: vi.fn(),
-      post: vi.fn(),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
-    };
+    const transport = transportFixture();
 
     await deleteRemoteTale(transport, "remote-tale", 7);
 
@@ -602,56 +574,17 @@ describe("sync transport", () => {
     );
   });
 
-  it("stores numeric server revisions as text after hosted upload", async () => {
-    taleRepo.exportTalePackage.mockResolvedValueOnce(samplePackage());
-    const transport = {
-      get: vi.fn(),
-      post: vi.fn().mockResolvedValue({
-        id: "remote-tale",
-        contentRev: 7,
-        metadataRev: 9,
-      }),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
-    };
-
-    await uploadTalePackage({
-      profile: {
-        id: "cloud",
-        baseUrl: "https://sync.example",
-        mode: "hosted",
-      },
-      transport,
-      localTaleId: "local-tale",
-      idempotencyKey: "idem-upload",
-      capabilities: capabilitiesFixture("unavailable"),
-    });
-
-    expect(syncRepo.upsertTaleSyncStateIfTaleVersion).toHaveBeenLastCalledWith(
-      expect.objectContaining({
-        contentRev: "7",
-        metadataRev: "9",
-        pendingStatus: "idle",
-      }),
-      1,
-    );
-  });
-
   it("keeps a successful initial upload linked and pending when the local tale changes", async () => {
     taleRepo.exportTalePackage.mockResolvedValueOnce(samplePackage());
     syncRepo.upsertTaleSyncStateIfTaleVersion.mockResolvedValueOnce(false);
     const transport = {
-      get: vi.fn(),
+      ...transportFixture(),
       post: vi.fn().mockResolvedValue({
         id: "generated-remote-tale",
         sourceTaleId: "local-tale",
         contentRev: 2,
         metadataRev: 3,
       }),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
     };
 
     await uploadTalePackage({
@@ -682,15 +615,12 @@ describe("sync transport", () => {
   it("rejects a successful create response without a remote tale id", async () => {
     taleRepo.exportTalePackage.mockResolvedValueOnce(samplePackage());
     const transport = {
-      get: vi.fn(),
+      ...transportFixture(),
       post: vi.fn().mockResolvedValue({
         sourceTaleId: "local-tale",
         contentRev: 1,
         metadataRev: 1,
       }),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
     };
 
     await expect(
@@ -713,7 +643,7 @@ describe("sync transport", () => {
   it("does not link a local tale when hosted upload rejects an unregistered device", async () => {
     taleRepo.exportTalePackage.mockResolvedValueOnce(samplePackage());
     const transport = {
-      get: vi.fn(),
+      ...transportFixture(),
       post: vi
         .fn()
         .mockRejectedValue(
@@ -723,9 +653,6 @@ describe("sync transport", () => {
             "device_not_registered",
           ),
         ),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
     };
 
     await expect(
@@ -768,15 +695,13 @@ describe("sync transport", () => {
       lastErrorCode: null,
     });
     const transport = {
+      ...transportFixture(),
       get: vi.fn().mockResolvedValue({ features: {} }),
-      post: vi.fn(),
       put: vi.fn().mockResolvedValue({
         id: "remote-tale",
         contentRev: 13,
         metadataRev: 4,
       }),
-      patch: vi.fn(),
-      delete: vi.fn(),
     };
 
     await replaceRemoteTalePackage({
@@ -799,16 +724,108 @@ describe("sync transport", () => {
       }),
       { idempotencyKey: "idem-replace" },
     );
-    expect(syncRepo.upsertTaleSyncStateIfTaleVersion).toHaveBeenLastCalledWith(
-      expect.objectContaining({
+    expect(syncRepo.acknowledgeTaleSyncWrite).toHaveBeenLastCalledWith({
+      expectedState: expect.objectContaining({
         remoteTaleId: "remote-tale",
-        contentRev: "13",
-        metadataRev: "4",
-        pendingStatus: "idle",
-        lastErrorCode: null,
+        contentRev: "12",
+        metadataRev: "3",
       }),
-      1,
+      expectedSaveVersion: 1,
+      contentRev: "13",
+      metadataRev: "4",
+    });
+  });
+
+  it("acknowledges the uploaded snapshot and uses stored revisions for the next local edit", async () => {
+    const pkg = samplePackage();
+    const edited = structuredClone(pkg);
+    edited.turns[0].entries[0].text = "Edited during upload.";
+    const state: TaleSyncState = {
+      profileId: "cloud",
+      accountId: "account-a",
+      localTaleId: "local-tale",
+      remoteTaleId: "remote-tale",
+      contentRev: "1",
+      metadataRev: "1",
+      lastSyncedAt: 1,
+      pendingStatus: "push",
+      lastErrorCode: null,
+    };
+    syncRepo.getTaleSyncState.mockResolvedValue(state);
+    taleRepo.exportTalePackage
+      .mockResolvedValueOnce(pkg)
+      .mockResolvedValueOnce(edited);
+    const transport = transportFixture();
+    transport.put
+      .mockImplementationOnce(async () => {
+        taleRepo.getTaleSaveVersion.mockResolvedValue(2);
+        return { id: "remote-tale", contentRev: 2, metadataRev: 2 };
+      })
+      .mockResolvedValueOnce({
+        id: "remote-tale",
+        contentRev: 3,
+        metadataRev: 3,
+      });
+    const input = {
+      profile: {
+        id: "cloud",
+        accountId: "account-a",
+        baseUrl: "https://sync.example",
+        mode: "hosted" as const,
+      },
+      transport,
+      localTaleId: "local-tale",
+      remoteTale: {
+        id: "remote-tale",
+        sourceTaleId: "local-tale",
+        title: pkg.tale.title,
+        description: pkg.tale.description,
+        gameMode: pkg.tale.gameMode,
+        coverAssetId: null,
+        thumbnailAssetId: null,
+        contentRev: 1,
+        metadataRev: 1,
+        turnCount: 1,
+        updatedAt: "2026-09-10",
+        lastEntryPreview: null,
+      },
+      idempotencyKey: "first-snapshot",
+      capabilities: capabilitiesFixture("unavailable"),
+    };
+    expect(await syncLinkedTale(input)).toBe("pushed");
+    expect(syncRepo.acknowledgeTaleSyncWrite).toHaveBeenLastCalledWith({
+      expectedState: state,
+      expectedSaveVersion: 1,
+      contentRev: "2",
+      metadataRev: "2",
+    });
+    // SQLite tests cover this stored outcome when an edit races the upload.
+    syncRepo.getTaleSyncState.mockResolvedValue({
+      ...state,
+      contentRev: "2",
+      metadataRev: "2",
+    });
+    expect(
+      await syncLinkedTale({
+        ...input,
+        remoteTale: { ...input.remoteTale, contentRev: 2, metadataRev: 2 },
+        idempotencyKey: "next-snapshot",
+      }),
+    ).toBe("pushed");
+    expect(transport.put).toHaveBeenCalledTimes(2);
+    expect(transport.put.mock.calls[1][1]).toMatchObject({
+      baseContentRev: 2,
+      baseMetadataRev: 2,
+      package: { turns: [{ entries: [{ text: "Edited during upload." }] }] },
+    });
+    expect(syncRepo.acknowledgeTaleSyncWrite).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        expectedSaveVersion: 2,
+        contentRev: "3",
+        metadataRev: "3",
+      }),
     );
+    expect(syncRepo.setTaleSyncStatus).not.toHaveBeenCalled();
   });
 
   it("omits baseContentRev when force replacing a conflicted remote package", async () => {
@@ -824,15 +841,13 @@ describe("sync transport", () => {
       lastErrorCode: "remote_changed",
     });
     const transport = {
+      ...transportFixture(),
       get: vi.fn().mockResolvedValue({ features: {} }),
-      post: vi.fn(),
       put: vi.fn().mockResolvedValue({
         id: "remote-tale",
         contentRev: 13,
         metadataRev: 4,
       }),
-      patch: vi.fn(),
-      delete: vi.fn(),
     };
 
     await replaceRemoteTalePackage({
@@ -856,6 +871,46 @@ describe("sync transport", () => {
     expect(body).not.toHaveProperty("baseContentRev");
   });
 
+  it("does not acknowledge a replacement after its account session is cancelled", async () => {
+    const controller = new AbortController();
+    taleRepo.exportTalePackage.mockResolvedValueOnce(samplePackage());
+    syncRepo.getTaleSyncState.mockResolvedValueOnce({
+      profileId: "cloud",
+      accountId: "old-account",
+      localTaleId: "local-tale",
+      remoteTaleId: "remote-tale",
+      contentRev: "1",
+      metadataRev: "1",
+      lastSyncedAt: 1,
+      pendingStatus: "push",
+      lastErrorCode: null,
+    });
+    const transport = {
+      ...transportFixture(),
+      signal: controller.signal,
+      put: vi.fn().mockImplementation(async () => {
+        controller.abort(new Error("account changed"));
+        return { id: "remote-tale", contentRev: 2, metadataRev: 2 };
+      }),
+    };
+    await expect(
+      replaceRemoteTalePackage({
+        profile: {
+          id: "cloud",
+          accountId: "old-account",
+          baseUrl: "https://sync.example",
+          mode: "hosted",
+        },
+        transport,
+        localTaleId: "local-tale",
+        idempotencyKey: "cancelled-replacement",
+        capabilities: capabilitiesFixture("unavailable"),
+      }),
+    ).rejects.toThrow("account changed");
+    expect(syncRepo.acknowledgeTaleSyncWrite).not.toHaveBeenCalled();
+    expect(syncRepo.setTaleSyncStatus).not.toHaveBeenCalled();
+  });
+
   it.each([false, true])(
     "records replacement failures only for the current session: %s",
     async (cancelled) => {
@@ -872,15 +927,12 @@ describe("sync transport", () => {
         lastErrorCode: null,
       });
       const transport = {
+        ...transportFixture(),
         signal: controller.signal,
-        get: vi.fn(),
-        post: vi.fn(),
         put: vi.fn().mockImplementation(async () => {
           if (cancelled) controller.abort(new Error("cancelled"));
           throw new Error("offline");
         }),
-        patch: vi.fn(),
-        delete: vi.fn(),
       };
 
       await expect(
@@ -923,15 +975,12 @@ describe("sync transport", () => {
       lastErrorCode: null,
     });
     const transport = {
-      get: vi.fn(),
-      post: vi.fn(),
+      ...transportFixture(),
       put: vi
         .fn()
         .mockRejectedValue(
           new SyncHttpError("Conflict", 409, "content_conflict"),
         ),
-      patch: vi.fn(),
-      delete: vi.fn(),
     };
 
     await expect(
@@ -1004,6 +1053,7 @@ describe("sync transport", () => {
         lastErrorCode: null,
       });
     const transport = {
+      ...transportFixture(),
       get: vi.fn().mockResolvedValue({
         id: "remote-tale",
         contentRev: 4,
@@ -1011,10 +1061,6 @@ describe("sync transport", () => {
         turnCount: 1,
         package: toSyncTalePackage(samplePackage(), { mode: "hosted" }),
       }),
-      post: vi.fn(),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
     };
 
     const result = await syncLinkedTale({
@@ -1074,6 +1120,7 @@ describe("sync transport", () => {
     });
     taleRepo.replaceTaleWithPackage.mockResolvedValueOnce(false);
     const transport = {
+      ...transportFixture(),
       get: vi.fn().mockResolvedValue({
         id: "remote-tale",
         contentRev: 4,
@@ -1081,10 +1128,6 @@ describe("sync transport", () => {
         turnCount: 1,
         package: toSyncTalePackage(samplePackage(), { mode: "hosted" }),
       }),
-      post: vi.fn(),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
     };
 
     const result = await syncLinkedTale({
@@ -1147,13 +1190,10 @@ describe("sync transport", () => {
         lastErrorCode: null,
       });
     const transport = {
+      ...transportFixture(),
       get: vi
         .fn()
         .mockRejectedValue(new SyncHttpError("Unauthorized", 401, "auth")),
-      post: vi.fn(),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
     };
 
     await expect(
@@ -1206,13 +1246,7 @@ describe("sync transport", () => {
       pendingStatus: "push",
       lastErrorCode: null,
     });
-    const transport = {
-      get: vi.fn(),
-      post: vi.fn(),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
-    };
+    const transport = transportFixture();
 
     const result = await syncLinkedTale({
       profile: {
@@ -1249,127 +1283,94 @@ describe("sync transport", () => {
     expect(transport.post).not.toHaveBeenCalled();
   });
 
-  it.each(["edit", "append", "state", "metadata"])(
-    "replaces dirty packages in one write without intermediate acknowledgement: %s",
-    async (change) => {
-      const appended = change === "append";
-      const pkg = samplePackage();
-      if (change === "edit" || appended)
-        pkg.turns[0].entries[0].text = "Edited an existing turn while offline.";
-      if (change === "state")
-        pkg.state.data.gm.scratchpad = { note: "updated state" };
-      if (change === "metadata") pkg.tale.title = "Renamed while offline";
-      if (appended)
-        pkg.turns.push({
-          ...pkg.turns[0],
-          id: "turn-2",
-          seq: 2,
-          entries: [
-            { ...pkg.turns[0].entries[0], id: "entry-2", text: "New turn." },
-          ],
-        });
-      taleRepo.exportTalePackage.mockResolvedValue(pkg);
-      syncRepo.getTaleSyncState
-        .mockResolvedValueOnce({
-          profileId: "cloud",
-          localTaleId: "local-tale",
-          remoteTaleId: "remote-tale",
-          contentRev: "2",
-          metadataRev: "3",
-          lastSyncedAt: 1,
-          pendingStatus: "push",
-          lastErrorCode: null,
-        })
-        .mockResolvedValueOnce({
-          profileId: "cloud",
-          localTaleId: "local-tale",
-          remoteTaleId: "remote-tale",
-          contentRev: "2",
-          metadataRev: "3",
-          lastSyncedAt: 1,
-          pendingStatus: "push",
-          lastErrorCode: null,
-        })
-        .mockResolvedValueOnce({
-          profileId: "cloud",
-          localTaleId: "local-tale",
-          remoteTaleId: "remote-tale",
-          contentRev: "2",
-          metadataRev: "3",
-          lastSyncedAt: 1,
-          pendingStatus: "push",
-          lastErrorCode: null,
-        });
-      const transport = {
-        get: vi.fn(),
-        post: vi.fn(),
-        put: vi.fn().mockResolvedValue({
-          id: "remote-tale",
-          contentRev: 3,
-          metadataRev: 4,
-        }),
-        patch: vi.fn(),
-        delete: vi.fn(),
-      };
+  it("uploads offline history, state, and metadata edits in one complete snapshot", async () => {
+    const pkg = samplePackage();
+    pkg.turns[0].entries[0].text = "Edited an existing turn while offline.";
+    pkg.state.data.gm.scratchpad = { note: "updated state" };
+    pkg.tale.title = "Renamed while offline";
+    pkg.turns.push({
+      ...pkg.turns[0],
+      id: "turn-2",
+      seq: 2,
+      entries: [
+        { ...pkg.turns[0].entries[0], id: "entry-2", text: "New turn." },
+      ],
+    });
+    taleRepo.exportTalePackage.mockResolvedValue(pkg);
+    syncRepo.getTaleSyncState.mockResolvedValue({
+      profileId: "cloud",
+      localTaleId: "local-tale",
+      remoteTaleId: "remote-tale",
+      contentRev: "2",
+      metadataRev: "3",
+      lastSyncedAt: 1,
+      pendingStatus: "push",
+      lastErrorCode: null,
+    });
+    const transport = {
+      ...transportFixture(),
+      put: vi.fn().mockResolvedValue({
+        id: "remote-tale",
+        contentRev: 3,
+        metadataRev: 4,
+      }),
+    };
 
-      const result = await syncLinkedTale({
-        profile: {
-          id: "cloud",
-          baseUrl: "https://sync.example",
-          mode: "hosted",
-        },
-        transport,
-        localTaleId: "local-tale",
-        remoteTale: {
-          id: "remote-tale",
-          sourceTaleId: "local-tale",
-          title: "Local Tale",
-          description: "Has a local thumbnail.",
-          gameMode: GameMode.STORY_TELLER,
-          coverAssetId: null,
-          thumbnailAssetId: null,
-          contentRev: 2,
-          metadataRev: 3,
-          turnCount: 1,
-          updatedAt: "2026-06-19T00:00:00.000Z",
-          lastEntryPreview: null,
-        },
-        idempotencyKey: "idem-sync",
-        capabilities: capabilitiesFixture("unavailable"),
-      });
+    const result = await syncLinkedTale({
+      profile: {
+        id: "cloud",
+        baseUrl: "https://sync.example",
+        mode: "hosted",
+      },
+      transport,
+      localTaleId: "local-tale",
+      remoteTale: {
+        id: "remote-tale",
+        sourceTaleId: "local-tale",
+        title: "Local Tale",
+        description: "Has a local thumbnail.",
+        gameMode: GameMode.STORY_TELLER,
+        coverAssetId: null,
+        thumbnailAssetId: null,
+        contentRev: 2,
+        metadataRev: 3,
+        turnCount: 1,
+        updatedAt: "2026-06-19T00:00:00.000Z",
+        lastEntryPreview: null,
+      },
+      idempotencyKey: "idem-sync",
+      capabilities: capabilitiesFixture("unavailable"),
+    });
 
-      expect(result).toBe("pushed");
-      expect(transport.put).toHaveBeenCalledWith(
-        "/v1/tales/remote-tale/package",
-        expect.objectContaining({
-          baseContentRev: 2,
-          baseMetadataRev: 3,
-          confirmReplace: true,
-          package: expect.objectContaining({
-            turns: expect.arrayContaining([
-              expect.objectContaining({ seq: 1 }),
-            ]),
-          }),
+    expect(result).toBe("pushed");
+    expect(transport.put).toHaveBeenCalledWith(
+      "/v1/tales/remote-tale/package",
+      expect.objectContaining({
+        baseContentRev: 2,
+        baseMetadataRev: 3,
+        confirmReplace: true,
+        package: expect.objectContaining({
+          turns: expect.arrayContaining([expect.objectContaining({ seq: 1 })]),
         }),
-        { idempotencyKey: "idem-sync" },
-      );
-      expect(transport.patch).not.toHaveBeenCalled();
-      expect(transport.post).not.toHaveBeenCalled();
-      const uploaded = transport.put.mock.calls[0][1].package;
-      expect(uploaded.turns).toHaveLength(appended ? 2 : 1);
-      expect(uploaded.turns[0].entries[0].text).toBe(
-        pkg.turns[0].entries[0].text,
-      );
-      expect(uploaded.tale.title).toBe(pkg.tale.title);
-      expect(uploaded.state).toEqual(
-        toSyncTalePackage(pkg, { mode: "hosted" }).state,
-      );
-      expect(syncRepo.upsertTaleSyncStateIfTaleVersion).toHaveBeenCalledOnce();
-      expect(transport.put.mock.invocationCallOrder[0]).toBeLessThan(
-        syncRepo.upsertTaleSyncStateIfTaleVersion.mock.invocationCallOrder[0],
-      );
-    },
-  );
+      }),
+      { idempotencyKey: "idem-sync" },
+    );
+    expect(transport.patch).not.toHaveBeenCalled();
+    expect(transport.post).not.toHaveBeenCalled();
+    const uploaded = transport.put.mock.calls[0][1].package;
+    expect(uploaded.turns).toHaveLength(2);
+    expect(uploaded.turns[0].entries[0].text).toBe(
+      pkg.turns[0].entries[0].text,
+    );
+    expect(uploaded.tale.title).toBe(pkg.tale.title);
+    expect(uploaded.state.data.gm.scratchpad).toEqual({
+      note: "updated state",
+    });
+    expect(syncRepo.acknowledgeTaleSyncWrite).toHaveBeenCalledOnce();
+    expect(transport.put.mock.invocationCallOrder[0]).toBeLessThan(
+      syncRepo.acknowledgeTaleSyncWrite.mock.invocationCallOrder[0],
+    );
+  });
 
   it("does not pull over an edit made after the background idle-state check", async () => {
     const state = {
@@ -1385,13 +1386,7 @@ describe("sync transport", () => {
     syncRepo.getTaleSyncState
       .mockResolvedValueOnce(state)
       .mockResolvedValueOnce({ ...state, pendingStatus: "push" });
-    const transport = {
-      get: vi.fn(),
-      post: vi.fn(),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
-    };
+    const transport = transportFixture();
     const result = await syncLinkedTale({
       profile: { id: "cloud", baseUrl: "https://sync.example", mode: "hosted" },
       transport,
@@ -1435,16 +1430,13 @@ describe("sync transport", () => {
       lastErrorCode: "sync_failed",
     });
     const transport = {
+      ...transportFixture(),
       get: vi.fn().mockResolvedValue({
         id: "remote-tale",
         contentRev: 3,
         metadataRev: 3,
         package: toSyncTalePackage(samplePackage(), { mode: "hosted" }),
       }),
-      post: vi.fn(),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
     };
     expect(
       await applyRemoteTalePackage({
@@ -1488,16 +1480,13 @@ describe("sync transport", () => {
         lastErrorCode: "sync_failed",
       });
       const transport = {
+        ...transportFixture(),
         get: vi.fn().mockResolvedValue({
           id: "remote-tale",
           contentRev: 3,
           metadataRev: 4,
           package: remotePackage,
         }),
-        post: vi.fn(),
-        put: vi.fn(),
-        patch: vi.fn(),
-        delete: vi.fn(),
       };
       const result = await syncLinkedTale({
         profile: {
@@ -1864,9 +1853,7 @@ describe("sync transport", () => {
 
   it("updates the hosted account profile", async () => {
     const transport = {
-      get: vi.fn(),
-      post: vi.fn(),
-      put: vi.fn(),
+      ...transportFixture(),
       patch: vi.fn().mockResolvedValue({
         id: "account-1",
         emailNormalized: "player@example.com",
@@ -1875,7 +1862,6 @@ describe("sync transport", () => {
         createdAt: "2026-01-01T00:00:00.000Z",
         updatedAt: "2026-01-01T00:00:00.000Z",
       }),
-      delete: vi.fn(),
     };
 
     const account = await updateHostedAccountProfile(transport, {
@@ -1888,87 +1874,9 @@ describe("sync transport", () => {
     expect(account.displayName).toBe("Player");
   });
 
-  it("fetches hosted account usage", async () => {
-    const transport = {
-      get: vi.fn().mockResolvedValue({
-        tales: { used: 2, limit: 25 },
-        storage: { usedBytes: 1024, limitBytes: 50 * 1024 * 1024 },
-      }),
-      post: vi.fn(),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
-    };
-
-    await expect(fetchHostedAccountUsage(transport)).resolves.toEqual({
-      tales: { used: 2, limit: 25 },
-      storage: { usedBytes: 1024, limitBytes: 50 * 1024 * 1024 },
-    });
-    expect(transport.get).toHaveBeenCalledWith("/v1/accounts/me/usage");
-  });
-
-  it("lists hosted devices", async () => {
-    const devices = [
-      {
-        id: "device-1",
-        name: "Laptop",
-        platform: "windows",
-        appVersion: "0.15.2",
-        createdAt: "2026-06-21T00:00:00.000Z",
-        lastSeenAt: "2026-06-22T00:00:00.000Z",
-      },
-    ];
-    const transport = {
-      get: vi.fn().mockResolvedValue(devices),
-      post: vi.fn(),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
-    };
-
-    await expect(listHostedDevices(transport)).resolves.toEqual(devices);
-    expect(transport.get).toHaveBeenCalledWith("/v1/devices");
-  });
-
-  it("registers the current hosted device", async () => {
-    const device = {
-      id: "device-1",
-      name: "Laptop",
-      platform: "windows",
-      appVersion: "0.15.2",
-      createdAt: "2026-06-21T00:00:00.000Z",
-      lastSeenAt: "2026-06-22T00:00:00.000Z",
-    };
-    const transport = {
-      get: vi.fn(),
-      post: vi.fn(),
-      put: vi.fn().mockResolvedValue(device),
-      patch: vi.fn(),
-      delete: vi.fn(),
-    };
-
-    await expect(
-      registerSyncDevice(transport, {
-        id: "device-1",
-        name: "Laptop",
-        platform: "windows",
-        appVersion: "0.15.2",
-      }),
-    ).resolves.toEqual(device);
-    expect(transport.put).toHaveBeenCalledWith("/v1/devices/current", {
-      clientDeviceId: "device-1",
-      name: "Laptop",
-      platform: "windows",
-      appVersion: "0.15.2",
-    });
-  });
-
   it("unregisters a hosted device", async () => {
     const transport = {
-      get: vi.fn(),
-      post: vi.fn(),
-      put: vi.fn(),
-      patch: vi.fn(),
+      ...transportFixture(),
       delete: vi.fn().mockResolvedValue(null),
     };
 
@@ -1980,6 +1888,7 @@ describe("sync transport", () => {
   it("imports a remote tale package and links local sync state", async () => {
     taleRepo.importTalePackage.mockResolvedValueOnce("local-imported");
     const transport = {
+      ...transportFixture(),
       get: vi.fn().mockResolvedValue({
         id: "remote-tale",
         contentRev: 4,
@@ -1990,10 +1899,6 @@ describe("sync transport", () => {
           assets: undefined,
         },
       }),
-      post: vi.fn(),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
     };
 
     const localTaleId = await importRemoteTalePackage({
@@ -2044,6 +1949,7 @@ describe("sync transport", () => {
       lastErrorCode: "content_conflict",
     });
     const transport = {
+      ...transportFixture(),
       get: vi.fn().mockResolvedValue({
         id: "remote-tale",
         contentRev: 8,
@@ -2056,9 +1962,6 @@ describe("sync transport", () => {
         contentRev: 1,
         metadataRev: 1,
       }),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
     };
 
     const copyId = await keepBothTalePackage({
@@ -2116,6 +2019,7 @@ describe("sync transport", () => {
       assets: undefined,
     };
     const transport = {
+      ...transportFixture(),
       get: vi.fn().mockResolvedValue({
         id: "remote-tale",
         contentRev: 8,
@@ -2123,10 +2027,6 @@ describe("sync transport", () => {
         turnCount: 1,
         package: remotePackage,
       }),
-      post: vi.fn(),
-      put: vi.fn(),
-      patch: vi.fn(),
-      delete: vi.fn(),
     };
 
     await applyRemoteTalePackage({

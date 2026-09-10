@@ -3,7 +3,6 @@ import type { Stat } from "@/types/stats.type";
 
 export const TALE_SCHEMA_VERSION = 1;
 export const TALE_STATE_SCHEMA_VERSION = 1;
-export const TALE_PACKAGE_FORMAT_VERSION = 1;
 
 export type TaleCurrentState = {
   components: PromptComponent[];

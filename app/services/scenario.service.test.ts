@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   deserializeScenarioExport,
-  serializeScenarioExportV2,
+  serializeScenarioExport,
 } from "./scenario.service";
 import {
   GameMode,
@@ -114,7 +114,7 @@ describe("scenario service exports", () => {
   });
 
   it("serializes scenarios as v3 with content", () => {
-    const json = serializeScenarioExportV2({
+    const json = serializeScenarioExport({
       id: "scenario-1",
       name: "New Forest",
       initialGameMode: GameMode.STORY_TELLER,
@@ -139,7 +139,7 @@ describe("scenario service exports", () => {
   });
 
   it("round-trips v3 scenario exports", () => {
-    const json = serializeScenarioExportV2({
+    const json = serializeScenarioExport({
       id: "scenario-1",
       name: "New Forest",
       initialGameMode: GameMode.STORY_TELLER,

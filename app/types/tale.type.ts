@@ -33,7 +33,6 @@ export type Tale = {
 };
 
 export type createTaleDTO = Omit<Tale, "id" | "createdAt" | "updatedAt">;
-export type updateTaleDTO = Omit<Tale, "createdAt" | "updatedAt">;
 export type TaleHead = {
   id: string;
   name: string;

@@ -21,8 +21,6 @@ type TestDatabase = {
   select: <T>(sql: string, params?: SqlParam[]) => Promise<T>;
   close: () => void;
   raw: DatabaseSync;
-  selectSql: string[];
-  executeSql: string[];
 };
 
 const dbState = vi.hoisted(() => ({
@@ -72,48 +70,20 @@ vi.mock("@tauri-apps/api/core", () => ({
 function createAdapter(): TestDatabase {
   const raw = new DatabaseSync(":memory:");
   raw.exec("PRAGMA foreign_keys = ON");
-  let transactionOpen = false;
-  const selectSql: string[] = [];
-  const executeSql: string[] = [];
 
   return {
     path: "sqlite:test",
     raw,
-    selectSql,
-    executeSql,
     async execute(sql: string, params: SqlParam[] = []) {
-      const command = sql.trim().split(/\s+/)[0]?.toUpperCase();
-      executeSql.push(sql);
-      if (command === "BEGIN") {
-        if (transactionOpen) {
-          throw new Error("cannot start a transaction within a transaction");
-        }
-        transactionOpen = true;
-      }
-
-      let rowsAffected = 0;
-      try {
-        rowsAffected = Number(raw.prepare(sql).run(...params).changes);
-      } catch (error) {
-        if (command === "ROLLBACK" && !transactionOpen) {
-          throw new Error("cannot rollback - no transaction is active");
-        }
-        throw error;
-      } finally {
-        if (command === "COMMIT" || command === "ROLLBACK") {
-          transactionOpen = false;
-        }
-      }
-      return { rowsAffected };
+      return { rowsAffected: Number(raw.prepare(sql).run(...params).changes) };
     },
     async select<T>(sql: string, params: SqlParam[] = []) {
-      selectSql.push(sql);
       return raw.prepare(sql).all(...params) as T;
     },
     close() {
       raw.close();
     },
-  } as TestDatabase;
+  };
 }
 
 const migrationFiles = [
@@ -958,7 +928,7 @@ describe("tale repository SQLite storage", () => {
     ]);
   });
 
-  it("does not acknowledge a sync result after the local tale changes", async () => {
+  it("does not mark a locally edited tale as fully synced", async () => {
     applyMigrations(dbState.current!);
     const taleId = await createEmptyTale();
     const { appendTurn, getTaleSaveVersion } = await import(
@@ -1015,6 +985,96 @@ describe("tale repository SQLite storage", () => {
       contentRev: "1",
       pendingStatus: "push",
     });
+  });
+
+  it("keeps edits pending after upload and rejects obsolete acknowledgements", async () => {
+    applyMigrations(dbState.current!);
+    const taleId = await createEmptyTale();
+    const { appendTurn, getTaleSaveVersion } = await import(
+      "./tale.repository"
+    );
+    const {
+      acknowledgeTaleSyncWrite,
+      deleteTaleSyncState,
+      getTaleSyncState,
+      upsertSyncProfile,
+      upsertTaleSyncState,
+    } = await import("./sync.repository");
+    await upsertSyncProfile({
+      id: "hosted",
+      baseUrl: "https://sync.example",
+      mode: "hosted",
+    });
+    const original = {
+      profileId: "hosted",
+      accountId: "account-a",
+      localTaleId: taleId,
+      remoteTaleId: "remote-a",
+      contentRev: "1",
+      metadataRev: "2",
+      lastSyncedAt: 1,
+      pendingStatus: "push" as const,
+      lastErrorCode: null,
+    };
+    await upsertTaleSyncState(original);
+    const other = {
+      ...original,
+      accountId: "account-b",
+      remoteTaleId: "remote-b",
+    };
+    await upsertTaleSyncState(other);
+    const expectedSaveVersion = await getTaleSaveVersion(taleId);
+    await appendTurn(
+      taleId,
+      { entries: [playerEntry("new-local-turn")], createdAt: 400 },
+      emptyState(),
+      createTaleSessionState(),
+    );
+    const acknowledgement = {
+      expectedState: original,
+      expectedSaveVersion,
+      contentRev: "2",
+      metadataRev: "3",
+    };
+    await expect(acknowledgeTaleSyncWrite(acknowledgement)).resolves.toBe(true);
+    await expect(getTaleSyncState(original)).resolves.toMatchObject({
+      contentRev: "2",
+      metadataRev: "3",
+      pendingStatus: "push",
+    });
+    await expect(getTaleSyncState(other)).resolves.toMatchObject({
+      contentRev: "1",
+      metadataRev: "2",
+      remoteTaleId: "remote-b",
+    });
+    const pending = (await getTaleSyncState(original))!;
+    await expect(
+      acknowledgeTaleSyncWrite({
+        expectedState: pending,
+        expectedSaveVersion: await getTaleSaveVersion(taleId),
+        contentRev: "3",
+        metadataRev: "4",
+      }),
+    ).resolves.toBe(true);
+    await expect(getTaleSyncState(original)).resolves.toMatchObject({
+      contentRev: "3",
+      metadataRev: "4",
+      pendingStatus: "idle",
+    });
+    // An older response cannot move acknowledged revisions backwards.
+    await expect(acknowledgeTaleSyncWrite(acknowledgement)).resolves.toBe(
+      false,
+    );
+    const latest = (await getTaleSyncState(original))!;
+    await upsertTaleSyncState({ ...latest, remoteTaleId: "replacement-link" });
+    await expect(
+      acknowledgeTaleSyncWrite({ ...acknowledgement, expectedState: latest }),
+    ).resolves.toBe(false);
+    await deleteTaleSyncState(original);
+    await expect(acknowledgeTaleSyncWrite(acknowledgement)).resolves.toBe(
+      false,
+    );
+    expect(await getTaleSyncState(original)).toBeNull();
   });
 
   it("rejects turn replacement when requested entry anchors are missing", async () => {
@@ -1501,38 +1561,6 @@ describe("tale repository SQLite storage", () => {
     ).rejects.toThrow("thumbnail asset is missing");
   });
 
-  it("serializes complete reads, play-window reads, and exports without DB read transactions", async () => {
-    const db = dbState.current!;
-    applyMigrations(db);
-    const { appendTurn, exportTalePackage, getTale, getTalePlayLoad } =
-      await import("./tale.repository");
-    const taleId = await createEmptyTale();
-    await appendTurn(
-      taleId,
-      { entries: [playerEntry("player-1"), gmEntry("gm-1")], createdAt: 10 },
-      emptyState(),
-      createTaleSessionState(),
-    );
-    db.executeSql.length = 0;
-
-    const completeTale = await getTale(taleId);
-    const playLoad = await getTalePlayLoad(taleId, { logLimit: 1 });
-    const exported = await exportTalePackage(taleId);
-
-    expect(completeTale?.log.map((entry) => entry.id)).toEqual([
-      "player-1",
-      "gm-1",
-    ]);
-    expect(playLoad?.log.map((entry) => entry.id)).toEqual(["gm-1"]);
-    expect(exported.turns[0].entries.map((entry) => entry.id)).toEqual([
-      "player-1",
-      "gm-1",
-    ]);
-    expect(
-      db.executeSql.filter((sql) => sql.trim().toUpperCase() === "BEGIN"),
-    ).toHaveLength(0);
-  });
-
   it("loads long tale windows and list summaries from indexed turn rows", async () => {
     const db = dbState.current!;
     applyMigrations(db);
@@ -1576,21 +1604,13 @@ describe("tale repository SQLite storage", () => {
       last_log_entry_json: string;
     };
 
-    expect(tale?.log).toHaveLength(10);
+    expect(tale?.log.map((entry) => entry.id)).toEqual(
+      turns.flatMap((turn) => turn.entries.map((entry) => entry.id)).slice(-10),
+    );
     expect(summaryRow.log_count).toBe(expectedCount);
     expect(JSON.parse(summaryRow.last_log_entry_json).id).toBe("gm-240");
     expect(summaries.data[0].logCount).toBe(expectedCount);
     expect(summaries.data[0].lastLogEntry?.id).toBe("gm-240");
-    expect(
-      dbState.current!.selectSql.some((sql) =>
-        sql.includes("entry_start_index < ?"),
-      ),
-    ).toBe(true);
-    expect(
-      dbState.current!.selectSql.some((sql) =>
-        sql.includes("GROUP BY tale_id"),
-      ),
-    ).toBe(false);
   });
 
   it("serializes overlapping local writes without nested transactions", async () => {

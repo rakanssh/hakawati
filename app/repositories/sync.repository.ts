@@ -1,7 +1,4 @@
-import {
-  enqueueLocalOperation,
-  enqueueLocalWrite,
-} from "@/lib/local-write-queue";
+import { enqueueLocalOperation } from "@/lib/local-write-queue";
 import { getDb } from "@/services/db";
 import type {
   SyncDisabledReason,
@@ -93,7 +90,7 @@ function mapPreference(row: TaleSyncPreferenceRow) {
 }
 
 export async function upsertSyncProfile(profile: SyncProfile): Promise<void> {
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const now = Date.now();
     const db = await getDb();
     await db.execute(
@@ -133,25 +130,13 @@ export async function setSyncProfileDisabled(
   profileId: string,
   reason: SyncDisabledReason,
 ): Promise<void> {
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     await db.execute(
       `UPDATE sync_profiles
        SET enabled = 0, disabled_reason = ?, updated_at = ?
        WHERE id = ?`,
       [reason, Date.now(), profileId],
-    );
-  });
-}
-
-export async function setSyncProfileEnabled(profileId: string): Promise<void> {
-  await enqueueLocalWrite(async () => {
-    const db = await getDb();
-    await db.execute(
-      `UPDATE sync_profiles
-       SET enabled = 1, disabled_reason = NULL, updated_at = ?
-       WHERE id = ?`,
-      [Date.now(), profileId],
     );
   });
 }
@@ -166,16 +151,6 @@ export async function getSyncProfile(
       [profileId],
     );
     return rows[0] ? mapProfile(rows[0]) : null;
-  });
-}
-
-export async function listSyncProfiles(): Promise<SyncProfile[]> {
-  return enqueueLocalOperation(async () => {
-    const db = await getDb();
-    const rows = await db.select<SyncProfileRow[]>(
-      `SELECT * FROM sync_profiles ORDER BY updated_at DESC`,
-    );
-    return rows.map(mapProfile);
   });
 }
 
@@ -210,21 +185,8 @@ export async function listTaleSyncStates(
   });
 }
 
-export async function listSyncStatesForLocalTale(
-  localTaleId: string,
-): Promise<TaleSyncState[]> {
-  return enqueueLocalOperation(async () => {
-    const db = await getDb();
-    const rows = await db.select<TaleSyncStateRow[]>(
-      `SELECT * FROM tale_sync_state WHERE local_tale_id = ?`,
-      [localTaleId],
-    );
-    return rows.map(mapState);
-  });
-}
-
 export async function upsertTaleSyncState(state: TaleSyncState): Promise<void> {
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     await db.execute(
       `INSERT INTO tale_sync_state (
@@ -265,7 +227,7 @@ export async function upsertTaleSyncStateIfTaleVersion(
   state: TaleSyncState,
   expectedSaveVersion: number,
 ): Promise<boolean> {
-  return enqueueLocalWrite(async () => {
+  return enqueueLocalOperation(async () => {
     const db = await getDb();
     const result = await db.execute(
       `INSERT INTO tale_sync_state (
@@ -307,12 +269,47 @@ export async function upsertTaleSyncStateIfTaleVersion(
   });
 }
 
+export async function acknowledgeTaleSyncWrite(input: {
+  expectedState: TaleSyncState;
+  expectedSaveVersion: number;
+  contentRev: string | null;
+  metadataRev: string | null;
+}): Promise<boolean> {
+  return enqueueLocalOperation(async () => {
+    const db = await getDb();
+    const state = input.expectedState;
+    const result = await db.execute(
+      `UPDATE tale_sync_state
+       SET content_rev = ?, metadata_rev = ?, last_synced_at = ?,
+           pending_status = CASE WHEN (
+             SELECT save_version FROM tales WHERE id = local_tale_id
+           ) = ? THEN 'idle' ELSE 'push' END,
+           last_error_code = NULL
+       WHERE profile_id = ? AND account_id = ? AND local_tale_id = ?
+         AND remote_tale_id = ? AND content_rev IS ? AND metadata_rev IS ?`,
+      [
+        input.contentRev,
+        input.metadataRev,
+        Date.now(),
+        input.expectedSaveVersion,
+        state.profileId,
+        accountScope(state.accountId),
+        state.localTaleId,
+        state.remoteTaleId,
+        state.contentRev,
+        state.metadataRev,
+      ],
+    );
+    return result.rowsAffected > 0;
+  });
+}
+
 export async function deleteTaleSyncState(input: {
   profileId: string;
   accountId?: string | null;
   localTaleId: string;
 }): Promise<void> {
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     await db.execute(
       `DELETE FROM tale_sync_state
@@ -329,7 +326,7 @@ export async function setTaleSyncStatus(input: {
   pendingStatus: TaleSyncStatus;
   lastErrorCode?: string | null;
 }): Promise<void> {
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     await db.execute(
       `UPDATE tale_sync_state
@@ -352,7 +349,7 @@ export async function setTaleSyncPreference(input: {
   localTaleId: string;
   policy: TaleSyncPolicy;
 }): Promise<void> {
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const now = Date.now();
     const db = await getDb();
     await db.execute(

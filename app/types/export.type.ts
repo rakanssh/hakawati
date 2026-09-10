@@ -27,9 +27,6 @@ export type ExportEnvelope<
   data: TData;
 };
 
-// Exclude binary thumbnail data to keep clipboard JSON lightweight.
-export type ScenarioExportDataV1 = Omit<Scenario, "thumbnail">;
-
 export type ScenarioExportV1 = ExportEnvelope<
   "hakawati.scenario",
   1,

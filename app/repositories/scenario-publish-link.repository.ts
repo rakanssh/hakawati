@@ -1,4 +1,4 @@
-import { enqueueLocalWrite } from "@/lib/local-write-queue";
+import { enqueueLocalOperation } from "@/lib/local-write-queue";
 import { getDb } from "@/services/db";
 import type { ScenarioPublishLink } from "@/types/catalog.type";
 
@@ -44,7 +44,7 @@ export async function upsertScenarioPublishLink(
     lastPublishedAt?: number;
   },
 ): Promise<void> {
-  await enqueueLocalWrite(async () => {
+  await enqueueLocalOperation(async () => {
     const db = await getDb();
     await db.execute(
       `INSERT INTO scenario_publish_links (

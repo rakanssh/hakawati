@@ -1,7 +1,6 @@
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import {
-  GameMode,
   PromptComponent,
   PromptComponentType,
   ScenarioContent,
@@ -372,12 +371,4 @@ export function packageContentToScenarioContent(
 
 export function createEmptyScenarioContent(): ScenarioContent[] {
   return [];
-}
-
-export function defaultScenarioName(name: string | undefined) {
-  return name?.trim() || "Untitled Scenario";
-}
-
-export function scenarioGameMode(value: string | undefined): GameMode {
-  return value === GameMode.GM ? GameMode.GM : GameMode.STORY_TELLER;
 }

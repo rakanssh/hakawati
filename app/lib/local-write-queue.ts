@@ -7,7 +7,3 @@ export function enqueueLocalOperation<T>(
   localOperationQueue = next.catch(() => undefined);
   return next;
 }
-
-export function enqueueLocalWrite<T>(operation: () => Promise<T>): Promise<T> {
-  return enqueueLocalOperation(operation);
-}

@@ -211,64 +211,6 @@ export function RedoControl({
   );
 }
 
-export function HistoryControls({
-  className,
-  handleUndo,
-  handleRedo,
-  loading = false,
-  saving = false,
-}: HistoryControlButtonProps) {
-  return (
-    <div className={cn("flex items-center gap-1", className)}>
-      <UndoControl handleUndo={handleUndo} loading={loading} saving={saving} />
-      <RedoControl handleRedo={handleRedo} loading={loading} saving={saving} />
-    </div>
-  );
-}
-
-interface LogControlProps extends LogControlShortcutProps {
-  className?: string;
-}
-
-export function LogControl({
-  className,
-  loading = false,
-  handleUndo,
-  handleRedo,
-  handleRetry,
-  handleStop,
-  saving = false,
-}: LogControlProps) {
-  useLogControlShortcuts({
-    handleUndo,
-    handleRedo,
-    handleRetry,
-    handleStop,
-    loading,
-    saving,
-  });
-
-  return (
-    <div className={cn("min-w-0 flex-[3_1_0]", className)}>
-      <div className="flex w-full flex-row gap-1">
-        <RetryControl
-          handleRetry={handleRetry}
-          loading={loading}
-          saving={saving}
-          className="flex-1 bg-card/70"
-        />
-        <HistoryControls
-          handleUndo={handleUndo}
-          handleRedo={handleRedo}
-          loading={loading}
-          saving={saving}
-          className="rounded-xs bg-card/70"
-        />
-      </div>
-    </div>
-  );
-}
-
 interface ContinueControlProps {
   onContinue: () => void;
   onStop?: () => void;

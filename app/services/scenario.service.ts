@@ -2,7 +2,6 @@ import {
   upsertScenario,
   getScenario,
   getScenarioHead,
-  listScenarios,
   deleteScenario,
   getScenarios,
 } from "@/repositories/scenario.repository";
@@ -65,15 +64,6 @@ export async function getScenarioHeadById(
   return getScenarioHead(id);
 }
 
-export async function listAllScenarios(): Promise<
-  Array<{ id: string; scenario: Scenario; updatedAt: number }>
-> {
-  const scenarios = await listScenarios();
-  return scenarios.map((item) => ({
-    ...item,
-  }));
-}
-
 export async function removeScenario(id: string): Promise<void> {
   return deleteScenario(id);
 }
@@ -131,9 +121,7 @@ export function buildScenarioExportV3(scenario: Scenario): ScenarioExportV3 {
   };
 }
 
-export const buildScenarioExportV2 = buildScenarioExportV3;
-
-export function serializeScenarioExportV2(scenario: Scenario): string {
+export function serializeScenarioExport(scenario: Scenario): string {
   const payload = buildScenarioExportV3(scenario);
   return JSON.stringify(payload, null, 2);
 }

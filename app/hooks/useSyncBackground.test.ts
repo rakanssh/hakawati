@@ -22,29 +22,14 @@ const syncRepoMocks = vi.hoisted(() => ({
 }));
 
 const syncServiceMocks = vi.hoisted(() => {
-  const listRemoteTales = vi.fn();
-  const listAllRemoteTales = vi.fn(async (transport, limit = 100) => {
-    const items: unknown[] = [];
-    let cursor: string | undefined;
-    do {
-      const page = (await listRemoteTales(transport, {
-        cursor,
-        limit,
-      })) as { items: unknown[]; nextCursor: string | null };
-      items.push(...page.items);
-      cursor = page.nextCursor ?? undefined;
-    } while (cursor);
-    return items;
-  });
   return {
     assertSyncAvailable: vi.fn(),
     createSyncTransport: vi.fn((_options: { signal?: AbortSignal }) => ({
       transport: true,
     })),
     fetchSyncCapabilities: vi.fn(),
-    listAllRemoteTales,
+    listAllRemoteTales: vi.fn(),
     listHostedDevices: vi.fn(),
-    listRemoteTales,
     syncLinkedTale: vi.fn(),
     uploadTalePackage: vi.fn(),
   };
@@ -107,12 +92,10 @@ function renderHarness(dbReady = true) {
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  let reject!: (reason?: unknown) => void;
-  const promise = new Promise<T>((promiseResolve, promiseReject) => {
+  const promise = new Promise<T>((promiseResolve) => {
     resolve = promiseResolve;
-    reject = promiseReject;
   });
-  return { promise, reject, resolve };
+  return { promise, resolve };
 }
 
 async function waitForAssertion(assertion: () => void) {
@@ -166,10 +149,7 @@ describe("useSyncBackground", () => {
       },
     });
     syncServiceMocks.listHostedDevices.mockResolvedValue([{ id: "device-1" }]);
-    syncServiceMocks.listRemoteTales.mockResolvedValue({
-      items: [],
-      nextCursor: null,
-    });
+    syncServiceMocks.listAllRemoteTales.mockResolvedValue([]);
   });
 
   it("pauses background sync while the active profile is disabled", async () => {
@@ -181,7 +161,7 @@ describe("useSyncBackground", () => {
 
     await harness.flush();
 
-    expect(syncServiceMocks.listRemoteTales).not.toHaveBeenCalled();
+    expect(syncServiceMocks.listAllRemoteTales).not.toHaveBeenCalled();
     expect(syncServiceMocks.uploadTalePackage).not.toHaveBeenCalled();
     expect(syncServiceMocks.syncLinkedTale).not.toHaveBeenCalled();
 
@@ -194,7 +174,7 @@ describe("useSyncBackground", () => {
 
     await harness.flush();
 
-    expect(syncServiceMocks.listRemoteTales).not.toHaveBeenCalled();
+    expect(syncServiceMocks.listAllRemoteTales).not.toHaveBeenCalled();
     expect(syncServiceMocks.uploadTalePackage).not.toHaveBeenCalled();
     expect(syncServiceMocks.syncLinkedTale).not.toHaveBeenCalled();
 
@@ -207,7 +187,7 @@ describe("useSyncBackground", () => {
 
     await harness.flush();
 
-    expect(syncServiceMocks.listRemoteTales).not.toHaveBeenCalled();
+    expect(syncServiceMocks.listAllRemoteTales).not.toHaveBeenCalled();
     expect(syncServiceMocks.uploadTalePackage).not.toHaveBeenCalled();
     expect(syncServiceMocks.syncLinkedTale).not.toHaveBeenCalled();
 
@@ -227,7 +207,7 @@ describe("useSyncBackground", () => {
     const enabledHarness = renderHarness();
     await enabledHarness.flush();
 
-    expect(syncServiceMocks.listRemoteTales).toHaveBeenCalledTimes(1);
+    expect(syncServiceMocks.listAllRemoteTales).toHaveBeenCalledTimes(1);
 
     enabledHarness.cleanup();
   });
@@ -244,7 +224,7 @@ describe("useSyncBackground", () => {
       "hosted",
       "device_limit",
     );
-    expect(syncServiceMocks.listRemoteTales).not.toHaveBeenCalled();
+    expect(syncServiceMocks.listAllRemoteTales).not.toHaveBeenCalled();
     expect(syncServiceMocks.uploadTalePackage).not.toHaveBeenCalled();
 
     harness.cleanup();
@@ -276,38 +256,7 @@ describe("useSyncBackground", () => {
     }
   });
 
-  it("notifies once when retries fail for the same initial-upload operation", async () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    syncRepoMocks.listTaleSyncPreferences.mockResolvedValue([
-      { localTaleId: "local-sync", policy: "sync", updatedAt: 1002 },
-    ]);
-    syncServiceMocks.uploadTalePackage.mockRejectedValue(
-      new Error("upload failed"),
-    );
-    const harness = renderHarness();
-
-    try {
-      await harness.flush();
-      await waitForAssertion(() =>
-        expect(toastMocks.error).toHaveBeenCalledTimes(1),
-      );
-      act(() => {
-        wakeSyncBackground();
-      });
-      await harness.flush();
-      await waitForAssertion(() =>
-        expect(syncServiceMocks.uploadTalePackage).toHaveBeenCalledTimes(2),
-      );
-
-      expect(syncServiceMocks.uploadTalePackage).toHaveBeenCalledTimes(2);
-      expect(toastMocks.error).toHaveBeenCalledTimes(1);
-    } finally {
-      warn.mockRestore();
-      harness.cleanup();
-    }
-  });
-
-  it("notifies again when a failed initial-upload operation has a new generation", async () => {
+  it("deduplicates failure notifications until the initial-upload operation changes", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const generation1002 = [
       { localTaleId: "local-sync", policy: "sync", updatedAt: 1002 },
@@ -359,18 +308,15 @@ describe("useSyncBackground", () => {
     syncRepoMocks.listTaleSyncPreferences.mockResolvedValue([
       { localTaleId: "local-source", policy: "sync" },
     ]);
-    syncServiceMocks.listRemoteTales.mockResolvedValue({
-      items: [
-        {
-          id: "generated-remote",
-          sourceTaleId: "local-source",
-          contentRev: 4,
-          metadataRev: 2,
-          title: "Remote",
-        },
-      ],
-      nextCursor: null,
-    });
+    syncServiceMocks.listAllRemoteTales.mockResolvedValue([
+      {
+        id: "generated-remote",
+        sourceTaleId: "local-source",
+        contentRev: 4,
+        metadataRev: 2,
+        title: "Remote",
+      },
+    ]);
     const harness = renderHarness();
 
     await harness.flush();
@@ -471,10 +417,9 @@ describe("useSyncBackground", () => {
         pendingStatus: "push",
       },
     ]);
-    syncServiceMocks.listRemoteTales.mockResolvedValue({
-      items: [{ id: "remote-1", title: "Remote" }],
-      nextCursor: null,
-    });
+    syncServiceMocks.listAllRemoteTales.mockResolvedValue([
+      { id: "remote-1", title: "Remote" },
+    ]);
     const harness = renderHarness();
 
     await harness.flush();
@@ -493,14 +438,14 @@ describe("useSyncBackground", () => {
     const harness = renderHarness();
 
     await harness.flush();
-    expect(syncServiceMocks.listRemoteTales).toHaveBeenCalledTimes(1);
+    expect(syncServiceMocks.listAllRemoteTales).toHaveBeenCalledTimes(1);
 
     act(() => {
       wakeSyncBackground();
     });
     await harness.flush();
 
-    expect(syncServiceMocks.listRemoteTales).toHaveBeenCalledTimes(2);
+    expect(syncServiceMocks.listAllRemoteTales).toHaveBeenCalledTimes(2);
 
     harness.cleanup();
   });
@@ -519,31 +464,31 @@ describe("useSyncBackground", () => {
   });
 
   it("runs one follow-up pass when sync is woken while already running", async () => {
-    const remoteList = deferred<{ items: []; nextCursor: null }>();
-    syncServiceMocks.listRemoteTales
+    const remoteList = deferred<[]>();
+    syncServiceMocks.listAllRemoteTales
       .mockReturnValueOnce(remoteList.promise)
-      .mockResolvedValue({ items: [], nextCursor: null });
+      .mockResolvedValue([]);
     const harness = renderHarness();
 
     await act(async () => {
       await Promise.resolve();
     });
-    expect(syncServiceMocks.listRemoteTales).toHaveBeenCalledTimes(1);
+    expect(syncServiceMocks.listAllRemoteTales).toHaveBeenCalledTimes(1);
 
     act(() => {
       wakeSyncBackground();
     });
-    remoteList.resolve({ items: [], nextCursor: null });
+    remoteList.resolve([]);
     await harness.flush();
 
-    expect(syncServiceMocks.listRemoteTales).toHaveBeenCalledTimes(2);
+    expect(syncServiceMocks.listAllRemoteTales).toHaveBeenCalledTimes(2);
 
     harness.cleanup();
   });
 
   it("stops a suspended sync pass after sign-out", async () => {
-    const remoteList = deferred<{ items: []; nextCursor: null }>();
-    syncServiceMocks.listRemoteTales.mockReturnValueOnce(remoteList.promise);
+    const remoteList = deferred<[]>();
+    syncServiceMocks.listAllRemoteTales.mockReturnValueOnce(remoteList.promise);
     syncRepoMocks.listTaleSyncPreferences.mockResolvedValue([
       { localTaleId: "private-after-logout", policy: "sync", updatedAt: 1 },
     ]);
@@ -552,7 +497,7 @@ describe("useSyncBackground", () => {
     syncStoreState.accessToken = "";
     syncStoreState.accountId = "";
     harness.rerender();
-    remoteList.resolve({ items: [], nextCursor: null });
+    remoteList.resolve([]);
     await harness.flush();
 
     expect(syncServiceMocks.uploadTalePackage).not.toHaveBeenCalled();
@@ -564,8 +509,8 @@ describe("useSyncBackground", () => {
   });
 
   it("runs queued work with the new account instead of the old closure", async () => {
-    const remoteList = deferred<{ items: []; nextCursor: null }>();
-    syncServiceMocks.listRemoteTales.mockReturnValueOnce(remoteList.promise);
+    const remoteList = deferred<[]>();
+    syncServiceMocks.listAllRemoteTales.mockReturnValueOnce(remoteList.promise);
     const harness = renderHarness();
     await harness.flush();
     syncStoreState.accountId = "account-2";
@@ -573,7 +518,7 @@ describe("useSyncBackground", () => {
     syncStoreState.deviceId = "device-2";
     syncServiceMocks.listHostedDevices.mockResolvedValue([{ id: "device-2" }]);
     harness.rerender();
-    remoteList.resolve({ items: [], nextCursor: null });
+    remoteList.resolve([]);
     await harness.flush();
 
     expect(syncServiceMocks.createSyncTransport).toHaveBeenLastCalledWith(
@@ -585,7 +530,7 @@ describe("useSyncBackground", () => {
         accessToken: "account-2-token",
       }),
     );
-    expect(syncServiceMocks.listRemoteTales).toHaveBeenCalledTimes(2);
+    expect(syncServiceMocks.listAllRemoteTales).toHaveBeenCalledTimes(2);
     harness.cleanup();
   });
 });
