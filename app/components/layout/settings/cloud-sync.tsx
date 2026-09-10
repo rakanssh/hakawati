@@ -50,6 +50,7 @@ import {
   prepareHostedSync,
   fetchSyncCapabilities,
   isHostedSignInCancelledError,
+  HostedSignInCancelledError,
   registerSyncDevice,
   signInHostedSync,
   updateHostedAccountProfile,
@@ -395,6 +396,7 @@ export default function SettingsCloudSync() {
   }, [devicesOpen, refreshHostedDevices]);
 
   async function signInForToken() {
+    signInControllerRef.current?.abort();
     const controller = new AbortController();
     signInControllerRef.current = controller;
     setSignInController(controller);
@@ -403,9 +405,13 @@ export default function SettingsCloudSync() {
         profile: hostedProfile,
         signal: controller.signal,
       });
+      if (controller.signal.aborted) throw new HostedSignInCancelledError();
       if (result.refreshToken) {
         await setHostedRefreshToken(HOSTED_PROFILE_ID, result.refreshToken);
+      } else {
+        await deleteHostedRefreshToken(HOSTED_PROFILE_ID);
       }
+      if (controller.signal.aborted) throw new HostedSignInCancelledError();
       const expiresAt =
         result.expiresIn && result.expiresIn > 0
           ? Date.now() + result.expiresIn * 1000
@@ -434,6 +440,7 @@ export default function SettingsCloudSync() {
   );
 
   function signOut() {
+    signInControllerRef.current?.abort();
     void deleteHostedRefreshToken(HOSTED_PROFILE_ID).catch(() => undefined);
     clearSession();
     void setSyncProfileDisabled(HOSTED_PROFILE_ID, "signed_out").catch(
@@ -449,8 +456,9 @@ export default function SettingsCloudSync() {
 
   function changeHostedCloudUrl(nextUrl: string) {
     if (nextUrl === cloudBaseUrl) return;
+    signInControllerRef.current?.abort();
+    void deleteHostedRefreshToken(HOSTED_PROFILE_ID).catch(() => undefined);
     if (hasAnySession) {
-      void deleteHostedRefreshToken(HOSTED_PROFILE_ID).catch(() => undefined);
       clearSession();
       void setSyncProfileDisabled(HOSTED_PROFILE_ID, "signed_out").catch(
         () => undefined,
@@ -514,15 +522,17 @@ export default function SettingsCloudSync() {
     }
   }
 
-  async function connect() {
-    await run("connect", async () => {
-      const token = hasUsableToken
-        ? accessToken.trim()
-        : await signInForToken();
+  async function prepareHostedConnection() {
+    const token = hasUsableToken ? accessToken.trim() : await signInForToken();
+    const controller = new AbortController();
+    signInControllerRef.current?.abort();
+    signInControllerRef.current = controller;
+    try {
       const appVersion = await getVersion().catch(() => "0.15.0");
       const result = await prepareHostedSync({
         profile: hostedProfile,
         accessToken: token,
+        signal: controller.signal,
         device: {
           name: deviceName.trim(),
           platform: devicePlatform.trim(),
@@ -530,6 +540,20 @@ export default function SettingsCloudSync() {
         },
         getDeviceIdForAccount: getOrCreateHostedDeviceId,
       });
+      if (controller.signal.aborted) throw new HostedSignInCancelledError();
+      return result;
+    } catch (error) {
+      if (controller.signal.aborted) throw new HostedSignInCancelledError();
+      throw error;
+    } finally {
+      if (signInControllerRef.current === controller)
+        signInControllerRef.current = null;
+    }
+  }
+
+  async function connect() {
+    await run("connect", async () => {
+      const result = await prepareHostedConnection();
       const label =
         result.account.emailNormalized ??
         result.account.displayName ??
@@ -589,20 +613,7 @@ export default function SettingsCloudSync() {
         await refreshUndecidedTales(profile.id, { open: true, force: true });
         return;
       }
-      const token = hasUsableToken
-        ? accessToken.trim()
-        : await signInForToken();
-      const appVersion = await getVersion().catch(() => "0.15.0");
-      const result = await prepareHostedSync({
-        profile: hostedProfile,
-        accessToken: token,
-        device: {
-          name: deviceName.trim(),
-          platform: devicePlatform.trim(),
-          appVersion,
-        },
-        getDeviceIdForAccount: getOrCreateHostedDeviceId,
-      });
+      const result = await prepareHostedConnection();
       setAccount({
         id: result.account.id,
         displayName: result.account.displayName,

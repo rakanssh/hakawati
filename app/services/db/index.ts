@@ -5,12 +5,15 @@ let databasePromise: Promise<Database> | null = null;
 
 const DB_NAME = import.meta.env.DEV ? "hakawati-dev.db" : "hakawati.db";
 
-export async function getDb(): Promise<Database> {
+export function getDb(): Promise<Database> {
   if (!databasePromise) {
-    const dbDirectory = await appLocalDataDir();
-    const dbPath = await join(dbDirectory, DB_NAME);
-    databasePromise = Database.load(`sqlite:${dbPath}`)
-      .then(async (db) => {
+    // Cache the whole initialization, including path resolution, so concurrent
+    // readers cannot replace each other's native connection pool during startup.
+    databasePromise = (async () => {
+      const dbDirectory = await appLocalDataDir();
+      const dbPath = await join(dbDirectory, DB_NAME);
+      const db = await Database.load(`sqlite:${dbPath}`);
+      try {
         await db.execute("PRAGMA foreign_keys = ON");
         const rows = await db.select<Array<{ foreign_keys: number | string }>>(
           "PRAGMA foreign_keys",
@@ -19,11 +22,14 @@ export async function getDb(): Promise<Database> {
           throw new Error("Failed to enable SQLite foreign key enforcement");
         }
         return db;
-      })
-      .catch((err) => {
-        databasePromise = null;
-        throw err;
-      });
+      } catch (error) {
+        await db.close().catch(() => undefined);
+        throw error;
+      }
+    })().catch((err) => {
+      databasePromise = null;
+      throw err;
+    });
   }
   return databasePromise;
 }

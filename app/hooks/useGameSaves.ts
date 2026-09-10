@@ -16,8 +16,10 @@ import { DEFAULT_WINDOW_SIZE, useTaleStore } from "@/store/useTaleStore";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 import { wakeSyncBackground } from "@/services/sync-wakeup";
 
-function snapshotMutableTale(): TaleMutableSnapshot {
+function snapshotMutableTale(taleId: string): TaleMutableSnapshot {
   const state = useTaleStore.getState();
+  if (state.id !== taleId)
+    throw new Error("The active tale changed before this save.");
   return {
     name: state.name,
     description: state.description,
@@ -80,11 +82,11 @@ export function usePersistTale() {
   );
 
   const save = useCallback(
-    async (taleId: string) => {
+    async (taleId: string, snapshot?: TaleMutableSnapshot) => {
       await runTalePersist(taleId, () =>
         persistCurrentTale({
           id: taleId,
-          tale: snapshotMutableTale(),
+          tale: snapshot ?? snapshotMutableTale(taleId),
         }),
       );
     },
@@ -96,7 +98,7 @@ export function usePersistTale() {
       await runTalePersist(taleId, () =>
         commitTaleTurn({
           id: taleId,
-          tale: snapshotMutableTale(),
+          tale: snapshotMutableTale(taleId),
           entries,
           createdAt,
         }),
@@ -116,7 +118,7 @@ export function usePersistTale() {
       await runTalePersist(taleId, () =>
         completePendingTaleTurn({
           id: taleId,
-          tale: snapshotMutableTale(),
+          tale: snapshotMutableTale(taleId),
           pendingEntries,
           entries,
           createdAt,
@@ -137,7 +139,7 @@ export function usePersistTale() {
       await runTalePersist(taleId, () =>
         retryTaleTurn({
           id: taleId,
-          tale: snapshotMutableTale(),
+          tale: snapshotMutableTale(taleId),
           previousEntries,
           entries,
           createdAt,
@@ -153,7 +155,7 @@ export function usePersistTale() {
       await runTalePersist(taleId, () =>
         undoTaleLogToEntryCount({
           id: taleId,
-          tale: snapshotMutableTale(),
+          tale: snapshotMutableTale(taleId),
           entryCount: entryCount ?? state.totalLogCount,
         }),
       );
@@ -170,7 +172,7 @@ export function usePersistTale() {
       await runTalePersist(taleId, () =>
         editTaleLogEntry({
           id: taleId,
-          tale: snapshotMutableTale(),
+          tale: snapshotMutableTale(taleId),
           entryId,
           patch,
         }),
@@ -188,7 +190,7 @@ export function usePersistTale() {
       await runTalePersist(taleId, () =>
         retryTaleLogEntry({
           id: taleId,
-          tale: snapshotMutableTale(),
+          tale: snapshotMutableTale(taleId),
           previousEntry,
           replacementEntry,
         }),
@@ -202,7 +204,7 @@ export function usePersistTale() {
       await runTalePersist(taleId, () =>
         redoTaleLogEntry({
           id: taleId,
-          tale: snapshotMutableTale(),
+          tale: snapshotMutableTale(taleId),
           entry,
           createdAt,
         }),
@@ -230,6 +232,15 @@ export function useLoadTale() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const loadingIdRef = useRef<string | null>(null);
+  const loadGenerationRef = useRef(0);
+
+  useEffect(
+    () => () => {
+      loadGenerationRef.current += 1;
+      loadingIdRef.current = null;
+    },
+    [],
+  );
 
   const load = useCallback(async (taleId: string) => {
     if (loadingIdRef.current === taleId) {
@@ -238,7 +249,7 @@ export function useLoadTale() {
 
     // If we switch tales mid-load, the previous load will be ignored via the token check below
     loadingIdRef.current = taleId;
-    const myToken = taleId;
+    const myToken = ++loadGenerationRef.current;
 
     setLoading(true);
     setError(null);
@@ -246,7 +257,7 @@ export function useLoadTale() {
     try {
       const tale = await getTaleById(taleId);
 
-      if (loadingIdRef.current !== myToken) {
+      if (loadGenerationRef.current !== myToken) {
         return;
       }
 
@@ -271,12 +282,12 @@ export function useLoadTale() {
 
       useLastPlayedStore.getState().setLastPlayedTaleId(taleId);
     } catch (e) {
-      if (loadingIdRef.current === myToken) {
+      if (loadGenerationRef.current === myToken) {
         setError(e);
         throw e;
       }
     } finally {
-      if (loadingIdRef.current === myToken) {
+      if (loadGenerationRef.current === myToken) {
         setLoading(false);
         loadingIdRef.current = null;
       }

@@ -53,6 +53,7 @@ export default function Play() {
     inventory,
     storyCards,
     gameMode,
+    undoStack,
     id: taleId,
   } = useTaleStore();
 
@@ -130,6 +131,7 @@ export default function Play() {
 
   const autoSaveData = useMemo(
     () => ({
+      id: taleId,
       name,
       description,
       components,
@@ -137,13 +139,28 @@ export default function Play() {
       stats,
       inventory,
       storyCards,
+      undoStack,
     }),
-    [name, description, components, gameMode, stats, inventory, storyCards],
+    [
+      taleId,
+      name,
+      description,
+      components,
+      gameMode,
+      stats,
+      inventory,
+      storyCards,
+      undoStack,
+    ],
   );
 
   useAutoSave({
     data: autoSaveData,
-    save: useCallback(() => save(taleId), [save, taleId]),
+    save: useCallback(
+      (snapshot: typeof autoSaveData) => save(snapshot.id, snapshot),
+      [save],
+    ),
+    scopeKey: taleId,
     debounceMs: 2000,
     disabled: loading,
     warnOnLeave: true,

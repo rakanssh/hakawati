@@ -13,6 +13,7 @@ import type { TaleMutableSnapshot } from "@/services/tale.service";
 type SqlParam = string | number | bigint | Uint8Array | null;
 
 type TestDatabase = {
+  path: string;
   execute: (
     sql: string,
     params?: SqlParam[],
@@ -37,6 +38,37 @@ vi.mock("@/services/db", () => ({
   }),
 }));
 
+// Exercise the real transaction wrapper over one SQLite connection, mirroring
+// the native bridge. Rust tests separately verify SQLx pinning and rollback.
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: async (
+    command: string,
+    args: {
+      sql?: string;
+      values?: SqlParam[];
+      select?: boolean;
+      commit?: boolean;
+    },
+  ) => {
+    const db = dbState.current;
+    if (!db) throw new Error("Test database was not initialized");
+    if (command === "begin_database_transaction") {
+      await db.execute("BEGIN");
+      return 1;
+    }
+    if (command === "query_database_transaction") {
+      return args.select
+        ? db.select(args.sql!, args.values)
+        : db.execute(args.sql!, args.values);
+    }
+    if (command === "end_database_transaction") {
+      await db.execute(args.commit ? "COMMIT" : "ROLLBACK");
+      return;
+    }
+    throw new Error(`Unexpected native command: ${command}`);
+  },
+}));
+
 function createAdapter(): TestDatabase {
   const raw = new DatabaseSync(":memory:");
   raw.exec("PRAGMA foreign_keys = ON");
@@ -45,6 +77,7 @@ function createAdapter(): TestDatabase {
   const executeSql: string[] = [];
 
   return {
+    path: "sqlite:test",
     raw,
     selectSql,
     executeSql,
@@ -157,6 +190,87 @@ describe("tale repository SQLite storage", () => {
   afterEach(() => {
     dbState.current?.close();
     dbState.current = null;
+  });
+
+  it("preserves exact action snapshots and stat descriptions through export/import", async () => {
+    applyMigrations(dbState.current!);
+    const { appendTurn, exportTalePackage, importTalePackage, getTale } =
+      await import("./tale.repository");
+    const taleId = await createEmptyTale();
+    const before = {
+      stats: [
+        {
+          name: "HP",
+          description: "Your remaining health",
+          value: 95,
+          range: [0, 100] as [number, number],
+        },
+      ],
+      inventory: [{ id: "key", name: "Key", description: "Opens the vault" }],
+    };
+    const after = {
+      stats: [{ ...before.stats[0], value: 100 }],
+      inventory: [],
+    };
+    await appendTurn(
+      taleId,
+      {
+        entries: [{ ...gmEntry("gm"), actionState: { before, after } }],
+        createdAt: 1,
+      },
+      { ...emptyState(), gm: { ...after, scratchpad: {} } },
+      createTaleSessionState(),
+    );
+    const importedId = await importTalePackage(await exportTalePackage(taleId));
+    const imported = await getTale(importedId);
+    expect(imported?.log[0].actionState).toEqual({ before, after });
+    expect(imported?.stats[0].description).toBe("Your remaining health");
+  });
+
+  it("rolls back destructive turn replacement when a later turn is invalid", async () => {
+    applyMigrations(dbState.current!);
+    const { appendTurn, getLogEntries, getTaleSaveVersion, replaceTurns } =
+      await import("./tale.repository");
+    const taleId = await createEmptyTale();
+    await appendTurn(
+      taleId,
+      { entries: [gmEntry("original", "Keep this story")], createdAt: 1 },
+      emptyState(),
+      createTaleSessionState(),
+    );
+    const version = await getTaleSaveVersion(taleId);
+    await expect(
+      replaceTurns(taleId, [
+        { id: "replacement", seq: 1, entries: [gmEntry("new")], createdAt: 2 },
+        { id: "invalid", seq: 2, entries: [], createdAt: 3 },
+      ]),
+    ).rejects.toThrow("at least one log entry");
+    expect(await getLogEntries(taleId, 0, 10)).toEqual([
+      gmEntry("original", "Keep this story"),
+    ]);
+    expect(await getTaleSaveVersion(taleId)).toBe(version);
+  });
+
+  it("rolls back appended history if writing current state fails", async () => {
+    applyMigrations(dbState.current!);
+    const { appendTurn, getLogEntries, getLogCount, getTaleSaveVersion } =
+      await import("./tale.repository");
+    const taleId = await createEmptyTale();
+    const version = await getTaleSaveVersion(taleId);
+    dbState.current!.raw.exec(
+      "CREATE TRIGGER fail_state BEFORE UPDATE ON tale_states BEGIN SELECT RAISE(ABORT, 'Injected state write failure'); END",
+    );
+    await expect(
+      appendTurn(
+        taleId,
+        { entries: [gmEntry("unsaved")], createdAt: 1 },
+        emptyState(),
+        createTaleSessionState(),
+      ),
+    ).rejects.toThrow("Injected state write failure");
+    expect(await getLogEntries(taleId, 0, 10)).toEqual([]);
+    expect(await getLogCount(taleId)).toBe(0);
+    expect(await getTaleSaveVersion(taleId)).toBe(version);
   });
 
   it("migrates legacy tale blobs into state, session, and indexed one-entry turns", () => {
@@ -1507,10 +1621,5 @@ describe("tale repository SQLite storage", () => {
     expect(
       (await getLogEntries(taleId, 0, 10)).map((entry) => entry.id),
     ).toEqual(["player-1", "gm-1", "gm-2"]);
-    expect(
-      dbState.current!.executeSql.some(
-        (sql) => sql.trim().toUpperCase().split(/\s+/)[0] === "BEGIN",
-      ),
-    ).toBe(false);
   });
 });

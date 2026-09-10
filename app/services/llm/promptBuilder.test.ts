@@ -95,7 +95,9 @@ const createMockStoryCard = (overrides?: Partial<StoryCard>): StoryCard => ({
 
 describe("promptBuilder", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    // Reset module-mock implementations as well as calls; tests replace the
+    // mocked tale/settings snapshots, and restoreAllMocks only restores spies.
+    vi.resetAllMocks();
   });
 
   afterEach(() => {

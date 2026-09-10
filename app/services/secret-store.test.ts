@@ -6,7 +6,11 @@ vi.mock("@tauri-apps/api/core", () => ({
   invoke: invokeMock,
 }));
 
-import { migrateStoredHostedRefreshToken } from "./secret-store";
+import {
+  deleteHostedRefreshToken,
+  migrateStoredHostedRefreshToken,
+  setHostedRefreshToken,
+} from "./secret-store";
 
 describe("secret-store", () => {
   beforeEach(() => {
@@ -47,5 +51,51 @@ describe("secret-store", () => {
       state: { hasRefreshToken: false },
       version: 0,
     });
+  });
+
+  it("orders sign-out after an in-flight token write", async () => {
+    let finishWrite!: () => void;
+    invokeMock.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishWrite = resolve;
+      }),
+    );
+    const write = setHostedRefreshToken("hosted", "rotated-token");
+    await Promise.resolve();
+    await Promise.resolve();
+    const remove = deleteHostedRefreshToken("hosted");
+    await Promise.resolve();
+    expect(invokeMock).toHaveBeenCalledOnce();
+    finishWrite();
+    await Promise.all([write, remove]);
+    expect(invokeMock.mock.calls.map(([command]) => command)).toEqual([
+      "set_hosted_refresh_token",
+      "delete_hosted_refresh_token",
+    ]);
+  });
+
+  it("does not restore pre-sign-out settings when migration finishes late", async () => {
+    const oldSettings = JSON.stringify({
+      state: { accountId: "old-account", refreshToken: "old-token" },
+      version: 0,
+    });
+    const signedOutSettings = JSON.stringify({
+      state: { accountId: "", hasRefreshToken: false },
+      version: 1,
+    });
+    localStorage.setItem("sync-settings", oldSettings);
+    let finishWrite!: () => void;
+    invokeMock.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishWrite = resolve;
+      }),
+    );
+    const migration = migrateStoredHostedRefreshToken("hosted");
+    await Promise.resolve();
+    await Promise.resolve();
+    localStorage.setItem("sync-settings", signedOutSettings);
+    finishWrite();
+    await migration;
+    expect(localStorage.getItem("sync-settings")).toBe(signedOutSettings);
   });
 });

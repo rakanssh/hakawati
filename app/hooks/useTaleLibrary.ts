@@ -108,6 +108,7 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
     setSyncListReady(!canReachProfile);
     setSyncStatesHydrated(false);
     if (!canReachProfile) {
+      setRemoteLoading(false);
       setSyncActive(false);
       setRemoteTales([]);
       setSyncStates([]);
@@ -316,16 +317,16 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
         }
       }
 
-      await deleteTaleSyncState({
-        profileId: profile.id,
-        accountId: profile.accountId,
-        localTaleId,
-      });
       await setTaleSyncPreference({
         profileId: profile.id,
         accountId: profile.accountId,
         localTaleId,
         policy: "private",
+      });
+      await deleteTaleSyncState({
+        profileId: profile.id,
+        accountId: profile.accountId,
+        localTaleId,
       });
       await refresh();
     },
@@ -345,11 +346,18 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
 
       let resolvedLocalTaleId = item.localTale.id;
       if (choice === "keep-remote") {
-        await applyRemoteTalePackage({
+        const applied = await applyRemoteTalePackage({
           profile,
           transport,
           localTaleId: item.localTale.id,
         });
+        if (!applied) {
+          throw new SyncHttpError(
+            "The local tale changed while resolving the conflict. Review it and try again.",
+            409,
+            "local_changed",
+          );
+        }
       } else if (choice === "keep-local") {
         await replaceRemoteTalePackage({
           profile,
@@ -357,6 +365,7 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
           localTaleId: item.localTale.id,
           idempotencyKey,
           forceReplace: true,
+          existingCover: item.sync.remoteTale?.cover,
         });
       } else {
         resolvedLocalTaleId = await keepBothTalePackage({

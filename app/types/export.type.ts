@@ -76,6 +76,7 @@ export const StoryCardV1Schema = z.object({
 
 export const StatV1Schema = z.object({
   name: z.string(),
+  description: z.string().optional(),
   value: z.number(),
   range: z.array(z.number()),
 });
@@ -273,6 +274,18 @@ export const TaleLogEntryV1Schema = z
     thinking: z.string().optional(),
     isActionError: z.boolean().optional(),
     actions: z.array(z.unknown()).optional(),
+    actionState: z
+      .object({
+        before: z.object({
+          stats: z.array(StatV1Schema),
+          inventory: z.array(InventoryItemV1Schema),
+        }),
+        after: z.object({
+          stats: z.array(StatV1Schema),
+          inventory: z.array(InventoryItemV1Schema),
+        }),
+      })
+      .optional(),
     chainId: z.string().optional(),
     error: z.unknown().optional(),
   })

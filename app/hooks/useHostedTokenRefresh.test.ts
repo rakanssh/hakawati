@@ -20,7 +20,7 @@ const syncStoreState = vi.hoisted(() => ({
   cloudBaseUrl: "https://sync.example",
   activeSyncMode: "hosted" as "hosted" | "personal",
   accessToken: "old-token",
-  accessTokenExpiresAt: Date.now() - 1,
+  accessTokenExpiresAt: (Date.now() - 1) as number | null,
   hasRefreshToken: true,
   deviceId: "device-1",
   accountId: "account-1",
@@ -55,6 +55,9 @@ function renderHarness(dbReady = true) {
   });
 
   return {
+    rerender() {
+      act(() => root.render(createElement(Harness)));
+    },
     async flush() {
       await act(async () => {
         await Promise.resolve();
@@ -97,6 +100,7 @@ describe("useHostedTokenRefresh", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -179,6 +183,53 @@ describe("useHostedTokenRefresh", () => {
     expect(syncStoreState.setHasRefreshToken).toHaveBeenCalledWith(false);
     expect(syncStoreState.setHostedRefreshFailed).toHaveBeenCalledWith(true);
 
+    harness.cleanup();
+  });
+
+  it("does not schedule an immediate refresh for an access token without expiry", async () => {
+    vi.useFakeTimers();
+    syncStoreState.accessTokenExpiresAt = null;
+    const harness = renderHarness();
+    await harness.flush();
+    expect(vi.getTimerCount()).toBe(0);
+    expect(syncServiceMocks.refreshHostedSync).not.toHaveBeenCalled();
+    harness.cleanup();
+  });
+
+  it("ignores a scheduled refresh failure after the session changes", async () => {
+    vi.useFakeTimers();
+    syncStoreState.accessTokenExpiresAt = Date.now() + 61_000;
+    let rejectRefresh!: (error: Error) => void;
+    syncServiceMocks.refreshHostedSync.mockReturnValueOnce(
+      new Promise((_resolve, reject) => {
+        rejectRefresh = reject;
+      }),
+    );
+    const harness = renderHarness();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(syncServiceMocks.refreshHostedSync).toHaveBeenCalledOnce();
+    syncStoreState.activeSyncMode = "personal";
+    harness.rerender();
+    rejectRefresh(new Error("old session failed"));
+    await harness.flush();
+    expect(syncStoreState.setHostedRefreshFailed).not.toHaveBeenCalled();
+    harness.cleanup();
+  });
+
+  it("refreshes another account even when its refresh deadline is unchanged", async () => {
+    const harness = renderHarness();
+    await harness.flush();
+    syncStoreState.accountId = "account-2";
+    harness.rerender();
+    await harness.flush();
+    expect(syncServiceMocks.refreshHostedSync).toHaveBeenCalledTimes(2);
+    expect(syncServiceMocks.refreshHostedSync).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        profile: expect.objectContaining({ accountId: "account-2" }),
+      }),
+    );
     harness.cleanup();
   });
 });

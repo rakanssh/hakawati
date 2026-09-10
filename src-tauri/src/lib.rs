@@ -1,3 +1,4 @@
+mod database_transaction;
 mod migration_backup;
 mod oauth_loopback;
 mod secret_store;
@@ -543,10 +544,14 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_process::init())
         .manage(oauth_loopback::OAuthLoopbackState::default())
+        .manage(database_transaction::DatabaseTransactions::default())
         .manage(speech_recorder::SpeechRecorderState::default())
         .invoke_handler(tauri::generate_handler![
             greet,
             migration_recovery_status,
+            database_transaction::begin_database_transaction,
+            database_transaction::query_database_transaction,
+            database_transaction::end_database_transaction,
             oauth_loopback::start_oauth_loopback,
             oauth_loopback::wait_oauth_loopback,
             oauth_loopback::cancel_oauth_loopback,

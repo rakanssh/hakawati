@@ -11,6 +11,7 @@ export function toUint8Array(value: unknown): Uint8Array | null {
   if (value === null || value === undefined) return null;
   if (value instanceof Uint8Array) return value;
   if (value instanceof ArrayBuffer) return new Uint8Array(value);
+  if (Array.isArray(value)) return new Uint8Array(value as number[]);
   if (typeof value === "string") {
     const trimmed = value.trim();
     if (trimmed.startsWith("[") && trimmed.endsWith("]")) {

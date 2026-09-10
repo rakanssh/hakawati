@@ -1,11 +1,12 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 
 interface UseAutoSaveOptions<T> {
   data: T;
-  save: () => Promise<void>;
+  save: (data: T) => Promise<void>;
   debounceMs?: number;
   disabled?: boolean;
   warnOnLeave?: boolean;
+  scopeKey?: string;
 }
 
 interface UseAutoSaveReturn {
@@ -22,10 +23,17 @@ export function useAutoSave<T>(
     debounceMs = 2000,
     disabled = false,
     warnOnLeave = true,
+    scopeKey,
   } = options;
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const hasUnsavedChangesRef = useRef(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const revisionRef = useRef(0);
+  const pendingSaveRef = useRef<{
+    run: () => Promise<void>;
+    disabled: boolean;
+  } | null>(null);
   const isFirstRenderRef = useRef(true);
 
   const saveNow = useCallback(async () => {
@@ -33,9 +41,14 @@ export function useAutoSave<T>(
       clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = null;
     }
-    await save();
-    hasUnsavedChangesRef.current = false;
-  }, [save]);
+    const revision = revisionRef.current;
+    pendingSaveRef.current = null;
+    await save(data);
+    if (revisionRef.current === revision) {
+      hasUnsavedChangesRef.current = false;
+      setHasUnsavedChanges(false);
+    }
+  }, [data, save]);
 
   useEffect(() => {
     if (isFirstRenderRef.current) {
@@ -43,24 +56,20 @@ export function useAutoSave<T>(
       return;
     }
 
-    if (disabled) {
-      return;
-    }
-
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
+    revisionRef.current += 1;
     hasUnsavedChangesRef.current = true;
+    setHasUnsavedChanges(true);
+    pendingSaveRef.current = { run: saveNow, disabled };
+    if (disabled) return;
 
     debounceTimerRef.current = setTimeout(() => {
-      save()
-        .then(() => {
-          hasUnsavedChangesRef.current = false;
-        })
-        .catch((error) => {
-          console.error("Auto-save failed:", error);
-        });
+      saveNow().catch((error) => {
+        console.error("Auto-save failed:", error);
+      });
     }, debounceMs);
 
     return () => {
@@ -68,7 +77,22 @@ export function useAutoSave<T>(
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [data, save, debounceMs, disabled]);
+  }, [data, saveNow, debounceMs, disabled]);
+
+  useEffect(
+    () => () => {
+      const pending = pendingSaveRef.current;
+      pendingSaveRef.current = null;
+      if (pending && !pending.disabled) {
+        // This callback owns the previous scope's snapshot; it must not read
+        // whichever tale happens to be active when the write is processed.
+        void pending
+          .run()
+          .catch((error) => console.error("Auto-save on leave failed:", error));
+      }
+    },
+    [scopeKey],
+  );
 
   useEffect(() => {
     if (!warnOnLeave) return;
@@ -87,17 +111,8 @@ export function useAutoSave<T>(
     };
   }, [warnOnLeave]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, []);
-
   return {
-    hasUnsavedChanges: hasUnsavedChangesRef.current,
+    hasUnsavedChanges,
     saveNow,
   };
 }

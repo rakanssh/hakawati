@@ -44,7 +44,7 @@ export function parseCloudCapabilities(
   if (
     typeof value.apiVersion !== "string" ||
     typeof value.minimumClientVersion !== "string" ||
-    typeof value.cloudSaveProtocol !== "number" ||
+    !positiveNumber(value.cloudSaveProtocol) ||
     !isRecord(value.compatibility) ||
     (value.compatibility.state !== "compatible" &&
       value.compatibility.state !== "unsupported") ||
@@ -129,39 +129,63 @@ function parseFeature(value: unknown): CloudFeatureState | null {
   };
 }
 
-function compareVersions(left: string, right: string) {
+export function compareVersions(left: string, right: string) {
   const leftVersion = parseVersion(left);
   const rightVersion = parseVersion(right);
   if (!leftVersion || !rightVersion) return -1;
   for (let index = 0; index < 3; index += 1) {
-    const delta = leftVersion.parts[index] - rightVersion.parts[index];
+    const delta = compareNumericIdentifier(
+      leftVersion.parts[index],
+      rightVersion.parts[index],
+    );
     if (delta !== 0) return delta;
   }
-  if (leftVersion.prerelease && !rightVersion.prerelease) return -1;
-  if (!leftVersion.prerelease && rightVersion.prerelease) return 1;
-  if (leftVersion.prerelease !== rightVersion.prerelease) {
-    return leftVersion.prerelease.localeCompare(rightVersion.prerelease);
+  const leftPre = leftVersion.prerelease;
+  const rightPre = rightVersion.prerelease;
+  if (leftPre.length && !rightPre.length) return -1;
+  if (!leftPre.length && rightPre.length) return 1;
+  for (
+    let index = 0;
+    index < Math.max(leftPre.length, rightPre.length);
+    index += 1
+  ) {
+    const leftPart = leftPre[index];
+    const rightPart = rightPre[index];
+    if (leftPart === undefined) return -1;
+    if (rightPart === undefined) return 1;
+    if (leftPart === rightPart) continue;
+    const leftNumeric = /^[0-9]+$/.test(leftPart);
+    const rightNumeric = /^[0-9]+$/.test(rightPart);
+    if (leftNumeric && rightNumeric)
+      return compareNumericIdentifier(leftPart, rightPart);
+    if (leftNumeric !== rightNumeric) return leftNumeric ? -1 : 1;
+    return leftPart < rightPart ? -1 : 1;
   }
   return 0;
 }
 
 function parseVersion(value: string) {
-  const match = /^(\d+)\.(\d+)\.(\d+)(?:-([^+]+))?(?:\+.*)?$/.exec(
-    value.trim(),
-  );
-  if (!match) return null;
+  const match =
+    /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/.exec(
+      value,
+    );
+  if (!match || match[0] !== value) return null;
+  const prerelease = match[4]?.split(".") ?? [];
+  if (prerelease.some((part) => /^0[0-9]+$/.test(part))) return null;
   return {
-    parts: [Number(match[1]), Number(match[2]), Number(match[3])] as [
-      number,
-      number,
-      number,
-    ],
-    prerelease: match[4] ?? "",
+    parts: [match[1], match[2], match[3]],
+    prerelease,
   };
 }
 
+function compareNumericIdentifier(left: string, right: string) {
+  return (
+    left.length - right.length || (left === right ? 0 : left < right ? -1 : 1)
+  );
+}
+
 function positiveNumber(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value) && value > 0;
+  return typeof value === "number" && Number.isSafeInteger(value) && value > 0;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

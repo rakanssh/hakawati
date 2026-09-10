@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   cloudFeatureAvailable,
+  compareVersions,
   parseCloudCapabilities,
 } from "./cloud-capabilities";
 
@@ -36,6 +37,39 @@ describe("cloud capabilities", () => {
       }),
     );
     expect(cloudFeatureAvailable(unavailable, "publishing")).toBe(false);
+  });
+});
+
+describe("semantic version compatibility", () => {
+  it.each([
+    ["1.0.0-10", "1.0.0-2", 1],
+    ["1.0.0-beta.10", "1.0.0-beta.2", 1],
+    ["1.0.0-2", "1.0.0-beta", -1],
+    ["1.0.0-alpha", "1.0.0-alpha.1", -1],
+    ["1.0.0-A", "1.0.0-a", -1],
+    ["1.0.0", "1.0.0-99", 1],
+    ["1.0.0+build.1", "1.0.0+build.2", 0],
+    ["1.0.0-9007199254740993", "1.0.0-9007199254740992", 1],
+  ])("compares %s against %s by SemVer precedence", (left, right, expected) => {
+    expect(Math.sign(compareVersions(left, right))).toBe(expected);
+    expect(Math.sign(compareVersions(right, left))).toBe(
+      expected === 0 ? 0 : -expected,
+    );
+  });
+
+  it.each([
+    "01.0.0",
+    "1.0.0-01",
+    "1.0.0-beta..1",
+    "1.0.0+",
+    "1.0.0-?",
+    "1.0.0+build..2",
+    "1.0.0\n",
+    " 1.0.0",
+    "1.0.0 ",
+  ])("fails closed for malformed client or minimum version %s", (version) => {
+    expect(compareVersions(version, "0.0.0")).toBeLessThan(0);
+    expect(compareVersions("99.0.0", version)).toBeLessThan(0);
   });
 });
 

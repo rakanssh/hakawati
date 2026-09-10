@@ -18,6 +18,7 @@ import { create } from "zustand";
 export const DEFAULT_WINDOW_SIZE = 200;
 export const MAX_WINDOW_SIZE = 300;
 export const MAX_UNDO_STACK = 50;
+let olderEntriesRequest = 0;
 
 export interface TaleStoreType {
   id: string;
@@ -71,11 +72,13 @@ export interface TaleStoreType {
   resetLogWindow: () => void;
 }
 
-//TODO: Find a better way to execute/undo actions
+// New turns retain exact states so clamping and removed item identities are
+// reversible. Older entries lack that information and retain legacy behavior.
 const undoEntryActions = (
   state: TaleStoreType,
   entry: LogEntry,
 ): Partial<TaleStoreType> => {
+  if (entry.actionState) return entry.actionState.before;
   if (!entry.actions) {
     return {};
   }
@@ -137,6 +140,7 @@ const redoEntryActions = (
   state: TaleStoreType,
   entry: LogEntry,
 ): Partial<TaleStoreType> => {
+  if (entry.actionState) return entry.actionState.after;
   if (!entry.actions) {
     return {};
   }
@@ -478,6 +482,7 @@ export const useTaleStore = create<TaleStoreType>()((set) => ({
       return;
     }
 
+    const request = ++olderEntriesRequest;
     set({ isLoadingOlderEntries: true });
 
     try {
@@ -492,7 +497,12 @@ export const useTaleStore = create<TaleStoreType>()((set) => ({
 
       // Check if state changed during async operation
       const currentState = useTaleStore.getState();
-      if (currentState.id !== state.id) {
+      if (
+        request !== olderEntriesRequest ||
+        currentState.id !== state.id ||
+        !currentState.isLoadingOlderEntries ||
+        currentState.oldestLoadedIndex !== state.oldestLoadedIndex
+      ) {
         return;
       }
 
@@ -501,10 +511,20 @@ export const useTaleStore = create<TaleStoreType>()((set) => ({
         oldestLoadedIndex: startIndex,
       });
     } catch (error) {
+      if (
+        request !== olderEntriesRequest ||
+        useTaleStore.getState().id !== state.id
+      )
+        return;
       console.error("Failed to load older entries:", error);
       toast.error("Failed to load older entries. Please try again.");
     } finally {
-      set({ isLoadingOlderEntries: false });
+      if (
+        request === olderEntriesRequest &&
+        useTaleStore.getState().id === state.id
+      ) {
+        set({ isLoadingOlderEntries: false });
+      }
     }
   },
   ensureLogEntriesLoaded: async (minCount: number) => {

@@ -6,12 +6,39 @@ on:
       - "v*"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   verify:
     runs-on: ubuntu-22.04
+    outputs:
+      tag: ${{ steps.release_metadata.outputs.tag }}
+      prerelease: ${{ steps.release_metadata.outputs.prerelease }}
     steps:
+      - name: Require an existing tag ref
+        run: |
+          if [ "$GITHUB_REF_TYPE" != "tag" ]; then
+            echo 'Release requires an existing tag. Use gh workflow run release.yml --ref <tag>; branch dispatch is not allowed.' >&2
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Sync node version and setup cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+          cache: "npm"
+
+      - name: Validate release tag, versions, and changelog
+        id: release_metadata
+        run: node scripts/release-validate.mjs --tag-ref
 
       - name: Install system dependencies
         run: |
@@ -26,12 +53,6 @@ jobs:
         with:
           workspaces: "./src-tauri -> target"
           shared-key: "release-tests"
-
-      - name: Sync node version and setup cache
-        uses: actions/setup-node@v4
-        with:
-          node-version: "lts/*"
-          cache: "npm"
 
       - name: Install frontend dependencies
         run: npm ci
@@ -101,6 +122,8 @@ jobs:
 
       - name: Generate release notes
         id: release_notes
+        env:
+          RELEASE_TAG: ${{ needs.verify.outputs.tag }}
         run: npx tsx scripts/extract-latest-release-notes.ts
 
       - name: Import Apple Developer Certificate
@@ -145,9 +168,9 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "Hakawati ${{ github.ref_name }}"
+          tagName: ${{ needs.verify.outputs.tag }}
+          releaseName: "Hakawati ${{ needs.verify.outputs.tag }}"
           releaseBody: ${{ steps.release_notes.outputs.release_body }}
           releaseDraft: true
-          prerelease: false
+          prerelease: ${{ needs.verify.outputs.prerelease == 'true' }}
           args: "${{ matrix.args }} -- --locked"

@@ -1,4 +1,8 @@
 import { LLMAction } from "@/services/llm/schema";
+import type { Item } from "./item.type";
+import type { Stat } from "./stats.type";
+
+export type LogActionState = { stats: Stat[]; inventory: Item[] };
 
 export enum LogEntryMode {
   SAY = "say",
@@ -21,6 +25,7 @@ export type LogEntry = {
   thinking?: string;
   isActionError?: boolean;
   actions?: LLMAction[];
+  actionState?: { before: LogActionState; after: LogActionState };
   chainId?: string;
   error?: unknown;
   _tokenCount?: number;

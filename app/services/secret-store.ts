@@ -1,6 +1,23 @@
 import { invoke } from "@tauri-apps/api/core";
 
 const SYNC_SETTINGS_KEY = "sync-settings";
+const pendingSecretOperations = new Map<string, Promise<unknown>>();
+
+function withSecretStore<T>(
+  profileId: string,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const previous = pendingSecretOperations.get(profileId) ?? Promise.resolve();
+  const next = previous.catch(() => undefined).then(operation);
+  pendingSecretOperations.set(profileId, next);
+  void next
+    .finally(() => {
+      if (pendingSecretOperations.get(profileId) === next)
+        pendingSecretOperations.delete(profileId);
+    })
+    .catch(() => undefined);
+  return next;
+}
 
 type PersistedSyncSettings = {
   state?: {
@@ -14,21 +31,27 @@ export async function setHostedRefreshToken(
   profileId: string,
   token: string,
 ): Promise<void> {
-  await invoke("set_hosted_refresh_token", { profileId, token });
+  await withSecretStore(profileId, () =>
+    invoke("set_hosted_refresh_token", { profileId, token }),
+  );
 }
 
 export async function getHostedRefreshToken(
   profileId: string,
 ): Promise<string | null> {
-  return await invoke<string | null>("get_hosted_refresh_token", {
-    profileId,
-  });
+  return await withSecretStore(profileId, () =>
+    invoke<string | null>("get_hosted_refresh_token", {
+      profileId,
+    }),
+  );
 }
 
 export async function deleteHostedRefreshToken(
   profileId: string,
 ): Promise<void> {
-  await invoke("delete_hosted_refresh_token", { profileId });
+  await withSecretStore(profileId, () =>
+    invoke("delete_hosted_refresh_token", { profileId }),
+  );
 }
 
 export async function migrateStoredHostedRefreshToken(
@@ -63,7 +86,11 @@ export async function migrateStoredHostedRefreshToken(
       },
     };
     delete next.state.refreshToken;
-    globalThis.localStorage?.setItem(SYNC_SETTINGS_KEY, JSON.stringify(next));
+    // A sign-out or settings write while the keyring was pending must win.
+    // Zustand already excludes legacy plaintext from every new persisted state.
+    if (globalThis.localStorage?.getItem(SYNC_SETTINGS_KEY) === raw) {
+      globalThis.localStorage?.setItem(SYNC_SETTINGS_KEY, JSON.stringify(next));
+    }
   }
 
   return migrated;

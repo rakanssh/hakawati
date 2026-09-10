@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import { getSyncProfile } from "@/repositories/sync.repository";
 import {
   getHostedRefreshToken,
@@ -33,7 +33,6 @@ export function useHostedTokenRefresh(dbReady: boolean) {
   const setHostedRefreshFailed = useSyncSettingsStore(
     (state) => state.setHostedRefreshFailed,
   );
-  const triedKeyRef = useRef("");
 
   const profile = useMemo<SyncProfile>(
     () => ({
@@ -61,7 +60,6 @@ export function useHostedTokenRefresh(dbReady: boolean) {
     const refresh = async () => {
       const migrated = await migrateStoredHostedRefreshToken(profile.id);
       if (cancelled) return;
-      if (migrated) setHasRefreshToken(true);
       if (!hasRefreshToken && !migrated) return;
 
       const storedProfile = await getSyncProfile(profile.id).catch(() => null);
@@ -93,12 +91,15 @@ export function useHostedTokenRefresh(dbReady: boolean) {
       setHostedRefreshFailed(false);
     };
 
-    const expiresAt = accessTokenExpiresAt ?? Number.POSITIVE_INFINITY;
+    // An access token with no advertised expiry has no meaningful refresh
+    // deadline. Passing Infinity to setTimeout instead triggers it immediately.
+    if (accessToken.trim().length > 0 && accessTokenExpiresAt === null) return;
+    const expiresAt = accessTokenExpiresAt ?? 0;
     const refreshIn = expiresAt - Date.now() - REFRESH_SKEW_MS;
     if (accessToken.trim().length > 0 && refreshIn > 0) {
       const timer = window.setTimeout(() => {
-        triedKeyRef.current = "";
         void refresh().catch((error) => {
+          if (cancelled) return;
           console.info("Hosted sync token refresh skipped", error);
           setHostedRefreshFailed(true);
         });
@@ -108,10 +109,6 @@ export function useHostedTokenRefresh(dbReady: boolean) {
         window.clearTimeout(timer);
       };
     }
-
-    const key = `${profile.baseUrl}:${hasRefreshToken}:${accessTokenExpiresAt ?? 0}`;
-    if (triedKeyRef.current === key) return;
-    triedKeyRef.current = key;
 
     void refresh().catch((error) => {
       if (cancelled) return;

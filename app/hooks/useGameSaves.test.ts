@@ -279,6 +279,54 @@ describe("useLoadTale", () => {
 
     harness.cleanup();
   });
+
+  it("ignores the first A request when switching A to B and back to A", async () => {
+    const firstA = deferred<ReturnType<typeof createLoadedTale>>();
+    const loadB = deferred<ReturnType<typeof createLoadedTale>>();
+    const latestA = deferred<ReturnType<typeof createLoadedTale>>();
+    serviceMocks.getTaleById
+      .mockReturnValueOnce(firstA.promise)
+      .mockReturnValueOnce(loadB.promise)
+      .mockReturnValueOnce(latestA.promise);
+    const harness = renderLoadHarness();
+    let requests: Promise<void>[] = [];
+    act(() => {
+      requests = [
+        harness.controls.load("A"),
+        harness.controls.load("B"),
+        harness.controls.load("A"),
+      ];
+    });
+    firstA.resolve(createLoadedTale("A", "stale-A"));
+    await act(async () => {
+      await requests[0];
+    });
+    expect(taleStoreMocks.state.id).toBe("old-tale");
+    expect(harness.controls.loading).toBe(true);
+    latestA.resolve(createLoadedTale("A", "latest-A"));
+    loadB.resolve(createLoadedTale("B", "stale-B"));
+    await act(async () => {
+      await Promise.all(requests);
+    });
+    expect(taleStoreMocks.state.log[0].id).toBe("latest-A");
+    expect(harness.controls.loading).toBe(false);
+    harness.cleanup();
+  });
+
+  it("does not replace the game state after its load hook unmounts", async () => {
+    const pending = deferred<ReturnType<typeof createLoadedTale>>();
+    serviceMocks.getTaleById.mockReturnValueOnce(pending.promise);
+    const harness = renderLoadHarness();
+    let request!: Promise<void>;
+    act(() => {
+      request = harness.controls.load("A");
+    });
+    harness.cleanup();
+    pending.resolve(createLoadedTale("A", "unmounted"));
+    await request;
+    expect(taleStoreMocks.state.id).toBe("old-tale");
+    expect(lastPlayedMocks.setLastPlayedTaleId).not.toHaveBeenCalled();
+  });
 });
 
 describe("usePersistTale", () => {
@@ -316,6 +364,40 @@ describe("usePersistTale", () => {
     expect(serviceMocks.commitTaleTurn).toHaveBeenCalledOnce();
     expect(syncWakeMocks.wakeSyncBackground).toHaveBeenCalledOnce();
 
+    harness.cleanup();
+  });
+
+  it("rejects a stale save callback instead of copying another tale's state", async () => {
+    const harness = renderPersistHarness();
+    taleStoreMocks.reset({
+      id: "new-tale",
+      name: "Must remain in the new tale",
+    });
+    await expect(
+      act(async () => {
+        await harness.controls.save("tale-1");
+      }),
+    ).rejects.toThrow(/active tale changed/);
+    expect(serviceMocks.persistCurrentTale).not.toHaveBeenCalled();
+    expect(syncWakeMocks.wakeSyncBackground).not.toHaveBeenCalled();
+    harness.cleanup();
+  });
+
+  it("persists an explicit old-tale snapshot after the active tale changes", async () => {
+    const harness = renderPersistHarness();
+    const snapshot = {
+      ...createLoadedTale("tale-1", "entry-1"),
+      name: "Captured edits",
+    };
+    taleStoreMocks.reset({ id: "new-tale", name: "New tale" });
+    await act(async () => {
+      await harness.controls.save("tale-1", snapshot);
+    });
+    expect(serviceMocks.persistCurrentTale).toHaveBeenCalledWith({
+      id: "tale-1",
+      tale: snapshot,
+    });
+    expect(taleStoreMocks.state.name).toBe("New tale");
     harness.cleanup();
   });
 });

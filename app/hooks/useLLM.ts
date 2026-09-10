@@ -1,7 +1,7 @@
 import { resolveModelRole, sendRoleChat } from "@/services/llm";
 import { LLMAction } from "@/services/llm/schema";
 import { useTaleStore } from "@/store/useTaleStore";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createDecoder } from "@/services/llm/decoders";
 import { buildMessage } from "@/services/llm/promptBuilder";
 import { useSettingsStore } from "@/store/useSettingsStore";
@@ -47,6 +47,15 @@ function isAbortError(error: unknown): boolean {
 export function useLLM() {
   const [loading, setLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const cancel = useCallback(() => abortRef.current?.abort(), []);
+
+  useEffect(
+    () => () => {
+      abortRef.current?.abort();
+      abortRef.current = null;
+    },
+    [],
+  );
 
   const send = async (
     lastMessage: {
@@ -106,6 +115,7 @@ export function useLLM() {
           seed,
         },
       });
+      if (controller.signal.aborted) return abortedResult(controller.signal);
       console.debug(
         `Sending request to ${model.id} with game mode: ${gameMode} and API URL: ${config.baseUrl}`,
       );
@@ -151,6 +161,8 @@ export function useLLM() {
             "@/services/llm/tools"
           );
           const actions = convertToolCallsToActions(res.tool_calls);
+          if (controller.signal.aborted)
+            return abortedResult(controller.signal);
           if (actions.length > 0) {
             callbacks.onActionsReady(actions);
           }
@@ -162,7 +174,7 @@ export function useLLM() {
       }
       return { status: "completed" };
     } catch (e) {
-      if (isAbortError(e)) {
+      if (controller.signal.aborted || isAbortError(e)) {
         return { status: "aborted", error: e };
       }
       callbacks.onError(e);
@@ -174,5 +186,5 @@ export function useLLM() {
     }
   };
 
-  return { send, loading, cancel: () => abortRef.current?.abort() };
+  return { send, loading, cancel };
 }

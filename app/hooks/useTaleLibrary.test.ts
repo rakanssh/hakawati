@@ -144,6 +144,7 @@ describe("useTaleLibrary", () => {
     syncRepoMocks.listTaleSyncStates.mockResolvedValue([]);
     syncRepoMocks.setTaleSyncPreference.mockResolvedValue(undefined);
     syncRepoMocks.deleteTaleSyncState.mockResolvedValue(undefined);
+    syncServiceMocks.applyRemoteTalePackage.mockResolvedValue(true);
     syncServiceMocks.fetchSyncCapabilities.mockResolvedValue({
       server: "hakawati-cloud",
       apiVersion: "1",
@@ -726,6 +727,11 @@ describe("useTaleLibrary", () => {
       localTaleId: "local-1",
       policy: "private",
     });
+    expect(
+      syncRepoMocks.setTaleSyncPreference.mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      syncRepoMocks.deleteTaleSyncState.mock.invocationCallOrder[0],
+    );
 
     harness.cleanup();
   });

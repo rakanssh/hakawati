@@ -38,7 +38,9 @@ const syncServiceMocks = vi.hoisted(() => {
   });
   return {
     assertSyncAvailable: vi.fn(),
-    createSyncTransport: vi.fn(() => ({ transport: true })),
+    createSyncTransport: vi.fn((_options: { signal?: AbortSignal }) => ({
+      transport: true,
+    })),
     fetchSyncCapabilities: vi.fn(),
     listAllRemoteTales,
     listHostedDevices: vi.fn(),
@@ -86,6 +88,9 @@ function renderHarness(dbReady = true) {
   });
 
   return {
+    rerender() {
+      act(() => root.render(createElement(Harness)));
+    },
     async flush() {
       await act(async () => {
         await Promise.resolve();
@@ -375,11 +380,11 @@ describe("useSyncBackground", () => {
       accountId: "account-1",
       localTaleId: "local-source",
       remoteTaleId: "generated-remote",
-      contentRev: "4",
-      metadataRev: "2",
+      contentRev: null,
+      metadataRev: null,
       lastSyncedAt: null,
-      pendingStatus: "push",
-      lastErrorCode: null,
+      pendingStatus: "error",
+      lastErrorCode: "sync_failed",
     });
     expect(syncServiceMocks.uploadTalePackage).not.toHaveBeenCalled();
     expect(syncServiceMocks.syncLinkedTale).toHaveBeenCalledWith(
@@ -533,6 +538,54 @@ describe("useSyncBackground", () => {
 
     expect(syncServiceMocks.listRemoteTales).toHaveBeenCalledTimes(2);
 
+    harness.cleanup();
+  });
+
+  it("stops a suspended sync pass after sign-out", async () => {
+    const remoteList = deferred<{ items: []; nextCursor: null }>();
+    syncServiceMocks.listRemoteTales.mockReturnValueOnce(remoteList.promise);
+    syncRepoMocks.listTaleSyncPreferences.mockResolvedValue([
+      { localTaleId: "private-after-logout", policy: "sync", updatedAt: 1 },
+    ]);
+    const harness = renderHarness();
+    await harness.flush();
+    syncStoreState.accessToken = "";
+    syncStoreState.accountId = "";
+    harness.rerender();
+    remoteList.resolve({ items: [], nextCursor: null });
+    await harness.flush();
+
+    expect(syncServiceMocks.uploadTalePackage).not.toHaveBeenCalled();
+    expect(syncServiceMocks.syncLinkedTale).not.toHaveBeenCalled();
+    expect(
+      syncServiceMocks.createSyncTransport.mock.calls[0][0].signal?.aborted,
+    ).toBe(true);
+    harness.cleanup();
+  });
+
+  it("runs queued work with the new account instead of the old closure", async () => {
+    const remoteList = deferred<{ items: []; nextCursor: null }>();
+    syncServiceMocks.listRemoteTales.mockReturnValueOnce(remoteList.promise);
+    const harness = renderHarness();
+    await harness.flush();
+    syncStoreState.accountId = "account-2";
+    syncStoreState.accessToken = "account-2-token";
+    syncStoreState.deviceId = "device-2";
+    syncServiceMocks.listHostedDevices.mockResolvedValue([{ id: "device-2" }]);
+    harness.rerender();
+    remoteList.resolve({ items: [], nextCursor: null });
+    await harness.flush();
+
+    expect(syncServiceMocks.createSyncTransport).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        profile: expect.objectContaining({
+          accountId: "account-2",
+          deviceId: "device-2",
+        }),
+        accessToken: "account-2-token",
+      }),
+    );
+    expect(syncServiceMocks.listRemoteTales).toHaveBeenCalledTimes(2);
     harness.cleanup();
   });
 });

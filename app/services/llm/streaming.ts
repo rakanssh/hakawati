@@ -83,6 +83,17 @@ function toStreamChunk(json: unknown): StreamChunk | null {
 /**
  * Parse OpenAI streaming response and yield chunks containing content and/or tool_calls
  */
+function parseDataLine(line: string): StreamChunk | "done" | null {
+  if (!line.startsWith("data:")) return null;
+  const payload = line.slice(5).trim();
+  if (payload === "[DONE]") return "done";
+  try {
+    return toStreamChunk(JSON.parse(payload));
+  } catch {
+    return null;
+  }
+}
+
 export async function* parseOpenAIStream(
   body: ReadableStream<Uint8Array>,
 ): AsyncGenerator<StreamChunk> {
@@ -90,43 +101,27 @@ export async function* parseOpenAIStream(
   const decoder = new TextDecoder("utf-8");
   let buffer = "";
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
 
-    const lines = buffer.split(/\r?\n/);
-    buffer = lines.pop() ?? "";
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() ?? "";
 
-    for (const line of lines) {
-      if (!line.startsWith("data: ")) continue;
-      const payload = line.slice(6).trim();
-      if (payload === "[DONE]") return;
-      try {
-        const json = JSON.parse(payload);
-        const chunk = toStreamChunk(json);
-        if (chunk) {
-          yield chunk;
-        }
-      } catch {
-        // ignore malformed partials; remaining bytes will arrive in subsequent chunks
+      for (const line of lines) {
+        const chunk = parseDataLine(line);
+        if (chunk === "done") return;
+        if (chunk) yield chunk;
       }
     }
-  }
 
-  // Flush any remaining buffered single line
-  if (buffer.startsWith("data: ")) {
-    const payload = buffer.slice(6).trim();
-    if (payload !== "[DONE]") {
-      try {
-        const json = JSON.parse(payload);
-        const chunk = toStreamChunk(json);
-        if (chunk) {
-          yield chunk;
-        }
-      } catch {
-        // ignore
-      }
-    }
+    const lastChunk = parseDataLine(buffer + decoder.decode());
+    if (lastChunk && lastChunk !== "done") yield lastChunk;
+  } finally {
+    // Breaking out of decoding must also stop the underlying HTTP response.
+    await reader.cancel().catch(() => undefined);
+    reader.releaseLock();
   }
 }

@@ -88,7 +88,15 @@ const taleStoreMocks = vi.hoisted(() => {
       modifyStat: (name, value) =>
         setState((current) => ({
           stats: current.stats.map((stat) =>
-            stat.name === name ? { ...stat, value: stat.value + value } : stat,
+            stat.name === name
+              ? {
+                  ...stat,
+                  value: Math.min(
+                    stat.range[1],
+                    Math.max(stat.range[0], stat.value + value),
+                  ),
+                }
+              : stat,
           ),
         })),
       addToInventory: (itemName, itemDescription) =>
@@ -286,6 +294,107 @@ describe("usePlaySession", () => {
       await Promise.resolve();
     });
   }
+
+  it("retains before/after action state across multiple batches for exact undo", async () => {
+    const key = { id: "key-1", name: "Key", description: "Opens the vault" };
+    taleStoreMocks.useTaleStore.setState({
+      stats: [{ name: "HP", value: 95, range: [0, 100] }],
+      inventory: [key],
+    });
+    llmMocks.send.mockImplementationOnce(async (_message, callbacks) => {
+      callbacks.onActionsReady([
+        { type: "MODIFY_STAT", payload: { name: "HP", value: 10 } },
+      ]);
+      callbacks.onActionsReady([
+        { type: "REMOVE_FROM_INVENTORY", payload: { item: "Key" } },
+      ]);
+      callbacks.onStoryStream("You heal and unlock the vault.");
+      return { status: "completed" };
+    });
+    const harness = renderSessionHarness();
+    try {
+      const entry = await act(async () =>
+        harness.controls.executeLlmSend("Unlock the vault", LogEntryMode.DO),
+      );
+      expect(entry?.actions).toHaveLength(2);
+      expect(entry?.actionState).toEqual({
+        before: {
+          stats: [{ name: "HP", value: 95, range: [0, 100] }],
+          inventory: [key],
+        },
+        after: {
+          stats: [{ name: "HP", value: 100, range: [0, 100] }],
+          inventory: [],
+        },
+      });
+    } finally {
+      harness.cleanup();
+    }
+  });
+
+  it("ignores late narration and GM actions after a different tale is loaded", async () => {
+    let complete!: () => void;
+    llmMocks.send.mockImplementationOnce(async (_message, callbacks) => {
+      await new Promise<void>((resolve) => {
+        complete = resolve;
+      });
+      callbacks.onActionsReady([
+        { type: "MODIFY_STAT", payload: { name: "HP", value: -40 } },
+      ]);
+      callbacks.onStoryStream("The previous tale's response.");
+      return { status: "completed" };
+    });
+    const harness = renderSessionHarness();
+    let pending!: Promise<LogEntry | null>;
+    act(() => {
+      pending = harness.controls.executeLlmSend(
+        "Open the door",
+        LogEntryMode.DO,
+      );
+    });
+    taleStoreMocks.reset({
+      id: "tale-2",
+      log: [],
+      totalLogCount: 0,
+      stats: [{ name: "HP", value: 100, range: [0, 100] }],
+    });
+    await act(async () => {
+      complete();
+      await pending;
+    });
+    expect(taleStoreMocks.state.log).toEqual([]);
+    expect(taleStoreMocks.state.stats[0].value).toBe(100);
+    expect(persistenceMocks.saveTurn).not.toHaveBeenCalled();
+    expect(await pending).toBeNull();
+    harness.cleanup();
+  });
+
+  it("cancels and ignores a generation that finishes after the play page unmounts", async () => {
+    let complete!: () => void;
+    llmMocks.send.mockImplementationOnce(async (_message, callbacks) => {
+      await new Promise<void>((resolve) => {
+        complete = resolve;
+      });
+      callbacks.onStoryStream("A late response.");
+      return { status: "completed" };
+    });
+    const harness = renderSessionHarness();
+    let pending!: Promise<LogEntry | null>;
+    act(() => {
+      pending = harness.controls.executeLlmSend(
+        "Open the door",
+        LogEntryMode.DO,
+      );
+    });
+    harness.cleanup();
+    expect(llmMocks.cancel).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      complete();
+      await pending;
+    });
+    expect(persistenceMocks.saveTurn).not.toHaveBeenCalled();
+    expect(await pending).toBeNull();
+  });
 
   it("removes the placeholder GM entry and skips persistence when generation aborts", async () => {
     llmMocks.send.mockResolvedValueOnce({

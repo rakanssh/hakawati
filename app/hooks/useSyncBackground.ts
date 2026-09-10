@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { i18n } from "@lingui/core";
 import { toast } from "sonner";
 import { createUploadIdempotencyKey } from "@/lib/sync-idempotency";
@@ -45,6 +45,7 @@ export function useSyncBackground(dbReady: boolean) {
   );
   const runningRef = useRef(false);
   const rerunRef = useRef(false);
+  const latestRunRef = useRef<(() => Promise<void>) | null>(null);
   const notifiedUploadOperationKeysRef = useRef(new Set<string>());
 
   const profile = useMemo<SyncProfile>(
@@ -74,8 +75,11 @@ export function useSyncBackground(dbReady: boolean) {
     ],
   );
 
-  const syncOnce = useCallback(
+  useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
     async function runSyncOnce() {
+      if (signal.aborted) return;
       if (runningRef.current) {
         rerunRef.current = true;
         return;
@@ -93,6 +97,7 @@ export function useSyncBackground(dbReady: boolean) {
       runningRef.current = true;
       try {
         const storedProfile = await getSyncProfile(profile.id);
+        if (signal.aborted) return;
         if (!storedProfile?.enabled) return;
         const activeProfile = {
           ...profile,
@@ -101,14 +106,17 @@ export function useSyncBackground(dbReady: boolean) {
         };
         const transport = createSyncTransport({
           profile: activeProfile,
+          signal,
           accessToken:
             activeProfile.mode === "hosted" ? accessToken.trim() : undefined,
         });
         const capabilities = await fetchSyncCapabilities(transport);
+        if (signal.aborted) return;
         assertSyncAvailable(capabilities);
         if (activeProfile.mode === "hosted") {
           if (!activeProfile.accountId) return;
           const devices = await listHostedDevices(transport);
+          if (signal.aborted) return;
           if (!devices.some((device) => device.id === activeProfile.deviceId)) {
             await setSyncProfileDisabled(activeProfile.id, "device_limit");
             return;
@@ -119,6 +127,7 @@ export function useSyncBackground(dbReady: boolean) {
           listTaleSyncStates(activeProfile.id, activeProfile.accountId),
           listTaleSyncPreferences(activeProfile.id, activeProfile.accountId),
         ]);
+        if (signal.aborted) return;
         const remoteById = new Map(remoteTales.map((tale) => [tale.id, tale]));
         const remoteBySourceId = new Map(
           remoteTales.map((tale) => [tale.sourceTaleId, tale]),
@@ -128,6 +137,7 @@ export function useSyncBackground(dbReady: boolean) {
         );
 
         for (const preference of syncPreferences) {
+          if (signal.aborted) return;
           if (preference.policy !== "sync") continue;
           let state = stateByLocalId.get(preference.localTaleId);
           const recoverableRemote = remoteBySourceId.get(
@@ -139,13 +149,16 @@ export function useSyncBackground(dbReady: boolean) {
               accountId: activeProfile.accountId,
               localTaleId: preference.localTaleId,
               remoteTaleId: recoverableRemote.id,
-              contentRev: String(recoverableRemote.contentRev),
-              metadataRev: String(recoverableRemote.metadataRev),
+              // The response was lost, so these revisions were never acknowledged.
+              // Reconcile package contents before adopting any later remote edits.
+              contentRev: null,
+              metadataRev: null,
               lastSyncedAt: null,
-              pendingStatus: "push",
-              lastErrorCode: null,
+              pendingStatus: "error",
+              lastErrorCode: "sync_failed",
             };
             await upsertTaleSyncState(state);
+            if (signal.aborted) return;
             syncStates.push(state);
             stateByLocalId.set(state.localTaleId, state);
           }
@@ -160,6 +173,7 @@ export function useSyncBackground(dbReady: boolean) {
               localTaleId: state.localTaleId,
               policy: "private",
             });
+            if (signal.aborted) return;
             await deleteTaleSyncState({
               profileId: activeProfile.id,
               accountId: activeProfile.accountId,
@@ -173,6 +187,7 @@ export function useSyncBackground(dbReady: boolean) {
             preference.localTaleId,
             preference.updatedAt,
           );
+          if (signal.aborted) return;
           try {
             await uploadTalePackage({
               profile: activeProfile,
@@ -182,6 +197,7 @@ export function useSyncBackground(dbReady: boolean) {
               capabilities,
             });
           } catch (error) {
+            if (signal.aborted) return;
             console.warn("Background tale upload failed", error);
             if (!notifiedUploadOperationKeysRef.current.has(idempotencyKey)) {
               notifiedUploadOperationKeysRef.current.add(idempotencyKey);
@@ -191,6 +207,7 @@ export function useSyncBackground(dbReady: boolean) {
         }
 
         for (const state of syncStates) {
+          if (signal.aborted) return;
           const remoteTale = remoteById.get(state.remoteTaleId);
           if (!remoteTale) continue;
           try {
@@ -203,34 +220,35 @@ export function useSyncBackground(dbReady: boolean) {
               capabilities,
             });
           } catch (error) {
+            if (signal.aborted) return;
             console.warn("Background sync failed", error);
           }
         }
       } catch (error) {
-        console.warn("Background sync refresh failed", error);
+        if (!signal.aborted)
+          console.warn("Background sync refresh failed", error);
       } finally {
-        notifySyncChanged();
+        if (!signal.aborted) notifySyncChanged();
         runningRef.current = false;
         if (rerunRef.current) {
           rerunRef.current = false;
-          void runSyncOnce();
+          void latestRunRef.current?.();
         }
       }
-    },
-    [accessToken, accessTokenExpiresAt, dbReady, profile],
-  );
-
-  useEffect(() => {
-    void syncOnce();
+    }
+    latestRunRef.current = runSyncOnce;
+    void runSyncOnce();
     const removeWakeListener = addSyncWakeListener(() => {
-      void syncOnce();
+      void runSyncOnce();
     });
     const intervalId = window.setInterval(() => {
-      void syncOnce();
+      void runSyncOnce();
     }, SYNC_INTERVAL_MS);
     return () => {
+      controller.abort();
+      latestRunRef.current = null;
       removeWakeListener();
       window.clearInterval(intervalId);
     };
-  }, [syncOnce]);
+  }, [accessToken, accessTokenExpiresAt, dbReady, profile]);
 }

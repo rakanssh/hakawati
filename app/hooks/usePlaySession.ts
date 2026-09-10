@@ -1,6 +1,8 @@
 import {
   useState,
   useCallback,
+  useEffect,
+  useRef,
   type Dispatch,
   type SetStateAction,
 } from "react";
@@ -13,7 +15,12 @@ import {
 } from "@/store/useSettingsStore";
 import { useLLM } from "@/hooks/useLLM";
 import { usePersistTale } from "@/hooks/useGameSaves";
-import { LogEntry, LogEntryMode, LogEntryRole } from "@/types/log.type";
+import {
+  LogEntry,
+  LogEntryMode,
+  LogEntryRole,
+  type LogActionState,
+} from "@/types/log.type";
 import { LLMAction } from "@/services/llm/schema";
 import { Action } from "@/lib/play-utils";
 
@@ -140,6 +147,17 @@ function processActions(actions: LLMAction[]): void {
         console.warn("Unknown action type:", action.type);
     }
   }
+}
+
+function snapshotActionState(): LogActionState {
+  const { stats, inventory } = useTaleStore.getState();
+  return {
+    stats: stats.map((stat) => ({
+      ...stat,
+      range: [...stat.range] as [number, number],
+    })),
+    inventory: inventory.map((item) => ({ ...item })),
+  };
 }
 
 type RestorableActionMode =
@@ -313,6 +331,14 @@ export function usePlaySession(
     useTaleStore();
 
   const taleId = useTaleStore((state) => state.id);
+  const sessionRevisionRef = useRef(0);
+  useEffect(
+    () => () => {
+      sessionRevisionRef.current += 1;
+      cancel();
+    },
+    [taleId, cancel],
+  );
 
   const handleStop = useCallback(() => {
     if (!loading) return;
@@ -335,6 +361,11 @@ export function usePlaySession(
       mode: LogEntryMode,
       options: ExecuteLlmSendOptions = {},
     ) => {
+      const sessionRevision = sessionRevisionRef.current;
+      const isCurrentSession = () =>
+        sessionRevisionRef.current === sessionRevision &&
+        useTaleStore.getState().id === taleId;
+      if (!isCurrentSession()) return null;
       if (!isModelRoleConfigured(narratorConfig)) {
         console.error("Narrator model not configured.");
         toast.error("No narrator model selected. Choose one in Settings.");
@@ -389,6 +420,7 @@ export function usePlaySession(
       let sendAborted = false;
       const flushResponse = () => {
         rafId = null;
+        if (!isCurrentSession()) return;
         updateLogEntry(gmResponseId, {
           ...(storyContent.length > 0 ? { text: storyContent } : {}),
           ...(thinkingContent ? { thinking: thinkingContent } : {}),
@@ -410,29 +442,42 @@ export function usePlaySession(
           { text: payloadText, mode },
           {
             onStoryStream: (storyChunk) => {
+              if (!isCurrentSession()) return;
               storyContent += storyChunk;
               scheduleFlush();
             },
             onThinkingStream: (thinkingChunk) => {
+              if (!isCurrentSession()) return;
               thinkingContent += thinkingChunk;
               scheduleFlush();
             },
             onActionsReady: (actions) => {
+              if (!isCurrentSession()) return;
               console.debug(
                 `Processing received actions: ${JSON.stringify(actions)}`,
               );
-              if (Array.isArray(actions)) {
-                updateLogEntry(gmResponseId, { actions });
+              if (Array.isArray(actions) && actions.length > 0) {
+                const previous = useTaleStore
+                  .getState()
+                  .log.find((entry) => entry.id === gmResponseId);
+                const before =
+                  previous?.actionState?.before ?? snapshotActionState();
                 processActions(actions);
+                updateLogEntry(gmResponseId, {
+                  actions: [...(previous?.actions ?? []), ...actions],
+                  actionState: { before, after: snapshotActionState() },
+                });
               }
             },
             onActionParseError: () => {
+              if (!isCurrentSession()) return;
               console.warn("Failed to parse actions from LLM response");
               updateLogEntry(gmResponseId, {
                 isActionError: true,
               });
             },
             onError: (error) => {
+              if (!isCurrentSession()) return;
               // Keep any partial text that streamed already.
               if (isAbortError(error)) return;
               console.error("LLM Error:", error);
@@ -457,7 +502,7 @@ export function usePlaySession(
         if (isAbortError(error)) {
           sendAborted = true;
         }
-        if (!isAbortError(error)) {
+        if (isCurrentSession() && !isAbortError(error)) {
           console.error("LLM Error:", error);
           updateLogEntry(gmResponseId, {
             error,
@@ -472,7 +517,10 @@ export function usePlaySession(
           const cancelRaf = globalThis.cancelAnimationFrame;
           if (typeof cancelRaf === "function") cancelRaf(rafId);
           rafId = null;
-          if (storyContent.length > 0 || thinkingContent.length > 0) {
+          if (
+            isCurrentSession() &&
+            (storyContent.length > 0 || thinkingContent.length > 0)
+          ) {
             updateLogEntry(gmResponseId, {
               ...(storyContent.length > 0 ? { text: storyContent } : {}),
               ...(thinkingContent ? { thinking: thinkingContent } : {}),
@@ -481,6 +529,7 @@ export function usePlaySession(
         }
       }
 
+      if (!isCurrentSession()) return null;
       const persistence: GenerationPersistence = options.persistence ?? {
         type: "continuation",
       };

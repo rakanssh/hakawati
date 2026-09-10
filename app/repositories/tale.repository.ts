@@ -1,4 +1,5 @@
 import { getDb, type Database } from "@/services/db";
+import { withTransaction } from "@/services/db/transaction";
 import { Tale, TaleHead, TaleSourceMetadata } from "@/types/tale.type";
 import { LogEntry } from "@/types/log.type";
 import { normalizePromptComponents } from "@/lib/prompt-components";
@@ -197,16 +198,6 @@ function sourceColumns(source: TaleSourceMetadata | undefined) {
 
 function packageSource(input: TalePackageV1): TaleSourceMetadata | undefined {
   return input.tale.source ?? input.state.data.source;
-}
-
-async function withTransaction<T>(
-  db: Database,
-  run: () => Promise<T>,
-): Promise<T> {
-  void db;
-  // tauri-plugin-sql owns a pool, so cross-call BEGIN/COMMIT is not reliable.
-  // enqueueLocalWrite is the single local writer for these composite writes.
-  return run();
 }
 
 async function withReadTransaction<T>(
@@ -658,7 +649,7 @@ export async function createTale(input: {
 
   await enqueueLocalWrite(async () => {
     const db = await getDb();
-    await withTransaction(db, async () => {
+    await withTransaction(db, async (db) => {
       await db.execute(
         `INSERT INTO tales (
         id,
@@ -774,7 +765,7 @@ export async function replaceCurrentState(
   await enqueueLocalWrite(async () => {
     const db = await getDb();
     const now = Date.now();
-    await withTransaction(db, async () => {
+    await withTransaction(db, async (db) => {
       await requireTaleRow(db, taleId);
       await markLinkedTaleForPush(db, taleId);
       await replaceState(db, taleId, state, now);
@@ -798,7 +789,7 @@ export async function appendTurn(
   await enqueueLocalWrite(async () => {
     const db = await getDb();
     const now = Date.now();
-    await withTransaction(db, async () => {
+    await withTransaction(db, async (db) => {
       await requireTaleRow(db, taleId);
       await markLinkedTaleForPush(db, taleId);
       const nextSeq = (await selectTurnCount(db, taleId)) + 1;
@@ -822,7 +813,7 @@ export async function replaceTurns(
   await enqueueLocalWrite(async () => {
     const db = await getDb();
     const now = Date.now();
-    await withTransaction(db, async () => {
+    await withTransaction(db, async (db) => {
       await requireTaleRow(db, taleId);
       await markLinkedTaleForPush(db, taleId);
       await db.execute(`DELETE FROM tale_turns WHERE tale_id = ?`, [taleId]);
@@ -846,7 +837,7 @@ export async function replaceTurn(
   await enqueueLocalWrite(async () => {
     const db = await getDb();
     const now = Date.now();
-    await withTransaction(db, async () => {
+    await withTransaction(db, async (db) => {
       await requireTaleRow(db, taleId);
       await markLinkedTaleForPush(db, taleId);
       const rows = await db.select<TaleTurnRow[]>(
@@ -890,7 +881,7 @@ export async function replaceTurnContainingEntries(
   await enqueueLocalWrite(async () => {
     const db = await getDb();
     const now = Date.now();
-    await withTransaction(db, async () => {
+    await withTransaction(db, async (db) => {
       await requireTaleRow(db, taleId);
       await markLinkedTaleForPush(db, taleId);
       const requestedEntryIds = Array.from(new Set(entryIds));
@@ -980,7 +971,7 @@ export async function trimLogToEntryCount(
     const now = Date.now();
     const nextEntryCount = Math.max(0, entryCount);
 
-    await withTransaction(db, async () => {
+    await withTransaction(db, async (db) => {
       await requireTaleRow(db, taleId);
       await markLinkedTaleForPush(db, taleId);
       const currentCount = await selectLogCount(db, taleId);
@@ -1045,7 +1036,7 @@ export async function updateLogEntry(
   await enqueueLocalWrite(async () => {
     const db = await getDb();
     const now = Date.now();
-    await withTransaction(db, async () => {
+    await withTransaction(db, async (db) => {
       await requireTaleRow(db, taleId);
       await markLinkedTaleForPush(db, taleId);
       const rows = await selectTurnRowsForEntryIds(db, taleId, [entryId]);
@@ -1089,7 +1080,7 @@ export async function replaceLogEntryInTurn(
   await enqueueLocalWrite(async () => {
     const db = await getDb();
     const now = Date.now();
-    await withTransaction(db, async () => {
+    await withTransaction(db, async (db) => {
       await requireTaleRow(db, taleId);
       await markLinkedTaleForPush(db, taleId);
       const rows = await selectTurnRowsForEntryIds(db, taleId, [entryId]);
@@ -1143,7 +1134,7 @@ export async function updateTaleCurrentData(
 
   await enqueueLocalWrite(async () => {
     const db = await getDb();
-    await withTransaction(db, async () => {
+    await withTransaction(db, async (db) => {
       await requireTaleRow(db, input.id);
       await markLinkedTaleForPush(db, input.id);
       await db.execute(
@@ -1427,7 +1418,7 @@ export async function getScenarioTales(
 export async function deleteTale(id: string): Promise<void> {
   await enqueueLocalWrite(async () => {
     const db = await getDb();
-    await withTransaction(db, async () => {
+    await withTransaction(db, async (db) => {
       await db.execute(`DELETE FROM tale_sessions WHERE tale_id = ?`, [id]);
       await db.execute(`DELETE FROM tale_turns WHERE tale_id = ?`, [id]);
       await db.execute(`DELETE FROM tale_states WHERE tale_id = ?`, [id]);
@@ -1603,7 +1594,7 @@ export async function importTalePackage(
     const existing = await selectTaleRow(db, requestedId);
     taleId = existing ? uuidv4() : requestedId;
 
-    await withTransaction(db, async () => {
+    await withTransaction(db, async (db) => {
       await db.execute(
         `INSERT INTO tales (
         id,
@@ -1671,7 +1662,7 @@ export async function replaceTaleWithPackage(
 
   return enqueueLocalWrite(async () => {
     const db = await getDb();
-    return withTransaction(db, async () => {
+    return withTransaction(db, async (db) => {
       const current = await requireTaleRow(db, taleId);
       if (
         options.expectedSaveVersion !== undefined &&
