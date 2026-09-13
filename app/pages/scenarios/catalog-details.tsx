@@ -7,6 +7,7 @@ import { PlayIcon, VenetianMask } from "lucide-react";
 import placeholderImage from "@/assets/scen-ph.png";
 import {
   PublishScenarioDialog,
+  ScenarioBreadcrumb,
   ScenarioDetailsLayout,
 } from "@/components/scenario";
 import { Badge } from "@/components/ui/badge";
@@ -108,6 +109,7 @@ export default function ScenarioCatalogDetails() {
       ? t`1 start`
       : t`${scenario?.startCount ?? 0} starts`;
   const sourceLabel = owned ? t`Published` : t`Discover`;
+  const sourceTab = owned ? "published" : "discover";
 
   useEffect(() => {
     let cancelled = false;
@@ -146,12 +148,9 @@ export default function ScenarioCatalogDetails() {
   }, []);
 
   const goBack = () => {
-    if (window.history.length > 1) {
-      window.history.back();
-      return;
-    }
     navigate({
-      to: owned ? "/scenarios?tab=published" : "/scenarios?tab=discover",
+      to: "/scenarios",
+      search: { tab: sourceTab },
     });
   };
 
@@ -216,13 +215,12 @@ export default function ScenarioCatalogDetails() {
       {scenario ? (
         <ScenarioDetailsLayout
           breadcrumb={
-            <>
-              <span className="text-primary">{sourceLabel}</span>
-              <span className="px-2">/</span>
-              <span>
-                <Trans>Scenario</Trans>
-              </span>
-            </>
+            <ScenarioBreadcrumb
+              to="/scenarios"
+              search={{ tab: sourceTab }}
+              parent={sourceLabel}
+              current={<Trans>Scenario</Trans>}
+            />
           }
           title={scenario.title}
           imageSrc={catalogAssetUrl(
@@ -287,13 +285,14 @@ export default function ScenarioCatalogDetails() {
               )
             ) : (
               <div className="grid gap-2 sm:flex sm:flex-wrap">
-                <Button onClick={() => void startScenario()}>
+                <Button size="lg" onClick={() => void startScenario()}>
                   <PlayIcon className="size-4" />
                   <Trans>Start Tale</Trans>
                 </Button>
                 {canStartPrivate ? (
                   <Button
                     variant="outline"
+                    size="lg"
                     onClick={() => void startScenario("private")}
                   >
                     <VenetianMask className="size-4" />
@@ -303,7 +302,6 @@ export default function ScenarioCatalogDetails() {
               </div>
             )
           }
-          summaryHeading={<Trans>Summary</Trans>}
           summary={scenario.summary}
           backLabel={t`Back to scenarios`}
           onBack={goBack}

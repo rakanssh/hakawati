@@ -8,7 +8,7 @@ import {
   UndoIcon,
   RedoIcon,
   RefreshCwIcon,
-  MoreHorizontalIcon,
+  StepForwardIcon,
   SquareIcon,
 } from "lucide-react";
 import { useTaleStore } from "@/store/useTaleStore";
@@ -244,7 +244,7 @@ export function ContinueControl({
           {canStop ? (
             <SquareIcon className="h-4 w-4" />
           ) : (
-            <MoreHorizontalIcon className="h-4 w-4" />
+            <StepForwardIcon className="h-4 w-4 rtl:rotate-180" />
           )}
         </Button>
       </TooltipTrigger>

@@ -4,6 +4,7 @@ import { useScenarioEditor } from "@/hooks/useScenarios";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { ScenarioBasicsFields } from "@/components/scenario/ScenarioBasicsFields";
+import { ScenarioBreadcrumb } from "@/components/scenario/ScenarioBreadcrumb";
 import { GameModeField } from "@/components/scenario/GameModeField";
 import { StatsEditor } from "@/components/scenario/StatsEditor";
 import { InventoryEditor } from "@/components/scenario/InventoryEditor";
@@ -55,15 +56,11 @@ export default function ScenarioEdit() {
           >
             <ArrowLeftIcon className="size-4 rtl:rotate-180" />
           </Button>
-          <div className="min-w-0 text-sm text-muted-foreground">
-            <span className="text-primary">
-              <Trans>Your scenarios</Trans>
-            </span>
-            <span className="px-2">/</span>
-            <span>
-              <Trans>Edit</Trans>
-            </span>
-          </div>
+          <ScenarioBreadcrumb
+            to="/scenarios"
+            parent={<Trans>Your scenarios</Trans>}
+            current={<Trans>Edit</Trans>}
+          />
         </div>
         <Button
           disabled={saving}

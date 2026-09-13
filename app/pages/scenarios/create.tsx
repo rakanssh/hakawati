@@ -6,6 +6,7 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   PublishScenarioDialog,
   ScenarioBasicsFields,
+  ScenarioBreadcrumb,
 } from "@/components/scenario";
 import { GameModeField } from "@/components/scenario/GameModeField";
 import { StatsEditor } from "@/components/scenario/StatsEditor";
@@ -73,15 +74,11 @@ export default function ScenarioCreate() {
           >
             <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
           </Button>
-          <div className="text-sm text-muted-foreground">
-            <span className="text-primary">
-              <Trans>Scenarios</Trans>
-            </span>
-            <span className="px-2">/</span>
-            <span>
-              <Trans>Create</Trans>
-            </span>
-          </div>
+          <ScenarioBreadcrumb
+            to="/scenarios"
+            parent={<Trans>Scenarios</Trans>}
+            current={<Trans>Create</Trans>}
+          />
         </div>
         <div className="flex flex-wrap items-center justify-end gap-3">
           {canPublishOnCreate ? (

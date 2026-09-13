@@ -33,6 +33,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 import { useStickToBottom } from "@/hooks/useStickToBottom";
 import { useZoom } from "@/hooks/useZoom";
+import { FONT_SIZE_MAX, FONT_SIZE_MIN } from "@/lib/appearance-limits";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { usePlaySession } from "@/hooks/usePlaySession";
 import { useTtsPlayback } from "@/hooks/useTtsPlayback";
@@ -124,6 +125,9 @@ export default function Play() {
   const { showIndicator: showZoomIndicator, isIndicatorVisible } = useZoom({
     zoom: fontSize,
     setZoom: setFontSize,
+    keyboard: false,
+    min: FONT_SIZE_MIN,
+    max: FONT_SIZE_MAX,
     step: 0.1,
     defaultZoom: 1,
     fadeDuration: 250,

@@ -1001,8 +1001,8 @@ msgid "Font Family"
 msgstr "عائلة الخط"
 
 #: app/components/layout/settings/game.tsx:138
-msgid "Font Size (0.75 - 2.0)"
-msgstr "حجم الخط (0.75 - 2.0)"
+msgid "Font Size (0.5 - 4.0)"
+msgstr "حجم الخط (0.5 - 4.0)"
 
 #: app/data/quickstart-presets.ts:409
 #~ msgid "forging your own path"
@@ -2589,8 +2589,8 @@ msgid "UI Direction"
 msgstr "الاتجاه"
 
 #: app/components/layout/settings/game.tsx:117
-msgid "UI Scale (0.8 - 1.5)"
-msgstr "مقياس الواجهة (0.8 - 1.5)"
+msgid "UI Scale (0.5 - 2.0)"
+msgstr "مقياس الواجهة (0.5 - 2.0)"
 
 #: app/data/quickstart-presets.ts:404
 #~ msgid "unable to let mysteries rest, even the ones that might be safer left buried"
@@ -2772,3 +2772,109 @@ msgstr "إرشادات المجتمع"
 #: app/components/scenario/PublishScenarioDialog.tsx
 msgid "Loading publishing policies..."
 msgstr "جارٍ تحميل سياسات النشر..."
+
+#: app/pages/home/home.tsx:852
+msgid "A new tale starts here"
+msgstr "هنا تبدأ حكاية جديدة"
+
+#: app/pages/home/home.tsx:913
+msgid "Browse scenarios"
+msgstr "تصفح السيناريوهات"
+
+#: app/pages/home/home.tsx:870
+msgid "Choose a scenario to step into a new world, or use Quickstart to create your own."
+msgstr "اختر سيناريو لتدخل عالماً جديداً، أو استخدم \"بداية سريعة\" لإنشاء عالمك الخاص."
+
+#: app/pages/home/home.tsx:850
+msgid "Continue your tale"
+msgstr "تابع حكايتك"
+
+#: app/pages/home/home.tsx:234
+#: app/pages/home/home.tsx:264
+msgid "Explore scenario"
+msgstr "استكشاف السيناريو"
+
+#: app/pages/home/home.tsx:868
+msgid "Loading your library..."
+msgstr "جارٍ تحميل مكتبتك..."
+
+#: app/pages/scenarios/details.tsx:229
+msgid "Opening passage"
+msgstr "المقطع الافتتاحي"
+
+#: app/pages/home/home.tsx:233
+msgid "Public scenario"
+msgstr "سيناريو عام"
+
+#: app/components/scenario/ScenarioDetailsLayout.tsx:99
+msgid "Read full description"
+msgstr "قراءة الوصف الكامل"
+
+#: app/pages/home/home.tsx:922
+msgid "Recent tales"
+msgstr "أحدث الحكايات"
+
+#: app/pages/home/home.tsx:188
+#: app/pages/home/home.tsx:900
+msgid "Review conflict"
+msgstr "مراجعة التعارض"
+
+#: app/components/scenario/ScenarioDetailsLayout.tsx:122
+msgid "Scenario details"
+msgstr "تفاصيل السيناريو"
+
+#: app/components/scenario/ScenarioDetailsLayout.tsx:97
+msgid "Show less"
+msgstr "عرض أقل"
+
+#: app/pages/home/home.tsx:859
+msgid "Where will your story take you?"
+msgstr "إلى أين ستأخذك قصتك؟"
+
+#: app/pages/home/home.tsx:809
+msgid "Your library"
+msgstr "مكتبتك"
+
+#: app/pages/home/home.tsx:865
+msgid "Your next chapter is waiting."
+msgstr "فصلك التالي بانتظارك."
+
+#: app/pages/home/home.tsx:843
+msgid "Your next tale"
+msgstr "حكايتك التالية"
+
+#: app/components/layout/settings/cloud-sync.tsx
+msgid "An optional account lets you sync tales across devices and publish scenarios."
+msgstr "الحساب اختياري، ويتيح لك مزامنة حكاياتك بين الأجهزة ونشر السيناريوهات."
+
+#: app/components/layout/settings/about.tsx
+msgid "Privacy Policy"
+msgstr "سياسة الخصوصية"
+
+#: app/components/layout/settings/about.tsx
+msgid "Could not open the link"
+msgstr "تعذّر فتح الرابط"
+
+#: app/components/layout/settings/about.tsx
+msgid "Email address copied"
+msgstr "تم نسخ عنوان البريد الإلكتروني"
+
+#: app/components/layout/settings/about.tsx
+msgid "Could not copy the email address"
+msgstr "تعذّر نسخ عنوان البريد الإلكتروني"
+
+#: app/components/layout/settings/about.tsx
+msgid "Questions, problems, or account and privacy requests."
+msgstr "للاستفسارات والمشكلات والطلبات المتعلقة بالحساب والخصوصية."
+
+#: app/components/layout/settings/about.tsx
+msgid "Copy email address"
+msgstr "نسخ عنوان البريد الإلكتروني"
+
+#: app/components/layout/settings/about.tsx
+msgid "Online services"
+msgstr "الخدمات عبر الإنترنت"
+
+#: app/components/layout/settings/about.tsx
+msgid "Terms and privacy information for accounts, cloud saves, and the public catalog."
+msgstr "الشروط ومعلومات الخصوصية المتعلقة بالحسابات والحفظ السحابي وفهرس السيناريوهات العام."

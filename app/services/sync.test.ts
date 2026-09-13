@@ -38,6 +38,13 @@ const opener = vi.hoisted(() => ({
   openUrl: vi.fn(),
 }));
 
+const coverImages = vi.hoisted(() => ({ optimize: vi.fn() }));
+
+vi.mock("@/lib/cover-image", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/cover-image")>()),
+  optimizeCoverImage: coverImages.optimize,
+}));
+
 const taleRepo = vi.hoisted(() => ({
   exportTalePackage: vi.fn(),
   getTaleSaveVersion: vi.fn(async () => 1),
@@ -158,6 +165,13 @@ function jsonResponse(body: unknown) {
 describe("sync transport", () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    coverImages.optimize.mockImplementation(
+      async (input: { bytes: Uint8Array; contentType: string }) => ({
+        ...input,
+        width: 1,
+        height: 1,
+      }),
+    );
     useTaleStore.setState({ id: "other-tale", loadingTaleId: null });
   });
 
@@ -448,7 +462,7 @@ describe("sync transport", () => {
     );
   });
 
-  it.each(["unchanged", "changed", "absent"])(
+  it.each(["unchanged", "changed", "absent", "optimized"])(
     "preserves existing covers and uploads changed bytes: %s",
     async (thumbnail) => {
       const pkg = samplePackage();
@@ -470,6 +484,24 @@ describe("sync transport", () => {
         downloadUrl: "/v1/assets/existing-cover/download",
         urlExpiresAt: null,
       };
+      if (thumbnail === "optimized") {
+        const optimizedBytes = new Uint8Array([21, 22]);
+        const optimizedDigest = await crypto.subtle.digest(
+          "SHA-256",
+          optimizedBytes,
+        );
+        existingCover.contentType = "image/webp";
+        existingCover.byteSize = optimizedBytes.byteLength;
+        existingCover.sha256 = Array.from(new Uint8Array(optimizedDigest))
+          .map((byte) => byte.toString(16).padStart(2, "0"))
+          .join("");
+        coverImages.optimize.mockResolvedValue({
+          bytes: optimizedBytes,
+          contentType: "image/webp",
+          width: 1280,
+          height: 720,
+        });
+      }
       const changed = thumbnail === "changed";
       if (changed) pkg.assets[0].dataBase64 = btoa("changed bytes");
       if (thumbnail === "absent") {
@@ -535,8 +567,93 @@ describe("sync transport", () => {
       expect(transport.put.mock.calls[0][1].package.tale.coverAssetId).toBe(
         changed ? "new-cover" : "existing-cover",
       );
+      expect(coverImages.optimize).toHaveBeenCalledTimes(
+        changed || thumbnail === "optimized" ? 1 : 0,
+      );
     },
   );
+
+  it("uploads the optimized cover bytes and metadata without changing the local original", async () => {
+    const pkg = samplePackage();
+    const original = structuredClone(pkg);
+    const optimizedBytes = new Uint8Array([31, 32]);
+    const digest = await crypto.subtle.digest("SHA-256", optimizedBytes);
+    const sha256 = Array.from(new Uint8Array(digest))
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+    coverImages.optimize.mockResolvedValue({
+      bytes: optimizedBytes,
+      contentType: "image/webp",
+      width: 720,
+      height: 1280,
+    });
+    taleRepo.exportTalePackage.mockResolvedValue(pkg);
+    http.fetch.mockResolvedValue({ ok: true });
+    const transport = {
+      ...transportFixture(),
+      post: vi.fn(async (path: string) =>
+        path === "/v1/assets/cover-upload-intents"
+          ? {
+              asset: { assetId: "optimized-cover" },
+              upload: { url: "https://storage.example/optimized", headers: {} },
+            }
+          : { id: "remote-tale", contentRev: 1, metadataRev: 1 },
+      ),
+    };
+    await uploadTalePackage({
+      profile: { id: "cloud", baseUrl: "https://sync.example", mode: "hosted" },
+      transport,
+      localTaleId: "local-tale",
+      idempotencyKey: "optimized-cover-upload",
+      capabilities: capabilitiesFixture(),
+    });
+
+    expect(transport.post).toHaveBeenCalledWith(
+      "/v1/assets/cover-upload-intents",
+      {
+        visibility: "private",
+        contentType: "image/webp",
+        byteSize: 2,
+        sha256,
+        width: 720,
+        height: 1280,
+      },
+    );
+    const body = http.fetch.mock.calls[0][1].body as Blob;
+    expect(body.type).toBe("image/webp");
+    expect(body.size).toBe(2);
+    expect(pkg).toEqual(original);
+  });
+
+  it("does not create a cover upload after the sync session aborts during optimization", async () => {
+    const controller = new AbortController();
+    taleRepo.exportTalePackage.mockResolvedValue(samplePackage());
+    coverImages.optimize.mockImplementation(async () => {
+      controller.abort();
+      return {
+        bytes: new Uint8Array([31]),
+        contentType: "image/webp",
+        width: 1,
+        height: 1,
+      };
+    });
+    const transport = { ...transportFixture(), signal: controller.signal };
+    await expect(
+      uploadTalePackage({
+        profile: {
+          id: "cloud",
+          baseUrl: "https://sync.example",
+          mode: "hosted",
+        },
+        transport,
+        localTaleId: "local-tale",
+        idempotencyKey: "aborted-cover-upload",
+        capabilities: capabilitiesFixture(),
+      }),
+    ).rejects.toMatchObject({ name: "AbortError" });
+    expect(transport.post).not.toHaveBeenCalled();
+    expect(http.fetch).not.toHaveBeenCalled();
+  });
 
   it("uses the sync mapper for personal uploads instead of raw local export", async () => {
     taleRepo.exportTalePackage.mockResolvedValueOnce(samplePackage());

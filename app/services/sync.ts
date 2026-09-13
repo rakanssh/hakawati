@@ -25,6 +25,11 @@ import {
 import type { TalePackageV1 } from "@/types/export.type";
 import type { CoverAssetReference } from "@/types/catalog.type";
 import {
+  optimizeCoverImage,
+  sha256Hex,
+  type OptimizedCoverImage,
+} from "@/lib/cover-image";
+import {
   cloudFeatureAvailable,
   HAKAWATI_CLIENT_HEADERS,
   parseCloudCapabilities,
@@ -331,16 +336,6 @@ function base64ToBytes(value: string): Uint8Array {
     bytes[index] = binary.charCodeAt(index);
   }
   return bytes;
-}
-
-async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    bytes.slice() as BufferSource,
-  );
-  return Array.from(new Uint8Array(digest))
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
 }
 
 export function createSyncTransport({
@@ -796,20 +791,24 @@ function localThumbnailAsset(pkg: TalePackageV1) {
 
 async function uploadHostedCoverAsset(
   transport: SyncTransport,
-  asset: TalePackageV1["assets"][number],
+  cover: OptimizedCoverImage,
 ): Promise<string> {
-  const bytes = base64ToBytes(asset.dataBase64);
+  const { bytes, contentType, width, height } = cover;
+  transport.signal?.throwIfAborted();
   const intent = bodyValue(
     await transport.post("/v1/assets/cover-upload-intents", {
       visibility: "private",
-      contentType: asset.contentType,
+      contentType,
       byteSize: bytes.byteLength,
       sha256: await sha256Hex(bytes),
+      width,
+      height,
     }),
   );
   const upload = bodyValue(intent.upload);
-  const cover = bodyValue(intent.asset);
-  const assetId = typeof cover.assetId === "string" ? cover.assetId : null;
+  const uploadedAsset = bodyValue(intent.asset);
+  const assetId =
+    typeof uploadedAsset.assetId === "string" ? uploadedAsset.assetId : null;
   const uploadUrl = typeof upload.url === "string" ? upload.url : null;
   const uploadMethod =
     typeof upload.method === "string" ? upload.method : "PUT";
@@ -822,7 +821,7 @@ async function uploadHostedCoverAsset(
   const response = await fetch(uploadUrl, {
     method: uploadMethod,
     headers: uploadHeaders,
-    body: new Blob([bytes.slice().buffer], { type: asset.contentType }),
+    body: new Blob([bytes.slice().buffer], { type: contentType }),
     ...(transport.signal ? { signal: transport.signal } : {}),
   });
   transport.signal?.throwIfAborted();
@@ -839,6 +838,18 @@ async function uploadHostedCoverAsset(
     {},
   );
   return assetId;
+}
+
+async function matchesExistingCover(
+  existing: CoverAssetReference | null | undefined,
+  cover: { bytes: Uint8Array; contentType: string },
+): Promise<boolean> {
+  return Boolean(
+    existing?.assetId &&
+      existing.contentType === cover.contentType &&
+      existing.byteSize === cover.bytes.byteLength &&
+      existing.sha256 === (await sha256Hex(cover.bytes)),
+  );
 }
 
 async function toUploadSyncPackage(input: {
@@ -859,17 +870,21 @@ async function toUploadSyncPackage(input: {
   let coverAssetId =
     input.profile.mode === "hosted" ? input.existingCover?.assetId : undefined;
   if (coverAsset) {
-    const bytes = base64ToBytes(coverAsset.dataBase64);
+    const original = {
+      bytes: base64ToBytes(coverAsset.dataBase64),
+      contentType: coverAsset.contentType,
+    };
     const existing = input.existingCover;
+    // Retain previously uploaded originals; optimize only when an upload is needed.
     if (
-      existing?.assetId &&
-      existing.contentType === coverAsset.contentType &&
-      existing.byteSize === bytes.byteLength &&
-      existing.sha256 === (await sha256Hex(bytes))
+      !(await matchesExistingCover(existing, original)) &&
+      canUploadCoverAssets(capabilities)
     ) {
-      coverAssetId = existing.assetId;
-    } else if (canUploadCoverAssets(capabilities)) {
-      coverAssetId = await uploadHostedCoverAsset(input.transport, coverAsset);
+      const optimized = await optimizeCoverImage(original);
+      input.transport.signal?.throwIfAborted();
+      if (!(await matchesExistingCover(existing, optimized))) {
+        coverAssetId = await uploadHostedCoverAsset(input.transport, optimized);
+      }
     }
   }
   return toSyncTalePackage(input.localPackage, {

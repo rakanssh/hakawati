@@ -1,9 +1,3 @@
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,17 +7,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   GenerateScenarioDialog,
+  PlainTextExcerpt,
   ScenarioPreviewCard,
 } from "@/components/scenario";
 import { TaleConflictDialog } from "@/components/tales/tale-conflict-dialog";
@@ -50,10 +37,7 @@ import {
 } from "@/repositories/sync.repository";
 import {
   createSyncTransport,
-  isHostedSignInCancelledError,
-  prepareHostedSync,
   registerSyncDevice,
-  signInHostedSync,
   type SyncProfile,
 } from "@/services/sync";
 import {
@@ -61,7 +45,6 @@ import {
   notifySyncChanged,
   wakeSyncBackground,
 } from "@/services/sync-wakeup";
-import { setHostedRefreshToken } from "@/services/secret-store";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 import {
   isModelRoleConfigured,
@@ -80,9 +63,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   AlertTriangle,
+  BookOpen,
   ChevronRight,
-  Cloud,
-  LogIn,
   Loader2,
   Plus,
   Play,
@@ -108,20 +90,16 @@ type ShelfProps = {
 function Shelf({ title, action, children }: ShelfProps) {
   return (
     <section className="min-w-0">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="truncate text-lg font-semibold tracking-normal">
-            {title}
-          </h2>
+          <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           {action}
         </div>
       </div>
       <ScrollArea scrollbars="horizontal" className="w-full">
-        <div className="flex snap-x gap-2 px-2 pb-3 sm:px-0 lg:gap-3">
-          {children}
-        </div>
+        <div className="flex snap-x gap-4 pb-3">{children}</div>
       </ScrollArea>
     </section>
   );
@@ -181,6 +159,8 @@ function TaleCard({
   return (
     <ScenarioPreviewCard
       variant="shelf"
+      eyebrow={<Trans>Tale</Trans>}
+      actionLabel={hasConflict ? <Trans>Review conflict</Trans> : undefined}
       title={title}
       summary={description}
       imageSrc={thumbnail ? bytesToObjectUrl(thumbnail) : placeholderImage}
@@ -224,6 +204,7 @@ function PublicScenarioCard({
   return (
     <ScenarioPreviewCard
       variant="shelf"
+      eyebrow={<Trans>Public scenario</Trans>}
       title={scenario.title}
       summary={scenario.summary}
       imageSrc={catalogAssetUrl(baseUrl, scenario.thumbnail?.downloadUrl)}
@@ -246,6 +227,13 @@ function ScenarioCard({
   return (
     <ScenarioPreviewCard
       variant="shelf"
+      eyebrow={
+        scenario.initialGameMode === "gm" ? (
+          <Trans>Game Master</Trans>
+        ) : (
+          <Trans>Story Teller</Trans>
+        )
+      }
       title={scenario.name}
       summary={scenario.description || t`No description yet.`}
       imageSrc={
@@ -268,16 +256,14 @@ export default function Home() {
   const { name, description, log, id: currentTaleId } = useTaleStore();
   const { isMobilePlatform } = useIsMobile();
   const lastEntry = log.at(-1);
+  const resumeRef = useRef<HTMLElement>(null);
+  const [resumeVisible, setResumeVisible] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] =
     useState<GlobalSettingsSectionId>("ai-setup");
   const [generateOpen, setGenerateOpen] = useState(false);
   const [whatsNewOpen, setWhatsNewOpen] = useState(false);
   const [loadingTaleId, setLoadingTaleId] = useState<string | null>(null);
-  const [accountBusy, setAccountBusy] = useState(false);
-  const [signInController, setSignInController] =
-    useState<AbortController | null>(null);
-  const signInControllerRef = useRef<AbortController | null>(null);
   const [conflictItem, setConflictItem] = useState<LibraryTaleItem | null>(
     null,
   );
@@ -325,14 +311,6 @@ export default function Home() {
     (state) => state.accountDisplayName,
   );
   const accountEmail = useSyncSettingsStore((state) => state.accountEmail);
-  const setAccessToken = useSyncSettingsStore((state) => state.setAccessToken);
-  const setAccount = useSyncSettingsStore((state) => state.setAccount);
-  const getOrCreateHostedDeviceId = useSyncSettingsStore(
-    (state) => state.getOrCreateHostedDeviceId,
-  );
-  const setActiveSyncMode = useSyncSettingsStore(
-    (state) => state.setActiveSyncMode,
-  );
   const pendingChangelogVersion = useUpdateStore(
     (state) => state.pendingChangelogVersion,
   );
@@ -355,10 +333,45 @@ export default function Home() {
 
   const hasActiveGame = Boolean(name || description || log.length > 0);
   const canContinue = hasActiveGame && log.length > 0 && !hasIssues;
+  const featuredItem =
+    tales.items.find(
+      (item) =>
+        item.source === "local" &&
+        item.localTale.id ===
+          (hasActiveGame ? currentTaleId : lastPlayedTaleId),
+    ) ?? (hasActiveGame ? undefined : tales.items[0]);
+  const hasFeaturedTale = hasActiveGame || Boolean(featuredItem);
+  const featuredTitle = hasActiveGame
+    ? name
+    : featuredItem?.source === "local"
+      ? featuredItem.localTale.name
+      : featuredItem?.remoteTale.title;
+  const featuredExcerpt = hasActiveGame
+    ? lastEntry?.text || description
+    : featuredItem?.source === "local"
+      ? featuredItem.localTale.lastLogEntry?.text ||
+        featuredItem.localTale.description
+      : featuredItem?.remoteTale.lastEntryPreview ||
+        featuredItem?.remoteTale.description;
+  const featuredId = hasActiveGame
+    ? currentTaleId
+    : featuredItem?.source === "local"
+      ? featuredItem.localTale.id
+      : featuredItem?.remoteTale.id;
+  const featuredConflict =
+    featuredItem?.source === "local" &&
+    featuredItem.sync?.status === "conflict";
+  const featuredLoading = Boolean(featuredId && loadingTaleId === featuredId);
+  useEffect(() => {
+    const element = resumeRef.current;
+    if (!element || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(([entry]) =>
+      setResumeVisible(entry.isIntersecting),
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   const accountLabel = accountDisplayName || accountEmail;
-  const personalActive = Boolean(
-    activeSyncMode === "personal" && personalBaseUrl.trim(),
-  );
   const [homeSyncProfile, setHomeSyncProfile] = useState<{
     enabled: boolean;
     disabledReason: string | null;
@@ -379,7 +392,7 @@ export default function Home() {
     syncUiKind === "profile-incomplete" ||
     syncUiKind === "sync-off" ||
     syncUiKind === "device-limit";
-  const accountSettingsState =
+  const showAccountStatus =
     signedIn || syncUiKind === "personal" || syncUiKind === "reconnecting";
 
   const hostedProfile = useMemo<SyncProfile>(
@@ -521,85 +534,6 @@ export default function Home() {
     }
   };
 
-  const handleAccountClick = async () => {
-    if (accountSettingsState || personalActive || !hostedProfile.baseUrl) {
-      openSettings("cloud-sync");
-      return;
-    }
-
-    setAccountBusy(true);
-    const controller = new AbortController();
-    signInControllerRef.current = controller;
-    setSignInController(controller);
-    try {
-      const result = await signInHostedSync({
-        profile: hostedProfile,
-        signal: controller.signal,
-      });
-      signInControllerRef.current = null;
-      setSignInController(null);
-      if (result.refreshToken) {
-        await setHostedRefreshToken(HOSTED_PROFILE_ID, result.refreshToken);
-      }
-      const expiresAt =
-        result.expiresIn && result.expiresIn > 0
-          ? Date.now() + result.expiresIn * 1000
-          : null;
-      setAccessToken(
-        result.accessToken,
-        expiresAt,
-        Boolean(result.refreshToken),
-      );
-      const appVersion = await getVersion().catch(() => "0.15.0");
-      const prepared = await prepareHostedSync({
-        profile: hostedProfile,
-        accessToken: result.accessToken,
-        device: {
-          name: deviceName.trim(),
-          platform: devicePlatform.trim(),
-          appVersion,
-        },
-        getDeviceIdForAccount: getOrCreateHostedDeviceId,
-      });
-      setAccount({
-        id: prepared.account.id,
-        displayName: prepared.account.displayName,
-        email: prepared.account.emailNormalized,
-      });
-      setActiveSyncMode("hosted");
-      if (!prepared.device) {
-        notifySyncChanged();
-        toast.error(
-          t`This device is not syncing because the device limit was reached`,
-        );
-        return;
-      }
-      wakeSyncBackground();
-      notifySyncChanged();
-      openSettings("cloud-sync");
-      toast.success(t`Cloud sync connected`);
-    } catch (error) {
-      if (!isHostedSignInCancelledError(error)) {
-        toast.error(error instanceof Error ? error.message : t`Sync failed`);
-      }
-    } finally {
-      if (signInControllerRef.current === controller) {
-        signInControllerRef.current = null;
-      }
-      setSignInController((current) =>
-        current === controller ? null : current,
-      );
-      setAccountBusy(false);
-    }
-  };
-
-  useEffect(
-    () => () => {
-      signInControllerRef.current?.abort();
-    },
-    [],
-  );
-
   useEffect(() => {
     if (hasLoadedRef.current) return;
     hasLoadedRef.current = true;
@@ -647,7 +581,8 @@ export default function Home() {
 
   const quickstartControl = (
     <Button
-      size="sm"
+      variant={hasFeaturedTale ? "outline" : "default"}
+      className="min-h-10"
       onClick={() => navigate({ to: "/quickstart" })}
       disabled={hasIssues}
     >
@@ -660,39 +595,23 @@ export default function Home() {
     <div className="flex min-w-0 items-center gap-2">
       <Button
         variant="outline"
-        onClick={handleAccountClick}
-        disabled={accountBusy}
-        className="h-14 w-64 max-w-full justify-start gap-2.5 border-primary/25 bg-card/70 px-2.5 shadow-xs hover:border-primary/45 hover:bg-accent/45"
+        onClick={() => openSettings("cloud-sync")}
+        className="h-11 w-auto max-w-64 justify-start gap-2 border-border/70 bg-card/60 px-3 shadow-none"
       >
-        <span className="relative shrink-0">
-          <Avatar className="size-9 border border-border/70">
-            <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
-              {accountBusy ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : signedIn && accountLabel ? (
-                avatarInitial(accountLabel)
-              ) : syncUiKind === "reconnecting" ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : hostedProfile.baseUrl && syncUiKind !== "personal" ? (
-                <LogIn className="size-4" />
-              ) : (
-                <UserRound className="size-4" />
-              )}
-            </AvatarFallback>
-          </Avatar>
-          <span
-            className={
-              syncUiKind === "signed-in"
-                ? "absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-card bg-primary"
-                : "absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-card bg-muted-foreground"
-            }
-          />
-        </span>
-        <span className="grid min-w-0 flex-1 text-left leading-tight">
+        <Avatar className="size-7 shrink-0 border border-border/70">
+          <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+            {signedIn && accountLabel ? (
+              avatarInitial(accountLabel)
+            ) : syncUiKind === "reconnecting" ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <UserRound className="size-4" />
+            )}
+          </AvatarFallback>
+        </Avatar>
+        <span className="grid min-w-0 flex-1 text-start leading-tight">
           <span className="truncate font-semibold">
-            {accountBusy ? (
-              <Trans>Connecting...</Trans>
-            ) : signedIn && accountLabel ? (
+            {signedIn && accountLabel ? (
               accountLabel
             ) : signedIn ? (
               <Trans>Complete profile</Trans>
@@ -701,16 +620,11 @@ export default function Home() {
             ) : syncUiKind === "personal" ? (
               <Trans>Personal Sync</Trans>
             ) : (
-              <Trans>Log in / Sign up</Trans>
+              <Trans>Local profile</Trans>
             )}
           </span>
-          <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-normal text-muted-foreground">
-            {syncUiKind === "signed-in" || syncUiKind === "reconnecting" ? (
-              <Cloud className="size-3" />
-            ) : (
-              <UserRound className="size-3" />
-            )}
-            <span className="truncate">
+          {showAccountStatus && (
+            <span className="truncate text-[11px] font-normal text-muted-foreground">
               {syncUiKind === "signed-in" ? (
                 <Trans>Cloud sync on</Trans>
               ) : syncUiKind === "sync-off" ? (
@@ -725,9 +639,8 @@ export default function Home() {
                 <Trans>Local profile</Trans>
               )}
             </span>
-          </span>
+          )}
         </span>
-        <ChevronRight className="ml-auto size-4 text-muted-foreground rtl:rotate-180" />
       </Button>
     </div>
   );
@@ -735,7 +648,7 @@ export default function Home() {
   return (
     <main className="relative min-h-full overflow-x-hidden">
       <div
-        className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5 px-3 py-4 sm:px-4 lg:px-6"
+        className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-6 sm:px-6 lg:py-8"
         style={
           hasActiveGame
             ? {
@@ -746,12 +659,14 @@ export default function Home() {
             : undefined
         }
       >
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="min-w-0">{accountControl}</div>
-          <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
-            {quickstartControl}
+        <header className="flex flex-wrap items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              <Trans>Your library</Trans>
+            </h1>
           </div>
-        </div>
+          {accountControl}
+        </header>
 
         {hasIssues && (
           <div className="flex flex-col gap-2 border border-destructive/40 bg-destructive/10 p-2.5 text-destructive sm:flex-row sm:items-center">
@@ -776,9 +691,86 @@ export default function Home() {
           </div>
         )}
 
-        <div className="flex flex-col gap-5">
+        <section
+          ref={resumeRef}
+          aria-label={t`Your next tale`}
+          className="flex min-w-0 flex-col gap-4 rounded-xs border border-border bg-card p-4 text-card-foreground sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+        >
+          <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
+            {!hasFeaturedTale && (
+              <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <BookOpen className="size-4" />
+                <Trans>A new tale starts here</Trans>
+              </p>
+            )}
+            <h2 className="line-clamp-2 max-w-full break-words text-lg font-semibold leading-snug">
+              {hasFeaturedTale ? (
+                featuredTitle || t`Untitled`
+              ) : (
+                <Trans>Where will your story take you?</Trans>
+              )}
+            </h2>
+            <p className="line-clamp-2 max-w-[75ch] text-sm leading-normal text-muted-foreground sm:line-clamp-1">
+              {hasFeaturedTale ? (
+                <PlainTextExcerpt>
+                  {featuredExcerpt || t`Your next chapter is waiting.`}
+                </PlainTextExcerpt>
+              ) : tales.loading ? (
+                <Trans>Loading your library...</Trans>
+              ) : (
+                <Trans>
+                  Choose a scenario to step into a new world, or use Quickstart
+                  to create your own.
+                </Trans>
+              )}
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {hasFeaturedTale && (
+              <Button
+                className="min-h-10"
+                disabled={
+                  hasIssues ||
+                  featuredLoading ||
+                  (hasActiveGame && !canContinue)
+                }
+                onClick={() => {
+                  if (featuredItem && (!hasActiveGame || featuredConflict))
+                    void handleLoadTale(featuredItem);
+                  else if (hasActiveGame) navigate({ to: "/play" });
+                }}
+              >
+                {featuredLoading ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Play className="size-4" />
+                )}
+                {featuredLoading ? (
+                  <Trans>Loading…</Trans>
+                ) : featuredConflict ? (
+                  <Trans>Review conflict</Trans>
+                ) : (
+                  <Trans>Continue</Trans>
+                )}
+              </Button>
+            )}
+            {quickstartControl}
+            {!hasFeaturedTale && (
+              <Button
+                variant="outline"
+                className="min-h-10"
+                onClick={() => navigate({ to: "/scenarios" })}
+              >
+                <Trans>Browse scenarios</Trans>
+                <ChevronRight className="size-4 rtl:rotate-180" />
+              </Button>
+            )}
+          </div>
+        </section>
+
+        <div className="flex flex-col gap-8">
           <Shelf
-            title={<Trans>Latest Tales</Trans>}
+            title={<Trans>Recent tales</Trans>}
             action={
               <Button
                 variant="outline"
@@ -882,8 +874,13 @@ export default function Home() {
               <>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button size="icon-sm" aria-label={t`Create Scenario`}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      aria-label={t`Create Scenario`}
+                    >
                       <Plus className="h-4 w-4" />
+                      <Trans>Create</Trans>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -939,83 +936,9 @@ export default function Home() {
             ))}
           </Shelf>
         </div>
-
-        <Accordion type="single" collapsible className="rounded-none">
-          <AccordionItem value="how">
-            <AccordionTrigger>
-              <Trans>How to play</Trans>
-            </AccordionTrigger>
-            <AccordionContent>
-              <ul className="list-disc space-y-1 pl-4 text-sm">
-                <li>
-                  <Trans>
-                    Open Settings → set API URL/key and pick a model.
-                  </Trans>
-                </li>
-                <li>
-                  <strong>
-                    <Trans>Quick Start:</Trans>
-                  </strong>{" "}
-                  <Trans>
-                    Click &quot;Quickstart&quot; to jump right in with a guided
-                    wizard, or
-                  </Trans>
-                </li>
-                <li>
-                  <Trans>
-                    Go to Scenarios → Create or Import from Clipboard.
-                  </Trans>
-                </li>
-                <li>
-                  <Trans>Go to Scenarios → New Tale.</Trans>
-                </li>
-                <li>
-                  <Trans>
-                    Type actions, the AI continues. Available actions:
-                  </Trans>
-                  <ul className="list-disc space-y-1 pl-4 text-sm">
-                    <li>
-                      <Trans>Do: Act in the story.</Trans>
-                    </li>
-                    <li>
-                      <Trans>Say: Speak something out loud.</Trans>
-                    </li>
-                    <li>
-                      <Trans>
-                        Story: Write a segment of text that the AI will treat as
-                        part of the story and continue from.
-                      </Trans>
-                    </li>
-                    <li>
-                      <Trans>
-                        Direct: An out of character note telling the AI to do
-                        something.
-                      </Trans>
-                    </li>
-                    <li>
-                      <Trans>Continue: Continue the story.</Trans>
-                    </li>
-                    <li>
-                      <Trans>
-                        Retry: Retry the last message. Can only be done if the
-                        last message is by the AI.
-                      </Trans>
-                    </li>
-                  </ul>
-                </li>
-                <li>
-                  <Trans>
-                    In Game Master mode, the AI keeps track of stats and
-                    inventory.
-                  </Trans>
-                </li>
-              </ul>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
       </div>
 
-      {hasActiveGame && (
+      {hasActiveGame && !resumeVisible && (
         <div
           className="fixed inset-x-0 z-30 border-t border-primary/60 bg-card"
           style={{
@@ -1036,7 +959,9 @@ export default function Home() {
                 </Badge>
               </div>
               <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                {(lastEntry?.text ?? description) || t`No description yet.`}
+                <PlainTextExcerpt>
+                  {(lastEntry?.text ?? description) || t`No description yet.`}
+                </PlainTextExcerpt>
               </p>
             </div>
             <Button
@@ -1057,28 +982,6 @@ export default function Home() {
         defaultTab={settingsTab}
         visibleTabs={nonPlayTabs}
       />
-      <Dialog
-        open={Boolean(signInController)}
-        onOpenChange={(open) => {
-          if (!open) signInController?.abort();
-        }}
-      >
-        <DialogContent showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle>
-              <Trans>Connecting...</Trans>
-            </DialogTitle>
-            <DialogDescription>
-              <Trans>Finish signing in through your browser.</Trans>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => signInController?.abort()}>
-              <Trans>Cancel</Trans>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
       <GenerateScenarioDialog
         open={generateOpen}
         onOpenChange={setGenerateOpen}

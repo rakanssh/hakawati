@@ -82,7 +82,7 @@ const HOSTED_PROFILE_ID = "hosted";
 const PERSONAL_PROFILE_ID = "personal";
 const PERSONAL_SYNC_ENABLED = false;
 const PROFILE_UPDATE_TIMEOUT_MS = 15_000;
-const HOSTED_DEVICE_LIMIT = 2;
+const HOSTED_DEVICE_LIMIT = 3;
 
 function avatarInitial(label: string) {
   return (label.trim()[0] ?? "?").toUpperCase();
@@ -771,6 +771,12 @@ export default function SettingsCloudSync() {
           </span>
         }
       >
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          <Trans>
+            An optional account lets you sync tales across devices and publish
+            scenarios.
+          </Trans>
+        </p>
         <div className="flex flex-col gap-3 border-t border-border/70 pt-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <Avatar className="size-10 border border-border/70">

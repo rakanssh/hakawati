@@ -15,10 +15,18 @@ import {
   publishScenarioDraft,
   publishingAcceptanceFor,
   startCatalogScenario,
+  uploadPublicCatalogThumbnail,
 } from "./catalog.service";
 
 const http = vi.hoisted(() => ({
   fetch: vi.fn(),
+}));
+
+const coverImages = vi.hoisted(() => ({ optimize: vi.fn() }));
+
+vi.mock("@/lib/cover-image", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/cover-image")>()),
+  optimizeCoverImage: coverImages.optimize,
 }));
 
 const taleService = vi.hoisted(() => ({
@@ -74,6 +82,77 @@ function jsonResponse(body: unknown, ok = true, status = 200) {
 describe("catalog service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    coverImages.optimize.mockReset();
+  });
+
+  it("uses optimized bytes for the catalog upload, hash, dimensions and quota request", async () => {
+    const source = {
+      bytes: new Uint8Array(100),
+      contentType: "image/png" as const,
+    };
+    const bytes = new Uint8Array([5, 6, 7]);
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    const sha256 = Array.from(new Uint8Array(digest))
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("");
+    coverImages.optimize.mockResolvedValue({
+      bytes,
+      contentType: "image/webp",
+      width: 1280,
+      height: 800,
+    });
+    const transport = {
+      get: vi.fn(),
+      patch: vi.fn(),
+      post: vi
+        .fn()
+        .mockResolvedValueOnce({
+          asset: { assetId: "cover-1" },
+          upload: { url: "https://storage.example/cover-1", headers: {} },
+        })
+        .mockResolvedValueOnce({ asset: { assetId: "cover-1" } }),
+    };
+    http.fetch.mockResolvedValueOnce({ ok: true });
+    await expect(
+      uploadPublicCatalogThumbnail(transport, source),
+    ).resolves.toEqual({ assetId: "cover-1" });
+    expect(coverImages.optimize).toHaveBeenCalledWith(source);
+    expect(transport.post).toHaveBeenNthCalledWith(
+      1,
+      "/v1/assets/cover-upload-intents",
+      {
+        visibility: "public",
+        contentType: "image/webp",
+        byteSize: 3,
+        sha256,
+        width: 1280,
+        height: 800,
+      },
+    );
+    const body = http.fetch.mock.calls[0][1].body as Blob;
+    expect(body.type).toBe("image/webp");
+    expect(body.size).toBe(3);
+    expect(transport.post).toHaveBeenNthCalledWith(
+      2,
+      "/v1/assets/cover-1/complete",
+      {},
+    );
+    expect(source.bytes.byteLength).toBe(100);
+  });
+
+  it("does not reserve cloud storage when cover optimization fails", async () => {
+    coverImages.optimize.mockRejectedValueOnce(
+      new Error("Invalid cover image"),
+    );
+    const transport = { get: vi.fn(), patch: vi.fn(), post: vi.fn() };
+    await expect(
+      uploadPublicCatalogThumbnail(transport, {
+        bytes: new Uint8Array([1]),
+        contentType: "image/png",
+      }),
+    ).rejects.toThrow("Invalid cover image");
+    expect(transport.post).not.toHaveBeenCalled();
+    expect(http.fetch).not.toHaveBeenCalled();
   });
 
   it("blocks a catalog publisher", async () => {
@@ -275,14 +354,14 @@ describe("catalog service", () => {
         policies: [
           {
             key: "terms",
-            version: "2026-07-14",
-            url: "https://hakawati.net/terms",
+            version: "2026-09-12",
+            url: "https://hakawati.dev/terms",
             requiredForPublishing: true,
           },
           {
             key: "community_guidelines",
-            version: "2026-07-14",
-            url: "https://hakawati.net/community-guidelines",
+            version: "2026-09-12",
+            url: "https://hakawati.dev/community-guidelines",
             requiredForPublishing: true,
           },
         ],
@@ -297,8 +376,8 @@ describe("catalog service", () => {
     await acceptCurrentCatalogPolicies(transport, acceptance);
 
     expect(transport.post).toHaveBeenCalledWith("/v1/policy-acceptances", {
-      termsVersion: "2026-07-14",
-      communityGuidelinesVersion: "2026-07-14",
+      termsVersion: "2026-09-12",
+      communityGuidelinesVersion: "2026-09-12",
     });
   });
 

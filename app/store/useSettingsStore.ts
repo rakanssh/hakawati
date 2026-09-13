@@ -1,4 +1,10 @@
 import { createDefaultProfiles } from "@/data/api-presets";
+import {
+  FONT_SIZE_MAX,
+  FONT_SIZE_MIN,
+  UI_SCALE_MAX,
+  UI_SCALE_MIN,
+} from "@/lib/appearance-limits";
 import { LLMModel } from "@/services/llm/schema";
 import {
   ApiPreset,
@@ -550,7 +556,10 @@ export const useSettingsStore = create<SettingsStoreType>()(
         set(() => {
           const isFiniteNumber = Number.isFinite(scale);
           const normalized = isFiniteNumber ? scale : 1;
-          const clamped = Math.min(Math.max(normalized, 0.8), 1.5);
+          const clamped = Math.min(
+            Math.max(normalized, UI_SCALE_MIN),
+            UI_SCALE_MAX,
+          );
           return { uiScale: Number(clamped.toFixed(2)) };
         }),
       setFontFamily: (fontFamily: string) => set({ fontFamily }),
@@ -558,7 +567,10 @@ export const useSettingsStore = create<SettingsStoreType>()(
         set(() => {
           const isFiniteNumber = Number.isFinite(fontSize);
           const normalized = isFiniteNumber ? fontSize : 1;
-          const clamped = Math.min(Math.max(normalized, 0.5), 3);
+          const clamped = Math.min(
+            Math.max(normalized, FONT_SIZE_MIN),
+            FONT_SIZE_MAX,
+          );
           return { fontSize: Number(clamped.toFixed(2)) };
         }),
       setTextDirection: (direction: TextDirection) =>

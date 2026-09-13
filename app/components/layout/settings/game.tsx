@@ -19,6 +19,12 @@ import { FontSelector } from "./font-selector";
 import { type Locale, LOCALES, loadLocale } from "@/i18n";
 import type { ThemeId } from "@/lib/themes";
 import {
+  FONT_SIZE_MAX,
+  FONT_SIZE_MIN,
+  UI_SCALE_MAX,
+  UI_SCALE_MIN,
+} from "@/lib/appearance-limits";
+import {
   SettingsField,
   SettingsPanel,
   SettingsStack,
@@ -114,11 +120,11 @@ export default function SettingsGame() {
 
       <SettingsPanel title={<Trans>Reading comfort</Trans>}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <SettingsField label={<Trans>UI Scale (0.8 - 1.5)</Trans>}>
+          <SettingsField label={<Trans>UI Scale (0.5 - 2.0)</Trans>}>
             <div className="flex flex-row items-center gap-2">
               <NumberInput
-                min={0.8}
-                max={1.5}
+                min={UI_SCALE_MIN}
+                max={UI_SCALE_MAX}
                 step={0.05}
                 value={uiScale}
                 onValueCommit={(value) => setUiScale(value)}
@@ -135,11 +141,11 @@ export default function SettingsGame() {
             </div>
           </SettingsField>
 
-          <SettingsField label={<Trans>Font Size (0.75 - 2.0)</Trans>}>
+          <SettingsField label={<Trans>Font Size (0.5 - 4.0)</Trans>}>
             <div className="flex flex-row items-center gap-2">
               <NumberInput
-                min={0.75}
-                max={2}
+                min={FONT_SIZE_MIN}
+                max={FONT_SIZE_MAX}
                 step={0.05}
                 value={fontSize}
                 onValueCommit={(value) => setFontSize(value)}

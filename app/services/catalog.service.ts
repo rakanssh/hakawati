@@ -26,6 +26,7 @@ import {
   type ScenarioPackageMetadata,
 } from "@/lib/catalog-package";
 import { normalizeCatalogTags } from "@/lib/catalog-tags";
+import { optimizeCoverImage, sha256Hex } from "@/lib/cover-image";
 import { scenarioContentToTaleSeed } from "@/lib/scenario-content";
 import { initTale } from "@/services/tale.service";
 import {
@@ -498,14 +499,15 @@ export async function uploadPublicCatalogThumbnail(
   transport: CatalogTransport,
   thumbnail: CatalogThumbnailUpload,
 ): Promise<CoverAssetReference> {
+  const cover = await optimizeCoverImage(thumbnail);
   const intent = bodyValue(
     await transport.post("/v1/assets/cover-upload-intents", {
       visibility: "public",
-      contentType: thumbnail.contentType,
-      byteSize: thumbnail.bytes.byteLength,
-      sha256: await sha256Hex(thumbnail.bytes),
-      ...(thumbnail.width ? { width: thumbnail.width } : {}),
-      ...(thumbnail.height ? { height: thumbnail.height } : {}),
+      contentType: cover.contentType,
+      byteSize: cover.bytes.byteLength,
+      sha256: await sha256Hex(cover.bytes),
+      width: cover.width,
+      height: cover.height,
     }),
   );
   const asset = bodyValue(intent.asset) as CoverAssetReference;
@@ -522,8 +524,8 @@ export async function uploadPublicCatalogThumbnail(
   const response = await fetch(uploadUrl, {
     method: uploadMethod,
     headers: uploadHeaders,
-    body: new Blob([thumbnail.bytes.slice().buffer], {
-      type: thumbnail.contentType,
+    body: new Blob([cover.bytes.slice().buffer], {
+      type: cover.contentType,
     }),
   });
   if (!response.ok) {
@@ -559,14 +561,4 @@ function catalogTagQuery(options: CatalogTagListOptions): string {
   if (options.limit) query.set("limit", String(options.limit));
   for (const tag of normalizeCatalogTags(options.tag)) query.append("tag", tag);
   return query.toString();
-}
-
-async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    bytes.slice() as BufferSource,
-  );
-  return Array.from(new Uint8Array(digest))
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
 }

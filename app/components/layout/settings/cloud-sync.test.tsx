@@ -196,8 +196,8 @@ describe("SettingsCloudSync storage usage", () => {
       disabledReason: null,
     });
     syncServiceMocks.fetchHostedAccountUsage.mockResolvedValue({
-      tales: { used: 3, limit: 25 },
-      storage: { usedBytes: 1.5 * 1024 * 1024, limitBytes: 50 * 1024 * 1024 },
+      tales: { used: 3, limit: 50 },
+      storage: { usedBytes: 1.5 * 1024 * 1024, limitBytes: 10 * 1024 * 1024 },
     });
     syncServiceMocks.listHostedDevices.mockResolvedValue([
       device("device-1", "Laptop"),
@@ -228,8 +228,8 @@ describe("SettingsCloudSync storage usage", () => {
     const view = render();
     await flush();
 
-    expect(view.container.textContent).toContain("3/25 tales");
-    expect(view.container.textContent).toContain("1.5 MB / 50 MB storage");
+    expect(view.container.textContent).toContain("3/50 tales");
+    expect(view.container.textContent).toContain("1.5 MB / 10 MB storage");
 
     view.cleanup();
   });
@@ -252,8 +252,8 @@ describe("SettingsCloudSync storage usage", () => {
       ...document.body.querySelectorAll('[data-slot="progress-indicator"]'),
     ];
     expect(bars).toHaveLength(2);
-    expect(bars[0]?.getAttribute("style")).toContain("translateX(-88%)");
-    expect(bars[1]?.getAttribute("style")).toContain("translateX(-97%)");
+    expect(bars[0]?.getAttribute("style")).toContain("translateX(-94%)");
+    expect(bars[1]?.getAttribute("style")).toContain("translateX(-85%)");
 
     const remove = [...document.body.querySelectorAll("button")].find(
       (button) => button.textContent?.includes("Remove from cloud"),
@@ -283,7 +283,7 @@ describe("SettingsCloudSync storage usage", () => {
     });
     await flush();
 
-    expect(document.body.textContent).toContain("2/2");
+    expect(document.body.textContent).toContain("2/3");
     expect(document.body.textContent).toContain("Laptop");
     expect(document.body.textContent).toContain("Tablet");
     expect(document.body.textContent).toContain("Current");

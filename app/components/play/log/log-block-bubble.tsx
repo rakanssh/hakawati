@@ -24,12 +24,15 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { StoryText } from "./story-text";
 
 interface LogBlockBubbleProps {
   block: LogBlock;
   isStreaming?: boolean;
   onEditStart?: (entryId: string) => void;
-  renderEntry?: (entry: LogEntry, onClick: () => void) => ReactNode;
+  renderEntry?: (entry: LogEntry) => ReactNode;
+  editDisabled?: boolean;
+  highlightedEntryId?: string;
   narration?: {
     isLoading: boolean;
     isActive: boolean;
@@ -42,6 +45,8 @@ export function LogBlockBubble({
   isStreaming,
   onEditStart,
   renderEntry,
+  editDisabled,
+  highlightedEntryId,
   narration,
 }: LogBlockBubbleProps) {
   const [thinkingOpen, setThinkingOpen] = useState(false);
@@ -153,20 +158,22 @@ export function LogBlockBubble({
   return (
     <div className="flex w-full flex-col items-start">
       <div
-        className="w-full whitespace-pre-wrap break-words font-normal leading-[1.72] tracking-normal text-foreground/95"
+        className="relative w-full whitespace-pre-wrap break-words font-normal leading-[1.72] tracking-normal text-foreground/95"
         style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
       >
-        {block.entries.map((e) => {
-          const onClick = () => onEditStart?.(e.id);
-          if (renderEntry) {
-            return <Fragment key={e.id}>{renderEntry(e, onClick)}</Fragment>;
-          }
-          return (
-            <span key={e.id} className="cursor-pointer" onClick={onClick}>
-              {e.text}
-            </span>
-          );
-        })}
+        {renderEntry ? (
+          block.entries.map((entry) => (
+            <Fragment key={entry.id}>{renderEntry(entry)}</Fragment>
+          ))
+        ) : (
+          <StoryText
+            segments={block.entries}
+            onEditSegment={
+              editDisabled || isStreaming ? undefined : onEditStart
+            }
+            highlightedSegmentId={highlightedEntryId}
+          />
+        )}
         {hasError && errorEntry && <ErrorTooltip error={errorEntry.error} />}
         {isStreaming && (
           <span className="inline-block w-0.5 h-[1.1em] bg-primary/70 animate-pulse ml-0.5 align-middle" />

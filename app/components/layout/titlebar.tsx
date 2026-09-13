@@ -9,6 +9,7 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import { flushPendingAutoSaves } from "@/hooks/useAutoSave";
 import { useUpdateStore } from "@/store/useUpdateStore";
+import { useTaleStore } from "@/store/useTaleStore";
 
 const titlebarButtonClass = "h-7 w-7 rounded-xs p-0";
 
@@ -25,6 +26,8 @@ export function Titlebar() {
   const isShowButtons = true;
   const { isMobilePlatform } = useIsMobile();
   const isPlayRoute = routerState.location.pathname?.startsWith("/play");
+  const taleName = useTaleStore((state) => state.name);
+  const title = isPlayRoute && taleName.trim() ? taleName : "Hakawati";
   useEffect(() => {
     if (isMobilePlatform || !("__TAURI_INTERNALS__" in window)) return;
     let disposed = false;
@@ -67,7 +70,7 @@ export function Titlebar() {
       className="fixed top-0 left-0 right-0 z-50 h-8 bg-background border-b"
     >
       <div data-tauri-drag-region className="titlebar-drag absolute inset-0" />
-      <div className="relative grid grid-cols-3 items-center h-full px-2 select-none pointer-events-none">
+      <div className="relative grid grid-cols-[6rem_minmax(0,1fr)_6rem] items-center h-full px-2 select-none pointer-events-none">
         <div className="titlebar-no-drag pointer-events-auto flex items-center gap-1">
           {isShowButtons && (
             <>
@@ -91,12 +94,15 @@ export function Titlebar() {
             </>
           )}
         </div>
-        <div className="flex justify-center items-center mb-1">
-          <div className="flex items-center gap-1">
-            <img src={fez} alt="Hakawati" className="w-5 h-5 " />
-
-            <span className="text-sm font-medium tracking-wide text-foreground">
-              Hakawati
+        <div className="flex min-w-0 justify-center items-center mb-1 px-1">
+          <div className="flex min-w-0 max-w-full items-center gap-1">
+            <img src={fez} alt="Hakawati" className="w-5 h-5 shrink-0" />
+            <span
+              dir="auto"
+              className="truncate text-sm font-medium text-foreground"
+              title={title}
+            >
+              {title}
             </span>
           </div>
         </div>

@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useTaleLibrary } from "@/hooks/useTaleLibrary";
 import { useLoadTale } from "@/hooks/useGameSaves";
 import { TaleConflictDialog } from "@/components/tales/tale-conflict-dialog";
@@ -30,6 +30,7 @@ import {
   FilePlus2Icon,
   MoreHorizontalIcon,
   PencilIcon,
+  SearchIcon,
   TrashIcon,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -175,33 +176,47 @@ export default function TalesHome() {
     : items;
 
   return (
-    <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5 px-3 py-4 sm:px-4 lg:px-6">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => navigate({ to: "/" })}
-        >
-          <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
-        </Button>
-        <div className="text-sm text-muted-foreground">
-          <span className="text-primary">
-            <Trans>Home</Trans>
-          </span>
-          <span className="px-2">/</span>
-          <span>
-            <Trans>Tales</Trans>
-          </span>
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8">
+      <header className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => navigate({ to: "/" })}
+            aria-label={t`Home`}
+          >
+            <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
+          </Button>
+          <nav
+            aria-label={t`Tales`}
+            className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground"
+          >
+            <Link
+              to="/"
+              className="rounded-xs text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            >
+              <Trans>Home</Trans>
+            </Link>
+            <span aria-hidden="true">/</span>
+            <h1 aria-current="page" className="text-sm font-normal">
+              <Trans>Tales</Trans>
+            </h1>
+          </nav>
         </div>
-      </div>
-      <div className="border-y py-2">
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder={t`Search tales`}
-          className="max-w-md"
-        />
-      </div>
+        <div className="relative w-full sm:w-80">
+          <SearchIcon
+            aria-hidden="true"
+            className="pointer-events-none absolute start-3 top-2.5 size-4 text-muted-foreground"
+          />
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder={t`Search tales`}
+            aria-label={t`Search tales`}
+            className="ps-9"
+          />
+        </div>
+      </header>
       {loading && (
         <div className="text-sm text-muted-foreground">
           <Trans>Loading...</Trans>
@@ -259,6 +274,7 @@ export default function TalesHome() {
               }
               imageAlt={t`${name} thumbnail`}
               ariaLabel={t`Load ${name}`}
+              actionLabel={hasConflict ? t`Review conflict` : t`Continue`}
               imageBadges={
                 syncActive && !syncStatusUnknown ? (
                   <Badge
@@ -438,6 +454,6 @@ export default function TalesHome() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </main>
   );
 }

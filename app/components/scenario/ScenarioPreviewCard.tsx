@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronRight } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -10,6 +12,8 @@ type ScenarioPreviewCardProps = {
   imageSrc: string;
   imageAlt: string;
   ariaLabel: string;
+  eyebrow?: ReactNode;
+  actionLabel?: ReactNode;
   meta?: ReactNode;
   footer?: ReactNode;
   imageBadges?: ReactNode;
@@ -19,12 +23,28 @@ type ScenarioPreviewCardProps = {
   onOpen: () => void;
 };
 
+/** Render an excerpt without formatting, links, images, or raw HTML. */
+export function PlainTextExcerpt({ children }: { children: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      allowedElements={[]}
+      unwrapDisallowed
+      skipHtml
+    >
+      {children}
+    </ReactMarkdown>
+  );
+}
+
 export function ScenarioPreviewCard({
   title,
   summary,
   imageSrc,
   imageAlt,
   ariaLabel,
+  eyebrow,
+  actionLabel,
   meta,
   footer,
   imageBadges,
@@ -36,7 +56,10 @@ export function ScenarioPreviewCard({
   const summarySlotRef = useRef<HTMLDivElement>(null);
   const summaryRef = useRef<HTMLParagraphElement>(null);
   const [summaryLines, setSummaryLines] = useState(4);
-  const hasFooter = Boolean(footer || meta);
+  const isShelf = variant === "shelf";
+  const hasFooter = Boolean(
+    footer || meta || actionLabel || (isShelf && eyebrow),
+  );
 
   useEffect(() => {
     const summarySlot = summarySlotRef.current;
@@ -91,20 +114,21 @@ export function ScenarioPreviewCard({
         }
       }}
       className={cn(
-        "group grid cursor-pointer gap-0 overflow-hidden border-accent/50 p-0 transition-[border-color,background-color] hover:border-accent hover:bg-card/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+        "group grid cursor-pointer gap-0 overflow-hidden border-border/80 p-0 transition-[border-color,background-color,box-shadow] hover:border-primary/40 hover:bg-card/80 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
         disabled &&
-          "cursor-not-allowed opacity-60 hover:border-accent/50 hover:bg-card",
-        variant === "shelf"
-          ? "h-40 w-[78vw] max-w-72 shrink-0 snap-start grid-cols-[6.5rem_minmax(0,1fr)]"
-          : "h-48 grid-cols-[7.5rem_minmax(0,1fr)] sm:grid-cols-[9rem_minmax(0,1fr)]",
+          "cursor-not-allowed opacity-60 hover:border-border/80 hover:bg-card hover:shadow-sm",
+        isShelf
+          ? "h-40 w-[84vw] max-w-[26rem] shrink-0 snap-start grid-cols-[5.5rem_minmax(0,1fr)] sm:grid-cols-[7rem_minmax(0,1fr)]"
+          : "h-40 grid-cols-[5.5rem_minmax(0,1fr)] sm:grid-cols-[6.5rem_minmax(0,1fr)]",
       )}
       aria-label={ariaLabel}
       aria-disabled={disabled || undefined}
     >
-      <div className="relative min-h-0 overflow-hidden border-r border-border/70 rtl:border-r-0 rtl:border-l">
+      <div className="relative min-h-0 overflow-hidden border-r border-border/70 bg-muted rtl:border-r-0 rtl:border-l">
         <img
           src={imageSrc}
           alt={imageAlt}
+          loading="lazy"
           className="h-full w-full object-cover"
         />
         {menu ? (
@@ -130,11 +154,23 @@ export function ScenarioPreviewCard({
             : "grid-rows-[auto_minmax(0,1fr)]",
         )}
       >
-        <div className="flex min-w-0 shrink-0 items-start gap-2">
-          <h3 className="line-clamp-2 min-w-0 flex-1 text-[0.9375rem] font-semibold leading-snug">
-            {title}
-          </h3>
-          <ChevronRight className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5" />
+        <div className="min-w-0 shrink-0 space-y-1.5">
+          {eyebrow && !isShelf ? (
+            <div className="truncate text-xs font-medium text-muted-foreground">
+              {eyebrow}
+            </div>
+          ) : null}
+          <div className="flex min-w-0 items-start gap-2">
+            <h3 className="line-clamp-2 min-w-0 flex-1 text-base font-semibold leading-snug">
+              {title}
+            </h3>
+            {!actionLabel ? (
+              <ChevronRight
+                aria-hidden="true"
+                className="mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5 motion-reduce:transition-none"
+              />
+            ) : null}
+          </div>
         </div>
         <div
           ref={summarySlotRef}
@@ -146,15 +182,40 @@ export function ScenarioPreviewCard({
             className="line-clamp-4 text-sm leading-normal text-muted-foreground"
             style={{ WebkitLineClamp: summaryLines }}
           >
-            {summary}
+            <PlainTextExcerpt>{summary}</PlainTextExcerpt>
           </p>
         </div>
         {hasFooter ? (
-          <div className="grid min-w-0 shrink-0 gap-1.5">
-            {footer ? <div className="min-w-0">{footer}</div> : null}
+          <div className="flex min-w-0 shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1">
+            {isShelf && eyebrow && !footer && !meta ? (
+              <div className="truncate text-xs font-medium text-muted-foreground">
+                {eyebrow}
+              </div>
+            ) : null}
+            {footer ? (
+              <div className={cn("min-w-0", !isShelf && "max-w-full")}>
+                {footer}
+              </div>
+            ) : null}
             {meta ? (
               <div className="truncate text-xs text-muted-foreground">
                 {meta}
+              </div>
+            ) : null}
+            {actionLabel ? (
+              <div
+                className={cn(
+                  "flex min-w-0 items-center gap-1.5 text-xs font-medium text-primary",
+                  !isShelf && "max-w-full",
+                )}
+              >
+                <span className={isShelf ? "truncate" : "min-w-0 break-words"}>
+                  {actionLabel}
+                </span>
+                <ChevronRight
+                  aria-hidden="true"
+                  className="size-3.5 shrink-0 transition-transform group-hover:translate-x-0.5 rtl:rotate-180 rtl:group-hover:-translate-x-0.5 motion-reduce:transition-none"
+                />
               </div>
             ) : null}
           </div>

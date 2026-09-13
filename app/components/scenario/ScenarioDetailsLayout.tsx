@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
+import { Trans } from "@lingui/react/macro";
 import { ArrowLeftIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ type ScenarioDetailsLayoutProps = {
   headerAction?: ReactNode;
   actions: ReactNode;
   summary: ReactNode;
-  summaryHeading: ReactNode;
+  children?: ReactNode;
   backLabel: string;
   onBack: () => void;
 };
@@ -33,12 +34,20 @@ export function ScenarioDetailsLayout({
   headerAction,
   actions,
   summary,
-  summaryHeading,
+  children,
   backLabel,
   onBack,
 }: ScenarioDetailsLayoutProps) {
+  const summaryId = useId();
+  const [expanded, setExpanded] = useState(false);
+  const canExpandSummary =
+    typeof summary === "string" &&
+    (summary.length > 320 || summary.split("\n").length > 4);
+
+  useEffect(() => setExpanded(false), [summary]);
+
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-3 py-4 sm:px-5 sm:py-6 lg:px-6">
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-3 py-4 sm:px-5 sm:py-6 lg:gap-8 lg:px-6">
       <header className="flex min-w-0 items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <Button
@@ -49,31 +58,47 @@ export function ScenarioDetailsLayout({
           >
             <ArrowLeftIcon className="size-4 rtl:rotate-180" />
           </Button>
-          <div className="min-w-0 truncate text-sm text-muted-foreground">
-            {breadcrumb}
-          </div>
+          <div className="min-w-0">{breadcrumb}</div>
         </div>
         {headerAction ? <div className="shrink-0">{headerAction}</div> : null}
       </header>
 
       <Separator />
 
-      <main className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(15rem,20rem)] md:items-start lg:gap-8">
-        <section className="grid min-w-0 gap-4 md:py-2">
-          <div className="grid gap-1.5">
-            <h1 className="text-[1.375rem] font-semibold leading-tight text-balance sm:text-[1.75rem] lg:text-[2rem]">
+      <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(13rem,18rem)] md:items-start lg:gap-10">
+        <section className="grid min-w-0 gap-5 md:py-2">
+          <div className="grid gap-3">
+            {tags ? <div className="flex flex-wrap gap-1.5">{tags}</div> : null}
+            <h1 className="break-words text-3xl font-semibold leading-tight text-balance sm:text-4xl">
               {title}
             </h1>
             {byline ? (
               <div className="text-sm text-muted-foreground">{byline}</div>
             ) : null}
           </div>
-          {meta ? (
-            <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
-              {meta}
+          <div className="grid gap-2">
+            <div
+              id={summaryId}
+              className={`max-w-[65ch] whitespace-pre-wrap break-words text-base leading-relaxed text-muted-foreground ${canExpandSummary && !expanded ? "line-clamp-4" : ""}`}
+            >
+              {summary}
             </div>
-          ) : null}
-          {tags ? <div className="flex flex-wrap gap-1.5">{tags}</div> : null}
+            {canExpandSummary ? (
+              <Button
+                variant="link"
+                className="h-auto justify-self-start p-0 text-sm"
+                aria-expanded={expanded}
+                aria-controls={summaryId}
+                onClick={() => setExpanded((value) => !value)}
+              >
+                {expanded ? (
+                  <Trans>Show less</Trans>
+                ) : (
+                  <Trans>Read full description</Trans>
+                )}
+              </Button>
+            ) : null}
+          </div>
           {notice}
           {actions}
         </section>
@@ -85,14 +110,20 @@ export function ScenarioDetailsLayout({
             className="aspect-[16/7] w-full object-cover md:aspect-[4/3]"
           />
         </div>
-      </main>
+      </div>
 
-      <section className="grid gap-3 border-t pt-5 sm:pt-6">
-        <h2 className="text-xl font-semibold">{summaryHeading}</h2>
-        <div className="max-w-[70ch] whitespace-pre-wrap text-base leading-relaxed text-muted-foreground">
-          {summary}
-        </div>
-      </section>
-    </div>
+      {children}
+
+      {meta ? (
+        <section className="grid gap-3 border-t pt-5">
+          <h2 className="text-sm font-medium">
+            <Trans>Scenario details</Trans>
+          </h2>
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
+            {meta}
+          </div>
+        </section>
+      ) : null}
+    </main>
   );
 }

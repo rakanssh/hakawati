@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { ScenarioBreadcrumb } from "@/components/scenario/ScenarioBreadcrumb";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -173,6 +174,7 @@ function CatalogScenarioCard({
       imageSrc={catalogAssetUrl(baseUrl, scenario.thumbnail?.downloadUrl)}
       imageAlt={`${scenario.title} thumbnail`}
       ariaLabel={`View ${scenario.title}`}
+      actionLabel={<Trans>Explore scenario</Trans>}
       imageBadges={
         <>
           <Badge className={`${imageBadgeClass} max-w-full`}>
@@ -408,49 +410,51 @@ export default function ScenariosHome() {
   const catalogToolbar = activeTab === "published" ? published : discover;
 
   return (
-    <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5 px-3 py-4 sm:px-4 lg:px-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4">
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-3">
           <Button
             variant="outline"
             size="icon"
             onClick={() => navigate({ to: "/" })}
+            aria-label={t`Home`}
           >
             <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
           </Button>
-          <div className="text-sm text-muted-foreground">
-            <span className="text-primary">
-              <Trans>Home</Trans>
-            </span>
-            <span className="px-2">/</span>
-            <span>
-              <Trans>Scenarios</Trans>
-            </span>
-          </div>
+          <ScenarioBreadcrumb
+            to="/"
+            parent={<Trans>Home</Trans>}
+            current={
+              <h1 className="text-sm font-normal">
+                <Trans>Scenarios</Trans>
+              </h1>
+            }
+          />
         </div>
-        <div className="grid grid-cols-[1fr_auto] gap-2 sm:flex sm:flex-row">
+        <div className="flex flex-wrap items-center gap-2">
           <Button onClick={() => navigate({ to: "/scenarios/new" })}>
             <Trans>Create</Trans>
           </Button>
-          <Button onClick={() => setGenerateOpen(true)}>
+          <Button variant="outline" onClick={() => setGenerateOpen(true)}>
             <Sparkles className="w-4 h-4" />
+            <Trans>Generate</Trans>
           </Button>
         </div>
-      </div>
+      </header>
 
       <Tabs value={activeTab} onValueChange={setScenarioTab} className="gap-4">
-        <div className="grid gap-2 border-y py-2 md:grid-cols-[22rem_minmax(0,1fr)] md:items-center">
-          <TabsList className="h-auto w-full justify-start gap-3 rounded-none bg-transparent p-0 md:w-[22rem]">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-3">
+          <TabsList className="h-auto max-w-full justify-start gap-1 overflow-x-auto rounded-none bg-transparent p-0">
             <TabsTrigger
               value="local"
-              className="min-w-24 flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-3 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              className="flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-3 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
             >
               <Trans>Local</Trans>
             </TabsTrigger>
             {catalog.enabled ? (
               <TabsTrigger
                 value="discover"
-                className="min-w-24 flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-3 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-3 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
                 <Trans>Discover</Trans>
               </TabsTrigger>
@@ -458,21 +462,21 @@ export default function ScenariosHome() {
             {catalog.enabled && catalog.signedIn ? (
               <TabsTrigger
                 value="published"
-                className="min-w-24 flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-3 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-3 py-2 text-sm shadow-none data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
                 <Trans>Published</Trans>
               </TabsTrigger>
             ) : null}
           </TabsList>
           {activeTab === "local" ? (
-            <div className="flex md:justify-end">
-              <Button className="w-full sm:w-auto" onClick={importScenario}>
+            <div className="flex">
+              <Button variant="outline" onClick={importScenario}>
                 <Trans>Import</Trans>
               </Button>
             </div>
           ) : null}
           {showCatalogControls ? (
-            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 md:justify-self-end md:w-full md:max-w-[34rem]">
+            <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-2 md:ms-auto md:w-auto md:max-w-[34rem] md:flex-1">
               <div className="relative min-w-0">
                 <CatalogTagInput
                   value={catalogToolbar.filters.tag ?? []}
@@ -562,6 +566,7 @@ export default function ScenariosHome() {
                   }
                   imageAlt={t`${name} thumbnail`}
                   ariaLabel={t`View ${name}`}
+                  actionLabel={<Trans>Explore scenario</Trans>}
                   imageBadges={
                     linked ? (
                       <Badge className={imageBadgeClass}>
@@ -812,6 +817,6 @@ export default function ScenariosHome() {
           });
         }}
       />
-    </div>
+    </main>
   );
 }

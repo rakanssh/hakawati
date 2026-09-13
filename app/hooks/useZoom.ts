@@ -9,6 +9,8 @@ interface UseZoomOptions {
   fadeDuration?: number;
   min?: number;
   max?: number;
+  keyboard?: boolean;
+  wheel?: boolean;
 }
 
 interface UseZoomReturn {
@@ -26,10 +28,13 @@ export function useZoom(options: UseZoomOptions): UseZoomReturn {
     fadeDuration = 250,
     min = 0.5,
     max = 3,
+    keyboard = true,
+    wheel = true,
   } = options;
 
   const [showIndicator, setShowIndicator] = useState(false);
   const [isIndicatorVisible, setIsIndicatorVisible] = useState(false);
+  const zoomRef = useRef(zoom);
   const indicatorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const indicatorFadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -39,6 +44,10 @@ export function useZoom(options: UseZoomOptions): UseZoomReturn {
     (value: number) => Math.min(max, Math.max(min, value)),
     [min, max],
   );
+
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
 
   const showIndicatorTemporarily = useCallback(() => {
     setShowIndicator(true);
@@ -60,12 +69,18 @@ export function useZoom(options: UseZoomOptions): UseZoomReturn {
   }, [indicatorDuration, fadeDuration]);
 
   useEffect(() => {
+    const changeZoom = (next: number) => {
+      // Keep consecutive events cumulative before React commits another render.
+      zoomRef.current = next;
+      setZoom(next);
+      showIndicatorTemporarily();
+    };
+
     const handleWheel = (e: WheelEvent) => {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
         const delta = e.deltaY > 0 ? -step : step;
-        setZoom(clampZoom(zoom + delta));
-        showIndicatorTemporarily();
+        changeZoom(clampZoom(zoomRef.current + delta));
       }
     };
 
@@ -73,28 +88,35 @@ export function useZoom(options: UseZoomOptions): UseZoomReturn {
       if (e.ctrlKey || e.metaKey) {
         if (e.key === "=" || e.key === "+") {
           e.preventDefault();
-          setZoom(clampZoom(zoom + step));
-          showIndicatorTemporarily();
+          changeZoom(clampZoom(zoomRef.current + step));
         } else if (e.key === "-") {
           e.preventDefault();
-          setZoom(clampZoom(zoom - step));
-          showIndicatorTemporarily();
+          changeZoom(clampZoom(zoomRef.current - step));
         } else if (e.key === "0") {
           e.preventDefault();
-          setZoom(defaultZoom);
-          showIndicatorTemporarily();
+          changeZoom(defaultZoom);
         }
       }
     };
 
-    globalThis.addEventListener("wheel", handleWheel, { passive: false });
-    globalThis.addEventListener("keydown", handleKeyDown);
+    if (wheel) {
+      globalThis.addEventListener("wheel", handleWheel, { passive: false });
+    }
+    if (keyboard) globalThis.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      globalThis.removeEventListener("wheel", handleWheel);
-      globalThis.removeEventListener("keydown", handleKeyDown);
+      if (wheel) globalThis.removeEventListener("wheel", handleWheel);
+      if (keyboard) globalThis.removeEventListener("keydown", handleKeyDown);
     };
-  }, [zoom, setZoom, step, defaultZoom, clampZoom, showIndicatorTemporarily]);
+  }, [
+    setZoom,
+    step,
+    defaultZoom,
+    clampZoom,
+    showIndicatorTemporarily,
+    keyboard,
+    wheel,
+  ]);
 
   useEffect(
     () => () => {

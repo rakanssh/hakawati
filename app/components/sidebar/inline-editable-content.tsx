@@ -11,6 +11,7 @@ interface InlineEditableContentProps {
 
 export function InlineEditableContent(props: InlineEditableContentProps) {
   const ref = useRef<HTMLDivElement | null>(null);
+  const finishedRef = useRef(false);
   const {
     initialValue,
     onCommit,
@@ -22,7 +23,9 @@ export function InlineEditableContent(props: InlineEditableContentProps) {
 
   useEffect(() => {
     if (ref.current) {
+      finishedRef.current = false;
       ref.current.textContent = initialValue;
+      ref.current.focus({ preventScroll: true });
       const selection = window.getSelection();
       const range = document.createRange();
       range.selectNodeContents(ref.current);
@@ -33,7 +36,13 @@ export function InlineEditableContent(props: InlineEditableContentProps) {
   }, [initialValue]);
 
   const finish = () => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
     const next = ref.current?.textContent ?? "";
+    if (next === initialValue) {
+      onCancel();
+      return;
+    }
     onCommit(next);
   };
 
@@ -44,6 +53,7 @@ export function InlineEditableContent(props: InlineEditableContentProps) {
     }
     if (e.key === "Escape") {
       e.preventDefault();
+      finishedRef.current = true;
       onCancel();
     }
   };
@@ -54,6 +64,9 @@ export function InlineEditableContent(props: InlineEditableContentProps) {
         ref={ref as unknown as React.RefObject<HTMLSpanElement>}
         contentEditable
         suppressContentEditableWarning
+        onFocus={() => {
+          finishedRef.current = false;
+        }}
         onBlur={finish}
         onKeyDown={onKeyDown}
         className={`whitespace-pre-wrap break-words outline-none ${className ?? ""}`}
@@ -69,6 +82,9 @@ export function InlineEditableContent(props: InlineEditableContentProps) {
       ref={ref}
       contentEditable
       suppressContentEditableWarning
+      onFocus={() => {
+        finishedRef.current = false;
+      }}
       onBlur={finish}
       onKeyDown={onKeyDown}
       className={`md:text-base whitespace-pre-wrap break-words outline-none ms-2 pt-2 ${className ?? ""}`}

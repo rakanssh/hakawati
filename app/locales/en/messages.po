@@ -1001,8 +1001,8 @@ msgid "Font Family"
 msgstr "Font Family"
 
 #: app/components/layout/settings/game.tsx:138
-msgid "Font Size (0.75 - 2.0)"
-msgstr "Font Size (0.75 - 2.0)"
+msgid "Font Size (0.5 - 4.0)"
+msgstr "Font Size (0.5 - 4.0)"
 
 #: app/data/quickstart-presets.ts:409
 #~ msgid "forging your own path"
@@ -2589,8 +2589,8 @@ msgid "UI Direction"
 msgstr "UI Direction"
 
 #: app/components/layout/settings/game.tsx:117
-msgid "UI Scale (0.8 - 1.5)"
-msgstr "UI Scale (0.8 - 1.5)"
+msgid "UI Scale (0.5 - 2.0)"
+msgstr "UI Scale (0.5 - 2.0)"
 
 #: app/data/quickstart-presets.ts:404
 #~ msgid "unable to let mysteries rest, even the ones that might be safer left buried"
@@ -2772,3 +2772,109 @@ msgstr "Community Guidelines"
 #: app/components/scenario/PublishScenarioDialog.tsx
 msgid "Loading publishing policies..."
 msgstr "Loading publishing policies..."
+
+#: app/pages/home/home.tsx:852
+msgid "A new tale starts here"
+msgstr "A new tale starts here"
+
+#: app/pages/home/home.tsx:913
+msgid "Browse scenarios"
+msgstr "Browse scenarios"
+
+#: app/pages/home/home.tsx:870
+msgid "Choose a scenario to step into a new world, or use Quickstart to create your own."
+msgstr "Choose a scenario to step into a new world, or use Quickstart to create your own."
+
+#: app/pages/home/home.tsx:850
+msgid "Continue your tale"
+msgstr "Continue your tale"
+
+#: app/pages/home/home.tsx:234
+#: app/pages/home/home.tsx:264
+msgid "Explore scenario"
+msgstr "Explore scenario"
+
+#: app/pages/home/home.tsx:868
+msgid "Loading your library..."
+msgstr "Loading your library..."
+
+#: app/pages/scenarios/details.tsx:229
+msgid "Opening passage"
+msgstr "Opening passage"
+
+#: app/pages/home/home.tsx:233
+msgid "Public scenario"
+msgstr "Public scenario"
+
+#: app/components/scenario/ScenarioDetailsLayout.tsx:99
+msgid "Read full description"
+msgstr "Read full description"
+
+#: app/pages/home/home.tsx:922
+msgid "Recent tales"
+msgstr "Recent tales"
+
+#: app/pages/home/home.tsx:188
+#: app/pages/home/home.tsx:900
+msgid "Review conflict"
+msgstr "Review conflict"
+
+#: app/components/scenario/ScenarioDetailsLayout.tsx:122
+msgid "Scenario details"
+msgstr "Scenario details"
+
+#: app/components/scenario/ScenarioDetailsLayout.tsx:97
+msgid "Show less"
+msgstr "Show less"
+
+#: app/pages/home/home.tsx:859
+msgid "Where will your story take you?"
+msgstr "Where will your story take you?"
+
+#: app/pages/home/home.tsx:809
+msgid "Your library"
+msgstr "Your library"
+
+#: app/pages/home/home.tsx:865
+msgid "Your next chapter is waiting."
+msgstr "Your next chapter is waiting."
+
+#: app/pages/home/home.tsx:843
+msgid "Your next tale"
+msgstr "Your next tale"
+
+#: app/components/layout/settings/cloud-sync.tsx
+msgid "An optional account lets you sync tales across devices and publish scenarios."
+msgstr "An optional account lets you sync tales across devices and publish scenarios."
+
+#: app/components/layout/settings/about.tsx
+msgid "Privacy Policy"
+msgstr "Privacy Policy"
+
+#: app/components/layout/settings/about.tsx
+msgid "Could not open the link"
+msgstr "Could not open the link"
+
+#: app/components/layout/settings/about.tsx
+msgid "Email address copied"
+msgstr "Email address copied"
+
+#: app/components/layout/settings/about.tsx
+msgid "Could not copy the email address"
+msgstr "Could not copy the email address"
+
+#: app/components/layout/settings/about.tsx
+msgid "Questions, problems, or account and privacy requests."
+msgstr "Questions, problems, or account and privacy requests."
+
+#: app/components/layout/settings/about.tsx
+msgid "Copy email address"
+msgstr "Copy email address"
+
+#: app/components/layout/settings/about.tsx
+msgid "Online services"
+msgstr "Online services"
+
+#: app/components/layout/settings/about.tsx
+msgid "Terms and privacy information for accounts, cloud saves, and the public catalog."
+msgstr "Terms and privacy information for accounts, cloud saves, and the public catalog."
