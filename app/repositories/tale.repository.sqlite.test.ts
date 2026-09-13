@@ -1,3 +1,5 @@
+import { Blob as NodeBlob } from "node:buffer";
+import { webcrypto } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -9,6 +11,7 @@ import {
 import { GameMode } from "@/types/context.type";
 import { LogEntryMode, LogEntryRole, type LogEntry } from "@/types/log.type";
 import type { TaleMutableSnapshot } from "@/services/tale.service";
+import type { SyncCapabilities, SyncProfile } from "@/services/sync";
 
 type SqlParam = string | number | bigint | Uint8Array | null;
 
@@ -26,6 +29,9 @@ type TestDatabase = {
 const dbState = vi.hoisted(() => ({
   current: null as TestDatabase | null,
 }));
+
+const coverUploadHttp = vi.hoisted(() => ({ fetch: vi.fn() }));
+vi.mock("@tauri-apps/plugin-http", () => coverUploadHttp);
 
 vi.mock("@/services/db", () => ({
   getDb: vi.fn(async () => {
@@ -78,7 +84,20 @@ function createAdapter(): TestDatabase {
       return { rowsAffected: Number(raw.prepare(sql).run(...params).changes) };
     },
     async select<T>(sql: string, params: SqlParam[] = []) {
-      return raw.prepare(sql).all(...params) as T;
+      // Native IPC returns SQLite blobs as JSON byte arrays.
+      return raw
+        .prepare(sql)
+        .all(...params)
+        .map((row) =>
+          Object.fromEntries(
+            Object.entries(row).map(([key, value]) => [
+              key,
+              ArrayBuffer.isView(value)
+                ? Array.from(value as Uint8Array)
+                : value,
+            ]),
+          ),
+        ) as T;
     },
     close() {
       raw.close();
@@ -137,11 +156,12 @@ function emptyState() {
   });
 }
 
-async function createEmptyTale() {
+async function createEmptyTale(thumbnail?: Uint8Array) {
   const { createTale } = await import("./tale.repository");
   return createTale({
     name: "Iron Valley",
     description: "A local tale.",
+    thumbnail,
     components: [],
     storyCards: [],
     stats: [],
@@ -1664,4 +1684,163 @@ describe("tale repository SQLite storage", () => {
       (await getLogEntries(taleId, 0, 10)).map((entry) => entry.id),
     ).toEqual(["player-1", "gm-1", "gm-2"]);
   });
+});
+
+describe("stored tale cover upload", () => {
+  const profile: SyncProfile = {
+    id: "cloud",
+    accountId: "account",
+    baseUrl: "https://sync.example",
+    mode: "hosted",
+  };
+  const capabilities: SyncCapabilities = {
+    server: "hakawati-cloud",
+    apiVersion: "1",
+    minimumClientVersion: "0.15.2",
+    compatibility: { state: "compatible" },
+    cloudSaveProtocol: 1,
+    features: {
+      sync: { state: "available" },
+      catalogRead: { state: "available" },
+      coverStorage: { state: "available" },
+      publishing: { state: "available" },
+    },
+    limits: { maxPackageBytes: 1024, maxStateBytes: 1024 },
+    scenarioCatalog: { packageFormatVersion: 1, thumbnailUploads: "enabled" },
+  };
+
+  beforeEach(() => {
+    dbState.current = createAdapter();
+    applyMigrations(dbState.current);
+    vi.stubGlobal("Blob", NodeBlob);
+    vi.stubGlobal("crypto", webcrypto);
+    // jsdom cannot decode or encode images. Keep the actual signature inspection,
+    // MIME handling, export, upload, and sync bookkeeping; stub only browser APIs.
+    vi.stubGlobal(
+      "createImageBitmap",
+      vi.fn(async () => ({
+        width: 1,
+        height: 1,
+        close: vi.fn(),
+      })),
+    );
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
+    coverUploadHttp.fetch.mockReset().mockResolvedValue({ ok: true });
+  });
+
+  afterEach(() => {
+    dbState.current?.close();
+    dbState.current = null;
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  function transportFixture() {
+    return {
+      get: vi.fn(),
+      put: vi.fn(),
+      patch: vi.fn(),
+      delete: vi.fn(),
+      post: vi.fn(async (path: string, _body: unknown, _options?: unknown) => {
+        if (path === "/v1/assets/cover-upload-intents") {
+          return {
+            asset: { assetId: "remote-cover" },
+            upload: { url: "https://upload.example/cover", method: "PUT" },
+          };
+        }
+        if (path === "/v1/assets/remote-cover/complete") return {};
+        if (path === "/v1/tales") {
+          return { id: "remote-tale", contentRev: 1, metadataRev: 1 };
+        }
+        throw new Error(`Unexpected upload request: ${path}`);
+      }),
+    };
+  }
+
+  it("uploads a PNG cover exported from SQLite with its actual MIME type", async () => {
+    const { exportTalePackage } = await import("./tale.repository");
+    const { getTaleSyncState } = await import("./sync.repository");
+    const { uploadTalePackage } = await import("@/services/sync");
+    const bytes = new Uint8Array(
+      Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aXioAAAAASUVORK5CYII=",
+        "base64",
+      ),
+    );
+    const localTaleId = await createEmptyTale(bytes);
+    const transport = transportFixture();
+
+    await uploadTalePackage({
+      profile,
+      transport,
+      localTaleId,
+      capabilities,
+      idempotencyKey: "covered-tale",
+    });
+
+    expect((await exportTalePackage(localTaleId)).assets[0].contentType).toBe(
+      "image/png",
+    );
+    expect(transport.post).toHaveBeenNthCalledWith(
+      1,
+      "/v1/assets/cover-upload-intents",
+      expect.objectContaining({
+        contentType: "image/png",
+        byteSize: bytes.length,
+      }),
+    );
+    const uploaded = coverUploadHttp.fetch.mock.calls[0][1].body as Blob;
+    expect(uploaded.type).toBe("image/png");
+    expect(new Uint8Array(await uploaded.arrayBuffer())).toEqual(bytes);
+    expect(transport.post).toHaveBeenNthCalledWith(
+      3,
+      "/v1/tales",
+      expect.objectContaining({
+        package: expect.objectContaining({
+          tale: expect.objectContaining({ coverAssetId: "remote-cover" }),
+          assets: [],
+        }),
+      }),
+      { idempotencyKey: "covered-tale" },
+    );
+    expect(
+      await getTaleSyncState({
+        profileId: profile.id,
+        accountId: profile.accountId,
+        localTaleId,
+      }),
+    ).toMatchObject({ remoteTaleId: "remote-tale", pendingStatus: "idle" });
+  });
+
+  it.each([
+    [
+      "unsupported GIF",
+      new TextEncoder().encode("GIF89a"),
+      "JPEG, PNG, or WebP",
+    ],
+    [
+      "truncated PNG",
+      new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
+      "invalid",
+    ],
+  ])(
+    "rejects a stored %s before sending uploads",
+    async (_name, bytes, error) => {
+      const { uploadTalePackage } = await import("@/services/sync");
+      const localTaleId = await createEmptyTale(bytes as Uint8Array);
+      const transport = transportFixture();
+
+      await expect(
+        uploadTalePackage({
+          profile,
+          transport,
+          localTaleId,
+          capabilities,
+          idempotencyKey: "invalid-cover",
+        }),
+      ).rejects.toThrow(error as string);
+      expect(transport.post).not.toHaveBeenCalled();
+      expect(coverUploadHttp.fetch).not.toHaveBeenCalled();
+    },
+  );
 });

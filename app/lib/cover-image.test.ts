@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 let optimizeCoverImage: typeof import("./cover-image").optimizeCoverImage;
 let sha256Hex: typeof import("./cover-image").sha256Hex;
+let detectCoverImageContentType: typeof import("./cover-image").detectCoverImageContentType;
 let width: number;
 let height: number;
 let bitmapClose: ReturnType<typeof vi.fn>;
@@ -34,7 +35,8 @@ beforeEach(async () => {
     toBlob: encode,
   } as unknown as HTMLCanvasElement;
   vi.spyOn(document, "createElement").mockReturnValue(canvas);
-  ({ optimizeCoverImage, sha256Hex } = await import("./cover-image"));
+  ({ optimizeCoverImage, sha256Hex, detectCoverImageContentType } =
+    await import("./cover-image"));
 });
 
 afterEach(() => {
@@ -43,6 +45,19 @@ afterEach(() => {
 });
 
 describe("cover optimization", () => {
+  it("identifies supported stored covers from bytes without accepting other formats", () => {
+    expect(detectCoverImageContentType(png())).toBe("image/png");
+    expect(detectCoverImageContentType(jpeg(640, 480))).toBe("image/jpeg");
+    expect(detectCoverImageContentType(webp(640, 480))).toBe("image/webp");
+    expect(
+      detectCoverImageContentType(new TextEncoder().encode("GIF89a")),
+    ).toBeUndefined();
+    expect(
+      detectCoverImageContentType(new TextEncoder().encode("RIFFother-data")),
+    ).toBeUndefined();
+    expect(detectCoverImageContentType(new Uint8Array())).toBeUndefined();
+  });
+
   it("resizes the longest side to 1280, keeps aspect ratio and alpha, and releases the bitmap", async () => {
     width = 3000;
     height = 2000;

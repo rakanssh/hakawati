@@ -14,10 +14,31 @@ const MAX_SOURCE_BYTES = 20 * 1024 * 1024;
 const MAX_SOURCE_PIXELS = 40_000_000;
 const MAX_CACHE_BYTES = 16 * 1024 * 1024;
 const MAX_CACHE_ENTRIES = 8;
+const PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
 const cache = new Map<
   string,
   { promise: Promise<OptimizedCoverImage>; bytes: number }
 >();
+
+// Stored thumbnails retain bytes, not their original file's MIME type. This
+// identifies the format only; optimizeCoverImage still validates and decodes it.
+export function detectCoverImageContentType(
+  bytes: Uint8Array,
+): OptimizedCoverImage["contentType"] | undefined {
+  if (PNG_SIGNATURE.every((byte, index) => bytes[index] === byte)) {
+    return "image/png";
+  }
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return "image/jpeg";
+  }
+  if (
+    String.fromCharCode(...bytes.subarray(0, 4)) === "RIFF" &&
+    String.fromCharCode(...bytes.subarray(8, 12)) === "WEBP"
+  ) {
+    return "image/webp";
+  }
+  return undefined;
+}
 
 export async function sha256Hex(bytes: Uint8Array): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new Uint8Array(bytes));
@@ -247,10 +268,9 @@ function inspectImage(
   const invalid = () =>
     new Error("The cover image is invalid or does not match its file type.");
   if (type === "image/png") {
-    const signature = [137, 80, 78, 71, 13, 10, 26, 10];
     if (
       bytes.length < 33 ||
-      !signature.every((byte, index) => bytes[index] === byte) ||
+      !PNG_SIGNATURE.every((byte, index) => bytes[index] === byte) ||
       tag(12) !== "IHDR" ||
       view.getUint32(8) !== 13
     )

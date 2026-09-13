@@ -221,6 +221,28 @@ export function usePersistTale() {
 
 let taleLoadGeneration = 0;
 
+export function clearDeletedTale(taleId: string) {
+  const state = useTaleStore.getState();
+  const loadingTaleId =
+    state.loadingTaleId === taleId ? null : state.loadingTaleId;
+
+  if (state.loadingTaleId === taleId) {
+    taleLoadGeneration += 1;
+    useTaleStore.setState({ loadingTaleId: null });
+  }
+  if (state.id === taleId) {
+    useTaleStore.setState({
+      ...useTaleStore.getInitialState(),
+      id: "",
+      loadingTaleId,
+    });
+  }
+  const lastPlayed = useLastPlayedStore.getState();
+  if (lastPlayed.lastPlayedTaleId === taleId) {
+    lastPlayed.setLastPlayedTaleId(null);
+  }
+}
+
 export function useLoadTale() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);

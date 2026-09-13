@@ -3,6 +3,7 @@ import { withTransaction } from "@/services/db/transaction";
 import { Tale, TaleHead, TaleSourceMetadata } from "@/types/tale.type";
 import { LogEntry } from "@/types/log.type";
 import { normalizePromptComponents } from "@/lib/prompt-components";
+import { detectCoverImageContentType } from "@/lib/cover-image";
 import { parseJsonValue, toUint8Array } from "@/lib/repository-utils";
 import { normalizeStoryCard } from "@/lib/story-card-utils";
 import {
@@ -1407,7 +1408,9 @@ export async function exportTalePackage(
               {
                 id: thumbnailAssetId ?? "thumbnail",
                 role: "thumbnail",
-                contentType: "application/octet-stream",
+                contentType:
+                  detectCoverImageContentType(thumbnail) ??
+                  "application/octet-stream",
                 dataBase64: bytesToBase64(thumbnail),
               },
             ]
