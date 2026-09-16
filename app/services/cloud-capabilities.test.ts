@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   cloudFeatureAvailable,
   compareVersions,
+  HAKAWATI_CLIENT_VERSION,
   parseCloudCapabilities,
 } from "./cloud-capabilities";
 
@@ -40,8 +41,9 @@ describe("cloud capabilities", () => {
     );
     expect(cloudFeatureAvailable(incompatible, "sync")).toBe(false);
 
+    const nextMajorVersion = `${Number(HAKAWATI_CLIENT_VERSION.split(".")[0]) + 1}.0.0`;
     const serverMisreportedCompatibility = parseCloudCapabilities(
-      fixture({ minimumClientVersion: "1.0.0" }),
+      fixture({ minimumClientVersion: nextMajorVersion }),
     );
     expect(cloudFeatureAvailable(serverMisreportedCompatibility, "sync")).toBe(
       false,

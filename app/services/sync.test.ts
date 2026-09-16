@@ -4,6 +4,7 @@ import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 import type { TalePackageV1 } from "@/types/export.type";
 import type { TaleSyncState } from "@/repositories/sync.repository";
 import { useTaleStore } from "@/store/useTaleStore";
+import { HAKAWATI_CLIENT_VERSION } from "./cloud-capabilities";
 import {
   assertSyncAvailable,
   createSyncTransport,
@@ -236,7 +237,7 @@ describe("sync transport", () => {
           "Content-Type": "application/json",
           Authorization: "Bearer token",
           "X-Hakawati-Api-Version": "1",
-          "X-Hakawati-Client-Version": "0.15.2",
+          "X-Hakawati-Client-Version": HAKAWATI_CLIENT_VERSION,
           "X-Hakawati-Device-Id": "device-1",
           "Idempotency-Key": "idem-1",
         },
@@ -265,7 +266,7 @@ describe("sync transport", () => {
         headers: {
           "Content-Type": "application/json",
           "X-Hakawati-Api-Version": "1",
-          "X-Hakawati-Client-Version": "0.15.2",
+          "X-Hakawati-Client-Version": HAKAWATI_CLIENT_VERSION,
           "Idempotency-Key": "idem-2",
         },
       }),

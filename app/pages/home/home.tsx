@@ -31,6 +31,7 @@ import { useTaleLibrary } from "@/hooks/useTaleLibrary";
 import { bytesToObjectUrl } from "@/lib/utils";
 import { imageBadgeClass } from "@/lib/card-badges";
 import { getSyncUiKind } from "@/lib/sync-ui";
+import { HAKAWATI_CLIENT_VERSION } from "@/services/cloud-capabilities";
 import {
   getSyncProfile,
   upsertSyncProfile,
@@ -447,7 +448,9 @@ export default function Home() {
     autoRegisterDeviceKeyRef.current = key;
 
     void (async () => {
-      const appVersion = await getVersion().catch(() => "0.15.0");
+      const appVersion = await getVersion().catch(
+        () => HAKAWATI_CLIENT_VERSION,
+      );
       await registerSyncDevice(
         createSyncTransport({
           profile: hostedProfile,

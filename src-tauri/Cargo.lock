@@ -1869,7 +1869,7 @@ dependencies = [
 
 [[package]]
 name = "hakawati"
-version = "0.15.2"
+version = "1.0.0"
 dependencies = [
  "base64 0.22.1",
  "cpal",

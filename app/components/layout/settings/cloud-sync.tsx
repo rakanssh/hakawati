@@ -37,6 +37,7 @@ import {
   SettingsStack,
 } from "@/components/layout/settings/settings-layout";
 import { getSyncUiKind } from "@/lib/sync-ui";
+import { HAKAWATI_CLIENT_VERSION } from "@/services/cloud-capabilities";
 import { defaultCloudBaseUrl, useSyncSettingsStore } from "@/store";
 import {
   getSyncProfile,
@@ -529,7 +530,9 @@ export default function SettingsCloudSync() {
     signInControllerRef.current?.abort();
     signInControllerRef.current = controller;
     try {
-      const appVersion = await getVersion().catch(() => "0.15.0");
+      const appVersion = await getVersion().catch(
+        () => HAKAWATI_CLIENT_VERSION,
+      );
       const result = await prepareHostedSync({
         profile: hostedProfile,
         accessToken: token,
@@ -715,7 +718,7 @@ export default function SettingsCloudSync() {
       profile: hostedProfile,
       accessToken: accessToken.trim(),
     });
-    const appVersion = await getVersion().catch(() => "0.15.0");
+    const appVersion = await getVersion().catch(() => HAKAWATI_CLIENT_VERSION);
     await registerSyncDevice(transport, {
       id: hostedProfile.deviceId,
       name: deviceName.trim(),
