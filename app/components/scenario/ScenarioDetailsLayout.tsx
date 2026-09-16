@@ -48,7 +48,7 @@ export function ScenarioDetailsLayout({
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-3 py-4 sm:px-5 sm:py-6 lg:gap-8 lg:px-6">
-      <header className="flex min-w-0 items-center justify-between gap-3">
+      <header className="flex min-w-0 flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <Button
             variant="outline"
@@ -60,7 +60,9 @@ export function ScenarioDetailsLayout({
           </Button>
           <div className="min-w-0">{breadcrumb}</div>
         </div>
-        {headerAction ? <div className="shrink-0">{headerAction}</div> : null}
+        {headerAction ? (
+          <div className="ms-auto max-w-full">{headerAction}</div>
+        ) : null}
       </header>
 
       <Separator />

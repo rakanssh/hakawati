@@ -1,12 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { BookOpenIcon, PencilIcon, PlayIcon, VenetianMask } from "lucide-react";
+import {
+  BookOpenIcon,
+  PencilIcon,
+  PlayIcon,
+  UploadCloudIcon,
+  VenetianMask,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 
 import placeholderImage from "@/assets/scen-ph.png";
 import {
+  PublishScenarioDialog,
   ScenarioBreadcrumb,
   ScenarioDetailsLayout,
 } from "@/components/scenario";
@@ -14,6 +21,11 @@ import { ScenarioStartWizard } from "@/components/scenario/ScenarioStartWizard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLoadTale } from "@/hooks/useGameSaves";
+import {
+  useCatalogActions,
+  useCatalogClient,
+  useScenarioPublishLinks,
+} from "@/hooks/useCatalogScenarios";
 import { bytesToObjectUrl, formatExactDateTime } from "@/lib/utils";
 import { scenarioContentToTaleSeed } from "@/lib/scenario-content";
 import {
@@ -43,6 +55,14 @@ export default function ScenarioDetails() {
   const navigate = useNavigate();
   const { t } = useLingui();
   const { load: loadTale } = useLoadTale();
+  const catalog = useCatalogClient();
+  const catalogActions = useCatalogActions(catalog);
+  const publishLinks = useScenarioPublishLinks();
+  const canPublish = catalog.enabled && catalog.signedIn;
+  const isPublished = publishLinks.links.some(
+    (link) => link.localScenarioId === id,
+  );
+  const [publishOpen, setPublishOpen] = useState(false);
   const fontSize = useSettingsStore((state) => state.fontSize);
   const [scenario, setScenario] = useState<Scenario | null>(null);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
@@ -56,6 +76,7 @@ export default function ScenarioDetails() {
   const [canStartPrivate, setCanStartPrivate] = useState(false);
 
   useEffect(() => setPendingStart(null), [id]);
+  useEffect(() => setPublishOpen(false), [id, canPublish]);
 
   useEffect(() => {
     let cancelled = false;
@@ -232,14 +253,31 @@ export default function ScenarioDetails() {
       imageSrc={imageSrc}
       imageAlt={t`${scenario.name} thumbnail`}
       headerAction={
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate({ to: `/scenarios/${id}/edit` })}
-        >
-          <PencilIcon className="size-4" />
-          <Trans>Edit</Trans>
-        </Button>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate({ to: `/scenarios/${id}/edit` })}
+          >
+            <PencilIcon className="size-4" />
+            <Trans>Edit</Trans>
+          </Button>
+          {canPublish && (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!catalog.publishingEnabled}
+              onClick={() => setPublishOpen(true)}
+            >
+              <UploadCloudIcon className="size-4" />
+              {isPublished ? (
+                <Trans>Publish update</Trans>
+              ) : (
+                <Trans>Publish</Trans>
+              )}
+            </Button>
+          )}
+        </div>
       }
       meta={
         <>
@@ -320,6 +358,40 @@ export default function ScenarioDetails() {
           </div>
         </section>
       ) : null}
+      <PublishScenarioDialog
+        open={publishOpen && canPublish}
+        scenario={scenario}
+        updating={isPublished}
+        thumbnailUploads={catalog.thumbnailUploads}
+        catalog={catalog}
+        onOpenChange={setPublishOpen}
+        onPublish={async ({ metadata, thumbnailFile, policyAcceptance }) => {
+          try {
+            const result = await catalogActions.publish({
+              scenario,
+              metadata,
+              thumbnailFile,
+              policyAcceptance,
+            });
+            toast.success(
+              result.moderation.status === "needs_review"
+                ? t`Scenario submitted for moderation`
+                : isPublished
+                  ? t`Scenario update published`
+                  : t`Scenario published`,
+            );
+            setPublishOpen(false);
+            await publishLinks.refresh();
+          } catch (cause) {
+            toast.error(
+              cause instanceof Error
+                ? cause.message
+                : t`Failed to publish scenario`,
+            );
+            throw cause;
+          }
+        }}
+      />
     </ScenarioDetailsLayout>
   );
 }

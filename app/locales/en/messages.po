@@ -3774,10 +3774,6 @@ msgid "Use options: for suggestions, or choices: to require a listed answer. Rep
 msgstr "Use options: for suggestions, or choices: to require a listed answer. Repeat a question to reuse its answer."
 
 #: app/components/scenario/ScenarioStartWizard.tsx
-msgid "Customize your tale"
-msgstr "Customize your tale"
-
-#: app/components/scenario/ScenarioStartWizard.tsx
 msgid "Question {questionNumber} of {totalQuestions}"
 msgstr "Question {questionNumber} of {totalQuestions}"
 
@@ -3792,10 +3788,6 @@ msgstr "Ready to start your tale?"
 #: app/components/scenario/ScenarioStartWizard.tsx
 msgid "Your answer"
 msgstr "Your answer"
-
-#: app/components/scenario/ScenarioStartWizard.tsx
-msgid "Answer this question to continue."
-msgstr "Answer this question to continue."
 
 #: app/components/scenario/ScenarioStartWizard.tsx
 msgid "Starting tale..."

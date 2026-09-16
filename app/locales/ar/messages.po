@@ -3774,10 +3774,6 @@ msgid "Use options: for suggestions, or choices: to require a listed answer. Rep
 msgstr "استخدم options: لاقتراح إجابات، أو choices: لحصر الإجابة في الخيارات المدرجة. كرّر السؤال لاستخدام إجابته مجددًا."
 
 #: app/components/scenario/ScenarioStartWizard.tsx
-msgid "Customize your tale"
-msgstr "خصّص حكايتك"
-
-#: app/components/scenario/ScenarioStartWizard.tsx
 msgid "Question {questionNumber} of {totalQuestions}"
 msgstr "السؤال {questionNumber} من {totalQuestions}"
 
@@ -3792,10 +3788,6 @@ msgstr "هل أنت مستعد لبدء حكايتك؟"
 #: app/components/scenario/ScenarioStartWizard.tsx
 msgid "Your answer"
 msgstr "إجابتك"
-
-#: app/components/scenario/ScenarioStartWizard.tsx
-msgid "Answer this question to continue."
-msgstr "أجب عن هذا السؤال للمتابعة."
 
 #: app/components/scenario/ScenarioStartWizard.tsx
 msgid "Starting tale..."

@@ -107,7 +107,7 @@ describe("ScenarioStartWizard", () => {
         new Event("submit", { bubbles: true, cancelable: true }),
       );
     });
-    expect(container.querySelector("h2")?.textContent).toBe("Your home?");
+    expect(container.querySelector("h1")?.textContent).toBe("Your home?");
     expect(button("Next").disabled).toBe(true);
     await click("Forest");
     expect(container.querySelector("input")?.value).toBe("Forest");
@@ -119,7 +119,7 @@ describe("ScenarioStartWizard", () => {
     await click("Next");
     expect(container.querySelector("input")).toBeNull();
     expect(button("Start Tale").disabled).toBe(true);
-    expect(document.activeElement).toBe(container.querySelector("h2"));
+    expect(document.activeElement).toBe(container.querySelector("h1"));
     const progress = container.querySelector('[role="progressbar"]');
     expect(progress?.getAttribute("aria-valuenow")).toBe("3");
     expect(progress?.getAttribute("aria-valuemax")).toBe("3");

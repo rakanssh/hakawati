@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { ArrowLeftIcon, LoaderCircle, PlayIcon } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import { SuggestedInput } from "@/components/question-input";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,89 +67,76 @@ export function ScenarioStartWizard({
   };
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-col gap-8 px-3 py-6 sm:px-5 sm:py-10 lg:px-6">
-      <header className="grid gap-3 text-center">
-        <p className="break-words text-sm text-muted-foreground">{title}</p>
-        <h1 className="text-2xl font-semibold sm:text-3xl">
-          <Trans>Customize your tale</Trans>
-        </h1>
-        {totalQuestions > 0 && (
-          <>
-            <p className="text-sm text-muted-foreground" aria-live="polite">
-              <Trans>
-                Question {questionNumber} of {totalQuestions}
-              </Trans>
-            </p>
-            <div
-              role="progressbar"
-              className="mx-auto h-1.5 w-full max-w-sm overflow-hidden rounded-full bg-muted"
-              aria-label={t`Question progress`}
-              aria-valuemin={0}
-              aria-valuenow={questionNumber}
-              aria-valuemax={totalQuestions}
-            >
-              <div
-                className="h-full bg-primary/75 transition-all"
-                style={{ width: `${(questionNumber / totalQuestions) * 100}%` }}
-              />
-            </div>
-          </>
-        )}
-      </header>
-      {notice && (
-        <p role="status" className="rounded-xs border bg-muted/30 p-4 text-sm">
-          {notice}
-        </p>
-      )}
-      <form onSubmit={(event) => void submit(event)} className="grid gap-8">
-        <section key={question?.id ?? "ready"} className="grid gap-6 py-4">
-          <h2
-            ref={heading}
-            tabIndex={-1}
-            className="break-words text-center text-xl font-medium outline-none sm:text-2xl"
+    <main className="mx-auto flex min-h-full w-full max-w-screen-2xl flex-col px-3 py-4 sm:px-5 lg:px-6">
+      <p
+        className="truncate text-center text-sm text-muted-foreground"
+        title={title}
+      >
+        {title}
+      </p>
+      <form
+        onSubmit={(event) => void submit(event)}
+        className="flex flex-1 flex-col"
+      >
+        <section className="flex flex-1 items-center justify-center py-8 sm:py-12">
+          <div
+            key={question?.id ?? "ready"}
+            className="grid w-full min-w-0 max-w-3xl grid-cols-1 gap-6 sm:gap-8"
           >
-            {question?.question ?? <Trans>Ready to start your tale?</Trans>}
-          </h2>
-          {question && (
-            <SuggestedInput
-              id="scenario-answer"
-              value={value}
-              placeholder={t`Your answer`}
-              aria-label={question.question}
-              aria-describedby="scenario-answer-hint"
-              disabled={submitting}
-              allowCustom={question.mode !== "choices"}
-              suggestions={question.options.map((option) => ({
-                id: option,
-                label: option,
-              }))}
-              selectedId={question.options.includes(value) ? value : null}
-              onValueChange={(answer) =>
-                setAnswers((current) => ({ ...current, [question.id]: answer }))
-              }
-              onSuggestionSelect={(option) =>
-                setAnswers((current) => ({
-                  ...current,
-                  [question.id]: option.label,
-                }))
-              }
-            />
-          )}
-          {question && (
-            <p
-              id="scenario-answer-hint"
-              className="text-center text-sm text-muted-foreground"
+            {notice && (
+              <p
+                role="status"
+                className="text-center text-sm text-muted-foreground"
+              >
+                {notice}
+              </p>
+            )}
+            <h1
+              ref={heading}
+              tabIndex={-1}
+              className="break-words text-balance text-center text-2xl font-semibold leading-tight outline-none sm:text-3xl lg:text-4xl"
             >
-              <Trans>Answer this question to continue.</Trans>
-            </p>
-          )}
+              {question?.question ?? <Trans>Ready to start your tale?</Trans>}
+            </h1>
+            {question && (
+              <SuggestedInput
+                id="scenario-answer"
+                value={value}
+                placeholder={t`Your answer`}
+                aria-label={question.question}
+                disabled={submitting}
+                allowCustom={question.mode !== "choices"}
+                optionColumns="grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))]"
+                suggestions={question.options.map((option) => ({
+                  id: option,
+                  label: option,
+                }))}
+                selectedId={question.options.includes(value) ? value : null}
+                onValueChange={(answer) =>
+                  setAnswers((current) => ({
+                    ...current,
+                    [question.id]: answer,
+                  }))
+                }
+                onSuggestionSelect={(option) =>
+                  setAnswers((current) => ({
+                    ...current,
+                    [question.id]: option.label,
+                  }))
+                }
+              />
+            )}
+            {error && (
+              <p
+                role="alert"
+                className="break-words text-center text-sm text-destructive"
+              >
+                {error}
+              </p>
+            )}
+          </div>
         </section>
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        )}
-        <footer className="flex flex-wrap items-center justify-between gap-3 border-t pt-5 pb-4">
+        <footer className="flex flex-wrap items-center justify-between gap-3 border-t pt-3">
           <Button
             type="button"
             variant="ghost"
@@ -158,7 +145,33 @@ export function ScenarioStartWizard({
           >
             <Trans>Cancel</Trans>
           </Button>
-          <div className="flex gap-2">
+          {totalQuestions > 1 && (
+            <div className="order-first flex w-full min-w-0 items-center gap-3 sm:order-none sm:w-auto sm:flex-1">
+              <span
+                aria-hidden="true"
+                className="shrink-0 text-xs tabular-nums text-muted-foreground"
+              >
+                {questionNumber} / {totalQuestions}
+              </span>
+              <div
+                role="progressbar"
+                className="h-1 flex-1 overflow-hidden rounded-full bg-muted"
+                aria-label={t`Question progress`}
+                aria-valuemin={0}
+                aria-valuenow={questionNumber}
+                aria-valuemax={totalQuestions}
+                aria-valuetext={t`Question ${questionNumber} of ${totalQuestions}`}
+              >
+                <div
+                  className="h-full bg-primary/75 transition-all"
+                  style={{
+                    width: `${(questionNumber / totalQuestions) * 100}%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+          <div className="ms-auto flex max-w-full flex-wrap justify-end gap-2">
             {step > 0 && (
               <Button
                 type="button"
@@ -169,21 +182,21 @@ export function ScenarioStartWizard({
                   setStep(step - 1);
                 }}
               >
-                <ArrowLeftIcon className="size-4 rtl:rotate-180" />
                 <Trans>Back</Trans>
               </Button>
             )}
-            <Button type="submit" disabled={submitting || !canContinue}>
+            <Button
+              type="submit"
+              className="h-auto min-h-9 max-w-full whitespace-normal"
+              disabled={submitting || !canContinue}
+            >
               {submitting ? (
                 <>
                   <LoaderCircle className="size-4 animate-spin" />
                   <Trans>Starting tale...</Trans>
                 </>
               ) : finalStep ? (
-                <>
-                  <PlayIcon className="size-4" />
-                  <Trans>Start Tale</Trans>
-                </>
+                <Trans>Start Tale</Trans>
               ) : (
                 <Trans>Next</Trans>
               )}
