@@ -7,7 +7,7 @@
   "author": "Rakan AlShammari",
   "scripts": {
     "dev": "vite",
-    "build": "npm run licenses:generate && tsc && vite build",
+    "build": "npm run i18n:extract-template && npm run licenses:generate && tsc && vite build",
     "preview": "vite preview",
     "preview-web": "vite preview --host 0.0.0.0 --port 4173",
     "preview-web:custom": "vite preview --host ${PREVIEW_HOST:-0.0.0.0} --port ${PREVIEW_PORT:-4173}",
@@ -27,6 +27,7 @@
     "licenses:npm": "node scripts/generate-licenses.cjs",
     "licenses:cargo": "cd src-tauri && cargo about generate about.hbs -o ../THIRD_PARTY_LICENSES-rust.md",
     "i18n:extract": "lingui extract",
+    "i18n:extract-template": "lingui extract-template",
     "i18n:compile": "lingui compile"
   },
   "dependencies": {
