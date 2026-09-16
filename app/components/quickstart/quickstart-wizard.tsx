@@ -34,7 +34,7 @@ import {
 import { createPromptComponent } from "@/lib/prompt-components";
 import { PromptComponentType } from "@/types/context.type";
 import type { PromptComponent } from "@/types/context.type";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, LoaderCircle } from "lucide-react";
 
 export interface QuickstartState {
   gameMode: GameMode;
@@ -234,6 +234,72 @@ function OptionalDetailsQuestion({
   );
 }
 
+function QuickstartGenerationStatus({
+  saving,
+  onCancel,
+}: {
+  saving: boolean;
+  onCancel: () => void;
+}) {
+  const { t } = useLingui();
+  const { i18n } = useLinguiCore();
+  const [startedAt] = useState(Date.now);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    headingRef.current?.focus();
+    const timer = window.setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [startedAt]);
+
+  return (
+    <div className="flex flex-col items-center gap-3 text-center">
+      <div role="status" className="flex flex-col items-center gap-3">
+        <LoaderCircle
+          aria-hidden="true"
+          className="size-6 animate-spin text-primary motion-reduce:animate-none"
+        />
+        <h1
+          ref={headingRef}
+          tabIndex={-1}
+          className="text-xl font-semibold outline-none"
+        >
+          {saving ? (
+            <Trans>Saving your tale…</Trans>
+          ) : (
+            <Trans>Creating your tale…</Trans>
+          )}
+        </h1>
+      </div>
+      <p
+        role="timer"
+        aria-live="off"
+        aria-label={t`Elapsed time`}
+        className="text-sm tabular-nums text-muted-foreground"
+      >
+        <bdi>
+          {i18n.number(elapsedSeconds, {
+            style: "unit",
+            unit: "second",
+            unitDisplay: "narrow",
+          })}
+        </bdi>
+      </p>
+      <Button
+        variant="outline"
+        className="mt-2 min-h-10"
+        onClick={onCancel}
+        disabled={saving}
+      >
+        <Trans>Cancel</Trans>
+      </Button>
+    </div>
+  );
+}
+
 export function QuickstartPage() {
   const navigate = useNavigate();
   const { t } = useLingui();
@@ -243,10 +309,15 @@ export function QuickstartPage() {
   const utilityConfig = useSettingsStore((s) => s.modelRoles.utility);
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationPhase, setGenerationPhase] = useState<
+    "idle" | "generating" | "saving"
+  >("idle");
+  const isBusy = generationPhase !== "idle";
   const [canStartPrivate, setCanStartPrivate] = useState(false);
   const [localOnly, setLocalOnly] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const primaryActionRef = useRef<HTMLButtonElement>(null);
+  const wasBusyRef = useRef(false);
   const [state, setState] = useState<QuickstartState>({
     gameMode: GameMode.STORY_TELLER,
     selectedWorldId: null,
@@ -497,7 +568,16 @@ export function QuickstartPage() {
     navigate({ to: "/" });
   }, [navigate]);
 
+  const handleCancelGeneration = useCallback(() => {
+    if (generationPhase !== "generating") return;
+    const abort = abortRef.current;
+    abortRef.current = null;
+    abort?.abort();
+    setGenerationPhase("idle");
+  }, [generationPhase]);
+
   const handleComplete = useCallback(async () => {
+    if (abortRef.current) return;
     if (!isModelRoleConfigured(utilityConfig)) {
       toast.error(t`No utility model selected`);
       return;
@@ -505,7 +585,7 @@ export function QuickstartPage() {
 
     const abort = new AbortController();
     abortRef.current = abort;
-    setIsGenerating(true);
+    setGenerationPhase("generating");
 
     try {
       const generated = await generateQuickstartTale(
@@ -519,6 +599,8 @@ export function QuickstartPage() {
         },
         abort.signal,
       );
+      if (abort.signal.aborted || abortRef.current !== abort) return;
+      setGenerationPhase("saving");
 
       const components: PromptComponent[] = [
         createPromptComponent(PromptComponentType.PLOT, generated.plot),
@@ -557,11 +639,13 @@ export function QuickstartPage() {
         taleId,
         localOnly ? "private" : "default",
       );
+      if (abort.signal.aborted || abortRef.current !== abort) return;
 
       taleStore.resetAllState();
       setLastPlayedTaleId(taleId);
       navigate({ to: "/play" });
     } catch (error) {
+      if (abort.signal.aborted || abortRef.current !== abort) return;
       if (error instanceof DOMException && error.name === "AbortError") {
         return;
       }
@@ -570,8 +654,10 @@ export function QuickstartPage() {
         t`Failed to generate tale: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
-      setIsGenerating(false);
-      abortRef.current = null;
+      if (abortRef.current === abort) {
+        abortRef.current = null;
+        setGenerationPhase("idle");
+      }
     }
   }, [
     utilityConfig,
@@ -584,7 +670,7 @@ export function QuickstartPage() {
   ]);
 
   const handlePrimaryAction = useCallback(() => {
-    if (!currentStepData.canProgress || isGenerating) return;
+    if (!currentStepData.canProgress || isBusy) return;
     if (isLastStep) {
       void handleComplete();
     } else {
@@ -594,16 +680,21 @@ export function QuickstartPage() {
     currentStepData.canProgress,
     handleComplete,
     handleNext,
-    isGenerating,
+    isBusy,
     isLastStep,
   ]);
+
+  useEffect(() => {
+    if (wasBusyRef.current && !isBusy) primaryActionRef.current?.focus();
+    wasBusyRef.current = isBusy;
+  }, [isBusy]);
 
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
       if (
         event.target instanceof HTMLTextAreaElement ||
         event.target instanceof HTMLButtonElement ||
-        isGenerating
+        isBusy
       ) {
         return;
       }
@@ -614,11 +705,12 @@ export function QuickstartPage() {
 
     document.addEventListener("keydown", handleKeyPress);
     return () => document.removeEventListener("keydown", handleKeyPress);
-  }, [handlePrimaryAction, isGenerating]);
+  }, [handlePrimaryAction, isBusy]);
 
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
+      abortRef.current = null;
     };
   }, []);
 
@@ -641,7 +733,7 @@ export function QuickstartPage() {
           <Button
             variant="default"
             onClick={handleCancel}
-            disabled={isGenerating}
+            disabled={isBusy}
             className="mt-1.5"
           >
             <ArrowLeftIcon className="h-4 w-4 rtl:rotate-180" />
@@ -660,78 +752,85 @@ export function QuickstartPage() {
 
         <div className="flex min-h-0 flex-1 flex-col">
           <section className="flex flex-1 items-center justify-center py-4 sm:py-8">
-            <div
-              key={currentStep}
-              className="flex w-full flex-col items-center gap-8 animate-in fade-in slide-in-from-bottom-2 duration-300"
-            >
-              <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center">
-                <div className="inline-flex items-center rounded-xs border border-border/60 bg-background/55 px-3 py-1 text-xs font-medium uppercase text-muted-foreground shadow-sm backdrop-blur">
-                  {currentStepData.title}
+            {isBusy ? (
+              <QuickstartGenerationStatus
+                saving={generationPhase === "saving"}
+                onCancel={handleCancelGeneration}
+              />
+            ) : (
+              <div
+                key={currentStep}
+                className="flex w-full flex-col items-center gap-8 animate-in fade-in slide-in-from-bottom-2 duration-300"
+              >
+                <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center">
+                  <div className="inline-flex items-center rounded-xs border border-border/60 bg-background/55 px-3 py-1 text-xs font-medium uppercase text-muted-foreground shadow-sm backdrop-blur">
+                    {currentStepData.title}
+                  </div>
+                  <h1 className="text-balance text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
+                    {currentStepData.question}
+                  </h1>
+                  <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
+                    {currentStepData.hint}
+                  </p>
                 </div>
-                <h1 className="text-balance text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
-                  {currentStepData.question}
-                </h1>
-                <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
-                  {currentStepData.hint}
-                </p>
-              </div>
 
-              <div className="w-full">{currentStepData.component}</div>
-            </div>
+                <div className="w-full">{currentStepData.component}</div>
+              </div>
+            )}
           </section>
 
-          <footer className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            {isLastStep && canStartPrivate ? (
-              <div className="mb-2 flex justify-center">
-                <label className="flex items-center gap-2 rounded-xs border border-border/70 bg-card/60 px-3 py-2 text-sm shadow-sm">
-                  <Checkbox
-                    checked={localOnly}
-                    onCheckedChange={(checked) =>
-                      setLocalOnly(checked === true)
-                    }
-                    disabled={isGenerating}
-                  />
-                  <Trans>Keep this tale local only</Trans>
-                </label>
+          {!isBusy && (
+            <footer className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              {isLastStep && canStartPrivate ? (
+                <div className="mb-2 flex justify-center">
+                  <label className="flex items-center gap-2 rounded-xs border border-border/70 bg-card/60 px-3 py-2 text-sm shadow-sm">
+                    <Checkbox
+                      checked={localOnly}
+                      onCheckedChange={(checked) =>
+                        setLocalOnly(checked === true)
+                      }
+                    />
+                    <Trans>Keep this tale local only</Trans>
+                  </label>
+                </div>
+              ) : null}
+              <div className="flex items-center justify-between gap-3 rounded-xs border border-border/70 bg-card/60 p-2.5 shadow-lg shadow-background/20 backdrop-blur">
+                <Button
+                  variant="outline"
+                  onClick={handleBack}
+                  disabled={isFirstStep}
+                  className="rounded-xs"
+                >
+                  <Trans>Back</Trans>
+                </Button>
+                <div className="flex min-w-0 flex-1 items-center justify-center gap-1">
+                  {steps.map((step, index) => (
+                    <div
+                      key={step.id}
+                      className={cn(
+                        "h-1.5 flex-1 rounded-xs transition-all duration-300",
+                        index <= currentStep ? "bg-primary" : "bg-muted",
+                      )}
+                    />
+                  ))}
+                </div>
+                <Button
+                  ref={primaryActionRef}
+                  onClick={handlePrimaryAction}
+                  disabled={!currentStepData.canProgress}
+                  className="min-w-32 rounded-xs"
+                >
+                  {isLastStep ? (
+                    <Trans>Generate Tale</Trans>
+                  ) : (
+                    <>
+                      <Trans>Next</Trans>
+                    </>
+                  )}
+                </Button>
               </div>
-            ) : null}
-            <div className="flex items-center justify-between gap-3 rounded-xs border border-border/70 bg-card/60 p-2.5 shadow-lg shadow-background/20 backdrop-blur">
-              <Button
-                variant="outline"
-                onClick={handleBack}
-                disabled={isFirstStep || isGenerating}
-                className="rounded-xs"
-              >
-                <Trans>Back</Trans>
-              </Button>
-              <div className="flex min-w-0 flex-1 items-center justify-center gap-1">
-                {steps.map((step, index) => (
-                  <div
-                    key={step.id}
-                    className={cn(
-                      "h-1.5 flex-1 rounded-xs transition-all duration-300",
-                      index <= currentStep ? "bg-primary" : "bg-muted",
-                    )}
-                  />
-                ))}
-              </div>
-              <Button
-                onClick={handlePrimaryAction}
-                disabled={!currentStepData.canProgress || isGenerating}
-                className="min-w-32 rounded-xs"
-              >
-                {isGenerating ? (
-                  <Trans>Generating</Trans>
-                ) : isLastStep ? (
-                  <Trans>Generate Tale</Trans>
-                ) : (
-                  <>
-                    <Trans>Next</Trans>
-                  </>
-                )}
-              </Button>
-            </div>
-          </footer>
+            </footer>
+          )}
         </div>
       </div>
     </main>

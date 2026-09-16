@@ -14,6 +14,7 @@ All notable changes to this project are documented in this file.
 
 - More compact Home, Tales, and Scenarios screens.
 - Refined Play controls.
+- Quickstart now shows a timer while creating your tale and lets you cancel without losing your setup.
 - Ctrl/Cmd + Plus/Minus now scales the interface. Ctrl/Cmd + mouse wheel adjusts story text size.
 - Improved loading and saving of long tales.
 - Cover images are optimized before cloud upload.

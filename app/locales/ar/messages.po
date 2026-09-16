@@ -18,6 +18,18 @@ msgstr ""
 msgid "Failed to upload tale to cloud"
 msgstr "تعذّر رفع الحكاية إلى السحابة"
 
+#: app/components/quickstart/quickstart-wizard.tsx
+msgid "Creating your tale…"
+msgstr "جارٍ إنشاء حكايتك…"
+
+#: app/components/quickstart/quickstart-wizard.tsx
+msgid "Saving your tale…"
+msgstr "جارٍ حفظ حكايتك…"
+
+#: app/components/quickstart/quickstart-wizard.tsx
+msgid "Elapsed time"
+msgstr "الوقت المنقضي"
+
 #: app/data/quickstart-presets.ts:476
 #~ msgid " {characterName} has a rational explanation ready. It is not fitting the facts as neatly as it should."
 #~ msgstr " جهّز {characterName} تفسيراً منطقياً. لكنه لا يتناسب مع الحقائق بدقة كما ينبغي."
