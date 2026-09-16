@@ -20,6 +20,7 @@ All notable changes to this project are documented in this file.
 
 ### Fixed
 
+- Fixed story card auto-generation failing when responses were cut short.
 - Fixed recent edits being lost when leaving a page, closing the app, or installing an update.
 - Cancelling a retry before it produces text now keeps the original passage.
 - Fixed delayed loading or generation results overwriting another tale after switching.

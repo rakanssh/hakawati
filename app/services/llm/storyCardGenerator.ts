@@ -5,6 +5,8 @@ import { ResponseMode } from "@/types/api.type";
 import { buildContext } from "./contextBuilder";
 import { getActiveStoryCardGeneratorPrompt } from "@/prompts";
 
+const MAX_COMPLETION_TOKENS = 4000;
+
 export interface GeneratedStoryCard {
   content: string;
   triggers: string[];
@@ -20,7 +22,7 @@ export async function generateStoryCard(
     model,
     systemPrompt: getActiveStoryCardGeneratorPrompt(),
     userMessage: `Create a story card for: "${title}"`,
-    maxCompletionTokens: 500,
+    maxCompletionTokens: MAX_COMPLETION_TOKENS,
     includeAuthorNote: false,
   });
 
@@ -28,7 +30,7 @@ export async function generateStoryCard(
     model: model.id,
     messages: context.messages,
     stream: false,
-    max_tokens: 500,
+    max_tokens: MAX_COMPLETION_TOKENS,
     responseMode: ResponseMode.FREE_FORM,
   };
 
