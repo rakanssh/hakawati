@@ -182,6 +182,31 @@ npm run tauri dev
 - Refresh license reports: `npm run licenses:generate`
 - Build Desktop App: `npm run tauri build`
 
+### Browser preview for UI development
+
+Run `npm run dev:browser` and open [http://127.0.0.1:1422](http://127.0.0.1:1422).
+This separate development mode requires no Rust runtime, database server, cloud
+account, or API key. The regular `npm run dev` command still serves the Tauri UI.
+
+The preview uses [sql.js](https://sql.js.org/) to run the existing SQLite
+migrations in memory and seeds three scenarios and two playable tales. Scenario
+editing, creating tales, and play controls use the real repositories. The preview
+narrator returns a labelled, scripted response; it does not call an AI provider.
+Reloading resets all tale and scenario data and returns to the home screen.
+Appearance preferences persist in this browser origin; preview connection
+settings are reapplied at startup.
+
+Cloud sync/catalog, sign-in, audio, AI scenario generation, and native updates are
+outside this preview's scope. HTTP calls through the preview adapter stay local
+and return an explanatory error for unsupported services. Clipboard actions use
+the browser clipboard API and may require browser permission.
+
+The preview uses a dedicated Vite config and port, with no access to desktop
+saves. Its dependency aliases are absent from normal development and release
+builds; building with the preview config is explicitly rejected. To reset sample
+content, reload the page. To test an empty library, delete the disposable sample
+tales/scenarios through the UI during the current session.
+
 ## Tech Stack
 
 - React 19, Vite, shadcn/ui, and Tailwind for the front-end.
