@@ -4,6 +4,7 @@ import {
   type ScenarioPackage,
 } from "@/types/catalog.type";
 import type { Scenario } from "@/types/context.type";
+import { assertValidScenarioQuestions } from "@/lib/scenario-questions";
 import type { TaleSourceMetadata } from "@/types/tale.type";
 import {
   packageContentToScenarioContent,
@@ -123,6 +124,7 @@ export function buildScenarioPackage(
   scenario: Scenario,
   metadata: ScenarioPackageMetadata = {},
 ): ScenarioPackage {
+  assertValidScenarioQuestions(scenario.content);
   const title = metadata.title?.trim() || scenario.name.trim() || "Untitled";
   return parseScenarioPackage({
     format: "hakawati-scenario-package",

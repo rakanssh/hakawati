@@ -35,6 +35,10 @@ import {
   ScenarioV3Schema,
 } from "@/types/export.type";
 import { LogEntryRole } from "@/types/log.type";
+import {
+  resolveScenarioQuestions,
+  type ScenarioAnswers,
+} from "@/lib/scenario-questions";
 
 export async function saveScenario(
   scenario: Scenario,
@@ -77,11 +81,21 @@ export async function getAllScenarios(
 
 export async function initTaleFromScenario(
   scenarioId: string,
-  options: { syncPolicy?: NewTaleSyncPolicy } = {},
+  options: {
+    syncPolicy?: NewTaleSyncPolicy;
+    answers?: ScenarioAnswers;
+    scenarioSnapshot?: Scenario;
+  } = {},
 ): Promise<string> {
-  const scenario = await getScenario(scenarioId);
+  const scenario = options.scenarioSnapshot
+    ? structuredClone(options.scenarioSnapshot)
+    : await getScenario(scenarioId);
   if (!scenario) throw new Error("Scenario not found");
-  const seed = scenarioContentToTaleSeed(scenario.content);
+  if (scenario.id !== scenarioId)
+    throw new Error("Scenario snapshot does not match");
+  const seed = scenarioContentToTaleSeed(
+    resolveScenarioQuestions(scenario.content, options.answers),
+  );
   // Copy scenario thumbnail into tale at creation time
   const taleId = await initTale({
     scenarioId,

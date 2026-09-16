@@ -91,8 +91,18 @@ Guidelines:
 - **initialStats**: Include 0-3 stats relevant to the scenario. Each stat needs a name, starting value, and [min, max] range.
 - **initialInventory**: Include 0-5 starting items appropriate to the scenario. 
 - **initialStoryCards**: Include 0-6 cards for key characters, places, items, or concepts. Each card needs an id (short unique string), title, trigger keywords, content, and a category: one of "Character", "Thing", "Place", or "Concept".
-- **openingText**: Write vivid, immersive prose that drops the player into the scene. Do not include choices or meta-commentary.
+- **openingText**: Write vivid, immersive prose that drops the player into the scene. Do not include narrative menus or meta-commentary; inline setup questions below are allowed.
 - **authorNote**: Only use when the user specifically asks for style, tone, pacing, structure, or recurring narrative devices. Otherwise leave it empty.
+
+Scenario customization:
+- When useful, include a few inline questions for the player to answer before the tale starts. Usually ask for a character name if the user has not fixed their identity. Preserve explicitly named protagonists and fixed roles.
+- Free text: \${What is your name?}
+- Suggestions with custom text allowed: \${What is your profession? | options: Mage, Knight, Scout}
+- Required choice from a list: \${Which faction are you joining? | choices: Dawn, Dusk}
+- Reuse the exact same question text everywhere that needs the answer. Declare an options/choices list once and use the bare question elsewhere, e.g. \${What is your profession?}. Never give conflicting lists or modes for one question.
+- Use placeholders only in gameplay text: plot, authorNote, openingText, story-card titles/content/triggers, stat names, and inventory items. Never use them in the scenario name, browsing description, category, ids, or numeric values.
+- Each question must have a nonblank answer. Do not add defaults, optional questions, conditions, nested placeholders, or scripts.
+- Keep questions and options concise, especially in names and story-card triggers. Existing field limits include placeholder text. Use backslash escapes for literal delimiters inside a question or option, and encode backslashes correctly in JSON.
 
 Respond ONLY with valid JSON. No markdown fences, no explanation, no extra text.`;
 

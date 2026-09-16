@@ -3756,3 +3756,63 @@ msgstr "Learn more"
 #: app/components/layout/server-announcement.tsx
 msgid "Dismiss announcement"
 msgstr "Dismiss announcement"
+
+#: app/components/scenario/ScenarioQuestionsHelp.tsx
+msgid "Fix these questions before starting or publishing. You can still save this draft."
+msgstr "Fix these questions before starting or publishing. You can still save this draft."
+
+#: app/components/scenario/ScenarioQuestionsHelp.tsx
+msgid "How to add questions"
+msgstr "How to add questions"
+
+#: app/components/scenario/ScenarioQuestionsHelp.tsx
+msgid "Put a question in your scenario text. Players answer before the tale starts, and their answers fill in the text."
+msgstr "Put a question in your scenario text. Players answer before the tale starts, and their answers fill in the text."
+
+#: app/components/scenario/ScenarioQuestionsHelp.tsx
+msgid "Use options: for suggestions, or choices: to require a listed answer. Repeat a question to reuse its answer."
+msgstr "Use options: for suggestions, or choices: to require a listed answer. Repeat a question to reuse its answer."
+
+#: app/components/scenario/ScenarioStartWizard.tsx
+msgid "Customize your tale"
+msgstr "Customize your tale"
+
+#: app/components/scenario/ScenarioStartWizard.tsx
+msgid "Question {questionNumber} of {totalQuestions}"
+msgstr "Question {questionNumber} of {totalQuestions}"
+
+#: app/components/scenario/ScenarioStartWizard.tsx
+msgid "Question progress"
+msgstr "Question progress"
+
+#: app/components/scenario/ScenarioStartWizard.tsx
+msgid "Ready to start your tale?"
+msgstr "Ready to start your tale?"
+
+#: app/components/scenario/ScenarioStartWizard.tsx
+msgid "Your answer"
+msgstr "Your answer"
+
+#: app/components/scenario/ScenarioStartWizard.tsx
+msgid "Answer this question to continue."
+msgstr "Answer this question to continue."
+
+#: app/components/scenario/ScenarioStartWizard.tsx
+msgid "Starting tale..."
+msgstr "Starting tale..."
+
+#: app/components/question-input.tsx
+msgid "Choose one of these options."
+msgstr "Choose one of these options."
+
+#: app/pages/scenarios/details.tsx
+msgid "This scenario has invalid questions. Edit the scenario before starting."
+msgstr "This scenario has invalid questions. Edit the scenario before starting."
+
+#: app/pages/scenarios/catalog-details.tsx
+msgid "This scenario has invalid questions. Its creator needs to fix them before you can start."
+msgstr "This scenario has invalid questions. Its creator needs to fix them before you can start."
+
+#: app/pages/scenarios/catalog-details.tsx
+msgid "This scenario has changed. Please answer its questions again."
+msgstr "This scenario has changed. Please answer its questions again."

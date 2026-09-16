@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  ClearableInput,
+  SuggestedInput,
+  type Suggestion,
+} from "@/components/question-input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,11 +52,6 @@ export interface QuickstartState {
   extraDetails: string;
 }
 
-type Suggestion = {
-  id: string;
-  label: string;
-};
-
 type StepData = {
   id: QuickstartStepId;
   title: string;
@@ -72,124 +71,6 @@ const QUICKSTART_STEP_IDS = [
 ] as const;
 
 type QuickstartStepId = (typeof QUICKSTART_STEP_IDS)[number];
-
-function optionPanelClass(isSelected: boolean) {
-  return cn(
-    "group flex min-h-12 items-center gap-3 rounded-xs border bg-card/55 px-3 py-2.5 text-start shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/55 hover:bg-card/80 hover:shadow-md focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none",
-    isSelected &&
-      "border-primary bg-primary/10 text-foreground ring-2 ring-primary/35",
-  );
-}
-
-function ClearableInput({
-  id,
-  value,
-  placeholder,
-  onValueChange,
-}: {
-  id: string;
-  value: string;
-  placeholder: string;
-  onValueChange: (value: string) => void;
-}) {
-  const { t } = useLingui();
-
-  return (
-    <div className="relative">
-      <Input
-        id={id}
-        value={value}
-        onChange={(event) => onValueChange(event.target.value)}
-        placeholder={placeholder}
-        className="h-14 rounded-xs border-border/75 bg-background/70 px-14 text-center text-lg shadow-lg shadow-background/20 backdrop-blur-sm md:text-xl"
-        autoFocus
-      />
-      {value && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-label={t`Clear input`}
-          className="absolute end-1.5 top-1/2 h-10 w-10 -translate-y-1/2 rounded-xs px-0 text-base font-semibold leading-none text-muted-foreground hover:text-foreground"
-          onClick={() => onValueChange("")}
-        >
-          X
-        </Button>
-      )}
-    </div>
-  );
-}
-
-function SuggestedInput({
-  id,
-  value,
-  placeholder,
-  suggestions,
-  selectedId,
-  optionColumns = "sm:grid-cols-2 lg:grid-cols-3",
-  onValueChange,
-  onSuggestionSelect,
-  onSurprise,
-}: {
-  id: string;
-  value: string;
-  placeholder: string;
-  suggestions: Suggestion[];
-  selectedId: string | null;
-  optionColumns?: string;
-  onValueChange: (value: string) => void;
-  onSuggestionSelect: (suggestion: Suggestion) => void;
-  onSurprise?: () => void;
-}) {
-  return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
-      <ClearableInput
-        id={id}
-        value={value}
-        placeholder={placeholder}
-        onValueChange={onValueChange}
-      />
-
-      {suggestions.length > 0 && (
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
-            <span>
-              <Trans>Or choose one of these options.</Trans>
-            </span>
-            {onSurprise && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 shrink-0 gap-1.5 rounded-xs px-2 text-muted-foreground hover:text-foreground"
-                onClick={onSurprise}
-              >
-                <Trans>Surprise Me</Trans>
-              </Button>
-            )}
-          </div>
-
-          <div className={cn("grid gap-2.5", optionColumns)}>
-            {suggestions.map((suggestion) => {
-              const isSelected = selectedId === suggestion.id;
-              return (
-                <button
-                  key={suggestion.id}
-                  type="button"
-                  className={optionPanelClass(isSelected)}
-                  onClick={() => onSuggestionSelect(suggestion)}
-                >
-                  <span className="min-w-0 truncate font-medium">
-                    {suggestion.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 function CharacterNameQuestion({
   value,

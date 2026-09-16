@@ -14,6 +14,10 @@ import { useScenarioForm } from "@/hooks/useScenarioForm";
 import { SCENARIO_COMPONENT_TYPES } from "@/lib/prompt-components";
 import { ArrowLeftIcon } from "lucide-react";
 import { Trans } from "@lingui/react/macro";
+import {
+  ScenarioQuestionErrors,
+  ScenarioQuestionsHelp,
+} from "@/components/scenario/ScenarioQuestionsHelp";
 export default function ScenarioEdit() {
   const { id } = useParams({ from: "/scenarios/$id/edit" });
   const navigate = useNavigate();
@@ -98,6 +102,7 @@ export default function ScenarioEdit() {
         />
         <Separator />
         <PromptComponentsEditor
+          headerAction={<ScenarioQuestionsHelp />}
           components={fields.components}
           allowedTypes={SCENARIO_COMPONENT_TYPES}
           gameMode={scenario.initialGameMode}
@@ -105,6 +110,7 @@ export default function ScenarioEdit() {
           onUpdate={updateComponent}
           onRemove={removeComponent}
         />
+        <ScenarioQuestionErrors content={scenario.content} />
         <Separator />
         <StatsEditor
           stats={fields.initialStats}
@@ -121,6 +127,7 @@ export default function ScenarioEdit() {
         />
         <Separator />
         <StorybookEditor
+          scenarioMode
           entries={fields.initialStoryCards}
           onAdd={addStoryCard}
           onUpdate={updateStoryCard}

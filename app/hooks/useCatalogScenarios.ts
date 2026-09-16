@@ -23,6 +23,7 @@ import {
   type CatalogPublishingAcceptance,
   type CatalogTagListOptions,
   type CatalogTransport,
+  type CatalogScenarioStartOptions,
 } from "@/services/catalog.service";
 import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
 import type {
@@ -31,7 +32,10 @@ import type {
   CatalogTagSuggestion,
 } from "@/types/catalog.type";
 import type { Scenario } from "@/types/context.type";
-import type { ScenarioPackageMetadata } from "@/lib/catalog-package";
+import {
+  buildScenarioPackage,
+  type ScenarioPackageMetadata,
+} from "@/lib/catalog-package";
 import { normalizeCatalogTags } from "@/lib/catalog-tags";
 import { listScenarioPublishLinks } from "@/repositories/scenario-publish-link.repository";
 import type { ScenarioPublishLink } from "@/types/catalog.type";
@@ -414,9 +418,14 @@ export function useCatalogActions(client: CatalogClientState) {
   );
 
   const start = useCallback(
-    async (scenarioId: string, syncPolicy?: NewTaleSyncPolicy) => {
+    async (
+      scenarioId: string,
+      syncPolicy?: NewTaleSyncPolicy,
+      setup?: Omit<CatalogScenarioStartOptions, "syncPolicy">,
+    ) => {
       if (!readTransport) throw new Error("Catalog is not configured");
       return startCatalogScenario(readTransport, scenarioId, {
+        ...setup,
         syncPolicy,
       });
     },
@@ -434,6 +443,7 @@ export function useCatalogActions(client: CatalogClientState) {
         throw new Error("Sign in to publish scenarios");
       if (!client.publishingEnabled)
         throw new Error("Publishing is currently unavailable");
+      buildScenarioPackage(input.scenario, input.metadata);
       await acceptCurrentCatalogPolicies(
         client.authTransport,
         input.policyAcceptance,

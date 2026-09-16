@@ -4,12 +4,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useLingui } from "@lingui/react/macro";
 import { Trans } from "@lingui/react/macro";
+import type { Item } from "@/types/item.type";
 
 export type InventoryEditorProps = {
-  items: string[];
+  items: Item[];
   onAdd: (name: string) => void;
-  onUpdate: (index: number, name: string) => void;
-  onRemove: (index: number) => void;
+  onUpdate: (
+    id: string,
+    update: Partial<Pick<Item, "name" | "description">>,
+  ) => void;
+  onRemove: (id: string) => void;
 };
 
 export function InventoryEditor({
@@ -26,20 +30,33 @@ export function InventoryEditor({
         <Trans>Initial Inventory</Trans>
       </Label>
       <div className="flex flex-col gap-2">
-        {items.map((item, idx) => (
-          <div key={`${item}-${idx}`} className="flex items-center gap-2">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="flex flex-col gap-2 rounded-xs border p-3"
+          >
+            <div className="flex items-center gap-2">
+              <Input
+                value={item.name}
+                onChange={(e) => onUpdate(item.id, { name: e.target.value })}
+              />
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => onRemove(item.id)}
+                className="w-24"
+              >
+                <Trans>Remove</Trans>
+              </Button>
+            </div>
             <Input
-              value={item}
-              onChange={(e) => onUpdate(idx, e.target.value)}
+              value={item.description ?? ""}
+              onChange={(e) =>
+                onUpdate(item.id, { description: e.target.value })
+              }
+              placeholder={t`Description (optional)`}
+              className="text-sm text-muted-foreground"
             />
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => onRemove(idx)}
-              className="w-24"
-            >
-              <Trans>Remove</Trans>
-            </Button>
           </div>
         ))}
         <div className="flex items-center gap-2">

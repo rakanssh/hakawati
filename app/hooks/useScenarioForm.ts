@@ -51,13 +51,13 @@ export function useScenarioForm(
       ...prev,
       initialStats: [
         ...prev.initialStats,
-        { name: trimmed, value: 0, range: [0, 100] },
+        { id: nanoid(12), name: trimmed, value: 0, range: [0, 100] },
       ],
     }));
   };
 
   const updateStat = (
-    prevName: string,
+    id: string,
     update: Partial<{
       name: string;
       description: string | undefined;
@@ -68,8 +68,8 @@ export function useScenarioForm(
     updateFields((prev) => ({
       ...prev,
       initialStats: prev.initialStats.map((s) => {
-        if (s.name !== prevName) return s;
-        const nextName = update.name?.trim() ?? s.name;
+        if (s.id !== id) return s;
+        const nextName = update.name ?? s.name;
         const nextDescription =
           "description" in update ? update.description : s.description;
         const nextValue =
@@ -81,6 +81,7 @@ export function useScenarioForm(
             ? Math.max(s.range[0], Math.max(update.rangeMax, nextValue))
             : s.range[1];
         return {
+          id: s.id,
           name: nextName,
           description: nextDescription,
           value: nextValue,
@@ -90,10 +91,10 @@ export function useScenarioForm(
     }));
   };
 
-  const removeStat = (name: string) => {
+  const removeStat = (id: string) => {
     updateFields((prev) => ({
       ...prev,
-      initialStats: prev.initialStats.filter((s) => s.name !== name),
+      initialStats: prev.initialStats.filter((s) => s.id !== id),
     }));
   };
 
@@ -102,22 +103,30 @@ export function useScenarioForm(
     if (!trimmed) return;
     updateFields((prev) => ({
       ...prev,
-      initialInventory: [...prev.initialInventory, trimmed],
+      initialInventory: [
+        ...prev.initialInventory,
+        { id: nanoid(12), name: trimmed },
+      ],
     }));
   };
 
-  const updateInventoryItem = (index: number, name: string) => {
-    const copy = [...fields.initialInventory];
-    copy[index] = name;
-    updateFields((prev) => ({ ...prev, initialInventory: copy }));
+  const updateInventoryItem = (
+    id: string,
+    update: Partial<{ name: string; description: string }>,
+  ) => {
+    updateFields((prev) => ({
+      ...prev,
+      initialInventory: prev.initialInventory.map((item) =>
+        item.id === id ? { ...item, ...update } : item,
+      ),
+    }));
   };
 
-  const removeInventoryItem = (index: number) => {
-    updateFields((prev) => {
-      const copy = [...prev.initialInventory];
-      copy.splice(index, 1);
-      return { ...prev, initialInventory: copy };
-    });
+  const removeInventoryItem = (id: string) => {
+    updateFields((prev) => ({
+      ...prev,
+      initialInventory: prev.initialInventory.filter((item) => item.id !== id),
+    }));
   };
 
   const addStoryCard = (input: StoryCardInput) => {

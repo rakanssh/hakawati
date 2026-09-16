@@ -1,5 +1,6 @@
 import { fetch } from "@tauri-apps/plugin-http";
 import { nanoid } from "nanoid";
+import { ZodError } from "zod";
 import {
   asApiObject,
   parseApiError,
@@ -28,6 +29,11 @@ import {
 import { normalizeCatalogTags } from "@/lib/catalog-tags";
 import { optimizeCoverImage, sha256Hex } from "@/lib/cover-image";
 import { scenarioContentToTaleSeed } from "@/lib/scenario-content";
+import {
+  assertValidScenarioQuestions,
+  resolveScenarioQuestions,
+  type ScenarioAnswers,
+} from "@/lib/scenario-questions";
 import { initTale } from "@/services/tale.service";
 import {
   markNewTaleSyncPreference,
@@ -315,18 +321,85 @@ export async function getOwnedCatalogScenario(
   };
 }
 
+export type CatalogScenarioStartOptions = {
+  syncPolicy?: NewTaleSyncPolicy;
+  answers?: ScenarioAnswers;
+  scenarioSnapshot?: CatalogScenarioDetail;
+  expectedVersionId?: string;
+};
+
+function resolveScenarioPackage(
+  pkg: ScenarioPackage,
+  answers?: ScenarioAnswers,
+) {
+  const content = resolveScenarioQuestions(pkg.scenario.content, answers);
+  try {
+    return parseScenarioPackage({
+      ...pkg,
+      scenario: { ...pkg.scenario, content },
+    });
+  } catch (error) {
+    if (!(error instanceof ZodError)) throw error;
+    throw new Error(
+      error.issues
+        .map((issue) => {
+          const index = Number(issue.path[2]);
+          const item = content[index];
+          const label =
+            item?.type === "prompt_component"
+              ? {
+                  opening: "Opening text",
+                  plot: "Plot",
+                  author_note: "Author's note",
+                  ai_instructions: "AI instructions",
+                }[item.promptType]
+              : item
+                ? `${item.type.replaceAll("_", " ")} ${content.slice(0, index + 1).filter((entry) => entry.type === item.type).length}: ${issue.path.slice(3).join(" ")}`
+                : "Scenario";
+          return `${label}: ${issue.message}`;
+        })
+        .join("\n"),
+    );
+  }
+}
+
 export async function startCatalogScenario(
   transport: CatalogTransport,
   scenarioId: string,
-  options: { syncPolicy?: NewTaleSyncPolicy } = {},
+  options: CatalogScenarioStartOptions = {},
 ): Promise<string> {
+  const snapshot = options.scenarioSnapshot
+    ? structuredClone(options.scenarioSnapshot)
+    : await getCatalogScenario(transport, scenarioId);
+  if (snapshot.id !== scenarioId)
+    throw new Error("Scenario snapshot does not match");
+  const expectedVersionId =
+    options.expectedVersionId ?? snapshot.currentVersionId;
+  if (!expectedVersionId || expectedVersionId !== snapshot.currentVersionId) {
+    throw new Error("Scenario version is missing or does not match");
+  }
+  // Reject invalid/missing answers before counting a start or writing any tale.
+  resolveScenarioPackage(
+    parseScenarioPackage(snapshot.package),
+    options.answers,
+  );
   const response = bodyValue(
     await transport.post(
       `/v1/catalog/scenarios/${encodeURIComponent(scenarioId)}/start`,
-      {},
+      { expectedVersionId },
     ),
   ) as CatalogStartResponse;
-  const pkg = parseScenarioPackage(response.package);
+  if (response.source?.catalogScenarioVersionId !== expectedVersionId) {
+    throw new CatalogHttpError(
+      "This scenario was updated. Please answer the new setup questions.",
+      409,
+      "scenario_version_changed",
+    );
+  }
+  const pkg = resolveScenarioPackage(
+    parseScenarioPackage(response.package),
+    options.answers,
+  );
   const seed = scenarioContentToTaleSeed(pkg.scenario.content);
   const taleId = await initTale({
     source: catalogStartSourceToTaleSource(response.source),
@@ -354,6 +427,7 @@ export async function createCatalogScenario(
   transport: CatalogTransport,
   input: { package: ScenarioPackage; thumbnailAssetId?: string | null },
 ): Promise<CatalogOwnedScenarioDetail> {
+  assertValidScenarioQuestions(input.package.scenario.content);
   return bodyValue(
     await transport.post("/v1/catalog/scenarios", {
       package: input.package,
@@ -369,6 +443,7 @@ export async function publishCatalogScenarioVersion(
   scenarioId: string,
   input: { package: ScenarioPackage; thumbnailAssetId?: string | null },
 ): Promise<CatalogOwnedScenarioDetail> {
+  assertValidScenarioQuestions(input.package.scenario.content);
   return bodyValue(
     await transport.post(
       `/v1/catalog/scenarios/${encodeURIComponent(scenarioId)}/versions`,

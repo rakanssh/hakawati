@@ -1,6 +1,9 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { GameMode, PromptComponentType } from "@/types/context.type";
-import type { ScenarioPackage } from "@/types/catalog.type";
+import type {
+  CatalogScenarioDetail,
+  ScenarioPackage,
+} from "@/types/catalog.type";
 import {
   acceptCurrentCatalogPolicies,
   blockCatalogPublisher,
@@ -69,6 +72,24 @@ const packageFixture = (): ScenarioPackage => ({
       },
     ],
   },
+});
+
+const scenarioDetailFixture = (
+  pkg = packageFixture(),
+): CatalogScenarioDetail => ({
+  id: "catalog-1",
+  currentVersionId: "version-1",
+  status: "published",
+  title: pkg.scenario.title,
+  summary: pkg.scenario.summary,
+  tags: pkg.scenario.tags,
+  author: { id: "author-1", displayName: "Author" },
+  thumbnail: null,
+  viewCount: 0,
+  startCount: 0,
+  updatedAt: "2026-09-16T00:00:00Z",
+  publishedAt: "2026-09-16T00:00:00Z",
+  package: pkg,
 });
 
 function jsonResponse(body: unknown, ok = true, status = 200) {
@@ -177,7 +198,7 @@ describe("catalog service", () => {
   it("creates a local tale from catalog start without saving a local scenario", async () => {
     taleService.initTale.mockResolvedValueOnce("local-tale");
     const transport = {
-      get: vi.fn(),
+      get: vi.fn().mockResolvedValue(scenarioDetailFixture()),
       patch: vi.fn(),
       post: vi.fn().mockResolvedValueOnce({
         scenario: packageFixture().scenario,
@@ -215,6 +236,143 @@ describe("catalog service", () => {
       "local-tale",
       "private",
     );
+    expect(transport.post).toHaveBeenCalledWith(
+      "/v1/catalog/scenarios/catalog-1/start",
+      { expectedVersionId: "version-1" },
+    );
+  });
+
+  it("keeps answers on the client and resolves the approved public version", async () => {
+    const pkg = packageFixture();
+    pkg.scenario.content[0] = {
+      type: "prompt_component",
+      version: 1,
+      id: "opening",
+      promptType: PromptComponentType.OPENING,
+      content: "${Name?} is a ${Role? | choices: Mage, Scout}.",
+    };
+    const snapshot = scenarioDetailFixture(pkg);
+    const transport = {
+      get: vi.fn(),
+      patch: vi.fn(),
+      post: vi.fn().mockResolvedValue({
+        package: pkg,
+        source: {
+          type: "catalog",
+          catalogScenarioId: "catalog-1",
+          catalogScenarioVersionId: "version-1",
+          title: "Iron Gate",
+        },
+      }),
+    };
+    taleService.initTale.mockResolvedValueOnce("custom-tale");
+    await startCatalogScenario(transport, snapshot.id, {
+      scenarioSnapshot: snapshot,
+      answers: { "Name?": "${Literal answer}", "Role?": "Mage" },
+    });
+    expect(transport.get).not.toHaveBeenCalled();
+    expect(transport.post).toHaveBeenCalledWith(
+      "/v1/catalog/scenarios/catalog-1/start",
+      { expectedVersionId: "version-1" },
+    );
+    expect(taleService.initTale).toHaveBeenCalledWith(
+      expect.objectContaining({
+        log: [
+          expect.objectContaining({ text: "${Literal answer} is a Mage." }),
+        ],
+      }),
+    );
+    expect(snapshot.package.scenario.content[0]).toMatchObject({
+      content: "${Name?} is a ${Role? | choices: Mage, Scout}.",
+    });
+  });
+
+  it("rejects missing answers and resolved content beyond existing limits before a public start", async () => {
+    const pkg = packageFixture();
+    pkg.scenario.content[0] = {
+      type: "prompt_component",
+      version: 1,
+      id: "opening",
+      promptType: PromptComponentType.OPENING,
+      content: "${Name?}",
+    };
+    const scenarioSnapshot = scenarioDetailFixture(pkg);
+    const transport = { get: vi.fn(), patch: vi.fn(), post: vi.fn() };
+    await expect(
+      startCatalogScenario(transport, scenarioSnapshot.id, {
+        scenarioSnapshot,
+      }),
+    ).rejects.toThrow();
+    await expect(
+      startCatalogScenario(transport, scenarioSnapshot.id, {
+        scenarioSnapshot,
+        answers: { "Name?": "x".repeat(8001) },
+      }),
+    ).rejects.toThrow();
+    expect(transport.post).not.toHaveBeenCalled();
+    expect(taleService.initTale).not.toHaveBeenCalled();
+  });
+
+  it("does not save a tale if the version changed while answering", async () => {
+    const scenarioSnapshot = scenarioDetailFixture();
+    const transport = {
+      get: vi.fn(),
+      patch: vi.fn(),
+      post: vi
+        .fn()
+        .mockRejectedValue(
+          new CatalogHttpError(
+            "Scenario updated",
+            409,
+            "scenario_version_changed",
+          ),
+        ),
+    };
+    await expect(
+      startCatalogScenario(transport, scenarioSnapshot.id, {
+        scenarioSnapshot,
+      }),
+    ).rejects.toMatchObject({ code: "scenario_version_changed" });
+    expect(taleService.initTale).not.toHaveBeenCalled();
+    expect(newTaleSync.markNewTaleSyncPreference).not.toHaveBeenCalled();
+    transport.post.mockResolvedValue({
+      package: packageFixture(),
+      source: { catalogScenarioVersionId: "other-version" },
+    });
+    await expect(
+      startCatalogScenario(transport, scenarioSnapshot.id, {
+        scenarioSnapshot,
+      }),
+    ).rejects.toMatchObject({ code: "scenario_version_changed" });
+    expect(taleService.initTale).not.toHaveBeenCalled();
+  });
+
+  it("blocks publishing invalid questions before making network requests", async () => {
+    const pkg = packageFixture();
+    pkg.scenario.content[0] = {
+      type: "prompt_component",
+      version: 1,
+      id: "opening",
+      promptType: PromptComponentType.OPENING,
+      content: "${Role? | invalid: Mage}",
+    };
+    const transport = { get: vi.fn(), patch: vi.fn(), post: vi.fn() };
+    await expect(
+      publishScenarioDraft({
+        transport,
+        localScenarioId: "local-1",
+        scenario: {
+          id: "local-1",
+          name: "Gate",
+          description: "Gate",
+          initialGameMode: GameMode.STORY_TELLER,
+          content: pkg.scenario.content,
+        },
+        metadata: { tags: ["gate"] },
+      }),
+    ).rejects.toThrow();
+    expect(transport.post).not.toHaveBeenCalled();
+    expect(publishLinks.upsertScenarioPublishLink).not.toHaveBeenCalled();
   });
 
   it("publishes local drafts through package endpoints and stores the link", async () => {

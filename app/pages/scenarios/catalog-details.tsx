@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -10,6 +10,7 @@ import {
   ScenarioBreadcrumb,
   ScenarioDetailsLayout,
 } from "@/components/scenario";
+import { ScenarioStartWizard } from "@/components/scenario/ScenarioStartWizard";
 import { CatalogTags } from "@/components/catalog/CatalogTags";
 import {
   catalogBrowseSearch,
@@ -23,6 +24,11 @@ import {
 } from "@/hooks/useCatalogScenarios";
 import { useLoadTale } from "@/hooks/useGameSaves";
 import { formatExactDateTime } from "@/lib/utils";
+import {
+  analyzeScenarioQuestions,
+  type ScenarioAnswers,
+  type ScenarioQuestion,
+} from "@/lib/scenario-questions";
 import { canSyncNewTales } from "@/services/new-tale-sync";
 import { getScenarioById } from "@/services/scenario.service";
 import { addSyncChangedListener } from "@/services/sync-wakeup";
@@ -33,6 +39,14 @@ import type {
 } from "@/types/catalog.type";
 
 type CatalogDetail = CatalogScenarioDetail | CatalogOwnedScenarioDetail;
+type CatalogStart = {
+  sourceKey: string;
+  scenarioSnapshot: CatalogDetail;
+  questions: ScenarioQuestion[];
+  syncPolicy?: "default" | "private";
+  revision: number;
+  notice?: string;
+};
 
 function catalogAssetUrl(baseUrl: string, path: string | null | undefined) {
   if (!path) return placeholderImage;
@@ -89,11 +103,23 @@ export default function ScenarioCatalogDetails() {
     ...browse,
     tab: owned ? "published" : "discover",
   });
-  const [scenario, setScenario] = useState<CatalogDetail | null>(null);
+  const sourceKey = JSON.stringify([catalog.baseUrl, id, owned]);
+  const currentSource = useRef(sourceKey);
+  currentSource.current = sourceKey;
+  const [loadedScenario, setLoadedScenario] = useState<{
+    sourceKey: string;
+    detail: CatalogDetail;
+  } | null>(null);
+  const scenario =
+    loadedScenario?.sourceKey === sourceKey ? loadedScenario.detail : null;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [canStartPrivate, setCanStartPrivate] = useState(false);
   const [pendingPublish, setPendingPublish] = useState<Scenario | null>(null);
+  const [pendingStart, setPendingStart] = useState<CatalogStart | null>(null);
+  const [starting, setStarting] = useState(false);
+  const startLock = useRef(false);
+  const startRevision = useRef(0);
   const localLink = useMemo(
     () => publishLinks.links.find((link) => link.catalogScenarioId === id),
     [id, publishLinks.links],
@@ -118,6 +144,8 @@ export default function ScenarioCatalogDetails() {
       : t`${scenario?.startCount ?? 0} starts`;
   const sourceLabel = owned ? t`Published` : t`Discover`;
 
+  useEffect(() => setPendingStart(null), [sourceKey]);
+
   useEffect(() => {
     let cancelled = false;
     if (!catalog.enabled) return;
@@ -125,7 +153,7 @@ export default function ScenarioCatalogDetails() {
     setError(null);
     void (owned ? viewOwned(id) : view(id))
       .then((detail) => {
-        if (!cancelled) setScenario(detail);
+        if (!cancelled) setLoadedScenario({ sourceKey, detail });
       })
       .catch((cause) => {
         if (!cancelled) setError(cause);
@@ -136,7 +164,7 @@ export default function ScenarioCatalogDetails() {
     return () => {
       cancelled = true;
     };
-  }, [catalog.enabled, id, owned, view, viewOwned]);
+  }, [catalog.enabled, id, owned, sourceKey, view, viewOwned]);
 
   useEffect(() => {
     let disposed = false;
@@ -161,12 +189,88 @@ export default function ScenarioCatalogDetails() {
     });
   };
 
-  const startScenario = async (syncPolicy?: "default" | "private") => {
-    if (!scenario) return;
+  const completeStart = async (
+    setup: CatalogStart,
+    answers: ScenarioAnswers = {},
+  ) => {
+    if (startLock.current || setup.sourceKey !== currentSource.current) return;
+    startLock.current = true;
+    setStarting(true);
     try {
-      const taleId = await start(scenario.id, syncPolicy);
+      const taleId = await start(setup.scenarioSnapshot.id, setup.syncPolicy, {
+        answers,
+        scenarioSnapshot: setup.scenarioSnapshot,
+        expectedVersionId: setup.scenarioSnapshot.currentVersionId ?? undefined,
+      });
+      if (setup.sourceKey !== currentSource.current) return;
       await loadTale(taleId);
-      navigate({ to: "/play" });
+      if (setup.sourceKey !== currentSource.current) return;
+      await navigate({ to: "/play" });
+    } catch (cause) {
+      if (setup.sourceKey !== currentSource.current) return;
+      if (
+        typeof cause === "object" &&
+        cause !== null &&
+        "code" in cause &&
+        cause.code === "scenario_version_changed"
+      ) {
+        const latest = await (owned
+          ? viewOwned(setup.scenarioSnapshot.id)
+          : view(setup.scenarioSnapshot.id));
+        if (setup.sourceKey !== currentSource.current) return;
+        setLoadedScenario({ sourceKey: setup.sourceKey, detail: latest });
+        const { questions, diagnostics } = analyzeScenarioQuestions(
+          latest.package.scenario.content,
+        );
+        if (diagnostics.length > 0) {
+          setPendingStart(null);
+          toast.error(
+            t`This scenario has invalid questions. Its creator needs to fix them before you can start.`,
+          );
+          return;
+        }
+        setPendingStart({
+          sourceKey: setup.sourceKey,
+          scenarioSnapshot: structuredClone(latest),
+          questions,
+          syncPolicy: setup.syncPolicy,
+          revision: ++startRevision.current,
+          notice: t`This scenario has changed. Please answer its questions again.`,
+        });
+        return;
+      }
+      throw cause;
+    } finally {
+      startLock.current = false;
+      setStarting(false);
+    }
+  };
+
+  const startScenario = async (syncPolicy?: "default" | "private") => {
+    if (!scenario || startLock.current) return;
+    const scenarioSnapshot = structuredClone(scenario);
+    const { questions, diagnostics } = analyzeScenarioQuestions(
+      scenarioSnapshot.package.scenario.content,
+    );
+    if (diagnostics.length > 0) {
+      toast.error(
+        t`This scenario has invalid questions. Its creator needs to fix them before you can start.`,
+      );
+      return;
+    }
+    const setup = {
+      sourceKey,
+      scenarioSnapshot,
+      questions,
+      syncPolicy,
+      revision: ++startRevision.current,
+    };
+    if (questions.length > 0) {
+      setPendingStart(setup);
+      return;
+    }
+    try {
+      await completeStart(setup);
     } catch (cause) {
       toast.error(
         cause instanceof Error ? cause.message : t`Failed to start scenario`,
@@ -206,6 +310,19 @@ export default function ScenarioCatalogDetails() {
       ) : null}
     </div>
   ) : null;
+
+  if (pendingStart?.sourceKey === sourceKey) {
+    return (
+      <ScenarioStartWizard
+        key={pendingStart.revision}
+        title={pendingStart.scenarioSnapshot.title}
+        questions={pendingStart.questions}
+        notice={pendingStart.notice}
+        onComplete={(answers) => completeStart(pendingStart, answers)}
+        onCancel={() => setPendingStart(null)}
+      />
+    );
+  }
 
   return (
     <>
@@ -297,7 +414,11 @@ export default function ScenarioCatalogDetails() {
               )
             ) : (
               <div className="grid gap-2 sm:flex sm:flex-wrap">
-                <Button size="lg" onClick={() => void startScenario()}>
+                <Button
+                  size="lg"
+                  disabled={starting}
+                  onClick={() => void startScenario()}
+                >
                   <PlayIcon className="size-4" />
                   <Trans>Start Tale</Trans>
                 </Button>
@@ -305,6 +426,7 @@ export default function ScenarioCatalogDetails() {
                   <Button
                     variant="outline"
                     size="lg"
+                    disabled={starting}
                     onClick={() => void startScenario("private")}
                   >
                     <VenetianMask className="size-4" />
@@ -337,7 +459,7 @@ export default function ScenarioCatalogDetails() {
               thumbnailFile,
               policyAcceptance,
             });
-            setScenario(updated);
+            setLoadedScenario({ sourceKey, detail: updated });
             await publishLinks.refresh();
             toast.success(
               updated.moderation.status === "needs_review"

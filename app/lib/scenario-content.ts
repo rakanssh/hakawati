@@ -21,12 +21,16 @@ import {
 
 export type ScenarioEditorFields = {
   components: PromptComponent[];
-  initialStats: Stat[];
-  initialInventory: string[];
+  initialStats: (Stat & { id: string })[];
+  initialInventory: Item[];
   initialStoryCards: StoryCard[];
 };
 
-export type ScenarioLegacyFields = Partial<ScenarioEditorFields> & {
+export type ScenarioLegacyFields = Partial<
+  Omit<ScenarioEditorFields, "initialStats" | "initialInventory">
+> & {
+  initialStats?: (Stat & { id?: string })[];
+  initialInventory?: string[];
   description?: string;
   initialDescription?: string;
   initialAuthorNote?: string;
@@ -245,7 +249,7 @@ export function legacyScenarioToContent(
     ...(scenario.initialStats ?? []).map((stat, index) => ({
       type: "stat" as const,
       version: 1 as const,
-      id: deterministicScenarioContentId("stat", stat.name, index),
+      id: stat.id || deterministicScenarioContentId("stat", stat.name, index),
       name: stat.name,
       description: stat.description,
       value: stat.value,
@@ -264,7 +268,9 @@ export function scenarioContentToEditorFields(
   content: ScenarioContent[],
   timestamp = Date.now(),
 ): ScenarioEditorFields {
-  const normalized = normalizeScenarioContent(content);
+  // Editing must preserve spaces and incomplete inline questions as they are typed.
+  // Normalize only at the save/package/tale boundaries.
+  const normalized = z.array(ScenarioContentSchema).parse(content);
   return {
     components: normalizePromptComponents(
       normalized
@@ -281,6 +287,7 @@ export function scenarioContentToEditorFields(
     initialStats: normalized
       .filter((item) => item.type === "stat")
       .map((item) => ({
+        id: item.id,
         name: item.name,
         ...(item.description ? { description: item.description } : {}),
         value: item.value,
@@ -288,7 +295,11 @@ export function scenarioContentToEditorFields(
       })),
     initialInventory: normalized
       .filter((item) => item.type === "inventory_item")
-      .map((item) => item.name),
+      .map(({ id, name, description }) => ({
+        id,
+        name,
+        ...(description ? { description } : {}),
+      })),
     initialStoryCards: normalized
       .filter((item) => item.type === "story_card")
       .map((item) =>
@@ -309,14 +320,45 @@ export function scenarioContentToEditorFields(
 export function editorFieldsToScenarioContent(
   fields: ScenarioEditorFields,
 ): ScenarioContent[] {
-  return legacyScenarioToContent(fields);
+  return [
+    ...fields.components.map((component) => ({
+      type: "prompt_component" as const,
+      version: 1 as const,
+      id: component.id,
+      promptType: component.type,
+      content: component.content,
+    })),
+    ...fields.initialStoryCards.map((card) => ({
+      type: "story_card" as const,
+      version: 1 as const,
+      id: card.id,
+      title: card.title,
+      content: card.content,
+      triggers: [...card.triggers],
+      category: card.category,
+      isPinned: card.isPinned,
+    })),
+    ...fields.initialStats.map((stat) => ({
+      type: "stat" as const,
+      version: 1 as const,
+      ...stat,
+    })),
+    ...fields.initialInventory.map((item) => ({
+      type: "inventory_item" as const,
+      version: 1 as const,
+      ...item,
+    })),
+  ];
 }
 
 export function scenarioContentToTaleSeed(
   content: ScenarioContent[],
   timestamp = Date.now(),
 ): TaleSeed {
-  const fields = scenarioContentToEditorFields(content, timestamp);
+  const fields = scenarioContentToEditorFields(
+    normalizeScenarioContent(content),
+    timestamp,
+  );
   const openingText =
     fields.components
       .find((component) => component.type === PromptComponentType.OPENING)
@@ -332,7 +374,7 @@ export function scenarioContentToTaleSeed(
       TALE_COMPONENT_TYPES,
     ),
     storyCards: fields.initialStoryCards.map(normalizeStoryCard),
-    stats: fields.initialStats,
+    stats: fields.initialStats.map(({ id: _id, ...stat }) => stat),
     inventory: normalizeScenarioContent(content)
       .filter((item) => item.type === "inventory_item")
       .map((item) => ({

@@ -59,6 +59,7 @@ type PromptComponentsEditorProps = {
   gameMode?: GameMode;
   showTitle?: boolean;
   description?: ReactNode;
+  headerAction?: ReactNode;
   onAdd: (type: PromptComponentType) => void;
   onUpdate: (id: string, content: string) => void;
   onRemove: (id: string) => void;
@@ -70,6 +71,7 @@ export function PromptComponentsEditor({
   gameMode,
   showTitle = true,
   description,
+  headerAction,
   onAdd,
   onUpdate,
   onRemove,
@@ -119,21 +121,24 @@ export function PromptComponentsEditor({
             </p>
           )}
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="sm" disabled={missingTypes.length === 0}>
-              <PlusIcon className="h-4 w-4" />
-              <Trans>Add</Trans>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {missingTypes.map((type) => (
-              <DropdownMenuItem key={type} onClick={() => onAdd(type)}>
-                {COMPONENT_LABELS[type]}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" disabled={missingTypes.length === 0}>
+                <PlusIcon className="h-4 w-4" />
+                <Trans>Add</Trans>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {missingTypes.map((type) => (
+                <DropdownMenuItem key={type} onClick={() => onAdd(type)}>
+                  {COMPONENT_LABELS[type]}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {headerAction}
+        </div>
       </div>
 
       {orderedComponents.length === 0 ? (

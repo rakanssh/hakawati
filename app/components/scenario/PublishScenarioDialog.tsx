@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,8 @@ import {
 } from "@/services/catalog.service";
 import { getScenarioPublishLink } from "@/repositories/scenario-publish-link.repository";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { analyzeScenarioQuestions } from "@/lib/scenario-questions";
+import { ScenarioQuestionErrors } from "./ScenarioQuestionsHelp";
 
 type PublishScenarioDialogProps = {
   open: boolean;
@@ -65,6 +67,10 @@ export function PublishScenarioDialog({
   const [metadataReady, setMetadataReady] = useState(false);
   const [metadataError, setMetadataError] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const questionDiagnostics = useMemo(
+    () => analyzeScenarioQuestions(scenario?.content ?? []).diagnostics,
+    [scenario?.content],
+  );
 
   useEffect(() => {
     formSession.current += 1;
@@ -131,7 +137,8 @@ export function PublishScenarioDialog({
   ]);
 
   const canSubmit = Boolean(
-    metadataReady &&
+    !questionDiagnostics.length &&
+      metadataReady &&
       title.trim() &&
       summary.trim() &&
       tags.length > 0 &&
@@ -156,6 +163,7 @@ export function PublishScenarioDialog({
             </Trans>
           </DialogDescription>
         </DialogHeader>
+        {scenario && <ScenarioQuestionErrors content={scenario.content} />}
         <form
           className="grid gap-4"
           onSubmit={async (event) => {

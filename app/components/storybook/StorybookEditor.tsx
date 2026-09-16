@@ -32,8 +32,10 @@ import {
 import { generateStoryCard } from "@/services/llm/storyCardGenerator";
 import { toast } from "sonner";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { splitScenarioTriggers } from "@/lib/scenario-questions";
 
 export type StorybookEditorProps = {
+  scenarioMode?: boolean;
   entries: StoryCard[];
   onAdd: (input: StoryCardInput) => void;
   onUpdate: (id: string, update: Partial<StoryCard>) => void;
@@ -49,6 +51,7 @@ type EntryFormData = {
 };
 
 export function StorybookEditor({
+  scenarioMode = false,
   entries,
   onAdd,
   onUpdate,
@@ -124,8 +127,11 @@ export function StorybookEditor({
   };
 
   const handleSubmit = () => {
-    const triggers = formData.triggers
-      .split(",")
+    const triggers = (
+      scenarioMode
+        ? splitScenarioTriggers(formData.triggers)
+        : formData.triggers.split(",")
+    )
       .map((t) => t.trim())
       .filter((t) => t.length > 0);
 

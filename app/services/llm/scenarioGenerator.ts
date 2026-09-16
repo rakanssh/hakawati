@@ -12,6 +12,7 @@ import type { Scenario } from "@/types/context.type";
 import { createPromptComponent } from "@/lib/prompt-components";
 import { legacyScenarioToContent } from "@/lib/scenario-content";
 import { z } from "zod";
+import { assertValidScenarioQuestions } from "@/lib/scenario-questions";
 
 const GeneratedScenarioSchema = z.object({
   name: z.string(),
@@ -125,6 +126,7 @@ export async function generateScenario(
       thumbnail: null,
     };
 
+    assertValidScenarioQuestions(scenario.content);
     return scenario;
   } catch (e) {
     throw new Error(

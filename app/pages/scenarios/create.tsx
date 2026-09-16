@@ -24,6 +24,10 @@ import {
 } from "@/hooks/useCatalogScenarios";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import {
+  ScenarioQuestionErrors,
+  ScenarioQuestionsHelp,
+} from "@/components/scenario/ScenarioQuestionsHelp";
 
 export default function ScenarioCreate() {
   const navigate = useNavigate();
@@ -127,6 +131,7 @@ export default function ScenarioCreate() {
         />
         <Separator />
         <PromptComponentsEditor
+          headerAction={<ScenarioQuestionsHelp />}
           components={fields.components}
           allowedTypes={SCENARIO_COMPONENT_TYPES}
           gameMode={scenario.initialGameMode}
@@ -134,6 +139,7 @@ export default function ScenarioCreate() {
           onUpdate={updateComponent}
           onRemove={removeComponent}
         />
+        <ScenarioQuestionErrors content={scenario.content} />
         <Separator />
         <StatsEditor
           stats={fields.initialStats}
@@ -150,6 +156,7 @@ export default function ScenarioCreate() {
         />
         <Separator />
         <StorybookEditor
+          scenarioMode
           entries={fields.initialStoryCards}
           onAdd={addStoryCard}
           onUpdate={updateStoryCard}

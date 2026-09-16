@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { BookOpenIcon, PencilIcon, PlayIcon, VenetianMask } from "lucide-react";
@@ -10,11 +10,18 @@ import {
   ScenarioBreadcrumb,
   ScenarioDetailsLayout,
 } from "@/components/scenario";
+import { ScenarioStartWizard } from "@/components/scenario/ScenarioStartWizard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLoadTale } from "@/hooks/useGameSaves";
 import { bytesToObjectUrl, formatExactDateTime } from "@/lib/utils";
 import { scenarioContentToTaleSeed } from "@/lib/scenario-content";
+import {
+  analyzeScenarioQuestions,
+  previewScenarioText,
+  type ScenarioAnswers,
+  type ScenarioQuestion,
+} from "@/lib/scenario-questions";
 import { canSyncNewTales } from "@/services/new-tale-sync";
 import {
   getScenarioById,
@@ -24,6 +31,12 @@ import {
 import { addSyncChangedListener } from "@/services/sync-wakeup";
 import { useSettingsStore } from "@/store";
 import { GameMode, type Scenario } from "@/types/context.type";
+
+type ScenarioStart = {
+  scenarioSnapshot: Scenario;
+  questions: ScenarioQuestion[];
+  syncPolicy?: "default" | "private";
+};
 
 export default function ScenarioDetails() {
   const { id } = useParams({ from: "/scenarios/$id" });
@@ -36,7 +49,13 @@ export default function ScenarioDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown>(null);
   const [starting, setStarting] = useState(false);
+  const startLock = useRef(false);
+  const currentId = useRef(id);
+  currentId.current = id;
+  const [pendingStart, setPendingStart] = useState<ScenarioStart | null>(null);
   const [canStartPrivate, setCanStartPrivate] = useState(false);
+
+  useEffect(() => setPendingStart(null), [id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -100,7 +119,11 @@ export default function ScenarioDetails() {
 
   const openingText = useMemo(
     () =>
-      scenario ? scenarioContentToTaleSeed(scenario.content).openingText : "",
+      scenario
+        ? previewScenarioText(
+            scenarioContentToTaleSeed(scenario.content).openingText,
+          )
+        : "",
     [scenario],
   );
 
@@ -108,22 +131,68 @@ export default function ScenarioDetails() {
     navigate({ to: "/scenarios" });
   };
 
-  const startScenario = async (syncPolicy?: "default" | "private") => {
+  const completeStart = async (
+    setup: ScenarioStart,
+    answers: ScenarioAnswers = {},
+  ) => {
+    if (startLock.current || setup.scenarioSnapshot.id !== currentId.current)
+      return;
+    startLock.current = true;
     setStarting(true);
     try {
-      const taleId = await initTaleFromScenario(id, { syncPolicy });
+      const taleId = await initTaleFromScenario(setup.scenarioSnapshot.id, {
+        syncPolicy: setup.syncPolicy,
+        answers,
+        scenarioSnapshot: setup.scenarioSnapshot,
+      });
+      if (setup.scenarioSnapshot.id !== currentId.current) return;
       await loadTale(taleId);
-      navigate({ to: "/play" });
-    } catch (cause) {
-      toast.error(
-        cause instanceof Error ? cause.message : t`Failed to start scenario`,
-      );
+      if (setup.scenarioSnapshot.id !== currentId.current) return;
+      await navigate({ to: "/play" });
     } finally {
+      startLock.current = false;
       setStarting(false);
     }
   };
 
-  if (loading) {
+  const startScenario = async (syncPolicy?: "default" | "private") => {
+    if (!scenario || scenario.id !== id || startLock.current) return;
+    const scenarioSnapshot = structuredClone(scenario);
+    const { questions, diagnostics } = analyzeScenarioQuestions(
+      scenarioSnapshot.content,
+    );
+    if (diagnostics.length > 0) {
+      toast.error(
+        t`This scenario has invalid questions. Edit the scenario before starting.`,
+      );
+      return;
+    }
+    const setup = { scenarioSnapshot, questions, syncPolicy };
+    if (questions.length > 0) {
+      setPendingStart(setup);
+      return;
+    }
+    try {
+      await completeStart(setup);
+    } catch (cause) {
+      toast.error(
+        cause instanceof Error ? cause.message : t`Failed to start scenario`,
+      );
+    }
+  };
+
+  if (pendingStart && pendingStart.scenarioSnapshot.id === id) {
+    return (
+      <ScenarioStartWizard
+        title={pendingStart.scenarioSnapshot.name}
+        questions={pendingStart.questions}
+        onComplete={(answers) => completeStart(pendingStart, answers)}
+        onCancel={() => setPendingStart(null)}
+      />
+    );
+  }
+
+  if (loading || (!error && scenario && scenario.id !== id)) {
     return (
       <div className="mx-auto w-full max-w-5xl px-3 py-6 text-base text-muted-foreground sm:px-5 lg:px-6">
         <Trans>Loading...</Trans>

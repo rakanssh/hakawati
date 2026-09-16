@@ -5,6 +5,7 @@ import {
   scenarioContentToEditorFields,
   scenarioContentToPackage,
   scenarioContentToTaleSeed,
+  editorFieldsToScenarioContent,
 } from "./scenario-content";
 import { PromptComponentType, StorybookCategory } from "@/types/context.type";
 
@@ -105,7 +106,7 @@ describe("scenario content", () => {
     });
 
     expect(scenarioContentToEditorFields(content).initialInventory).toEqual([
-      "Compass",
+      expect.objectContaining({ name: "Compass" }),
     ]);
     expect(scenarioContentToPackage(content)).toEqual([
       expect.objectContaining({
@@ -113,6 +114,41 @@ describe("scenario content", () => {
         name: "Compass",
       }),
     ]);
+  });
+
+  it("preserves ids, inventory descriptions and unfinished question text through editing", () => {
+    const fields = scenarioContentToEditorFields([
+      {
+        type: "stat",
+        version: 1,
+        id: "stable-stat",
+        name: "Nerve",
+        description: "${Who are you?}",
+        value: 5,
+        range: [0, 10],
+      },
+      {
+        type: "inventory_item",
+        version: 1,
+        id: "stable-item",
+        name: "Sword",
+        description: "Belongs to ${Who are you?}",
+      },
+    ]);
+    fields.initialStats[0].name = "${Which trait ";
+    fields.initialInventory[0].name = "${Which item ";
+    const edited = editorFieldsToScenarioContent(fields);
+    const reopened = scenarioContentToEditorFields(edited);
+    expect(reopened.initialStats[0]).toMatchObject({
+      id: "stable-stat",
+      name: "${Which trait ",
+      description: "${Who are you?}",
+    });
+    expect(reopened.initialInventory[0]).toEqual({
+      id: "stable-item",
+      name: "${Which item ",
+      description: "Belongs to ${Who are you?}",
+    });
   });
 
   it("preserves prompt component whitespace while editing", () => {
