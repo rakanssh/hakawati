@@ -37,7 +37,7 @@ import {
   SettingsStack,
 } from "@/components/layout/settings/settings-layout";
 import { getSyncUiKind } from "@/lib/sync-ui";
-import { useSyncSettingsStore } from "@/store";
+import { defaultCloudBaseUrl, useSyncSettingsStore } from "@/store";
 import {
   getSyncProfile,
   setSyncProfileDisabled,
@@ -135,6 +135,7 @@ type CloudStorageItem = NonNullable<ReturnType<typeof cloudStorageItem>>;
 export default function SettingsCloudSync() {
   const { t } = useLingui();
   const cloudBaseUrl = useSyncSettingsStore((state) => state.cloudBaseUrl);
+  const defaultCloudUrl = defaultCloudBaseUrl();
   const personalBaseUrl = useSyncSettingsStore(
     (state) => state.personalBaseUrl,
   );
@@ -948,13 +949,27 @@ export default function SettingsCloudSync() {
             <AccordionContent>
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <SettingsField label={<Trans>Cloud URL</Trans>}>
-                  <Input
-                    value={cloudBaseUrl}
-                    onChange={(event) =>
-                      changeHostedCloudUrl(event.target.value)
-                    }
-                    placeholder={t`https://sync.example.com`}
-                  />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Input
+                      className="min-w-0 flex-1 basis-48"
+                      value={cloudBaseUrl}
+                      onChange={(event) =>
+                        changeHostedCloudUrl(event.target.value)
+                      }
+                      placeholder={t`https://sync.example.com`}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={
+                        busy !== null || cloudBaseUrl === defaultCloudUrl
+                      }
+                      onClick={() => changeHostedCloudUrl(defaultCloudUrl)}
+                    >
+                      <Trans>Reset to Default</Trans>
+                    </Button>
+                  </div>
                 </SettingsField>
                 <SettingsField label={<Trans>Device Name</Trans>}>
                   <Input

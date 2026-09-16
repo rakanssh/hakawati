@@ -11,6 +11,25 @@ describe("cloud capabilities", () => {
     const parsed = parseCloudCapabilities(fixture());
     expect(parsed).not.toBeNull();
     expect(cloudFeatureAvailable(parsed, "sync")).toBe(true);
+    expect(parsed?.announcement).toBeNull();
+  });
+
+  it("ignores an invalid optional announcement without disabling cloud features", () => {
+    const parsed = parseCloudCapabilities(
+      fixture({ announcement: { id: "bad", en: "bad" } }),
+    );
+    expect(parsed?.announcement).toBeNull();
+    expect(cloudFeatureAvailable(parsed, "sync")).toBe(true);
+    const announcement = {
+      id: "491c7ee0-a094-408a-84c9-7f3ee24b519a",
+      en: { title: "Update", body: "Hello" },
+      url: "https://hakawati.dev/news",
+      linkLabel: "Read the news",
+      expiresAt: "2030-01-01T00:00:00Z",
+    };
+    expect(
+      parseCloudCapabilities(fixture({ announcement }))?.announcement,
+    ).toEqual(announcement);
   });
 
   it("fails closed for missing fields, incompatible clients, and unavailable features", () => {

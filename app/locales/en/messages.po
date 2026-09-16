@@ -3744,3 +3744,15 @@ msgstr "Tags must be 32 characters or shorter."
 #: app/components/catalog/CatalogTagInput.tsx:83
 msgid "Use 16 tags or fewer."
 msgstr "Use 16 tags or fewer."
+
+#: app/components/layout/server-announcement.tsx
+msgid "From Hakawati"
+msgstr "From Hakawati"
+
+#: app/components/layout/server-announcement.tsx
+msgid "Learn more"
+msgstr "Learn more"
+
+#: app/components/layout/server-announcement.tsx
+msgid "Dismiss announcement"
+msgstr "Dismiss announcement"

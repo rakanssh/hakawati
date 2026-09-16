@@ -3744,3 +3744,15 @@ msgstr "يجب ألا يتجاوز طول الوسم 32 حرفًا."
 #: app/components/catalog/CatalogTagInput.tsx:83
 msgid "Use 16 tags or fewer."
 msgstr "استخدم 16 وسمًا كحد أقصى."
+
+#: app/components/layout/server-announcement.tsx
+msgid "From Hakawati"
+msgstr "من حكواتي"
+
+#: app/components/layout/server-announcement.tsx
+msgid "Learn more"
+msgstr "معرفة المزيد"
+
+#: app/components/layout/server-announcement.tsx
+msgid "Dismiss announcement"
+msgstr "إخفاء الإعلان"

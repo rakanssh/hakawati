@@ -4,6 +4,7 @@ import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SettingsCloudSync from "./cloud-sync";
+import { deleteHostedRefreshToken } from "@/services/secret-store";
 
 i18n.load("en", {});
 i18n.activate("en");
@@ -85,6 +86,7 @@ vi.mock("@tauri-apps/api/app", () => ({
 }));
 
 vi.mock("@/store", () => ({
+  defaultCloudBaseUrl: () => "https://default.example",
   useSyncSettingsStore: (selector: (state: typeof syncStoreState) => unknown) =>
     selector(syncStoreState),
 }));
@@ -177,6 +179,7 @@ describe("SettingsCloudSync storage usage", () => {
     ).IS_REACT_ACT_ENVIRONMENT = true;
     vi.clearAllMocks();
     Object.assign(syncStoreState, {
+      cloudBaseUrl: "https://sync.example",
       personalBaseUrl: "",
       activeSyncMode: "hosted",
       accessToken: "token",
@@ -195,6 +198,8 @@ describe("SettingsCloudSync storage usage", () => {
       enabled: true,
       disabledReason: null,
     });
+    syncRepoMocks.setSyncProfileDisabled.mockResolvedValue(undefined);
+    vi.mocked(deleteHostedRefreshToken).mockResolvedValue(undefined);
     syncServiceMocks.fetchHostedAccountUsage.mockResolvedValue({
       tales: { used: 3, limit: 50 },
       storage: { usedBytes: 1.5 * 1024 * 1024, limitBytes: 10 * 1024 * 1024 },
@@ -206,6 +211,53 @@ describe("SettingsCloudSync storage usage", () => {
     syncServiceMocks.unregisterHostedDevice.mockResolvedValue(undefined);
     syncServiceMocks.registerSyncDevice.mockResolvedValue(device("device-1"));
     taleLibraryMocks.removeLibraryTaleFromCloud.mockResolvedValue(undefined);
+  });
+
+  it("resets the cloud URL to the build default and clears the previous server session", async () => {
+    const view = render();
+    await flush();
+    const cloudSection = [...view.container.querySelectorAll("button")].find(
+      (button) => button.textContent === "Cloud service",
+    )!;
+    act(() => cloudSection.click());
+    const reset = [...view.container.querySelectorAll("button")].find(
+      (button) => button.textContent === "Reset to Default",
+    )!;
+    expect(reset.disabled).toBe(false);
+    await act(async () => reset.click());
+
+    expect(syncStoreState.setCloudBaseUrl).toHaveBeenCalledExactlyOnceWith(
+      "https://default.example",
+    );
+    expect(deleteHostedRefreshToken).toHaveBeenCalledExactlyOnceWith("hosted");
+    expect(syncStoreState.clearSession).toHaveBeenCalledOnce();
+    expect(syncRepoMocks.setSyncProfileDisabled).toHaveBeenCalledWith(
+      "hosted",
+      "signed_out",
+    );
+    expect(view.container.textContent).toContain(
+      "Cloud URL changed. Sign in again to continue.",
+    );
+    view.cleanup();
+  });
+
+  it("disables resetting an already-default cloud URL without signing out", async () => {
+    syncStoreState.cloudBaseUrl = "https://default.example";
+    const view = render();
+    await flush();
+    const cloudSection = [...view.container.querySelectorAll("button")].find(
+      (button) => button.textContent === "Cloud service",
+    )!;
+    act(() => cloudSection.click());
+    const reset = [...view.container.querySelectorAll("button")].find(
+      (button) => button.textContent === "Reset to Default",
+    )!;
+    expect(reset.disabled).toBe(true);
+    act(() => reset.click());
+    expect(syncStoreState.setCloudBaseUrl).not.toHaveBeenCalled();
+    expect(deleteHostedRefreshToken).not.toHaveBeenCalled();
+    expect(syncStoreState.clearSession).not.toHaveBeenCalled();
+    view.cleanup();
   });
 
   it("hides personal sync even when an old preference selected it", async () => {

@@ -80,32 +80,61 @@ export function useCatalogClient(): CatalogClientState {
         : null,
     [baseUrl, signedIn, token],
   );
-  const [capabilities, setCapabilities] = useState<CatalogCapabilities | null>(
-    null,
-  );
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<unknown>(null);
+  const activeTransport = useRef(publicTransport);
+  activeTransport.current = publicTransport;
+  const generation = useRef(0);
+  const [state, setState] = useState({
+    transport: publicTransport,
+    capabilities: null as CatalogCapabilities | null,
+    loading: Boolean(publicTransport),
+    error: null as unknown,
+  });
+  // A server switch must hide the previous server's capabilities and notice
+  // immediately, before the next effect or network response runs.
+  const current = state.transport === publicTransport;
+  const capabilities = current ? state.capabilities : null;
+  const loading = current ? state.loading : Boolean(publicTransport);
+  const error = current ? state.error : null;
 
   const refreshCapabilities = useCallback(async () => {
-    if (!publicTransport) {
-      setCapabilities(null);
-      setError(null);
-      return;
-    }
-    setLoading(true);
-    setError(null);
+    if (activeTransport.current !== publicTransport) return;
+    const request = ++generation.current;
+    setState((previous) => ({
+      transport: publicTransport,
+      capabilities:
+        previous.transport === publicTransport ? previous.capabilities : null,
+      loading: Boolean(publicTransport),
+      error: null,
+    }));
+    if (!publicTransport) return;
+    const isCurrent = () =>
+      activeTransport.current === publicTransport &&
+      generation.current === request;
     try {
-      setCapabilities(await fetchCatalogCapabilities(publicTransport));
+      const capabilities = await fetchCatalogCapabilities(publicTransport);
+      if (isCurrent())
+        setState({
+          transport: publicTransport,
+          capabilities,
+          loading: false,
+          error: null,
+        });
     } catch (err) {
-      setCapabilities(null);
-      setError(err);
-    } finally {
-      setLoading(false);
+      if (isCurrent())
+        setState({
+          transport: publicTransport,
+          capabilities: null,
+          loading: false,
+          error: err,
+        });
     }
   }, [publicTransport]);
 
   useEffect(() => {
     void refreshCapabilities();
+    return () => {
+      generation.current += 1;
+    };
   }, [refreshCapabilities]);
 
   return {

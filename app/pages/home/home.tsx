@@ -19,6 +19,7 @@ import {
   type GlobalSettingsSectionId,
 } from "@/components/layout/settings";
 import { WhatsNewModal } from "@/components/layout";
+import { ServerAnnouncementCard } from "@/components/layout/server-announcement";
 import placeholderImage from "@/assets/scen-ph.png";
 import { useLoadTale } from "@/hooks/useGameSaves";
 import { useScenariosList } from "@/hooks/useScenarios";
@@ -634,6 +635,11 @@ export default function Home() {
   return (
     <main className="relative min-h-full overflow-x-hidden">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-6 sm:px-6 lg:py-8">
+        <ServerAnnouncementCard
+          announcement={catalog.capabilities?.announcement}
+          baseUrl={catalog.baseUrl}
+        />
+
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold tracking-tight">

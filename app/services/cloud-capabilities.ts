@@ -1,4 +1,8 @@
 import packageMetadata from "../../package.json";
+import {
+  parseServerAnnouncement,
+  type ServerAnnouncement,
+} from "@/lib/server-announcement";
 
 export const HAKAWATI_API_VERSION = "1";
 export const HAKAWATI_CLIENT_VERSION = packageMetadata.version;
@@ -35,6 +39,7 @@ export type CloudCapabilities = {
     packageFormatVersion: number;
     thumbnailUploads: string;
   };
+  announcement?: ServerAnnouncement | null;
 };
 
 export function parseCloudCapabilities(
@@ -86,6 +91,7 @@ export function parseCloudCapabilities(
       packageFormatVersion: value.scenarioCatalog.packageFormatVersion,
       thumbnailUploads: value.scenarioCatalog.thumbnailUploads,
     },
+    announcement: parseServerAnnouncement(value.announcement),
   };
 }
 
