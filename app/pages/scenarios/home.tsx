@@ -431,15 +431,17 @@ export default function ScenariosHome() {
             }
           />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={() => navigate({ to: "/scenarios/new" })}>
-            <Trans>Create</Trans>
-          </Button>
-          <Button variant="outline" onClick={() => setGenerateOpen(true)}>
-            <Sparkles className="w-4 h-4" />
-            <Trans>Generate</Trans>
-          </Button>
-        </div>
+        {activeTab === "local" || catalog.signedIn ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={() => navigate({ to: "/scenarios/new" })}>
+              <Trans>Create</Trans>
+            </Button>
+            <Button variant="outline" onClick={() => setGenerateOpen(true)}>
+              <Sparkles className="w-4 h-4" />
+              <Trans>Generate</Trans>
+            </Button>
+          </div>
+        ) : null}
       </header>
 
       <Tabs value={activeTab} onValueChange={setScenarioTab} className="gap-4">
