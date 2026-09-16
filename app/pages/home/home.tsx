@@ -62,7 +62,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   AlertTriangle,
-  BookOpen,
   ChevronRight,
   Loader2,
   Plus,
@@ -672,33 +671,24 @@ export default function Home() {
           className="flex min-w-0 flex-col gap-4 rounded-xs border border-border bg-card p-4 text-card-foreground sm:flex-row sm:items-center sm:justify-between sm:gap-6"
         >
           <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
-            {!hasFeaturedTale && (
-              <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                <BookOpen className="size-4" />
-                <Trans>A new tale starts here</Trans>
+            {hasFeaturedTale ? (
+              <>
+                <h2 className="line-clamp-2 max-w-full break-words text-lg font-semibold leading-snug">
+                  {featuredTitle || t`Untitled`}
+                </h2>
+                {featuredExcerpt && (
+                  <p className="line-clamp-2 max-w-[75ch] text-sm leading-normal text-muted-foreground sm:line-clamp-1">
+                    <PlainTextExcerpt>{featuredExcerpt}</PlainTextExcerpt>
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-sm leading-normal text-muted-foreground">
+                <Trans>
+                  Choose a scenario or click Quickstart to start a new tale.
+                </Trans>
               </p>
             )}
-            <h2 className="line-clamp-2 max-w-full break-words text-lg font-semibold leading-snug">
-              {hasFeaturedTale ? (
-                featuredTitle || t`Untitled`
-              ) : (
-                <Trans>Where will your story take you?</Trans>
-              )}
-            </h2>
-            <p className="line-clamp-2 max-w-[75ch] text-sm leading-normal text-muted-foreground sm:line-clamp-1">
-              {hasFeaturedTale ? (
-                <PlainTextExcerpt>
-                  {featuredExcerpt || t`Your next chapter is waiting.`}
-                </PlainTextExcerpt>
-              ) : tales.loading ? (
-                <Trans>Loading your library...</Trans>
-              ) : (
-                <Trans>
-                  Choose a scenario to step into a new world, or use Quickstart
-                  to create your own.
-                </Trans>
-              )}
-            </p>
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-2">
             {hasFeaturedTale && (

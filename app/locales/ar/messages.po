@@ -210,10 +210,6 @@ msgstr "بدء واحد"
 msgid "100"
 msgstr "100"
 
-#: app/pages/home/home.tsx:703
-msgid "A new tale starts here"
-msgstr "هنا تبدأ حكاية جديدة"
-
 #: app/data/quickstart-presets.ts:378
 #~ msgid "a setting defined by the theme you provided, grounded in the tone and situations common to that type of story."
 #~ msgstr "بيئة محددة بالموضوع الذي قدمته، مرتكزة على النغمة والمواقف الشائعة لهذا النوع من القصص."
@@ -603,8 +599,8 @@ msgid "Checking for updates..."
 msgstr "جاري التحقق من وجود تحديثات..."
 
 #: app/pages/home/home.tsx:721
-msgid "Choose a scenario to step into a new world, or use Quickstart to create your own."
-msgstr "اختر سيناريو لتدخل عالماً جديداً، أو استخدم \"بداية سريعة\" لإنشاء عالمك الخاص."
+msgid "Choose a scenario or click Quickstart to start a new tale."
+msgstr "اختر سيناريو أو اضغط على \"بداية سريعة\" لبدء حكاية جديدة."
 
 #: app/components/layout/settings/tale.tsx:62
 #~ msgid "Choose how much control the AI has over this tale."
@@ -3610,10 +3606,6 @@ msgstr "كيف تريد أن يكون شعور الحكاية؟"
 msgid "What world should the tale begin in?"
 msgstr "في أي عالم يجب أن تبدأ الحكاية؟"
 
-#: app/pages/home/home.tsx:710
-msgid "Where will your story take you?"
-msgstr "إلى أين ستأخذك قصتك؟"
-
 #: app/components/quickstart/quickstart-wizard.tsx:404
 msgid "Who are you in this world?"
 msgstr "من أنت في هذا العالم؟"
@@ -3653,10 +3645,6 @@ msgstr "افعل..."
 #: app/pages/home/home.tsx:665
 msgid "Your library"
 msgstr "مكتبتك"
-
-#: app/pages/home/home.tsx:716
-msgid "Your next chapter is waiting."
-msgstr "فصلك التالي بانتظارك."
 
 #: app/pages/home/home.tsx:696
 msgid "Your next tale"
