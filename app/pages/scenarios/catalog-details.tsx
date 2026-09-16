@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { PlayIcon, VenetianMask } from "lucide-react";
@@ -10,7 +10,11 @@ import {
   ScenarioBreadcrumb,
   ScenarioDetailsLayout,
 } from "@/components/scenario";
-import { Badge } from "@/components/ui/badge";
+import { CatalogTags } from "@/components/catalog/CatalogTags";
+import {
+  catalogBrowseSearch,
+  readCatalogBrowseSearch,
+} from "@/lib/catalog-browse";
 import { Button } from "@/components/ui/button";
 import {
   useCatalogActions,
@@ -75,8 +79,16 @@ export default function ScenarioCatalogDetails() {
   const { view, viewOwned, start, publish } = useCatalogActions(catalog);
   const publishLinks = useScenarioPublishLinks();
   const { load: loadTale } = useLoadTale();
-  const owned =
-    new URLSearchParams(window.location.search).get("owned") === "1";
+  const { search: routeSearch } = useLocation();
+  const owned = String(routeSearch.owned) === "1";
+  const browse = readCatalogBrowseSearch(
+    routeSearch,
+    owned ? "published" : "discover",
+  );
+  const returnSearch = catalogBrowseSearch({
+    ...browse,
+    tab: owned ? "published" : "discover",
+  });
   const [scenario, setScenario] = useState<CatalogDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
@@ -96,10 +108,6 @@ export default function ScenarioCatalogDetails() {
   const moderationReason = isModerationUnavailable
     ? scenario.moderation.reason
     : null;
-  const visibleTags = scenario?.tags.slice(0, 8) ?? [];
-  const hiddenTagCount = scenario
-    ? Math.max(0, scenario.tags.length - visibleTags.length)
-    : 0;
   const publishedLabel = scenario?.publishedAt
     ? formatDateOnly(scenario.publishedAt)
     : formatDateOnly(validDateMs);
@@ -109,7 +117,6 @@ export default function ScenarioCatalogDetails() {
       ? t`1 start`
       : t`${scenario?.startCount ?? 0} starts`;
   const sourceLabel = owned ? t`Published` : t`Discover`;
-  const sourceTab = owned ? "published" : "discover";
 
   useEffect(() => {
     let cancelled = false;
@@ -150,7 +157,7 @@ export default function ScenarioCatalogDetails() {
   const goBack = () => {
     navigate({
       to: "/scenarios",
-      search: { tab: sourceTab },
+      search: returnSearch,
     });
   };
 
@@ -217,7 +224,7 @@ export default function ScenarioCatalogDetails() {
           breadcrumb={
             <ScenarioBreadcrumb
               to="/scenarios"
-              search={{ tab: sourceTab }}
+              search={returnSearch}
               parent={sourceLabel}
               current={<Trans>Scenario</Trans>}
             />
@@ -250,16 +257,21 @@ export default function ScenarioCatalogDetails() {
             </>
           }
           tags={
-            <>
-              {visibleTags.map((tag) => (
-                <Badge key={tag} variant="outline">
-                  {tag}
-                </Badge>
-              ))}
-              {hiddenTagCount ? (
-                <Badge variant="outline">+{hiddenTagCount}</Badge>
-              ) : null}
-            </>
+            <CatalogTags
+              tags={scenario.tags}
+              limit={8}
+              onSelect={(tag) =>
+                navigate({
+                  to: "/scenarios",
+                  search: catalogBrowseSearch({
+                    tab: "discover",
+                    q: "",
+                    tag: [tag],
+                    sort: "newest",
+                  }),
+                })
+              }
+            />
           }
           notice={notice}
           actions={

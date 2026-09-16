@@ -1,5 +1,6 @@
 export const CATALOG_MAX_TAGS = 16;
 export const CATALOG_MAX_TAG_LENGTH = 32;
+export const CATALOG_TAG_PATTERN = /^[\p{L}\p{N}\p{M}-]+$/u;
 
 export type CatalogTagValidation = {
   tags: string[];
@@ -10,6 +11,7 @@ export type CatalogTagValidation = {
 
 export function normalizeCatalogTag(tag: string): string {
   return tag
+    .normalize("NFKC")
     .trim()
     .toLowerCase()
     .replace(/[\s_]+/g, "-")
@@ -37,7 +39,7 @@ export function validateCatalogTags(tags: string[]): CatalogTagValidation {
   for (const raw of tags) {
     const tag = normalizeCatalogTag(raw);
     if (!tag) continue;
-    if (!/^[a-z0-9-]+$/.test(tag)) {
+    if (!CATALOG_TAG_PATTERN.test(tag)) {
       invalid.push(raw);
       continue;
     }

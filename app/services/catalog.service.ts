@@ -60,12 +60,14 @@ export type CatalogTransportOptions = {
 export type CatalogListOptions = {
   limit?: number;
   cursor?: string;
+  q?: string;
   sort?: CatalogSort;
   tag?: string[];
 };
 
 export type CatalogTagListOptions = {
   q?: string;
+  search?: string;
   tag?: string[];
   sort?: CatalogTagSort;
   limit?: number;
@@ -549,6 +551,7 @@ function catalogListQuery(options: CatalogListOptions): string {
   const query = new URLSearchParams();
   if (options.limit) query.set("limit", String(options.limit));
   if (options.cursor) query.set("cursor", options.cursor);
+  if (options.q?.trim()) query.set("q", options.q.trim());
   if (options.sort) query.set("sort", options.sort);
   for (const tag of normalizeCatalogTags(options.tag)) query.append("tag", tag);
   return query.toString();
@@ -557,6 +560,7 @@ function catalogListQuery(options: CatalogListOptions): string {
 function catalogTagQuery(options: CatalogTagListOptions): string {
   const query = new URLSearchParams();
   if (options.q?.trim()) query.set("q", options.q.trim());
+  if (options.search?.trim()) query.set("search", options.search.trim());
   if (options.sort) query.set("sort", options.sort);
   if (options.limit) query.set("limit", String(options.limit));
   for (const tag of normalizeCatalogTags(options.tag)) query.append("tag", tag);

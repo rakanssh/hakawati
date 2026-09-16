@@ -12,6 +12,7 @@ import {
 import {
   CATALOG_MAX_TAGS,
   CATALOG_MAX_TAG_LENGTH,
+  CATALOG_TAG_PATTERN,
   normalizeCatalogTags,
 } from "@/lib/catalog-tags";
 
@@ -82,8 +83,8 @@ const scenarioPackageSchema = z.object({
         .array(nonBlankString(CATALOG_MAX_TAG_LENGTH))
         .min(1)
         .max(CATALOG_MAX_TAGS)
-        .refine((tags) => tags.every((tag) => /^[a-z0-9-]+$/.test(tag)), {
-          message: "Tags must use lowercase letters, numbers, and hyphens",
+        .refine((tags) => tags.every((tag) => CATALOG_TAG_PATTERN.test(tag)), {
+          message: "Tags must use letters, numbers, and hyphens",
         }),
       initialGameMode: z.enum(["story_teller", "gm"]),
       description: z.string().trim().max(4000).default(""),

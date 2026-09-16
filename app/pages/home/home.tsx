@@ -806,7 +806,9 @@ export default function Home() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate({ to: "/scenarios?tab=discover" })}
+                  onClick={() =>
+                    navigate({ to: "/scenarios", search: { tab: "discover" } })
+                  }
                 >
                   <Trans>Discover</Trans>
                   <ChevronRight className="rtl:rotate-180" />

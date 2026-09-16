@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useNavigate } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import {
   useScenariosList,
   useScenariosExport,
@@ -23,13 +23,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   ArrowLeftIcon,
   BanIcon,
@@ -40,7 +41,6 @@ import {
   Loader2,
   MoreHorizontalIcon,
   Sparkles,
-  SlidersHorizontalIcon,
   UploadCloudIcon,
 } from "lucide-react";
 import placeholderImage from "@/assets/scen-ph.png";
@@ -53,7 +53,7 @@ import {
   PublishScenarioDialog,
   ScenarioPreviewCard,
 } from "@/components/scenario";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   useCatalogActions,
   useCatalogClient,
@@ -62,13 +62,20 @@ import {
   useScenarioPublishLinks,
 } from "@/hooks/useCatalogScenarios";
 import {
-  CATALOG_SORTS,
+  type CatalogSort,
   type CatalogOwnedScenarioRecord,
   type CatalogScenarioRecord,
 } from "@/types/catalog.type";
 import { getScenarioById } from "@/services/scenario.service";
 import type { Scenario } from "@/types/context.type";
 import { CatalogTagInput } from "@/components/catalog/CatalogTagInput";
+import { CatalogTags } from "@/components/catalog/CatalogTags";
+import {
+  catalogBrowseSearch,
+  readCatalogBrowseSearch,
+  type CatalogBrowseState,
+  type ScenarioTab,
+} from "@/lib/catalog-browse";
 import { imageBadgeClass, imageMenuButtonClass } from "@/lib/card-badges";
 
 type PendingScenarioDelete = {
@@ -77,7 +84,6 @@ type PendingScenarioDelete = {
 };
 
 type CatalogCardScenario = CatalogScenarioRecord | CatalogOwnedScenarioRecord;
-type ScenarioTab = "local" | "discover" | "published";
 
 const libraryGridClass =
   "grid grid-cols-1 gap-4 sm:grid-cols-[repeat(auto-fill,minmax(20rem,1fr))]";
@@ -101,50 +107,6 @@ function awaitingModeration(scenario: CatalogCardScenario) {
   );
 }
 
-function scenarioTabFromSearch(): ScenarioTab {
-  const tab = new URLSearchParams(window.location.search).get("tab");
-  return tab === "discover" || tab === "published" ? tab : "local";
-}
-
-function replaceScenarioTabSearch(tab: ScenarioTab) {
-  const url = new URL(window.location.href);
-  if (tab === "local") {
-    url.searchParams.delete("tab");
-  } else {
-    url.searchParams.set("tab", tab);
-  }
-  window.history.replaceState(
-    window.history.state,
-    "",
-    `${url.pathname}${url.search}${url.hash}`,
-  );
-}
-
-function TagPreview({ tags, limit = 3 }: { tags: string[]; limit?: number }) {
-  const visible = tags.slice(0, limit);
-  const extra = tags.length - visible.length;
-  if (!visible.length) return null;
-
-  return (
-    <div className="flex h-6 min-w-0 gap-1 overflow-hidden">
-      {visible.map((tag) => (
-        <Badge
-          key={tag}
-          variant="outline"
-          className="h-6 max-w-28 shrink-0 truncate text-xs"
-        >
-          {tag}
-        </Badge>
-      ))}
-      {extra > 0 ? (
-        <Badge variant="outline" className="h-6 shrink-0 text-xs">
-          +{extra}
-        </Badge>
-      ) : null}
-    </div>
-  );
-}
-
 function CatalogScenarioCard({
   baseUrl,
   scenario,
@@ -154,6 +116,7 @@ function CatalogScenarioCard({
   onBlockPublisher,
   onUnpublish,
   onThumbnail,
+  onTag,
 }: {
   baseUrl: string;
   scenario: CatalogCardScenario;
@@ -163,6 +126,7 @@ function CatalogScenarioCard({
   onBlockPublisher?: (scenario: CatalogCardScenario) => void;
   onUnpublish?: (scenario: CatalogCardScenario) => void;
   onThumbnail?: (scenario: CatalogCardScenario, file: File) => void;
+  onTag: (tag: string) => void;
 }) {
   const isModerationHidden = hiddenByModeration(scenario);
   const isAwaitingModeration = awaitingModeration(scenario);
@@ -244,7 +208,7 @@ function CatalogScenarioCard({
           </DropdownMenuContent>
         </DropdownMenu>
       }
-      footer={<TagPreview tags={scenario.tags} limit={2} />}
+      footer={<CatalogTags tags={scenario.tags} onSelect={onTag} />}
       onOpen={() => onView?.(scenario)}
     />
   );
@@ -255,11 +219,49 @@ export default function ScenariosHome() {
   const { items, loading, error, page, limit, total, setPage, remove } =
     useScenariosList();
   const navigate = useNavigate();
+  const { search: routeSearch } = useLocation();
+  const browse = useMemo(
+    () => readCatalogBrowseSearch(routeSearch),
+    [routeSearch],
+  );
+  const activeTab = browse.tab;
+  const filters = useMemo(
+    () => ({ limit: 24, q: browse.q, tag: browse.tag, sort: browse.sort }),
+    [browse],
+  );
+  const updateBrowse = useCallback(
+    (updates: Partial<CatalogBrowseState>) => {
+      void navigate({
+        to: "/scenarios",
+        search: catalogBrowseSearch({ ...browse, ...updates }),
+        replace: true,
+        resetScroll: false,
+      });
+    },
+    [browse, navigate],
+  );
   const { exportById } = useScenariosExport();
   const { importFromClipboard } = useScenariosImport();
   const catalog = useCatalogClient();
-  const discover = useCatalogScenarioList(catalog, { limit: 24 });
-  const published = usePublishedCatalogScenarios(catalog);
+  const discover = useCatalogScenarioList(
+    { ...catalog, enabled: catalog.enabled && activeTab === "discover" },
+    {},
+    filters,
+  );
+  const published = usePublishedCatalogScenarios(
+    { ...catalog, enabled: catalog.enabled && activeTab === "published" },
+    {},
+    filters,
+  );
+  const latestCatalogRefresh = useRef({
+    discover: discover.refresh,
+    published: published.refresh,
+  });
+  // A mutation can finish after the user has changed the active filters.
+  latestCatalogRefresh.current = {
+    discover: discover.refresh,
+    published: published.refresh,
+  };
   const publishLinks = useScenarioPublishLinks();
   const catalogActions = useCatalogActions(catalog);
   const linkByLocalId = useMemo(
@@ -268,18 +270,17 @@ export default function ScenariosHome() {
     [publishLinks.links],
   );
   const [generateOpen, setGenerateOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<ScenarioTab>(
-    scenarioTabFromSearch,
-  );
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [tagInputKey, setTagInputKey] = useState(0);
   const [pendingDelete, setPendingDelete] =
     useState<PendingScenarioDelete | null>(null);
   const [pendingPublish, setPendingPublish] = useState<Scenario | null>(null);
   const setScenarioTab = (value: string) => {
     const next: ScenarioTab =
       value === "discover" || value === "published" ? value : "local";
-    setActiveTab(next);
-    replaceScenarioTabSearch(next);
+    updateBrowse({
+      tab: next,
+      sort: next === "published" ? "updated" : "newest",
+    });
   };
   const importScenario = async () => {
     try {
@@ -310,16 +311,18 @@ export default function ScenariosHome() {
   };
   const refreshCatalogState = async () => {
     await Promise.all([
-      published.refresh(),
+      latestCatalogRefresh.current.published(),
       publishLinks.refresh(),
-      discover.refresh(),
+      latestCatalogRefresh.current.discover(),
     ]);
   };
   const viewPublicScenario = (scenario: CatalogCardScenario, owned = false) => {
     navigate({
-      to: owned
-        ? `/scenarios/catalog/${scenario.id}?owned=1`
-        : `/scenarios/catalog/${scenario.id}`,
+      to: `/scenarios/catalog/${scenario.id}`,
+      search: {
+        ...catalogBrowseSearch(browse),
+        owned: owned ? "1" : undefined,
+      },
     });
   };
   const reportPublicScenario = async (scenario: CatalogScenarioRecord) => {
@@ -346,8 +349,9 @@ export default function ScenariosHome() {
     }
     try {
       await catalogActions.blockPublisher(scenario.author.id);
+      setTagInputKey((key) => key + 1);
       toast.success(t`Publisher blocked`);
-      await discover.refresh();
+      await latestCatalogRefresh.current.discover();
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : t`Failed to block publisher`,
@@ -358,8 +362,8 @@ export default function ScenariosHome() {
     try {
       await catalogActions.unpublish(scenario.id);
       toast.success(t`Scenario unpublished`);
-      await published.refresh();
-      await discover.refresh();
+      await latestCatalogRefresh.current.published();
+      await latestCatalogRefresh.current.discover();
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -375,7 +379,8 @@ export default function ScenariosHome() {
     try {
       await catalogActions.updateThumbnail(scenario.id, file);
       toast.success(t`Thumbnail updated`);
-      await published.refresh();
+      await latestCatalogRefresh.current.published();
+      await latestCatalogRefresh.current.discover();
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : t`Failed to update thumbnail`,
@@ -392,8 +397,7 @@ export default function ScenariosHome() {
       (activeTab === "discover" && !catalog.enabled) ||
       (activeTab === "published" && (!catalog.enabled || !catalog.signedIn))
     ) {
-      setActiveTab("local");
-      replaceScenarioTabSearch("local");
+      updateBrowse({ tab: "local" });
     }
   }, [
     activeTab,
@@ -402,12 +406,22 @@ export default function ScenariosHome() {
     catalog.enabled,
     catalog.error,
     catalog.signedIn,
+    updateBrowse,
   ]);
 
   const showCatalogControls =
     (activeTab === "discover" && catalog.enabled) ||
     (activeTab === "published" && catalog.enabled && catalog.signedIn);
   const catalogToolbar = activeTab === "published" ? published : discover;
+  const hasFilters = Boolean(browse.q.trim() || browse.tag.length);
+  const filterByTag = (tag: string) => {
+    if (!browse.tag.includes(tag))
+      updateBrowse({ tag: [...browse.tag, tag].slice(0, 16) });
+  };
+  const clearFilters = () => {
+    setTagInputKey((key) => key + 1);
+    updateBrowse({ q: "", tag: [] });
+  };
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8">
@@ -478,70 +492,99 @@ export default function ScenariosHome() {
             </div>
           ) : null}
           {showCatalogControls ? (
-            <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-2 md:ms-auto md:w-auto md:max-w-[34rem] md:flex-1">
-              <div className="relative min-w-0">
-                <CatalogTagInput
-                  value={catalogToolbar.filters.tag ?? []}
-                  onChange={(tag) =>
-                    catalogToolbar.setFilters((current) => ({
-                      ...current,
-                      tag,
-                    }))
-                  }
-                  client={catalog}
-                  placeholder="Search scenarios or tags"
-                />
-                {catalogToolbar.loading ? (
-                  <Loader2
-                    className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 animate-spin text-muted-foreground"
-                    aria-label={t`Loading scenarios`}
+            <div className="grid w-full gap-2">
+              <div className="flex items-center gap-2">
+                <div className="relative min-w-0 flex-1">
+                  <Input
+                    type="search"
+                    value={browse.q}
+                    maxLength={200}
+                    placeholder={t`Search scenarios`}
+                    aria-label={t`Search scenarios`}
+                    className="pe-9"
+                    onChange={(event) =>
+                      updateBrowse({ q: event.target.value })
+                    }
                   />
-                ) : null}
-              </div>
-              <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
+                  {catalogToolbar.loading && (
+                    <Loader2
+                      className="pointer-events-none absolute end-2 top-2.5 size-4 animate-spin text-muted-foreground"
+                      aria-label={t`Loading scenarios`}
+                    />
+                  )}
+                </div>
+                <Select
+                  value={browse.sort}
+                  onValueChange={(sort) =>
+                    updateBrowse({ sort: sort as CatalogSort })
+                  }
+                >
+                  <SelectTrigger
                     aria-label={t`Sort scenarios`}
+                    className="w-32"
                   >
-                    <SlidersHorizontalIcon className="h-4 w-4" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">
+                      <Trans>New</Trans>
+                    </SelectItem>
+                    <SelectItem value="popular">
+                      <Trans>Popular</Trans>
+                    </SelectItem>
+                    {(activeTab === "published" ||
+                      browse.sort === "updated") && (
+                      <SelectItem value="updated">
+                        <Trans>Updated</Trans>
+                      </SelectItem>
+                    )}
+                    {browse.sort === "most_started" && (
+                      <SelectItem value="most_started">
+                        <Trans>Most started</Trans>
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-start gap-2">
+                <div className="min-w-0 flex-1">
+                  <CatalogTagInput
+                    key={`${activeTab}-${tagInputKey}`}
+                    value={browse.tag}
+                    onChange={(tag) => updateBrowse({ tag })}
+                    search={browse.q}
+                    client={catalog}
+                    placeholder={t`Filter by tags`}
+                    aria-label={t`Filter by tags`}
+                  />
+                </div>
+                {hasFilters && (
+                  <Button variant="ghost" onClick={clearFilters}>
+                    <Trans>Clear filters</Trans>
                   </Button>
-                </SheetTrigger>
-                <SheetContent side="bottom" className="pb-6">
-                  <SheetHeader>
-                    <SheetTitle>
-                      <Trans>Sort scenarios</Trans>
-                    </SheetTitle>
-                  </SheetHeader>
-                  <div className="grid gap-2 px-4">
-                    {CATALOG_SORTS.map((sort) => (
-                      <Button
-                        key={sort}
-                        variant={
-                          catalogToolbar.filters.sort === sort ||
-                          (!catalogToolbar.filters.sort && sort === "popular")
-                            ? "default"
-                            : "outline"
-                        }
-                        className="justify-start"
-                        onClick={() => {
-                          catalogToolbar.setFilters((current) => ({
-                            ...current,
-                            sort: sort as (typeof CATALOG_SORTS)[number],
-                          }));
-                          setFilterOpen(false);
-                        }}
-                      >
-                        {sort.replaceAll("_", " ")}
-                      </Button>
-                    ))}
-                  </div>
-                </SheetContent>
-              </Sheet>
+                )}
+              </div>
             </div>
           ) : null}
         </div>
+        {showCatalogControls &&
+          !catalogToolbar.error &&
+          catalogToolbar.items.length === 0 && (
+            <p
+              role="status"
+              className="py-8 text-center text-sm text-muted-foreground"
+            >
+              {catalogToolbar.loading ? (
+                <Trans>Loading scenarios</Trans>
+              ) : hasFilters ? (
+                <Trans>No scenarios match your search or tags.</Trans>
+              ) : activeTab === "published" ? (
+                <Trans>No published scenarios yet.</Trans>
+              ) : (
+                <Trans>No public scenarios yet.</Trans>
+              )}
+            </p>
+          )}
         <TabsContent value="local" className="grid gap-4">
           {loading && (
             <div className="text-sm text-muted-foreground">
@@ -671,6 +714,9 @@ export default function ScenariosHome() {
             {discover.error ? (
               <div className="text-sm text-destructive">
                 <Trans>Failed to load public scenarios.</Trans>
+                <Button variant="link" onClick={() => void discover.refresh()}>
+                  <Trans>Retry</Trans>
+                </Button>
               </div>
             ) : null}
             <div className={libraryGridClass}>
@@ -680,6 +726,7 @@ export default function ScenariosHome() {
                   baseUrl={catalog.baseUrl}
                   scenario={scenario}
                   actions="discover"
+                  onTag={filterByTag}
                   onView={viewPublicScenario}
                   onReport={reportPublicScenario}
                   onBlockPublisher={
@@ -706,6 +753,9 @@ export default function ScenariosHome() {
             {published.error ? (
               <div className="text-sm text-destructive">
                 <Trans>Failed to load published scenarios.</Trans>
+                <Button variant="link" onClick={() => void published.refresh()}>
+                  <Trans>Retry</Trans>
+                </Button>
               </div>
             ) : null}
             <div className={libraryGridClass}>
@@ -715,6 +765,7 @@ export default function ScenariosHome() {
                   baseUrl={catalog.baseUrl}
                   scenario={scenario}
                   actions="published"
+                  onTag={filterByTag}
                   onView={(item) => viewPublicScenario(item, true)}
                   onUnpublish={unpublishPublicScenario}
                   onThumbnail={

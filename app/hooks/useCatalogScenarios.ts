@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   acceptCurrentCatalogPolicies,
   blockCatalogPublisher,
@@ -32,6 +32,7 @@ import type {
 } from "@/types/catalog.type";
 import type { Scenario } from "@/types/context.type";
 import type { ScenarioPackageMetadata } from "@/lib/catalog-package";
+import { normalizeCatalogTags } from "@/lib/catalog-tags";
 import { listScenarioPublishLinks } from "@/repositories/scenario-publish-link.repository";
 import type { ScenarioPublishLink } from "@/types/catalog.type";
 import type { NewTaleSyncPolicy } from "@/services/new-tale-sync";
@@ -127,140 +128,156 @@ export function useCatalogClient(): CatalogClientState {
 export function useCatalogScenarioList(
   client: CatalogClientState,
   initial: CatalogListOptions = {},
+  controlledFilters?: CatalogListOptions,
 ) {
-  const readTransport = selectCatalogReadTransport(client);
-  const [items, setItems] = useState<CatalogScenarioRecord[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [filters, setFilters] = useState<CatalogListOptions>({
-    limit: initial.limit ?? 24,
-    sort: initial.sort ?? "popular",
-    tag: initial.tag,
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<unknown>(null);
-
-  const refresh = useCallback(async () => {
-    if (!client.enabled || !readTransport) {
-      setItems([]);
-      setNextCursor(null);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const page = await listCatalogScenarios(readTransport, filters);
-      setItems(page.items);
-      setNextCursor(page.nextCursor);
-    } catch (err) {
-      setError(err);
-      setItems([]);
-      setNextCursor(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [client.enabled, filters, readTransport]);
-
-  const loadMore = useCallback(async () => {
-    if (!client.enabled || !readTransport || !nextCursor) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const page = await listCatalogScenarios(readTransport, {
-        ...filters,
-        cursor: nextCursor,
-      });
-      setItems((current) => [...current, ...page.items]);
-      setNextCursor(page.nextCursor);
-    } catch (err) {
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [client.enabled, filters, nextCursor, readTransport]);
-
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
-
-  return {
-    items,
-    nextCursor,
-    filters,
-    setFilters,
-    loading,
-    error,
-    refresh,
-    loadMore,
-  } as const;
+  return useCatalogList<CatalogScenarioRecord>(
+    client.enabled,
+    selectCatalogReadTransport(client),
+    { ...initial, sort: initial.sort ?? "newest" },
+    listCatalogScenarios,
+    controlledFilters,
+  );
 }
 
 export function usePublishedCatalogScenarios(
   client: CatalogClientState,
   initial: CatalogListOptions = {},
+  controlledFilters?: CatalogListOptions,
 ) {
-  const [items, setItems] = useState<CatalogOwnedScenarioRecord[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [filters, setFilters] = useState<CatalogListOptions>({
+  return useCatalogList<CatalogOwnedScenarioRecord>(
+    client.enabled,
+    client.authTransport,
+    { ...initial, sort: initial.sort ?? "updated" },
+    listOwnedCatalogScenarios,
+    controlledFilters,
+  );
+}
+
+function useCatalogList<T extends { id: string }>(
+  enabled: boolean,
+  transport: CatalogTransport | null,
+  initial: CatalogListOptions,
+  list: (
+    transport: CatalogTransport,
+    options: CatalogListOptions,
+  ) => Promise<{ items: T[]; nextCursor: string | null }>,
+  controlledFilters?: CatalogListOptions,
+) {
+  const [internalFilters, setFilters] = useState<CatalogListOptions>(() => ({
     limit: initial.limit ?? 24,
-    sort: initial.sort ?? "popular",
+    sort: initial.sort,
+    q: initial.q,
     tag: initial.tag,
+  }));
+  const filters = controlledFilters ?? internalFilters;
+  const { limit, sort } = filters;
+  const q = filters.q?.trim() || undefined;
+  const tagsKey = JSON.stringify(normalizeCatalogTags(filters.tag));
+  const query = useMemo(
+    () => ({ limit, sort, q, tag: JSON.parse(tagsKey) as string[] }),
+    [limit, sort, q, tagsKey],
+  );
+  const scope = useMemo(
+    () => ({ enabled, transport, query }),
+    [enabled, transport, query],
+  );
+  const activeScope = useRef(scope);
+  // Guard responses and old callbacks as soon as a new filter/auth render starts.
+  activeScope.current = scope;
+  const generation = useRef(0);
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const paging = useRef<{
+    scope: typeof scope;
+    cursor: string | null;
+    busy: boolean;
+  } | null>(null);
+  const [state, setState] = useState({
+    scope,
+    items: [] as T[],
+    nextCursor: null as string | null,
+    loading: Boolean(enabled && transport),
+    error: null as unknown,
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<unknown>(null);
 
-  const refresh = useCallback(async () => {
-    if (!client.enabled || !client.authTransport) {
-      setItems([]);
-      setNextCursor(null);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const page = await listOwnedCatalogScenarios(
-        client.authTransport,
-        filters,
-      );
-      setItems(page.items);
-      setNextCursor(page.nextCursor);
-    } catch (err) {
-      setError(err);
-      setItems([]);
-      setNextCursor(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [client.authTransport, client.enabled, filters]);
-
-  const loadMore = useCallback(async () => {
-    if (!client.enabled || !client.authTransport || !nextCursor) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const page = await listOwnedCatalogScenarios(client.authTransport, {
-        ...filters,
-        cursor: nextCursor,
-      });
-      setItems((current) => [...current, ...page.items]);
-      setNextCursor(page.nextCursor);
-    } catch (err) {
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [client.authTransport, client.enabled, filters, nextCursor]);
+  const requestPage = useCallback(
+    async (append: boolean) => {
+      if (activeScope.current !== scope) return;
+      const cursor =
+        paging.current?.scope === scope ? paging.current.cursor : null;
+      if (append && (!cursor || paging.current?.busy)) return;
+      const request = ++generation.current;
+      const available = Boolean(scope.enabled && scope.transport);
+      const pageRequest = {
+        scope,
+        cursor: append ? cursor : null,
+        busy: available,
+      };
+      paging.current = pageRequest;
+      setState((current) => ({
+        scope,
+        items: append && current.scope === scope ? current.items : [],
+        nextCursor: append ? cursor : null,
+        loading: available,
+        error: null,
+      }));
+      if (!scope.enabled || !scope.transport) return;
+      const isCurrent = () =>
+        activeScope.current === scope && generation.current === request;
+      try {
+        const page = await list(scope.transport, {
+          ...scope.query,
+          ...(append && cursor ? { cursor } : {}),
+        });
+        if (!isCurrent()) return;
+        pageRequest.cursor = page.nextCursor;
+        setState((current) => {
+          const items = append ? [...current.items, ...page.items] : page.items;
+          const seen = new Set<string>();
+          return {
+            ...current,
+            items: items.filter((item) => {
+              if (seen.has(item.id)) return false;
+              seen.add(item.id);
+              return true;
+            }),
+            nextCursor: page.nextCursor,
+          };
+        });
+      } catch (error) {
+        if (isCurrent()) setState((current) => ({ ...current, error }));
+      } finally {
+        if (isCurrent()) {
+          pageRequest.busy = false;
+          setState((current) => ({ ...current, loading: false }));
+        }
+      }
+    },
+    [list, scope],
+  );
+  const refresh = useCallback(() => {
+    if (activeScope.current !== scope) return Promise.resolve();
+    if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    return requestPage(false);
+  }, [requestPage, scope]);
+  const loadMore = useCallback(() => requestPage(true), [requestPage]);
 
   useEffect(() => {
-    void refresh();
+    refreshTimer.current = setTimeout(() => void refresh(), 200);
+    return () => {
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+      generation.current += 1;
+      paging.current = null;
+    };
   }, [refresh]);
 
   return {
-    items,
-    nextCursor,
+    items: state.scope === scope ? state.items : [],
+    nextCursor: state.scope === scope ? state.nextCursor : null,
     filters,
     setFilters,
-    loading,
-    error,
+    loading:
+      state.scope === scope ? state.loading : Boolean(enabled && transport),
+    error: state.scope === scope ? state.error : null,
     refresh,
     loadMore,
   } as const;
@@ -284,38 +301,68 @@ export function useCatalogTagSuggestions(
   client: CatalogClientState,
   options: CatalogTagListOptions,
 ) {
-  const { limit, q, sort, tag } = options;
-  const [items, setItems] = useState<CatalogTagSuggestion[]>([]);
-  const [loading, setLoading] = useState(false);
+  const readTransport = selectCatalogReadTransport(client);
+  const { limit, sort } = options;
+  const q = options.q?.trim();
+  const search = options.search?.trim();
+  const tagsKey = JSON.stringify(normalizeCatalogTags(options.tag));
+  const scope = useMemo(
+    () => ({
+      enabled: client.enabled,
+      readTransport,
+      limit,
+      q,
+      search,
+      sort,
+      tagsKey,
+    }),
+    [client.enabled, readTransport, limit, q, search, sort, tagsKey],
+  );
+  const activeScope = useRef(scope);
+  activeScope.current = scope;
+  const [state, setState] = useState({
+    scope,
+    items: [] as CatalogTagSuggestion[],
+    loading: Boolean(client.enabled && readTransport),
+  });
 
   useEffect(() => {
-    if (!client.enabled || !client.publicTransport) {
-      setItems([]);
+    if (!scope.enabled || !scope.readTransport) {
+      setState({ scope, items: [], loading: false });
       return;
     }
     let cancelled = false;
-    setLoading(true);
-    void listCatalogTags(client.publicTransport, {
-      limit,
-      q,
-      sort,
-      tag,
-    })
-      .then((page) => {
-        if (!cancelled) setItems(page.items);
+    const isCurrent = () => !cancelled && activeScope.current === scope;
+    setState({ scope, items: [], loading: true });
+    const timer = setTimeout(() => {
+      void listCatalogTags(scope.readTransport!, {
+        limit: scope.limit,
+        q: scope.q,
+        search: scope.search,
+        sort: scope.sort,
+        tag: JSON.parse(scope.tagsKey) as string[],
       })
-      .catch(() => {
-        if (!cancelled) setItems([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+        .then((page) => {
+          if (isCurrent())
+            setState({ scope, items: page.items, loading: false });
+        })
+        .catch(() => {
+          if (isCurrent()) setState({ scope, items: [], loading: false });
+        });
+    }, 200);
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
-  }, [client.enabled, client.publicTransport, limit, q, sort, tag]);
+  }, [scope]);
 
-  return { items, loading } as const;
+  return {
+    items: state.scope === scope ? state.items : [],
+    loading:
+      state.scope === scope
+        ? state.loading
+        : Boolean(client.enabled && readTransport),
+  } as const;
 }
 
 export function useCatalogActions(client: CatalogClientState) {

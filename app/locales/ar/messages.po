@@ -3674,3 +3674,85 @@ msgstr "سيناريوهاتك"
 #: app/data/quickstart-presets.ts:20
 msgid "Zombies"
 msgstr "زومبي"
+
+#: app/components/catalog/CatalogTagInput.tsx:72
+msgid "Add at least one tag."
+msgstr "أضف وسمًا واحدًا على الأقل."
+
+#: app/components/catalog/CatalogTagInput.tsx:143
+msgid "Add tag"
+msgstr "إضافة وسم"
+
+#: app/components/catalog/CatalogTags.tsx:26
+msgid "Browse tag: {tag}"
+msgstr "تصفّح الوسم: {tag}"
+
+#: app/pages/scenarios/home.tsx:542
+msgid "Clear filters"
+msgstr "مسح عوامل التصفية"
+
+#: app/pages/scenarios/home.tsx:536
+#: app/pages/scenarios/home.tsx:537
+msgid "Filter by tags"
+msgstr "تصفية حسب الوسوم"
+
+#: app/components/scenario/PublishScenarioDialog.tsx:200
+msgid "Loading published scenario details..."
+msgstr "جارٍ تحميل تفاصيل السيناريو المنشور..."
+
+#: app/components/scenario/PublishScenarioDialog.tsx:238
+msgid "magic, city"
+msgstr "سحر, مدينة"
+
+#: app/pages/scenarios/home.tsx:522
+msgid "Most started"
+msgstr "الأكثر لعبًا"
+
+#: app/pages/scenarios/home.tsx:509
+msgid "New"
+msgstr "الأحدث"
+
+#: app/pages/scenarios/home.tsx:561
+msgid "No published scenarios yet."
+msgstr "لا توجد سيناريوهات منشورة بعد."
+
+#: app/pages/scenarios/home.tsx:559
+msgid "No scenarios match your search or tags."
+msgstr "لا توجد سيناريوهات تطابق بحثك أو الوسوم المحددة."
+
+#: app/pages/scenarios/home.tsx:512
+msgid "Popular"
+msgstr "الأكثر شعبية"
+
+#: app/components/scenario/PublishScenarioDialog.tsx:187
+msgid "Published scenario details could not be loaded."
+msgstr "تعذّر تحميل تفاصيل السيناريو المنشور."
+
+#: app/components/catalog/CatalogTagInput.tsx:113
+msgid "Remove {tag}"
+msgstr "إزالة {tag}"
+
+#: app/pages/scenarios/home.tsx:481
+#: app/pages/scenarios/home.tsx:482
+msgid "Search scenarios"
+msgstr "البحث في السيناريوهات"
+
+#: app/components/catalog/CatalogTags.tsx:48
+msgid "Show all tags"
+msgstr "عرض جميع الوسوم"
+
+#: app/components/catalog/CatalogTagInput.tsx:203
+msgid "Suggested tags"
+msgstr "وسوم مقترحة"
+
+#: app/components/catalog/CatalogTagInput.tsx:79
+msgid "Tags can only use letters, numbers, and hyphens."
+msgstr "يمكن أن تحتوي الوسوم على حروف وأرقام وشرطات فقط."
+
+#: app/components/catalog/CatalogTagInput.tsx:81
+msgid "Tags must be 32 characters or shorter."
+msgstr "يجب ألا يتجاوز طول الوسم 32 حرفًا."
+
+#: app/components/catalog/CatalogTagInput.tsx:83
+msgid "Use 16 tags or fewer."
+msgstr "استخدم 16 وسمًا كحد أقصى."

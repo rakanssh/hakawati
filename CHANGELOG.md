@@ -7,7 +7,7 @@ All notable changes to this project are documented in this file.
 ### Added
 
 - Optional accounts for syncing tales across devices, with controls to keep individual tales local and resolve conflicting saves.
-- A public scenario catalog with tag filters, publishing and updates, reporting, and publisher blocking.
+- A public scenario catalog with title and summary search, tag filters (including Arabic tags), publishing and updates, reporting, and publisher blocking.
 - Automatic backups before upgrading your saves, with recovery instructions if an upgrade cannot complete.
 
 ### Changed

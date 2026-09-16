@@ -3674,3 +3674,85 @@ msgstr "Your Scenarios"
 #: app/data/quickstart-presets.ts:20
 msgid "Zombies"
 msgstr "Zombies"
+
+#: app/components/catalog/CatalogTagInput.tsx:72
+msgid "Add at least one tag."
+msgstr "Add at least one tag."
+
+#: app/components/catalog/CatalogTagInput.tsx:143
+msgid "Add tag"
+msgstr "Add tag"
+
+#: app/components/catalog/CatalogTags.tsx:26
+msgid "Browse tag: {tag}"
+msgstr "Browse tag: {tag}"
+
+#: app/pages/scenarios/home.tsx:542
+msgid "Clear filters"
+msgstr "Clear filters"
+
+#: app/pages/scenarios/home.tsx:536
+#: app/pages/scenarios/home.tsx:537
+msgid "Filter by tags"
+msgstr "Filter by tags"
+
+#: app/components/scenario/PublishScenarioDialog.tsx:200
+msgid "Loading published scenario details..."
+msgstr "Loading published scenario details..."
+
+#: app/components/scenario/PublishScenarioDialog.tsx:238
+msgid "magic, city"
+msgstr "magic, city"
+
+#: app/pages/scenarios/home.tsx:522
+msgid "Most started"
+msgstr "Most started"
+
+#: app/pages/scenarios/home.tsx:509
+msgid "New"
+msgstr "New"
+
+#: app/pages/scenarios/home.tsx:561
+msgid "No published scenarios yet."
+msgstr "No published scenarios yet."
+
+#: app/pages/scenarios/home.tsx:559
+msgid "No scenarios match your search or tags."
+msgstr "No scenarios match your search or tags."
+
+#: app/pages/scenarios/home.tsx:512
+msgid "Popular"
+msgstr "Popular"
+
+#: app/components/scenario/PublishScenarioDialog.tsx:187
+msgid "Published scenario details could not be loaded."
+msgstr "Published scenario details could not be loaded."
+
+#: app/components/catalog/CatalogTagInput.tsx:113
+msgid "Remove {tag}"
+msgstr "Remove {tag}"
+
+#: app/pages/scenarios/home.tsx:481
+#: app/pages/scenarios/home.tsx:482
+msgid "Search scenarios"
+msgstr "Search scenarios"
+
+#: app/components/catalog/CatalogTags.tsx:48
+msgid "Show all tags"
+msgstr "Show all tags"
+
+#: app/components/catalog/CatalogTagInput.tsx:203
+msgid "Suggested tags"
+msgstr "Suggested tags"
+
+#: app/components/catalog/CatalogTagInput.tsx:79
+msgid "Tags can only use letters, numbers, and hyphens."
+msgstr "Tags can only use letters, numbers, and hyphens."
+
+#: app/components/catalog/CatalogTagInput.tsx:81
+msgid "Tags must be 32 characters or shorter."
+msgstr "Tags must be 32 characters or shorter."
+
+#: app/components/catalog/CatalogTagInput.tsx:83
+msgid "Use 16 tags or fewer."
+msgstr "Use 16 tags or fewer."

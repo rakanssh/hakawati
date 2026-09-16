@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -14,15 +14,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import type { Scenario } from "@/types/context.type";
 import type { ScenarioPackageMetadata } from "@/lib/catalog-package";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { CatalogTagInput } from "@/components/catalog/CatalogTagInput";
 import type { CatalogClientState } from "@/hooks/useCatalogScenarios";
 import {
   fetchCurrentCatalogPolicies,
+  getOwnedCatalogScenario,
   publishingAcceptanceFor,
   type CatalogCurrentPolicies,
   type CatalogPublishingAcceptance,
 } from "@/services/catalog.service";
+import { getScenarioPublishLink } from "@/repositories/scenario-publish-link.repository";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
 type PublishScenarioDialogProps = {
@@ -48,6 +50,10 @@ export function PublishScenarioDialog({
   onOpenChange,
   onPublish,
 }: PublishScenarioDialogProps) {
+  const { t } = useLingui();
+  const titleId = useId();
+  const summaryId = useId();
+  const formSession = useRef(0);
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [tags, setTags] = useState<string[]>([]);
@@ -56,35 +62,77 @@ export function PublishScenarioDialog({
   const [policiesError, setPoliciesError] = useState(false);
   const [policiesAccepted, setPoliciesAccepted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [metadataReady, setMetadataReady] = useState(false);
+  const [metadataError, setMetadataError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
+    formSession.current += 1;
     if (!open || !scenario) return;
-    setTitle(scenario.name);
-    setSummary(scenario.description);
+    let cancelled = false;
+    setTitle(updating ? "" : scenario.name);
+    setSummary(updating ? "" : scenario.description);
     setTags([]);
+    setMetadataReady(!updating);
+    setMetadataError(false);
     setThumbnailFile(null);
     setPolicies(null);
     setPoliciesError(false);
     setPoliciesAccepted(false);
+    setSubmitting(false);
+
+    if (updating) {
+      const transport = catalog.authTransport;
+      if (!transport) {
+        setMetadataError(true);
+      } else {
+        void getScenarioPublishLink(scenario.id)
+          .then(async (link) => {
+            if (cancelled) return;
+            if (!link) throw new Error("Published scenario link is missing");
+            const published = await getOwnedCatalogScenario(
+              transport,
+              link.catalogScenarioId,
+            );
+            if (cancelled) return;
+            setTitle(published.title);
+            setSummary(published.summary);
+            setTags(published.tags);
+            setMetadataReady(true);
+          })
+          .catch(() => {
+            if (!cancelled) setMetadataError(true);
+          });
+      }
+    }
+
     if (!catalog.publicTransport) {
       setPoliciesError(true);
-      return;
+    } else {
+      void fetchCurrentCatalogPolicies(catalog.publicTransport)
+        .then((current) => {
+          if (!cancelled) setPolicies(current);
+        })
+        .catch(() => {
+          if (!cancelled) setPoliciesError(true);
+        });
     }
-    let cancelled = false;
-    void fetchCurrentCatalogPolicies(catalog.publicTransport)
-      .then((current) => {
-        if (!cancelled) setPolicies(current);
-      })
-      .catch(() => {
-        if (!cancelled) setPoliciesError(true);
-      });
     return () => {
       cancelled = true;
+      formSession.current += 1;
     };
-  }, [catalog.publicTransport, open, scenario]);
+  }, [
+    catalog.authTransport,
+    catalog.publicTransport,
+    loadAttempt,
+    open,
+    scenario,
+    updating,
+  ]);
 
   const canSubmit = Boolean(
-    title.trim() &&
+    metadataReady &&
+      title.trim() &&
       summary.trim() &&
       tags.length > 0 &&
       policies &&
@@ -112,7 +160,8 @@ export function PublishScenarioDialog({
           className="grid gap-4"
           onSubmit={async (event) => {
             event.preventDefault();
-            if (!canSubmit) return;
+            if (!canSubmit || submitting) return;
+            const session = formSession.current;
             const policyAcceptance = publishingAcceptanceFor(policies!);
             setSubmitting(true);
             try {
@@ -125,27 +174,55 @@ export function PublishScenarioDialog({
                 thumbnailFile,
                 policyAcceptance,
               });
-              onOpenChange(false);
+              if (session === formSession.current) onOpenChange(false);
             } finally {
-              setSubmitting(false);
+              if (session === formSession.current) setSubmitting(false);
             }
           }}
         >
+          {updating && !metadataReady ? (
+            metadataError ? (
+              <div role="alert" className="flex items-center gap-2 text-sm">
+                <p className="text-destructive">
+                  <Trans>Published scenario details could not be loaded.</Trans>
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setLoadAttempt((attempt) => attempt + 1)}
+                >
+                  <Trans>Retry</Trans>
+                </Button>
+              </div>
+            ) : (
+              <p role="status" className="text-sm text-muted-foreground">
+                <Trans>Loading published scenario details...</Trans>
+              </p>
+            )
+          ) : null}
           <div className="grid gap-3">
             <div className="grid gap-2">
-              <Label>
+              <Label htmlFor={titleId}>
                 <Trans>Title</Trans>
               </Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+              <Input
+                id={titleId}
+                value={title}
+                disabled={!metadataReady || submitting}
+                onChange={(e) => setTitle(e.target.value)}
+              />
             </div>
           </div>
           <div className="grid gap-2">
-            <Label>
+            <Label htmlFor={summaryId}>
               <Trans>Summary</Trans>
             </Label>
             <Textarea
+              id={summaryId}
               value={summary}
               maxLength={600}
+              disabled={!metadataReady || submitting}
               onChange={(e) => setSummary(e.target.value)}
             />
           </div>
@@ -158,7 +235,9 @@ export function PublishScenarioDialog({
                 value={tags}
                 onChange={setTags}
                 client={catalog}
-                placeholder="magic, city"
+                placeholder={t`magic, city`}
+                aria-label={t`Tags`}
+                disabled={!metadataReady || submitting}
                 required
               />
             </div>
@@ -170,6 +249,7 @@ export function PublishScenarioDialog({
               </Label>
               <Input
                 type="file"
+                disabled={!metadataReady || submitting}
                 accept="image/png,image/jpeg,image/webp"
                 onChange={(event) =>
                   setThumbnailFile(event.target.files?.[0] ?? null)

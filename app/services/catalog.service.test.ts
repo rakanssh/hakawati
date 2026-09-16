@@ -381,7 +381,7 @@ describe("catalog service", () => {
     });
   });
 
-  it("sends repeated tag filters when listing catalog scenarios", async () => {
+  it("combines title search, pagination, ordering and normalized tag filters", async () => {
     const transport = {
       get: vi.fn().mockResolvedValueOnce({ items: [], nextCursor: null }),
       patch: vi.fn(),
@@ -389,12 +389,15 @@ describe("catalog service", () => {
     };
 
     await listCatalogScenarios(transport, {
+      q: "  Iron & Gate  ",
+      limit: 12,
+      cursor: "next page",
       sort: "popular",
       tag: ["Sci Fi", "scripted"],
     });
 
     expect(transport.get).toHaveBeenCalledWith(
-      "/v1/catalog/scenarios?sort=popular&tag=sci-fi&tag=scripted",
+      "/v1/catalog/scenarios?limit=12&cursor=next+page&q=Iron+%26+Gate&sort=popular&tag=sci-fi&tag=scripted",
     );
   });
 
@@ -406,12 +409,13 @@ describe("catalog service", () => {
     };
 
     await listOwnedCatalogScenarios(transport, {
+      q: "  Iron Gate  ",
       sort: "updated",
       tag: ["Sci Fi", "scripted"],
     });
 
     expect(transport.get).toHaveBeenCalledWith(
-      "/v1/catalog/me/scenarios?sort=updated&tag=sci-fi&tag=scripted",
+      "/v1/catalog/me/scenarios?q=Iron+Gate&sort=updated&tag=sci-fi&tag=scripted",
     );
   });
 
@@ -528,13 +532,14 @@ describe("catalog service", () => {
     await expect(
       listCatalogTags(transport, {
         q: "sc",
+        search: "  Iron Gate  ",
         tag: ["Scripted"],
         sort: "hot",
         limit: 20,
       }),
     ).resolves.toEqual({ items: [{ tag: "sci-fi", count: 50 }] });
     expect(transport.get).toHaveBeenCalledWith(
-      "/v1/catalog/tags?q=sc&sort=hot&limit=20&tag=scripted",
+      "/v1/catalog/tags?q=sc&search=Iron+Gate&sort=hot&limit=20&tag=scripted",
     );
   });
 });

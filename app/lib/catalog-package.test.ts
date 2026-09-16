@@ -81,6 +81,28 @@ describe("catalog package", () => {
     ).toThrow();
   });
 
+  it("publishes and reads packages with normalized Unicode tags", () => {
+    const pkg = buildScenarioPackage(
+      {
+        id: "local-unicode",
+        name: "بوابة المدينة",
+        initialGameMode: GameMode.STORY_TELLER,
+        description: "A public scenario.",
+        content: [],
+      },
+      { tags: [" خيال علمي ", "خَيَال", "ＣＡＦÉ", "cafe\u0301", "世界"] },
+    );
+
+    expect(pkg.scenario.tags).toEqual(["خيال-علمي", "خَيَال", "café", "世界"]);
+    expect(parseScenarioPackage(pkg).scenario.tags).toEqual(pkg.scenario.tags);
+    expect(() =>
+      parseScenarioPackage({
+        ...pkg,
+        scenario: { ...pkg.scenario, tags: ["story✨"] },
+      }),
+    ).toThrow();
+  });
+
   it("requires at least one public tag", () => {
     expect(() =>
       buildScenarioPackage(

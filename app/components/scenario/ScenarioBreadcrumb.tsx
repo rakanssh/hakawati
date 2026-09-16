@@ -4,7 +4,7 @@ import { useLingui } from "@lingui/react/macro";
 
 type ScenarioBreadcrumbProps = {
   to: string;
-  search?: { tab: "published" | "discover" };
+  search?: Record<string, unknown>;
   parent: ReactNode;
   current: ReactNode;
 };
