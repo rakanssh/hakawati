@@ -6,25 +6,26 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
-- Cloud sync for tales, including sign-in, device registration, and background syncing across devices.
-- Library controls to sync or unsync individual tales, keep tales private, and resolve sync conflicts.
-- Build-time configuration for the default hosted sync server.
-- Public catalog of scenarios with tag filtering, publishing, updates, reporting, and publisher blocking.
-- The ability for signed-in users to publish their own scenarios for others to play.
-- Automatic safety backups before database upgrades, with recovery guidance if an upgrade cannot complete.
+- Optional accounts for syncing tales across devices, with controls to keep individual tales local and resolve conflicting saves.
+- A public scenario catalog with tag filters, publishing and updates, reporting, and publisher blocking.
+- Automatic backups before upgrading your saves, with recovery instructions if an upgrade cannot complete.
 
 ### Changed
 
-- Reworked tale storage so larger tales load, save, and recover play history more smoothly.
-- Improved tale deletion and sync cleanup across local and remote copies.
-- Redesigned scenario and catalog pages for consistency.
+- More compact Home, Tales, and Scenarios screens.
+- Refined Play controls.
+- Ctrl/Cmd + Plus/Minus now scales the interface. Ctrl/Cmd + mouse wheel adjusts story text size.
+- Improved loading and saving of long tales.
+- Cover images are optimized before cloud upload.
 
 ### Fixed
 
-- Prevented migration checksum errors from line-ending differences in earlier Windows builds.
-- Cloud tales can be uploaded again after their remote copy is removed instead of remaining stuck in a queued retry loop.
-- Background upload failures now show a localized notification while automatic retries continue.
-- Local tales remain linked to the correct cloud copy when the server assigns a new remote ID.
+- Fixed recent edits being lost when leaving a page, closing the app, or installing an update.
+- Cancelling a retry before it produces text now keeps the original passage.
+- Fixed delayed loading or generation results overwriting another tale after switching.
+- Fixed saving of story edits, undo, and redo. New turns also restore stats and inventory correctly when undone or redone.
+- Deleted tales no longer remain available through Continue.
+- Fixed upgrade errors affecting some earlier Windows installations.
 
 ## [v0.15.2] - 2026-06-11
 

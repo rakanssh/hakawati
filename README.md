@@ -74,6 +74,11 @@ Private cloud saves use server-side encryption at rest. Public catalog
 scenarios are intentionally public and pass through pre-publication moderation
 before they appear in discovery.
 
+Before uploading a cover, the client fits it within 1,280 pixels on its longest
+side and encodes it as WebP at 82% quality, without upscaling. Suitable originals
+are kept when encoding would make them larger. Local files and animated covers
+are preserved; optimized results and existing uploads are reused where possible.
+
 ## How to Play
 
 ### Install
@@ -194,6 +199,10 @@ Planned areas of exploration include:
 - Operational hardening for the optional cloud service and catalog.
 
 ## License
+
+Hosted-service policies: [Terms of Service](https://hakawati.dev/terms),
+[Privacy Policy](https://hakawati.dev/privacy), and
+[Community Guidelines](https://hakawati.dev/community-guidelines).
 
 `© 2025 Rakan AlShammari`
 
