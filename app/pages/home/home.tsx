@@ -21,7 +21,6 @@ import {
 import { WhatsNewModal } from "@/components/layout";
 import placeholderImage from "@/assets/scen-ph.png";
 import { useLoadTale } from "@/hooks/useGameSaves";
-import { useIsMobile } from "@/hooks/useIsMobile";
 import { useScenariosList } from "@/hooks/useScenarios";
 import {
   useCatalogClient,
@@ -254,10 +253,7 @@ export default function Home() {
   const narratorConfig = useSettingsStore((state) => state.modelRoles.narrator);
   const utilityConfig = useSettingsStore((state) => state.modelRoles.utility);
   const { name, description, log, id: currentTaleId } = useTaleStore();
-  const { isMobilePlatform } = useIsMobile();
   const lastEntry = log.at(-1);
-  const resumeRef = useRef<HTMLElement>(null);
-  const [resumeVisible, setResumeVisible] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] =
     useState<GlobalSettingsSectionId>("ai-setup");
@@ -362,15 +358,6 @@ export default function Home() {
     featuredItem?.source === "local" &&
     featuredItem.sync?.status === "conflict";
   const featuredLoading = Boolean(featuredId && loadingTaleId === featuredId);
-  useEffect(() => {
-    const element = resumeRef.current;
-    if (!element || typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver(([entry]) =>
-      setResumeVisible(entry.isIntersecting),
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
   const accountLabel = accountDisplayName || accountEmail;
   const [homeSyncProfile, setHomeSyncProfile] = useState<{
     enabled: boolean;
@@ -647,18 +634,7 @@ export default function Home() {
 
   return (
     <main className="relative min-h-full overflow-x-hidden">
-      <div
-        className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-6 sm:px-6 lg:py-8"
-        style={
-          hasActiveGame
-            ? {
-                paddingBottom: isMobilePlatform
-                  ? "calc(7rem + env(safe-area-inset-bottom))"
-                  : "5.5rem",
-              }
-            : undefined
-        }
-      >
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-6 sm:px-6 lg:py-8">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold tracking-tight">
@@ -692,7 +668,6 @@ export default function Home() {
         )}
 
         <section
-          ref={resumeRef}
           aria-label={t`Your next tale`}
           className="flex min-w-0 flex-col gap-4 rounded-xs border border-border bg-card p-4 text-card-foreground sm:flex-row sm:items-center sm:justify-between sm:gap-6"
         >
@@ -937,44 +912,6 @@ export default function Home() {
           </Shelf>
         </div>
       </div>
-
-      {hasActiveGame && !resumeVisible && (
-        <div
-          className="fixed inset-x-0 z-30 border-t border-primary/60 bg-card"
-          style={{
-            bottom: isMobilePlatform
-              ? "calc(3.5rem + env(safe-area-inset-bottom))"
-              : 0,
-          }}
-        >
-          <div className="h-0.5 bg-primary" />
-          <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center sm:px-4 lg:px-6">
-            <div className="min-w-0 flex-1">
-              <div className="flex min-w-0 items-center gap-2">
-                <h2 className="min-w-0 truncate font-semibold">
-                  {name || t`Untitled`}
-                </h2>
-                <Badge variant="outline" className="shrink-0 text-[10px]">
-                  {log.length} {log.length === 1 ? t`entry` : t`entries`}
-                </Badge>
-              </div>
-              <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                <PlainTextExcerpt>
-                  {(lastEntry?.text ?? description) || t`No description yet.`}
-                </PlainTextExcerpt>
-              </p>
-            </div>
-            <Button
-              className="h-9 w-full sm:w-auto sm:min-w-36"
-              onClick={() => navigate({ to: "/play" })}
-              disabled={!canContinue}
-            >
-              <Play />
-              <Trans>Continue</Trans>
-            </Button>
-          </div>
-        </div>
-      )}
 
       <SettingsModal
         open={settingsOpen}
