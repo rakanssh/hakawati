@@ -1,15 +1,61 @@
 import { resolveModelRole, sendRoleChat } from "@/services/llm";
 import { LLMAction } from "@/services/llm/schema";
 import { useTaleStore } from "@/store/useTaleStore";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createDecoder } from "@/services/llm/decoders";
 import { buildMessage } from "@/services/llm/promptBuilder";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { LogEntryMode } from "@/types";
 
+export type LlmSendResult =
+  | { status: "completed" }
+  | { status: "aborted"; error: unknown }
+  | { status: "error"; error: unknown };
+
+function abortedResult(signal: AbortSignal): LlmSendResult {
+  return { status: "aborted", error: signal.reason ?? new Error("Aborted") };
+}
+
+function isAbortError(error: unknown): boolean {
+  if (!error) return false;
+  if (error instanceof Error) {
+    const text = `${error.name} ${error.message}`.toLowerCase();
+    return (
+      error.name === "AbortError" ||
+      text.includes("abort") ||
+      text.includes("cancel")
+    );
+  }
+  if (typeof error === "string") {
+    const text = error.toLowerCase();
+    return text.includes("abort") || text.includes("cancel");
+  }
+  if (typeof error === "object") {
+    const obj = error as Record<string, unknown>;
+    const text = `${String(obj.name ?? "")} ${String(
+      obj.message ?? "",
+    )} ${String(obj.code ?? "")}`.toLowerCase();
+    return (
+      obj.name === "AbortError" ||
+      text.includes("abort") ||
+      text.includes("cancel")
+    );
+  }
+  return false;
+}
+
 export function useLLM() {
   const [loading, setLoading] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const cancel = useCallback(() => abortRef.current?.abort(), []);
+
+  useEffect(
+    () => () => {
+      abortRef.current?.abort();
+      abortRef.current = null;
+    },
+    [],
+  );
 
   const send = async (
     lastMessage: {
@@ -23,7 +69,7 @@ export function useLLM() {
       onActionParseError: () => void;
       onError: (error: unknown) => void;
     },
-  ) => {
+  ): Promise<LlmSendResult> => {
     if (abortRef.current && !abortRef.current.signal.aborted) {
       abortRef.current.abort();
     }
@@ -69,15 +115,22 @@ export function useLLM() {
           seed,
         },
       });
+      if (controller.signal.aborted) return abortedResult(controller.signal);
       console.debug(
         `Sending request to ${model.id} with game mode: ${gameMode} and API URL: ${config.baseUrl}`,
       );
-      const res = await sendRoleChat("narrator", req, abortRef.current?.signal);
+      const res = await sendRoleChat("narrator", req, controller.signal);
+      if (controller.signal.aborted) {
+        return abortedResult(controller.signal);
+      }
 
       if (res.iterator) {
         const decoder = createDecoder(gameMode);
         const stream = decoder.decode(res.iterator);
         for await (const chunk of stream) {
+          if (controller.signal.aborted) {
+            return abortedResult(controller.signal);
+          }
           if ("actionParseError" in chunk && chunk.actionParseError) {
             callbacks.onActionParseError();
           } else {
@@ -94,6 +147,9 @@ export function useLLM() {
           }
         }
       } else {
+        if (controller.signal.aborted) {
+          return abortedResult(controller.signal);
+        }
         if (res.content) {
           callbacks.onStoryStream(res.content);
         }
@@ -105,14 +161,24 @@ export function useLLM() {
             "@/services/llm/tools"
           );
           const actions = convertToolCallsToActions(res.tool_calls);
+          if (controller.signal.aborted)
+            return abortedResult(controller.signal);
           if (actions.length > 0) {
             callbacks.onActionsReady(actions);
           }
         }
         console.debug(`Response from ${model.id}:`, res);
       }
+      if (controller.signal.aborted) {
+        return abortedResult(controller.signal);
+      }
+      return { status: "completed" };
     } catch (e) {
+      if (controller.signal.aborted || isAbortError(e)) {
+        return { status: "aborted", error: e };
+      }
       callbacks.onError(e);
+      return { status: "error", error: e };
     } finally {
       if (abortRef.current === controller) {
         setLoading(false);
@@ -120,5 +186,5 @@ export function useLLM() {
     }
   };
 
-  return { send, loading, cancel: () => abortRef.current?.abort() };
+  return { send, loading, cancel };
 }

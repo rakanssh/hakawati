@@ -6,8 +6,68 @@ on:
       - "v*"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  verify:
+    runs-on: ubuntu-22.04
+    outputs:
+      tag: ${{ steps.release_metadata.outputs.tag }}
+      prerelease: ${{ steps.release_metadata.outputs.prerelease }}
+    steps:
+      - name: Require an existing tag ref
+        run: |
+          if [ "$GITHUB_REF_TYPE" != "tag" ]; then
+            echo 'Release requires an existing tag. Use gh workflow run release.yml --ref <tag>; branch dispatch is not allowed.' >&2
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Sync node version and setup cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+          cache: "npm"
+
+      - name: Validate release tag, versions, and changelog
+        id: release_metadata
+        run: node scripts/release-validate.mjs --tag-ref
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libgtk-3-dev libasound2-dev
+
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+          shared-key: "release-tests"
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Run frontend checks
+        run: |
+          npm run typecheck
+          npm run test:run
+
+      - name: Run Rust tests
+        run: cargo test --locked --manifest-path src-tauri/Cargo.toml
+
   release:
+    needs: verify
+    environment: production
     permissions:
       contents: write
     strategy:
@@ -26,6 +86,16 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     steps:
+      - name: Require production server configuration
+        shell: bash
+        env:
+          VITE_HAKAWATI_SYNC_SERVER_URL: ${{ vars.VITE_HAKAWATI_SYNC_SERVER_URL }}
+        run: |
+          if [ -z "$VITE_HAKAWATI_SYNC_SERVER_URL" ]; then
+            echo '::error::Set VITE_HAKAWATI_SYNC_SERVER_URL in the GitHub production environment variables.'
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -63,6 +133,8 @@ jobs:
 
       - name: Generate release notes
         id: release_notes
+        env:
+          RELEASE_TAG: ${{ needs.verify.outputs.tag }}
         run: npx tsx scripts/extract-latest-release-notes.ts
 
       - name: Import Apple Developer Certificate
@@ -97,6 +169,7 @@ jobs:
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_HAKAWATI_SYNC_SERVER_URL: ${{ vars.VITE_HAKAWATI_SYNC_SERVER_URL }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
@@ -106,9 +179,9 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "Hakawati ${{ github.ref_name }}"
+          tagName: ${{ needs.verify.outputs.tag }}
+          releaseName: "Hakawati ${{ needs.verify.outputs.tag }}"
           releaseBody: ${{ steps.release_notes.outputs.release_body }}
           releaseDraft: true
-          prerelease: false
+          prerelease: ${{ needs.verify.outputs.prerelease == 'true' }}
           args: "${{ matrix.args }} -- --locked"

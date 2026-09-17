@@ -187,6 +187,24 @@ describe("role-aware LLM service", () => {
     expect(models[0]).toMatchObject({ id: "utility-a", name: "Utility A" });
   });
 
+  it("does not log the bearer key when fetching models fails", async () => {
+    const errorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    try {
+      fetchMock.mockResolvedValue(
+        responseError(401, { error: "Unauthorized" }),
+      );
+      await expect(getRoleModels("utility")).rejects.toThrow("Unauthorized");
+      expect(JSON.stringify(errorSpy.mock.calls)).not.toContain("utility-key");
+      expect(JSON.stringify(errorSpy.mock.calls)).not.toContain(
+        "Authorization",
+      );
+    } finally {
+      errorSpy.mockRestore();
+    }
+  });
+
   it("fetches OpenRouter speech-to-text models with the transcription modality filter", async () => {
     const modelRoles = createDefaultModelRoles();
     modelRoles.speechToText = {

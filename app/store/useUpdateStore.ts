@@ -5,11 +5,13 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { formatBytes } from "@/lib/utils";
 import { t } from "@lingui/core/macro";
+import { flushPendingAutoSaves } from "@/hooks/useAutoSave";
 
 export type UpdatePhase =
   | "idle"
   | "checking"
   | "available"
+  | "downloading"
   | "installing"
   | "upToDate"
   | "error"
@@ -76,7 +78,7 @@ export const useUpdateStore = create<UpdateState>()(
           return;
         }
 
-        if (get().phase === "checking") {
+        if (["checking", "downloading", "installing"].includes(get().phase)) {
           return;
         }
 
@@ -150,6 +152,7 @@ export const useUpdateStore = create<UpdateState>()(
       },
 
       installUpdate: async () => {
+        if (["downloading", "installing"].includes(get().phase)) return;
         const update = get().updateResource;
         if (!update) {
           return;
@@ -169,12 +172,13 @@ export const useUpdateStore = create<UpdateState>()(
           });
         }
 
-        set({ phase: "installing", errorMessage: null, downloadedBytes: 0 });
+        set({ phase: "downloading", errorMessage: null, downloadedBytes: 0 });
 
         const toastId = toast.loading(t`Starting download...`);
 
         try {
-          await update.downloadAndInstall((event) => {
+          await flushPendingAutoSaves();
+          await update.download((event) => {
             if (event.event === "Progress") {
               const chunkLength = event.data?.chunkLength ?? 0;
               if (chunkLength > 0) {
@@ -194,6 +198,12 @@ export const useUpdateStore = create<UpdateState>()(
               }
             }
           });
+
+          set({ phase: "installing" });
+          // Windows exits inside install(), so save before entering native code.
+          // Flush again because play can continue while the download is running.
+          await flushPendingAutoSaves();
+          await update.install();
 
           toast.success(t`Update downloaded. Restarting...`, { id: toastId });
           await relaunch();

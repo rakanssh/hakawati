@@ -138,7 +138,6 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
       const errorText = await r.text().catch(() => "");
       console.error(`Models fetch failed (${r.status}):`, errorText);
       console.error("Request URL:", `${base}${modelPath}`);
-      console.error("Request headers:", headers);
       throw new Error(errorText || `Failed to fetch models (${r.status})`);
     }
     const json = await r.json();

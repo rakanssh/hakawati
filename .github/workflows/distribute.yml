@@ -6,22 +6,44 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag to distribute (e.g., v1.0.0)"
+        description: "Published stable release tag to distribute (e.g., v1.0.0)"
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   upload-itchio:
+    if: github.event_name == 'workflow_dispatch' || (!github.event.release.draft && !github.event.release.prerelease)
     runs-on: ubuntu-latest
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Sync node version
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+
+      - name: Require a published stable release
+        id: release_metadata
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json tagName,isDraft,isPrerelease > "$RUNNER_TEMP/release.json"
+          node scripts/release-distribution.mjs "$RELEASE_TAG" "$RUNNER_TEMP/release.json"
+
       - name: Download release assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release download ${{ env.RELEASE_TAG }} \
-            --repo ${{ github.repository }} \
+          gh release download "$RELEASE_TAG" \
+            --repo "$GITHUB_REPOSITORY" \
             --dir ./release-assets \
             --pattern '*.dmg' \
             --pattern '*.AppImage' \
@@ -37,9 +59,8 @@ jobs:
       - name: Push to itch.io
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          VERSION: ${{ steps.release_metadata.outputs.version }}
         run: |
-          VERSION="${{ env.RELEASE_TAG }}"
-          VERSION="${VERSION#v}"
           ./butler push release-assets/*.dmg rakanssh/hakawati:macos --userversion "$VERSION"
           ./butler push release-assets/*.AppImage rakanssh/hakawati:linux --userversion "$VERSION"
           ./butler push release-assets/*.msi rakanssh/hakawati:windows --userversion "$VERSION"

@@ -6,12 +6,13 @@ import {
   getScenarioById,
   getAllScenarios,
   deserializeScenarioExport,
-  serializeScenarioExportV2,
+  serializeScenarioExport,
 } from "@/services/scenario.service";
 import { useLoadTale } from "@/hooks/useGameSaves";
 import { GameMode, Scenario, ScenarioHead } from "@/types/context.type";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
 import { copyTextToClipboard, readTextFromClipboard } from "@/lib/clipboard";
+import { createEmptyScenarioContent } from "@/lib/scenario-content";
 import { toast } from "sonner";
 
 export function useScenariosList(initialPage = 1, initialLimit = 12) {
@@ -59,10 +60,7 @@ export function useScenarioEditor(initial?: Partial<Scenario>) {
     name: initial?.name ?? "Untitled Scenario",
     initialGameMode: initial?.initialGameMode ?? GameMode.STORY_TELLER,
     description: initial?.description ?? "",
-    components: initial?.components ?? [],
-    initialStats: initial?.initialStats ?? [],
-    initialInventory: initial?.initialInventory ?? [],
-    initialStoryCards: initial?.initialStoryCards ?? [],
+    content: initial?.content ?? createEmptyScenarioContent(),
     thumbnail: initial?.thumbnail ?? null,
   });
   const [saving, setSaving] = useState(false);
@@ -78,7 +76,7 @@ export function useScenarioEditor(initial?: Partial<Scenario>) {
     setError(null);
     try {
       const id = await saveScenario(scenario, scenario.id || undefined);
-      setScenario((s) => ({ ...s, id }));
+      setScenario((s) => (s.id === scenario.id ? { ...s, id } : s));
       return id;
     } catch (e) {
       setError(e);
@@ -119,13 +117,13 @@ export function useScenariosExport() {
       toast.error("Scenario not found");
       return;
     }
-    const json = serializeScenarioExportV2(scenario);
+    const json = serializeScenarioExport(scenario);
     await copyTextToClipboard(json);
     toast.success("Scenario JSON copied to clipboard");
   }, []);
 
   const exportFromValue = useCallback(async (scenario: Scenario) => {
-    const json = serializeScenarioExportV2(scenario);
+    const json = serializeScenarioExport(scenario);
     await copyTextToClipboard(json);
     toast.success("Scenario JSON copied to clipboard");
   }, []);

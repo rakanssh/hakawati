@@ -136,11 +136,3 @@ export interface LLMAction {
     description?: string;
   };
 }
-
-/**
- * Response format used by decoders (backward compatibility)
- */
-export interface LLMResponse {
-  story: string;
-  actions?: LLMAction[];
-}

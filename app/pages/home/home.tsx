@@ -1,74 +1,85 @@
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { GenerateScenarioDialog } from "@/components/scenario";
+  GenerateScenarioDialog,
+  PlainTextExcerpt,
+  ScenarioPreviewCard,
+} from "@/components/scenario";
+import { TaleConflictDialog } from "@/components/tales/tale-conflict-dialog";
 import {
   SettingsModal,
   type GlobalSettingsSectionId,
 } from "@/components/layout/settings";
 import { WhatsNewModal } from "@/components/layout";
+import { ServerAnnouncementCard } from "@/components/layout/server-announcement";
 import placeholderImage from "@/assets/scen-ph.png";
 import { useLoadTale } from "@/hooks/useGameSaves";
-import { useIsMobile } from "@/hooks/useIsMobile";
 import { useScenariosList } from "@/hooks/useScenarios";
-import { useTalesList } from "@/hooks/useTales";
-import { type Locale, LOCALES, loadLocale } from "@/i18n";
 import {
-  bytesToObjectUrl,
-  formatExactDateTime,
-  formatRelativeTime,
-} from "@/lib/utils";
-import { initTaleFromScenario } from "@/services/scenario.service";
+  useCatalogClient,
+  useCatalogScenarioList,
+} from "@/hooks/useCatalogScenarios";
+import { useTaleLibrary } from "@/hooks/useTaleLibrary";
+import { bytesToObjectUrl } from "@/lib/utils";
+import { imageBadgeClass } from "@/lib/card-badges";
+import { getSyncUiKind } from "@/lib/sync-ui";
+import { HAKAWATI_CLIENT_VERSION } from "@/services/cloud-capabilities";
+import {
+  getSyncProfile,
+  upsertSyncProfile,
+} from "@/repositories/sync.repository";
+import {
+  createSyncTransport,
+  registerSyncDevice,
+  type SyncProfile,
+} from "@/services/sync";
+import {
+  addSyncChangedListener,
+  notifySyncChanged,
+  wakeSyncBackground,
+} from "@/services/sync-wakeup";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 import {
   isModelRoleConfigured,
   useSettingsStore,
 } from "@/store/useSettingsStore";
+import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
 import { useTaleStore } from "@/store/useTaleStore";
 import { useUpdateStore } from "@/store/useUpdateStore";
 import { useVersionStore } from "@/store/useVersionStore";
 import type { ScenarioHead } from "@/types/context.type";
-import type { TaleHead } from "@/types/tale.type";
+import type { CatalogScenarioRecord } from "@/types/catalog.type";
+import type { LibraryTaleItem } from "@/lib/tale-library";
+import type { TaleConflictChoice } from "@/hooks/useTaleLibrary";
 import { getVersion } from "@tauri-apps/api/app";
 import { useNavigate } from "@tanstack/react-router";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   AlertTriangle,
   ChevronRight,
-  Globe,
   Loader2,
   Plus,
   Play,
   Sparkles,
+  UserRound,
   WandSparkles,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+
+const HOSTED_PROFILE_ID = "hosted";
+
+function avatarInitial(label: string) {
+  return (label.trim()[0] ?? "?").toUpperCase();
+}
 
 type ShelfProps = {
   title: React.ReactNode;
@@ -79,20 +90,16 @@ type ShelfProps = {
 function Shelf({ title, action, children }: ShelfProps) {
   return (
     <section className="min-w-0">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="truncate text-lg font-semibold tracking-normal">
-            {title}
-          </h2>
+          <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
           {action}
         </div>
       </div>
       <ScrollArea scrollbars="horizontal" className="w-full">
-        <div className="flex snap-x gap-2 px-2 pb-3 sm:px-0 lg:gap-3">
-          {children}
-        </div>
+        <div className="flex snap-x gap-4 pb-3">{children}</div>
       </ScrollArea>
     </section>
   );
@@ -106,164 +113,201 @@ function ShelfState({ children }: { children: React.ReactNode }) {
   );
 }
 
-function PreviewImage({
-  thumbnail,
-  alt,
+function catalogAssetUrl(baseUrl: string, path: string | null | undefined) {
+  if (!path) return placeholderImage;
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${baseUrl.replace(/\/+$/, "").replace(/\/v1$/, "")}${path}`;
+}
+
+function TaleCard({
+  item,
+  loading,
+  disabled,
+  syncActive,
+  syncStatusLoading,
+  onLoad,
 }: {
-  thumbnail?: Uint8Array | null;
-  alt: string;
+  item: LibraryTaleItem;
+  loading: boolean;
+  disabled: boolean;
+  syncActive: boolean;
+  syncStatusLoading: boolean;
+  onLoad: (item: LibraryTaleItem) => void;
 }) {
+  const { t } = useLingui();
+  const isRemote = item.source === "remote";
+  const title = isRemote ? item.remoteTale.title : item.localTale.name;
+  const description = isRemote
+    ? item.remoteTale.lastEntryPreview ||
+      item.remoteTale.description ||
+      t`No description yet.`
+    : item.localTale.lastLogEntry?.text ||
+      item.localTale.description ||
+      t`No description yet.`;
+  const thumbnail = isRemote ? null : item.localTale.thumbnail;
+  const hasConflict =
+    syncActive && item.source === "local" && item.sync?.status === "conflict";
+  const isSynced = syncActive && (isRemote || Boolean(item.sync));
+  const syncStatusUnknown =
+    syncActive && item.source === "local" && !item.sync && syncStatusLoading;
+  const statusLabel = hasConflict
+    ? t`Needs review`
+    : isSynced
+      ? t`Cloud`
+      : t`Local`;
+
   return (
-    <img
-      src={thumbnail ? bytesToObjectUrl(thumbnail) : placeholderImage}
-      alt={alt}
-      className="h-20 w-full object-cover sm:h-28"
+    <ScenarioPreviewCard
+      variant="shelf"
+      eyebrow={<Trans>Tale</Trans>}
+      actionLabel={hasConflict ? <Trans>Review conflict</Trans> : undefined}
+      title={title}
+      summary={description}
+      imageSrc={thumbnail ? bytesToObjectUrl(thumbnail) : placeholderImage}
+      imageAlt={t`${title} tale`}
+      ariaLabel={t`Load ${title}`}
+      disabled={disabled || loading}
+      imageBadges={
+        !loading && syncActive && !syncStatusUnknown ? (
+          <Badge
+            className={`${imageBadgeClass} ${
+              hasConflict ? "text-destructive" : ""
+            }`}
+          >
+            {statusLabel}
+          </Badge>
+        ) : null
+      }
+      footer={
+        loading ? (
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Loader2 className="size-3 animate-spin" />
+            <Trans>Loading…</Trans>
+          </span>
+        ) : null
+      }
+      onOpen={() => onLoad(item)}
     />
   );
 }
 
-function TaleCard({
-  tale,
-  loading,
-  disabled,
-  onLoad,
+function PublicScenarioCard({
+  scenario,
+  baseUrl,
+  onView,
 }: {
-  tale: TaleHead;
-  loading: boolean;
-  disabled: boolean;
-  onLoad: (id: string) => void;
+  scenario: CatalogScenarioRecord;
+  baseUrl: string;
+  onView: (scenario: CatalogScenarioRecord) => void;
 }) {
   const { t } = useLingui();
-
   return (
-    <Card className="w-[60vw] max-w-56 shrink-0 snap-start gap-0 overflow-hidden py-0 sm:w-60 sm:max-w-64 lg:w-64">
-      <CardHeader className="p-0">
-        <div className="relative">
-          <PreviewImage thumbnail={tale.thumbnail} alt={t`${tale.name} tale`} />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge className="absolute left-2 top-2 bg-background/80 text-foreground backdrop-blur">
-                {formatRelativeTime(tale.updatedAt)}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <Trans>Last played: {formatExactDateTime(tale.updatedAt)}</Trans>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      </CardHeader>
-      <CardContent className="flex min-h-28 flex-col gap-1.5 p-2 sm:min-h-32 sm:gap-2 sm:p-2.5">
-        <div className="min-w-0">
-          <div className="flex items-start gap-1.5">
-            <h3 className="min-w-0 flex-1 truncate font-semibold">
-              {tale.name}
-            </h3>
-            <Badge variant="outline" className="shrink-0 text-[10px]">
-              {tale.logCount} {tale.logCount === 1 ? t`turn` : t`turns`}
-            </Badge>
-          </div>
-          <p className="mt-1 line-clamp-2 min-h-10 text-sm text-muted-foreground">
-            {tale.lastLogEntry?.text ||
-              tale.description ||
-              t`No description yet.`}
-          </p>
-        </div>
-        <Button
-          className="mt-auto w-full"
-          onClick={() => onLoad(tale.id)}
-          disabled={disabled || loading}
-        >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play />}
-          <Trans>Load Tale</Trans>
-        </Button>
-      </CardContent>
-    </Card>
+    <ScenarioPreviewCard
+      variant="shelf"
+      eyebrow={<Trans>Public scenario</Trans>}
+      title={scenario.title}
+      summary={scenario.summary}
+      imageSrc={catalogAssetUrl(baseUrl, scenario.thumbnail?.downloadUrl)}
+      imageAlt={t`${scenario.title} public scenario`}
+      ariaLabel={t`View ${scenario.title}`}
+      onOpen={() => onView(scenario)}
+    />
   );
 }
 
 function ScenarioCard({
   scenario,
-  loading,
-  disabled,
-  onStart,
+  onView,
 }: {
   scenario: ScenarioHead;
-  loading: boolean;
-  disabled: boolean;
-  onStart: (id: string) => void;
+  onView: (id: string) => void;
 }) {
   const { t } = useLingui();
 
   return (
-    <Card className="w-[60vw] max-w-56 shrink-0 snap-start gap-0 overflow-hidden py-0 sm:w-60 sm:max-w-64 lg:w-64">
-      <CardHeader className="p-0">
-        <div className="relative">
-          <PreviewImage
-            thumbnail={scenario.thumbnail}
-            alt={t`${scenario.name} scenario`}
-          />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge className="absolute left-2 top-2 bg-background/80 text-foreground backdrop-blur">
-                {formatRelativeTime(scenario.updatedAt)}
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <Trans>
-                Last updated: {formatExactDateTime(scenario.updatedAt)}
-              </Trans>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      </CardHeader>
-      <CardContent className="flex min-h-28 flex-col gap-1.5 p-2 sm:min-h-32 sm:gap-2 sm:p-2.5">
-        <div className="min-w-0">
-          <h3 className="truncate font-semibold">{scenario.name}</h3>
-          <p className="mt-1 line-clamp-2 min-h-10 text-sm text-muted-foreground">
-            {scenario.description || t`No description yet.`}
-          </p>
-        </div>
-        <Button
-          className="mt-auto w-full"
-          onClick={() => onStart(scenario.id)}
-          disabled={disabled || loading}
-        >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play />}
-          <Trans>New Tale</Trans>
-        </Button>
-      </CardContent>
-    </Card>
+    <ScenarioPreviewCard
+      variant="shelf"
+      eyebrow={
+        scenario.initialGameMode === "gm" ? (
+          <Trans>Game Master</Trans>
+        ) : (
+          <Trans>Story Teller</Trans>
+        )
+      }
+      title={scenario.name}
+      summary={scenario.description || t`No description yet.`}
+      imageSrc={
+        scenario.thumbnail
+          ? bytesToObjectUrl(scenario.thumbnail)
+          : placeholderImage
+      }
+      imageAlt={t`${scenario.name} scenario`}
+      ariaLabel={t`Open ${scenario.name}`}
+      onOpen={() => onView(scenario.id)}
+    />
   );
 }
 
 export default function Home() {
   const navigate = useNavigate();
   const { t } = useLingui();
-  const language = useSettingsStore((state) => state.language);
-  const setLanguage = useSettingsStore((state) => state.setLanguage);
   const narratorConfig = useSettingsStore((state) => state.modelRoles.narrator);
   const utilityConfig = useSettingsStore((state) => state.modelRoles.utility);
   const { name, description, log, id: currentTaleId } = useTaleStore();
-  const { isMobilePlatform } = useIsMobile();
   const lastEntry = log.at(-1);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] =
+    useState<GlobalSettingsSectionId>("ai-setup");
   const [generateOpen, setGenerateOpen] = useState(false);
   const [whatsNewOpen, setWhatsNewOpen] = useState(false);
   const [loadingTaleId, setLoadingTaleId] = useState<string | null>(null);
-  const [startingScenarioId, setStartingScenarioId] = useState<string | null>(
+  const [conflictItem, setConflictItem] = useState<LibraryTaleItem | null>(
     null,
   );
+  const [resolvingConflict, setResolvingConflict] = useState(false);
   const nonPlayTabs: readonly GlobalSettingsSectionId[] = [
     "appearance",
     "ai-setup",
     "generation",
+    "cloud-sync",
   ];
   const { lastPlayedTaleId } = useLastPlayedStore();
   const { load } = useLoadTale();
-  const tales = useTalesList(1, 6);
+  const tales = useTaleLibrary(1, 6);
   const scenarios = useScenariosList(1, 6);
+  const catalog = useCatalogClient();
+  const publicScenarios = useCatalogScenarioList(catalog, {
+    limit: 6,
+    sort: "popular",
+  });
   const hasLoadedRef = useRef(false);
-
+  const autoRegisterDeviceKeyRef = useRef("");
+  const cloudBaseUrl = useSyncSettingsStore((state) => state.cloudBaseUrl);
+  const personalBaseUrl = useSyncSettingsStore(
+    (state) => state.personalBaseUrl,
+  );
+  const activeSyncMode = useSyncSettingsStore((state) => state.activeSyncMode);
+  const accessToken = useSyncSettingsStore((state) => state.accessToken);
+  const accessTokenExpiresAt = useSyncSettingsStore(
+    (state) => state.accessTokenExpiresAt,
+  );
+  const hasRefreshToken = useSyncSettingsStore(
+    (state) => state.hasRefreshToken,
+  );
+  const hostedRefreshFailed = useSyncSettingsStore(
+    (state) => state.hostedRefreshFailed,
+  );
+  const deviceId = useSyncSettingsStore((state) => state.deviceId);
+  const accountId = useSyncSettingsStore((state) => state.accountId);
+  const hostedDeviceIdsByAccountId = useSyncSettingsStore(
+    (state) => state.hostedDeviceIdsByAccountId,
+  );
+  const deviceName = useSyncSettingsStore((state) => state.deviceName);
+  const devicePlatform = useSyncSettingsStore((state) => state.devicePlatform);
+  const accountDisplayName = useSyncSettingsStore(
+    (state) => state.accountDisplayName,
+  );
+  const accountEmail = useSyncSettingsStore((state) => state.accountEmail);
   const pendingChangelogVersion = useUpdateStore(
     (state) => state.pendingChangelogVersion,
   );
@@ -286,17 +330,174 @@ export default function Home() {
 
   const hasActiveGame = Boolean(name || description || log.length > 0);
   const canContinue = hasActiveGame && log.length > 0 && !hasIssues;
+  const featuredItem =
+    tales.items.find(
+      (item) =>
+        item.source === "local" &&
+        item.localTale.id ===
+          (hasActiveGame ? currentTaleId : lastPlayedTaleId),
+    ) ?? (hasActiveGame ? undefined : tales.items[0]);
+  const hasFeaturedTale = hasActiveGame || Boolean(featuredItem);
+  const featuredTitle = hasActiveGame
+    ? name
+    : featuredItem?.source === "local"
+      ? featuredItem.localTale.name
+      : featuredItem?.remoteTale.title;
+  const featuredExcerpt = hasActiveGame
+    ? lastEntry?.text || description
+    : featuredItem?.source === "local"
+      ? featuredItem.localTale.lastLogEntry?.text ||
+        featuredItem.localTale.description
+      : featuredItem?.remoteTale.lastEntryPreview ||
+        featuredItem?.remoteTale.description;
+  const featuredId = hasActiveGame
+    ? currentTaleId
+    : featuredItem?.source === "local"
+      ? featuredItem.localTale.id
+      : featuredItem?.remoteTale.id;
+  const featuredConflict =
+    featuredItem?.source === "local" &&
+    featuredItem.sync?.status === "conflict";
+  const featuredLoading = Boolean(featuredId && loadingTaleId === featuredId);
+  const accountLabel = accountDisplayName || accountEmail;
+  const [homeSyncProfile, setHomeSyncProfile] = useState<{
+    enabled: boolean;
+    disabledReason: string | null;
+  } | null>(null);
+  const syncUiKind = getSyncUiKind({
+    activeSyncMode,
+    personalBaseUrl,
+    accessToken,
+    accessTokenExpiresAt,
+    hasRefreshToken,
+    accountLabel,
+    syncEnabled: homeSyncProfile?.enabled,
+    disabledReason: homeSyncProfile?.disabledReason,
+    refreshFailed: hostedRefreshFailed,
+  });
+  const signedIn =
+    syncUiKind === "signed-in" ||
+    syncUiKind === "profile-incomplete" ||
+    syncUiKind === "sync-off" ||
+    syncUiKind === "device-limit";
+  const showAccountStatus =
+    signedIn || syncUiKind === "personal" || syncUiKind === "reconnecting";
 
-  const handleLanguageChange = (value: string) => {
-    const locale = value as Locale;
-    setLanguage(locale);
-    void loadLocale(locale);
+  const hostedProfile = useMemo<SyncProfile>(
+    () => ({
+      id: HOSTED_PROFILE_ID,
+      baseUrl: cloudBaseUrl.trim(),
+      mode: "hosted",
+      accountId: accountId || null,
+      deviceId: accountId
+        ? (hostedDeviceIdsByAccountId[accountId] ?? deviceId).trim()
+        : deviceId.trim(),
+    }),
+    [accountId, cloudBaseUrl, deviceId, hostedDeviceIdsByAccountId],
+  );
+  const canRegisterHostedDevice =
+    activeSyncMode === "hosted" &&
+    hostedProfile.baseUrl.length > 0 &&
+    deviceName.trim().length > 0 &&
+    devicePlatform.trim().length > 0;
+
+  useEffect(() => {
+    let disposed = false;
+
+    const refreshSyncProfile = () => {
+      getSyncProfile(hostedProfile.id)
+        .then((profile) => {
+          if (disposed) return;
+          setHomeSyncProfile(
+            profile
+              ? {
+                  enabled: profile.enabled === true,
+                  disabledReason: profile.disabledReason ?? null,
+                }
+              : null,
+          );
+        })
+        .catch(() => {
+          if (!disposed) setHomeSyncProfile(null);
+        });
+    };
+
+    refreshSyncProfile();
+    const removeListener = addSyncChangedListener(refreshSyncProfile);
+    return () => {
+      disposed = true;
+      removeListener();
+    };
+  }, [hostedProfile.id]);
+
+  useEffect(() => {
+    if (
+      homeSyncProfile?.disabledReason !== "device_limit" ||
+      !canRegisterHostedDevice ||
+      !accountLabel.trim() ||
+      !hostedProfile.deviceId ||
+      accessToken.trim().length === 0 ||
+      (accessTokenExpiresAt !== null && accessTokenExpiresAt <= Date.now())
+    ) {
+      return;
+    }
+
+    const currentDeviceId = hostedProfile.deviceId;
+    const key = `${accountId}:${currentDeviceId}`;
+    if (autoRegisterDeviceKeyRef.current === key) return;
+    autoRegisterDeviceKeyRef.current = key;
+
+    void (async () => {
+      const appVersion = await getVersion().catch(
+        () => HAKAWATI_CLIENT_VERSION,
+      );
+      await registerSyncDevice(
+        createSyncTransport({
+          profile: hostedProfile,
+          accessToken: accessToken.trim(),
+        }),
+        {
+          id: currentDeviceId,
+          name: deviceName.trim(),
+          platform: devicePlatform.trim(),
+          appVersion,
+        },
+      );
+      await upsertSyncProfile({
+        ...hostedProfile,
+        enabled: true,
+        disabledReason: null,
+      });
+      setHomeSyncProfile({ enabled: true, disabledReason: null });
+      wakeSyncBackground();
+      notifySyncChanged();
+    })().catch(() => undefined);
+  }, [
+    accessToken,
+    accessTokenExpiresAt,
+    accountId,
+    accountLabel,
+    canRegisterHostedDevice,
+    deviceName,
+    devicePlatform,
+    homeSyncProfile?.disabledReason,
+    hostedProfile,
+  ]);
+
+  const openSettings = (tab: GlobalSettingsSectionId) => {
+    setSettingsTab(tab);
+    setSettingsOpen(true);
   };
 
-  const handleLoadTale = async (id: string) => {
+  const handleLoadTale = async (item: LibraryTaleItem) => {
+    if (item.source === "local" && item.sync?.status === "conflict") {
+      setConflictItem(item);
+      return;
+    }
+    const id = item.source === "local" ? item.localTale.id : item.remoteTale.id;
     setLoadingTaleId(id);
     try {
-      await load(id);
+      await tales.loadIntoGame(item);
       navigate({ to: "/play" });
     } catch (_error) {
       toast.error(t`Failed to load tales.`);
@@ -305,16 +506,21 @@ export default function Home() {
     }
   };
 
-  const handleStartScenario = async (id: string) => {
-    setStartingScenarioId(id);
+  const handleResolveConflict = async (choice: TaleConflictChoice) => {
+    if (!conflictItem || conflictItem.source !== "local") return;
+    setResolvingConflict(true);
     try {
-      const taleId = await initTaleFromScenario(id);
+      const taleId = await tales.resolveConflict(conflictItem, choice);
       await load(taleId);
+      setConflictItem(null);
+      toast.success(t`Conflict resolved`);
       navigate({ to: "/play" });
-    } catch (_error) {
-      toast.error(t`Failed to load scenarios.`);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : t`Failed to resolve conflict`,
+      );
     } finally {
-      setStartingScenarioId(null);
+      setResolvingConflict(false);
     }
   };
 
@@ -363,25 +569,10 @@ export default function Home() {
     }
   };
 
-  const languageControl = (
-    <Select value={language} onValueChange={handleLanguageChange}>
-      <SelectTrigger className="w-auto gap-2 border-none bg-background/50 backdrop-blur transition-colors hover:bg-accent/50">
-        <Globe className="h-4 w-4 text-muted-foreground" />
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent align="start">
-        {Object.entries(LOCALES).map(([code, localeName]) => (
-          <SelectItem key={code} value={code}>
-            {localeName}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-
   const quickstartControl = (
     <Button
-      size="sm"
+      variant={hasFeaturedTale ? "outline" : "default"}
+      className="min-h-10"
       onClick={() => navigate({ to: "/quickstart" })}
       disabled={hasIssues}
     >
@@ -390,24 +581,76 @@ export default function Home() {
     </Button>
   );
 
+  const accountControl = (
+    <div className="flex min-w-0 items-center gap-2">
+      <Button
+        variant="outline"
+        onClick={() => openSettings("cloud-sync")}
+        className="h-11 w-auto max-w-64 justify-start gap-2 border-border/70 bg-card/60 px-3 shadow-none"
+      >
+        <Avatar className="size-7 shrink-0 border border-border/70">
+          <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
+            {signedIn && accountLabel ? (
+              avatarInitial(accountLabel)
+            ) : syncUiKind === "reconnecting" ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <UserRound className="size-4" />
+            )}
+          </AvatarFallback>
+        </Avatar>
+        <span className="grid min-w-0 flex-1 text-start leading-tight">
+          <span className="truncate font-semibold">
+            {signedIn && accountLabel ? (
+              accountLabel
+            ) : signedIn ? (
+              <Trans>Complete profile</Trans>
+            ) : syncUiKind === "reconnecting" ? (
+              <Trans>Reconnecting...</Trans>
+            ) : syncUiKind === "personal" ? (
+              <Trans>Personal Sync</Trans>
+            ) : (
+              <Trans>Local profile</Trans>
+            )}
+          </span>
+          {showAccountStatus && (
+            <span className="truncate text-[11px] font-normal text-muted-foreground">
+              {syncUiKind === "signed-in" ? (
+                <Trans>Cloud sync on</Trans>
+              ) : syncUiKind === "sync-off" ? (
+                <Trans>Sync off</Trans>
+              ) : syncUiKind === "reconnecting" ? (
+                <Trans>Restoring session</Trans>
+              ) : syncUiKind === "personal" ? (
+                <Trans>Personal server</Trans>
+              ) : syncUiKind === "device-limit" ? (
+                <Trans>Device limit reached</Trans>
+              ) : (
+                <Trans>Local profile</Trans>
+              )}
+            </span>
+          )}
+        </span>
+      </Button>
+    </div>
+  );
+
   return (
     <main className="relative min-h-full overflow-x-hidden">
-      <div
-        className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5 px-3 py-4 sm:px-4 lg:px-6"
-        style={
-          hasActiveGame
-            ? {
-                paddingBottom: isMobilePlatform
-                  ? "calc(7rem + env(safe-area-inset-bottom))"
-                  : "5.5rem",
-              }
-            : undefined
-        }
-      >
-        <div className="flex items-center justify-between gap-2">
-          <div className="min-w-0">{languageControl}</div>
-          <div className="shrink-0">{quickstartControl}</div>
-        </div>
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-6 sm:px-6 lg:py-8">
+        <ServerAnnouncementCard
+          announcement={catalog.capabilities?.announcement}
+          baseUrl={catalog.baseUrl}
+        />
+
+        <header className="flex flex-wrap items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              <Trans>Your library</Trans>
+            </h1>
+          </div>
+          {accountControl}
+        </header>
 
         {hasIssues && (
           <div className="flex flex-col gap-2 border border-destructive/40 bg-destructive/10 p-2.5 text-destructive sm:flex-row sm:items-center">
@@ -423,15 +666,85 @@ export default function Home() {
                 </Trans>
               </p>
             </div>
-            <Button variant="destructive" onClick={() => setSettingsOpen(true)}>
+            <Button
+              variant="destructive"
+              onClick={() => openSettings("ai-setup")}
+            >
               <Trans>Open Settings</Trans>
             </Button>
           </div>
         )}
 
-        <div className="flex flex-col gap-5">
+        <section
+          aria-label={t`Your next tale`}
+          className="flex min-w-0 flex-col gap-4 rounded-xs border border-border bg-card p-4 text-card-foreground sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+        >
+          <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
+            {hasFeaturedTale ? (
+              <>
+                <h2 className="line-clamp-2 max-w-full break-words text-lg font-semibold leading-snug">
+                  {featuredTitle || t`Untitled`}
+                </h2>
+                {featuredExcerpt && (
+                  <p className="line-clamp-2 max-w-[75ch] text-sm leading-normal text-muted-foreground sm:line-clamp-1">
+                    <PlainTextExcerpt>{featuredExcerpt}</PlainTextExcerpt>
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-sm leading-normal text-muted-foreground">
+                <Trans>
+                  Choose a scenario or click Quickstart to start a new tale.
+                </Trans>
+              </p>
+            )}
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {hasFeaturedTale && (
+              <Button
+                className="min-h-10"
+                disabled={
+                  hasIssues ||
+                  featuredLoading ||
+                  (hasActiveGame && !canContinue)
+                }
+                onClick={() => {
+                  if (featuredItem && (!hasActiveGame || featuredConflict))
+                    void handleLoadTale(featuredItem);
+                  else if (hasActiveGame) navigate({ to: "/play" });
+                }}
+              >
+                {featuredLoading ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Play className="size-4" />
+                )}
+                {featuredLoading ? (
+                  <Trans>Loading…</Trans>
+                ) : featuredConflict ? (
+                  <Trans>Review conflict</Trans>
+                ) : (
+                  <Trans>Continue</Trans>
+                )}
+              </Button>
+            )}
+            {quickstartControl}
+            {!hasFeaturedTale && (
+              <Button
+                variant="outline"
+                className="min-h-10"
+                onClick={() => navigate({ to: "/scenarios" })}
+              >
+                <Trans>Browse scenarios</Trans>
+                <ChevronRight className="size-4 rtl:rotate-180" />
+              </Button>
+            )}
+          </div>
+        </section>
+
+        <div className="flex flex-col gap-8">
           <Shelf
-            title={<Trans>Latest Tales</Trans>}
+            title={<Trans>Recent tales</Trans>}
             action={
               <Button
                 variant="outline"
@@ -453,6 +766,11 @@ export default function Home() {
                 <Trans>Failed to load tales.</Trans>
               </ShelfState>
             )}
+            {Boolean(tales.remoteError) && (
+              <ShelfState>
+                <Trans>Cloud tales are unavailable.</Trans>
+              </ShelfState>
+            )}
             {!tales.loading && !tales.error && tales.items.length === 0 && (
               <ShelfState>
                 <Trans>No tales yet.</Trans>
@@ -460,23 +778,85 @@ export default function Home() {
             )}
             {tales.items.map((tale) => (
               <TaleCard
-                key={tale.id}
-                tale={tale}
-                loading={loadingTaleId === tale.id}
+                key={
+                  tale.source === "local"
+                    ? `local-${tale.localTale.id}`
+                    : `remote-${tale.remoteTale.id}`
+                }
+                item={tale}
+                loading={
+                  loadingTaleId ===
+                  (tale.source === "local"
+                    ? tale.localTale.id
+                    : tale.remoteTale.id)
+                }
                 disabled={hasIssues}
+                syncActive={tales.syncActive}
+                syncStatusLoading={tales.syncStatesLoading}
                 onLoad={handleLoadTale}
               />
             ))}
           </Shelf>
 
+          {catalog.enabled ? (
+            <Shelf
+              title={<Trans>Public Scenarios</Trans>}
+              action={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    navigate({ to: "/scenarios", search: { tab: "discover" } })
+                  }
+                >
+                  <Trans>Discover</Trans>
+                  <ChevronRight className="rtl:rotate-180" />
+                </Button>
+              }
+            >
+              {publicScenarios.loading && (
+                <ShelfState>
+                  <Trans>Loading...</Trans>
+                </ShelfState>
+              )}
+              {Boolean(publicScenarios.error) && (
+                <ShelfState>
+                  <Trans>Public scenarios are unavailable.</Trans>
+                </ShelfState>
+              )}
+              {!publicScenarios.loading &&
+                !publicScenarios.error &&
+                publicScenarios.items.length === 0 && (
+                  <ShelfState>
+                    <Trans>No public scenarios yet.</Trans>
+                  </ShelfState>
+                )}
+              {publicScenarios.items.map((scenario) => (
+                <PublicScenarioCard
+                  key={scenario.id}
+                  scenario={scenario}
+                  baseUrl={catalog.baseUrl}
+                  onView={(item) =>
+                    navigate({ to: `/scenarios/catalog/${item.id}` })
+                  }
+                />
+              ))}
+            </Shelf>
+          ) : null}
+
           <Shelf
-            title={<Trans>Latest Scenarios</Trans>}
+            title={<Trans>Your Scenarios</Trans>}
             action={
               <>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button size="icon-sm" aria-label={t`Create Scenario`}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      aria-label={t`Create Scenario`}
+                    >
                       <Plus className="h-4 w-4" />
+                      <Trans>Create</Trans>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -527,129 +907,17 @@ export default function Home() {
               <ScenarioCard
                 key={scenario.id}
                 scenario={scenario}
-                loading={startingScenarioId === scenario.id}
-                disabled={hasIssues}
-                onStart={handleStartScenario}
+                onView={(id) => navigate({ to: `/scenarios/${id}` })}
               />
             ))}
           </Shelf>
         </div>
-
-        <Accordion type="single" collapsible className="rounded-none">
-          <AccordionItem value="how">
-            <AccordionTrigger>
-              <Trans>How to play</Trans>
-            </AccordionTrigger>
-            <AccordionContent>
-              <ul className="list-disc space-y-1 pl-4 text-sm">
-                <li>
-                  <Trans>
-                    Open Settings → set API URL/key and pick a model.
-                  </Trans>
-                </li>
-                <li>
-                  <strong>
-                    <Trans>Quick Start:</Trans>
-                  </strong>{" "}
-                  <Trans>
-                    Click &quot;Quickstart&quot; to jump right in with a guided
-                    wizard, or
-                  </Trans>
-                </li>
-                <li>
-                  <Trans>
-                    Go to Scenarios → Create or Import from Clipboard.
-                  </Trans>
-                </li>
-                <li>
-                  <Trans>Go to Scenarios → New Tale.</Trans>
-                </li>
-                <li>
-                  <Trans>
-                    Type actions, the AI continues. Available actions:
-                  </Trans>
-                  <ul className="list-disc space-y-1 pl-4 text-sm">
-                    <li>
-                      <Trans>Do: Act in the story.</Trans>
-                    </li>
-                    <li>
-                      <Trans>Say: Speak something out loud.</Trans>
-                    </li>
-                    <li>
-                      <Trans>
-                        Story: Write a segment of text that the AI will treat as
-                        part of the story and continue from.
-                      </Trans>
-                    </li>
-                    <li>
-                      <Trans>
-                        Direct: An out of character note telling the AI to do
-                        something.
-                      </Trans>
-                    </li>
-                    <li>
-                      <Trans>Continue: Continue the story.</Trans>
-                    </li>
-                    <li>
-                      <Trans>
-                        Retry: Retry the last message. Can only be done if the
-                        last message is by the AI.
-                      </Trans>
-                    </li>
-                  </ul>
-                </li>
-                <li>
-                  <Trans>
-                    In Game Master mode, the AI keeps track of stats and
-                    inventory.
-                  </Trans>
-                </li>
-              </ul>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
       </div>
-
-      {hasActiveGame && (
-        <div
-          className="fixed inset-x-0 z-30 border-t border-primary/60 bg-card"
-          style={{
-            bottom: isMobilePlatform
-              ? "calc(3.5rem + env(safe-area-inset-bottom))"
-              : 0,
-          }}
-        >
-          <div className="h-0.5 bg-primary" />
-          <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-2 px-3 py-2.5 sm:flex-row sm:items-center sm:px-4 lg:px-6">
-            <div className="min-w-0 flex-1">
-              <div className="flex min-w-0 items-center gap-2">
-                <h2 className="min-w-0 truncate font-semibold">
-                  {name || t`Untitled`}
-                </h2>
-                <Badge variant="outline" className="shrink-0 text-[10px]">
-                  {log.length} {log.length === 1 ? t`turn` : t`turns`}
-                </Badge>
-              </div>
-              <p className="mt-0.5 truncate text-sm text-muted-foreground">
-                {(lastEntry?.text ?? description) || t`No description yet.`}
-              </p>
-            </div>
-            <Button
-              className="h-9 w-full sm:w-auto sm:min-w-36"
-              onClick={() => navigate({ to: "/play" })}
-              disabled={!canContinue}
-            >
-              <Play />
-              <Trans>Continue</Trans>
-            </Button>
-          </div>
-        </div>
-      )}
 
       <SettingsModal
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
-        defaultTab="ai-setup"
+        defaultTab={settingsTab}
         visibleTabs={nonPlayTabs}
       />
       <GenerateScenarioDialog
@@ -664,6 +932,15 @@ export default function Home() {
             }),
           });
         }}
+      />
+      <TaleConflictDialog
+        item={conflictItem}
+        open={Boolean(conflictItem)}
+        resolving={resolvingConflict}
+        onOpenChange={(open) => {
+          if (!open && !resolvingConflict) setConflictItem(null);
+        }}
+        onResolve={handleResolveConflict}
       />
       {pendingChangelogVersion && pendingChangelogNotes && (
         <WhatsNewModal

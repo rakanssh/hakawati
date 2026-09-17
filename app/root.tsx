@@ -27,14 +27,42 @@ import { Titlebar } from "./components/layout";
 import { MobileBottomNav } from "./components/layout/mobile-bottom-nav";
 import { isTauriEnvironment, useUpdateStore } from "./store/useUpdateStore";
 import { useDbReady } from "./hooks/useDbReady";
+import { useHostedTokenRefresh } from "./hooks/useHostedTokenRefresh";
 import { useIsMobile } from "./hooks/useIsMobile";
+import { useSyncBackground } from "./hooks/useSyncBackground";
+import { useZoom } from "./hooks/useZoom";
+import { useSettingsStore } from "./store/useSettingsStore";
+import { UI_SCALE_MAX, UI_SCALE_MIN } from "./lib/appearance-limits";
+import { Scaling } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+} from "./components/ui/alert-dialog";
+import { Trans } from "@lingui/react/macro";
 
 export default function AppShell() {
   const checkForUpdates = useUpdateStore((state) => state.checkForUpdates);
+  const installingUpdate = useUpdateStore(
+    (state) => state.phase === "installing",
+  );
   const hasRunRef = useRef(false);
   const { isReady: dbReady, error: dbError } = useDbReady();
   const { isMobilePlatform } = useIsMobile();
   const routerState = useRouterState();
+  useHostedTokenRefresh(dbReady);
+  useSyncBackground(dbReady);
+  const uiScale = useSettingsStore((state) => state.uiScale);
+  const setUiScale = useSettingsStore((state) => state.setUiScale);
+  const { showIndicator: showScaleIndicator, isIndicatorVisible } = useZoom({
+    zoom: uiScale,
+    setZoom: setUiScale,
+    wheel: false,
+    step: 0.05,
+    min: UI_SCALE_MIN,
+    max: UI_SCALE_MAX,
+  });
 
   const pathname = routerState.location.pathname;
   const isPlayRoute = pathname?.startsWith("/play");
@@ -89,7 +117,38 @@ export default function AppShell() {
           {dbReady && <Outlet />}
         </div>
         <MobileBottomNav />
+        {showScaleIndicator && (
+          <div
+            role="status"
+            className={`pointer-events-none fixed top-[calc(3rem+env(safe-area-inset-top))] end-4 z-[100] transition-opacity duration-[250ms] ${
+              isIndicatorVisible ? "opacity-100" : "opacity-0"
+            }`}
+          >
+            <div className="flex items-center gap-2 rounded-xs border border-border bg-background/95 px-2 py-1 text-sm font-medium text-foreground shadow-lg backdrop-blur-sm">
+              <Scaling className="size-4" aria-hidden="true" />
+              <span className="sr-only">
+                <Trans>User interface scale</Trans>{" "}
+              </span>
+              {Math.round(uiScale * 100)}%
+            </div>
+          </div>
+        )}
         <Toaster richColors expand position="top-right" />
+        <AlertDialog open={installingUpdate}>
+          <AlertDialogContent
+            onEscapeKeyDown={(event) => event.preventDefault()}
+          >
+            <AlertDialogTitle>
+              <Trans>Installing update…</Trans>
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <Trans>
+                Saving your progress. Hakawati will restart when the update is
+                ready.
+              </Trans>
+            </AlertDialogDescription>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </ThemeProvider>
   );

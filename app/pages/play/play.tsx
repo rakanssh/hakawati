@@ -33,6 +33,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 import { useStickToBottom } from "@/hooks/useStickToBottom";
 import { useZoom } from "@/hooks/useZoom";
+import { FONT_SIZE_MAX, FONT_SIZE_MIN } from "@/lib/appearance-limits";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { usePlaySession } from "@/hooks/usePlaySession";
 import { useTtsPlayback } from "@/hooks/useTtsPlayback";
@@ -46,10 +47,14 @@ export default function Play() {
     oldestLoadedIndex,
     isLoadingOlderEntries,
     loadOlderLogEntries,
+    name,
+    description,
+    components,
     stats,
     inventory,
     storyCards,
     gameMode,
+    undoStack,
     id: taleId,
   } = useTaleStore();
 
@@ -59,7 +64,7 @@ export default function Play() {
   const { isMobilePlatform } = useIsMobile();
   const { lastPlayedTaleId } = useLastPlayedStore();
   const { load, loading: isLoadingTale } = useLoadTale();
-  const { save } = usePersistTale();
+  const { save, editEntry } = usePersistTale();
 
   const [currentlyEditingLogId, setCurrentlyEditingLogId] = useState<
     string | null
@@ -81,6 +86,7 @@ export default function Play() {
     handleContinue,
     handleRetry,
     handleUndo,
+    handleRedo,
     handleStop,
     executeLlmSend,
   } = usePlaySession();
@@ -119,19 +125,46 @@ export default function Play() {
   const { showIndicator: showZoomIndicator, isIndicatorVisible } = useZoom({
     zoom: fontSize,
     setZoom: setFontSize,
+    keyboard: false,
+    min: FONT_SIZE_MIN,
+    max: FONT_SIZE_MAX,
     step: 0.1,
     defaultZoom: 1,
     fadeDuration: 250,
   });
 
   const autoSaveData = useMemo(
-    () => ({ log, stats, inventory, storyCards }),
-    [log, stats, inventory, storyCards],
+    () => ({
+      id: taleId,
+      name,
+      description,
+      components,
+      gameMode,
+      stats,
+      inventory,
+      storyCards,
+      undoStack,
+    }),
+    [
+      taleId,
+      name,
+      description,
+      components,
+      gameMode,
+      stats,
+      inventory,
+      storyCards,
+      undoStack,
+    ],
   );
 
   useAutoSave({
     data: autoSaveData,
-    save: useCallback(() => save(taleId), [save, taleId]),
+    save: useCallback(
+      (snapshot: typeof autoSaveData) => save(snapshot.id, snapshot),
+      [save],
+    ),
+    scopeKey: taleId,
     debounceMs: 2000,
     disabled: loading,
     warnOnLeave: true,
@@ -194,11 +227,30 @@ export default function Play() {
       void executeLlmSend(
         firstEntry.text,
         firstEntry.mode ?? LogEntryMode.DIRECT,
+        {
+          persistence: {
+            type: "new-turn",
+            pendingEntries: [firstEntry],
+            leadingEntries: [firstEntry],
+            fallbackToAppend: true,
+          },
+        },
       );
     }
   }, [log, loading, narratorConfig, executeLlmSend, isLoadingTale]);
 
   const blocks = useMemo(() => groupLogEntriesIntoBlocks(log), [log]);
+
+  const commitLogEntryEdit = useCallback(
+    (entryId: string, updates: Parameters<typeof updateLogEntry>[1]) => {
+      updateLogEntry(entryId, updates);
+      void editEntry(taleId, entryId, updates).catch((error) => {
+        console.error("Failed to save edited log entry:", error);
+        toast.error("Failed to save progress");
+      });
+    },
+    [editEntry, taleId, updateLogEntry],
+  );
 
   useEffect(() => {
     if (loading || isLoadingTale) return;
@@ -244,7 +296,7 @@ export default function Play() {
           isStreaming={loading}
           currentlyEditingLogId={currentlyEditingLogId}
           setCurrentlyEditingLogId={setCurrentlyEditingLogId}
-          updateLogEntry={updateLogEntry}
+          updateLogEntry={commitLogEntryEdit}
           viewportRef={viewportRef}
           bottomRef={bottomRef}
           onViewportScroll={handleScroll}
@@ -266,6 +318,7 @@ export default function Play() {
           onContinue={handleContinue}
           onRetry={handleRetry}
           onUndo={handleUndo}
+          onRedo={handleRedo}
         />
         <TtsPlayer
           visible={ttsPlayback.isVisible}

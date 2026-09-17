@@ -2,6 +2,34 @@
 
 All notable changes to this project are documented in this file.
 
+## [v1.0.0] - 2026-09-17
+
+### Added
+
+- Scenario questions for character names and other choices, with free text, suggested answers, or fixed options before starting a tale.
+- Optional accounts for syncing tales across devices, with controls to keep individual tales local and resolve conflicting saves.
+- A public scenario catalog with title and summary search, tag filters (including Arabic tags), publishing and updates, reporting, and publisher blocking.
+- Automatic backups before upgrading your saves, with recovery instructions if an upgrade cannot complete.
+
+### Changed
+
+- More compact Home, Tales, and Scenarios screens.
+- Refined Play controls.
+- Quickstart now shows a timer while creating your tale and lets you cancel without losing your setup.
+- Ctrl/Cmd + Plus/Minus now scales the interface. Ctrl/Cmd + mouse wheel adjusts story text size.
+- Improved loading and saving of long tales.
+- Cover images are optimized before cloud upload.
+
+### Fixed
+
+- Fixed story card auto-generation failing when responses were cut short.
+- Fixed recent edits being lost when leaving a page, closing the app, or installing an update.
+- Cancelling a retry before it produces text now keeps the original passage.
+- Fixed delayed loading or generation results overwriting another tale after switching.
+- Fixed saving of story edits, undo, and redo. New turns also restore stats and inventory correctly when undone or redone.
+- Deleted tales no longer remain available through Continue.
+- Fixed upgrade errors affecting some earlier Windows installations.
+
 ## [v0.15.2] - 2026-06-11
 
 ### Fixed

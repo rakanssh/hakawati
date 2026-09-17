@@ -5,11 +5,47 @@ export type Scenario = {
   name: string;
   initialGameMode: GameMode;
   description: string;
-  components: PromptComponent[];
-  initialStats: Stat[];
-  initialInventory: string[];
-  initialStoryCards: StoryCard[];
+  content: ScenarioContent[];
   thumbnail?: Uint8Array | null;
+};
+
+export type ScenarioContent =
+  | PromptComponentContent
+  | StoryCardContent
+  | StatContent
+  | InventoryItemContent;
+
+export type PromptComponentContent = {
+  type: "prompt_component";
+  version: 1;
+  id: string;
+  promptType: PromptComponentType;
+  content: string;
+};
+
+export type StoryCardContent = {
+  type: "story_card";
+  version: 1;
+  id: string;
+  title: string;
+  triggers: string[];
+  content: string;
+  category: StorybookCategory;
+  isPinned: boolean;
+};
+
+export type StatContent = Stat & {
+  type: "stat";
+  version: 1;
+  id: string;
+};
+
+export type InventoryItemContent = {
+  type: "inventory_item";
+  version: 1;
+  id: string;
+  name: string;
+  description?: string;
 };
 
 export type ScenarioHead = {

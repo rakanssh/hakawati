@@ -8,10 +8,10 @@ import { useLingui } from "@lingui/react/macro";
 import { Trans } from "@lingui/react/macro";
 
 export type StatsEditorProps = {
-  stats: Stat[];
+  stats: (Stat & { id: string })[];
   onAdd: (name: string) => void;
   onUpdate: (
-    prevName: string,
+    id: string,
     update: Partial<{
       name: string;
       description: string | undefined;
@@ -19,7 +19,7 @@ export type StatsEditorProps = {
       rangeMax: number;
     }>,
   ) => void;
-  onRemove: (name: string) => void;
+  onRemove: (id: string) => void;
 };
 
 export function StatsEditor({
@@ -38,18 +38,18 @@ export function StatsEditor({
       <div className="flex flex-col gap-3">
         {stats.map((stat) => (
           <div
-            key={stat.name}
+            key={stat.id}
             className="p-3 border rounded-xs flex flex-col gap-2"
           >
             <div className="flex items-center justify-between gap-2">
               <Input
                 value={stat.name}
-                onChange={(e) => onUpdate(stat.name, { name: e.target.value })}
+                onChange={(e) => onUpdate(stat.id, { name: e.target.value })}
               />
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => onRemove(stat.name)}
+                onClick={() => onRemove(stat.id)}
                 className="w-24"
               >
                 <Trans>Remove</Trans>
@@ -58,7 +58,7 @@ export function StatsEditor({
             <Input
               value={stat.description || ""}
               onChange={(e) =>
-                onUpdate(stat.name, {
+                onUpdate(stat.id, {
                   description: e.target.value || undefined,
                 })
               }
@@ -73,7 +73,7 @@ export function StatsEditor({
                 value={stat.value}
                 min={stat.range[0]}
                 max={stat.range[1]}
-                onValueCommit={(v) => onUpdate(stat.name, { value: v })}
+                onValueCommit={(v) => onUpdate(stat.id, { value: v })}
                 className="w-24"
               />
               <span>/</span>
@@ -83,7 +83,7 @@ export function StatsEditor({
               <NumberInput
                 value={stat.range[1]}
                 min={stat.value}
-                onValueCommit={(v) => onUpdate(stat.name, { rangeMax: v })}
+                onValueCommit={(v) => onUpdate(stat.id, { rangeMax: v })}
                 className="w-24 rounded-xs"
               />
             </div>

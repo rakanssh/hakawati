@@ -4,7 +4,7 @@ import {
   deleteTaleById,
   saveAsScenario as saveAsScenarioService,
 } from "@/services/tale.service";
-import { useLoadTale } from "@/hooks/useGameSaves";
+import { clearDeletedTale, useLoadTale } from "@/hooks/useGameSaves";
 import { TaleHead } from "@/types/tale.type";
 import { usePaginatedList } from "@/hooks/usePaginatedList";
 
@@ -32,6 +32,7 @@ export function useTalesList(initialPage = 1, initialLimit = 12) {
   const deleteTale = useCallback(
     async (id: string) => {
       await deleteTaleById(id);
+      clearDeletedTale(id);
       await refresh();
     },
     [refresh],

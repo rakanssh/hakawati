@@ -5,8 +5,15 @@ import { Button } from "../ui/button";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import fez from "@/assets/fez-offwh-bg-sqc.svg";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useEffect } from "react";
+import { toast } from "sonner";
+import { flushPendingAutoSaves } from "@/hooks/useAutoSave";
+import { useUpdateStore } from "@/store/useUpdateStore";
+import { useTaleStore } from "@/store/useTaleStore";
 
 const titlebarButtonClass = "h-7 w-7 rounded-xs p-0";
+const isBrowserPreview =
+  import.meta.env.DEV && import.meta.env.MODE === "browser-preview";
 
 async function getAppWindow() {
   const { getCurrentWebviewWindow } = await import(
@@ -21,6 +28,43 @@ export function Titlebar() {
   const isShowButtons = true;
   const { isMobilePlatform } = useIsMobile();
   const isPlayRoute = routerState.location.pathname?.startsWith("/play");
+  const taleName = useTaleStore((state) => state.name);
+  const title = isPlayRoute && taleName.trim() ? taleName : "Hakawati";
+  useEffect(() => {
+    if (isMobilePlatform || !("__TAURI_INTERNALS__" in window)) return;
+    let disposed = false;
+    let unlisten: (() => void) | undefined;
+    void getAppWindow()
+      .then((appWindow) =>
+        appWindow.onCloseRequested(async (event) => {
+          if (useUpdateStore.getState().phase === "installing") {
+            event.preventDefault();
+            return;
+          }
+          try {
+            await flushPendingAutoSaves();
+          } catch (error) {
+            event.preventDefault();
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : "Failed to save progress. Please try closing again.",
+            );
+          }
+        }),
+      )
+      .then((stop) => {
+        if (disposed) stop();
+        else unlisten = stop;
+      })
+      .catch((error) =>
+        console.error("Unable to register save on close:", error),
+      );
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, [isMobilePlatform]);
   if (isMobilePlatform) return null;
   return (
     <div
@@ -28,7 +72,7 @@ export function Titlebar() {
       className="fixed top-0 left-0 right-0 z-50 h-8 bg-background border-b"
     >
       <div data-tauri-drag-region className="titlebar-drag absolute inset-0" />
-      <div className="relative grid grid-cols-3 items-center h-full px-2 select-none pointer-events-none">
+      <div className="relative grid grid-cols-[6rem_minmax(0,1fr)_6rem] items-center h-full px-2 select-none pointer-events-none">
         <div className="titlebar-no-drag pointer-events-auto flex items-center gap-1">
           {isShowButtons && (
             <>
@@ -52,55 +96,68 @@ export function Titlebar() {
             </>
           )}
         </div>
-        <div className="flex justify-center items-center mb-1">
-          <div className="flex items-center gap-1">
-            <img src={fez} alt="Hakawati" className="w-5 h-5 " />
-
-            <span className="text-sm font-medium tracking-wide text-foreground">
-              Hakawati
+        <div className="flex min-w-0 justify-center items-center mb-1 px-1">
+          <div className="flex min-w-0 max-w-full items-center gap-1">
+            <img src={fez} alt="Hakawati" className="w-5 h-5 shrink-0" />
+            <span
+              dir="auto"
+              className="truncate text-sm font-medium text-foreground"
+              title={title}
+            >
+              {title}
             </span>
+            {isBrowserPreview && (
+              <span
+                className="ml-1 shrink-0 text-xs text-muted-foreground"
+                title="Sample data resets on reload. Narrator responses are scripted. Cloud and native features require the desktop app."
+              >
+                · <span className="hidden sm:inline">Browser </span>preview
+              </span>
+            )}
           </div>
         </div>
-        <div className="titlebar-no-drag pointer-events-auto flex justify-end gap-1 w-fit absolute right-0">
-          <button
-            aria-label="Minimize"
-            className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-foreground/10 text-foreground/80 hover:text-foreground"
-            onClick={async () => {
-              if (typeof window === "undefined") return;
-              const appWindow = await getAppWindow();
-              await appWindow.minimize();
-            }}
-          >
-            <MinusIcon className="w-4 h-4" />
-          </button>
-          <button
-            aria-label="Maximize"
-            className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-foreground/10 text-foreground/80 hover:text-foreground"
-            onClick={async () => {
-              if (typeof window === "undefined") return;
-              const appWindow = await getAppWindow();
-              const isMax = await appWindow.isMaximized();
-              if (isMax) {
-                await appWindow.unmaximize();
-              } else {
-                await appWindow.maximize();
-              }
-            }}
-          >
-            <SquareIcon className="w-3.5 h-3.5" />
-          </button>
-          <button
-            aria-label="Close"
-            className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-foreground/10 text-foreground/80 hover:text-foreground"
-            onClick={async () => {
-              if (typeof window === "undefined") return;
-              const appWindow = await getAppWindow();
-              await appWindow.close();
-            }}
-          >
-            <XIcon className="w-4 h-4" />
-          </button>
-        </div>
+        {!isBrowserPreview && (
+          <div className="titlebar-no-drag pointer-events-auto flex justify-end gap-1 w-fit absolute right-0">
+            <button
+              aria-label="Minimize"
+              className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-foreground/10 text-foreground/80 hover:text-foreground"
+              onClick={async () => {
+                if (typeof window === "undefined") return;
+                const appWindow = await getAppWindow();
+                await appWindow.minimize();
+              }}
+            >
+              <MinusIcon className="w-4 h-4" />
+            </button>
+            <button
+              aria-label="Maximize"
+              className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-foreground/10 text-foreground/80 hover:text-foreground"
+              onClick={async () => {
+                if (typeof window === "undefined") return;
+                const appWindow = await getAppWindow();
+                const isMax = await appWindow.isMaximized();
+                if (isMax) {
+                  await appWindow.unmaximize();
+                } else {
+                  await appWindow.maximize();
+                }
+              }}
+            >
+              <SquareIcon className="w-3.5 h-3.5" />
+            </button>
+            <button
+              aria-label="Close"
+              className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-foreground/10 text-foreground/80 hover:text-foreground"
+              onClick={async () => {
+                if (typeof window === "undefined") return;
+                const appWindow = await getAppWindow();
+                await appWindow.close();
+              }}
+            >
+              <XIcon className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

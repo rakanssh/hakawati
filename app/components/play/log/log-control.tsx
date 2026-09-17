@@ -8,7 +8,7 @@ import {
   UndoIcon,
   RedoIcon,
   RefreshCwIcon,
-  MoreHorizontalIcon,
+  StepForwardIcon,
   SquareIcon,
 } from "lucide-react";
 import { useTaleStore } from "@/store/useTaleStore";
@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 
 interface LogControlShortcutProps {
   handleUndo?: () => void;
+  handleRedo?: () => void;
   handleRetry: () => void;
   handleStop?: () => void;
   loading?: boolean;
@@ -27,12 +28,14 @@ interface LogControlShortcutProps {
 export function useLogControlShortcuts({
   loading = false,
   handleUndo,
+  handleRedo,
   handleRetry,
   handleStop,
   saving = false,
 }: LogControlShortcutProps) {
   const { undo, redo } = useTaleStore();
   const effectiveUndo = handleUndo ?? undo;
+  const effectiveRedo = handleRedo ?? redo;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -70,7 +73,7 @@ export function useLogControlShortcuts({
       ) {
         e.preventDefault();
         if (!loading && !saving) {
-          redo();
+          effectiveRedo();
         }
       }
 
@@ -87,7 +90,7 @@ export function useLogControlShortcuts({
       globalThis.removeEventListener("keydown", handleKeyDown, {
         capture: true,
       });
-  }, [effectiveUndo, redo, handleRetry, handleStop, loading, saving]);
+  }, [effectiveUndo, effectiveRedo, handleRetry, handleStop, loading, saving]);
 }
 
 interface RetryControlProps {
@@ -133,6 +136,7 @@ export function RetryControl({
 interface HistoryControlButtonProps {
   className?: string;
   handleUndo?: () => void;
+  handleRedo?: () => void;
   loading?: boolean;
   saving?: boolean;
 }
@@ -174,11 +178,13 @@ export function UndoControl({
 
 export function RedoControl({
   className,
+  handleRedo,
   loading = false,
   saving = false,
 }: HistoryControlButtonProps) {
   const { t } = useLingui();
   const { redo } = useTaleStore();
+  const effectiveRedo = handleRedo ?? redo;
 
   return (
     <Tooltip>
@@ -191,7 +197,7 @@ export function RedoControl({
             "!h-10 !w-10 border border-transparent bg-transparent p-0 text-muted-foreground shadow-none hover:border-border hover:bg-muted/45 hover:text-foreground md:!h-9 md:!w-9",
             className,
           )}
-          onClick={redo}
+          onClick={effectiveRedo}
           disabled={loading || saving}
           aria-label={t`Redo`}
         >
@@ -202,60 +208,6 @@ export function RedoControl({
         <Trans>Redo (Ctrl+Y)</Trans>
       </TooltipContent>
     </Tooltip>
-  );
-}
-
-export function HistoryControls({
-  className,
-  handleUndo,
-  loading = false,
-  saving = false,
-}: HistoryControlButtonProps) {
-  return (
-    <div className={cn("flex items-center gap-1", className)}>
-      <UndoControl handleUndo={handleUndo} loading={loading} saving={saving} />
-      <RedoControl loading={loading} saving={saving} />
-    </div>
-  );
-}
-
-interface LogControlProps extends LogControlShortcutProps {
-  className?: string;
-}
-
-export function LogControl({
-  className,
-  loading = false,
-  handleUndo,
-  handleRetry,
-  handleStop,
-  saving = false,
-}: LogControlProps) {
-  useLogControlShortcuts({
-    handleUndo,
-    handleRetry,
-    handleStop,
-    loading,
-    saving,
-  });
-
-  return (
-    <div className={cn("min-w-0 flex-[3_1_0]", className)}>
-      <div className="flex w-full flex-row gap-1">
-        <RetryControl
-          handleRetry={handleRetry}
-          loading={loading}
-          saving={saving}
-          className="flex-1 bg-card/70"
-        />
-        <HistoryControls
-          handleUndo={handleUndo}
-          loading={loading}
-          saving={saving}
-          className="rounded-xs bg-card/70"
-        />
-      </div>
-    </div>
   );
 }
 
@@ -292,7 +244,7 @@ export function ContinueControl({
           {canStop ? (
             <SquareIcon className="h-4 w-4" />
           ) : (
-            <MoreHorizontalIcon className="h-4 w-4" />
+            <StepForwardIcon className="h-4 w-4 rtl:rotate-180" />
           )}
         </Button>
       </TooltipTrigger>

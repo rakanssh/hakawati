@@ -64,6 +64,7 @@ interface PlayInputControlsProps {
   onContinue: () => void;
   onRetry: () => void;
   onUndo: () => void;
+  onRedo: () => void;
 }
 
 const ACTION_MODES = [
@@ -213,6 +214,7 @@ export function PlayInputControls({
   onContinue,
   onRetry,
   onUndo,
+  onRedo,
 }: PlayInputControlsProps) {
   const { t } = useLingui();
   const { isMobilePlatform } = useIsMobile();
@@ -277,6 +279,7 @@ export function PlayInputControls({
     "flex min-h-[6.25rem] min-w-0 overflow-hidden rounded-xs border border-border/75 bg-[var(--composer-background)] p-1.5 shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18 md:min-h-[6rem]";
   useLogControlShortcuts({
     handleUndo: onUndo,
+    handleRedo: onRedo,
     handleRetry: onRetry,
     handleStop: onStop,
     loading,
@@ -301,6 +304,9 @@ export function PlayInputControls({
             >
               <span className="flex items-center gap-1.5">
                 {renderModeIcon(currentActionMode)}
+                <span className="composer-command-label">
+                  {currentActionLabel}
+                </span>
               </span>
               <span className="composer-command-select-affordance flex items-center text-muted-foreground">
                 <ChevronUpIcon className="h-3.5 w-3.5" />
@@ -506,7 +512,7 @@ export function PlayInputControls({
           <div className="min-w-0">
             <div className="min-w-0 flex-1">{renderTextArea()}</div>
           </div>
-          <div className="flex min-w-0 items-center justify-between gap-1.5">
+          <div className="composer-command-controls flex min-w-0 items-center justify-between gap-1.5">
             <div className="flex min-w-0 items-center gap-1.5">
               {renderModifierControls("min-w-0")}
               {renderHistoryControls()}
@@ -555,6 +561,7 @@ export function PlayInputControls({
         className={quietIconButtonClass}
       />
       <RedoControl
+        handleRedo={onRedo}
         loading={loading}
         saving={saving}
         className={quietIconButtonClass}

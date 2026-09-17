@@ -10,7 +10,9 @@ import {
 } from "@/types/context.type";
 import type { Scenario } from "@/types/context.type";
 import { createPromptComponent } from "@/lib/prompt-components";
+import { legacyScenarioToContent } from "@/lib/scenario-content";
 import { z } from "zod";
+import { assertValidScenarioQuestions } from "@/lib/scenario-questions";
 
 const GeneratedScenarioSchema = z.object({
   name: z.string(),
@@ -51,7 +53,8 @@ export async function generateScenario(
     model: model.id,
     messages,
     stream: false,
-    max_tokens: 4000,
+    // Reasoning models share this budget between thinking and the JSON output.
+    max_tokens: 16000,
     responseMode: ResponseMode.FREE_FORM,
   };
 
@@ -86,39 +89,45 @@ export async function generateScenario(
       name: parsed.name,
       initialGameMode: gameMode,
       description: parsed.description,
-      components: [
-        createPromptComponent(PromptComponentType.PLOT, parsed.plot),
-        createPromptComponent(
-          PromptComponentType.AUTHOR_NOTE,
-          parsed.authorNote,
-        ),
-        createPromptComponent(PromptComponentType.OPENING, parsed.openingText),
-      ],
-      initialStats: parsed.initialStats.map((s) => ({
-        ...s,
-        range: [s.range[0] ?? 0, s.range[1] ?? 100] as [number, number],
-      })),
-      initialInventory: parsed.initialInventory,
-      initialStoryCards: parsed.initialStoryCards.map((card, i) => {
-        const rawCat = rawCards[i]?.category;
-        const category =
-          typeof rawCat === "string" && validCategories.includes(rawCat)
-            ? (rawCat as StorybookCategory)
-            : StorybookCategory.UNCATEGORIZED;
-        return {
-          id: nanoid(12),
-          title: card.title,
-          triggers: card.triggers,
-          content: card.content,
-          category,
-          isPinned: false,
-          createdAt: now,
-          updatedAt: now,
-        };
+      content: legacyScenarioToContent({
+        components: [
+          createPromptComponent(PromptComponentType.PLOT, parsed.plot),
+          createPromptComponent(
+            PromptComponentType.AUTHOR_NOTE,
+            parsed.authorNote,
+          ),
+          createPromptComponent(
+            PromptComponentType.OPENING,
+            parsed.openingText,
+          ),
+        ],
+        initialStats: parsed.initialStats.map((s) => ({
+          ...s,
+          range: [s.range[0] ?? 0, s.range[1] ?? 100] as [number, number],
+        })),
+        initialInventory: parsed.initialInventory,
+        initialStoryCards: parsed.initialStoryCards.map((card, i) => {
+          const rawCat = rawCards[i]?.category;
+          const category =
+            typeof rawCat === "string" && validCategories.includes(rawCat)
+              ? (rawCat as StorybookCategory)
+              : StorybookCategory.UNCATEGORIZED;
+          return {
+            id: nanoid(12),
+            title: card.title,
+            triggers: card.triggers,
+            content: card.content,
+            category,
+            isPinned: false,
+            createdAt: now,
+            updatedAt: now,
+          };
+        }),
       }),
       thumbnail: null,
     };
 
+    assertValidScenarioQuestions(scenario.content);
     return scenario;
   } catch (e) {
     throw new Error(

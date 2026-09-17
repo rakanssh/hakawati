@@ -9,33 +9,55 @@ import {
   normalizePromptComponents,
   SCENARIO_COMPONENT_TYPES,
 } from "@/lib/prompt-components";
+import {
+  editorFieldsToScenarioContent,
+  scenarioContentToEditorFields,
+  type ScenarioEditorFields,
+} from "@/lib/scenario-content";
 import { getActiveStorytellerPrompt } from "@/prompts";
 import { nanoid } from "nanoid";
+import { useMemo } from "react";
 
 export function useScenarioForm(
   scenario: Scenario,
   setScenario: React.Dispatch<React.SetStateAction<Scenario>>,
 ) {
+  const fields = useMemo(
+    () => scenarioContentToEditorFields(scenario.content),
+    [scenario.content],
+  );
+
+  const updateFields = (
+    update: (fields: ScenarioEditorFields) => ScenarioEditorFields,
+  ) => {
+    setScenario((prev) => ({
+      ...prev,
+      content: editorFieldsToScenarioContent(
+        update(scenarioContentToEditorFields(prev.content)),
+      ),
+    }));
+  };
+
   const addStat = (name: string) => {
     const trimmed = name.trim();
     if (!trimmed) return;
     if (
-      scenario.initialStats.some(
+      fields.initialStats.some(
         (s) => s.name.toLowerCase() === trimmed.toLowerCase(),
       )
     )
       return;
-    setScenario((prev) => ({
+    updateFields((prev) => ({
       ...prev,
       initialStats: [
         ...prev.initialStats,
-        { name: trimmed, value: 0, range: [0, 100] },
+        { id: nanoid(12), name: trimmed, value: 0, range: [0, 100] },
       ],
     }));
   };
 
   const updateStat = (
-    prevName: string,
+    id: string,
     update: Partial<{
       name: string;
       description: string | undefined;
@@ -43,11 +65,11 @@ export function useScenarioForm(
       rangeMax: number;
     }>,
   ) => {
-    setScenario((prev) => ({
+    updateFields((prev) => ({
       ...prev,
       initialStats: prev.initialStats.map((s) => {
-        if (s.name !== prevName) return s;
-        const nextName = update.name?.trim() ?? s.name;
+        if (s.id !== id) return s;
+        const nextName = update.name ?? s.name;
         const nextDescription =
           "description" in update ? update.description : s.description;
         const nextValue =
@@ -59,6 +81,7 @@ export function useScenarioForm(
             ? Math.max(s.range[0], Math.max(update.rangeMax, nextValue))
             : s.range[1];
         return {
+          id: s.id,
           name: nextName,
           description: nextDescription,
           value: nextValue,
@@ -68,39 +91,47 @@ export function useScenarioForm(
     }));
   };
 
-  const removeStat = (name: string) => {
-    setScenario((prev) => ({
+  const removeStat = (id: string) => {
+    updateFields((prev) => ({
       ...prev,
-      initialStats: prev.initialStats.filter((s) => s.name !== name),
+      initialStats: prev.initialStats.filter((s) => s.id !== id),
     }));
   };
 
   const addInventoryItem = (name: string) => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    setScenario((prev) => ({
+    updateFields((prev) => ({
       ...prev,
-      initialInventory: [...prev.initialInventory, trimmed],
+      initialInventory: [
+        ...prev.initialInventory,
+        { id: nanoid(12), name: trimmed },
+      ],
     }));
   };
 
-  const updateInventoryItem = (index: number, name: string) => {
-    const copy = [...scenario.initialInventory];
-    copy[index] = name;
-    setScenario({ ...scenario, initialInventory: copy });
+  const updateInventoryItem = (
+    id: string,
+    update: Partial<{ name: string; description: string }>,
+  ) => {
+    updateFields((prev) => ({
+      ...prev,
+      initialInventory: prev.initialInventory.map((item) =>
+        item.id === id ? { ...item, ...update } : item,
+      ),
+    }));
   };
 
-  const removeInventoryItem = (index: number) => {
-    setScenario((prev) => {
-      const copy = [...prev.initialInventory];
-      copy.splice(index, 1);
-      return { ...prev, initialInventory: copy };
-    });
+  const removeInventoryItem = (id: string) => {
+    updateFields((prev) => ({
+      ...prev,
+      initialInventory: prev.initialInventory.filter((item) => item.id !== id),
+    }));
   };
 
   const addStoryCard = (input: StoryCardInput) => {
     const now = Date.now();
-    setScenario((prev) => ({
+    updateFields((prev) => ({
       ...prev,
       initialStoryCards: [
         ...prev.initialStoryCards,
@@ -117,7 +148,7 @@ export function useScenarioForm(
   };
 
   const updateStoryCard = (id: string, update: Partial<StoryCardInput>) => {
-    setScenario((prev) => ({
+    updateFields((prev) => ({
       ...prev,
       initialStoryCards: prev.initialStoryCards.map((c) =>
         c.id === id ? { ...c, ...update, updatedAt: Date.now() } : c,
@@ -126,7 +157,7 @@ export function useScenarioForm(
   };
 
   const removeStoryCard = (id: string) => {
-    setScenario((prev) => ({
+    updateFields((prev) => ({
       ...prev,
       initialStoryCards: prev.initialStoryCards.filter((c) => c.id !== id),
     }));
@@ -135,7 +166,7 @@ export function useScenarioForm(
   const addComponent = (type: PromptComponentType) => {
     if (
       !SCENARIO_COMPONENT_TYPES.includes(type) ||
-      scenario.components.some((component) => component.type === type)
+      fields.components.some((component) => component.type === type)
     ) {
       return;
     }
@@ -143,7 +174,7 @@ export function useScenarioForm(
       type === PromptComponentType.AI_INSTRUCTIONS
         ? getActiveStorytellerPrompt()
         : "";
-    setScenario((prev) => ({
+    updateFields((prev) => ({
       ...prev,
       components: normalizePromptComponents(
         [...prev.components, createPromptComponent(type, content)],
@@ -153,7 +184,7 @@ export function useScenarioForm(
   };
 
   const updateComponent = (id: string, content: string) => {
-    setScenario((prev) => ({
+    updateFields((prev) => ({
       ...prev,
       components: prev.components.map((component) =>
         component.id === id
@@ -164,13 +195,14 @@ export function useScenarioForm(
   };
 
   const removeComponent = (id: string) => {
-    setScenario((prev) => ({
+    updateFields((prev) => ({
       ...prev,
       components: prev.components.filter((component) => component.id !== id),
     }));
   };
 
   return {
+    fields,
     addStat,
     updateStat,
     removeStat,

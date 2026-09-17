@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { parseOpenAIStream } from "./streaming";
 import { PlainTextDecoder, ToolCallingDecoder } from "./decoders";
 import { StreamChunk } from "./schema";
@@ -23,6 +23,48 @@ async function collect<T>(iterator: AsyncIterable<T>): Promise<T[]> {
 }
 
 describe("parseOpenAIStream", () => {
+  it("accepts SSE data fields without a space and releases the reader at completion", async () => {
+    const stream = makeSseStream([
+      'data:{"choices":[{"delta":{"content":"Hello"}}]}',
+      "data:[DONE]",
+    ]);
+    expect(await collect(parseOpenAIStream(stream))).toEqual([
+      { content: "Hello" },
+    ]);
+    expect(stream.locked).toBe(false);
+  });
+
+  it("cancels and unlocks the HTTP body when the consumer stops early", async () => {
+    const cancel = vi.fn();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(
+          new TextEncoder().encode(
+            'data: {"choices":[{"delta":{"content":"Partial"}}]}\n',
+          ),
+        );
+      },
+      cancel,
+    });
+    const iterator = parseOpenAIStream(stream);
+    expect((await iterator.next()).value).toEqual({ content: "Partial" });
+    await iterator.return(undefined);
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(stream.locked).toBe(false);
+  });
+
+  it("releases the reader when the network stream fails", async () => {
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.error(new Error("Connection lost"));
+      },
+    });
+    await expect(collect(parseOpenAIStream(stream))).rejects.toThrow(
+      "Connection lost",
+    );
+    expect(stream.locked).toBe(false);
+  });
+
   it("extracts story and thinking deltas from SSE", async () => {
     const stream = makeSseStream([
       'data: {"choices":[{"delta":{"content":"Hello "}}]}',

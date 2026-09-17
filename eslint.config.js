@@ -14,6 +14,15 @@ export default tseslint.config(
       "scripts/**/*.cjs",
     ],
   },
+  {
+    files: ["*.js", "scripts/**/*.js", "scripts/**/*.cjs"],
+    languageOptions: {
+      globals: {
+        console: "readonly",
+        process: "readonly",
+      },
+    },
+  },
   eslint.configs.recommended, // ESLint's recommended rules
   ...tseslint.configs.recommended, // TypeScript-ESLint's recommended rules
   {

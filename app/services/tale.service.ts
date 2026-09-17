@@ -1,22 +1,59 @@
 import {
+  appendTurn,
   createTale,
-  updateTale,
+  replaceLogEntryInTurn,
+  replaceTurnContainingEntries,
+  trimLogToEntryCount,
+  updateLogEntry as updateStoredLogEntry,
+  updateTaleCurrentData,
   getTale,
+  getTalePlayLoad,
   getTales,
-  getScenarioTales,
   deleteTale,
   linkTaleToScenario,
 } from "@/repositories/tale.repository";
 import { saveScenario } from "@/services/scenario.service";
 import { PaginatedResponse } from "@/types/db.type";
-import { createTaleDTO, TaleHead, updateTaleDTO } from "@/types/tale.type";
+import { createTaleDTO, Tale, TaleHead } from "@/types/tale.type";
 import { PromptComponentType, Scenario } from "@/types/context.type";
+import type { LogEntry } from "@/types/log.type";
 import { normalizePromptComponents } from "@/lib/prompt-components";
 import { normalizeStoryCard } from "@/lib/story-card-utils";
+import { legacyScenarioToContent } from "@/lib/scenario-content";
+import {
+  createTaleCurrentState,
+  createTaleSessionState,
+} from "@/lib/tale-storage";
+
+export type TaleMutableSnapshot = Pick<
+  Tale,
+  | "name"
+  | "description"
+  | "components"
+  | "storyCards"
+  | "stats"
+  | "inventory"
+  | "gameMode"
+  | "undoStack"
+>;
+
+function currentStateFromSnapshot(tale: TaleMutableSnapshot) {
+  return createTaleCurrentState({
+    components: normalizePromptComponents(tale.components),
+    storyCards: tale.storyCards,
+    stats: tale.stats,
+    inventory: tale.inventory,
+  });
+}
+
+function sessionFromSnapshot(tale: TaleMutableSnapshot) {
+  return createTaleSessionState({ undoStack: tale.undoStack });
+}
 
 export async function initTale(tale: createTaleDTO): Promise<string> {
   const id = await createTale({
     scenarioId: tale.scenarioId,
+    source: tale.source,
     name: tale.name,
     description: tale.description,
     thumbnail: tale.thumbnail,
@@ -34,42 +71,11 @@ export async function initTale(tale: createTaleDTO): Promise<string> {
 export async function persistCurrentTale({
   id,
   tale,
-  oldestLoadedIndex,
-  totalLogCount,
 }: {
   id: string;
-  tale: updateTaleDTO;
-  oldestLoadedIndex?: number;
-  totalLogCount?: number;
+  tale: TaleMutableSnapshot;
 }): Promise<void> {
-  let completeLog = tale.log;
-
-  if (
-    oldestLoadedIndex !== undefined &&
-    totalLogCount !== undefined &&
-    oldestLoadedIndex > 0
-  ) {
-    try {
-      const currentTale = await getTale(id);
-
-      if (currentTale?.log) {
-        const dbLog = currentTale.log;
-        const beforeWindow = dbLog.slice(0, oldestLoadedIndex);
-        completeLog = [...beforeWindow, ...tale.log];
-      }
-    } catch (error) {
-      console.error("Failed to merge windowed log with database log:", error);
-      throw error;
-    }
-  }
-
-  // Strip token cache before persisting
-  const cleanLog = completeLog.map((entry) => {
-    const { _tokenCount, ...cleanEntry } = entry;
-    return cleanEntry;
-  });
-
-  await updateTale({
+  await updateTaleCurrentData({
     id,
     name: tale.name,
     description: tale.description,
@@ -77,29 +83,172 @@ export async function persistCurrentTale({
     storyCards: tale.storyCards,
     stats: tale.stats,
     inventory: tale.inventory,
-    log: cleanLog,
     gameMode: tale.gameMode,
     undoStack: tale.undoStack,
     updatedAt: Date.now(),
   });
 }
 
+export async function commitTaleTurn({
+  id,
+  tale,
+  entries,
+  createdAt = Date.now(),
+}: {
+  id: string;
+  tale: TaleMutableSnapshot;
+  entries: LogEntry[];
+  createdAt?: number;
+}): Promise<void> {
+  await appendTurn(
+    id,
+    { entries, createdAt },
+    currentStateFromSnapshot(tale),
+    sessionFromSnapshot(tale),
+  );
+}
+
+export async function completePendingTaleTurn({
+  id,
+  tale,
+  pendingEntries,
+  entries,
+  createdAt = Date.now(),
+  fallbackToAppend = false,
+}: {
+  id: string;
+  tale: TaleMutableSnapshot;
+  pendingEntries: LogEntry[];
+  entries: LogEntry[];
+  createdAt?: number;
+  fallbackToAppend?: boolean;
+}): Promise<void> {
+  try {
+    await replaceTurnContainingEntries(
+      id,
+      pendingEntries.map((entry) => entry.id),
+      { entries, createdAt },
+      currentStateFromSnapshot(tale),
+      sessionFromSnapshot(tale),
+    );
+  } catch (error) {
+    if (
+      !fallbackToAppend ||
+      !(error instanceof Error) ||
+      !error.message.includes("not found")
+    ) {
+      throw error;
+    }
+    await commitTaleTurn({ id, tale, entries, createdAt });
+  }
+}
+
+export async function retryTaleTurn({
+  id,
+  tale,
+  previousEntries,
+  entries,
+  createdAt = Date.now(),
+}: {
+  id: string;
+  tale: TaleMutableSnapshot;
+  previousEntries: LogEntry[];
+  entries: LogEntry[];
+  createdAt?: number;
+}): Promise<void> {
+  await replaceTurnContainingEntries(
+    id,
+    previousEntries.map((entry) => entry.id),
+    { entries, createdAt },
+    currentStateFromSnapshot(tale),
+    sessionFromSnapshot(tale),
+  );
+}
+
+export async function undoTaleLogToEntryCount({
+  id,
+  tale,
+  entryCount,
+}: {
+  id: string;
+  tale: TaleMutableSnapshot;
+  entryCount: number;
+}): Promise<void> {
+  await trimLogToEntryCount(
+    id,
+    entryCount,
+    currentStateFromSnapshot(tale),
+    sessionFromSnapshot(tale),
+  );
+}
+
+export async function editTaleLogEntry({
+  id,
+  entryId,
+  patch,
+}: {
+  id: string;
+  tale: TaleMutableSnapshot;
+  entryId: string;
+  patch: Partial<Omit<LogEntry, "id">>;
+}): Promise<void> {
+  await updateStoredLogEntry(id, entryId, patch);
+}
+
+export async function retryTaleLogEntry({
+  id,
+  tale,
+  previousEntry,
+  replacementEntry,
+}: {
+  id: string;
+  tale: TaleMutableSnapshot;
+  previousEntry: LogEntry;
+  replacementEntry: LogEntry;
+}): Promise<void> {
+  await replaceLogEntryInTurn(
+    id,
+    previousEntry.id,
+    replacementEntry,
+    currentStateFromSnapshot(tale),
+    sessionFromSnapshot(tale),
+  );
+}
+
+export async function redoTaleLogEntry({
+  id,
+  tale,
+  entry,
+  createdAt = Date.now(),
+}: {
+  id: string;
+  tale: TaleMutableSnapshot;
+  entry: LogEntry;
+  createdAt?: number;
+}): Promise<void> {
+  await appendTurn(
+    id,
+    { entries: [entry], createdAt },
+    currentStateFromSnapshot(tale),
+    sessionFromSnapshot(tale),
+  );
+}
+
 export async function getTaleById(taleId: string) {
-  const tale = await getTale(taleId);
+  const INITIAL_WINDOW = 200;
+  const tale = await getTalePlayLoad(taleId, {
+    logLimit: INITIAL_WINDOW,
+  });
 
   if (!tale) return null;
-
-  const INITIAL_WINDOW = 200;
-  const totalCount = tale.log.length;
-  const startIndex = Math.max(0, totalCount - INITIAL_WINDOW);
 
   return {
     ...tale,
     components: normalizePromptComponents(tale.components),
     storyCards: tale.storyCards.map(normalizeStoryCard),
-    log: tale.log.slice(startIndex),
-    totalLogCount: totalCount,
-    oldestLoadedIndex: startIndex,
+    log: tale.log,
+    totalLogCount: tale.totalLogCount,
+    oldestLoadedIndex: tale.oldestLoadedIndex,
   };
 }
 
@@ -108,14 +257,6 @@ export async function getAllTales(
   limit: number,
 ): Promise<PaginatedResponse<TaleHead>> {
   return getTales(page, limit);
-}
-
-export async function getTalesForScenario(
-  scenarioId: string,
-  page: number,
-  limit: number,
-): Promise<PaginatedResponse<TaleHead>> {
-  return getScenarioTales(scenarioId, page, limit);
 }
 
 export async function deleteTaleById(id: string): Promise<void> {
@@ -132,14 +273,16 @@ export async function saveAsScenario(taleId: string): Promise<string> {
     name: tale.name,
     initialGameMode: tale.gameMode,
     description: tale.description,
-    components: normalizePromptComponents(
-      tale.components.filter(
-        (component) => component.type !== PromptComponentType.OPENING,
+    content: legacyScenarioToContent({
+      components: normalizePromptComponents(
+        tale.components.filter(
+          (component) => component.type !== PromptComponentType.OPENING,
+        ),
       ),
-    ),
-    initialStats: tale.stats,
-    initialInventory: tale.inventory.map((item) => item.name),
-    initialStoryCards: tale.storyCards.map(normalizeStoryCard),
+      initialStats: tale.stats,
+      initialInventory: tale.inventory.map((item) => item.name),
+      initialStoryCards: tale.storyCards.map(normalizeStoryCard),
+    }),
     thumbnail: tale.thumbnail,
   };
 

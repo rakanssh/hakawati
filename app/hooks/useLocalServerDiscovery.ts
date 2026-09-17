@@ -8,7 +8,6 @@ export interface DiscoveredServer {
   requiresAuth?: boolean;
 }
 
-//TODO: Test and add more
 const knownNames = ["ollama", "localai"];
 
 const knownPorts = [11434, 8000, 8080, 3000, 5000, 7860, 1234];

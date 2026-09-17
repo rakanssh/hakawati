@@ -25,6 +25,7 @@ export function SettingsButton({
     "ai-setup",
     "generation",
     "prompting",
+    "cloud-sync",
     "maintenance",
     "about",
   ];

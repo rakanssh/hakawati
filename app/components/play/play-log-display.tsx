@@ -12,7 +12,7 @@ import {
 } from "@/lib/play-utils";
 import { useSettingsStore } from "@/store";
 import { Trans } from "@lingui/react/macro";
-import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 interface PlayLogDisplayProps {
   blocks: LogBlock[];
@@ -48,9 +48,22 @@ export function PlayLogDisplay({
     (state) => state.highlightLatestSection,
   );
   const latestGmEntryId = getLatestGmEntryId(blocks);
+  const { isMobilePlatform } = useIsMobile();
   const editingSelectionClass = "rounded-[0.2rem] bg-primary/20 py-0.5";
-  const latestHighlightClass =
-    "underline decoration-dotted decoration-primary/55 decoration-2 underline-offset-4";
+  const renderEditor = (entry: LogEntry) => (
+    <InlineEditableContent
+      key={entry.id}
+      initialValue={entry.text}
+      onCommit={(next) => {
+        updateLogEntry(entry.id, { text: next });
+        setCurrentlyEditingLogId(null);
+      }}
+      onCancel={() => setCurrentlyEditingLogId(null)}
+      variant="inline"
+      className={editingSelectionClass}
+      style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
+    />
+  );
 
   return (
     <ScrollArea
@@ -62,7 +75,14 @@ export function PlayLogDisplay({
         { "--game-log-font-size": `${fontSize}rem` } as React.CSSProperties
       }
     >
-      <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-3 pt-8 sm:px-5 sm:pt-10 lg:px-7">
+      <div
+        className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-3 pt-8 sm:px-5 sm:pt-10 lg:px-7"
+        style={
+          isMobilePlatform
+            ? { paddingTop: "calc(3.5rem + env(safe-area-inset-top))" }
+            : undefined
+        }
+      >
         {loadingOlder && (
           <div className="flex items-center justify-center py-2 text-muted-foreground">
             <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
@@ -94,51 +114,44 @@ export function PlayLogDisplay({
                     block={block}
                     isStreaming={isStreamingBlock}
                     onEditStart={(entryId) => setCurrentlyEditingLogId(entryId)}
+                    editDisabled={isStreaming}
+                    highlightedEntryId={
+                      highlightLatestSection
+                        ? (latestGmEntryId ?? undefined)
+                        : undefined
+                    }
                     narration={blockNarration}
-                    renderEntry={(entry, onClick) => {
-                      const isEditing = currentlyEditingLogId === entry.id;
-                      const isLatestGmEntry = latestGmEntryId === entry.id;
-
-                      return isEditing ? (
-                        <InlineEditableContent
-                          initialValue={entry.text}
-                          onCommit={(next) => {
-                            updateLogEntry(entry.id, { text: next });
-                            setCurrentlyEditingLogId(null);
-                          }}
-                          onCancel={() => setCurrentlyEditingLogId(null)}
-                          variant="inline"
-                          className={editingSelectionClass}
-                          style={{
-                            fontSize: "var(--game-log-font-size, 1rem)",
-                          }}
-                        />
-                      ) : (
-                        <span
-                          className={cn(
-                            "cursor-pointer",
-                            highlightLatestSection &&
-                              isLatestGmEntry &&
-                              latestHighlightClass,
-                          )}
-                          onClick={onClick}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              onClick();
-                            }
-                          }}
-                          aria-label="Edit entry"
-                          style={{
-                            fontSize: "var(--game-log-font-size, 1rem)",
-                          }}
-                        >
-                          {entry.text}
-                        </span>
-                      );
-                    }}
+                    renderEntry={
+                      block.entries.some(
+                        (entry) => entry.id === currentlyEditingLogId,
+                      )
+                        ? (entry) =>
+                            entry.id === currentlyEditingLogId ? (
+                              renderEditor(entry)
+                            ) : (
+                              <span
+                                className="cursor-pointer"
+                                role="button"
+                                tabIndex={0}
+                                aria-label="Edit entry"
+                                onClick={() =>
+                                  setCurrentlyEditingLogId(entry.id)
+                                }
+                                onKeyDown={(event) => {
+                                  if (
+                                    event.key === "Enter" ||
+                                    event.key === " "
+                                  ) {
+                                    event.preventDefault();
+                                    setCurrentlyEditingLogId(entry.id);
+                                  }
+                                }}
+                              >
+                                {entry.text}
+                              </span>
+                            )
+                        : undefined
+                    }
                   />
                 ) : (
                   block.entries.map((entry) => {
@@ -149,22 +162,26 @@ export function PlayLogDisplay({
                     return (
                       <div
                         key={entry.id}
-                        className={cn(
-                          "rounded-xs whitespace-pre-wrap transition-colors",
-                          !isEditing && "cursor-pointer hover:bg-accent/20",
-                        )}
-                        onClick={
-                          isEditing
-                            ? undefined
-                            : () => setCurrentlyEditingLogId(entry.id)
+                        className={`rounded-xs ${!isEditing && !isStreaming ? "cursor-pointer hover:bg-accent/20" : ""}`}
+                        role={!isEditing && !isStreaming ? "button" : undefined}
+                        tabIndex={!isEditing && !isStreaming ? 0 : undefined}
+                        aria-label={
+                          !isEditing && !isStreaming ? "Edit entry" : undefined
                         }
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Edit entry"
-                        onKeyDown={(e) => {
-                          if (isEditing) return;
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
+                        onClick={
+                          !isEditing && !isStreaming
+                            ? () => setCurrentlyEditingLogId(entry.id)
+                            : undefined
+                        }
+                        onKeyDown={(event) => {
+                          if (
+                            isEditing ||
+                            isStreaming ||
+                            event.target !== event.currentTarget
+                          )
+                            return;
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
                             setCurrentlyEditingLogId(entry.id);
                           }
                         }}
@@ -185,26 +202,7 @@ export function PlayLogDisplay({
                                 }
                               : undefined
                           }
-                          content={
-                            isEditing ? (
-                              <InlineEditableContent
-                                initialValue={entry.text}
-                                onCommit={(next) => {
-                                  updateLogEntry(entry.id, { text: next });
-                                  setCurrentlyEditingLogId(null);
-                                }}
-                                onCancel={() => setCurrentlyEditingLogId(null)}
-                                variant="inline"
-                                className={cn(
-                                  "m-0 inline p-0 align-baseline text-inherit [line-height:inherit]",
-                                  editingSelectionClass,
-                                )}
-                                style={{
-                                  fontSize: "var(--game-log-font-size, 1rem)",
-                                }}
-                              />
-                            ) : undefined
-                          }
+                          content={isEditing ? renderEditor(entry) : undefined}
                         />
                       </div>
                     );

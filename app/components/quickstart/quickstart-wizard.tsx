@@ -1,10 +1,15 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  ClearableInput,
+  SuggestedInput,
+  type Suggestion,
+} from "@/components/question-input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { GameModeStep } from "./steps";
 import { GameMode } from "@/types";
@@ -26,10 +31,14 @@ import {
   useSettingsStore,
 } from "@/store/useSettingsStore";
 import { generateQuickstartTale } from "@/services/llm/quickstartTaleGenerator";
+import {
+  canSyncNewTales,
+  markNewTaleSyncPreference,
+} from "@/services/new-tale-sync";
 import { createPromptComponent } from "@/lib/prompt-components";
 import { PromptComponentType } from "@/types/context.type";
 import type { PromptComponent } from "@/types/context.type";
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, LoaderCircle } from "lucide-react";
 
 export interface QuickstartState {
   gameMode: GameMode;
@@ -42,11 +51,6 @@ export interface QuickstartState {
   tone: string;
   extraDetails: string;
 }
-
-type Suggestion = {
-  id: string;
-  label: string;
-};
 
 type StepData = {
   id: QuickstartStepId;
@@ -67,124 +71,6 @@ const QUICKSTART_STEP_IDS = [
 ] as const;
 
 type QuickstartStepId = (typeof QUICKSTART_STEP_IDS)[number];
-
-function optionPanelClass(isSelected: boolean) {
-  return cn(
-    "group flex min-h-12 items-center gap-3 rounded-xs border bg-card/55 px-3 py-2.5 text-start shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/55 hover:bg-card/80 hover:shadow-md focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] outline-none",
-    isSelected &&
-      "border-primary bg-primary/10 text-foreground ring-2 ring-primary/35",
-  );
-}
-
-function ClearableInput({
-  id,
-  value,
-  placeholder,
-  onValueChange,
-}: {
-  id: string;
-  value: string;
-  placeholder: string;
-  onValueChange: (value: string) => void;
-}) {
-  const { t } = useLingui();
-
-  return (
-    <div className="relative">
-      <Input
-        id={id}
-        value={value}
-        onChange={(event) => onValueChange(event.target.value)}
-        placeholder={placeholder}
-        className="h-14 rounded-xs border-border/75 bg-background/70 px-14 text-center text-lg shadow-lg shadow-background/20 backdrop-blur-sm md:text-xl"
-        autoFocus
-      />
-      {value && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          aria-label={t`Clear input`}
-          className="absolute end-1.5 top-1/2 h-10 w-10 -translate-y-1/2 rounded-xs px-0 text-base font-semibold leading-none text-muted-foreground hover:text-foreground"
-          onClick={() => onValueChange("")}
-        >
-          X
-        </Button>
-      )}
-    </div>
-  );
-}
-
-function SuggestedInput({
-  id,
-  value,
-  placeholder,
-  suggestions,
-  selectedId,
-  optionColumns = "sm:grid-cols-2 lg:grid-cols-3",
-  onValueChange,
-  onSuggestionSelect,
-  onSurprise,
-}: {
-  id: string;
-  value: string;
-  placeholder: string;
-  suggestions: Suggestion[];
-  selectedId: string | null;
-  optionColumns?: string;
-  onValueChange: (value: string) => void;
-  onSuggestionSelect: (suggestion: Suggestion) => void;
-  onSurprise?: () => void;
-}) {
-  return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
-      <ClearableInput
-        id={id}
-        value={value}
-        placeholder={placeholder}
-        onValueChange={onValueChange}
-      />
-
-      {suggestions.length > 0 && (
-        <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
-            <span>
-              <Trans>Or choose one of these options.</Trans>
-            </span>
-            {onSurprise && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 shrink-0 gap-1.5 rounded-xs px-2 text-muted-foreground hover:text-foreground"
-                onClick={onSurprise}
-              >
-                <Trans>Surprise Me</Trans>
-              </Button>
-            )}
-          </div>
-
-          <div className={cn("grid gap-2.5", optionColumns)}>
-            {suggestions.map((suggestion) => {
-              const isSelected = selectedId === suggestion.id;
-              return (
-                <button
-                  key={suggestion.id}
-                  type="button"
-                  className={optionPanelClass(isSelected)}
-                  onClick={() => onSuggestionSelect(suggestion)}
-                >
-                  <span className="min-w-0 truncate font-medium">
-                    {suggestion.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 function CharacterNameQuestion({
   value,
@@ -229,6 +115,72 @@ function OptionalDetailsQuestion({
   );
 }
 
+function QuickstartGenerationStatus({
+  saving,
+  onCancel,
+}: {
+  saving: boolean;
+  onCancel: () => void;
+}) {
+  const { t } = useLingui();
+  const { i18n } = useLinguiCore();
+  const [startedAt] = useState(Date.now);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    headingRef.current?.focus();
+    const timer = window.setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [startedAt]);
+
+  return (
+    <div className="flex flex-col items-center gap-3 text-center">
+      <div role="status" className="flex flex-col items-center gap-3">
+        <LoaderCircle
+          aria-hidden="true"
+          className="size-6 animate-spin text-primary motion-reduce:animate-none"
+        />
+        <h1
+          ref={headingRef}
+          tabIndex={-1}
+          className="text-xl font-semibold outline-none"
+        >
+          {saving ? (
+            <Trans>Saving your tale…</Trans>
+          ) : (
+            <Trans>Creating your tale…</Trans>
+          )}
+        </h1>
+      </div>
+      <p
+        role="timer"
+        aria-live="off"
+        aria-label={t`Elapsed time`}
+        className="text-sm tabular-nums text-muted-foreground"
+      >
+        <bdi>
+          {i18n.number(elapsedSeconds, {
+            style: "unit",
+            unit: "second",
+            unitDisplay: "narrow",
+          })}
+        </bdi>
+      </p>
+      <Button
+        variant="outline"
+        className="mt-2 min-h-10"
+        onClick={onCancel}
+        disabled={saving}
+      >
+        <Trans>Cancel</Trans>
+      </Button>
+    </div>
+  );
+}
+
 export function QuickstartPage() {
   const navigate = useNavigate();
   const { t } = useLingui();
@@ -238,8 +190,15 @@ export function QuickstartPage() {
   const utilityConfig = useSettingsStore((s) => s.modelRoles.utility);
 
   const [currentStep, setCurrentStep] = useState(0);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationPhase, setGenerationPhase] = useState<
+    "idle" | "generating" | "saving"
+  >("idle");
+  const isBusy = generationPhase !== "idle";
+  const [canStartPrivate, setCanStartPrivate] = useState(false);
+  const [localOnly, setLocalOnly] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const primaryActionRef = useRef<HTMLButtonElement>(null);
+  const wasBusyRef = useRef(false);
   const [state, setState] = useState<QuickstartState>({
     gameMode: GameMode.STORY_TELLER,
     selectedWorldId: null,
@@ -490,7 +449,16 @@ export function QuickstartPage() {
     navigate({ to: "/" });
   }, [navigate]);
 
+  const handleCancelGeneration = useCallback(() => {
+    if (generationPhase !== "generating") return;
+    const abort = abortRef.current;
+    abortRef.current = null;
+    abort?.abort();
+    setGenerationPhase("idle");
+  }, [generationPhase]);
+
   const handleComplete = useCallback(async () => {
+    if (abortRef.current) return;
     if (!isModelRoleConfigured(utilityConfig)) {
       toast.error(t`No utility model selected`);
       return;
@@ -498,7 +466,7 @@ export function QuickstartPage() {
 
     const abort = new AbortController();
     abortRef.current = abort;
-    setIsGenerating(true);
+    setGenerationPhase("generating");
 
     try {
       const generated = await generateQuickstartTale(
@@ -512,6 +480,8 @@ export function QuickstartPage() {
         },
         abort.signal,
       );
+      if (abort.signal.aborted || abortRef.current !== abort) return;
+      setGenerationPhase("saving");
 
       const components: PromptComponent[] = [
         createPromptComponent(PromptComponentType.PLOT, generated.plot),
@@ -546,11 +516,17 @@ export function QuickstartPage() {
         gameMode: state.gameMode,
         undoStack: [],
       });
+      await markNewTaleSyncPreference(
+        taleId,
+        localOnly ? "private" : "default",
+      );
+      if (abort.signal.aborted || abortRef.current !== abort) return;
 
       taleStore.resetAllState();
       setLastPlayedTaleId(taleId);
       navigate({ to: "/play" });
     } catch (error) {
+      if (abort.signal.aborted || abortRef.current !== abort) return;
       if (error instanceof DOMException && error.name === "AbortError") {
         return;
       }
@@ -559,13 +535,23 @@ export function QuickstartPage() {
         t`Failed to generate tale: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     } finally {
-      setIsGenerating(false);
-      abortRef.current = null;
+      if (abortRef.current === abort) {
+        abortRef.current = null;
+        setGenerationPhase("idle");
+      }
     }
-  }, [utilityConfig, t, state, taleStore, setLastPlayedTaleId, navigate]);
+  }, [
+    utilityConfig,
+    t,
+    state,
+    localOnly,
+    taleStore,
+    setLastPlayedTaleId,
+    navigate,
+  ]);
 
   const handlePrimaryAction = useCallback(() => {
-    if (!currentStepData.canProgress || isGenerating) return;
+    if (!currentStepData.canProgress || isBusy) return;
     if (isLastStep) {
       void handleComplete();
     } else {
@@ -575,16 +561,21 @@ export function QuickstartPage() {
     currentStepData.canProgress,
     handleComplete,
     handleNext,
-    isGenerating,
+    isBusy,
     isLastStep,
   ]);
+
+  useEffect(() => {
+    if (wasBusyRef.current && !isBusy) primaryActionRef.current?.focus();
+    wasBusyRef.current = isBusy;
+  }, [isBusy]);
 
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
       if (
         event.target instanceof HTMLTextAreaElement ||
         event.target instanceof HTMLButtonElement ||
-        isGenerating
+        isBusy
       ) {
         return;
       }
@@ -595,11 +586,24 @@ export function QuickstartPage() {
 
     document.addEventListener("keydown", handleKeyPress);
     return () => document.removeEventListener("keydown", handleKeyPress);
-  }, [handlePrimaryAction, isGenerating]);
+  }, [handlePrimaryAction, isBusy]);
 
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
+      abortRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    canSyncNewTales().then((canSync) => {
+      if (disposed) return;
+      setCanStartPrivate(canSync);
+      if (!canSync) setLocalOnly(false);
+    });
+    return () => {
+      disposed = true;
     };
   }, []);
 
@@ -610,7 +614,7 @@ export function QuickstartPage() {
           <Button
             variant="default"
             onClick={handleCancel}
-            disabled={isGenerating}
+            disabled={isBusy}
             className="mt-1.5"
           >
             <ArrowLeftIcon className="h-4 w-4 rtl:rotate-180" />
@@ -629,64 +633,85 @@ export function QuickstartPage() {
 
         <div className="flex min-h-0 flex-1 flex-col">
           <section className="flex flex-1 items-center justify-center py-4 sm:py-8">
-            <div
-              key={currentStep}
-              className="flex w-full flex-col items-center gap-8 animate-in fade-in slide-in-from-bottom-2 duration-300"
-            >
-              <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center">
-                <div className="inline-flex items-center rounded-xs border border-border/60 bg-background/55 px-3 py-1 text-xs font-medium uppercase text-muted-foreground shadow-sm backdrop-blur">
-                  {currentStepData.title}
+            {isBusy ? (
+              <QuickstartGenerationStatus
+                saving={generationPhase === "saving"}
+                onCancel={handleCancelGeneration}
+              />
+            ) : (
+              <div
+                key={currentStep}
+                className="flex w-full flex-col items-center gap-8 animate-in fade-in slide-in-from-bottom-2 duration-300"
+              >
+                <div className="mx-auto flex max-w-3xl flex-col items-center gap-3 text-center">
+                  <div className="inline-flex items-center rounded-xs border border-border/60 bg-background/55 px-3 py-1 text-xs font-medium uppercase text-muted-foreground shadow-sm backdrop-blur">
+                    {currentStepData.title}
+                  </div>
+                  <h1 className="text-balance text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
+                    {currentStepData.question}
+                  </h1>
+                  <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
+                    {currentStepData.hint}
+                  </p>
                 </div>
-                <h1 className="text-balance text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
-                  {currentStepData.question}
-                </h1>
-                <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
-                  {currentStepData.hint}
-                </p>
-              </div>
 
-              <div className="w-full">{currentStepData.component}</div>
-            </div>
+                <div className="w-full">{currentStepData.component}</div>
+              </div>
+            )}
           </section>
 
-          <footer className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <div className="flex items-center justify-between gap-3 rounded-xs border border-border/70 bg-card/60 p-2.5 shadow-lg shadow-background/20 backdrop-blur">
-              <Button
-                variant="outline"
-                onClick={handleBack}
-                disabled={isFirstStep || isGenerating}
-                className="rounded-xs"
-              >
-                <Trans>Back</Trans>
-              </Button>
-              <div className="flex min-w-0 flex-1 items-center justify-center gap-1">
-                {steps.map((step, index) => (
-                  <div
-                    key={step.id}
-                    className={cn(
-                      "h-1.5 flex-1 rounded-xs transition-all duration-300",
-                      index <= currentStep ? "bg-primary" : "bg-muted",
-                    )}
-                  />
-                ))}
+          {!isBusy && (
+            <footer className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              {isLastStep && canStartPrivate ? (
+                <div className="mb-2 flex justify-center">
+                  <label className="flex items-center gap-2 rounded-xs border border-border/70 bg-card/60 px-3 py-2 text-sm shadow-sm">
+                    <Checkbox
+                      checked={localOnly}
+                      onCheckedChange={(checked) =>
+                        setLocalOnly(checked === true)
+                      }
+                    />
+                    <Trans>Keep this tale local only</Trans>
+                  </label>
+                </div>
+              ) : null}
+              <div className="flex items-center justify-between gap-3 rounded-xs border border-border/70 bg-card/60 p-2.5 shadow-lg shadow-background/20 backdrop-blur">
+                <Button
+                  variant="outline"
+                  onClick={handleBack}
+                  disabled={isFirstStep}
+                  className="rounded-xs"
+                >
+                  <Trans>Back</Trans>
+                </Button>
+                <div className="flex min-w-0 flex-1 items-center justify-center gap-1">
+                  {steps.map((step, index) => (
+                    <div
+                      key={step.id}
+                      className={cn(
+                        "h-1.5 flex-1 rounded-xs transition-all duration-300",
+                        index <= currentStep ? "bg-primary" : "bg-muted",
+                      )}
+                    />
+                  ))}
+                </div>
+                <Button
+                  ref={primaryActionRef}
+                  onClick={handlePrimaryAction}
+                  disabled={!currentStepData.canProgress}
+                  className="min-w-32 rounded-xs"
+                >
+                  {isLastStep ? (
+                    <Trans>Generate Tale</Trans>
+                  ) : (
+                    <>
+                      <Trans>Next</Trans>
+                    </>
+                  )}
+                </Button>
               </div>
-              <Button
-                onClick={handlePrimaryAction}
-                disabled={!currentStepData.canProgress || isGenerating}
-                className="min-w-32 rounded-xs"
-              >
-                {isGenerating ? (
-                  <Trans>Generating</Trans>
-                ) : isLastStep ? (
-                  <Trans>Generate Tale</Trans>
-                ) : (
-                  <>
-                    <Trans>Next</Trans>
-                  </>
-                )}
-              </Button>
-            </div>
-          </footer>
+            </footer>
+          )}
         </div>
       </div>
     </main>

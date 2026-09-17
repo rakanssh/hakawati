@@ -70,13 +70,6 @@ export function resolveThemeId(theme: ThemeId): ResolvedThemeId {
   return theme === "system" ? resolveSystemTheme() : theme;
 }
 
-export function getThemeDefinition(theme: ThemeId): ThemeDefinition {
-  return (
-    themeDefinitions.find((definition) => definition.id === theme) ??
-    themeDefinitions[0]
-  );
-}
-
 export function getResolvedThemeDefinition(
   theme: ResolvedThemeId,
 ): ThemeDefinition & { baseMode: ThemeBaseMode } {

@@ -8,6 +8,11 @@ yarn-error.log*
 pnpm-debug.log*
 
 .vite/
+*.tsbuildinfo
+
+# Generated translation catalogs
+/app/locales/messages.pot
+/app/locales/*/messages.js
 
 src-tauri/target/
 
@@ -25,3 +30,13 @@ THIRD_PARTY_LICENSES*.md
 
 .env
 .env.*
+!.env.example
+
+# Local planning and agent artifacts
+/.agents/
+/.codex/
+/.gstack/
+/.kiro/
+/.superpowers/
+/artifacts/
+/docs/superpowers/

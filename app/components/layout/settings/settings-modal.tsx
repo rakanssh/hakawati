@@ -1,6 +1,7 @@
 import {
   Bot,
   BookOpen,
+  Cloud,
   DownloadCloud,
   Info,
   Library,
@@ -25,6 +26,7 @@ import SettingsAbout from "@/components/layout/settings/about";
 import SettingsTale from "@/components/layout/settings/tale";
 import SettingsStoryCards from "@/components/layout/settings/story-cards";
 import SettingsInventoryStats from "@/components/layout/settings/inventory-stats";
+import SettingsCloudSync from "@/components/layout/settings/cloud-sync";
 
 const globalSections = [
   {
@@ -68,6 +70,15 @@ const globalSections = [
     group: <Trans>AI</Trans>,
     icon: Sparkles,
     component: SettingsAdvanced,
+  },
+  {
+    id: "cloud-sync",
+    label: <Trans>Account & Sync</Trans>,
+    description: <Trans>Manage your account and cloud sync.</Trans>,
+    groupId: "app",
+    group: <Trans>App</Trans>,
+    icon: Cloud,
+    component: SettingsCloudSync,
   },
   {
     id: "maintenance",
@@ -129,7 +140,6 @@ const taleSections = [
 
 export type GlobalSettingsSectionId = (typeof globalSections)[number]["id"];
 export type TaleSettingsSectionId = (typeof taleSections)[number]["id"];
-export type SettingsTabId = GlobalSettingsSectionId | TaleSettingsSectionId;
 
 const DEFAULT_GLOBAL_SECTION: GlobalSettingsSectionId = "appearance";
 const DEFAULT_TALE_SECTION: TaleSettingsSectionId = "story";
