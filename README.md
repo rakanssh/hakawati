@@ -6,232 +6,211 @@
   <a href="https://github.com/rakanssh/hakawati/releases"><img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey" alt="Platform"></a>
 </p>
 
-Hakawati is a local-first, AI-powered text RPG. Bring your own
-OpenAI-compatible endpoint (cloud or local) and start an interactive adventure.
-An optional Hakawati Cloud account adds cross-device tale sync and access to the
-public scenario catalog; neither is required for local play.
+Hakawati is a free and open-source AI adventure client for Windows, macOS, and
+Linux. It works with your own AI provider or local model. Tales and scenarios are
+stored on your device; an optional account adds cloud sync and scenario publishing.
 
-> ℹ️ The client is in an early experimental stage. Expect bugs! (right click -> refresh app may resolve the occasional issue.)
+[Download](https://github.com/rakanssh/hakawati/releases/latest) ·
+[Website](https://hakawati.dev) · [Changelog](CHANGELOG.md) ·
+[Report a bug](https://github.com/rakanssh/hakawati/issues)
 
-[📥 Download Latest Release Here](https://github.com/rakanssh/hakawati/releases/latest)
+- [Game modes](#game-modes)
+- [Getting started](#getting-started)
+- [Tales and scenarios](#tales-and-scenarios)
+- [Accounts and cloud](#accounts-and-cloud)
+- [Development](#development)
+- [Support and license](#support-and-license)
 
-## Table of Contents
+## Game modes
 
-- [Game Modes](#game-modes)
-- [Features](#features)
-- [How to Play](#how-to-play)
-  - [Install](#install)
-  - [Setup](#setup)
-  - [Getting an Inference endpoint](#getting-an-inference-endpoint)
-  - [Create a Tale](#create-a-tale)
-  - [Create or Import a Scenario](#create-or-import-a-scenario)
-  - [Manage Tales](#manage-tales)
-  - [Export a Scenario](#export-a-scenario)
-  - [Edit a Scenario](#edit-a-scenario)
-- [Getting Started (For Development)](#getting-started-for-development)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-- [Running and Building the App](#running-and-building-the-app)
-- [Project Structure](#project-structure)
-- [Tech Stack](#tech-stack)
-- [Roadmap](#roadmap)
-- [License](#license)
+### Story Teller
 
-## Game Modes
+Freeform storytelling without inventory or stat tracking. The AI narrates the
+story in response to your actions, dialogue, and directions.
 
-### Game Master Mode
+![Story Teller mode showing a tale and the player input](./public/st.png)
 
-The game keeps track of items and statistics, allowing the AI to represent, remember, and change the current state of your character. Stats can be any numeric value with a minimum and maximum. (Experimental — best with more capable models. Requires tool calling to be supported by the model.)
-![Game Master Mode](./public/gm.png)
+### Game Master
 
-### Story Teller Mode
+The AI narrates and updates your character's inventory and stats. This mode is
+experimental and requires a model that supports tool calling. Results depend on
+how well the model handles those instructions.
 
-Standard AI text-based adventure. Works with any model.
-![Story Teller Mode](./public/st.png)
+![Game Master mode showing inventory and stats beside the story](./public/gm.png)
 
-## Features
+## Getting started
 
-- Two gamemodes: `Game Master` and `Story Teller`.
-- Different prompt types: `Do`, `Say`, `Story`, `Direct` or `Continue`.
-- Self-contained application — download (or build) and run.
-- Supports OpenAI-compatible endpoints (including OpenRouter metadata such as pricing/token limits). Works with local servers and tools like Ollama, LocalAI, and LLM Studio.
-- Scenario builder to create and save templates for new tales. Supports sharing scenarios via import/export to the clipboard.
-- Optional cross-device tale sync through Hakawati Cloud.
-- Public scenario discovery, publishing, reporting, and starting tales from
-  approved community scenarios. Public catalog packages are copied into local
-  tales and do not remain dependent on the server.
-- Persistence using an easily editable/queryable local SQLite database.
-- Flexible model configuration with adjustable sampling parameters.
+1. Install the [latest release](https://github.com/rakanssh/hakawati/releases/latest)
+   for your operating system.
+2. Open **Settings → AI Setup**. Select a provider, enter its API key if needed,
+   and choose a **Narrator** model. For a local server, select **Local** and use
+   **Rescan**, or enter its OpenAI-compatible base URL.
+3. Configure a **Utility** model for Quickstart, scenario generation, and story
+   card generation. It can use the same provider and model as the narrator.
+4. Use **Quickstart** on Home to generate a tale, or open a scenario and choose
+   **Start Tale**.
 
-### Local-first and cloud boundaries
+Hakawati does not include a model or API credits. Requests go to the provider or
+local server you configure. Provider presets include OpenRouter and OpenAI;
+**Generic OpenAI** supports other compatible endpoints. Local tools such as
+LM Studio, Ollama, and LocalAI need their model server running before connecting.
 
-Hakawati's gameplay, local scenarios, tales, imports/exports, and bring-your-own
-inference settings live in the open-source client. Hakawati Cloud is an optional
-service for accounts, remote tale copies, and the public scenario catalog.
-Cloud failures must not block local authoring or play.
+During play, the input modes are **Act**, **Say**, **Story**, and **Direct**.
+**Continue** lets the narrator carry on without new input. You can edit passages,
+retry a response, and undo or redo turns. Tales save automatically and are
+available from the **Tales** library.
 
-Private cloud saves use server-side encryption at rest. Public catalog
-scenarios are intentionally public and pass through pre-publication moderation
-before they appear in discovery.
+Optional **Speech to Text** and **Text to Speech** models in AI Setup provide
+dictation and spoken narration. Interface language, themes, and reading settings
+are under **Appearance**.
 
-Before uploading a cover, the client fits it within 1,280 pixels on its longest
-side and encodes it as WebP at 82% quality, without upscaling. Suitable originals
-are kept when encoding would make them larger. Local files and animated covers
-are preserved; optimized results and existing uploads are reused where possible.
+## Tales and scenarios
 
-## How to Play
+A tale is an ongoing adventure. A scenario is a reusable starting point for new
+tales, including its opening, world details, and initial character state.
 
-### Install
+The **Scenarios** library has **Create**, **Generate**, and **Import** actions.
+Import reads a scenario's JSON from the clipboard; **Export JSON** in a scenario's
+menu copies it back to the clipboard for sharing.
 
-Download the latest release for your operating system from the [Releases page](https://github.com/rakanssh/hakawati/releases/latest).
+### Editing a scenario
 
-### Setup
+The editor keeps the scenario's name, description, cover, and story content in
+one draft.
 
-On first launch, follow the home screen prompt to navigate to the settings tab, setup your API URL and key if it requires one. (OpenAI-compatible endpoints are supported. click scan to detect local servers.)
+| Field                                    | Purpose                                                                                                             |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Name, description, and cover             | How the scenario appears in your library and the public catalog. The description is not sent to the AI.             |
+| AI Instructions, Plot, and Author's Note | Instructions and context used by the narrator.                                                                      |
+| Opening Text                             | The first passage shown when a tale starts.                                                                         |
+| Game mode                                | Story Teller or Game Master.                                                                                        |
+| Stats and inventory                      | The starting character state for Game Master mode.                                                                  |
+| Story cards                              | Notes about characters, places, things, and concepts, with triggers or pinning to include them in the AI's context. |
 
-#### Getting an Inference endpoint
+**Save draft** keeps changes local. **Publish** or **Publish update** opens a
+preview of the name, description, and cover, then publishes the whole draft with
+your chosen tags. Later edits stay in the draft until you publish another update.
+Cover images are optimized automatically before upload.
 
-The client supports OpenAI-compatible endpoints. There are two main straightforward ways to get an OpenAI-compatible endpoint for the client:
+Each new tale gets its own copy of the scenario. Editing a scenario does not
+rewrite existing tales. During play, **Tale Settings** contains **Story**,
+**Story Cards**, and, in Game Master mode, **Character** settings.
 
-- **Cloud Providers:** Check each provider for their pricing, limits, and privacy policies.
-- **Local Servers:** Run open LLMs on your own hardware using tools that expose a local server.
+### Scenario questions
 
-**Example Cloud Providers:**
+Scenarios can ask for a name, background, or other choices before a tale starts:
 
-- OpenRouter: [https://openrouter.ai](https://openrouter.ai)
-  A good option if you want to use models from various providers without having to sign up for each one. Has multiple free providers. (Check their website for more details). Note that free providers often collect your prompts.
-- OpenAI: [https://platform.openai.com](https://platform.openai.com)
-  The official OpenAI API.
-- Many others...
+```text
+Your name is ${What is your name?}.
+Your ship is ${What is your ship's name? | options: The Skipper, Nebula}.
+```
 
-**Example Local tools:**
+Answers replace the placeholders in the new tale. Repeated questions reuse the
+same answer, and the original scenario stays unchanged. These are text
+placeholders, not executable scripts. See [Scenario questions](SCENARIO_QUESTIONS.md)
+for supported fields, fixed choices, and escaping.
 
-- LocalAI: [https://localai.io](https://localai.io)
-- LLM Studio: [https://lmstudio.ai](https://lmstudio.ai)
-- Ollama: [https://ollama.com](https://ollama.com)
-- Many others...
+## Accounts and cloud
 
-I've tested with these tools and they work, anything that exposes an OpenAI-compatible endpoint should work too. Reach out if you find one that doesn't.
-Check your chosen tool's documentation for how to enable the server.
+Local play and scenario editing need no Hakawati account. **Discover** also lets
+you browse public scenarios and start tales without signing in.
 
-### Create a Tale
+An account enables tale sync and scenario publishing. Sign-in and sync controls
+are under **Settings → Account & Sync**.
 
-You can get started right away by clicking `Quickstart` on the home page and following the on-screen instructions to create a new tale by defining your character, setting, and tone. This will give you a tale with data based on your choices, the resulting description and author note can be changed at any time from the settings tab while in the tale.
+- Existing tales can be selected individually for sync or kept local.
+- When sync is enabled, new tales sync by default. **Start Local** on a scenario
+  or **Keep this tale local only** in Quickstart keeps that tale on your device.
+- **Remove from cloud** keeps the local copy. Conflicting saves can be reviewed
+  before choosing which version to keep.
+- Published scenarios are public and moderated. A tale started from one is a
+  local copy; changes to the published scenario do not alter that tale.
 
-You can also create, share, and import scenarios that act as templates for new tales allowing further customization.
+A Hakawati account does not provide AI inference or replace your model provider.
+Hosted-service details are covered by the [Privacy Policy](https://hakawati.dev/privacy),
+[Terms of Service](https://hakawati.dev/terms), and
+[Community Guidelines](https://hakawati.dev/community-guidelines).
 
-### Create or Import a Scenario
-
-Click `Scenarios` to navigate to the scenario page. You can create a new scenario from scratch `Create Scenario` or import one from the clipboard `Import From Clipboard`.
-
-Scenario Fields:
-
-- **Name**: The name of the scenario. Used to identify it.
-- **Thumbnail**: A thumbnail image for the scenario. (Optional)
-- **Initial Description**: A description of the scenario passed to the LLM with every action. Can be customized per tale.
-- **Initial Author Notes**: A note directing how the AI should write the story. Can be customized per tale.
-- **Opening Text**: The initial text at the start of the tale.
-- **Initial Game Mode**: The game mode new tales will start in.(`Story Teller` or `Game Master`)
-- **Initial Stats**: A list of stats that the AI can use to track the state of the scenario.(Used only in `Game Master` mode.)
-- **Initial Inventory**: A list of items that the AI can use to track the state of the scenario.(Used only in `Game Master` mode.)
-- **Initial Story Cards**: A list of story cards that the AI can use to track the state of the scenario.
-
-These fields can be customized per tale from the settings tab after creating a new tale. The values in the scenario will be used as initial values for new tales created from it.
-
-### Create a Tale
-
-From the scenario page, click `New Tale` on a scenario card to create a new tale from it. The tale will be saved automatically on every action.
-
-### Manage Tales
-
-From the home page, click `Tales` to navigate to the tales page. You can continue or manage existing tales from here.
-
-### Export a Scenario
-
-Click the three dot menu on a scenario and click `Export JSON` to copy the scenario to the clipboard. The scenario can then be shared with others to be imported into their client.
-
-### Edit a Scenario
-
-Click the three dot menu on a scenario and click `Edit` to edit its values.
-
-## Getting Started
+## Development
 
 ### Prerequisites
 
-> ℹ️ This is section is only required for development or modifying the app. If you just want to play, download the latest release from the [Releases page](https://github.com/rakanssh/hakawati/releases/latest).
+- Node.js 22.12 or newer and npm.
+- The stable Rust toolchain and the platform dependencies in
+  [Tauri's prerequisites](https://v2.tauri.app/start/prerequisites/).
+- [`cargo-about`](https://github.com/EmbarkStudios/cargo-about) for bundled license
+  notices.
 
-- Node.js 20+ and npm
-- Rust toolchain and platform dependencies required by [Tauri](https://tauri.app/start/prerequisites/)
-- [`cargo-about`](https://github.com/EmbarkStudios/cargo-about) CLI (`cargo install cargo-about --locked`)
+### Run the desktop app
 
-### Preparing the Development Environment
-
-```bash
-# Install dependencies
-npm install
-# Install cargo-about
+```sh
+git clone https://github.com/rakanssh/hakawati.git
+cd hakawati
+npm ci
 cargo install cargo-about --locked
-# Generate license reports
 npm run licenses:generate
-# Run the development server
 npm run tauri dev
 ```
 
-## Running and Building the App
+For hosted services in a development or local build, add this to `.env.local`:
 
-- Refresh license reports: `npm run licenses:generate`
-- Build Desktop App: `npm run tauri build`
+```dotenv
+VITE_HAKAWATI_SYNC_SERVER_URL=https://api.hakawati.net
+```
 
-### Browser preview for UI development
+This is the default cloud-service URL, not an AI provider URL or a secret. Leave
+it unset for local-only development. Official release builds get it from the
+GitHub `production` environment.
 
-Run `npm run dev:browser` and open [http://127.0.0.1:1422](http://127.0.0.1:1422).
-This separate development mode requires no Rust runtime, database server, cloud
-account, or API key. The regular `npm run dev` command still serves the Tauri UI.
+### Build locally
 
-The preview uses [sql.js](https://sql.js.org/) to run the existing SQLite
-migrations in memory and seeds three scenarios and two playable tales. Scenario
-editing, creating tales, and play controls use the real repositories. The preview
-narrator returns a labelled, scripted response; it does not call an AI provider.
-Reloading resets all tale and scenario data and returns to the home screen.
-Appearance preferences persist in this browser origin; preview connection
-settings are reapplied at startup.
+```sh
+npm run tauri -- build --config src-tauri/tauri.test.conf.json -- --locked
+```
 
-Cloud sync/catalog, sign-in, audio, AI scenario generation, and native updates are
-outside this preview's scope. HTTP calls through the preview adapter stay local
-and return an explanatory error for unsupported services. Clipboard actions use
-the browser clipboard API and may require browser permission.
+This configuration disables updater-signing artifacts for local builds. The build
+generates the frontend and license notices, then writes the executable and installers under
+`src-tauri/target/release/` and `src-tauri/target/release/bundle/`.
 
-The preview uses a dedicated Vite config and port, with no access to desktop
-saves. Its dependency aliases are absent from normal development and release
-builds; building with the preview config is explicitly rejected. To reset sample
-content, reload the page. To test an empty library, delete the disposable sample
-tales/scenarios through the UI during the current session.
+Official tagged releases use the signing configuration in
+[the release workflow](.github/workflows/release.yml).
 
-## Tech Stack
+### Browser preview
 
-- React 19, Vite, shadcn/ui, and Tailwind for the front-end.
-- TanStack Router for navigation and layout composition.
-- Zustand for client-side state and persistence.
-- Tauri 2 with clipboard, opener, and SQL plugins for native capabilities.
+```sh
+npm run dev:browser
+```
 
-## Roadmap
+Open [http://127.0.0.1:1422](http://127.0.0.1:1422). This UI development preview
+uses disposable sample tales and scenarios in an in-memory SQLite database,
+with scripted narration. Reloading resets the sample data.
 
-Planned areas of exploration include:
+It needs no Rust runtime, account, or API key and cannot access desktop saves.
+Live AI calls, cloud features, audio, and native updates are unavailable in this
+preview. Normal desktop and release builds use the native integrations.
 
-- Scenario scripting (allow inserting variables/options in scenarios and prompting the user to fill or select them when starting a tale)
-- AI-generated/assisted story cards.
-- Mobile support.
-- Operational hardening for the optional cloud service and catalog.
+### Checks
 
-## License
+```sh
+npm run typecheck
+npm run lint
+npm run test:run
+npm run build
+cargo test --locked --manifest-path src-tauri/Cargo.toml
+```
 
-Hosted-service policies: [Terms of Service](https://hakawati.dev/terms),
-[Privacy Policy](https://hakawati.dev/privacy), and
-[Community Guidelines](https://hakawati.dev/community-guidelines).
+The client uses React 19, TypeScript, Vite, Tailwind CSS, shadcn/ui, TanStack
+Router, and Zustand. Tauri 2 provides the desktop runtime, with SQLite for local
+tales and scenarios.
 
-`© 2025 Rakan AlShammari`
+## Support and license
 
-This project is licensed under the GNU General Public License v3.0 or later - see the [LICENSE](LICENSE) file for details.
+Bug reports and feature requests go to
+[GitHub Issues](https://github.com/rakanssh/hakawati/issues). Account, privacy, and
+other support requests can be sent to [support@hakawati.net](mailto:support@hakawati.net).
 
-Third-party dependencies are used under their respective licenses. The generated reports ship with the desktop build inside the `LICENSES/` directory.
-Run `npm run licenses:generate` to refresh the license bundle before building (requires the [`cargo-about`](https://github.com/EmbarkStudios/cargo-about) CLI to be installed and available on your `PATH`).
+Hakawati is licensed under the [GNU GPL v3.0 or later](LICENSE).
+Third-party license notices ship with desktop builds in the `LICENSES/` directory.
+`npm run licenses:generate` refreshes those reports.
+
+© 2025–2026 Rakan AlShammari
