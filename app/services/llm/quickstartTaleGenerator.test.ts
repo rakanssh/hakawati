@@ -159,7 +159,7 @@ describe("quickstart tale generator", () => {
       expect.objectContaining({
         model: "utility-model",
         stream: false,
-        max_tokens: 4000,
+        max_tokens: 16000,
       }),
       undefined,
     );

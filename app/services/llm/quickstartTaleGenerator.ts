@@ -162,7 +162,8 @@ export async function generateQuickstartTale(
     model: model.id,
     messages,
     stream: false,
-    max_tokens: 4000,
+    // Reasoning models share this budget between thinking and the JSON output.
+    max_tokens: 16000,
     responseMode: ResponseMode.FREE_FORM,
   };
 

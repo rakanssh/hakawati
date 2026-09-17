@@ -50,6 +50,7 @@ describe("scenario generation with questions", () => {
     expect(llm.sendRoleChat).toHaveBeenCalledWith(
       "utility",
       expect.objectContaining({
+        max_tokens: 16000,
         messages: [
           { role: "system", content: SCENARIO_GENERATOR_PROMPT },
           { role: "user", content: "A mysterious gate" },
