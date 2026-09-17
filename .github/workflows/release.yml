@@ -62,6 +62,14 @@ jobs:
           npm run typecheck
           npm run test:run
 
+      - name: Install cargo-about
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-about
+
+      - name: Generate license notices for Tauri resources
+        run: npm run licenses:generate
+
       - name: Run Rust tests
         run: cargo test --locked --manifest-path src-tauri/Cargo.toml
 
