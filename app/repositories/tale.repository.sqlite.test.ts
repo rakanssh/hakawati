@@ -112,6 +112,7 @@ const migrationFiles = [
   "004_split_tale_storage.sql",
   "005_add_sync_metadata.sql",
   "006_add_scenario_content_catalog_metadata.sql",
+  "007_unify_scenario_draft_cover.sql",
 ];
 
 function applyMigration(db: TestDatabase, index: number) {

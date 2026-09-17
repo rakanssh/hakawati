@@ -280,6 +280,11 @@ mod tests {
                     "add_scenario_catalog_content",
                     include_str!("../migrations/006_add_scenario_content_catalog_metadata.sql"),
                 ),
+                (
+                    7_i64,
+                    "unify_scenario_draft_cover",
+                    include_str!("../migrations/007_unify_scenario_draft_cover.sql"),
+                ),
             ] {
                 sqlx::raw_sql(migration).execute(&pool).await.unwrap();
                 sqlx::query(
@@ -519,6 +524,12 @@ pub fn run() {
                 version: 6,
                 description: "add_scenario_content_catalog_metadata",
                 sql: include_str!("../migrations/006_add_scenario_content_catalog_metadata.sql"),
+                kind: MigrationKind::Up,
+            },
+            Migration {
+                version: 7,
+                description: "unify_scenario_draft_cover",
+                sql: include_str!("../migrations/007_unify_scenario_draft_cover.sql"),
                 kind: MigrationKind::Up,
             },
         ];

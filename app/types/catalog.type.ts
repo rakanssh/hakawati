@@ -116,4 +116,5 @@ export type ScenarioPublishLink = {
   catalogScenarioId: string;
   catalogScenarioVersionId: string | null;
   lastPublishedAt: number;
+  draftCoverInitialized?: boolean;
 };

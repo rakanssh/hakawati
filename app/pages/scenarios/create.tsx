@@ -37,6 +37,7 @@ export default function ScenarioCreate() {
   const canPublishOnCreate = catalog.enabled && catalog.signedIn;
   const [publishAfterCreate, setPublishAfterCreate] = useState(false);
   const [pendingPublish, setPendingPublish] = useState<Scenario | null>(null);
+  const [readingCover, setReadingCover] = useState(false);
   const importedScenario = useRouterState({
     select: (s) =>
       // @ts-expect-error - importedScenario is not typed
@@ -97,7 +98,7 @@ export default function ScenarioCreate() {
             </label>
           ) : null}
           <Button
-            disabled={saving}
+            disabled={saving || readingCover}
             onClick={async () => {
               const id = await save();
               if (publishAfterCreate && canPublishOnCreate) {
@@ -112,22 +113,31 @@ export default function ScenarioCreate() {
         </div>
       </div>
       <Separator />
-      <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+      <fieldset
+        disabled={saving}
+        className="mx-auto flex w-full min-w-0 max-w-2xl flex-col gap-4"
+      >
         <ScenarioBasicsFields
           name={scenario.name}
           thumbnail={scenario.thumbnail}
           description={scenario.description}
-          onNameChange={(name) => setScenario({ ...scenario, name })}
+          disabled={saving}
+          onCoverReadingChange={setReadingCover}
+          onNameChange={(name) =>
+            setScenario((previous) => ({ ...previous, name }))
+          }
           onThumbnailChange={(bytes) =>
-            setScenario({ ...scenario, thumbnail: bytes })
+            setScenario((previous) => ({ ...previous, thumbnail: bytes }))
           }
           onDescriptionChange={(text) =>
-            setScenario({ ...scenario, description: text })
+            setScenario((previous) => ({ ...previous, description: text }))
           }
         />
         <GameModeField
           value={scenario.initialGameMode}
-          onChange={(v) => setScenario({ ...scenario, initialGameMode: v })}
+          onChange={(v) =>
+            setScenario((previous) => ({ ...previous, initialGameMode: v }))
+          }
         />
         <Separator />
         <PromptComponentsEditor
@@ -162,7 +172,7 @@ export default function ScenarioCreate() {
           onUpdate={updateStoryCard}
           onRemove={removeStoryCard}
         />
-      </div>
+      </fieldset>
       <PublishScenarioDialog
         open={Boolean(pendingPublish)}
         scenario={pendingPublish}
@@ -174,15 +184,15 @@ export default function ScenarioCreate() {
           setPendingPublish(null);
           navigate({ to: `/scenarios` });
         }}
-        onPublish={async ({ metadata, thumbnailFile, policyAcceptance }) => {
+        onEdit={() => {
+          if (!pendingPublish) return;
+          void navigate({ to: `/scenarios/${pendingPublish.id}/edit` });
+          setPendingPublish(null);
+        }}
+        onPublish={async (input) => {
           if (!pendingPublish) return;
           try {
-            const result = await catalogActions.publish({
-              scenario: pendingPublish,
-              metadata,
-              thumbnailFile,
-              policyAcceptance,
-            });
+            const result = await catalogActions.publish(input);
             toast.success(
               result.moderation.status === "needs_review"
                 ? t`Scenario submitted for moderation`

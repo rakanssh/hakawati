@@ -16,7 +16,6 @@ import {
   reportCatalogScenario,
   startCatalogScenario,
   unpublishCatalogScenario,
-  updateCatalogScenarioMetadata,
   uploadPublicCatalogThumbnail,
   type CatalogCapabilities,
   type CatalogListOptions,
@@ -32,10 +31,8 @@ import type {
   CatalogTagSuggestion,
 } from "@/types/catalog.type";
 import type { Scenario } from "@/types/context.type";
-import {
-  buildScenarioPackage,
-  type ScenarioPackageMetadata,
-} from "@/lib/catalog-package";
+import { buildScenarioPackage } from "@/lib/catalog-package";
+import { detectCoverImageContentType } from "@/lib/cover-image";
 import { normalizeCatalogTags } from "@/lib/catalog-tags";
 import { listScenarioPublishLinks } from "@/repositories/scenario-publish-link.repository";
 import type { ScenarioPublishLink } from "@/types/catalog.type";
@@ -435,55 +432,47 @@ export function useCatalogActions(client: CatalogClientState) {
   const publish = useCallback(
     async (input: {
       scenario: Scenario;
-      metadata: ScenarioPackageMetadata;
-      thumbnailFile?: File | null;
+      tags: string[];
       policyAcceptance: CatalogPublishingAcceptance;
     }) => {
       if (!client.authTransport)
         throw new Error("Sign in to publish scenarios");
       if (!client.publishingEnabled)
         throw new Error("Publishing is currently unavailable");
-      buildScenarioPackage(input.scenario, input.metadata);
+      const metadata = { tags: input.tags };
+      buildScenarioPackage(input.scenario, metadata);
+      const cover = input.scenario.thumbnail;
+      if (cover && !client.thumbnailUploads) {
+        throw new Error(
+          "Cover uploads are currently unavailable. Please try again before publishing this draft.",
+        );
+      }
+      const contentType = cover ? detectCoverImageContentType(cover) : null;
+      if (cover && !contentType) {
+        throw new Error("Use a JPEG, PNG, or WebP cover image.");
+      }
       await acceptCurrentCatalogPolicies(
         client.authTransport,
         input.policyAcceptance,
       );
       const thumbnailAssetId =
-        input.thumbnailFile && client.thumbnailUploads
+        cover && contentType
           ? (
-              await uploadPublicCatalogThumbnail(
-                client.authTransport,
-                await fileToCatalogThumbnail(input.thumbnailFile),
-              )
+              await uploadPublicCatalogThumbnail(client.authTransport, {
+                bytes: cover,
+                contentType,
+              })
             ).assetId
-          : undefined;
+          : null;
       return publishScenarioDraft({
         transport: client.authTransport,
         localScenarioId: input.scenario.id,
         scenario: input.scenario,
-        metadata: input.metadata,
-        ...(thumbnailAssetId ? { thumbnailAssetId } : {}),
-      });
-    },
-    [client.authTransport, client.publishingEnabled, client.thumbnailUploads],
-  );
-
-  const updateThumbnail = useCallback(
-    async (scenarioId: string, thumbnailFile: File | null) => {
-      if (!client.authTransport) throw new Error("Sign in to update scenarios");
-      const thumbnailAssetId = thumbnailFile
-        ? (
-            await uploadPublicCatalogThumbnail(
-              client.authTransport,
-              await fileToCatalogThumbnail(thumbnailFile),
-            )
-          ).assetId
-        : null;
-      return updateCatalogScenarioMetadata(client.authTransport, scenarioId, {
+        metadata,
         thumbnailAssetId,
       });
     },
-    [client.authTransport],
+    [client.authTransport, client.publishingEnabled, client.thumbnailUploads],
   );
 
   const unpublish = useCallback(
@@ -520,24 +509,8 @@ export function useCatalogActions(client: CatalogClientState) {
     viewOwned,
     start,
     publish,
-    updateThumbnail,
     unpublish,
     report,
     blockPublisher,
   } as const;
-}
-
-async function fileToCatalogThumbnail(file: File) {
-  if (
-    file.type !== "image/jpeg" &&
-    file.type !== "image/png" &&
-    file.type !== "image/webp"
-  ) {
-    throw new Error("Use a JPEG, PNG, or WebP thumbnail");
-  }
-  const contentType = file.type as "image/jpeg" | "image/png" | "image/webp";
-  return {
-    bytes: new Uint8Array(await file.arrayBuffer()),
-    contentType,
-  };
 }

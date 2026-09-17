@@ -115,7 +115,7 @@ function CatalogScenarioCard({
   onReport,
   onBlockPublisher,
   onUnpublish,
-  onThumbnail,
+  onEdit,
   onTag,
 }: {
   baseUrl: string;
@@ -125,7 +125,7 @@ function CatalogScenarioCard({
   onReport?: (scenario: CatalogCardScenario) => void;
   onBlockPublisher?: (scenario: CatalogCardScenario) => void;
   onUnpublish?: (scenario: CatalogCardScenario) => void;
-  onThumbnail?: (scenario: CatalogCardScenario, file: File) => void;
+  onEdit?: () => void;
   onTag: (tag: string) => void;
 }) {
   const isModerationHidden = hiddenByModeration(scenario);
@@ -183,21 +183,10 @@ function CatalogScenarioCard({
                 <Trans>Block publisher</Trans>
               </DropdownMenuItem>
             ) : null}
-            {actions === "published" && onThumbnail ? (
-              <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
-                <label>
-                  <Trans>Thumbnail</Trans>
-                  <input
-                    className="hidden"
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file) onThumbnail(scenario, file);
-                      event.currentTarget.value = "";
-                    }}
-                  />
-                </label>
+            {actions === "published" && onEdit ? (
+              <DropdownMenuItem onClick={onEdit}>
+                <PencilIcon className="h-4 w-4" />
+                <Trans>Edit scenario</Trans>
               </DropdownMenuItem>
             ) : null}
             {actions === "published" ? (
@@ -216,8 +205,17 @@ function CatalogScenarioCard({
 
 export default function ScenariosHome() {
   const { t } = useLingui();
-  const { items, loading, error, page, limit, total, setPage, remove } =
-    useScenariosList();
+  const {
+    items,
+    loading,
+    error,
+    page,
+    limit,
+    total,
+    setPage,
+    remove,
+    refresh: refreshLocal,
+  } = useScenariosList();
   const navigate = useNavigate();
   const { search: routeSearch } = useLocation();
   const browse = useMemo(
@@ -314,6 +312,7 @@ export default function ScenariosHome() {
       latestCatalogRefresh.current.published(),
       publishLinks.refresh(),
       latestCatalogRefresh.current.discover(),
+      refreshLocal(),
     ]);
   };
   const viewPublicScenario = (scenario: CatalogCardScenario, owned = false) => {
@@ -369,21 +368,6 @@ export default function ScenariosHome() {
         error instanceof Error
           ? error.message
           : t`Failed to unpublish scenario`,
-      );
-    }
-  };
-  const updatePublicThumbnail = async (
-    scenario: CatalogScenarioRecord,
-    file: File,
-  ) => {
-    try {
-      await catalogActions.updateThumbnail(scenario.id, file);
-      toast.success(t`Thumbnail updated`);
-      await latestCatalogRefresh.current.published();
-      await latestCatalogRefresh.current.discover();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : t`Failed to update thumbnail`,
       );
     }
   };
@@ -759,20 +743,30 @@ export default function ScenariosHome() {
               </div>
             ) : null}
             <div className={libraryGridClass}>
-              {published.items.map((scenario) => (
-                <CatalogScenarioCard
-                  key={scenario.id}
-                  baseUrl={catalog.baseUrl}
-                  scenario={scenario}
-                  actions="published"
-                  onTag={filterByTag}
-                  onView={(item) => viewPublicScenario(item, true)}
-                  onUnpublish={unpublishPublicScenario}
-                  onThumbnail={
-                    catalog.thumbnailUploads ? updatePublicThumbnail : undefined
-                  }
-                />
-              ))}
+              {published.items.map((scenario) => {
+                const link = publishLinks.links.find(
+                  (item) => item.catalogScenarioId === scenario.id,
+                );
+                return (
+                  <CatalogScenarioCard
+                    key={scenario.id}
+                    baseUrl={catalog.baseUrl}
+                    scenario={scenario}
+                    actions="published"
+                    onTag={filterByTag}
+                    onView={(item) => viewPublicScenario(item, true)}
+                    onUnpublish={unpublishPublicScenario}
+                    onEdit={
+                      link
+                        ? () =>
+                            void navigate({
+                              to: `/scenarios/${link.localScenarioId}/edit`,
+                            })
+                        : undefined
+                    }
+                  />
+                );
+              })}
             </div>
             {published.nextCursor ? (
               <div className="flex justify-end">
@@ -830,15 +824,15 @@ export default function ScenariosHome() {
         onOpenChange={(open) => {
           if (!open) setPendingPublish(null);
         }}
-        onPublish={async ({ metadata, thumbnailFile, policyAcceptance }) => {
+        onEdit={() => {
+          if (!pendingPublish) return;
+          void navigate({ to: `/scenarios/${pendingPublish.id}/edit` });
+          setPendingPublish(null);
+        }}
+        onPublish={async (input) => {
           if (!pendingPublish) return;
           try {
-            const result = await catalogActions.publish({
-              scenario: pendingPublish,
-              metadata,
-              thumbnailFile,
-              policyAcceptance,
-            });
+            const result = await catalogActions.publish(input);
             toast.success(
               result.moderation.status === "needs_review"
                 ? t`Scenario submitted for moderation`
@@ -846,6 +840,7 @@ export default function ScenariosHome() {
                   ? t`Scenario update published`
                   : t`Scenario published`,
             );
+            setPendingPublish(null);
             await refreshCatalogState();
           } catch (error) {
             toast.error(

@@ -76,7 +76,7 @@ export function useScenarioEditor(initial?: Partial<Scenario>) {
     setError(null);
     try {
       const id = await saveScenario(scenario, scenario.id || undefined);
-      setScenario((s) => ({ ...s, id }));
+      setScenario((s) => (s.id === scenario.id ? { ...s, id } : s));
       return id;
     } catch (e) {
       setError(e);

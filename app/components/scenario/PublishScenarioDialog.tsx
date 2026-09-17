@@ -8,23 +8,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
 import type { Scenario } from "@/types/context.type";
-import type { ScenarioPackageMetadata } from "@/lib/catalog-package";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CatalogTagInput } from "@/components/catalog/CatalogTagInput";
 import type { CatalogClientState } from "@/hooks/useCatalogScenarios";
 import {
   fetchCurrentCatalogPolicies,
-  getOwnedCatalogScenario,
+  prepareScenarioPublishDraft,
   publishingAcceptanceFor,
   type CatalogCurrentPolicies,
   type CatalogPublishingAcceptance,
 } from "@/services/catalog.service";
-import { getScenarioPublishLink } from "@/repositories/scenario-publish-link.repository";
+import { bytesToObjectUrl } from "@/lib/utils";
+import { detectCoverImageContentType } from "@/lib/cover-image";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { analyzeScenarioQuestions } from "@/lib/scenario-questions";
 import { ScenarioQuestionErrors } from "./ScenarioQuestionsHelp";
@@ -36,9 +34,10 @@ type PublishScenarioDialogProps = {
   thumbnailUploads: boolean;
   catalog: CatalogClientState;
   onOpenChange: (open: boolean) => void;
+  onEdit: (scenario: Scenario) => void;
   onPublish: (input: {
-    metadata: ScenarioPackageMetadata;
-    thumbnailFile?: File | null;
+    scenario: Scenario;
+    tags: string[];
     policyAcceptance: CatalogPublishingAcceptance;
   }) => Promise<void>;
 };
@@ -50,16 +49,16 @@ export function PublishScenarioDialog({
   thumbnailUploads,
   catalog,
   onOpenChange,
+  onEdit,
   onPublish,
 }: PublishScenarioDialogProps) {
   const { t } = useLingui();
-  const titleId = useId();
-  const summaryId = useId();
+  const acceptanceId = useId();
   const formSession = useRef(0);
-  const [title, setTitle] = useState("");
-  const [summary, setSummary] = useState("");
+  const [draft, setDraft] = useState<Scenario | null>(null);
+  const [previewUrl, setPreviewUrl] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [publishError, setPublishError] = useState<string | null>(null);
   const [policies, setPolicies] = useState<CatalogCurrentPolicies | null>(null);
   const [policiesError, setPoliciesError] = useState(false);
   const [policiesAccepted, setPoliciesAccepted] = useState(false);
@@ -68,20 +67,20 @@ export function PublishScenarioDialog({
   const [metadataError, setMetadataError] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const questionDiagnostics = useMemo(
-    () => analyzeScenarioQuestions(scenario?.content ?? []).diagnostics,
-    [scenario?.content],
+    () => analyzeScenarioQuestions(draft?.content ?? []).diagnostics,
+    [draft?.content],
   );
 
   useEffect(() => {
     formSession.current += 1;
     if (!open || !scenario) return;
     let cancelled = false;
-    setTitle(updating ? "" : scenario.name);
-    setSummary(updating ? "" : scenario.description);
+    const snapshot = structuredClone(scenario);
+    setDraft(snapshot);
     setTags([]);
     setMetadataReady(!updating);
     setMetadataError(false);
-    setThumbnailFile(null);
+    setPublishError(null);
     setPolicies(null);
     setPoliciesError(false);
     setPoliciesAccepted(false);
@@ -92,17 +91,12 @@ export function PublishScenarioDialog({
       if (!transport) {
         setMetadataError(true);
       } else {
-        void getScenarioPublishLink(scenario.id)
-          .then(async (link) => {
+        void prepareScenarioPublishDraft(snapshot, transport)
+          .then(({ scenario: prepared, published }) => {
             if (cancelled) return;
-            if (!link) throw new Error("Published scenario link is missing");
-            const published = await getOwnedCatalogScenario(
-              transport,
-              link.catalogScenarioId,
-            );
-            if (cancelled) return;
-            setTitle(published.title);
-            setSummary(published.summary);
+            if (!published)
+              throw new Error("Published scenario link is missing");
+            setDraft(prepared);
             setTags(published.tags);
             setMetadataReady(true);
           })
@@ -136,19 +130,48 @@ export function PublishScenarioDialog({
     updating,
   ]);
 
+  useEffect(() => {
+    const bytes = open ? draft?.thumbnail : null;
+    const url = bytes
+      ? bytesToObjectUrl(bytes, detectCoverImageContentType(bytes))
+      : "";
+    setPreviewUrl(url);
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [draft?.thumbnail, open]);
+
+  const detailsError = !draft?.name.trim()
+    ? t`Add a scenario name before publishing.`
+    : draft.name.trim().length > 160
+      ? t`Shorten the scenario name to 160 characters before publishing.`
+      : !draft.description.trim()
+        ? t`Add a description before publishing.`
+        : draft.description.trim().length > 600
+          ? t`Shorten the description to 600 characters before publishing.`
+          : draft.thumbnail?.length && !thumbnailUploads
+            ? t`Cover uploads are currently unavailable. Your draft is saved; try publishing again later.`
+            : null;
+
   const canSubmit = Boolean(
     !questionDiagnostics.length &&
       metadataReady &&
-      title.trim() &&
-      summary.trim() &&
+      draft &&
+      !detailsError &&
       tags.length > 0 &&
       policies &&
       policiesAccepted,
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+    <Dialog
+      open={open}
+      onOpenChange={(next) => !submitting && onOpenChange(next)}
+    >
+      <DialogContent
+        className="max-h-[90dvh] overflow-y-auto sm:max-w-2xl"
+        showCloseButton={!submitting}
+      >
         <DialogHeader>
           <DialogTitle>
             {updating ? (
@@ -159,11 +182,12 @@ export function PublishScenarioDialog({
           </DialogTitle>
           <DialogDescription>
             <Trans>
-              Public catalog metadata is copied into a frozen version.
+              Publish the name, description, cover, and story content from this
+              draft together. Later edits stay private until you publish again.
             </Trans>
           </DialogDescription>
         </DialogHeader>
-        {scenario && <ScenarioQuestionErrors content={scenario.content} />}
+        {draft && <ScenarioQuestionErrors content={draft.content} />}
         <form
           className="grid gap-4"
           onSubmit={async (event) => {
@@ -172,17 +196,21 @@ export function PublishScenarioDialog({
             const session = formSession.current;
             const policyAcceptance = publishingAcceptanceFor(policies!);
             setSubmitting(true);
+            setPublishError(null);
             try {
               await onPublish({
-                metadata: {
-                  title,
-                  summary,
-                  tags,
-                },
-                thumbnailFile,
+                scenario: structuredClone(draft!),
+                tags: [...tags],
                 policyAcceptance,
               });
               if (session === formSession.current) onOpenChange(false);
+            } catch (error) {
+              if (session === formSession.current)
+                setPublishError(
+                  error instanceof Error
+                    ? error.message
+                    : t`Failed to publish scenario`,
+                );
             } finally {
               if (session === formSession.current) setSubmitting(false);
             }
@@ -209,31 +237,48 @@ export function PublishScenarioDialog({
               </p>
             )
           ) : null}
-          <div className="grid gap-3">
-            <div className="grid gap-2">
-              <Label htmlFor={titleId}>
-                <Trans>Title</Trans>
-              </Label>
-              <Input
-                id={titleId}
-                value={title}
-                disabled={!metadataReady || submitting}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor={summaryId}>
-              <Trans>Summary</Trans>
-            </Label>
-            <Textarea
-              id={summaryId}
-              value={summary}
-              maxLength={600}
-              disabled={!metadataReady || submitting}
-              onChange={(e) => setSummary(e.target.value)}
-            />
-          </div>
+          {draft && (
+            <section className="overflow-hidden rounded-xs border bg-muted/20">
+              {previewUrl ? (
+                <img
+                  src={previewUrl}
+                  alt={t`Scenario cover`}
+                  className="max-h-48 w-full object-contain bg-muted/40"
+                />
+              ) : (
+                <p className="border-b p-3 text-sm text-muted-foreground">
+                  <Trans>No cover image</Trans>
+                </p>
+              )}
+              <div className="grid gap-2 p-4">
+                <h3 className="break-words text-lg font-semibold">
+                  {draft.name}
+                </h3>
+                <p className="whitespace-pre-wrap break-words text-sm text-muted-foreground">
+                  {draft.description}
+                </p>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="h-auto justify-self-start p-0"
+                  disabled={submitting || (!metadataReady && !metadataError)}
+                  onClick={() => onEdit(structuredClone(draft))}
+                >
+                  <Trans>Edit scenario</Trans>
+                </Button>
+              </div>
+            </section>
+          )}
+          {detailsError && (
+            <p role="alert" className="text-sm text-destructive">
+              {detailsError}
+            </p>
+          )}
+          {publishError && (
+            <p role="alert" className="text-sm text-destructive">
+              {publishError}
+            </p>
+          )}
           <div className="grid gap-3">
             <div className="grid gap-2">
               <Label>
@@ -250,21 +295,6 @@ export function PublishScenarioDialog({
               />
             </div>
           </div>
-          {thumbnailUploads ? (
-            <div className="grid gap-2">
-              <Label>
-                <Trans>Public thumbnail</Trans>
-              </Label>
-              <Input
-                type="file"
-                disabled={!metadataReady || submitting}
-                accept="image/png,image/jpeg,image/webp"
-                onChange={(event) =>
-                  setThumbnailFile(event.target.files?.[0] ?? null)
-                }
-              />
-            </div>
-          ) : null}
           <div className="grid gap-2 rounded-xs border p-3 text-sm">
             {policiesError ? (
               <p className="text-destructive">
@@ -273,14 +303,15 @@ export function PublishScenarioDialog({
             ) : policies ? (
               <div className="flex items-start gap-2">
                 <Checkbox
-                  id="publishing-policy-acceptance"
+                  id={acceptanceId}
+                  disabled={submitting}
                   checked={policiesAccepted}
                   onCheckedChange={(checked) =>
                     setPoliciesAccepted(checked === true)
                   }
                 />
                 <div className="grid gap-1 leading-relaxed">
-                  <Label htmlFor="publishing-policy-acceptance">
+                  <Label htmlFor={acceptanceId}>
                     <Trans>
                       I agree to the publishing rules and understand that public
                       scenarios are moderated and may be removed.
@@ -317,6 +348,7 @@ export function PublishScenarioDialog({
             <Button
               type="button"
               variant="outline"
+              disabled={submitting}
               onClick={() => onOpenChange(false)}
             >
               <Trans>Cancel</Trans>

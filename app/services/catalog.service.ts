@@ -27,7 +27,11 @@ import {
   type ScenarioPackageMetadata,
 } from "@/lib/catalog-package";
 import { normalizeCatalogTags } from "@/lib/catalog-tags";
-import { optimizeCoverImage, sha256Hex } from "@/lib/cover-image";
+import {
+  detectCoverImageContentType,
+  optimizeCoverImage,
+  sha256Hex,
+} from "@/lib/cover-image";
 import { scenarioContentToTaleSeed } from "@/lib/scenario-content";
 import {
   assertValidScenarioQuestions,
@@ -41,6 +45,8 @@ import {
 } from "@/services/new-tale-sync";
 import {
   getScenarioPublishLink,
+  getScenarioDraftCoverState,
+  initializeScenarioDraftCover,
   upsertScenarioPublishLink,
 } from "@/repositories/scenario-publish-link.repository";
 import {
@@ -541,10 +547,12 @@ export async function publishScenarioDraft(input: {
   transport: CatalogTransport;
   localScenarioId: string;
   scenario: Scenario;
-  metadata: ScenarioPackageMetadata;
+  metadata: Pick<ScenarioPackageMetadata, "tags">;
   thumbnailAssetId?: string | null;
 }): Promise<CatalogOwnedScenarioDetail> {
-  const pkg = buildScenarioPackage(input.scenario, input.metadata);
+  const pkg = buildScenarioPackage(input.scenario, {
+    tags: input.metadata.tags,
+  });
   const link = await getScenarioPublishLink(input.localScenarioId);
   const detail = link
     ? await publishCatalogScenarioVersion(
@@ -568,8 +576,100 @@ export async function publishScenarioDraft(input: {
     localScenarioId: input.localScenarioId,
     catalogScenarioId: detail.id,
     catalogScenarioVersionId: detail.currentVersionId,
+    draftCoverInitialized: true,
   });
   return detail;
+}
+
+export async function prepareScenarioPublishDraft(
+  scenario: Scenario,
+  transport: CatalogTransport,
+): Promise<{
+  scenario: Scenario;
+  published: CatalogOwnedScenarioDetail | null;
+}> {
+  const link = await getScenarioPublishLink(scenario.id);
+  if (!link) return { scenario, published: null };
+  const coverState = !link.draftCoverInitialized
+    ? await getScenarioDraftCoverState(scenario.id)
+    : null;
+  const published = await getOwnedCatalogScenario(
+    transport,
+    link.catalogScenarioId,
+  );
+  if (!coverState) return { scenario, published };
+
+  const thumbnail =
+    coverState.thumbnail ??
+    scenario.thumbnail ??
+    (published.thumbnail
+      ? await downloadPublishedDraftCover(published.thumbnail)
+      : null);
+  const initialized = await initializeScenarioDraftCover({
+    localScenarioId: scenario.id,
+    catalogScenarioId: link.catalogScenarioId,
+    expectedUpdatedAt: coverState.updatedAt,
+    thumbnail,
+  });
+  return { scenario: { ...scenario, thumbnail: initialized }, published };
+}
+
+async function downloadPublishedDraftCover(
+  asset: CoverAssetReference,
+): Promise<Uint8Array> {
+  const maxBytes = 20 * 1024 * 1024;
+  if (
+    !Number.isSafeInteger(asset.byteSize) ||
+    asset.byteSize < 1 ||
+    asset.byteSize > maxBytes ||
+    !/^[a-f\d]{64}$/i.test(asset.sha256) ||
+    !["image/png", "image/jpeg", "image/webp"].includes(asset.contentType)
+  ) {
+    throw new Error("The published cover has invalid image metadata.");
+  }
+  const url = new URL(asset.downloadUrl);
+  if (!["http:", "https:"].includes(url.protocol))
+    throw new Error("The published cover has an invalid download URL.");
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+  try {
+    const response = await fetch(asset.downloadUrl, {
+      signal: controller.signal,
+    });
+    if (!response.ok || !response.body) {
+      throw new Error(
+        "Could not restore the published cover. Please try again.",
+      );
+    }
+    const reader = response.body.getReader();
+    const bytes = new Uint8Array(asset.byteSize);
+    let offset = 0;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value.byteLength > bytes.length - offset) {
+          throw new Error("The published cover exceeds its declared size.");
+        }
+        bytes.set(value, offset);
+        offset += value.byteLength;
+      }
+    } finally {
+      await reader.cancel().catch(() => undefined);
+      reader.releaseLock();
+    }
+    if (
+      offset !== asset.byteSize ||
+      detectCoverImageContentType(bytes) !== asset.contentType ||
+      (await sha256Hex(bytes)) !== asset.sha256.toLowerCase()
+    ) {
+      throw new Error("The published cover did not pass its integrity check.");
+    }
+    return bytes;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function uploadPublicCatalogThumbnail(

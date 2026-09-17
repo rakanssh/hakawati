@@ -1,5 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { GameMode, PromptComponentType } from "@/types/context.type";
+import {
+  GameMode,
+  PromptComponentType,
+  type Scenario,
+} from "@/types/context.type";
+import { sha256Hex } from "@/lib/cover-image";
 import type {
   CatalogScenarioDetail,
   ScenarioPackage,
@@ -16,6 +21,7 @@ import {
   listCatalogTags,
   listOwnedCatalogScenarios,
   publishScenarioDraft,
+  prepareScenarioPublishDraft,
   publishingAcceptanceFor,
   startCatalogScenario,
   uploadPublicCatalogThumbnail,
@@ -43,6 +49,8 @@ const newTaleSync = vi.hoisted(() => ({
 const publishLinks = vi.hoisted(() => ({
   getScenarioPublishLink: vi.fn(),
   upsertScenarioPublishLink: vi.fn(),
+  getScenarioDraftCoverState: vi.fn(),
+  initializeScenarioDraftCover: vi.fn(),
 }));
 
 vi.mock("@tauri-apps/plugin-http", () => ({
@@ -397,7 +405,7 @@ describe("catalog service", () => {
         thumbnail: null,
         content: packageFixture().scenario.content,
       },
-      metadata: { summary: "A gate waits.", tags: ["gate"] },
+      metadata: { tags: ["gate"] },
     });
 
     expect(transport.post).toHaveBeenCalledWith(
@@ -421,6 +429,7 @@ describe("catalog service", () => {
       localScenarioId: "local-1",
       catalogScenarioId: "catalog-1",
       catalogScenarioVersionId: "version-1",
+      draftCoverInitialized: true,
     });
   });
 
@@ -445,19 +454,150 @@ describe("catalog service", () => {
       localScenarioId: "local-1",
       scenario: {
         id: "local-1",
-        name: "Iron Gate",
+        name: "Updated Iron Gate",
         initialGameMode: GameMode.STORY_TELLER,
-        description: "A public scenario.",
+        description: "The latest draft description.",
         thumbnail: null,
         content: packageFixture().scenario.content,
       },
-      metadata: { summary: "A gate waits.", tags: ["gate"] },
+      metadata: { tags: ["gate"] },
+      thumbnailAssetId: null,
     });
 
     expect(transport.post).toHaveBeenCalledWith(
       "/v1/catalog/scenarios/catalog-1/versions",
-      expect.any(Object),
+      expect.objectContaining({
+        thumbnailAssetId: null,
+        package: expect.objectContaining({
+          scenario: expect.objectContaining({
+            title: "Updated Iron Gate",
+            summary: "The latest draft description.",
+            description: "The latest draft description.",
+          }),
+        }),
+      }),
     );
+  });
+
+  describe("legacy published cover recovery", () => {
+    const bytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 1]);
+    const draft = (): Scenario => ({
+      id: "local-1",
+      name: "My current name",
+      description: "My current description",
+      initialGameMode: GameMode.STORY_TELLER,
+      content: packageFixture().scenario.content,
+      thumbnail: null,
+    });
+    const link = {
+      localScenarioId: "local-1",
+      catalogScenarioId: "catalog-1",
+      draftCoverInitialized: false,
+    };
+
+    async function recoveryTransport() {
+      const detail = {
+        ...scenarioDetailFixture(),
+        thumbnail: {
+          assetId: "cover-1",
+          visibility: "public",
+          contentType: "image/png",
+          byteSize: bytes.length,
+          sha256: await sha256Hex(bytes),
+          width: 1,
+          height: 1,
+          downloadUrl: "https://storage.example/cover-1",
+          urlExpiresAt: null,
+        },
+      };
+      return {
+        get: vi.fn().mockResolvedValue(detail),
+        post: vi.fn(),
+        patch: vi.fn(),
+      };
+    }
+
+    beforeEach(() => {
+      publishLinks.getScenarioPublishLink.mockResolvedValue(link);
+      publishLinks.getScenarioDraftCoverState.mockResolvedValue({
+        thumbnail: null,
+        updatedAt: 123,
+      });
+      publishLinks.initializeScenarioDraftCover.mockImplementation(
+        async ({ thumbnail }) => thumbnail,
+      );
+    });
+
+    it("restores a verified public-only cover without replacing current draft text", async () => {
+      const transport = await recoveryTransport();
+      http.fetch.mockResolvedValueOnce(new Response(bytes));
+      const result = await prepareScenarioPublishDraft(draft(), transport);
+      expect(result.scenario).toEqual({ ...draft(), thumbnail: bytes });
+      expect(result.published?.tags).toEqual(["gate"]);
+      expect(publishLinks.initializeScenarioDraftCover).toHaveBeenCalledWith({
+        localScenarioId: "local-1",
+        catalogScenarioId: "catalog-1",
+        expectedUpdatedAt: 123,
+        thumbnail: bytes,
+      });
+    });
+
+    it("keeps a deliberate cover removal after initialization", async () => {
+      publishLinks.getScenarioPublishLink.mockResolvedValue({
+        ...link,
+        draftCoverInitialized: true,
+      });
+      const result = await prepareScenarioPublishDraft(
+        draft(),
+        await recoveryTransport(),
+      );
+      expect(result.scenario.thumbnail).toBeNull();
+      expect(http.fetch).not.toHaveBeenCalled();
+      expect(publishLinks.initializeScenarioDraftCover).not.toHaveBeenCalled();
+    });
+
+    it("keeps an existing local cover without downloading the older public cover", async () => {
+      publishLinks.getScenarioDraftCoverState.mockResolvedValue({
+        thumbnail: bytes,
+        updatedAt: 123,
+      });
+      const result = await prepareScenarioPublishDraft(
+        draft(),
+        await recoveryTransport(),
+      );
+      expect(result.scenario.thumbnail).toEqual(bytes);
+      expect(http.fetch).not.toHaveBeenCalled();
+    });
+
+    it.each(["checksum", "size", "format"])(
+      "does not initialize after invalid cover %s",
+      async (invalid) => {
+        const transport = await recoveryTransport();
+        const downloaded = bytes.slice();
+        if (invalid === "checksum") downloaded[8] = 2;
+        if (invalid === "format") downloaded[0] = 0;
+        http.fetch.mockResolvedValueOnce(
+          new Response(
+            invalid === "size" ? new Uint8Array(bytes.length + 1) : downloaded,
+          ),
+        );
+        await expect(
+          prepareScenarioPublishDraft(draft(), transport),
+        ).rejects.toThrow(/published cover/);
+        expect(
+          publishLinks.initializeScenarioDraftCover,
+        ).not.toHaveBeenCalled();
+      },
+    );
+
+    it("leaves an unpublished local draft alone", async () => {
+      publishLinks.getScenarioPublishLink.mockResolvedValue(null);
+      const transport = await recoveryTransport();
+      await expect(
+        prepareScenarioPublishDraft(draft(), transport),
+      ).resolves.toEqual({ scenario: draft(), published: null });
+      expect(transport.get).not.toHaveBeenCalled();
+    });
   });
 
   it("throws generic HTTP status errors from server failures", async () => {

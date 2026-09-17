@@ -352,6 +352,31 @@ export default function ScenarioCatalogDetails() {
             scenario.thumbnail?.downloadUrl,
           )}
           imageAlt={t`${scenario.title} thumbnail`}
+          headerAction={
+            owned && localLink ? (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    void navigate({
+                      to: `/scenarios/${localLink.localScenarioId}/edit`,
+                    })
+                  }
+                >
+                  <Trans>Edit scenario</Trans>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!catalog.publishingEnabled}
+                  onClick={() => void openPublishUpdate()}
+                >
+                  <Trans>Publish update</Trans>
+                </Button>
+              </div>
+            ) : undefined
+          }
           byline={
             <>
               <Trans>by</Trans>{" "}
@@ -393,25 +418,7 @@ export default function ScenarioCatalogDetails() {
           notice={notice}
           actions={
             isModerationUnavailable ? (
-              localLink ? (
-                <div className="grid gap-2 sm:flex sm:flex-wrap">
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      navigate({
-                        to: `/scenarios/${localLink.localScenarioId}/edit`,
-                      })
-                    }
-                  >
-                    <Trans>Edit local scenario</Trans>
-                  </Button>
-                  <Button onClick={() => void openPublishUpdate()}>
-                    <Trans>Publish update</Trans>
-                  </Button>
-                </div>
-              ) : (
-                <></>
-              )
+              <></>
             ) : (
               <div className="grid gap-2 sm:flex sm:flex-wrap">
                 <Button
@@ -450,15 +457,15 @@ export default function ScenarioCatalogDetails() {
         onOpenChange={(open) => {
           if (!open) setPendingPublish(null);
         }}
-        onPublish={async ({ metadata, thumbnailFile, policyAcceptance }) => {
+        onEdit={() => {
+          if (!localLink) return;
+          setPendingPublish(null);
+          void navigate({ to: `/scenarios/${localLink.localScenarioId}/edit` });
+        }}
+        onPublish={async (input) => {
           if (!pendingPublish) return;
           try {
-            const updated = await publish({
-              scenario: pendingPublish,
-              metadata,
-              thumbnailFile,
-              policyAcceptance,
-            });
+            const updated = await publish(input);
             setLoadedScenario({ sourceKey, detail: updated });
             await publishLinks.refresh();
             toast.success(

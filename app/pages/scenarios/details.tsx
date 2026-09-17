@@ -365,14 +365,14 @@ export default function ScenarioDetails() {
         thumbnailUploads={catalog.thumbnailUploads}
         catalog={catalog}
         onOpenChange={setPublishOpen}
-        onPublish={async ({ metadata, thumbnailFile, policyAcceptance }) => {
+        onEdit={() => {
+          setPublishOpen(false);
+          void navigate({ to: `/scenarios/${id}/edit` });
+        }}
+        onPublish={async (input) => {
           try {
-            const result = await catalogActions.publish({
-              scenario,
-              metadata,
-              thumbnailFile,
-              policyAcceptance,
-            });
+            const result = await catalogActions.publish(input);
+            setScenario(input.scenario);
             toast.success(
               result.moderation.status === "needs_review"
                 ? t`Scenario submitted for moderation`

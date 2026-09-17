@@ -9,7 +9,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-pub const TARGET_SCHEMA_VERSION: i64 = 6;
+pub const TARGET_SCHEMA_VERSION: i64 = 7;
 const BACKUP_DIRECTORY: &str = "migration-backups";
 const PENDING_MARKER_FILE: &str = "migration-attempt.json";
 const MIN_FREE_SPACE_BUFFER_BYTES: u64 = 16 * 1024 * 1024;
@@ -88,7 +88,11 @@ async fn prepare_pre_migration_backup_with_failure(
     if marker_path.exists() {
         let marker: MigrationAttemptMarker = read_json(&marker_path)?;
         validate_marker_paths(&marker, &backup_dir)?;
-        if marker.source_schema_version != source_schema_version
+        if source_schema_version >= marker.target_schema_version {
+            // A successful older migration may not have had a second launch to
+            // retire its marker before the user installed this schema update.
+            complete_pending_marker(&marker_path, app_data_dir)?;
+        } else if marker.source_schema_version != source_schema_version
             || marker.target_schema_version != TARGET_SCHEMA_VERSION
         {
             return Err(format!(
@@ -98,9 +102,10 @@ async fn prepare_pre_migration_backup_with_failure(
                 source_schema_version,
                 TARGET_SCHEMA_VERSION
             ));
+        } else {
+            validate_existing_backup(&marker).await?;
+            return Ok(Some(marker));
         }
-        validate_existing_backup(&marker).await?;
-        return Ok(Some(marker));
     }
 
     fail_at(failure, MigrationBackupFailurePoint::FreeSpace)?;
@@ -199,9 +204,7 @@ fn fail_at(
             MigrationBackupFailurePoint::PermissionDenied => {
                 "Unable to create a consistent migration backup: permission denied"
             }
-            MigrationBackupFailurePoint::BackupRename => {
-                "Unable to finalize the migration backup"
-            }
+            MigrationBackupFailurePoint::BackupRename => "Unable to finalize the migration backup",
             MigrationBackupFailurePoint::MarkerWrite => {
                 "Unable to record the migration recovery marker"
             }
@@ -638,7 +641,10 @@ mod tests {
                 MigrationBackupFailurePoint::DestinationCollision,
                 "destination already exists",
             ),
-            (MigrationBackupFailurePoint::PermissionDenied, "permission denied"),
+            (
+                MigrationBackupFailurePoint::PermissionDenied,
+                "permission denied",
+            ),
             (MigrationBackupFailurePoint::BackupRename, "finalize"),
             (MigrationBackupFailurePoint::MarkerWrite, "recovery marker"),
         ] {
@@ -649,13 +655,9 @@ mod tests {
                 let source_hash = sha256_file(&db_path).unwrap();
                 let source_value = read_sample_value(&db_path).await;
 
-                let error = prepare_pre_migration_backup_with_failure(
-                    &db_path,
-                    &root,
-                    Some(point),
-                )
-                .await
-                .unwrap_err();
+                let error = prepare_pre_migration_backup_with_failure(&db_path, &root, Some(point))
+                    .await
+                    .unwrap_err();
 
                 assert!(error.to_lowercase().contains(expected));
                 assert_eq!(sha256_file(&db_path).unwrap(), source_hash);
@@ -749,6 +751,39 @@ mod tests {
                 ))
                 .exists());
 
+            fs::remove_dir_all(root).unwrap();
+        });
+    }
+
+    #[test]
+    fn completes_a_finished_older_marker_before_the_next_schema_backup() {
+        tauri::async_runtime::block_on(async {
+            let root = unique_temp_directory("backup-next-schema");
+            let db_path = root.join("hakawati.db");
+            create_database(&db_path, 6).await;
+            let old_marker = MigrationAttemptMarker {
+                attempt_id: "1-6".to_string(),
+                source_schema_version: 3,
+                target_schema_version: 6,
+                backup_path: root.join(BACKUP_DIRECTORY).join("migration-1-6.db"),
+                manifest_path: root
+                    .join(BACKUP_DIRECTORY)
+                    .join("migration-1-6.manifest.json"),
+                created_at_unix_ms: 1,
+            };
+            fs::create_dir_all(root.join(BACKUP_DIRECTORY)).unwrap();
+            write_json_file(&root.join(PENDING_MARKER_FILE), &old_marker).unwrap();
+
+            let marker = prepare_pre_migration_backup(&db_path, &root)
+                .await
+                .unwrap()
+                .unwrap();
+            assert_eq!(marker.source_schema_version, 6);
+            assert_eq!(marker.target_schema_version, TARGET_SCHEMA_VERSION);
+            assert!(root
+                .join("migration-attempt-1-6.completed.json")
+                .exists());
+            assert_eq!(read_schema_version(&marker.backup_path).await.unwrap(), 6);
             fs::remove_dir_all(root).unwrap();
         });
     }
