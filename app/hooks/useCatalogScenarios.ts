@@ -40,6 +40,7 @@ import type { NewTaleSyncPolicy } from "@/services/new-tale-sync";
 
 export type CatalogClientState = {
   baseUrl: string;
+  accountId: string;
   signedIn: boolean;
   enabled: boolean;
   publishingEnabled: boolean;
@@ -140,6 +141,7 @@ export function useCatalogClient(): CatalogClientState {
 
   return {
     baseUrl,
+    accountId,
     signedIn,
     enabled: Boolean(baseUrl && canUseScenarioCatalog(capabilities)),
     publishingEnabled: Boolean(
@@ -163,6 +165,7 @@ export function useCatalogScenarioList(
   return useCatalogList<CatalogScenarioRecord>(
     client.enabled,
     selectCatalogReadTransport(client),
+    JSON.stringify([client.baseUrl, client.accountId]),
     { ...initial, sort: initial.sort ?? "newest" },
     listCatalogScenarios,
     controlledFilters,
@@ -177,6 +180,7 @@ export function usePublishedCatalogScenarios(
   return useCatalogList<CatalogOwnedScenarioRecord>(
     client.enabled,
     client.authTransport,
+    JSON.stringify([client.baseUrl, client.accountId]),
     { ...initial, sort: initial.sort ?? "updated" },
     listOwnedCatalogScenarios,
     controlledFilters,
@@ -186,6 +190,7 @@ export function usePublishedCatalogScenarios(
 function useCatalogList<T extends { id: string }>(
   enabled: boolean,
   transport: CatalogTransport | null,
+  audience: string,
   initial: CatalogListOptions,
   list: (
     transport: CatalogTransport,
@@ -207,9 +212,17 @@ function useCatalogList<T extends { id: string }>(
     () => ({ limit, sort, q, tag: JSON.parse(tagsKey) as string[] }),
     [limit, sort, q, tagsKey],
   );
+  const available = Boolean(enabled && transport);
+  // A renewed token changes the request transport, not the account's results.
+  // Keep those results visible while revalidating, but isolate actual account,
+  // server, filter, or availability changes immediately.
+  const resultScope = useMemo(
+    () => ({ available, audience, query }),
+    [available, audience, query],
+  );
   const scope = useMemo(
-    () => ({ enabled, transport, query }),
-    [enabled, transport, query],
+    () => ({ enabled, transport, query, resultScope }),
+    [enabled, transport, query, resultScope],
   );
   const activeScope = useRef(scope);
   // Guard responses and old callbacks as soon as a new filter/auth render starts.
@@ -245,7 +258,7 @@ function useCatalogList<T extends { id: string }>(
       paging.current = pageRequest;
       setState((current) => ({
         scope,
-        items: append && current.scope === scope ? current.items : [],
+        items: current.scope.resultScope === resultScope ? current.items : [],
         nextCursor: append ? cursor : null,
         loading: available,
         error: null,
@@ -282,7 +295,7 @@ function useCatalogList<T extends { id: string }>(
         }
       }
     },
-    [list, scope],
+    [list, resultScope, scope],
   );
   const refresh = useCallback(() => {
     if (activeScope.current !== scope) return Promise.resolve();
@@ -301,7 +314,7 @@ function useCatalogList<T extends { id: string }>(
   }, [refresh]);
 
   return {
-    items: state.scope === scope ? state.items : [],
+    items: state.scope.resultScope === resultScope ? state.items : [],
     nextCursor: state.scope === scope ? state.nextCursor : null,
     filters,
     setFilters,

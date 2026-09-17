@@ -21,6 +21,7 @@ function transport() {
 function client(): CatalogClientState {
   return {
     baseUrl: "https://cloud.example",
+    accountId: "account-1",
     signedIn: true,
     enabled: true,
     publishingEnabled: true,
@@ -100,6 +101,73 @@ describe.each([
   { name: "public", useList: useCatalogScenarioList, sort: "newest" },
   { name: "owned", useList: usePublishedCatalogScenarios, sort: "updated" },
 ])("$name catalog lists", ({ useList, sort }) => {
+  it("keeps loaded results visible while renewing the same account's token", async () => {
+    let catalog = client();
+    const first = transport();
+    const renewed = transport();
+    const revalidation = deferred();
+    first.get.mockResolvedValueOnce(page(["one"], "next"));
+    renewed.get.mockReturnValueOnce(revalidation.promise);
+    catalog.authTransport = first;
+    const hook = renderHook(() => useList(catalog));
+    await debounce();
+
+    catalog = { ...catalog, authTransport: renewed };
+    hook.rerender();
+    expect(hook.current.items.map((item) => item.id)).toEqual(["one"]);
+    expect(hook.current.nextCursor).toBeNull();
+    await debounce();
+    expect(hook.current.items.map((item) => item.id)).toEqual(["one"]);
+    expect(renewed.get).toHaveBeenCalledTimes(1);
+    await act(async () => revalidation.resolve(page(["two"])));
+    expect(hook.current.items.map((item) => item.id)).toEqual(["two"]);
+    expect(hook.current.loading).toBe(false);
+  });
+
+  it.each(["account", "server", "logout"] as const)(
+    "immediately clears previous results on %s changes",
+    async (change) => {
+      let catalog = client();
+      const first = transport();
+      first.get.mockResolvedValueOnce(page(["previous"], "next"));
+      catalog.authTransport = first;
+      const hook = renderHook(() => useList(catalog));
+      await debounce();
+      const pending = deferred();
+      const next = transport();
+      next.get.mockReturnValueOnce(pending.promise);
+      catalog = {
+        ...catalog,
+        ...(change === "account" ? { accountId: "account-2" } : {}),
+        ...(change === "server" ? { baseUrl: "https://other.example" } : {}),
+        ...(change === "logout" ? { accountId: "", signedIn: false } : {}),
+        authTransport: change === "logout" ? null : next,
+        publicTransport: next,
+      };
+      hook.rerender();
+      expect(hook.current.items).toEqual([]);
+      expect(hook.current.nextCursor).toBeNull();
+      await debounce();
+      expect(hook.current.items).toEqual([]);
+    },
+  );
+
+  it("keeps results visible during a refresh of unchanged filters", async () => {
+    const catalog = client();
+    const read = transport();
+    const refresh = deferred();
+    read.get
+      .mockResolvedValueOnce(page(["one"]))
+      .mockReturnValueOnce(refresh.promise);
+    catalog.authTransport = read;
+    const hook = renderHook(() => useList(catalog));
+    await debounce();
+    act(() => void hook.current.refresh());
+    expect(hook.current.items.map((item) => item.id)).toEqual(["one"]);
+    await act(async () => refresh.resolve(page(["two"])));
+    expect(hook.current.items.map((item) => item.id)).toEqual(["two"]);
+  });
+
   it("keeps inactive lists idle and fetches current filters when activated", async () => {
     let catalog = { ...client(), enabled: false };
     const read = transport();
@@ -257,6 +325,53 @@ describe.each([
     expect(hook.current.error).toBeNull();
     await debounce();
     expect(second.get).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("catalog session restoration", () => {
+  it("keeps public results visible until the restored account's filtered results arrive", async () => {
+    const publicRead = transport();
+    const authenticatedRead = transport();
+    const authenticatedPage = deferred();
+    publicRead.get.mockResolvedValueOnce(
+      page(["visible", "blocked-publisher"]),
+    );
+    authenticatedRead.get.mockReturnValueOnce(authenticatedPage.promise);
+    let catalog = {
+      ...client(),
+      signedIn: false,
+      authTransport: null as CatalogTransport | null,
+      publicTransport: publicRead,
+    };
+    const hook = renderHook(() => useCatalogScenarioList(catalog));
+    await debounce();
+    expect(hook.current.items.map((item) => item.id)).toEqual([
+      "visible",
+      "blocked-publisher",
+    ]);
+
+    catalog = { ...catalog, signedIn: true, authTransport: authenticatedRead };
+    hook.rerender();
+    expect(hook.current.items).toHaveLength(2);
+    await debounce();
+    expect(hook.current.items).toHaveLength(2);
+    expect(authenticatedRead.get).toHaveBeenCalledTimes(1);
+    await act(async () => authenticatedPage.resolve(page(["visible"])));
+    expect(hook.current.items.map((item) => item.id)).toEqual(["visible"]);
+  });
+
+  it("immediately hides owned results when authentication becomes unavailable", async () => {
+    let catalog = client();
+    const authenticatedRead = transport();
+    authenticatedRead.get.mockResolvedValueOnce(page(["private-draft"]));
+    catalog.authTransport = authenticatedRead;
+    const hook = renderHook(() => usePublishedCatalogScenarios(catalog));
+    await debounce();
+    expect(hook.current.items).toHaveLength(1);
+    catalog = { ...catalog, signedIn: false, authTransport: null };
+    hook.rerender();
+    expect(hook.current.items).toEqual([]);
+    expect(hook.current.loading).toBe(false);
   });
 });
 

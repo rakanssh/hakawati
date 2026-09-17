@@ -28,7 +28,7 @@ import {
   useCatalogScenarioList,
 } from "@/hooks/useCatalogScenarios";
 import { useTaleLibrary } from "@/hooks/useTaleLibrary";
-import { bytesToObjectUrl } from "@/lib/utils";
+import { useCoverImageUrl } from "@/hooks/useCoverImageUrl";
 import { imageBadgeClass } from "@/lib/card-badges";
 import { getSyncUiKind } from "@/lib/sync-ui";
 import { HAKAWATI_CLIENT_VERSION } from "@/services/cloud-capabilities";
@@ -107,7 +107,7 @@ function Shelf({ title, action, children }: ShelfProps) {
 
 function ShelfState({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-28 w-[60vw] max-w-56 shrink-0 snap-start items-center justify-center border border-dashed border-border/80 bg-card/35 p-2.5 text-center text-sm text-muted-foreground sm:min-h-32 sm:w-60 sm:max-w-64 sm:p-3 lg:w-64">
+    <div className="flex h-40 w-[60vw] max-w-56 shrink-0 snap-start items-center justify-center border border-dashed border-border/80 bg-card/35 p-2.5 text-center text-sm text-muted-foreground sm:w-60 sm:max-w-64 sm:p-3 lg:w-64">
       {children}
     </div>
   );
@@ -145,6 +145,7 @@ function TaleCard({
       item.localTale.description ||
       t`No description yet.`;
   const thumbnail = isRemote ? null : item.localTale.thumbnail;
+  const coverUrl = useCoverImageUrl(thumbnail);
   const hasConflict =
     syncActive && item.source === "local" && item.sync?.status === "conflict";
   const isSynced = syncActive && (isRemote || Boolean(item.sync));
@@ -163,7 +164,7 @@ function TaleCard({
       actionLabel={hasConflict ? <Trans>Review conflict</Trans> : undefined}
       title={title}
       summary={description}
-      imageSrc={thumbnail ? bytesToObjectUrl(thumbnail) : placeholderImage}
+      imageSrc={coverUrl || placeholderImage}
       imageAlt={t`${title} tale`}
       ariaLabel={t`Load ${title}`}
       disabled={disabled || loading}
@@ -223,6 +224,7 @@ function ScenarioCard({
   onView: (id: string) => void;
 }) {
   const { t } = useLingui();
+  const coverUrl = useCoverImageUrl(scenario.thumbnail);
 
   return (
     <ScenarioPreviewCard
@@ -236,11 +238,7 @@ function ScenarioCard({
       }
       title={scenario.name}
       summary={scenario.description || t`No description yet.`}
-      imageSrc={
-        scenario.thumbnail
-          ? bytesToObjectUrl(scenario.thumbnail)
-          : placeholderImage
-      }
+      imageSrc={coverUrl || placeholderImage}
       imageAlt={t`${scenario.name} scenario`}
       ariaLabel={t`Open ${scenario.name}`}
       onOpen={() => onView(scenario.id)}
@@ -280,6 +278,10 @@ export default function Home() {
     limit: 6,
     sort: "popular",
   });
+  const publicScenariosLoading = catalog.loading || publicScenarios.loading;
+  const publicScenariosUnavailable =
+    Boolean(catalog.error || publicScenarios.error) ||
+    (!catalog.loading && !catalog.enabled);
   const hasLoadedRef = useRef(false);
   const autoRegisterDeviceKeyRef = useRef("");
   const cloudBaseUrl = useSyncSettingsStore((state) => state.cloudBaseUrl);
@@ -756,7 +758,7 @@ export default function Home() {
               </Button>
             }
           >
-            {tales.loading && (
+            {tales.loading && tales.items.length === 0 && (
               <ShelfState>
                 <Trans>Loading…</Trans>
               </ShelfState>
@@ -798,7 +800,7 @@ export default function Home() {
             ))}
           </Shelf>
 
-          {catalog.enabled ? (
+          {catalog.baseUrl ? (
             <Shelf
               title={<Trans>Public Scenarios</Trans>}
               action={
@@ -814,18 +816,18 @@ export default function Home() {
                 </Button>
               }
             >
-              {publicScenarios.loading && (
+              {publicScenariosLoading && publicScenarios.items.length === 0 && (
                 <ShelfState>
                   <Trans>Loading...</Trans>
                 </ShelfState>
               )}
-              {Boolean(publicScenarios.error) && (
+              {!publicScenariosLoading && publicScenariosUnavailable && (
                 <ShelfState>
                   <Trans>Public scenarios are unavailable.</Trans>
                 </ShelfState>
               )}
-              {!publicScenarios.loading &&
-                !publicScenarios.error &&
+              {!publicScenariosLoading &&
+                !publicScenariosUnavailable &&
                 publicScenarios.items.length === 0 && (
                   <ShelfState>
                     <Trans>No public scenarios yet.</Trans>
@@ -886,7 +888,7 @@ export default function Home() {
               </>
             }
           >
-            {scenarios.loading && (
+            {scenarios.loading && scenarios.items.length === 0 && (
               <ShelfState>
                 <Trans>Loading…</Trans>
               </ShelfState>

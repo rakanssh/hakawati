@@ -23,6 +23,7 @@ const roots: ReturnType<typeof createRoot>[] = [];
 function actions(thumbnailUploads = true) {
   const authTransport = { get: vi.fn(), post: vi.fn(), patch: vi.fn() };
   const client: CatalogClientState = {
+    accountId: "account-1",
     baseUrl: "https://cloud.example",
     signedIn: true,
     enabled: true,
