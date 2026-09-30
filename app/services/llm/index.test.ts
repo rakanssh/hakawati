@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ResponseMode } from "@/types";
+import { ApiPreset, ResponseMode } from "@/types";
 import type { LLMModel } from "./schema";
 import {
   createDefaultModelRoles,
@@ -111,6 +111,148 @@ describe("role-aware LLM service", () => {
   beforeEach(() => {
     fetchMock.mockReset();
     setConfiguredRoles();
+  });
+
+  it("applies separate role thinking levels and preserves the requested output budget", async () => {
+    const modelRoles = useSettingsStore.getState().modelRoles;
+    useSettingsStore.setState({
+      modelRoles: {
+        ...modelRoles,
+        narrator: {
+          ...modelRoles.narrator,
+          reasoningEffort: "high",
+          model: {
+            ...narratorModel,
+            reasoning: { supportedEfforts: ["low", "high"] },
+          },
+        },
+        utility: {
+          ...modelRoles.utility,
+          reasoningEffort: "low",
+          model: {
+            ...utilityModel,
+            reasoning: { supportedEfforts: ["low", "high"] },
+          },
+        },
+      },
+    });
+    fetchMock.mockResolvedValue(
+      responseJson({ choices: [{ message: { content: "done" } }] }),
+    );
+    for (const role of ["narrator", "utility"] as const) {
+      await sendRoleChat(role, {
+        model: role === "narrator" ? narratorModel.id : utilityModel.id,
+        messages: [{ role: "user", content: "Continue" }],
+        max_tokens: 2048,
+        responseMode: ResponseMode.FREE_FORM,
+      });
+    }
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toMatchObject({
+      reasoning_effort: "high",
+      max_tokens: 2048,
+    });
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toMatchObject({
+      reasoning_effort: "low",
+      max_tokens: 2048,
+    });
+  });
+
+  it("maps an OpenRouter role's choice and excludes unsupported routes", async () => {
+    const modelRoles = useSettingsStore.getState().modelRoles;
+    useSettingsStore.setState({
+      modelRoles: {
+        ...modelRoles,
+        narrator: {
+          ...modelRoles.narrator,
+          activePreset: ApiPreset.OPENROUTER,
+          baseUrl: "https://openrouter.ai/api/v1",
+          reasoningEffort: "high",
+          model: {
+            ...narratorModel,
+            reasoning: { supportedEfforts: ["high"] },
+          },
+        },
+      },
+    });
+    fetchMock.mockResolvedValue(
+      responseJson({ choices: [{ message: { content: "done" } }] }),
+    );
+    await sendRoleChat("narrator", {
+      model: narratorModel.id,
+      messages: [],
+      responseMode: ResponseMode.FREE_FORM,
+    });
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.reasoning).toEqual({ effort: "high" });
+    expect(body.provider).toEqual({ require_parameters: true });
+    expect(body).not.toHaveProperty("reasoning_effort");
+  });
+
+  it("omits the override for Model default even when the model has an advertised default", async () => {
+    const modelRoles = useSettingsStore.getState().modelRoles;
+    useSettingsStore.setState({
+      modelRoles: {
+        ...modelRoles,
+        narrator: {
+          ...modelRoles.narrator,
+          model: {
+            ...narratorModel,
+            reasoning: { supportedEfforts: ["high"], defaultEffort: "high" },
+          },
+        },
+      },
+    });
+    fetchMock.mockResolvedValue(
+      responseJson({ choices: [{ message: { content: "done" } }] }),
+    );
+    await sendRoleChat("narrator", {
+      model: narratorModel.id,
+      messages: [],
+      responseMode: ResponseMode.FREE_FORM,
+    });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).not.toHaveProperty(
+      "reasoning_effort",
+    );
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body)).not.toHaveProperty(
+      "reasoning",
+    );
+  });
+
+  it("rejects stale or unsupported effort before sending instead of silently downgrading", async () => {
+    await expect(
+      sendRoleChat("narrator", {
+        model: narratorModel.id,
+        messages: [],
+        reasoningEffort: "high",
+        responseMode: ResponseMode.FREE_FORM,
+      }),
+    ).rejects.toThrow("thinking level is unavailable");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("does not transfer a selected model's effort to a different request model", async () => {
+    const modelRoles = useSettingsStore.getState().modelRoles;
+    useSettingsStore.setState({
+      modelRoles: {
+        ...modelRoles,
+        narrator: {
+          ...modelRoles.narrator,
+          reasoningEffort: "high",
+          model: {
+            ...narratorModel,
+            reasoning: { supportedEfforts: ["high"] },
+          },
+        },
+      },
+    });
+    await expect(
+      sendRoleChat("narrator", {
+        model: "different-model",
+        messages: [],
+        responseMode: ResponseMode.FREE_FORM,
+      }),
+    ).rejects.toThrow("thinking level is unavailable");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("sends narrator chat requests to the narrator endpoint", async () => {

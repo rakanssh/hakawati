@@ -7,6 +7,11 @@ All notable changes to this project are documented in this file.
 ### Added
 
 - "Login with ChatGPT" Support! You can use your ChatGPT plan resources to play Hakawati.
+- Thinking levels for Narrator and Utility, saved per provider with model-specific choices for OpenRouter, OpenAI API, and ChatGPT subscriptions.
+
+### Fixed
+
+- Reasoning models on the OpenAI API use Responses for story text and game actions. Truncated API responses now report an output-limit error instead of appearing complete.
 
 ## [v1.0.0] - 2026-09-17
 

@@ -83,19 +83,46 @@ function toStreamChunk(json: unknown): StreamChunk | null {
 /**
  * Parse OpenAI streaming response and yield chunks containing content and/or tool_calls
  */
-function parseDataLine(line: string): StreamChunk | "done" | null {
+function parseDataLine(
+  line: string,
+  outputLimitAdjustable: boolean,
+): StreamChunk | "done" | null {
   if (!line.startsWith("data:")) return null;
   const payload = line.slice(5).trim();
   if (payload === "[DONE]") return "done";
+  let json: unknown;
   try {
-    return toStreamChunk(JSON.parse(payload));
+    json = JSON.parse(payload);
   } catch {
     return null;
   }
+  if (json && typeof json === "object") {
+    const response = json as {
+      error?: { message?: string } | string;
+      choices?: Array<{ finish_reason?: string }>;
+    };
+    if (response.error) {
+      throw new Error(
+        typeof response.error === "string"
+          ? response.error
+          : response.error.message ||
+            "The provider could not complete the response.",
+      );
+    }
+    if (response.choices?.[0]?.finish_reason === "length") {
+      throw new Error(
+        outputLimitAdjustable
+          ? "The response reached its output token limit before finishing. Thinking and the answer share this limit. Increase Max Output Tokens or choose a lower thinking level and try again."
+          : "The response reached its output token limit before finishing. Choose a lower Utility thinking level or use a shorter request and try again.",
+      );
+    }
+  }
+  return toStreamChunk(json);
 }
 
 export async function* parseOpenAIStream(
   body: ReadableStream<Uint8Array>,
+  options: { outputLimitAdjustable?: boolean } = {},
 ): AsyncGenerator<StreamChunk> {
   const reader = body.getReader();
   const decoder = new TextDecoder("utf-8");
@@ -111,13 +138,19 @@ export async function* parseOpenAIStream(
       buffer = lines.pop() ?? "";
 
       for (const line of lines) {
-        const chunk = parseDataLine(line);
+        const chunk = parseDataLine(
+          line,
+          options.outputLimitAdjustable !== false,
+        );
         if (chunk === "done") return;
         if (chunk) yield chunk;
       }
     }
 
-    const lastChunk = parseDataLine(buffer + decoder.decode());
+    const lastChunk = parseDataLine(
+      buffer + decoder.decode(),
+      options.outputLimitAdjustable !== false,
+    );
     if (lastChunk && lastChunk !== "done") yield lastChunk;
   } finally {
     // Breaking out of decoding must also stop the underlying HTTP response.

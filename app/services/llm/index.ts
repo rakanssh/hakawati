@@ -3,6 +3,11 @@ import { OpenAiClient } from "./adapters/openai";
 import { ChatGptClient } from "./adapters/chatgpt";
 import { ChatRequest, LLMModel } from "./schema";
 import { ApiPreset, ApiType, ModelRole, ModelRoleSettings } from "@/types";
+import {
+  getModelReasoning,
+  normalizeReasoningEffort,
+  reasoningProvider,
+} from "./reasoning";
 
 export class ModelRoleConfigurationError extends Error {
   constructor(
@@ -57,6 +62,7 @@ function getClient(role: ModelRole) {
   return OpenAiClient({
     baseUrl: config.baseUrl,
     apiKey: config.apiKey || undefined,
+    model: config.model,
     role,
   });
 }
@@ -77,7 +83,23 @@ export async function sendRoleChat(
   req: ChatRequest,
   signal?: AbortSignal,
 ) {
-  return getClient(role).chat(req, signal);
+  const config = assertRoleConfig(role);
+  const reasoning = getModelReasoning(
+    config.model?.id === req.model ? config.model : undefined,
+    reasoningProvider(
+      config.baseUrl,
+      config.activePreset === ApiPreset.CHATGPT,
+    ),
+  );
+  const requested = req.reasoningEffort ?? config.reasoningEffort;
+  const reasoningEffort = normalizeReasoningEffort(requested, reasoning);
+  if (requested !== undefined && reasoningEffort === undefined) {
+    throw new ModelRoleConfigurationError(
+      role,
+      "The selected thinking level is unavailable for this model. Choose Model default or a supported level in AI Setup.",
+    );
+  }
+  return getClient(role).chat({ ...req, reasoningEffort }, signal);
 }
 
 export async function getRoleModels(role: ModelRole, signal?: AbortSignal) {

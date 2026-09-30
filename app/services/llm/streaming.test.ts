@@ -23,6 +23,37 @@ async function collect<T>(iterator: AsyncIterable<T>): Promise<T[]> {
 }
 
 describe("parseOpenAIStream", () => {
+  it("reports an exhausted thinking/output budget instead of accepting an empty answer", async () => {
+    const stream = makeSseStream([
+      'data: {"choices":[{"delta":{"reasoning":"Planning"}}]}',
+      'data: {"choices":[{"delta":{},"finish_reason":"length"}]}',
+      "data: [DONE]",
+    ]);
+    const iterator = parseOpenAIStream(stream);
+    expect((await iterator.next()).value).toEqual({ thinking: "Planning" });
+    await expect(iterator.next()).rejects.toThrow("Increase Max Output Tokens");
+    expect(stream.locked).toBe(false);
+  });
+
+  it("surfaces provider routing errors sent inside a successful HTTP stream", async () => {
+    const stream = makeSseStream([
+      'data: {"error":{"message":"No provider supports the selected reasoning effort"}}',
+    ]);
+    await expect(collect(parseOpenAIStream(stream))).rejects.toThrow(
+      "No provider supports",
+    );
+    expect(stream.locked).toBe(false);
+  });
+
+  it("gives actionable budget advice for Utility's separate fixed output limit", async () => {
+    const stream = makeSseStream([
+      'data: {"choices":[{"delta":{},"finish_reason":"length"}]}',
+    ]);
+    await expect(
+      collect(parseOpenAIStream(stream, { outputLimitAdjustable: false })),
+    ).rejects.toThrow("lower Utility thinking level");
+  });
+
   it("accepts SSE data fields without a space and releases the reader at completion", async () => {
     const stream = makeSseStream([
       'data:{"choices":[{"delta":{"content":"Hello"}}]}',

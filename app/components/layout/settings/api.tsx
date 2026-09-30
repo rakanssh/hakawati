@@ -18,6 +18,7 @@ import { ProviderHelpModal } from "./provider-help-modal";
 import { Eye, EyeOff } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ChatGptConnection, ChatGptPlanNotice } from "./chatgpt-connection";
+import { ThinkingLevel } from "./thinking-level";
 import { useLingui as useLinguiCore } from "@lingui/react";
 import {
   SettingsField,
@@ -287,6 +288,9 @@ function RoleApiSettings({ role }: { role: ModelRole }) {
         <SettingsField label={<Trans>Model</Trans>}>
           <ModelSelect role={role} />
         </SettingsField>
+        {(role === "narrator" || role === "utility") && (
+          <ThinkingLevel role={role} />
+        )}
         {role === "textToSpeech" && (
           <SettingsField
             label={<Trans>Voice</Trans>}

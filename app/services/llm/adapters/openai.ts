@@ -10,45 +10,102 @@ import {
   LLMModel,
 } from "../schema";
 import { parseOpenAIStream } from "../streaming";
+import {
+  knownOpenAiReasoning,
+  readReasoningCapabilities,
+  reasoningProvider,
+} from "../reasoning";
+import {
+  assertNotAborted,
+  readResponseJson,
+  responseChunks,
+  type ResponsesOptions,
+} from "./responses";
 import { fetch } from "@tauri-apps/plugin-http";
 import { GM_TOOLS, ToolCall } from "../tools";
 import { ModelRole } from "@/types";
 import { repairCommonMojibake } from "@/lib/utils";
 
+const samplingParameterNames: Record<string, string> = {
+  temperature: "temperature",
+  topP: "top_p",
+  topK: "top_k",
+  frequencyPenalty: "frequency_penalty",
+  presencePenalty: "presence_penalty",
+  repetitionPenalty: "repetition_penalty",
+  minP: "min_p",
+  topA: "top_a",
+  seed: "seed",
+};
+
 export interface OpenAiConnection {
   baseUrl: string;
   apiKey?: string;
   role?: ModelRole;
+  model?: LLMModel;
 }
 
 export function OpenAiClient(connection: OpenAiConnection): LLMClient {
   const base = connection.baseUrl.replace(/\/$/, "");
   const apiKey = connection.apiKey?.trim();
-  const isOpenRouter = (() => {
-    try {
-      return new URL(base).hostname === "openrouter.ai";
-    } catch {
-      return false;
-    }
-  })();
+  const provider = reasoningProvider(base);
+  const isOpenRouter = provider === "openrouter";
 
   async function chat(
     req: ChatRequest,
     signal?: AbortSignal,
   ): Promise<ChatResponse> {
+    assertNotAborted(signal);
+    const selectedModel =
+      connection.model?.id === req.model ? connection.model : undefined;
+    const reasoning = selectedModel?.reasoning;
+    const knownReasoning = knownOpenAiReasoning(req.model);
+    if (
+      provider === "openai" &&
+      (req.reasoningEffort !== undefined ||
+        reasoning?.supportedEfforts.length ||
+        knownReasoning?.supportedEfforts.length)
+    ) {
+      return chatResponses(req, signal);
+    }
     const useToolCalling = req.responseMode !== ResponseMode.FREE_FORM;
+
+    const options = Object.entries(req.options ?? {}).filter(
+      ([, value]) => value !== undefined && value !== null,
+    );
+    const samplingOptions =
+      isOpenRouter && req.reasoningEffort !== undefined
+        ? Object.fromEntries(
+            options
+              .map(
+                ([key, value]) => [samplingParameterNames[key], value] as const,
+              )
+              .filter(
+                ([key]) =>
+                  key && selectedModel?.supportedParameters?.includes(key),
+              ),
+          )
+        : Object.fromEntries(options);
 
     const body: Record<string, unknown> = {
       model: req.model,
       messages: req.messages,
       stream: req.stream,
       max_tokens: req.max_tokens,
-      ...Object.fromEntries(
-        Object.entries(req.options ?? {}).filter(
-          ([_, value]) => value !== undefined && value !== null,
-        ),
-      ),
+      ...samplingOptions,
     };
+
+    if (req.reasoningEffort !== undefined) {
+      if (isOpenRouter) {
+        body.reasoning = { effort: req.reasoningEffort };
+        // Only advertised sampler fields accompany strict routing: application
+        // defaults such as seed can otherwise exclude every reasoning endpoint.
+        // Without catalog metadata, keep provider sampler defaults.
+        body.provider = { require_parameters: true };
+      } else {
+        body.reasoning_effort = req.reasoningEffort;
+      }
+    }
 
     if (useToolCalling) {
       body.tools = GM_TOOLS;
@@ -74,7 +131,9 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
         if (req.stream) {
           return {
             content: "",
-            iterator: parseOpenAIStream(r.body!),
+            iterator: parseOpenAIStream(r.body!, {
+              outputLimitAdjustable: connection.role !== "utility",
+            }),
             raw: r,
             usage: {
               prompt_tokens: 0,
@@ -84,6 +143,13 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
           };
         } else {
           const json = await r.json();
+          if (json.choices?.[0]?.finish_reason === "length") {
+            throw new Error(
+              connection.role === "utility"
+                ? "The response reached the output token limit. Lower the Utility thinking level or try a shorter request."
+                : "The response reached the output token limit. Increase Max Output Tokens or lower the thinking level and retry.",
+            );
+          }
           const message = json.choices[0].message;
           const thinking =
             (typeof message.reasoning === "string" && message.reasoning) ||
@@ -114,6 +180,95 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
       });
 
     return doFetch();
+  }
+
+  async function chatResponses(
+    req: ChatRequest,
+    signal?: AbortSignal,
+  ): Promise<ChatResponse> {
+    const knownReasoning = knownOpenAiReasoning(req.model);
+    const reasoning =
+      connection.model?.id === req.model
+        ? (connection.model.reasoning ?? knownReasoning)
+        : knownReasoning;
+    const effectiveEffort = req.reasoningEffort ?? reasoning?.defaultEffort;
+    // The documented OpenAI models with None support also accept temperature
+    // and top_p in that mode. Unknown models' reasoning metadata alone does
+    // not establish sampler compatibility; seeds and penalties stay omitted.
+    const supportsSampling =
+      effectiveEffort === "none" &&
+      knownReasoning?.supportedEfforts.includes("none");
+    const body: Record<string, unknown> = {
+      model: req.model,
+      input: req.messages.map((message) => ({
+        role: message.role === "system" ? "developer" : message.role,
+        content: message.content,
+      })),
+      store: false,
+      stream: Boolean(req.stream),
+      ...(req.max_tokens !== undefined
+        ? { max_output_tokens: req.max_tokens }
+        : {}),
+      ...(req.reasoningEffort !== undefined
+        ? { reasoning: { effort: req.reasoningEffort } }
+        : {}),
+    };
+    if (supportsSampling) {
+      if (typeof req.options?.temperature === "number")
+        body.temperature = req.options.temperature;
+      if (typeof req.options?.topP === "number") body.top_p = req.options.topP;
+    }
+    if (req.responseMode !== ResponseMode.FREE_FORM) {
+      body.tools = GM_TOOLS.map((tool) => ({
+        type: tool.type,
+        ...tool.function,
+      }));
+      body.tool_choice = "auto";
+    }
+    const response = await fetch(`${base}/responses`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}),
+      },
+      body: JSON.stringify(body),
+      signal,
+    });
+    assertNotAborted(signal);
+    if (!response.ok) {
+      throw new Error(
+        await readErrorMessage(response, "OpenAI request failed"),
+      );
+    }
+    const result: ChatResponse = {
+      content: "",
+      raw: undefined,
+      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+    };
+    const options: ResponsesOptions = {
+      provider: "OpenAI",
+      ...(connection.role === "utility"
+        ? {
+            incompleteMessage:
+              "OpenAI did not complete the response. Lower the Utility thinking level or try a shorter request.",
+          }
+        : {}),
+      error: (message, details) => {
+        const diagnostic = extractErrorMessage(details);
+        const requestId = response.headers.get("x-request-id");
+        return new Error(
+          `${diagnostic || message}${requestId ? ` [request ${requestId}]` : ""}`,
+        );
+      },
+    };
+    if (req.stream)
+      result.iterator = responseChunks(response, result, signal, options);
+    else {
+      const json: unknown = await response.json();
+      await readResponseJson(json, result, signal, options);
+      result.raw = json;
+    }
+    return result;
   }
 
   async function models(signal?: AbortSignal): Promise<LLMModel[]> {
@@ -164,6 +319,11 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
           )
         : undefined;
       const supportedVoices = readSupportedVoices(model);
+      const reasoning = readReasoningCapabilities(model, provider);
+      const maxOutputTokens =
+        model.top_provider?.max_completion_tokens ??
+        model.max_output_tokens ??
+        model.max_completion_tokens;
 
       return {
         id: model.id ?? model.name,
@@ -174,6 +334,11 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
           supportedParameters?.includes("response_format"),
         supportsToolCalls,
         supportedVoices,
+        ...(supportedParameters ? { supportedParameters } : {}),
+        ...(reasoning ? { reasoning } : {}),
+        ...(typeof maxOutputTokens === "number" && maxOutputTokens > 0
+          ? { maxOutputTokens }
+          : {}),
       } satisfies LLMModel;
     });
   }

@@ -6,6 +6,7 @@ import { useSettingsStore } from "@/store/useSettingsStore";
 import { useTaleStore } from "@/store/useTaleStore";
 import { ApiPreset, GameMode, LogEntryMode, LogEntryRole } from "@/types";
 import { generateQuickstartTale } from "./quickstartTaleGenerator";
+import type { ReasoningEffort } from "./schema";
 
 const { fetchChatGpt, persistence } = vi.hoisted(() => ({
   fetchChatGpt: vi.fn(),
@@ -142,6 +143,10 @@ describe("ChatGPT provider through game and utility flows", () => {
         name: `ChatGPT ${role}`,
         contextLength: 100000,
         supportsToolCalls: true,
+        reasoning: {
+          supportedEfforts: ["low", "medium", "high"],
+          defaultEffort: "medium",
+        },
       });
     }
     useTaleStore.setState({
@@ -268,6 +273,125 @@ describe("ChatGPT provider through game and utility flows", () => {
       harness.cleanup();
     }
   });
+
+  it.each<{
+    narrator: ReasoningEffort | undefined;
+    utility: ReasoningEffort | undefined;
+  }>([
+    { narrator: "high", utility: "low" },
+    { narrator: undefined, utility: "low" },
+    { narrator: "high", utility: undefined },
+  ])(
+    "sends saved narrator $narrator and utility $utility levels through the game and generation flows",
+    async ({ narrator, utility }) => {
+      const settings = useSettingsStore.getState();
+      settings.setRoleReasoningEffort("narrator", narrator);
+      settings.setRoleReasoningEffort("utility", utility);
+      settings.setThinkingVisibility("none");
+      settings.setTemperature(0.7);
+      settings.setTopP(0.9);
+      settings.setTopK(30);
+      settings.setFrequencyPenalty(0.2);
+      settings.setPresencePenalty(0.3);
+      settings.setSeed(42);
+      settings.setMaxTokens(8192);
+      for (const role of ["narrator", "utility"] as const) {
+        settings.setRoleActivePreset(role, ApiPreset.GENERIC);
+        settings.setRoleActivePreset(role, ApiPreset.CHATGPT);
+      }
+      expect(
+        useSettingsStore.getState().modelRoles.narrator.reasoningEffort,
+      ).toBe(narrator);
+      expect(
+        useSettingsStore.getState().modelRoles.utility.reasoningEffort,
+      ).toBe(utility);
+
+      const generated = {
+        name: "The quiet grove",
+        description: "A path through an ancient forest.",
+        plot: "Follow the path to the grove.",
+        openingText: "A leaf falls at your feet.",
+        stats: [],
+        inventory: [],
+        storyCards: [],
+      };
+      fetchChatGpt
+        .mockResolvedValueOnce(
+          streamResponse([
+            { type: "response.output_text.delta", delta: "A new path opens." },
+            completed(),
+          ]),
+        )
+        .mockResolvedValueOnce(
+          streamResponse([
+            {
+              type: "response.output_text.delta",
+              delta: JSON.stringify(generated),
+            },
+            completed(),
+          ]),
+        );
+      useTaleStore.setState({ gameMode: GameMode.STORY_TELLER });
+      const harness = renderSession();
+      try {
+        const entry = await act(async () =>
+          harness.controls.executeLlmSend("Follow the path", LogEntryMode.DO),
+        );
+        expect(entry?.text).toBe("A new path opens.");
+        expect(entry?.error).toBeUndefined();
+        const tale = await generateQuickstartTale({
+          gameMode: GameMode.STORY_TELLER,
+          world: "An ancient forest",
+          characterName: "Sam",
+          archetype: "Explorer",
+        });
+        expect(tale).toMatchObject({
+          name: generated.name,
+          openingText: generated.openingText,
+        });
+        expect(fetchChatGpt).toHaveBeenCalledTimes(2);
+        for (const [index, role, effort] of [
+          [0, "narrator", narrator],
+          [1, "utility", utility],
+        ] as const) {
+          const [path, init] = fetchChatGpt.mock.calls[index];
+          expect(path).toBe("/responses");
+          const request = JSON.parse(init.body);
+          expect(request).toMatchObject({
+            model: `chatgpt-${role}`,
+            stream: true,
+            store: false,
+          });
+          if (effort === undefined) {
+            // A published model default must not become an explicit override.
+            expect(request).not.toHaveProperty("reasoning");
+          } else {
+            expect(request.reasoning).toEqual({ effort });
+          }
+          for (const parameter of [
+            "reasoning_effort",
+            "temperature",
+            "topP",
+            "top_p",
+            "topK",
+            "top_k",
+            "frequencyPenalty",
+            "frequency_penalty",
+            "presencePenalty",
+            "presence_penalty",
+            "seed",
+            "max_tokens",
+            "max_output_tokens",
+            "options",
+          ]) {
+            expect(request).not.toHaveProperty(parameter);
+          }
+        }
+      } finally {
+        harness.cleanup();
+      }
+    },
+  );
 
   it("preserves partial narration but never applies GM tools from a failed stream", async () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
