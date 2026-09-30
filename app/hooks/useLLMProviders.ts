@@ -2,8 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getRoleModels } from "@/services/llm";
 import { LLMModel } from "@/services/llm/schema";
 import { useSettingsStore } from "@/store";
-import { ModelRole } from "@/types";
+import { ApiPreset, ModelRole } from "@/types";
 import { toast } from "sonner";
+import { useChatGpt } from "./useChatGpt";
+import { useChatGptStore } from "@/store/useChatGptStore";
 
 export function useLLMProviders(role: ModelRole = "narrator") {
   const [models, setModels] = useState<LLMModel[]>([]);
@@ -13,17 +15,22 @@ export function useLLMProviders(role: ModelRole = "narrator") {
   const setRoleModel = useSettingsStore((state) => state.setRoleModel);
   const abortControllerRef = useRef<AbortController | null>(null);
   const baseUrl = roleConfig?.baseUrl ?? "";
+  const apiKey = roleConfig?.apiKey;
+  const activePreset = roleConfig?.activePreset;
+  const isChatGpt = activePreset === ApiPreset.CHATGPT;
+  const { session, busy } = useChatGpt(isChatGpt);
+  const accountId = isChatGpt ? session?.account?.id : null;
+  const enabled = isChatGpt
+    ? Boolean(session?.connected && session.planUsageEnabled && !busy)
+    : Boolean(baseUrl.trim());
 
   const fetchModels = useCallback(async () => {
-    if (!baseUrl || baseUrl.trim() === "") {
+    abortControllerRef.current?.abort();
+    if (!enabled) {
       setModels([]);
       setError(undefined);
       setLoading(false);
       return;
-    }
-
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
     }
 
     const controller = new AbortController();
@@ -34,7 +41,19 @@ export function useLLMProviders(role: ModelRole = "narrator") {
     try {
       const fetchedModels = await getRoleModels(role, controller.signal);
 
-      if (controller.signal.aborted) {
+      const currentConfig = useSettingsStore.getState().modelRoles[role];
+      const currentChatGpt = useChatGptStore.getState();
+      if (
+        controller.signal.aborted ||
+        currentConfig.activePreset !== activePreset ||
+        currentConfig.baseUrl !== baseUrl ||
+        currentConfig.apiKey !== apiKey ||
+        (isChatGpt &&
+          (!currentChatGpt.session?.connected ||
+            !currentChatGpt.session.planUsageEnabled ||
+            currentChatGpt.busy ||
+            currentChatGpt.session.account?.id !== accountId))
+      ) {
         return;
       }
 
@@ -51,6 +70,8 @@ export function useLLMProviders(role: ModelRole = "narrator") {
         } else {
           setRoleModel(role, refreshedCurrentModel);
         }
+      } else if (isChatGpt) {
+        setRoleModel(role, undefined);
       }
     } catch (error) {
       if (controller.signal.aborted) {
@@ -67,18 +88,26 @@ export function useLLMProviders(role: ModelRole = "narrator") {
         return;
       }
 
-      console.error("Failed to fetch models:", error);
       setError(errorMessage);
-      toast.error("Failed to fetch models", {
-        description: errorMessage,
-      });
+      if (!isChatGpt) {
+        toast.error("Failed to fetch models", { description: errorMessage });
+      }
       setModels([]);
     } finally {
       if (!controller.signal.aborted) {
         setLoading(false);
       }
     }
-  }, [baseUrl, role, setRoleModel]);
+  }, [
+    baseUrl,
+    apiKey,
+    activePreset,
+    enabled,
+    accountId,
+    isChatGpt,
+    role,
+    setRoleModel,
+  ]);
 
   const refresh = useCallback(() => {
     fetchModels();
@@ -94,5 +123,5 @@ export function useLLMProviders(role: ModelRole = "narrator") {
     };
   }, [baseUrl, fetchModels]);
 
-  return { models, loading, error, refresh };
+  return { models, loading, error, refresh, enabled };
 }

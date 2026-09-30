@@ -1,3 +1,4 @@
+mod chatgpt;
 mod database_transaction;
 mod migration_backup;
 mod oauth_loopback;
@@ -555,10 +556,17 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_process::init())
         .manage(oauth_loopback::OAuthLoopbackState::default())
+        .manage(chatgpt::ChatGptState::default())
         .manage(database_transaction::DatabaseTransactions::default())
         .manage(speech_recorder::SpeechRecorderState::default())
         .invoke_handler(tauri::generate_handler![
             greet,
+            chatgpt::chatgpt_session,
+            chatgpt::chatgpt_start_operation,
+            chatgpt::chatgpt_cancel_operation,
+            chatgpt::chatgpt_sign_in,
+            chatgpt::chatgpt_sign_out,
+            chatgpt::chatgpt_request,
             migration_recovery_status,
             database_transaction::begin_database_transaction,
             database_transaction::query_database_transaction,

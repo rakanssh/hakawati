@@ -30,12 +30,20 @@ pub struct OAuthLoopbackState {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OAuthLoopbackStart {
-    id: String,
-    redirect_uri: String,
+    pub(crate) id: String,
+    pub(crate) redirect_uri: String,
 }
 
 impl OAuthLoopbackState {
     fn start(&self, listener: TcpListener) -> Result<OAuthLoopbackStart, String> {
+        self.start_path(listener, "/callback")
+    }
+
+    pub(crate) fn start_path(
+        &self,
+        listener: TcpListener,
+        callback_path: &'static str,
+    ) -> Result<OAuthLoopbackStart, String> {
         let port = listener
             .local_addr()
             .map_err(|error| error.to_string())?
@@ -44,7 +52,7 @@ impl OAuthLoopbackState {
             "oauth-{port}-{}",
             NEXT_LISTENER_ID.fetch_add(1, Ordering::Relaxed)
         );
-        let redirect_uri = format!("http://127.0.0.1:{port}/callback");
+        let redirect_uri = format!("http://127.0.0.1:{port}{callback_path}");
         let (result_tx, result_rx) = mpsc::channel();
         let (cancel_tx, cancel_rx) = mpsc::channel();
 
@@ -64,14 +72,14 @@ impl OAuthLoopbackState {
             );
 
         thread::spawn(move || {
-            let result = read_callback(listener, port, cancel_rx);
+            let result = read_callback(listener, port, callback_path, cancel_rx);
             let _ = result_tx.send(result);
         });
 
         Ok(OAuthLoopbackStart { id, redirect_uri })
     }
 
-    fn wait(&self, id: &str, timeout: Duration) -> Result<String, String> {
+    pub(crate) fn wait(&self, id: &str, timeout: Duration) -> Result<String, String> {
         let receiver = self
             .listeners
             .lock()
@@ -97,7 +105,7 @@ impl OAuthLoopbackState {
         result
     }
 
-    fn signal_cancel(&self, id: &str) -> Result<(), String> {
+    pub(crate) fn signal_cancel(&self, id: &str) -> Result<(), String> {
         let canceller = self
             .cancellers
             .lock()
@@ -146,6 +154,7 @@ pub fn cancel_oauth_loopback(
 fn read_callback(
     listener: TcpListener,
     port: u16,
+    callback_path: &str,
     cancel_rx: mpsc::Receiver<()>,
 ) -> Result<String, String> {
     listener
@@ -164,7 +173,9 @@ fn read_callback(
                 if cancel_rx.try_recv().is_ok() {
                     return Err(OAUTH_CANCELLED.to_string());
                 }
-                let Some(path) = read_callback_path(&mut stream, deadline, &cancel_rx)? else {
+                let Some(path) =
+                    read_callback_path(&mut stream, deadline, &cancel_rx, callback_path)?
+                else {
                     continue;
                 };
                 let callback_url = format!("http://127.0.0.1:{port}{path}");
@@ -199,6 +210,7 @@ fn read_callback_path(
     stream: &mut TcpStream,
     deadline: Instant,
     cancel_rx: &mpsc::Receiver<()>,
+    callback_path: &str,
 ) -> Result<Option<String>, String> {
     stream
         .set_read_timeout(Some(Duration::from_millis(50)))
@@ -229,7 +241,12 @@ fn read_callback_path(
             let mut parts = line.split_whitespace();
             let method = parts.next();
             let path = parts.next().unwrap_or("");
-            if method == Some("GET") && (path == "/callback" || path.starts_with("/callback?")) {
+            if method == Some("GET")
+                && (path == callback_path
+                    || path
+                        .strip_prefix(callback_path)
+                        .is_some_and(|suffix| suffix.starts_with('?')))
+            {
                 return Ok(Some(path.to_string()));
             }
             stream
@@ -313,6 +330,36 @@ mod tests {
         assert_eq!(
             state.wait(&started.id, Duration::from_secs(2)).unwrap(),
             format!("http://127.0.0.1:{port}/callback?code=test&state=expected")
+        );
+    }
+
+    #[test]
+    fn chatgpt_callback_path_is_distinct_from_hosted_sync_callback() {
+        let state = OAuthLoopbackState::default();
+        let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let started = state.start_path(listener, "/auth/callback").unwrap();
+        assert_eq!(
+            started.redirect_uri,
+            format!("http://127.0.0.1:{port}/auth/callback")
+        );
+        let mut wrong = TcpStream::connect(("127.0.0.1", port)).unwrap();
+        wrong
+            .set_read_timeout(Some(Duration::from_secs(2)))
+            .unwrap();
+        wrong
+            .write_all(b"GET /callback?code=wrong HTTP/1.1\r\n\r\n")
+            .unwrap();
+        let mut response = String::new();
+        wrong.read_to_string(&mut response).unwrap();
+        assert!(response.contains("404 Not Found"));
+        let mut correct = TcpStream::connect(("127.0.0.1", port)).unwrap();
+        correct
+            .write_all(b"GET /auth/callback?code=right HTTP/1.1\r\n\r\n")
+            .unwrap();
+        assert_eq!(
+            state.wait(&started.id, Duration::from_secs(2)).unwrap(),
+            format!("http://127.0.0.1:{port}/auth/callback?code=right")
         );
     }
 }

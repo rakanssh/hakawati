@@ -5,6 +5,7 @@ import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 import { useVersionStore } from "@/store/useVersionStore";
 import { version } from "../../package.json";
+import { ApiPreset } from "@/types";
 
 async function startPreview() {
   if ("__TAURI_INTERNALS__" in window)
@@ -13,6 +14,7 @@ async function startPreview() {
   // A reload recreates disposable data; previously created route IDs expire.
   window.history.replaceState(null, "", "/");
   const settings = useSettingsStore.getState();
+  settings.setActivePreset(ApiPreset.GENERIC);
   settings.setOpenAiBaseUrl(PREVIEW_BASE_URL);
   settings.setApiKey("");
   settings.setModel(PREVIEW_MODEL);

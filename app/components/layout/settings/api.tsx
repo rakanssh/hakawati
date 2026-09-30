@@ -17,6 +17,7 @@ import { useLocalServerDiscovery } from "@/hooks/useLocalServerDiscovery";
 import { ProviderHelpModal } from "./provider-help-modal";
 import { Eye, EyeOff } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { ChatGptConnection, ChatGptPlanNotice } from "./chatgpt-connection";
 import { useLingui as useLinguiCore } from "@lingui/react";
 import {
   SettingsField,
@@ -78,6 +79,7 @@ function RoleApiSettings({ role }: { role: ModelRole }) {
   );
 
   const isLocalPreset = roleConfig.activePreset === ApiPreset.LOCAL;
+  const isChatGptPreset = roleConfig.activePreset === ApiPreset.CHATGPT;
   const isEditableUrl =
     apiPresetMap[roleConfig.activePreset]?.editableUrl ?? false;
   const roleApiPresets = getApiPresetsForRole(role);
@@ -145,43 +147,47 @@ function RoleApiSettings({ role }: { role: ModelRole }) {
             </SelectContent>
           </Select>
         </SettingsField>
-        <SettingsField label={<Trans>Base URL</Trans>}>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Input
-              value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
-              onBlur={() => {
-                if (
-                  isEditableUrl &&
-                  baseUrl.trim() !== roleConfig.baseUrl.trim()
-                ) {
-                  handleUrlChange(baseUrl);
-                }
-              }}
-              onKeyDown={(e) => {
-                if (isEditableUrl && e.key === "Enter") {
-                  handleUrlChange(baseUrl);
-                }
-              }}
-              placeholder={isLocalPreset ? t`http://localhost:11434/v1` : ""}
-              disabled={!isEditableUrl}
-            />
-            {isEditableUrl && (
-              <Button
-                variant="outline"
-                onClick={() => handleUrlChange(baseUrl)}
-                disabled={
-                  !baseUrl?.trim() ||
-                  baseUrl.trim() === roleConfig.baseUrl.trim()
-                }
-                className="shrink-0"
-              >
-                <Trans>Set</Trans>
-              </Button>
-            )}
-          </div>
-        </SettingsField>
+        {!isChatGptPreset && (
+          <SettingsField label={<Trans>Base URL</Trans>}>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Input
+                value={baseUrl}
+                onChange={(e) => setBaseUrl(e.target.value)}
+                onBlur={() => {
+                  if (
+                    isEditableUrl &&
+                    baseUrl.trim() !== roleConfig.baseUrl.trim()
+                  ) {
+                    handleUrlChange(baseUrl);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (isEditableUrl && e.key === "Enter") {
+                    handleUrlChange(baseUrl);
+                  }
+                }}
+                placeholder={isLocalPreset ? t`http://localhost:11434/v1` : ""}
+                disabled={!isEditableUrl}
+              />
+              {isEditableUrl && (
+                <Button
+                  variant="outline"
+                  onClick={() => handleUrlChange(baseUrl)}
+                  disabled={
+                    !baseUrl?.trim() ||
+                    baseUrl.trim() === roleConfig.baseUrl.trim()
+                  }
+                  className="shrink-0"
+                >
+                  <Trans>Set</Trans>
+                </Button>
+              )}
+            </div>
+          </SettingsField>
+        )}
       </div>
+
+      {isChatGptPreset && <ChatGptConnection />}
 
       {isLocalPreset && (
         <div className="flex flex-col gap-3 rounded-xs border border-border/70 p-3">
@@ -237,45 +243,47 @@ function RoleApiSettings({ role }: { role: ModelRole }) {
       )}
 
       <div className="flex flex-col gap-4">
-        <SettingsField
-          label={<Trans>API Key</Trans>}
-          description={
-            isLocalPreset ? (
-              <Trans>Optional for most local servers.</Trans>
-            ) : undefined
-          }
-        >
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Input
-                type={showApiKey ? "text" : "password"}
-                value={roleConfig.apiKey}
-                onChange={(e) => setRoleApiKey(role, e.target.value)}
-                placeholder={
-                  isLocalPreset ? t`Optional for most local servers` : ""
-                }
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowApiKey(!showApiKey)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                aria-label={showApiKey ? t`Hide API key` : t`Show API key`}
-              >
-                {showApiKey ? (
-                  <EyeOff className="size-4" />
-                ) : (
-                  <Eye className="size-4" />
-                )}
-              </button>
+        {!isChatGptPreset && (
+          <SettingsField
+            label={<Trans>API Key</Trans>}
+            description={
+              isLocalPreset ? (
+                <Trans>Optional for most local servers.</Trans>
+              ) : undefined
+            }
+          >
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  type={showApiKey ? "text" : "password"}
+                  value={roleConfig.apiKey}
+                  onChange={(e) => setRoleApiKey(role, e.target.value)}
+                  placeholder={
+                    isLocalPreset ? t`Optional for most local servers` : ""
+                  }
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowApiKey(!showApiKey)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label={showApiKey ? t`Hide API key` : t`Show API key`}
+                >
+                  {showApiKey ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
+                </button>
+              </div>
+              {apiPresetMap[roleConfig.activePreset]?.help && (
+                <ProviderHelpModal
+                  preset={apiPresetMap[roleConfig.activePreset]}
+                />
+              )}
             </div>
-            {apiPresetMap[roleConfig.activePreset]?.help && (
-              <ProviderHelpModal
-                preset={apiPresetMap[roleConfig.activePreset]}
-              />
-            )}
-          </div>
-        </SettingsField>
+          </SettingsField>
+        )}
         <SettingsField label={<Trans>Model</Trans>}>
           <ModelSelect role={role} />
         </SettingsField>
@@ -341,6 +349,7 @@ export default function SettingsApi() {
       <RoleApiSettings role="utility" />
       <RoleApiSettings role="speechToText" />
       <RoleApiSettings role="textToSpeech" />
+      <ChatGptPlanNotice />
     </SettingsStack>
   );
 }

@@ -1,7 +1,8 @@
 import { DEFAULT_TTS_VOICE, useSettingsStore } from "@/store/useSettingsStore";
 import { OpenAiClient } from "./adapters/openai";
+import { ChatGptClient } from "./adapters/chatgpt";
 import { ChatRequest, LLMModel } from "./schema";
-import { ApiType, ModelRole, ModelRoleSettings } from "@/types";
+import { ApiPreset, ApiType, ModelRole, ModelRoleSettings } from "@/types";
 
 export class ModelRoleConfigurationError extends Error {
   constructor(
@@ -25,6 +26,15 @@ function getRoleConfig(role: ModelRole): ModelRoleSettings {
 
 function assertRoleConfig(role: ModelRole): ModelRoleSettings {
   const config = getRoleConfig(role);
+  if (config?.activePreset === ApiPreset.CHATGPT) {
+    if (role === "speechToText" || role === "textToSpeech") {
+      throw new ModelRoleConfigurationError(
+        role,
+        "ChatGPT plan usage supports narrator and utility models. Choose another provider for speech.",
+      );
+    }
+    return config;
+  }
   if (!config?.baseUrl?.trim()) {
     throw new ModelRoleConfigurationError(
       role,
@@ -43,6 +53,7 @@ function assertRoleConfig(role: ModelRole): ModelRoleSettings {
 
 function getClient(role: ModelRole) {
   const config = assertRoleConfig(role);
+  if (config.activePreset === ApiPreset.CHATGPT) return ChatGptClient();
   return OpenAiClient({
     baseUrl: config.baseUrl,
     apiKey: config.apiKey || undefined,

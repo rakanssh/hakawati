@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## Unreleased
+
+### Added
+
+- "Login with ChatGPT" Support! You can use your ChatGPT plan resources to play Hakawati.
+
 ## [v1.0.0] - 2026-09-17
 
 ### Added

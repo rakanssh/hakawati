@@ -1,4 +1,4 @@
-import { createDefaultProfiles } from "@/data/api-presets";
+import { apiPresetMap, createDefaultProfiles } from "@/data/api-presets";
 import {
   FONT_SIZE_MAX,
   FONT_SIZE_MIN,
@@ -60,7 +60,7 @@ function mergeProfiles(
   const defaults = createDefaultProfiles();
   const merged = { ...defaults };
 
-  for (const key of Object.keys(profiles ?? {}) as ApiPreset[]) {
+  for (const key of Object.keys(defaults) as ApiPreset[]) {
     const profile = profiles?.[key];
     if (profile) {
       merged[key] = {
@@ -71,6 +71,24 @@ function mergeProfiles(
   }
 
   return merged;
+}
+
+function currentPreset(preset: ApiPreset): ApiPreset {
+  return Object.hasOwn(apiPresetMap, preset) ? preset : ApiPreset.GENERIC;
+}
+
+function preserveDisplacedProfile(
+  savedPreset: ApiPreset,
+  profiles?: Partial<Record<ApiPreset, ApiProfileSettings>>,
+  retiredProfiles?: ModelRoleSettings["retiredProfiles"],
+): ModelRoleSettings["retiredProfiles"] {
+  const activePreset = currentPreset(savedPreset);
+  if (savedPreset === activePreset || !profiles?.[activePreset])
+    return retiredProfiles;
+  return {
+    ...retiredProfiles,
+    [activePreset]: { ...profiles[activePreset] },
+  };
 }
 
 export function createDefaultModelRoleSettings(
@@ -147,6 +165,7 @@ function roleStatePatch(
 
 type PersistedSettingsState = Partial<SettingsStoreType> & {
   profiles?: Partial<Record<ApiPreset, ApiProfileSettings>>;
+  retiredProfiles?: ModelRoleSettings["retiredProfiles"];
   modelRoles?: Partial<Record<ModelRole, Partial<ModelRoleSettings>>>;
   showThinkingInLog?: boolean;
   thinkingVisibility?: ThinkingVisibility;
@@ -159,18 +178,31 @@ function normalizeRoleSettings(
   fallback?: ModelRoleSettings,
   role?: ModelRole,
 ): ModelRoleSettings {
-  const activePreset =
+  const savedPreset =
     input?.activePreset ?? fallback?.activePreset ?? ApiPreset.GENERIC;
-  const profiles = mergeProfiles(input?.profiles ?? fallback?.profiles);
-  const activeProfile =
-    profiles[activePreset] ?? createDefaultProfiles()[activePreset];
+  const activePreset = currentPreset(savedPreset);
+  const savedProfiles = input?.profiles ?? fallback?.profiles;
+  const profiles = mergeProfiles(savedProfiles);
+  const activeProfile = {
+    ...(savedPreset === activePreset
+      ? profiles[activePreset]
+      : createDefaultProfiles()[ApiPreset.GENERIC]),
+    ...savedProfiles?.[savedPreset],
+  };
+  // Removed presets continue as a generic endpoint with the existing credentials.
+  const inherited = savedPreset === activePreset ? fallback : activeProfile;
   const config: ModelRoleSettings = {
     apiType: input?.apiType ?? fallback?.apiType ?? ApiType.OPENAI,
     activePreset,
     profiles,
-    baseUrl: input?.baseUrl ?? fallback?.baseUrl ?? activeProfile.baseUrl,
-    apiKey: input?.apiKey ?? fallback?.apiKey ?? activeProfile.apiKey,
-    model: input?.model ?? fallback?.model ?? activeProfile.model,
+    retiredProfiles: preserveDisplacedProfile(
+      savedPreset,
+      savedProfiles,
+      input?.retiredProfiles ?? fallback?.retiredProfiles,
+    ),
+    baseUrl: input?.baseUrl ?? inherited?.baseUrl ?? activeProfile.baseUrl,
+    apiKey: input?.apiKey ?? inherited?.apiKey ?? activeProfile.apiKey,
+    model: input?.model ?? inherited?.model ?? activeProfile.model,
     ...(role === "textToSpeech"
       ? { voice: input?.voice ?? fallback?.voice ?? DEFAULT_TTS_VOICE }
       : {}),
@@ -182,7 +214,8 @@ function normalizeRoleSettings(
 function createLegacyRoleSettings(
   state: PersistedSettingsState,
 ): ModelRoleSettings {
-  const activePreset = state.activePreset ?? ApiPreset.GENERIC;
+  const savedPreset = state.activePreset ?? ApiPreset.GENERIC;
+  const activePreset = currentPreset(savedPreset);
   const profiles = mergeProfiles(state.profiles);
 
   if (!state.profiles && (state.apiKey || state.openAiBaseUrl || state.model)) {
@@ -194,11 +227,21 @@ function createLegacyRoleSettings(
     };
   }
 
-  const activeProfile = profiles[activePreset] ?? profiles[ApiPreset.GENERIC];
+  const activeProfile = {
+    ...(savedPreset === activePreset
+      ? profiles[activePreset]
+      : createDefaultProfiles()[ApiPreset.GENERIC]),
+    ...state.profiles?.[savedPreset],
+  };
   return syncActiveProfile({
     apiType: state.apiType ?? ApiType.OPENAI,
     activePreset,
     profiles,
+    retiredProfiles: preserveDisplacedProfile(
+      savedPreset,
+      state.profiles,
+      state.retiredProfiles,
+    ),
     baseUrl: state.openAiBaseUrl ?? activeProfile.baseUrl,
     apiKey: state.apiKey ?? activeProfile.apiKey,
     model: state.model ?? activeProfile.model,
@@ -302,6 +345,8 @@ export interface SettingsStoreType {
   thinkingVisibility: ThinkingVisibility;
   autoNarrate: boolean;
   highlightLatestSection: boolean;
+  chatGptPlanNoticeAcknowledged: boolean;
+  acknowledgeChatGptPlanNotice: () => void;
 
   setActivePreset: (preset: ApiPreset) => void;
   setApiKey: (apiKey: string) => void;
@@ -315,6 +360,8 @@ export interface SettingsStoreType {
   setRoleModel: (role: ModelRole, model: LLMModel | undefined) => void;
   setRoleBaseUrl: (role: ModelRole, baseUrl: string) => void;
   setRoleVoice: (role: ModelRole, voice: string) => void;
+  chatGptProfileId: string | null;
+  clearChatGptModels: (profileId?: string | null) => void;
   setMaxTokens: (maxTokens: number) => void;
   setTemperature: (temperature: number | null) => void;
   setTopP: (topP: number | null) => void;
@@ -367,6 +414,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
       model: undefined,
       openAiBaseUrl: "",
       modelRoles: defaultModelRoles,
+      chatGptProfileId: null,
 
       // Global settings
       contextWindow: 10000,
@@ -391,6 +439,9 @@ export const useSettingsStore = create<SettingsStoreType>()(
       thinkingVisibility: "all",
       autoNarrate: false,
       highlightLatestSection: true,
+      chatGptPlanNoticeAcknowledged: false,
+      acknowledgeChatGptPlanNotice: () =>
+        set({ chatGptPlanNoticeAcknowledged: true }),
 
       setActivePreset: (preset: ApiPreset) =>
         get().setRoleActivePreset("narrator", preset),
@@ -498,6 +549,33 @@ export const useSettingsStore = create<SettingsStoreType>()(
             state.modelRoles[role] ?? createDefaultModelRoleSettings();
           const nextRole = syncActiveProfile({ ...current, voice });
           return roleStatePatch(state, role, nextRole);
+        });
+      },
+
+      clearChatGptModels: (profileId = null) => {
+        set((state) => {
+          const modelRoles = { ...state.modelRoles };
+          for (const role of MODEL_ROLES) {
+            const current = modelRoles[role];
+            modelRoles[role] = {
+              ...current,
+              profiles: {
+                ...current.profiles,
+                [ApiPreset.CHATGPT]: {
+                  ...createDefaultProfiles()[ApiPreset.CHATGPT],
+                  model: undefined,
+                },
+              },
+              ...(current.activePreset === ApiPreset.CHATGPT
+                ? { model: undefined }
+                : {}),
+            };
+          }
+          return {
+            modelRoles,
+            chatGptProfileId: profileId,
+            ...narratorAliases(modelRoles.narrator),
+          };
         });
       },
 
@@ -659,7 +737,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
     {
       name: "settings",
       migrate: migrateSettingsState,
-      version: 3,
+      version: 5,
     },
   ),
 );

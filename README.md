@@ -64,6 +64,12 @@ Optional **Speech to Text** and **Text to Speech** models in AI Setup provide
 dictation and spoken narration. Interface language, themes, and reading settings
 are under **Appearance**.
 
+### Using a ChatGPT subscription
+
+Select **ChatGPT (Subscription)** for Narrator or Utility, then **Continue with ChatGPT**.
+This will allow Hakawati to draw from your ChatGPT plan/credits. You can manage usage
+and limits from the ChatGPT app.
+
 ## Tales and scenarios
 
 A tale is an ongoing adventure. A scenario is a reusable starting point for new

@@ -8,7 +8,7 @@ export enum ApiPreset {
   OPENROUTER = "openrouter",
   OPENAI = "openai",
   NANOGPT = "nanogpt",
-  VENICE = "venice",
+  CHATGPT = "chatgpt",
   GENERIC = "generic",
   LOCAL = "local",
 }
@@ -36,6 +36,8 @@ export interface ModelRoleSettings {
   apiType: ApiType;
   activePreset: ApiPreset;
   profiles: Record<ApiPreset, ApiProfileSettings>;
+  /** Settings displaced by a retired preset migration; never selectable. */
+  retiredProfiles?: Record<string, ApiProfileSettings>;
   baseUrl: string;
   apiKey: string;
   model: LLMModel | undefined;
