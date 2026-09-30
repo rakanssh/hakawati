@@ -14,6 +14,7 @@ import {
 import { useSettingsStore } from "@/store";
 import { DicesIcon, InfoIcon } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { ApiPreset } from "@/types";
 import {
   SettingsField,
   SettingsPanel,
@@ -23,6 +24,7 @@ import {
 export default function SettingsModel() {
   const { t } = useLingui();
   const {
+    activePreset,
     contextWindow,
     modelContextLength,
     maxTokens,
@@ -49,6 +51,7 @@ export default function SettingsModel() {
     randomSeed,
     setToDefault,
   } = useSettingsStore();
+  const isChatGpt = activePreset === ApiPreset.CHATGPT;
 
   const modelLimit =
     modelContextLength > 0 && modelContextLength < Number.MAX_SAFE_INTEGER
@@ -60,6 +63,14 @@ export default function SettingsModel() {
   return (
     <SettingsStack>
       <SettingsPanel title={<Trans>Core generation</Trans>}>
+        {isChatGpt && (
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              ChatGPT manages output length and sampling. Your sampling settings
+              are preserved for other providers.
+            </Trans>
+          </p>
+        )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <SettingsField
             label={
@@ -98,9 +109,21 @@ export default function SettingsModel() {
           <SettingsField
             label={
               <>
-                <Trans>Max Output Tokens</Trans>
+                {isChatGpt ? (
+                  <Trans>Response space in context</Trans>
+                ) : (
+                  <Trans>Max Output Tokens</Trans>
+                )}
                 {modelLimit ? ` (1 - ${modelLimit})` : ""}
               </>
+            }
+            description={
+              isChatGpt ? (
+                <Trans>
+                  Reserves room when selecting story history. This does not
+                  limit ChatGPT’s response length.
+                </Trans>
+              ) : undefined
             }
           >
             <NumberInput
@@ -108,7 +131,9 @@ export default function SettingsModel() {
               max={maxContextValue}
               step={1}
               value={maxTokens}
-              aria-label={t`Max output tokens`}
+              aria-label={
+                isChatGpt ? t`Response space in context` : t`Max output tokens`
+              }
               onValueCommit={(val) => setMaxTokens(val)}
             />
           </SettingsField>
@@ -127,6 +152,7 @@ export default function SettingsModel() {
               allowNull
               placeholder={t`Provider default`}
               aria-label={t`Temperature`}
+              disabled={isChatGpt}
               onValueCommit={(val) => setTemperature(val)}
             />
           </SettingsField>
@@ -144,6 +170,7 @@ export default function SettingsModel() {
                 value={seed}
                 className="flex-1"
                 aria-label={t`Seed`}
+                disabled={isChatGpt}
                 onValueCommit={(val) => setSeed(val)}
               />
               <Tooltip>
@@ -153,6 +180,7 @@ export default function SettingsModel() {
                     variant="outline"
                     size="icon"
                     aria-label={t`Randomize seed`}
+                    disabled={isChatGpt}
                     onClick={randomSeed}
                   >
                     <DicesIcon className="size-4" />
@@ -168,7 +196,12 @@ export default function SettingsModel() {
       </SettingsPanel>
 
       <SettingsPanel title={<Trans>Advanced sampling</Trans>}>
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion
+          type="single"
+          collapsible
+          className="w-full"
+          disabled={isChatGpt}
+        >
           <AccordionItem value="sampling">
             <AccordionTrigger>
               <Trans>Show sampling controls</Trans>

@@ -12,9 +12,9 @@ describe("getApiPresetsForRole", () => {
     expect(getApiPresetsForRole("narrator").map((preset) => preset.id)).toEqual(
       [
         ApiPreset.OPENROUTER,
-        ApiPreset.NANOGPT,
-        ApiPreset.VENICE,
+        ApiPreset.CHATGPT,
         ApiPreset.OPENAI,
+        ApiPreset.NANOGPT,
         ApiPreset.GENERIC,
         ApiPreset.LOCAL,
       ],

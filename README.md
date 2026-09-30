@@ -64,6 +64,26 @@ Optional **Speech to Text** and **Text to Speech** models in AI Setup provide
 dictation and spoken narration. Interface language, themes, and reading settings
 are under **Appearance**.
 
+### Using a ChatGPT subscription
+
+On desktop, select **ChatGPT (Subscription)** for Narrator or Utility, then
+**Continue with ChatGPT**. Authorize use of your eligible Plus or Pro plan in the
+browser and choose a model. Both roles share the selected ChatGPT account; speech
+uses its own provider. This connection is separate from Hakawati cloud sync.
+
+Requests go directly to OpenAI and count toward your ChatGPT plan or credits,
+subject to your ChatGPT settings. **Manage usage** opens those settings. Hakawati
+uses one ChatGPT account; **Disconnect** ends the session and clears its tokens.
+The app registration is retained so **Continue with ChatGPT** reconnects the same
+account without registering another app. Credentials stay in the desktop runtime, in an encrypted
+vault protected by your operating system's keyring; they are not included in tales,
+scenario exports, or cloud sync.
+
+ChatGPT controls sampling and output length. Hakawati still lets you set the local
+context budget. See OpenAI's [integration documentation](https://developers.openai.com/siwc/token-sharing-open-source)
+for eligibility and current preview limits. Browser preview and mobile builds do
+not support this sign-in flow.
+
 ## Tales and scenarios
 
 A tale is an ongoing adventure. A scenario is a reusable starting point for new

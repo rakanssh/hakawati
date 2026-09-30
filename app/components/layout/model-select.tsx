@@ -23,6 +23,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { getModelMetaLabels } from "./model-select-meta";
 import { DEFAULT_TTS_VOICE } from "@/store/useSettingsStore";
+import { ChatGptUsageLink } from "./settings/chatgpt-connection";
 
 interface ModelSelectProps {
   role?: ModelRole;
@@ -38,7 +39,8 @@ export function ModelSelect({ role = "narrator" }: ModelSelectProps) {
   const setRoleVoice = useSettingsStore((state) => state.setRoleVoice);
   const [open, setOpen] = useState(false);
   const [manualModelId, setManualModelId] = useState("");
-  const { models, loading, refresh } = useLLMProviders(role);
+  const { models, loading, error, refresh, enabled } = useLLMProviders(role);
+  const isChatGpt = activePreset === ApiPreset.CHATGPT;
   const { gameMode } = useTaleStore();
   const { isCompactViewport, isMobilePlatform } = useIsMobile();
   const useDrawer = isCompactViewport || isMobilePlatform;
@@ -147,6 +149,22 @@ export function ModelSelect({ role = "narrator" }: ModelSelectProps) {
     </CommandList>
   );
 
+  const providerStatus = isChatGpt ? (
+    <div className="space-y-1 text-xs text-muted-foreground">
+      {error && (
+        <p role="alert" className="text-destructive">
+          {error}
+        </p>
+      )}
+      {enabled && !loading && !error && models.length === 0 && (
+        <p>
+          <Trans>No models are available for this account.</Trans>
+        </p>
+      )}
+      <ChatGptUsageLink />
+    </div>
+  ) : null;
+
   if (useDrawer) {
     return (
       <div className="flex flex-col gap-2">
@@ -156,6 +174,7 @@ export function ModelSelect({ role = "narrator" }: ModelSelectProps) {
               variant="outline"
               role="combobox"
               aria-expanded={open}
+              disabled={isChatGpt && !enabled}
               className="min-h-[44px] flex-1 justify-between gap-2"
               onClick={() => setOpen(true)}
             >
@@ -181,7 +200,8 @@ export function ModelSelect({ role = "narrator" }: ModelSelectProps) {
             variant="outline"
             size="icon"
             onClick={refresh}
-            disabled={loading}
+            disabled={loading || (isChatGpt && !enabled)}
+            aria-label={t`Refresh models`}
             className="h-auto min-h-[44px] min-w-[44px] self-stretch"
           >
             <RefreshCwIcon
@@ -189,6 +209,7 @@ export function ModelSelect({ role = "narrator" }: ModelSelectProps) {
             />
           </Button>
         </div>
+        {providerStatus}
         {canSetManualTtsModel && (
           <div className="flex gap-2">
             <Input
@@ -223,6 +244,7 @@ export function ModelSelect({ role = "narrator" }: ModelSelectProps) {
               variant="outline"
               role="combobox"
               aria-expanded={open}
+              disabled={isChatGpt && !enabled}
               className="min-h-11 flex-1 justify-between gap-2"
             >
               <SelectedModelLabel />
@@ -245,7 +267,8 @@ export function ModelSelect({ role = "narrator" }: ModelSelectProps) {
               variant="outline"
               size="icon"
               onClick={refresh}
-              disabled={loading}
+              disabled={loading || (isChatGpt && !enabled)}
+              aria-label={t`Refresh models`}
               className="h-auto self-stretch"
             >
               <RefreshCwIcon
@@ -258,6 +281,7 @@ export function ModelSelect({ role = "narrator" }: ModelSelectProps) {
           </TooltipContent>
         </Tooltip>
       </div>
+      {providerStatus}
       {canSetManualTtsModel && (
         <div className="flex gap-2">
           <Input

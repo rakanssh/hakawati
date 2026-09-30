@@ -21,7 +21,7 @@ export interface ApiPresetConfig {
 export const apiPresets: ApiPresetConfig[] = [
   {
     id: ApiPreset.OPENROUTER,
-    label: msg`OpenRouter`,
+    label: msg`OpenRouter (API)`,
     baseUrl: "https://openrouter.ai/api/v1",
     editableUrl: false,
     help: {
@@ -33,6 +33,29 @@ export const apiPresets: ApiPresetConfig[] = [
         msg`Add credits to your account (To access non-free models)`,
         msg`Go to Settings → Keys`,
         msg`Create a new API key and paste it here`,
+      ],
+    },
+  },
+  {
+    id: ApiPreset.CHATGPT,
+    label: msg`ChatGPT (Subscription)`,
+    baseUrl: "https://api.openai.com/v1",
+    editableUrl: false,
+  },
+  {
+    id: ApiPreset.OPENAI,
+    label: msg`Official OpenAI (API)`,
+    baseUrl: "https://api.openai.com/v1",
+    editableUrl: false,
+    help: {
+      description: msg`The Official OpenAI API. Requires an OpenAI account with charged credits.`,
+      signupUrl: "https://platform.openai.com/signup",
+      apiKeyUrl: "https://platform.openai.com/api-keys",
+      steps: [
+        msg`Create an OpenAI account`,
+        msg`Add API funds`,
+        msg`Go to API Keys in the dashboard`,
+        msg`Create a new secret key and paste it here`,
       ],
     },
   },
@@ -50,40 +73,6 @@ export const apiPresets: ApiPresetConfig[] = [
         msg`Add funds or subscribe to a plan`,
         msg`Go to the API section in the dashboard`,
         msg`Copy your API key and paste it here`,
-      ],
-    },
-  },
-  {
-    id: ApiPreset.VENICE,
-    label: msg`Venice AI`,
-    baseUrl: "https://api.venice.ai/api/v1",
-    editableUrl: false,
-    help: {
-      description: msg`Pay-as-you-go Privacy-focused provider with multiple models on offer.`,
-      signupUrl: "https://venice.ai/sign-up",
-      apiKeyUrl: "https://venice.ai/settings/api",
-      steps: [
-        msg`Sign up for an account at Venice AI`,
-        msg`Add API funds`,
-        msg`Go to the API section in the dashboard`,
-        msg`Generate an API key and paste it here`,
-      ],
-    },
-  },
-  {
-    id: ApiPreset.OPENAI,
-    label: msg`OpenAI`,
-    baseUrl: "https://api.openai.com/v1",
-    editableUrl: false,
-    help: {
-      description: msg`The Official OpenAI API. Requires an OpenAI account with charged credits.`,
-      signupUrl: "https://platform.openai.com/signup",
-      apiKeyUrl: "https://platform.openai.com/api-keys",
-      steps: [
-        msg`Create an OpenAI account`,
-        msg`Add API funds`,
-        msg`Go to API Keys in the dashboard`,
-        msg`Create a new secret key and paste it here`,
       ],
     },
   },
