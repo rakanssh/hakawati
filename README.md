@@ -66,42 +66,9 @@ are under **Appearance**.
 
 ### Using a ChatGPT subscription
 
-On desktop, select **ChatGPT (Subscription)** for Narrator or Utility, then
-**Continue with ChatGPT**. Authorize use of your eligible Plus or Pro plan in the
-browser and choose a model. Both roles share the selected ChatGPT account; speech
-uses its own provider. This connection is separate from Hakawati cloud sync.
-
-Requests go directly to OpenAI and count toward your ChatGPT plan or credits,
-subject to your ChatGPT settings. **Manage usage** opens those settings. Hakawati
-uses one ChatGPT account; **Disconnect** ends the session and clears its tokens.
-The app registration is retained so **Continue with ChatGPT** reconnects the same
-account without registering another app. Credentials stay in the desktop runtime, in an encrypted
-vault protected by your operating system's keyring; they are not included in tales,
-scenario exports, or cloud sync.
-
-ChatGPT controls sampling and output length. Hakawati still lets you set the local
-context budget. See OpenAI's [integration documentation](https://developers.openai.com/siwc/token-sharing-open-source)
-for eligibility and current preview limits. Browser preview and mobile builds do
-not support this sign-in flow.
-
-### Thinking levels
-
-In **AI Setup**, choose a **Thinking level** below the Narrator or Utility model.
-Each role remembers its choice for each provider. **Model default** sends no
-override; the available levels depend on the selected model. Models without
-published or documented effort controls keep the default.
-
-OpenRouter, supported OpenAI API models, and the ChatGPT subscription connection
-use their respective reasoning controls. Other compatible providers need to
-publish supported effort levels. Changing models revalidates the saved level.
-Higher levels can take longer and use more tokens. For the API Narrator, thinking
-and the answer share **Max Output Tokens**; increase that limit if responses are
-cut short. Utility generation has its own output budgets; lower its thinking
-level or shorten the request if it reaches its limit. Limits are never increased
-automatically. ChatGPT manages its own output length and plan usage.
-
-**Thinking level** controls model computation. The existing **AI thinking**
-visibility setting only changes which returned thinking text is shown.
+Select **ChatGPT (Subscription)** for Narrator or Utility, then **Continue with ChatGPT**.
+This will allow Hakawati to draw from your ChatGPT plan/credits. You can manage usage
+and limits from the ChatGPT app.
 
 ## Tales and scenarios
 
