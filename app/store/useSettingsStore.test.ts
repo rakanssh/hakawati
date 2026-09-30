@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiPreset, MODEL_ROLES } from "@/types";
 import type { LLMModel } from "@/services/llm/schema";
 import {
@@ -222,5 +222,206 @@ describe("useSettingsStore migration", () => {
       settings.modelRoles.utility.profiles[ApiPreset.CHATGPT].model,
     ).toBeUndefined();
     expect(settings.chatGptProfileId).toBe("second-account");
+  });
+});
+
+describe("thinking-level settings", () => {
+  const thinkingModel: LLMModel = {
+    id: "provider/thinking-model",
+    name: "Thinking Model",
+    reasoning: { supportedEfforts: ["low", "medium", "high"] },
+  };
+
+  beforeEach(() => {
+    useSettingsStore.setState(useSettingsStore.getInitialState());
+  });
+
+  afterEach(() => {
+    useSettingsStore.setState(useSettingsStore.getInitialState());
+  });
+
+  it("migrates existing role profiles to Model default without choosing an effort", () => {
+    const modelRoles = createDefaultModelRoles();
+    modelRoles.narrator.model = thinkingModel;
+    modelRoles.utility.model = thinkingModel;
+    const migrated = migrateSettingsState({ modelRoles });
+    expect(migrated.modelRoles.narrator.reasoningEffort).toBeUndefined();
+    expect(migrated.modelRoles.utility.reasoningEffort).toBeUndefined();
+    expect(migrated.modelRoles.narrator.model).toEqual(thinkingModel);
+    expect(useSettingsStore.persist.getOptions().version).toBe(6);
+  });
+
+  it("normalizes invalid persisted levels in active and inactive profiles", () => {
+    const migrated = migrateSettingsState({
+      modelRoles: {
+        narrator: {
+          activePreset: ApiPreset.OPENROUTER,
+          model: thinkingModel,
+          reasoningEffort: "max",
+          profiles: {
+            [ApiPreset.OPENROUTER]: {
+              baseUrl: "https://openrouter.ai/api/v1",
+              model: thinkingModel,
+              reasoningEffort: "max",
+            },
+            [ApiPreset.GENERIC]: {
+              baseUrl: "https://custom.example/v1",
+              model: legacyModel,
+              reasoningEffort: "high",
+            },
+          },
+        },
+        utility: {
+          model: thinkingModel,
+          reasoningEffort: "low",
+        },
+      },
+    });
+    expect(migrated.modelRoles.narrator.reasoningEffort).toBeUndefined();
+    expect(
+      migrated.modelRoles.narrator.profiles[ApiPreset.OPENROUTER]
+        .reasoningEffort,
+    ).toBeUndefined();
+    expect(
+      migrated.modelRoles.narrator.profiles[ApiPreset.GENERIC].reasoningEffort,
+    ).toBeUndefined();
+    expect(migrated.modelRoles.utility.reasoningEffort).toBe("low");
+  });
+
+  it("stores independent levels for each role and provider profile", () => {
+    const settings = useSettingsStore.getState();
+    settings.setRoleActivePreset("narrator", ApiPreset.OPENROUTER);
+    settings.setRoleModel("narrator", thinkingModel);
+    settings.setRoleReasoningEffort("narrator", "high");
+    settings.setRoleModel("utility", thinkingModel);
+    settings.setRoleReasoningEffort("utility", "low");
+    settings.setThinkingVisibility("none");
+
+    settings.setRoleActivePreset("narrator", ApiPreset.OPENAI);
+    settings.setRoleModel("narrator", thinkingModel);
+    expect(
+      useSettingsStore.getState().modelRoles.narrator.reasoningEffort,
+    ).toBeUndefined();
+    settings.setRoleReasoningEffort("narrator", "medium");
+    settings.setRoleActivePreset("narrator", ApiPreset.OPENROUTER);
+
+    const current = useSettingsStore.getState();
+    expect(current.modelRoles.narrator.reasoningEffort).toBe("high");
+    expect(
+      current.modelRoles.narrator.profiles[ApiPreset.OPENAI].reasoningEffort,
+    ).toBe("medium");
+    expect(current.modelRoles.utility.reasoningEffort).toBe("low");
+    expect(current.thinkingVisibility).toBe("none");
+    settings.setRoleReasoningEffort("narrator", undefined);
+    expect(
+      useSettingsStore.getState().modelRoles.narrator.reasoningEffort,
+    ).toBeUndefined();
+    expect(
+      useSettingsStore.getState().modelRoles.narrator.profiles[
+        ApiPreset.OPENROUTER
+      ].reasoningEffort,
+    ).toBeUndefined();
+  });
+
+  it("retains a supported effort on model refresh and clears unsupported choices", () => {
+    const settings = useSettingsStore.getState();
+    settings.setRoleModel("narrator", thinkingModel);
+    settings.setRoleReasoningEffort("narrator", "high");
+    settings.setRoleModel("narrator", { ...thinkingModel, name: "Refreshed" });
+    expect(
+      useSettingsStore.getState().modelRoles.narrator.reasoningEffort,
+    ).toBe("high");
+    settings.setRoleModel("narrator", {
+      ...thinkingModel,
+      reasoning: { supportedEfforts: ["low"] },
+    });
+    expect(
+      useSettingsStore.getState().modelRoles.narrator.reasoningEffort,
+    ).toBeUndefined();
+    settings.setRoleReasoningEffort("narrator", "high");
+    expect(
+      useSettingsStore.getState().modelRoles.narrator.reasoningEffort,
+    ).toBeUndefined();
+    settings.setRoleReasoningEffort("narrator", "low");
+    settings.setRoleModel("narrator", legacyModel);
+    expect(
+      useSettingsStore.getState().modelRoles.narrator.reasoningEffort,
+    ).toBeUndefined();
+  });
+
+  it("clears thinking levels when a URL or API account changes", () => {
+    const settings = useSettingsStore.getState();
+    settings.setRoleModel("narrator", thinkingModel);
+    settings.setRoleReasoningEffort("narrator", "high");
+    settings.setRoleApiKey("narrator", "different-account");
+    expect(
+      useSettingsStore.getState().modelRoles.narrator.reasoningEffort,
+    ).toBeUndefined();
+    settings.setRoleReasoningEffort("narrator", "high");
+    settings.setRoleBaseUrl("narrator", "https://other.example/v1");
+    expect(
+      useSettingsStore.getState().modelRoles.narrator.model,
+    ).toBeUndefined();
+    expect(
+      useSettingsStore.getState().modelRoles.narrator.reasoningEffort,
+    ).toBeUndefined();
+  });
+
+  it("clears active and saved ChatGPT levels when the subscription account changes", () => {
+    const settings = useSettingsStore.getState();
+    settings.setRoleActivePreset("narrator", ApiPreset.CHATGPT);
+    settings.setRoleModel("narrator", thinkingModel);
+    settings.setRoleReasoningEffort("narrator", "high");
+    settings.setRoleActivePreset("utility", ApiPreset.CHATGPT);
+    settings.setRoleModel("utility", thinkingModel);
+    settings.setRoleReasoningEffort("utility", "low");
+    settings.setRoleActivePreset("utility", ApiPreset.OPENROUTER);
+    settings.setRoleModel("utility", thinkingModel);
+    settings.setRoleReasoningEffort("utility", "medium");
+    settings.clearChatGptModels("new-account");
+
+    const current = useSettingsStore.getState();
+    expect(current.modelRoles.narrator.reasoningEffort).toBeUndefined();
+    expect(
+      current.modelRoles.narrator.profiles[ApiPreset.CHATGPT].reasoningEffort,
+    ).toBeUndefined();
+    expect(
+      current.modelRoles.utility.profiles[ApiPreset.CHATGPT].reasoningEffort,
+    ).toBeUndefined();
+    expect(current.modelRoles.utility.reasoningEffort).toBe("medium");
+  });
+
+  it("persists thinking levels and Model default through reload", async () => {
+    const settings = useSettingsStore.getState();
+    settings.setRoleModel("narrator", thinkingModel);
+    settings.setRoleReasoningEffort("narrator", "high");
+    settings.setRoleModel("utility", thinkingModel);
+    settings.setRoleReasoningEffort("utility", "low");
+    settings.setRoleReasoningEffort("utility", undefined);
+    const saved = localStorage.getItem("settings")!;
+    expect(JSON.parse(saved).state.modelRoles.narrator.reasoningEffort).toBe(
+      "high",
+    );
+    expect(JSON.parse(saved).state.modelRoles.utility).not.toHaveProperty(
+      "reasoningEffort",
+    );
+    useSettingsStore.setState(useSettingsStore.getInitialState());
+    localStorage.setItem("settings", saved);
+    await useSettingsStore.persist.rehydrate();
+    expect(
+      useSettingsStore.getState().modelRoles.narrator.reasoningEffort,
+    ).toBe("high");
+    expect(
+      useSettingsStore.getState().modelRoles.utility.reasoningEffort,
+    ).toBeUndefined();
+  });
+
+  it("does not apply thinking levels to speech roles", () => {
+    const settings = useSettingsStore.getState();
+    settings.setRoleModel("textToSpeech", thinkingModel);
+    settings.setRoleReasoningEffort("textToSpeech", "high");
+    expect(
+      useSettingsStore.getState().modelRoles.textToSpeech.reasoningEffort,
+    ).toBeUndefined();
   });
 });

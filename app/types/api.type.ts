@@ -1,4 +1,4 @@
-import type { LLMModel } from "@/services/llm/schema";
+import type { LLMModel, ReasoningEffort } from "@/services/llm/schema";
 
 export enum ApiType {
   OPENAI = "openai",
@@ -30,6 +30,7 @@ export interface ApiProfileSettings {
   baseUrl: string;
   apiKey: string;
   model: LLMModel | undefined;
+  reasoningEffort?: ReasoningEffort;
 }
 
 export interface ModelRoleSettings {
@@ -41,6 +42,7 @@ export interface ModelRoleSettings {
   baseUrl: string;
   apiKey: string;
   model: LLMModel | undefined;
+  reasoningEffort?: ReasoningEffort;
   voice?: string;
 }
 

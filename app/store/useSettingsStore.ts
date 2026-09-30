@@ -5,7 +5,12 @@ import {
   UI_SCALE_MAX,
   UI_SCALE_MIN,
 } from "@/lib/appearance-limits";
-import { LLMModel } from "@/services/llm/schema";
+import { LLMModel, ReasoningEffort } from "@/services/llm/schema";
+import {
+  getModelReasoning,
+  normalizeReasoningEffort,
+  reasoningProvider,
+} from "@/services/llm/reasoning";
 import {
   ApiPreset,
   ApiProfileSettings,
@@ -63,10 +68,13 @@ function mergeProfiles(
   for (const key of Object.keys(defaults) as ApiPreset[]) {
     const profile = profiles?.[key];
     if (profile) {
-      merged[key] = {
-        ...defaults[key],
-        ...profile,
-      };
+      merged[key] = normalizeProfileReasoning(
+        {
+          ...defaults[key],
+          ...profile,
+        },
+        key === ApiPreset.CHATGPT,
+      );
     }
   }
 
@@ -120,7 +128,27 @@ export function createDefaultModelRoles(): Record<
   ) as Record<ModelRole, ModelRoleSettings>;
 }
 
+function normalizeProfileReasoning<T extends ApiProfileSettings>(
+  profile: T,
+  isChatGpt: boolean,
+): T {
+  return {
+    ...profile,
+    reasoningEffort: normalizeReasoningEffort(
+      profile.reasoningEffort,
+      getModelReasoning(
+        profile.model,
+        reasoningProvider(profile.baseUrl, isChatGpt),
+      ),
+    ),
+  };
+}
+
 function syncActiveProfile(config: ModelRoleSettings): ModelRoleSettings {
+  config = normalizeProfileReasoning(
+    config,
+    config.activePreset === ApiPreset.CHATGPT,
+  );
   return {
     ...config,
     profiles: {
@@ -130,6 +158,7 @@ function syncActiveProfile(config: ModelRoleSettings): ModelRoleSettings {
         baseUrl: config.baseUrl,
         apiKey: config.apiKey,
         model: config.model,
+        reasoningEffort: config.reasoningEffort,
       },
     },
   };
@@ -203,6 +232,12 @@ function normalizeRoleSettings(
     baseUrl: input?.baseUrl ?? inherited?.baseUrl ?? activeProfile.baseUrl,
     apiKey: input?.apiKey ?? inherited?.apiKey ?? activeProfile.apiKey,
     model: input?.model ?? inherited?.model ?? activeProfile.model,
+    reasoningEffort:
+      role === "narrator" || role === "utility"
+        ? (input?.reasoningEffort ??
+          inherited?.reasoningEffort ??
+          activeProfile.reasoningEffort)
+        : undefined,
     ...(role === "textToSpeech"
       ? { voice: input?.voice ?? fallback?.voice ?? DEFAULT_TTS_VOICE }
       : {}),
@@ -245,6 +280,7 @@ function createLegacyRoleSettings(
     baseUrl: state.openAiBaseUrl ?? activeProfile.baseUrl,
     apiKey: state.apiKey ?? activeProfile.apiKey,
     model: state.model ?? activeProfile.model,
+    reasoningEffort: activeProfile.reasoningEffort,
   });
 }
 
@@ -358,6 +394,7 @@ export interface SettingsStoreType {
   setRoleApiKey: (role: ModelRole, apiKey: string) => void;
   setRoleApiType: (role: ModelRole, apiType: ApiType) => void;
   setRoleModel: (role: ModelRole, model: LLMModel | undefined) => void;
+  setRoleReasoningEffort: (role: ModelRole, effort?: ReasoningEffort) => void;
   setRoleBaseUrl: (role: ModelRole, baseUrl: string) => void;
   setRoleVoice: (role: ModelRole, voice: string) => void;
   chatGptProfileId: string | null;
@@ -480,6 +517,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
             baseUrl: profile.baseUrl,
             apiKey: profile.apiKey,
             model: profile.model,
+            reasoningEffort: profile.reasoningEffort,
           });
           return roleStatePatch(state, role, nextRole);
         });
@@ -489,7 +527,12 @@ export const useSettingsStore = create<SettingsStoreType>()(
         set((state) => {
           const current =
             state.modelRoles[role] ?? createDefaultModelRoleSettings();
-          const nextRole = syncActiveProfile({ ...current, apiKey });
+          const nextRole = syncActiveProfile({
+            ...current,
+            apiKey,
+            reasoningEffort:
+              apiKey === current.apiKey ? current.reasoningEffort : undefined,
+          });
           return roleStatePatch(state, role, nextRole);
         });
       },
@@ -530,6 +573,18 @@ export const useSettingsStore = create<SettingsStoreType>()(
         });
       },
 
+      setRoleReasoningEffort: (role: ModelRole, effort?: ReasoningEffort) => {
+        if (role !== "narrator" && role !== "utility") return;
+        set((state) => {
+          const current = state.modelRoles[role];
+          const nextRole = syncActiveProfile({
+            ...current,
+            reasoningEffort: effort,
+          });
+          return roleStatePatch(state, role, nextRole);
+        });
+      },
+
       setRoleBaseUrl: (role: ModelRole, baseUrl: string) => {
         set((state) => {
           const current =
@@ -538,6 +593,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
             ...current,
             baseUrl,
             model: undefined,
+            reasoningEffort: undefined,
           });
           return roleStatePatch(state, role, nextRole);
         });
@@ -567,7 +623,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
                 },
               },
               ...(current.activePreset === ApiPreset.CHATGPT
-                ? { model: undefined }
+                ? { model: undefined, reasoningEffort: undefined }
                 : {}),
             };
           }
@@ -737,7 +793,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
     {
       name: "settings",
       migrate: migrateSettingsState,
-      version: 5,
+      version: 6,
     },
   ),
 );

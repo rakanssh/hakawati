@@ -3808,3 +3808,43 @@ msgstr "يحتوي هذا السيناريو على أسئلة غير صالحة
 #: app/pages/scenarios/catalog-details.tsx
 msgid "This scenario has changed. Please answer its questions again."
 msgstr "تغيّر هذا السيناريو. يرجى الإجابة عن أسئلته مجددًا."
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "Minimal"
+msgstr "أدنى"
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "Low"
+msgstr "منخفض"
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "Medium"
+msgstr "متوسط"
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "High"
+msgstr "مرتفع"
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "Extra high"
+msgstr "مرتفع جدًا"
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "Maximum"
+msgstr "أقصى"
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "Model default"
+msgstr "الإعداد الافتراضي للنموذج"
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "Thinking level"
+msgstr "مستوى التفكير"
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "Thinking and the answer share your output limit. Increase Max Output Tokens if responses are cut short."
+msgstr "يتشارك التفكير والإجابة الحد المحدد للإخراج. ارفع الحد الأقصى لرموز الإخراج إذا انقطعت الإجابات قبل اكتمالها."
+
+#: app/components/layout/settings/model.tsx
+msgid "Thinking tokens and the answer share this limit. Higher thinking levels may need more output space."
+msgstr "تتشارك رموز التفكير والإجابة هذا الحد. قد تحتاج مستويات التفكير الأعلى إلى مساحة إخراج أكبر."

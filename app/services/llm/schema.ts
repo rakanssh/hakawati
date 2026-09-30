@@ -1,6 +1,21 @@
 import { ResponseMode } from "@/types/api.type";
 import { ToolCall } from "./tools";
 
+export type ReasoningEffort =
+  | "none"
+  | "minimal"
+  | "low"
+  | "medium"
+  | "high"
+  | "xhigh"
+  | "max";
+
+export interface ReasoningCapabilities {
+  supportedEfforts: ReasoningEffort[];
+  defaultEffort?: ReasoningEffort;
+  mandatory?: boolean;
+}
+
 /**
  * Core chat message types
  */
@@ -26,6 +41,7 @@ export interface ChatRequest {
   messages: ChatMessage[];
   stream?: boolean;
   max_tokens?: number;
+  reasoningEffort?: ReasoningEffort;
   options?: ChatRequestOptions;
   responseMode: ResponseMode;
 }
@@ -117,7 +133,11 @@ export interface LLMModel {
   pricing?: ModelPricing;
   supportsResponseFormat?: boolean;
   supportsToolCalls?: boolean;
+  supportedParameters?: string[];
   supportedVoices?: string[];
+  /** Missing metadata means unknown; an empty list explicitly has no selector. */
+  reasoning?: ReasoningCapabilities;
+  maxOutputTokens?: number;
 }
 
 /**

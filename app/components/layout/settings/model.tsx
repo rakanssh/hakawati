@@ -123,7 +123,12 @@ export default function SettingsModel() {
                   Reserves room when selecting story history. This does not
                   limit ChatGPT’s response length.
                 </Trans>
-              ) : undefined
+              ) : (
+                <Trans>
+                  Thinking tokens and the answer share this limit. Higher
+                  thinking levels may need more output space.
+                </Trans>
+              )
             }
           >
             <NumberInput

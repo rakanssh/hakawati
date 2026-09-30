@@ -92,6 +92,59 @@ describe("ChatGPT plan inference", () => {
     });
   });
 
+  it.each(["low", "high", "none"] as const)(
+    "sends explicit %s thinking while preserving subscription restrictions",
+    async (reasoningEffort) => {
+      fetchMock.mockResolvedValue(sse([completed()]).response);
+      await ChatGptClient().chat({
+        ...request,
+        reasoningEffort,
+        max_tokens: 2048,
+        options: { temperature: 0.4, seed: 7 },
+      });
+      const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+      expect(body.reasoning).toEqual({ effort: reasoningEffort });
+      expect(body.stream).toBe(true);
+      expect(body.store).toBe(false);
+      expect(body.max_tokens).toBeUndefined();
+      expect(body.max_output_tokens).toBeUndefined();
+      expect(body.temperature).toBeUndefined();
+      expect(body.seed).toBeUndefined();
+    },
+  );
+
+  it("reads account reasoning levels in preference to known model fallbacks", async () => {
+    fetchMock.mockResolvedValue(
+      Response.json({
+        models: [
+          {
+            slug: "gpt-5",
+            visibility: "list",
+            supported_reasoning_levels: [{ effort: "low" }, { effort: "high" }],
+            default_reasoning_level: "high",
+          },
+          {
+            slug: "gpt-5.2",
+            visibility: "list",
+            supported_reasoning_levels: [],
+          },
+          {
+            slug: "custom-reasoner",
+            visibility: "list",
+            reasoning: { supported_efforts: ["medium"] },
+          },
+        ],
+      }),
+    );
+    const models = await ChatGptClient().models();
+    expect(models[0].reasoning).toMatchObject({
+      supportedEfforts: ["low", "high"],
+      defaultEffort: "high",
+    });
+    expect(models[1].reasoning?.supportedEfforts).toEqual([]);
+    expect(models[2].reasoning?.supportedEfforts).toEqual(["medium"]);
+  });
+
   it("aggregates utility text, reasoning and token usage from fragmented UTF-8/CRLF SSE without duplicating final snapshots", async () => {
     const output = [
       {
@@ -346,6 +399,27 @@ describe("ChatGPT plan inference", () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
     },
   );
+
+  it("offers applicable recovery when subscription output is incomplete", async () => {
+    fetchMock.mockResolvedValue(
+      sse([
+        event("response.incomplete", {
+          response: {
+            status: "incomplete",
+            incomplete_details: { reason: "max_output_tokens" },
+          },
+        }),
+      ]).response,
+    );
+    const error = await ChatGptClient()
+      .chat(request)
+      .catch((value: unknown) => value);
+    expect(error).toBeInstanceOf(ChatGptInferenceError);
+    expect((error as Error).message).toContain("Lower the thinking level");
+    expect((error as Error).message).not.toContain(
+      "Increase the output token limit",
+    );
+  });
 
   it("preserves structured errors and direct-admission detail bodies without retrying", async () => {
     const details = {

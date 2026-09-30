@@ -3808,3 +3808,43 @@ msgstr "This scenario has invalid questions. Its creator needs to fix them befor
 #: app/pages/scenarios/catalog-details.tsx
 msgid "This scenario has changed. Please answer its questions again."
 msgstr "This scenario has changed. Please answer its questions again."
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "Minimal"
+msgstr "Minimal"
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "Low"
+msgstr "Low"
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "Medium"
+msgstr "Medium"
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "High"
+msgstr "High"
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "Extra high"
+msgstr "Extra high"
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "Maximum"
+msgstr "Maximum"
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "Model default"
+msgstr "Model default"
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "Thinking level"
+msgstr "Thinking level"
+
+#: app/components/layout/settings/thinking-level.tsx
+msgid "Thinking and the answer share your output limit. Increase Max Output Tokens if responses are cut short."
+msgstr "Thinking and the answer share your output limit. Increase Max Output Tokens if responses are cut short."
+
+#: app/components/layout/settings/model.tsx
+msgid "Thinking tokens and the answer share this limit. Higher thinking levels may need more output space."
+msgstr "Thinking tokens and the answer share this limit. Higher thinking levels may need more output space."

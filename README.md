@@ -84,6 +84,25 @@ context budget. See OpenAI's [integration documentation](https://developers.open
 for eligibility and current preview limits. Browser preview and mobile builds do
 not support this sign-in flow.
 
+### Thinking levels
+
+In **AI Setup**, choose a **Thinking level** below the Narrator or Utility model.
+Each role remembers its choice for each provider. **Model default** sends no
+override; the available levels depend on the selected model. Models without
+published or documented effort controls keep the default.
+
+OpenRouter, supported OpenAI API models, and the ChatGPT subscription connection
+use their respective reasoning controls. Other compatible providers need to
+publish supported effort levels. Changing models revalidates the saved level.
+Higher levels can take longer and use more tokens. For the API Narrator, thinking
+and the answer share **Max Output Tokens**; increase that limit if responses are
+cut short. Utility generation has its own output budgets; lower its thinking
+level or shorten the request if it reaches its limit. Limits are never increased
+automatically. ChatGPT manages its own output length and plan usage.
+
+**Thinking level** controls model computation. The existing **AI thinking**
+visibility setting only changes which returned thinking text is shown.
+
 ## Tales and scenarios
 
 A tale is an ongoing adventure. A scenario is a reusable starting point for new
