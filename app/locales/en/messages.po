@@ -898,7 +898,7 @@ msgid "Context window help"
 msgstr "Context window help"
 
 #. placeholder {0}: entry.chainIndex
-#: app/components/play/log/log-block-bubble.tsx:207
+#: app/components/play/log/log-block-bubble.tsx:213
 msgid "Continuation {0}"
 msgstr "Continuation {0}"
 
@@ -1310,8 +1310,7 @@ msgstr "Drawn around the story on the play screen. Still keeps it without moveme
 msgid "Edit"
 msgstr "Edit"
 
-#: app/components/play/play-log-display.tsx:140
-#: app/components/play/play-log-display.tsx:173
+#: app/components/play/play-log-display.tsx:165
 msgid "Edit entry"
 msgstr "Edit entry"
 
@@ -1838,7 +1837,7 @@ msgstr "In review"
 #~ msgid "Include special narrative instructions"
 #~ msgstr "Include special narrative instructions"
 
-#: app/components/play/log/log-block-bubble.tsx:205
+#: app/components/play/log/log-block-bubble.tsx:211
 msgid "Initial"
 msgstr "Initial"
 
@@ -2072,7 +2071,7 @@ msgstr "Load more"
 msgid "Loading adventure..."
 msgstr "Loading adventure..."
 
-#: app/components/play/play-log-display.tsx:94
+#: app/components/play/play-log-display.tsx:109
 msgid "Loading older entries..."
 msgstr "Loading older entries..."
 
@@ -2338,8 +2337,8 @@ msgstr "Name"
 msgid "NanoGPT"
 msgstr "NanoGPT"
 
-#: app/components/play/log/log-block-bubble.tsx:100
-#: app/components/play/log/log-block-bubble.tsx:110
+#: app/components/play/log/log-block-bubble.tsx:106
+#: app/components/play/log/log-block-bubble.tsx:116
 #: app/components/play/log/log-entry-bubble.tsx:76
 #: app/components/play/log/log-entry-bubble.tsx:86
 msgid "Narrate section"
@@ -3720,7 +3719,7 @@ msgstr "Tags can only use letters, numbers, and hyphens."
 msgid "Tags must be 32 characters or shorter."
 msgstr "Tags must be 32 characters or shorter."
 
-#: app/components/play/play-log-display.tsx:224
+#: app/components/play/play-log-display.tsx:229
 msgid "Take an action or send a director's note to start the adventure."
 msgstr "Take an action or send a director's note to start the adventure."
 
@@ -3845,7 +3844,7 @@ msgstr "These optional components are sent to the AI."
 msgid "Thing"
 msgstr "Thing"
 
-#: app/components/play/log/log-block-bubble.tsx:123
+#: app/components/play/log/log-block-bubble.tsx:129
 msgid "Thinking"
 msgstr "Thinking"
 
@@ -4002,7 +4001,7 @@ msgstr "This will permanently delete the component content. This action cannot b
 msgid "Title"
 msgstr "Title"
 
-#: app/components/play/log/log-block-bubble.tsx:119
+#: app/components/play/log/log-block-bubble.tsx:125
 msgid "Toggle thinking output"
 msgstr "Toggle thinking output"
 

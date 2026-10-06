@@ -1,7 +1,8 @@
+import { useRef, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2Icon } from "lucide-react";
 import { LogEntryBubble, LogBlockBubble } from "@/components/play/log";
-import { InlineEditableContent } from "@/components/sidebar";
+import { StoryText } from "@/components/play/log/story-text";
 import { LogEntry, LogEntryRole } from "@/types/log.type";
 import {
   getLatestGmEntryId,
@@ -50,24 +51,31 @@ export function PlayLogDisplay({
   );
   const latestGmEntryId = getLatestGmEntryId(blocks);
   const { isMobilePlatform } = useIsMobile();
-  const editingSelectionClass = "rounded-[0.2rem] bg-primary/20 py-0.5";
-  const renderEditor = (entry: LogEntry) => (
-    <InlineEditableContent
-      key={entry.id}
-      initialValue={entry.text}
-      onCommit={(next) => {
-        updateLogEntry(entry.id, { text: next });
-        setCurrentlyEditingLogId(null);
-      }}
-      onCancel={() => setCurrentlyEditingLogId(null)}
-      variant="inline"
-      className={editingSelectionClass}
-      style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
-    />
+  // Remember where the reader pressed, so an edit can put the caret right there.
+  const pointerRef = useRef<{ x: number; y: number } | null>(null);
+  const [editPoint, setEditPoint] = useState<{ x: number; y: number } | null>(
+    null,
   );
+  const startEditing = (entryId: string) => {
+    setEditPoint(pointerRef.current);
+    setCurrentlyEditingLogId(entryId);
+  };
+  const commitEdit = (entryId: string, text: string) => {
+    updateLogEntry(entryId, { text });
+    setCurrentlyEditingLogId(null);
+  };
+  const cancelEdit = () => setCurrentlyEditingLogId(null);
 
   return (
-    <div className="relative min-h-0">
+    <div
+      className="relative min-h-0"
+      onPointerDownCapture={(event) => {
+        pointerRef.current = { x: event.clientX, y: event.clientY };
+      }}
+      onKeyDownCapture={() => {
+        pointerRef.current = null;
+      }}
+    >
       {/* A reading surface behind the column, styled by the theme; it stays put while the story scrolls. */}
       <div
         data-play-backdrop=""
@@ -125,9 +133,11 @@ export function PlayLogDisplay({
                     <LogBlockBubble
                       block={block}
                       isStreaming={isStreamingBlock}
-                      onEditStart={(entryId) =>
-                        setCurrentlyEditingLogId(entryId)
-                      }
+                      onEditStart={startEditing}
+                      editingEntryId={currentlyEditingLogId}
+                      editPoint={editPoint}
+                      onEditCommit={commitEdit}
+                      onEditCancel={cancelEdit}
                       editDisabled={isStreaming}
                       highlightedEntryId={
                         highlightLatestSection
@@ -135,37 +145,6 @@ export function PlayLogDisplay({
                           : undefined
                       }
                       narration={blockNarration}
-                      renderEntry={
-                        block.entries.some(
-                          (entry) => entry.id === currentlyEditingLogId,
-                        )
-                          ? (entry) =>
-                              entry.id === currentlyEditingLogId ? (
-                                renderEditor(entry)
-                              ) : (
-                                <span
-                                  className="cursor-pointer"
-                                  role="button"
-                                  tabIndex={0}
-                                  aria-label={t`Edit entry`}
-                                  onClick={() =>
-                                    setCurrentlyEditingLogId(entry.id)
-                                  }
-                                  onKeyDown={(event) => {
-                                    if (
-                                      event.key === "Enter" ||
-                                      event.key === " "
-                                    ) {
-                                      event.preventDefault();
-                                      setCurrentlyEditingLogId(entry.id);
-                                    }
-                                  }}
-                                >
-                                  {entry.text}
-                                </span>
-                              )
-                          : undefined
-                      }
                     />
                   ) : (
                     block.entries.map((entry) => {
@@ -188,7 +167,7 @@ export function PlayLogDisplay({
                           }
                           onClick={
                             !isEditing && !isStreaming
-                              ? () => setCurrentlyEditingLogId(entry.id)
+                              ? () => startEditing(entry.id)
                               : undefined
                           }
                           onKeyDown={(event) => {
@@ -200,7 +179,7 @@ export function PlayLogDisplay({
                               return;
                             if (event.key === "Enter" || event.key === " ") {
                               event.preventDefault();
-                              setCurrentlyEditingLogId(entry.id);
+                              startEditing(entry.id);
                             }
                           }}
                         >
@@ -221,7 +200,17 @@ export function PlayLogDisplay({
                                 : undefined
                             }
                             content={
-                              isEditing ? renderEditor(entry) : undefined
+                              isEditing ? (
+                                <StoryText
+                                  segments={[
+                                    { id: entry.id, text: entry.text },
+                                  ]}
+                                  editingSegmentId={entry.id}
+                                  editPoint={editPoint}
+                                  onCommitEdit={commitEdit}
+                                  onCancelEdit={cancelEdit}
+                                />
+                              ) : undefined
                             }
                           />
                         </div>

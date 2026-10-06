@@ -68,6 +68,18 @@
   background: var(--titlebar-background);
 }
 
+/* Editing a passage in place: the text keeps its layout, with a faint tint on the entry being edited. */
+[data-story-editor] {
+  caret-color: var(--primary);
+}
+
+[data-story-editing] {
+  border-radius: 0.15rem;
+  background-color: color-mix(in oklch, var(--primary) 9%, transparent);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
 /* The reading surface behind the story column. Themes give it a material; it stays clear by default. */
 [data-play-backdrop] {
   top: 0.75rem;

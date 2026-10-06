@@ -1,5 +1,4 @@
-import { LogEntry } from "@/types/log.type";
-import { ReactNode, Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { LLMAction } from "@/services/llm/schema";
 import { ErrorTooltip } from "./error-tooltip";
 import { ActionBadge } from "./action-badge";
@@ -30,7 +29,11 @@ interface LogBlockBubbleProps {
   block: LogBlock;
   isStreaming?: boolean;
   onEditStart?: (entryId: string) => void;
-  renderEntry?: (entry: LogEntry) => ReactNode;
+  /** The entry being edited in place, if any, and where the reader clicked to start. */
+  editingEntryId?: string | null;
+  editPoint?: { x: number; y: number } | null;
+  onEditCommit?: (entryId: string, text: string) => void;
+  onEditCancel?: () => void;
   editDisabled?: boolean;
   highlightedEntryId?: string;
   narration?: {
@@ -44,7 +47,10 @@ export function LogBlockBubble({
   block,
   isStreaming,
   onEditStart,
-  renderEntry,
+  editingEntryId,
+  editPoint,
+  onEditCommit,
+  onEditCancel,
   editDisabled,
   highlightedEntryId,
   narration,
@@ -166,19 +172,19 @@ export function LogBlockBubble({
         className="relative w-full whitespace-pre-wrap break-words font-normal leading-[1.72] tracking-normal text-foreground/95"
         style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
       >
-        {renderEntry ? (
-          block.entries.map((entry) => (
-            <Fragment key={entry.id}>{renderEntry(entry)}</Fragment>
-          ))
-        ) : (
-          <StoryText
-            segments={block.entries}
-            onEditSegment={
-              editDisabled || isStreaming ? undefined : onEditStart
-            }
-            highlightedSegmentId={highlightedEntryId}
-          />
-        )}
+        <StoryText
+          segments={block.entries}
+          onEditSegment={editDisabled || isStreaming ? undefined : onEditStart}
+          highlightedSegmentId={highlightedEntryId}
+          editingSegmentId={
+            block.entries.some((entry) => entry.id === editingEntryId)
+              ? (editingEntryId ?? undefined)
+              : undefined
+          }
+          editPoint={editPoint}
+          onCommitEdit={onEditCommit}
+          onCancelEdit={onEditCancel}
+        />
         {hasError && errorEntry && <ErrorTooltip error={errorEntry.error} />}
         {isStreaming && (
           <span

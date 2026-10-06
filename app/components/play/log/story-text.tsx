@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import type { Element, Root, Text } from "hast";
 import { decodeString } from "micromark-util-decode-string";
+import { StoryEditor } from "./story-editor";
 
 interface StorySegment {
   id: string;
@@ -12,6 +13,12 @@ interface StoryTextProps {
   segments?: StorySegment[];
   onEditSegment?: (id: string) => void;
   highlightedSegmentId?: string;
+  /** Edit this entry in place, keeping the passage's formatting. */
+  editingSegmentId?: string;
+  /** Where the reader clicked to start editing, to put the caret there. */
+  editPoint?: { x: number; y: number } | null;
+  onCommitEdit?: (id: string, text: string) => void;
+  onCancelEdit?: () => void;
 }
 
 interface SegmentRange {
@@ -167,12 +174,16 @@ function getOnlySegmentId(node?: Element) {
   return ids.size === 1 ? ids.values().next().value : undefined;
 }
 
-/** Read-only story formatting; the original Markdown remains the editable text. */
+/** Story formatting; the original Markdown remains the source of truth, including while editing. */
 export function StoryText({
   text = "",
   segments,
   onEditSegment,
   highlightedSegmentId,
+  editingSegmentId,
+  editPoint,
+  onCommitEdit,
+  onCancelEdit,
 }: StoryTextProps) {
   const source = segments?.map((segment) => segment.text).join("") ?? text;
   let offset = 0;
@@ -187,7 +198,7 @@ export function StoryText({
       return range;
     }) ?? [];
 
-  return (
+  const markup = (
     <div className="whitespace-normal break-words [&>p+p]:mt-3">
       <ReactMarkdown
         allowedElements={["p", "strong", "em", "br", "span"]}
@@ -261,4 +272,22 @@ export function StoryText({
       </ReactMarkdown>
     </div>
   );
+
+  if (editingSegmentId && onCommitEdit && onCancelEdit) {
+    const original =
+      segments?.find((segment) => segment.id === editingSegmentId)?.text ??
+      text;
+    return (
+      <StoryEditor
+        key={editingSegmentId}
+        markup={markup}
+        segmentId={editingSegmentId}
+        original={original}
+        point={editPoint}
+        onCommit={(next) => onCommitEdit(editingSegmentId, next)}
+        onCancel={onCancelEdit}
+      />
+    );
+  }
+  return markup;
 }

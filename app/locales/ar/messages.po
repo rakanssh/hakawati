@@ -898,7 +898,7 @@ msgid "Context window help"
 msgstr "مساعدة بشأن نافذة السياق"
 
 #. placeholder {0}: entry.chainIndex
-#: app/components/play/log/log-block-bubble.tsx:207
+#: app/components/play/log/log-block-bubble.tsx:213
 msgid "Continuation {0}"
 msgstr "تكملة {0}"
 
@@ -1310,8 +1310,7 @@ msgstr "تُرسم حول القصة في شاشة اللعب. «ثابت» يب
 msgid "Edit"
 msgstr "تعديل"
 
-#: app/components/play/play-log-display.tsx:140
-#: app/components/play/play-log-display.tsx:173
+#: app/components/play/play-log-display.tsx:165
 msgid "Edit entry"
 msgstr "تعديل المدخل"
 
@@ -1838,7 +1837,7 @@ msgstr "قيد المراجعة"
 #~ msgid "Include special narrative instructions"
 #~ msgstr "تضمين تعليمات سردية خاصة"
 
-#: app/components/play/log/log-block-bubble.tsx:205
+#: app/components/play/log/log-block-bubble.tsx:211
 msgid "Initial"
 msgstr "أولى"
 
@@ -2072,7 +2071,7 @@ msgstr "تحميل المزيد"
 msgid "Loading adventure..."
 msgstr "جاري تحميل المغامرة..."
 
-#: app/components/play/play-log-display.tsx:94
+#: app/components/play/play-log-display.tsx:109
 msgid "Loading older entries..."
 msgstr "جاري تحميل المدخلات القديمة..."
 
@@ -2338,8 +2337,8 @@ msgstr "الاسم"
 msgid "NanoGPT"
 msgstr "NanoGPT"
 
-#: app/components/play/log/log-block-bubble.tsx:100
-#: app/components/play/log/log-block-bubble.tsx:110
+#: app/components/play/log/log-block-bubble.tsx:106
+#: app/components/play/log/log-block-bubble.tsx:116
 #: app/components/play/log/log-entry-bubble.tsx:76
 #: app/components/play/log/log-entry-bubble.tsx:86
 msgid "Narrate section"
@@ -3720,7 +3719,7 @@ msgstr "يمكن أن تحتوي الوسوم على حروف وأرقام وش�
 msgid "Tags must be 32 characters or shorter."
 msgstr "يجب ألا يتجاوز طول الوسم 32 حرفًا."
 
-#: app/components/play/play-log-display.tsx:224
+#: app/components/play/play-log-display.tsx:229
 msgid "Take an action or send a director's note to start the adventure."
 msgstr "قم بفعل أو أرسل ملاحظة المخرج لتبدأ المغامرة."
 
@@ -3845,7 +3844,7 @@ msgstr "تُرسل هذه المكونات الاختيارية إلى الذك�
 msgid "Thing"
 msgstr "شيء"
 
-#: app/components/play/log/log-block-bubble.tsx:123
+#: app/components/play/log/log-block-bubble.tsx:129
 msgid "Thinking"
 msgstr "تفكير"
 
@@ -4002,7 +4001,7 @@ msgstr "سيؤدي هذا إلى حذف محتوى المكون نهائياً. 
 msgid "Title"
 msgstr "العنوان"
 
-#: app/components/play/log/log-block-bubble.tsx:119
+#: app/components/play/log/log-block-bubble.tsx:125
 msgid "Toggle thinking output"
 msgstr "إظهار التفكير أو إخفاؤه"
 
