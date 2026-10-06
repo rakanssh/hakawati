@@ -440,7 +440,7 @@ msgstr "الحساب اختياري، ويتيح لك مزامنة حكايات�
 #~ msgid "Ancient Tome"
 #~ msgstr "مجلد قديم"
 
-#: app/components/layout/settings/appearance-fields.tsx:19
+#: app/components/layout/settings/appearance-fields.tsx:25
 msgid "Animated"
 msgstr "متحرك"
 
@@ -1270,7 +1270,7 @@ msgstr "جاري تحميل التحديث... ({0})"
 #~ msgid "Draw from classic sword and sorcery. Magic should feel wondrous or dangerous, never mundane."
 #~ msgstr "استمد إلهامك من قصص السيف والسحر الكلاسيكية. يجب أن يبدو السحر عجيباً أو خطيراً، وليس عادياً أبداً."
 
-#: app/components/layout/settings/appearance-fields.tsx:28
+#: app/components/layout/settings/appearance-fields.tsx:35
 msgid "Drawn around the story on the play screen. Still keeps it without movement; Off keeps only the colours and type."
 msgstr "تُرسم حول القصة في شاشة اللعب. «ثابت» يبقيها دون حركة، و«إيقاف» يبقي الألوان والخطوط فقط."
 
@@ -1561,11 +1561,11 @@ msgstr "أصلح هذه الأسئلة قبل البدء أو النشر. لا �
 #~ msgid "Flashlight"
 #~ msgstr "مصباح يدوي"
 
-#: app/components/layout/settings/appearance-fields.tsx:91
+#: app/components/layout/settings/appearance-fields.tsx:107
 msgid "Font Family"
 msgstr "عائلة الخط"
 
-#: app/components/layout/settings/appearance-fields.tsx:66
+#: app/components/layout/settings/appearance-fields.tsx:82
 msgid "Font Size (0.5 - 4.0)"
 msgstr "حجم الخط (0.5 - 4.0)"
 
@@ -1586,7 +1586,7 @@ msgstr "عقوبة التواتر"
 msgid "From Hakawati"
 msgstr "من حكواتي"
 
-#: app/components/layout/settings/appearance-fields.tsx:74
+#: app/components/layout/settings/appearance-fields.tsx:90
 msgid "Game log font size"
 msgstr "حجم الخط لسجل اللعبة"
 
@@ -1743,7 +1743,7 @@ msgstr "مرتفع"
 msgid "Higher values make responses less predictable."
 msgstr "القيم الأعلى تجعل الاستجابات أقل قابلية للتنبؤ."
 
-#: app/components/layout/settings/appearance-fields.tsx:114
+#: app/components/layout/settings/appearance-fields.tsx:130
 msgid "Highlight last section"
 msgstr "تمييز آخر قسم"
 
@@ -2002,7 +2002,7 @@ msgstr "الأحدث"
 #~ msgid "Latest Scenarios"
 #~ msgstr "أحدث السيناريوهات"
 
-#: app/components/layout/settings/appearance-fields.tsx:106
+#: app/components/layout/settings/appearance-fields.tsx:122
 msgid "Latest section"
 msgstr "آخر قسم"
 
@@ -2501,7 +2501,7 @@ msgstr "لا شيء..."
 msgid "Occultist"
 msgstr "عالم غيبيات"
 
-#: app/components/layout/settings/appearance-fields.tsx:21
+#: app/components/layout/settings/appearance-fields.tsx:27
 msgid "Off"
 msgstr "إيقاف"
 
@@ -3029,7 +3029,7 @@ msgstr "إعادة الفحص"
 msgid "Reserves room when selecting story history. This does not limit ChatGPT’s response length."
 msgstr "يحجز مساحة للرد عند اختيار سجل القصة. لا يحدّ هذا من طول ردود ChatGPT."
 
-#: app/components/layout/settings/appearance-fields.tsx:82
+#: app/components/layout/settings/appearance-fields.tsx:98
 #: app/components/layout/settings/game.tsx:120
 msgid "Reset"
 msgstr "إعادة تعيين"
@@ -3236,8 +3236,8 @@ msgstr "تم نشر تحديث السيناريو"
 msgid "Scenarios"
 msgstr "سيناريوهات"
 
-#: app/components/layout/settings/appearance-fields.tsx:26
-#: app/components/layout/settings/appearance-fields.tsx:36
+#: app/components/layout/settings/appearance-fields.tsx:32
+#: app/components/layout/settings/appearance-fields.tsx:52
 msgid "Scenery"
 msgstr "المشهد"
 
@@ -3533,7 +3533,7 @@ msgstr "تتبع الخصائص والمخزون"
 #~ msgid "Step {0} of {1}"
 #~ msgstr "الخطوة {0} من {1}"
 
-#: app/components/layout/settings/appearance-fields.tsx:20
+#: app/components/layout/settings/appearance-fields.tsx:26
 msgid "Still"
 msgstr "ثابت"
 
@@ -4334,6 +4334,10 @@ msgstr "سيناريوهاتك"
 #: app/pages/home/home.tsx:849
 msgid "Your Scenarios"
 msgstr "سيناريوهاتك"
+
+#: app/components/layout/settings/appearance-fields.tsx:42
+msgid "Your system asks for reduced motion, so scenery starts still."
+msgstr "يطلب نظامك تقليل الحركة، لذا يبدأ المشهد ثابتاً."
 
 #: app/data/quickstart-presets.ts:20
 msgid "Zombies"

@@ -440,7 +440,7 @@ msgstr "An optional account lets you sync tales across devices and publish scena
 #~ msgid "Ancient Tome"
 #~ msgstr "Ancient Tome"
 
-#: app/components/layout/settings/appearance-fields.tsx:19
+#: app/components/layout/settings/appearance-fields.tsx:25
 msgid "Animated"
 msgstr "Animated"
 
@@ -1270,7 +1270,7 @@ msgstr "Downloading update... ({0})"
 #~ msgid "Draw from classic sword and sorcery. Magic should feel wondrous or dangerous, never mundane."
 #~ msgstr "Draw from classic sword and sorcery. Magic should feel wondrous or dangerous, never mundane."
 
-#: app/components/layout/settings/appearance-fields.tsx:28
+#: app/components/layout/settings/appearance-fields.tsx:35
 msgid "Drawn around the story on the play screen. Still keeps it without movement; Off keeps only the colours and type."
 msgstr "Drawn around the story on the play screen. Still keeps it without movement; Off keeps only the colours and type."
 
@@ -1561,11 +1561,11 @@ msgstr "Fix these questions before starting or publishing. You can still save th
 #~ msgid "Flashlight"
 #~ msgstr "Flashlight"
 
-#: app/components/layout/settings/appearance-fields.tsx:91
+#: app/components/layout/settings/appearance-fields.tsx:107
 msgid "Font Family"
 msgstr "Font Family"
 
-#: app/components/layout/settings/appearance-fields.tsx:66
+#: app/components/layout/settings/appearance-fields.tsx:82
 msgid "Font Size (0.5 - 4.0)"
 msgstr "Font Size (0.5 - 4.0)"
 
@@ -1586,7 +1586,7 @@ msgstr "Frequency penalty"
 msgid "From Hakawati"
 msgstr "From Hakawati"
 
-#: app/components/layout/settings/appearance-fields.tsx:74
+#: app/components/layout/settings/appearance-fields.tsx:90
 msgid "Game log font size"
 msgstr "Game log font size"
 
@@ -1743,7 +1743,7 @@ msgstr "High"
 msgid "Higher values make responses less predictable."
 msgstr "Higher values make responses less predictable."
 
-#: app/components/layout/settings/appearance-fields.tsx:114
+#: app/components/layout/settings/appearance-fields.tsx:130
 msgid "Highlight last section"
 msgstr "Highlight last section"
 
@@ -2002,7 +2002,7 @@ msgstr "Latest"
 #~ msgid "Latest Scenarios"
 #~ msgstr "Latest Scenarios"
 
-#: app/components/layout/settings/appearance-fields.tsx:106
+#: app/components/layout/settings/appearance-fields.tsx:122
 msgid "Latest section"
 msgstr "Latest section"
 
@@ -2501,7 +2501,7 @@ msgstr "Nothing..."
 msgid "Occultist"
 msgstr "Occultist"
 
-#: app/components/layout/settings/appearance-fields.tsx:21
+#: app/components/layout/settings/appearance-fields.tsx:27
 msgid "Off"
 msgstr "Off"
 
@@ -3029,7 +3029,7 @@ msgstr "Rescan"
 msgid "Reserves room when selecting story history. This does not limit ChatGPT’s response length."
 msgstr "Reserves room when selecting story history. This does not limit ChatGPT’s response length."
 
-#: app/components/layout/settings/appearance-fields.tsx:82
+#: app/components/layout/settings/appearance-fields.tsx:98
 #: app/components/layout/settings/game.tsx:120
 msgid "Reset"
 msgstr "Reset"
@@ -3236,8 +3236,8 @@ msgstr "Scenario update published"
 msgid "Scenarios"
 msgstr "Scenarios"
 
-#: app/components/layout/settings/appearance-fields.tsx:26
-#: app/components/layout/settings/appearance-fields.tsx:36
+#: app/components/layout/settings/appearance-fields.tsx:32
+#: app/components/layout/settings/appearance-fields.tsx:52
 msgid "Scenery"
 msgstr "Scenery"
 
@@ -3533,7 +3533,7 @@ msgstr "Stats and inventory tracking"
 #~ msgid "Step {0} of {1}"
 #~ msgstr "Step {0} of {1}"
 
-#: app/components/layout/settings/appearance-fields.tsx:20
+#: app/components/layout/settings/appearance-fields.tsx:26
 msgid "Still"
 msgstr "Still"
 
@@ -4334,6 +4334,10 @@ msgstr "Your scenarios"
 #: app/pages/home/home.tsx:849
 msgid "Your Scenarios"
 msgstr "Your Scenarios"
+
+#: app/components/layout/settings/appearance-fields.tsx:42
+msgid "Your system asks for reduced motion, so scenery starts still."
+msgstr "Your system asks for reduced motion, so scenery starts still."
 
 #: app/data/quickstart-presets.ts:20
 msgid "Zombies"

@@ -147,3 +147,11 @@ export function resolveThemePreference(preference: ThemePreference): ThemeId {
 export function isThemeScenery(value: unknown): value is ThemeScenery {
   return THEME_SCENERY_OPTIONS.includes(value as ThemeScenery);
 }
+
+/** The scenery to draw: the reader's choice, otherwise still when the system asks for reduced motion. */
+export function resolveThemeScenery(
+  chosen: ThemeScenery | undefined,
+  prefersReducedMotion: boolean,
+): ThemeScenery {
+  return chosen ?? (prefersReducedMotion ? "still" : "animated");
+}

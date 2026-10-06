@@ -341,7 +341,7 @@ export function migrateSettingsState(
     highlightLatestSection: state.highlightLatestSection ?? true,
     themeScenery: isThemeScenery(state.themeScenery)
       ? state.themeScenery
-      : "animated",
+      : undefined,
     // Before themes had their own type, "system-ui" was simply the default; let themes choose instead.
     fontFamily:
       version < 7 && (!state.fontFamily || state.fontFamily === "system-ui")
@@ -398,7 +398,8 @@ export interface SettingsStoreType {
   thinkingVisibility: ThinkingVisibility;
   autoNarrate: boolean;
   highlightLatestSection: boolean;
-  themeScenery: ThemeScenery;
+  /** The reader's scenery choice. Unset follows the system's reduced-motion preference. */
+  themeScenery?: ThemeScenery;
   chatGptPlanNoticeAcknowledged: boolean;
   acknowledgeChatGptPlanNotice: () => void;
 
@@ -495,7 +496,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
       thinkingVisibility: "all",
       autoNarrate: false,
       highlightLatestSection: true,
-      themeScenery: "animated",
+      themeScenery: undefined,
       chatGptPlanNoticeAcknowledged: false,
       acknowledgeChatGptPlanNotice: () =>
         set({ chatGptPlanNoticeAcknowledged: true }),

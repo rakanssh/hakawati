@@ -67,14 +67,14 @@ describe("useSettingsStore migration", () => {
     ).toBe("system-ui");
   });
 
-  it("defaults theme scenery to animated", () => {
-    expect(migrateSettingsState({}).themeScenery).toBe("animated");
+  it("leaves theme scenery unset until the reader picks one", () => {
+    expect(migrateSettingsState({}).themeScenery).toBeUndefined();
     expect(migrateSettingsState({ themeScenery: "still" }).themeScenery).toBe(
       "still",
     );
     expect(
       migrateSettingsState({ themeScenery: "moving" as never }).themeScenery,
-    ).toBe("animated");
+    ).toBeUndefined();
   });
 
   it("creates empty role configs when no legacy model settings exist", () => {

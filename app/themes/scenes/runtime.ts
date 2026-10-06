@@ -5,7 +5,7 @@ import {
   useState,
   type RefObject,
 } from "react";
-import { useSettingsStore } from "@/store/useSettingsStore";
+import { useThemeScenery } from "@/hooks/useThemeScenery";
 
 /** Viewport-space box, in CSS pixels. */
 export interface Box {
@@ -118,9 +118,9 @@ export function useStageGeometry(): StageGeometry {
   return geometry;
 }
 
-/** Whether scenes move. Only the Scenery setting stills them; they animate by default. */
+/** Whether scenes move: the Scenery setting, or the system's reduced-motion preference until one is picked. */
 export function useSceneAnimated() {
-  return useSettingsStore((state) => state.themeScenery) === "animated";
+  return useThemeScenery() === "animated";
 }
 
 type FrameSubscriber = {

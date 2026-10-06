@@ -7,6 +7,7 @@ import {
   isThemeScenery,
   parseThemePreference,
   resolveThemePreference,
+  resolveThemeScenery,
   themes,
 } from "./registry";
 
@@ -71,5 +72,13 @@ describe("theme registry", () => {
   it("recognises scenery settings", () => {
     expect(isThemeScenery("still")).toBe(true);
     expect(isThemeScenery("moving")).toBe(false);
+  });
+
+  it("stills unchosen scenery when the system asks for reduced motion", () => {
+    expect(resolveThemeScenery(undefined, false)).toBe("animated");
+    expect(resolveThemeScenery(undefined, true)).toBe("still");
+    // A choice the reader made wins over the system preference.
+    expect(resolveThemeScenery("animated", true)).toBe("animated");
+    expect(resolveThemeScenery("off", false)).toBe("off");
   });
 });

@@ -7,23 +7,22 @@ All notable changes to this project are documented in this file.
 ### Added
 
 - Seven new themes! Brass Night, Orbit, Phosphor, Cartridge, Rain on Glass, Storybook, and Typewriter. Most draw scenery around the story on the play screen, and several bring their own type.
-- Themes are chosen from a gallery of live previews in Settings, and scenery can be animated, still, or off.
+- Themes are chosen from a gallery of live previews in Settings, and scenery can be animated!
 - A story panel on the right of the play screen.
 
 ### Changed
 
 - Bamboo and Cosmos are retired. Bamboo switches to Light and Cosmos to Orbit.
 - Tale Settings now open in the story panel instead of a full-screen dialog.
-- Passages are edited in place and keep their formatting and layout. Enter saves, Shift+Enter starts a new line, and Escape cancels.
 
 ### Fixed
 
 - Reset generation settings no longer resets your appearance and language settings.
-- Top P, Top K, Min P, Top A, and the penalty settings now reach OpenAI-compatible providers and local servers. Only temperature and seed were sent before.
+- Top P, Top K, Min P, Top A, and the penalty settings now reach OpenAI-compatible providers and local servers.
 - Repeating an earlier action word for word no longer removes the earlier one from the narrator's context.
 - Pressing Escape in a number field now discards what you typed.
 - Deleting the last tale or scenario on a page no longer leaves an empty page.
-- Fixed dictation getting stuck when started, stopped, or cancelled quickly.
+- Fixed dictation getting stuck on occasion.
 
 ## [v1.1.0] - 2026-09-30
 

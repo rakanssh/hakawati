@@ -22,6 +22,7 @@ import {
 } from "@/themes/registry";
 import { loadThemeFonts } from "@/themes/fonts";
 import { prepareThemeTextures } from "@/themes/textures";
+import { useThemeScenery } from "@/hooks/useThemeScenery";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
@@ -66,7 +67,7 @@ export function ThemeProvider({
 }: ThemeProviderProps) {
   const uiScale = useSettingsStore((state) => state.uiScale);
   const fontFamily = useSettingsStore((state) => state.fontFamily);
-  const scenery = useSettingsStore((state) => state.themeScenery);
+  const scenery = useThemeScenery();
   const textDirection = useSettingsStore((state) => state.textDirection);
   const language = useSettingsStore((state) => state.language);
 

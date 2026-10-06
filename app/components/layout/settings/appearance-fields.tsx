@@ -3,6 +3,10 @@ import { Button } from "@/components/ui/button";
 import { NumberInput } from "@/components/ui";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import {
+  usePrefersReducedMotion,
+  useThemeScenery,
+} from "@/hooks/useThemeScenery";
 import { THEME_SCENERY_OPTIONS, type ThemeScenery } from "@/themes/registry";
 import { FONT_SIZE_MAX, FONT_SIZE_MIN } from "@/lib/appearance-limits";
 import { cn } from "@/lib/utils";
@@ -13,7 +17,9 @@ import { SettingsField } from "./settings-layout";
 
 export function SceneryField() {
   const { t } = useLingui();
-  const themeScenery = useSettingsStore((state) => state.themeScenery);
+  const chosen = useSettingsStore((state) => state.themeScenery);
+  const themeScenery = useThemeScenery();
+  const reducedMotion = usePrefersReducedMotion();
   const setThemeScenery = useSettingsStore((state) => state.setThemeScenery);
   const labels: Record<ThemeScenery, string> = {
     animated: t`Animated`,
@@ -25,10 +31,20 @@ export function SceneryField() {
     <SettingsField
       label={<Trans>Scenery</Trans>}
       description={
-        <Trans>
-          Drawn around the story on the play screen. Still keeps it without
-          movement; Off keeps only the colours and type.
-        </Trans>
+        <>
+          <Trans>
+            Drawn around the story on the play screen. Still keeps it without
+            movement; Off keeps only the colours and type.
+          </Trans>
+          {!chosen && reducedMotion && (
+            <>
+              {" "}
+              <Trans>
+                Your system asks for reduced motion, so scenery starts still.
+              </Trans>
+            </>
+          )}
+        </>
       }
     >
       <div
