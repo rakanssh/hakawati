@@ -4,12 +4,14 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { useCoverImageUrl } from "@/hooks/useCoverImageUrl";
 import { cn } from "@/lib/utils";
 
 type ScenarioPreviewCardProps = {
   title: string;
   summary: string;
   imageSrc: string;
+  imageBytes?: Uint8Array | null;
   imageAlt: string;
   ariaLabel: string;
   eyebrow?: ReactNode;
@@ -41,6 +43,7 @@ export function ScenarioPreviewCard({
   title,
   summary,
   imageSrc,
+  imageBytes,
   imageAlt,
   ariaLabel,
   eyebrow,
@@ -53,6 +56,7 @@ export function ScenarioPreviewCard({
   disabled = false,
   onOpen,
 }: ScenarioPreviewCardProps) {
+  const coverUrl = useCoverImageUrl(imageBytes);
   const summarySlotRef = useRef<HTMLDivElement>(null);
   const summaryRef = useRef<HTMLParagraphElement>(null);
   const [summaryLines, setSummaryLines] = useState(4);
@@ -126,7 +130,7 @@ export function ScenarioPreviewCard({
     >
       <div className="relative min-h-0 overflow-hidden border-r border-border/70 bg-muted rtl:border-r-0 rtl:border-l">
         <img
-          src={imageSrc}
+          src={coverUrl || imageSrc}
           alt={imageAlt}
           loading="lazy"
           className="h-full w-full object-cover"

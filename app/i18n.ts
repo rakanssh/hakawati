@@ -11,12 +11,15 @@ export const LOCALES: Record<Locale, string> = {
 i18n.load("en", enMessages);
 i18n.activate("en");
 
+let requestedLocale: Locale = "en";
+
 /**
  * Dynamically load and activate a locale.
  * @param locale - The locale to load and activate.
  * @returns A promise that resolves when the locale is loaded and activated.
  */
 export async function loadLocale(locale: Locale): Promise<void> {
+  requestedLocale = locale;
   if (locale === "en") {
     i18n.activate("en");
     return;
@@ -24,7 +27,9 @@ export async function loadLocale(locale: Locale): Promise<void> {
 
   const { messages } = await import(`./locales/${locale}/messages.po`);
   i18n.load(locale, messages);
-  i18n.activate(locale);
+  if (requestedLocale === locale) {
+    i18n.activate(locale);
+  }
 }
 
 export { i18n } from "@lingui/core";

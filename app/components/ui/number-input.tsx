@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, KeyboardEvent, FocusEvent } from "react";
+import { useEffect, useMemo, useRef, useState, KeyboardEvent } from "react";
 import { Input } from "./input";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +43,7 @@ export function NumberInput({
     value === undefined || value === null ? "" : String(value),
   );
   const [hasFocus, setHasFocus] = useState<boolean>(false);
+  const cancelBlur = useRef(false);
 
   useEffect(() => {
     if (!hasFocus) {
@@ -62,8 +63,8 @@ export function NumberInput({
     return result;
   }
 
-  function commit(nextRaw?: string) {
-    const raw = nextRaw ?? draft;
+  function commit() {
+    const raw = draft;
     const parsed = Number(raw);
     let next: number | null;
 
@@ -86,18 +87,21 @@ export function NumberInput({
     setDraft(next === null ? "" : String(next));
   }
 
-  function handleBlur(_e: FocusEvent<HTMLInputElement>) {
-    commit();
+  function handleBlur() {
+    if (!cancelBlur.current) commit();
+    cancelBlur.current = false;
     setHasFocus(false);
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
-      commit();
-      (e.target as HTMLInputElement).blur();
+      e.preventDefault();
+      e.currentTarget.blur();
     } else if (e.key === "Escape") {
+      e.preventDefault();
+      cancelBlur.current = true;
       setDraft(value === undefined || value === null ? "" : String(value));
-      (e.target as HTMLInputElement).blur();
+      e.currentTarget.blur();
     }
   }
 

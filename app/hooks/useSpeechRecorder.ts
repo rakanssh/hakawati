@@ -103,70 +103,74 @@ export function useSpeechRecorder({
     );
   }, [pollRecordingStats, stopRecordingStats]);
 
-  const transcribe = useCallback(
-    async (audio: Blob) => {
-      if (audio.size === 0) {
-        throw new Error("Recording did not capture any audio.");
-      }
-
-      abortRef.current?.abort();
-      const abort = new AbortController();
-      abortRef.current = abort;
-      setStatus("transcribing");
-      const result = await transcribeSpeech(audio, abort.signal);
-      onTranscript(result.text);
-    },
-    [onTranscript],
-  );
-
   const start = useCallback(async () => {
-    if (status !== "idle") return;
+    // Claim the recording before invoking native code, which may resolve later.
+    if (abortRef.current) return;
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
       await invoke("start_speech_recording");
+      if (controller.signal.aborted) {
+        await invoke("cancel_speech_recording").catch(() => undefined);
+        return;
+      }
       isRecordingRef.current = true;
       startRecordingStats();
       setStatus("recording");
     } catch (error) {
+      if (controller.signal.aborted) return;
+      abortRef.current = null;
       isRecordingRef.current = false;
       stopRecordingStats();
       setStatus("idle");
       onError(normalizeMicrophoneError(error));
     }
-  }, [onError, startRecordingStats, status, stopRecordingStats]);
+  }, [onError, startRecordingStats, stopRecordingStats]);
 
   const stop = useCallback(() => {
-    if (status !== "recording") return;
+    const controller = abortRef.current;
+    if (!isRecordingRef.current || !controller) return;
 
     isRecordingRef.current = false;
     stopRecordingStats();
     setStatus("transcribing");
     void invoke<NativeSpeechRecording>("stop_speech_recording")
-      .then((recording) => {
-        return transcribe(nativeRecordingToBlob(recording));
+      .then(async (recording) => {
+        if (controller.signal.aborted) return;
+        const audio = nativeRecordingToBlob(recording);
+        const result = await transcribeSpeech(audio, controller.signal);
+        if (!controller.signal.aborted) onTranscript(result.text);
       })
       .catch((error) => {
-        if (abortRef.current?.signal.aborted) return;
+        if (controller.signal.aborted) return;
         onError(normalizeMicrophoneError(error));
       })
       .finally(() => {
-        if (abortRef.current?.signal.aborted) return;
+        if (abortRef.current !== controller) return;
         abortRef.current = null;
-        isRecordingRef.current = false;
         setStatus("idle");
       });
-  }, [onError, status, stopRecordingStats, transcribe]);
+  }, [onError, onTranscript, stopRecordingStats]);
 
   const cancel = useCallback(() => {
-    if (status !== "recording") return;
+    const controller = abortRef.current;
+    if (!isRecordingRef.current || !controller) return;
 
+    controller.abort();
     stopRecordingStats();
     isRecordingRef.current = false;
-    setStatus("idle");
-    void invoke("cancel_speech_recording").catch((error) => {
-      onError(normalizeMicrophoneError(error));
-    });
-  }, [onError, status, stopRecordingStats]);
+    void invoke("cancel_speech_recording")
+      .catch((error) => {
+        if (abortRef.current !== controller) return;
+        onError(normalizeMicrophoneError(error));
+      })
+      .finally(() => {
+        if (abortRef.current !== controller) return;
+        abortRef.current = null;
+        setStatus("idle");
+      });
+  }, [onError, stopRecordingStats]);
 
   const toggle = useCallback(() => {
     if (status === "recording") {
@@ -181,6 +185,7 @@ export function useSpeechRecorder({
   useEffect(() => {
     return () => {
       abortRef.current?.abort();
+      abortRef.current = null;
       if (isRecordingRef.current) {
         isRecordingRef.current = false;
         stopRecordingStats();

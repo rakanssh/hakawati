@@ -70,22 +70,17 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
     }
     const useToolCalling = req.responseMode !== ResponseMode.FREE_FORM;
 
-    const options = Object.entries(req.options ?? {}).filter(
-      ([, value]) => value !== undefined && value !== null,
+    const samplingOptions = Object.fromEntries(
+      Object.entries(req.options ?? {})
+        .filter(([, value]) => value !== undefined && value !== null)
+        .map(([key, value]) => [samplingParameterNames[key], value] as const)
+        .filter(
+          ([key]) =>
+            key &&
+            (!(isOpenRouter && req.reasoningEffort !== undefined) ||
+              selectedModel?.supportedParameters?.includes(key)),
+        ),
     );
-    const samplingOptions =
-      isOpenRouter && req.reasoningEffort !== undefined
-        ? Object.fromEntries(
-            options
-              .map(
-                ([key, value]) => [samplingParameterNames[key], value] as const,
-              )
-              .filter(
-                ([key]) =>
-                  key && selectedModel?.supportedParameters?.includes(key),
-              ),
-          )
-        : Object.fromEntries(options);
 
     const body: Record<string, unknown> = {
       model: req.model,

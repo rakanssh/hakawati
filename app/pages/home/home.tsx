@@ -28,7 +28,6 @@ import {
   useCatalogScenarioList,
 } from "@/hooks/useCatalogScenarios";
 import { useTaleLibrary } from "@/hooks/useTaleLibrary";
-import { useCoverImageUrl } from "@/hooks/useCoverImageUrl";
 import { imageBadgeClass } from "@/lib/card-badges";
 import { getSyncUiKind } from "@/lib/sync-ui";
 import { HAKAWATI_CLIENT_VERSION } from "@/services/cloud-capabilities";
@@ -145,7 +144,6 @@ function TaleCard({
       item.localTale.description ||
       t`No description yet.`;
   const thumbnail = isRemote ? null : item.localTale.thumbnail;
-  const coverUrl = useCoverImageUrl(thumbnail);
   const hasConflict =
     syncActive && item.source === "local" && item.sync?.status === "conflict";
   const isSynced = syncActive && (isRemote || Boolean(item.sync));
@@ -164,7 +162,8 @@ function TaleCard({
       actionLabel={hasConflict ? <Trans>Review conflict</Trans> : undefined}
       title={title}
       summary={description}
-      imageSrc={coverUrl || placeholderImage}
+      imageSrc={placeholderImage}
+      imageBytes={thumbnail}
       imageAlt={t`${title} tale`}
       ariaLabel={t`Load ${title}`}
       disabled={disabled || loading}
@@ -224,7 +223,6 @@ function ScenarioCard({
   onView: (id: string) => void;
 }) {
   const { t } = useLingui();
-  const coverUrl = useCoverImageUrl(scenario.thumbnail);
 
   return (
     <ScenarioPreviewCard
@@ -238,7 +236,8 @@ function ScenarioCard({
       }
       title={scenario.name}
       summary={scenario.description || t`No description yet.`}
-      imageSrc={coverUrl || placeholderImage}
+      imageSrc={placeholderImage}
+      imageBytes={scenario.thumbnail}
       imageAlt={t`${scenario.name} scenario`}
       ariaLabel={t`Open ${scenario.name}`}
       onOpen={() => onView(scenario.id)}

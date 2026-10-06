@@ -49,7 +49,7 @@ export default function SettingsModel() {
     setTopA,
     setSeed,
     randomSeed,
-    setToDefault,
+    resetGenerationSettings,
   } = useSettingsStore();
   const isChatGpt = activePreset === ApiPreset.CHATGPT;
 
@@ -309,7 +309,7 @@ export default function SettingsModel() {
       </SettingsPanel>
 
       <div className="flex justify-end">
-        <Button variant="destructive" onClick={setToDefault}>
+        <Button variant="destructive" onClick={resetGenerationSettings}>
           <Trans>Reset generation settings</Trans>
         </Button>
       </div>

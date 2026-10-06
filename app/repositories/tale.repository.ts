@@ -198,13 +198,6 @@ function packageSource(input: TalePackageV1): TaleSourceMetadata | undefined {
   return input.tale.source ?? input.state.data.source;
 }
 
-async function withReadTransaction<T>(
-  _db: Database,
-  run: () => Promise<T>,
-): Promise<T> {
-  return run();
-}
-
 async function markLinkedTaleForPush(
   db: Database,
   taleId: string,
@@ -1088,14 +1081,12 @@ export async function getCurrentState(
 ): Promise<TaleCurrentState | null> {
   return enqueueLocalOperation(async () => {
     const db = await getDb();
-    return withReadTransaction(db, async () => {
-      const row = await selectTaleRow(db, taleId);
-      if (!row) return null;
-      return parseStateRow(
-        await selectStateRow(db, taleId),
-        legacyStateFromRow(row),
-      );
-    });
+    const row = await selectTaleRow(db, taleId);
+    if (!row) return null;
+    return parseStateRow(
+      await selectStateRow(db, taleId),
+      legacyStateFromRow(row),
+    );
   });
 }
 
@@ -1148,7 +1139,7 @@ async function selectTalePlayLoad(
 export async function getTale(id: string): Promise<Tale | null> {
   return enqueueLocalOperation(async () => {
     const db = await getDb();
-    return withReadTransaction(db, () => selectTaleAggregate(db, id));
+    return selectTaleAggregate(db, id);
   });
 }
 
@@ -1166,19 +1157,17 @@ export async function getTalePlayLoad(
 ): Promise<TalePlayLoad | null> {
   return enqueueLocalOperation(async () => {
     const db = await getDb();
-    return withReadTransaction(db, async () => {
-      if (options.logStart !== undefined) {
-        return selectTalePlayLoad(db, id, {
-          logStart: options.logStart,
-          logLimit: options.logLimit,
-        });
-      }
-
-      const totalLogCount = await selectLogCount(db, id);
+    if (options.logStart !== undefined) {
       return selectTalePlayLoad(db, id, {
-        logStart: Math.max(0, totalLogCount - options.logLimit),
+        logStart: options.logStart,
         logLimit: options.logLimit,
       });
+    }
+
+    const totalLogCount = await selectLogCount(db, id);
+    return selectTalePlayLoad(db, id, {
+      logStart: Math.max(0, totalLogCount - options.logLimit),
+      logLimit: options.logLimit,
     });
   });
 }
@@ -1256,27 +1245,25 @@ export async function getTales(
 ): Promise<PaginatedResponse<TaleHead>> {
   return enqueueLocalOperation(async () => {
     const db = await getDb();
-    return withReadTransaction(db, async () => {
-      const rows = await db.select<TaleHeadRow[]>(
-        `${taleHeadSelect()}
-        ORDER BY t.updated_at DESC LIMIT ? OFFSET ?`,
-        [limit, (page - 1) * limit],
-      );
-      const countRows = await db.select<Array<{ count: number }>>(
-        `SELECT COUNT(*) as count FROM tales`,
-      );
-      const total = countRows?.[0]?.count ?? 0;
-      const data: TaleHead[] = [];
-      for (const row of rows) {
-        data.push(await mapTaleHeadRow(row));
-      }
-      return {
-        data,
-        total,
-        page,
-        limit,
-      };
-    });
+    const rows = await db.select<TaleHeadRow[]>(
+      `${taleHeadSelect()}
+      ORDER BY t.updated_at DESC LIMIT ? OFFSET ?`,
+      [limit, (page - 1) * limit],
+    );
+    const countRows = await db.select<Array<{ count: number }>>(
+      `SELECT COUNT(*) as count FROM tales`,
+    );
+    const total = countRows?.[0]?.count ?? 0;
+    const data: TaleHead[] = [];
+    for (const row of rows) {
+      data.push(await mapTaleHeadRow(row));
+    }
+    return {
+      data,
+      total,
+      page,
+      limit,
+    };
   });
 }
 
@@ -1298,18 +1285,21 @@ export async function linkTaleToScenario(
 ): Promise<void> {
   await enqueueLocalOperation(async () => {
     const db = await getDb();
-    await db.execute(
-      `UPDATE tales
-       SET scenario_id = ?,
-           source_type = 'local',
-           source_scenario_id = ?,
-           source_scenario_version_id = NULL,
-           source_scenario_title = (SELECT name FROM scenarios WHERE id = ?),
-           updated_at = ?,
-           save_version = save_version + 1
-       WHERE id = ?`,
-      [scenarioId, scenarioId, scenarioId, Date.now(), taleId],
-    );
+    await withTransaction(db, async (db) => {
+      await markLinkedTaleForPush(db, taleId);
+      await db.execute(
+        `UPDATE tales
+         SET scenario_id = ?,
+             source_type = 'local',
+             source_scenario_id = ?,
+             source_scenario_version_id = NULL,
+             source_scenario_title = (SELECT name FROM scenarios WHERE id = ?),
+             updated_at = ?,
+             save_version = save_version + 1
+         WHERE id = ?`,
+        [scenarioId, scenarioId, scenarioId, Date.now(), taleId],
+      );
+    });
   });
 }
 
@@ -1321,9 +1311,7 @@ export async function getLogEntries(
   try {
     return await enqueueLocalOperation(async () => {
       const db = await getDb();
-      return withReadTransaction(db, () =>
-        selectLogEntries(db, taleId, startIndex, limit),
-      );
+      return selectLogEntries(db, taleId, startIndex, limit);
     });
   } catch (error) {
     console.error("Error fetching log entries:", error);
@@ -1335,7 +1323,7 @@ export async function getLogCount(taleId: string): Promise<number> {
   try {
     return await enqueueLocalOperation(async () => {
       const db = await getDb();
-      return withReadTransaction(db, () => selectLogCount(db, taleId));
+      return selectLogCount(db, taleId);
     });
   } catch (error) {
     console.error("Error fetching log count:", error);
@@ -1348,75 +1336,73 @@ export async function exportTalePackage(
 ): Promise<TalePackageV1> {
   return enqueueLocalOperation(async () => {
     const db = await getDb();
-    return withReadTransaction(db, async () => {
-      const row = await selectTaleRow(db, taleId);
-      if (!row) throw new Error("Tale not found");
+    const row = await selectTaleRow(db, taleId);
+    if (!row) throw new Error("Tale not found");
 
-      const stateRow = await selectStateRow(db, taleId);
-      const state = parseStateRow(stateRow, legacyStateFromRow(row));
-      const splitStorage = await hasSplitStorage(db, taleId);
-      const turnRows = await db.select<TaleTurnRow[]>(
-        `SELECT * FROM tale_turns WHERE tale_id = ? ORDER BY seq ASC`,
-        [taleId],
-      );
-      const turns = splitStorage
-        ? turnRows.map((turn) => ({
-            id: turn.id,
-            seq: turn.seq,
-            createdAt: turn.created_at,
-            updatedAt: turn.updated_at,
-            entries: sanitizeLogEntries(parseTurnEntries(turn)),
-          }))
-        : (parseJsonValue<LogEntry[]>(row.log) ?? []).map((entry, index) => ({
-            id: uuidv4(),
-            seq: index + 1,
-            createdAt: row.created_at + index,
-            updatedAt: row.updated_at,
-            entries: sanitizeLogEntries([entry]),
-          }));
-
-      const thumbnail = toUint8Array(row.thumbnail_data ?? null);
-      const thumbnailAssetId = thumbnail ? "thumbnail" : undefined;
-      const gameMode =
-        row.game_mode === GameMode.STORY_TELLER
-          ? GameMode.STORY_TELLER
-          : GameMode.GM;
-
-      return {
-        format: "hakawati-tale-package",
-        formatVersion: 1,
-        exportedAt: new Date().toISOString(),
-        tale: {
-          id: row.id,
-          title: row.name,
-          description: row.description,
-          gameMode,
-          ...(thumbnailAssetId ? { thumbnailAssetId } : {}),
-          createdAt: row.created_at,
+    const stateRow = await selectStateRow(db, taleId);
+    const state = parseStateRow(stateRow, legacyStateFromRow(row));
+    const splitStorage = await hasSplitStorage(db, taleId);
+    const turnRows = await db.select<TaleTurnRow[]>(
+      `SELECT * FROM tale_turns WHERE tale_id = ? ORDER BY seq ASC`,
+      [taleId],
+    );
+    const turns = splitStorage
+      ? turnRows.map((turn) => ({
+          id: turn.id,
+          seq: turn.seq,
+          createdAt: turn.created_at,
+          updatedAt: turn.updated_at,
+          entries: sanitizeLogEntries(parseTurnEntries(turn)),
+        }))
+      : (parseJsonValue<LogEntry[]>(row.log) ?? []).map((entry, index) => ({
+          id: uuidv4(),
+          seq: index + 1,
+          createdAt: row.created_at + index,
           updatedAt: row.updated_at,
-          schemaVersion: row.schema_version ?? TALE_SCHEMA_VERSION,
-          ...(sourceFromRow(row) ? { source: sourceFromRow(row) } : {}),
-        },
-        state: {
-          stateSchemaVersion:
-            stateRow?.state_schema_version ?? TALE_STATE_SCHEMA_VERSION,
-          data: state,
-        },
-        turns,
-        assets: thumbnail
-          ? [
-              {
-                id: thumbnailAssetId ?? "thumbnail",
-                role: "thumbnail",
-                contentType:
-                  detectCoverImageContentType(thumbnail) ??
-                  "application/octet-stream",
-                dataBase64: bytesToBase64(thumbnail),
-              },
-            ]
-          : [],
-      };
-    });
+          entries: sanitizeLogEntries([entry]),
+        }));
+
+    const thumbnail = toUint8Array(row.thumbnail_data ?? null);
+    const thumbnailAssetId = thumbnail ? "thumbnail" : undefined;
+    const gameMode =
+      row.game_mode === GameMode.STORY_TELLER
+        ? GameMode.STORY_TELLER
+        : GameMode.GM;
+
+    return {
+      format: "hakawati-tale-package",
+      formatVersion: 1,
+      exportedAt: new Date().toISOString(),
+      tale: {
+        id: row.id,
+        title: row.name,
+        description: row.description,
+        gameMode,
+        ...(thumbnailAssetId ? { thumbnailAssetId } : {}),
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        schemaVersion: row.schema_version ?? TALE_SCHEMA_VERSION,
+        ...(sourceFromRow(row) ? { source: sourceFromRow(row) } : {}),
+      },
+      state: {
+        stateSchemaVersion:
+          stateRow?.state_schema_version ?? TALE_STATE_SCHEMA_VERSION,
+        data: state,
+      },
+      turns,
+      assets: thumbnail
+        ? [
+            {
+              id: thumbnailAssetId ?? "thumbnail",
+              role: "thumbnail",
+              contentType:
+                detectCoverImageContentType(thumbnail) ??
+                "application/octet-stream",
+              dataBase64: bytesToBase64(thumbnail),
+            },
+          ]
+        : [],
+    };
   });
 }
 
@@ -1516,6 +1502,7 @@ export async function replaceTaleWithPackage(
       ) {
         return false;
       }
+      await markLinkedTaleForPush(db, taleId);
       await db.execute(
         `UPDATE tales SET
            name = ?,

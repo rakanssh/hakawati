@@ -16,7 +16,6 @@ import {
   useScenariosExport,
   useScenariosImport,
 } from "@/hooks/useScenarios";
-import { bytesToObjectUrl } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -588,11 +587,8 @@ export default function ScenariosHome() {
                   key={id}
                   title={name}
                   summary={description || t`No description yet.`}
-                  imageSrc={
-                    thumbnail
-                      ? bytesToObjectUrl(thumbnail as unknown as Uint8Array)
-                      : placeholderImage
-                  }
+                  imageSrc={placeholderImage}
+                  imageBytes={thumbnail}
                   imageAlt={t`${name} thumbnail`}
                   ariaLabel={t`View ${name}`}
                   actionLabel={<Trans>Explore scenario</Trans>}

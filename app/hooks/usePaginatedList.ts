@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PaginatedResponse } from "@/types/db.type";
 
 export function usePaginatedList<T>(
@@ -12,24 +12,43 @@ export function usePaginatedList<T>(
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<unknown>(null);
+  const generation = useRef(0);
+  const currentPage = useRef({ page, limit, fetchPage });
+  currentPage.current = { page, limit, fetchPage };
 
   const refresh = useCallback(async () => {
+    const { page, limit, fetchPage } = currentPage.current;
+    const request = ++generation.current;
+    const isCurrent = () =>
+      generation.current === request &&
+      currentPage.current.page === page &&
+      currentPage.current.limit === limit &&
+      currentPage.current.fetchPage === fetchPage;
     setLoading(true);
     setError(null);
     try {
       const resp = await fetchPage(page, limit);
+      if (!isCurrent()) return;
+      const lastPage = Math.max(1, Math.ceil(resp.total / limit));
+      if (page > lastPage) {
+        setPage(lastPage);
+        return;
+      }
       setItems(resp.data);
       setTotal(resp.total);
     } catch (e) {
-      setError(e);
+      if (isCurrent()) setError(e);
     } finally {
-      setLoading(false);
+      if (isCurrent()) setLoading(false);
     }
-  }, [page, limit, fetchPage]);
+  }, []);
 
   useEffect(() => {
     void refresh();
-  }, [refresh]);
+    return () => {
+      generation.current += 1;
+    };
+  }, [page, limit, fetchPage, refresh]);
 
   return {
     items,

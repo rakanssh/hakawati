@@ -143,6 +143,27 @@ ${inventoryBlock}
     });
   }
 
+  // Only the current turn is supplied separately; earlier repeated commands
+  // still belong in the conversation history.
+  let currentPlayerEntry: LogEntry | undefined;
+  for (let i = effectiveLogSource.length - 1; i >= 0; i -= 1) {
+    const entry = effectiveLogSource[i];
+    if (
+      entry.role === LogEntryRole.GM &&
+      (!entry.text.trim() || entry.text === "...")
+    ) {
+      continue;
+    }
+    if (
+      entry.role === LogEntryRole.PLAYER &&
+      entry.text === lastMessage.text &&
+      (entry.mode ?? LogEntryMode.STORY) === lastMessage.mode
+    ) {
+      currentPlayerEntry = entry;
+    }
+    break;
+  }
+
   const assembled = assembleContextMessages({
     log: effectiveLogSource,
     storyCards,
@@ -150,8 +171,7 @@ ${inventoryBlock}
     lateMeta,
     userMessage: userMsg,
     promptBudget,
-    includeLogEntry: (entry) =>
-      entry.role !== LogEntryRole.PLAYER || entry.text !== lastMessage.text,
+    includeLogEntry: (entry) => entry !== currentPlayerEntry,
     onRequiredTokensExceeded: (requiredTokens) => {
       toast.warning(
         `Context limit exceeded. Required messages use ${requiredTokens} tokens but only ${promptBudget} are available.`,

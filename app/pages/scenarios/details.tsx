@@ -26,7 +26,8 @@ import {
   useCatalogClient,
   useScenarioPublishLinks,
 } from "@/hooks/useCatalogScenarios";
-import { bytesToObjectUrl, formatExactDateTime } from "@/lib/utils";
+import { formatExactDateTime } from "@/lib/utils";
+import { useCoverImageUrl } from "@/hooks/useCoverImageUrl";
 import { scenarioContentToTaleSeed } from "@/lib/scenario-content";
 import {
   analyzeScenarioQuestions,
@@ -116,13 +117,7 @@ export default function ScenarioDetails() {
     };
   }, []);
 
-  const imageSrc = useMemo(
-    () =>
-      scenario?.thumbnail
-        ? bytesToObjectUrl(scenario.thumbnail)
-        : placeholderImage,
-    [scenario?.thumbnail],
-  );
+  const coverUrl = useCoverImageUrl(scenario?.thumbnail);
 
   const contentCounts = useMemo(() => {
     const counts = {
@@ -250,7 +245,7 @@ export default function ScenarioDetails() {
         />
       }
       title={scenario.name}
-      imageSrc={imageSrc}
+      imageSrc={coverUrl || placeholderImage}
       imageAlt={t`${scenario.name} thumbnail`}
       headerAction={
         <div className="flex flex-wrap justify-end gap-2">

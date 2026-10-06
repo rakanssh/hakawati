@@ -14,7 +14,6 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useTaleLibrary } from "@/hooks/useTaleLibrary";
 import { useLoadTale } from "@/hooks/useGameSaves";
 import { TaleConflictDialog } from "@/components/tales/tale-conflict-dialog";
-import { bytesToObjectUrl } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { ScenarioPreviewCard } from "@/components/scenario";
 import {
@@ -267,11 +266,8 @@ export default function TalesHome() {
               key={isRemote ? `remote-${id}` : `local-${id}`}
               title={name}
               summary={description || t`No description yet.`}
-              imageSrc={
-                thumbnail
-                  ? bytesToObjectUrl(thumbnail as unknown as Uint8Array)
-                  : placeholderImage
-              }
+              imageSrc={placeholderImage}
+              imageBytes={thumbnail}
               imageAlt={t`${name} thumbnail`}
               ariaLabel={t`Load ${name}`}
               actionLabel={hasConflict ? t`Review conflict` : t`Continue`}

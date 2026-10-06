@@ -152,7 +152,8 @@ export const useUpdateStore = create<UpdateState>()(
       },
 
       installUpdate: async () => {
-        if (["downloading", "installing"].includes(get().phase)) return;
+        if (["checking", "downloading", "installing"].includes(get().phase))
+          return;
         const update = get().updateResource;
         if (!update) {
           return;
@@ -225,8 +226,10 @@ export const useUpdateStore = create<UpdateState>()(
             pendingChangelogNotes: null,
           });
         } finally {
+          if (get().updateResource === update) {
+            set({ updateResource: null });
+          }
           await closeUpdate(update);
-          set({ updateResource: null });
         }
       },
 

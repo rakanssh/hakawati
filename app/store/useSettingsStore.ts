@@ -433,7 +433,7 @@ export interface SettingsStoreType {
   setFontSize: (fontSize: number) => void;
   setTextDirection: (direction: TextDirection) => void;
   setLanguage: (language: Locale) => void;
-  setToDefault: () => void;
+  resetGenerationSettings: () => void;
   setCustomGmPrompt: (prompt: string) => void;
   setCustomStorytellerPrompt: (prompt: string) => void;
   setCustomContinuePrompt: (prompt: string) => void;
@@ -789,7 +789,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
           useCustomContinueAuthorNote: false,
           useCustomStoryCardGeneratorPrompt: false,
         }),
-      setToDefault: () =>
+      resetGenerationSettings: () =>
         set({
           contextWindow: 10000,
           maxTokens: 2048,
@@ -801,15 +801,6 @@ export const useSettingsStore = create<SettingsStoreType>()(
           repetitionPenalty: undefined,
           minP: undefined,
           topA: undefined,
-          uiScale: 1,
-          fontFamily: THEME_FONT,
-          fontSize: 1,
-          textDirection: "system",
-          language: "en",
-          thinkingVisibility: "all",
-          autoNarrate: false,
-          highlightLatestSection: true,
-          themeScenery: "animated",
         }),
     }),
     {
