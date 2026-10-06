@@ -115,7 +115,8 @@ export default function StorybookScene() {
 
   const scale = clamp(Math.min(width / 960, height / 600), 0.75, 1.5);
   const left = stage?.left ?? 0;
-  const right = width;
+  // Pinned to the story area, so an open story panel never covers the right-hand doodles.
+  const right = stage?.right ?? width;
   const bottom = height;
   const centerX = column
     ? (column.left + column.right) / 2

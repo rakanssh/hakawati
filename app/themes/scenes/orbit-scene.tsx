@@ -17,22 +17,27 @@ type Star = {
   speed: number;
 };
 
-/** Still stars over the whole sky, thinned out behind the reading column; bright sparkles only in the margins. */
-function makeSky({ width, height, column }: StageGeometry) {
+/**
+ * Still stars over the story area only (never behind the sidebars), thinned out behind the reading
+ * column; bright sparkles only in the margins.
+ */
+function makeSky({ width, height, column, stage }: StageGeometry) {
   const r = rng(77);
-  const left = column ? column.left : width / 2 - 330;
-  const right = column ? column.right : width / 2 + 330;
+  const skyLeft = stage?.left ?? 0;
+  const skyWidth = (stage?.right ?? width) - skyLeft;
+  const left = column ? column.left : skyLeft + skyWidth / 2 - 330;
+  const right = column ? column.right : skyLeft + skyWidth / 2 + 330;
   const inColumn = (x: number, pad: number) =>
     x > left - pad && x < right + pad;
 
   const stars: Star[] = [];
-  const starCount = Math.min(520, Math.round(width * height * 1.9e-4));
+  const starCount = Math.min(520, Math.round(skyWidth * height * 1.9e-4));
   for (
     let guard = 0;
     stars.length < starCount && guard < starCount * 6;
     guard++
   ) {
-    const x = r() * width;
+    const x = skyLeft + r() * skyWidth;
     const y = r() * height;
     if (inColumn(x, 10) && r() > 0.22) continue;
     const q = r();
@@ -46,9 +51,9 @@ function makeSky({ width, height, column }: StageGeometry) {
   }
 
   const sparkles: Star[] = [];
-  const sparkleCount = clamp(Math.round((8 * width) / 960), 6, 14);
+  const sparkleCount = clamp(Math.round((8 * skyWidth) / 960), 6, 14);
   for (let guard = 0; sparkles.length < sparkleCount && guard < 400; guard++) {
-    const x = 20 + r() * (width - 40);
+    const x = skyLeft + 20 + r() * (skyWidth - 40);
     const y = 40 + r() * (height * 0.7);
     if (inColumn(x, 30)) continue;
     sparkles.push({
@@ -68,11 +73,11 @@ export default function OrbitScene() {
   const animated = useSceneAnimated();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvas = useSceneCanvas(canvasRef, geometry.width, geometry.height);
-  const { width, height, column } = geometry;
+  const { width, height, column, stage } = geometry;
   const sky = useMemo(
-    () => makeSky({ width, height, column, stage: null, composer: null }),
+    () => makeSky({ width, height, column, stage, composer: null }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [width, height, column?.left, column?.right],
+    [width, height, column?.left, column?.right, stage?.left, stage?.right],
   );
 
   const draw = useCallback(
@@ -103,7 +108,10 @@ export default function OrbitScene() {
     <div data-theme-scene="back" aria-hidden="true">
       <div className="orbit-sky scene-fill" />
       <canvas ref={canvasRef} />
-      <Planet scale={scale} />
+      <Planet
+        scale={scale}
+        inset={geometry.stage ? width - geometry.stage.right : 0}
+      />
     </div>
   );
 }
@@ -161,12 +169,13 @@ const STORM_X = CX - R - 40;
 const STORM_Y = CY - 0.28 * R;
 const HALO_EDGE = R / HALO;
 
-function Planet({ scale }: { scale: number }) {
+/** The planet sits in the story area's bottom-right corner, `inset` from the window's right edge. */
+function Planet({ scale, inset }: { scale: number; inset: number }) {
   return (
     <svg
       className="orbit-planet"
       viewBox="700 330 260 270"
-      style={{ width: 260 * scale, height: 270 * scale }}
+      style={{ width: 260 * scale, height: 270 * scale, right: inset }}
     >
       <defs>
         <clipPath id="orbit-planet-clip">

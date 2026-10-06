@@ -1,6 +1,28 @@
-import type { ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "react";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+
+/**
+ * "boxed" sections are cards, as in the Settings dialog. "plain" sections are headings over open space,
+ * for narrow surfaces such as the story panel, where cards inside a panel would feel heavy.
+ */
+export type SettingsLayoutVariant = "boxed" | "plain";
+
+const SettingsLayoutContext = createContext<SettingsLayoutVariant>("boxed");
+
+export function SettingsLayoutProvider({
+  variant,
+  children,
+}: {
+  variant: SettingsLayoutVariant;
+  children: ReactNode;
+}) {
+  return (
+    <SettingsLayoutContext.Provider value={variant}>
+      {children}
+    </SettingsLayoutContext.Provider>
+  );
+}
 
 export function SettingsStack({
   className,
@@ -9,8 +31,15 @@ export function SettingsStack({
   className?: string;
   children: ReactNode;
 }) {
+  const variant = useContext(SettingsLayoutContext);
   return (
-    <div className={cn("flex max-w-full flex-col gap-5", className)}>
+    <div
+      className={cn(
+        "@container flex max-w-full flex-col",
+        variant === "plain" ? "gap-6" : "gap-5",
+        className,
+      )}
+    >
       {children}
     </div>
   );
@@ -25,6 +54,20 @@ export function SettingsPanel({
   className?: string;
   children: ReactNode;
 }) {
+  const variant = useContext(SettingsLayoutContext);
+  if (variant === "plain") {
+    return (
+      <section className={cn("flex flex-col gap-4", className)}>
+        <h3
+          data-sidebar-heading=""
+          className="border-b border-sidebar-border/80 pb-2 text-[0.8rem] font-semibold text-sidebar-foreground/90"
+        >
+          {title}
+        </h3>
+        {children}
+      </section>
+    );
+  }
   return (
     <section
       className={cn(

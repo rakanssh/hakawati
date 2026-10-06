@@ -9,8 +9,8 @@ interface PreviewStyle {
   entry?: string;
   composer?: string;
   send?: string;
-  /** The background's tile sizes, scaled down with the miniature. */
-  surfaceSize?: string;
+  /** Replaces the theme's page background, e.g. to show scenery the app pages tone down. */
+  surface?: string;
   /** Drawn behind and in front of the miniature screen, in a 160×100 frame. */
   back?: ReactNode;
   front?: ReactNode;
@@ -193,7 +193,8 @@ const PREVIEWS: Record<ThemeId, PreviewStyle> = {
     ),
   },
   typewriter: {
-    surfaceSize: "auto, auto, 200px 129px",
+    surface:
+      "var(--typewriter-desk, none) 0 0 / 200px 129px, var(--app-background)",
     column:
       "bg-card px-[6%] pt-[6%] shadow-[0_6px_10px_-6px_oklch(0.25_0.05_55/0.5)]",
     entry: "h-[3px] w-[60%] rounded-none border-0 bg-primary/80",
@@ -254,9 +255,7 @@ export function ThemePreview({
         "relative isolate aspect-[16/10] overflow-hidden bg-(--app-background) bg-(image:--app-surface-gradient)",
         className,
       )}
-      style={
-        style.surfaceSize ? { backgroundSize: style.surfaceSize } : undefined
-      }
+      style={style.surface ? { background: style.surface } : undefined}
       aria-hidden="true"
     >
       {style.back && <Art>{style.back}</Art>}

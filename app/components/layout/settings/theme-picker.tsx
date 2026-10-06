@@ -113,49 +113,51 @@ export function ThemePicker() {
   }, []);
 
   return (
-    <div
-      role="radiogroup"
-      aria-label={t`Theme`}
-      onKeyDown={moveFocus}
-      className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
-    >
-      {OPTIONS.map((option) => {
-        if (option === "system") {
+    <div className="@container">
+      <div
+        role="radiogroup"
+        aria-label={t`Theme`}
+        onKeyDown={moveFocus}
+        className="grid grid-cols-2 gap-3 @lg:grid-cols-3 @3xl:grid-cols-4"
+      >
+        {OPTIONS.map((option) => {
+          if (option === "system") {
+            return (
+              <ThemeCard
+                key="system"
+                selected={preference === "system"}
+                name={t`System`}
+                description={t`Light or Dark, following your device.`}
+                mode="system"
+                preview={
+                  <div className="relative">
+                    <ThemePreview id="light" />
+                    <ThemePreview
+                      id="dark"
+                      className="absolute inset-0 [clip-path:polygon(100%_0,100%_100%,0_100%)]"
+                    />
+                  </div>
+                }
+                onSelect={() => setPreference("system")}
+              />
+            );
+          }
+          const theme = themes.find((item) => item.id === option)!;
           return (
             <ThemeCard
-              key="system"
-              selected={preference === "system"}
-              name={t`System`}
-              description={t`Light or Dark, following your device.`}
-              mode="system"
-              preview={
-                <div className="relative">
-                  <ThemePreview id="light" />
-                  <ThemePreview
-                    id="dark"
-                    className="absolute inset-0 [clip-path:polygon(100%_0,100%_100%,0_100%)]"
-                  />
-                </div>
-              }
-              onSelect={() => setPreference("system")}
+              key={theme.id}
+              selected={preference === theme.id}
+              name={t(theme.name)}
+              description={t(theme.description)}
+              mode={theme.mode}
+              nameFont={theme.nameFont}
+              nameScale={theme.nameScale}
+              preview={<ThemePreview id={theme.id} />}
+              onSelect={() => setPreference(theme.id)}
             />
           );
-        }
-        const theme = themes.find((item) => item.id === option)!;
-        return (
-          <ThemeCard
-            key={theme.id}
-            selected={preference === theme.id}
-            name={t(theme.name)}
-            description={t(theme.description)}
-            mode={theme.mode}
-            nameFont={theme.nameFont}
-            nameScale={theme.nameScale}
-            preview={<ThemePreview id={theme.id} />}
-            onSelect={() => setPreference(theme.id)}
-          />
-        );
-      })}
+        })}
+      </div>
     </div>
   );
 }

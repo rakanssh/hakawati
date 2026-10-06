@@ -1,5 +1,5 @@
 import { HomeIcon, MinusIcon, SquareIcon, XIcon } from "lucide-react";
-import { SettingsButton, TaleSettingsButton } from "./settings";
+import { SettingsButton } from "./settings";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { Button } from "../ui/button";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
@@ -96,9 +96,6 @@ export function Titlebar() {
                 </TooltipContent>
               </Tooltip>
               <SettingsButton className={titlebarButtonClass} />
-              {isPlayRoute && (
-                <TaleSettingsButton className={titlebarButtonClass} />
-              )}
             </>
           )}
         </div>

@@ -146,3 +146,18 @@
   --story-uncategorized: oklch(0.7 0.018 248);
   --story-uncategorized-foreground: oklch(0.74 0.018 248);
 }
+
+/* A softly raised reading card. */
+.theme-light [data-play-backdrop] {
+  background: color-mix(in oklch, var(--card) 72%, transparent);
+  border: 1px solid color-mix(in oklch, var(--border) 55%, transparent);
+  box-shadow:
+    0 1px 2px oklch(0.3 0.02 248 / 0.04),
+    0 18px 40px -28px oklch(0.3 0.02 248 / 0.28);
+}
+
+.theme-dark [data-play-backdrop] {
+  background: color-mix(in oklch, var(--card) 45%, transparent);
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 48px -30px oklch(0 0 0 / 0.6);
+}

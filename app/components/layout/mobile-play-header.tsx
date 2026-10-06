@@ -2,7 +2,8 @@ import { ArrowLeftIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { SettingsButton, TaleSettingsButton } from "./settings";
+import { SettingsButton } from "./settings";
+import { StoryPanelButton } from "@/components/play/story-panel/story-panel-button";
 import { useTaleStore } from "@/store/useTaleStore";
 
 export function MobilePlayHeader() {
@@ -42,7 +43,7 @@ export function MobilePlayHeader() {
       >
         <ArrowLeftIcon className="w-4 h-4 rtl:rotate-180" />
       </Button>
-      <TaleSettingsButton
+      <StoryPanelButton
         variant="default"
         size="sm"
         className="pointer-events-auto h-8 w-8 shrink-0 rounded-full bg-input/75 text-foreground"

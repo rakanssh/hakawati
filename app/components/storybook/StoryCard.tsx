@@ -86,14 +86,14 @@ export function StoryCard({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex gap-1 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
           <Button
             variant="ghost"
             size="icon"
             className="size-7"
             onClick={handlePinToggle}
-            title={entry.isPinned ? "Unpin" : "Pin"}
-            aria-label={entry.isPinned ? "Unpin" : "Pin"}
+            title={entry.isPinned ? t`Unpin` : t`Pin`}
+            aria-label={entry.isPinned ? t`Unpin` : t`Pin`}
           >
             {entry.isPinned ? (
               <PinOffIcon className="size-3.5" />
@@ -107,8 +107,8 @@ export function StoryCard({
               size="icon"
               className="size-7"
               onClick={() => onEdit(entry)}
-              title="Edit"
-              aria-label="Edit"
+              title={t`Edit`}
+              aria-label={t`Edit`}
             >
               <EditIcon className="size-3.5" />
             </Button>
@@ -118,8 +118,8 @@ export function StoryCard({
             size="icon"
             className="size-7 text-destructive hover:text-destructive"
             onClick={() => onRemove(entry.id)}
-            title="Delete"
-            aria-label="Delete"
+            title={t`Delete`}
+            aria-label={t`Delete`}
           >
             <TrashIcon className="size-3.5" />
           </Button>

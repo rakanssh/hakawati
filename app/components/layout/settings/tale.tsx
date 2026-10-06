@@ -58,13 +58,28 @@ export default function SettingsTale() {
 
   return (
     <SettingsStack>
+      <SettingsPanel title={<Trans>AI Components</Trans>}>
+        <PromptComponentsEditor
+          components={components}
+          allowedTypes={TALE_COMPONENT_TYPES}
+          gameMode={gameMode}
+          showTitle={false}
+          description={
+            <Trans>These optional components are sent to the AI.</Trans>
+          }
+          onAdd={addComponent}
+          onUpdate={updateComponent}
+          onRemove={removeComponent}
+        />
+      </SettingsPanel>
+
       <SettingsPanel title={<Trans>Tale mode</Trans>}>
         <SettingsField
           label={<Trans>Game Mode</Trans>}
           description={getGamemodeDescription(gameMode)}
         >
           <Select value={gameMode} onValueChange={handleGameModeChange}>
-            <SelectTrigger className="w-full sm:w-[240px]">
+            <SelectTrigger className="w-full @md:w-[240px]">
               <SelectValue placeholder={t`Select a game mode`} />
             </SelectTrigger>
             <SelectContent>
@@ -112,21 +127,6 @@ export default function SettingsTale() {
             rows={6}
           />
         </SettingsField>
-      </SettingsPanel>
-
-      <SettingsPanel title={<Trans>AI Components</Trans>}>
-        <PromptComponentsEditor
-          components={components}
-          allowedTypes={TALE_COMPONENT_TYPES}
-          gameMode={gameMode}
-          showTitle={false}
-          description={
-            <Trans>These optional components are sent to the AI.</Trans>
-          }
-          onAdd={addComponent}
-          onUpdate={updateComponent}
-          onRemove={removeComponent}
-        />
       </SettingsPanel>
     </SettingsStack>
   );

@@ -60,9 +60,13 @@ export function CategoryFilter({
                 <Button
                   variant={isSelected ? "default" : "outline"}
                   onClick={() => onCategoryChange(category.value)}
+                  aria-label={category.label}
+                  aria-pressed={isSelected}
+                  className="px-2.5 @xl:px-4"
                 >
                   {category.icon}
-                  <span>{category.label}</span>
+                  {/* Labels show once there is room; narrow spaces get icons with tooltips. */}
+                  <span className="hidden @xl:inline">{category.label}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top">{category.label}</TooltipContent>

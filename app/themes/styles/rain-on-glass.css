@@ -71,6 +71,17 @@
   border-bottom-color: color-mix(in oklch, var(--border) 50%, transparent);
 }
 
-.theme-rain-on-glass [data-slot="sidebar-inner"] {
+.theme-rain-on-glass :is([data-slot="sidebar-inner"], [data-story-panel]) {
   background: color-mix(in oklch, var(--sidebar) 84%, transparent);
+}
+
+/* The reading surface: a clearer, frosted pane in the misted window. */
+.theme-rain-on-glass [data-play-backdrop] {
+  border-radius: 12px;
+  background: color-mix(in oklch, var(--background) 52%, transparent);
+  backdrop-filter: blur(8px);
+  border: 1px solid oklch(1 0 0 / 0.55);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.7),
+    0 20px 40px -26px oklch(0.4 0.03 250 / 0.35);
 }

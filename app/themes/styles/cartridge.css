@@ -170,6 +170,32 @@
   );
 }
 
-.theme-cartridge [data-slot="sidebar-inner"] {
+.theme-cartridge :is([data-slot="sidebar-inner"], [data-story-panel]) {
   background: color-mix(in oklch, var(--sidebar) 90%, transparent);
+}
+
+/* Both sidebars get the arcade panel's pixel edge on the side facing the story. */
+.theme-cartridge [data-slot="sidebar-container"] {
+  border: 0;
+  box-shadow: 4px 0 0 0 var(--foreground);
+}
+
+.theme-cartridge [data-story-panel] {
+  border: 0;
+  box-shadow: -4px 0 0 0 var(--foreground);
+}
+
+.theme-cartridge [data-story-panel-tabs] [role="tab"] {
+  font-family: var(--theme-font-display);
+  font-size: 0.5rem;
+  font-weight: 400;
+}
+
+.theme-cartridge [data-story-panel-handle] {
+  border: 0;
+  border-radius: 0;
+  box-shadow:
+    0 -4px 0 0 var(--foreground),
+    0 4px 0 0 var(--foreground),
+    -4px 0 0 0 var(--foreground);
 }

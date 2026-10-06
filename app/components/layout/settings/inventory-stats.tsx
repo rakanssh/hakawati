@@ -88,178 +88,180 @@ export default function SettingsInventoryStats() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 h-full w-full overflow-hidden">
-      {/* Stats Section */}
-      <section className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <div className="flex items-center gap-2 mb-4">
-          <BarChart3 className="h-5 w-5 text-primary" />
-          <Label className="text-base font-semibold">
-            <Trans>Stats</Trans>
-          </Label>
-          <span className="text-xs text-muted-foreground ml-auto">
-            {plural(stats.length, { one: "# stat", other: "# stats" })}
-          </span>
-        </div>
+    <div className="@container h-full w-full">
+      <div className="flex h-full w-full flex-col gap-6 overflow-hidden @3xl:flex-row">
+        {/* Stats Section */}
+        <section className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="h-5 w-5 text-primary" />
+            <Label className="text-base font-semibold">
+              <Trans>Stats</Trans>
+            </Label>
+            <span className="text-xs text-muted-foreground ml-auto">
+              {plural(stats.length, { one: "# stat", other: "# stats" })}
+            </span>
+          </div>
 
-        <div className="flex flex-col gap-2 mb-4">
-          <div className="flex gap-2 items-end">
-            <div className="flex-1 flex flex-col gap-1">
+          <div className="flex flex-col gap-2 mb-4">
+            <div className="flex gap-2 items-end">
+              <div className="flex-1 flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">
+                  <Trans>Name</Trans>
+                </span>
+                <Input
+                  placeholder={t`Stat name`}
+                  value={newStatName}
+                  onChange={(e) => setNewStatName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">
+                  <Trans>Current</Trans>
+                </span>
+                <Input
+                  type="number"
+                  value={newStatValue}
+                  onChange={(e) => setNewStatValue(Number(e.target.value))}
+                  className="w-20"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">
+                  <Trans>Max</Trans>
+                </span>
+                <Input
+                  type="number"
+                  value={newStatMax}
+                  onChange={(e) => setNewStatMax(Number(e.target.value))}
+                  className="w-20"
+                />
+              </div>
+              <Button
+                onClick={handleAddStat}
+                disabled={!newStatName.trim()}
+                size="icon"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex flex-col gap-1">
               <span className="text-xs text-muted-foreground">
-                <Trans>Name</Trans>
+                <Trans>Description (optional)</Trans>
               </span>
               <Input
-                placeholder={t`Stat name`}
-                value={newStatName}
-                onChange={(e) => setNewStatName(e.target.value)}
+                placeholder={t`Add context for the AI...`}
+                value={newStatDescription}
+                onChange={(e) => setNewStatDescription(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
+                className="text-sm"
               />
             </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground">
-                <Trans>Current</Trans>
-              </span>
-              <Input
-                type="number"
-                value={newStatValue}
-                onChange={(e) => setNewStatValue(Number(e.target.value))}
-                className="w-20"
-              />
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground">
-                <Trans>Max</Trans>
-              </span>
-              <Input
-                type="number"
-                value={newStatMax}
-                onChange={(e) => setNewStatMax(Number(e.target.value))}
-                className="w-20"
-              />
-            </div>
-            <Button
-              onClick={handleAddStat}
-              disabled={!newStatName.trim()}
-              size="icon"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
           </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">
-              <Trans>Description (optional)</Trans>
+
+          <ScrollArea className="flex-1 -mx-1 px-1">
+            <div className="flex flex-col gap-2 pb-2">
+              {stats.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <BarChart3 className="h-10 w-10 text-muted-foreground/30 mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    <Trans>No stats yet</Trans>
+                  </p>
+                  <p className="text-xs text-muted-foreground/70">
+                    <Trans>Add a stat to track character attributes</Trans>
+                  </p>
+                </div>
+              ) : (
+                stats.map((stat) => (
+                  <StatItem
+                    key={stat.name}
+                    stat={stat}
+                    onUpdate={handleUpdateStat}
+                    onRemove={handleRemoveStat}
+                  />
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </section>
+
+        {/* Divider */}
+        <div className="hidden w-px bg-border @3xl:block" />
+        <div className="h-px bg-border @3xl:hidden" />
+
+        {/* Inventory Section */}
+        <section className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 mb-4">
+            <Package className="h-5 w-5 text-primary" />
+            <Label className="text-base font-semibold">
+              <Trans>Inventory</Trans>
+            </Label>
+            <span className="text-xs text-muted-foreground ml-auto">
+              {plural(inventory.length, { one: "# item", other: "# items" })}
             </span>
-            <Input
-              placeholder={t`Add context for the AI...`}
-              value={newStatDescription}
-              onChange={(e) => setNewStatDescription(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddStat()}
-              className="text-sm"
-            />
           </div>
-        </div>
 
-        <ScrollArea className="flex-1 -mx-1 px-1">
-          <div className="flex flex-col gap-2 pb-2">
-            {stats.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <BarChart3 className="h-10 w-10 text-muted-foreground/30 mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  <Trans>No stats yet</Trans>
-                </p>
-                <p className="text-xs text-muted-foreground/70">
-                  <Trans>Add a stat to track character attributes</Trans>
-                </p>
-              </div>
-            ) : (
-              stats.map((stat) => (
-                <StatItem
-                  key={stat.name}
-                  stat={stat}
-                  onUpdate={handleUpdateStat}
-                  onRemove={handleRemoveStat}
+          <div className="flex flex-col gap-2 mb-4">
+            <div className="flex gap-2 items-end">
+              <div className="flex-1 flex flex-col gap-1">
+                <span className="text-xs text-muted-foreground">
+                  <Trans>Name</Trans>
+                </span>
+                <Input
+                  placeholder={t`Add item...`}
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
                 />
-              ))
-            )}
-          </div>
-        </ScrollArea>
-      </section>
-
-      {/* Divider */}
-      <div className="hidden lg:block w-px bg-border" />
-      <div className="lg:hidden h-px bg-border" />
-
-      {/* Inventory Section */}
-      <section className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <div className="flex items-center gap-2 mb-4">
-          <Package className="h-5 w-5 text-primary" />
-          <Label className="text-base font-semibold">
-            <Trans>Inventory</Trans>
-          </Label>
-          <span className="text-xs text-muted-foreground ml-auto">
-            {plural(inventory.length, { one: "# item", other: "# items" })}
-          </span>
-        </div>
-
-        <div className="flex flex-col gap-2 mb-4">
-          <div className="flex gap-2 items-end">
-            <div className="flex-1 flex flex-col gap-1">
+              </div>
+              <Button
+                onClick={handleAddItem}
+                disabled={!newItemName.trim()}
+                size="icon"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex flex-col gap-1">
               <span className="text-xs text-muted-foreground">
-                <Trans>Name</Trans>
+                <Trans>Description (optional)</Trans>
               </span>
               <Input
-                placeholder={t`Add item...`}
-                value={newItemName}
-                onChange={(e) => setNewItemName(e.target.value)}
+                placeholder={t`Add context for the AI...`}
+                value={newItemDescription}
+                onChange={(e) => setNewItemDescription(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
+                className="text-sm"
               />
             </div>
-            <Button
-              onClick={handleAddItem}
-              disabled={!newItemName.trim()}
-              size="icon"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
           </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">
-              <Trans>Description (optional)</Trans>
-            </span>
-            <Input
-              placeholder={t`Add context for the AI...`}
-              value={newItemDescription}
-              onChange={(e) => setNewItemDescription(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddItem()}
-              className="text-sm"
-            />
-          </div>
-        </div>
 
-        <ScrollArea className="flex-1 -mx-1 px-1">
-          <div className="flex flex-col gap-2 pb-2">
-            {inventory.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <Package className="h-10 w-10 text-muted-foreground/30 mb-2" />
-                <p className="text-sm text-muted-foreground">
-                  <Trans>Inventory empty</Trans>
-                </p>
-                <p className="text-xs text-muted-foreground/70">
-                  <Trans>Items collected will appear here</Trans>
-                </p>
-              </div>
-            ) : (
-              inventory.map((item) => (
-                <InventoryItem
-                  key={item.id}
-                  item={item}
-                  onUpdate={handleUpdateItem}
-                  onRemove={handleRemoveItem}
-                />
-              ))
-            )}
-          </div>
-        </ScrollArea>
-      </section>
+          <ScrollArea className="flex-1 -mx-1 px-1">
+            <div className="flex flex-col gap-2 pb-2">
+              {inventory.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <Package className="h-10 w-10 text-muted-foreground/30 mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    <Trans>Inventory empty</Trans>
+                  </p>
+                  <p className="text-xs text-muted-foreground/70">
+                    <Trans>Items collected will appear here</Trans>
+                  </p>
+                </div>
+              ) : (
+                inventory.map((item) => (
+                  <InventoryItem
+                    key={item.id}
+                    item={item}
+                    onUpdate={handleUpdateItem}
+                    onRemove={handleRemoveItem}
+                  />
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </section>
+      </div>
     </div>
   );
 }

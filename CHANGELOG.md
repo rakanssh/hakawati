@@ -8,10 +8,12 @@ All notable changes to this project are documented in this file.
 
 - Seven new themes! Brass Night, Orbit, Phosphor, Cartridge, Rain on Glass, Storybook, and Typewriter. Most draw scenery around the story on the play screen, and several bring their own type.
 - Themes are chosen from a gallery of live previews in Settings, and scenery can be animated, still, or off.
+- A story panel on the right of the play screen, opened from a pull tab on the edge of the story. It sits beside the story and can be resized by dragging its edge. It holds the tale's story setup, story cards (now searchable), the character in Game Master tales, the narrator model and response settings, and the theme and reading settings.
 
 ### Changed
 
 - Bamboo and Cosmos are retired. Bamboo switches to Light and Cosmos to Orbit.
+- Tale Settings now open in the story panel instead of a full-screen dialog.
 
 ## [v1.1.0] - 2026-09-30
 

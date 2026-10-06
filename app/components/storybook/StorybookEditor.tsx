@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, PlusIcon, Sparkles } from "lucide-react";
+import { Loader2, PlusIcon, SearchIcon, Sparkles } from "lucide-react";
 import {
   isModelRoleConfigured,
   useSettingsStore,
@@ -78,15 +78,23 @@ export function StorybookEditor({
     category: StorybookCategory.UNCATEGORIZED,
     isPinned: false,
   });
+  const [query, setQuery] = React.useState("");
   const [isGenerating, setIsGenerating] = React.useState(false);
   const abortRef = React.useRef<AbortController | null>(null);
   const utilityConfig = useSettingsStore((s) => s.modelRoles.utility);
 
-  // Filter entries by selected category
+  // Filter entries by selected category and search text
   const filteredEntries = React.useMemo(() => {
-    if (!selectedCategory) return entries;
-    return entries.filter((entry) => entry.category === selectedCategory);
-  }, [entries, selectedCategory]);
+    const needle = query.trim().toLocaleLowerCase();
+    return entries.filter(
+      (entry) =>
+        (!selectedCategory || entry.category === selectedCategory) &&
+        (!needle ||
+          [entry.title, entry.content, ...entry.triggers].some((text) =>
+            text.toLocaleLowerCase().includes(needle),
+          )),
+    );
+  }, [entries, selectedCategory, query]);
 
   // Organize entries: pinned first, then by category
   const organizedEntries = React.useMemo(() => {
@@ -207,23 +215,36 @@ export function StorybookEditor({
     formData.title.trim().length > 0 && formData.content.trim().length > 0;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+    <div className="@container flex flex-col gap-4">
+      <div className="flex flex-col items-start justify-between gap-3 @2xl:flex-row @2xl:items-center">
         <CategoryFilter
           selectedCategory={selectedCategory}
           onCategoryChange={setSelectedCategory}
         />
-        <Button onClick={() => handleOpenDialog()} aria-label={t`Add entry`}>
-          <PlusIcon />
-          <span>
-            <Trans>Add</Trans>
-          </span>
-        </Button>
+        <div className="flex w-full items-center gap-2 @2xl:w-auto">
+          <div className="relative min-w-0 flex-1 @2xl:w-56 @2xl:flex-none">
+            <SearchIcon className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t`Search cards`}
+              aria-label={t`Search cards`}
+              className="ps-8"
+            />
+          </div>
+          <Button onClick={() => handleOpenDialog()} aria-label={t`Add entry`}>
+            <PlusIcon />
+            <span>
+              <Trans>Add</Trans>
+            </span>
+          </Button>
+        </div>
       </div>
 
       {/* Entries Grid */}
       {organizedEntries.length > 0 ? (
-        <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 @2xl:grid-cols-2 @2xl:gap-4">
           {organizedEntries.map((entry) => (
             <StoryCardComponent
               key={entry.id}
@@ -237,7 +258,9 @@ export function StorybookEditor({
       ) : (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <p className="text-muted-foreground text-sm">
-            {selectedCategory ? (
+            {query.trim() ? (
+              <Trans>No cards match your search.</Trans>
+            ) : selectedCategory ? (
               <Trans>
                 No entries in <param>{selectedCategory}</param> category
               </Trans>

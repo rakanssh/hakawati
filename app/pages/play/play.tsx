@@ -39,6 +39,7 @@ import { usePlaySession } from "@/hooks/usePlaySession";
 import { useTtsPlayback } from "@/hooks/useTtsPlayback";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ThemeScene } from "@/themes/scenes/theme-scene";
+import { StoryPanel } from "@/components/play/story-panel/story-panel";
 
 export default function Play() {
   const { t } = useLingui();
@@ -400,20 +401,24 @@ export default function Play() {
           >
             {renderMainContent()}
           </SidebarInset>
+          <StoryPanel />
         </SidebarProvider>
       ) : (
-        <div
-          className="relative flex h-full flex-col overflow-hidden bg-transparent"
-          style={
-            isMobilePlatform
-              ? {
-                  paddingInlineStart: "env(safe-area-inset-left)",
-                  paddingInlineEnd: "env(safe-area-inset-right)",
-                }
-              : undefined
-          }
-        >
-          {renderMainContent()}
+        <div className="flex h-full overflow-hidden">
+          <div
+            className="relative flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-transparent"
+            style={
+              isMobilePlatform
+                ? {
+                    paddingInlineStart: "env(safe-area-inset-left)",
+                    paddingInlineEnd: "env(safe-area-inset-right)",
+                  }
+                : undefined
+            }
+          >
+            {renderMainContent()}
+          </div>
+          <StoryPanel />
         </div>
       )}
     </>

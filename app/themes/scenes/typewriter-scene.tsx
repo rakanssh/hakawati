@@ -121,7 +121,14 @@ function Spool({ x, y }: { x: number; y: number }) {
  */
 export default function TypewriterScene({ withSidebar }: SceneProps) {
   const { width, height, column, composer } = useStageGeometry();
-  if (!composer) return null;
+  const desk = <div className="typewriter-desk scene-fill" />;
+  if (!composer) {
+    return (
+      <div data-theme-scene="back" aria-hidden="true">
+        {desk}
+      </div>
+    );
+  }
 
   const cx = (composer.left + composer.right) / 2;
   const composerHalf = (composer.right - composer.left) / 2;
@@ -141,6 +148,7 @@ export default function TypewriterScene({ withSidebar }: SceneProps) {
   return (
     <>
       <div data-theme-scene="back" aria-hidden="true">
+        {desk}
         <svg className="scene-fill" viewBox={`0 0 ${width} ${height}`}>
           <defs>
             <linearGradient

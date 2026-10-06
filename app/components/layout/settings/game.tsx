@@ -14,17 +14,15 @@ import {
   type TextDirection,
   type ThinkingVisibility,
 } from "@/store/useSettingsStore";
-import { FontSelector } from "./font-selector";
 import { type Locale, LOCALES, loadLocale } from "@/i18n";
-import { THEME_SCENERY_OPTIONS, type ThemeScenery } from "@/themes/registry";
-import { cn } from "@/lib/utils";
 import { ThemePicker } from "./theme-picker";
+import { UI_SCALE_MAX, UI_SCALE_MIN } from "@/lib/appearance-limits";
 import {
-  FONT_SIZE_MAX,
-  FONT_SIZE_MIN,
-  UI_SCALE_MAX,
-  UI_SCALE_MIN,
-} from "@/lib/appearance-limits";
+  FontFamilyField,
+  HighlightLatestField,
+  SceneryField,
+  StoryTextSizeField,
+} from "./appearance-fields";
 import {
   SettingsField,
   SettingsPanel,
@@ -36,8 +34,6 @@ export default function SettingsGame() {
   const {
     uiScale,
     setUiScale,
-    fontSize,
-    setFontSize,
     textDirection,
     setTextDirection,
     language,
@@ -46,16 +42,7 @@ export default function SettingsGame() {
     setThinkingVisibility,
     autoNarrate,
     setAutoNarrate,
-    highlightLatestSection,
-    setHighlightLatestSection,
-    themeScenery,
-    setThemeScenery,
   } = useSettingsStore();
-  const sceneryLabels: Record<ThemeScenery, string> = {
-    animated: t`Animated`,
-    still: t`Still`,
-    off: t`Off`,
-  };
 
   const handleLanguageChange = (value: string) => {
     const locale = value as Locale;
@@ -67,38 +54,7 @@ export default function SettingsGame() {
     <SettingsStack>
       <SettingsPanel title={<Trans>Theme</Trans>}>
         <ThemePicker />
-        <SettingsField
-          label={<Trans>Scenery</Trans>}
-          description={
-            <Trans>
-              Drawn around the story on the play screen. Still keeps it without
-              movement; Off keeps only the colours and type.
-            </Trans>
-          }
-        >
-          <div
-            role="radiogroup"
-            aria-label={t`Scenery`}
-            className="inline-flex w-fit rounded-xs border bg-muted/40 p-0.5"
-          >
-            {THEME_SCENERY_OPTIONS.map((option) => (
-              <button
-                key={option}
-                type="button"
-                role="radio"
-                aria-checked={themeScenery === option}
-                onClick={() => setThemeScenery(option)}
-                className={cn(
-                  "rounded-[calc(var(--radius)-6px)] px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  themeScenery === option &&
-                    "bg-background text-foreground shadow-sm",
-                )}
-              >
-                {sceneryLabels[option]}
-              </button>
-            ))}
-          </div>
-        </SettingsField>
+        <SceneryField />
       </SettingsPanel>
 
       <SettingsPanel title={<Trans>Language</Trans>}>
@@ -166,45 +122,11 @@ export default function SettingsGame() {
             </div>
           </SettingsField>
 
-          <SettingsField label={<Trans>Font Size (0.5 - 4.0)</Trans>}>
-            <div className="flex flex-row items-center gap-2">
-              <NumberInput
-                min={FONT_SIZE_MIN}
-                max={FONT_SIZE_MAX}
-                step={0.05}
-                value={fontSize}
-                onValueCommit={(value) => setFontSize(value)}
-                aria-label={t`Game log font size`}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setFontSize(1)}
-                disabled={Math.abs(fontSize - 1) < 0.01}
-              >
-                <Trans>Reset</Trans>
-              </Button>
-            </div>
-          </SettingsField>
+          <StoryTextSizeField />
 
-          <SettingsField
-            label={<Trans>Font Family</Trans>}
-            className="sm:col-span-2"
-          >
-            <FontSelector />
-          </SettingsField>
+          <FontFamilyField className="sm:col-span-2" />
 
-          <SettingsField label={<Trans>Latest section</Trans>}>
-            <label className="flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={highlightLatestSection}
-                onCheckedChange={(checked) =>
-                  setHighlightLatestSection(checked === true)
-                }
-              />
-              <Trans>Highlight last section</Trans>
-            </label>
-          </SettingsField>
+          <HighlightLatestField />
         </div>
       </SettingsPanel>
 

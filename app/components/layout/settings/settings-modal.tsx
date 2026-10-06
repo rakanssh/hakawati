@@ -1,14 +1,11 @@
 import {
   Bot,
-  BookOpen,
   Cloud,
   DownloadCloud,
   Info,
-  Library,
   Palette,
   SlidersHorizontal,
   Sparkles,
-  UserRound,
 } from "lucide-react";
 import { Trans } from "@lingui/react/macro";
 import {
@@ -23,9 +20,6 @@ import SettingsModel from "@/components/layout/settings/model";
 import SettingsAdvanced from "@/components/layout/settings/advanced";
 import SettingsUpdates from "@/components/layout/settings/updates";
 import SettingsAbout from "@/components/layout/settings/about";
-import SettingsTale from "@/components/layout/settings/tale";
-import SettingsStoryCards from "@/components/layout/settings/story-cards";
-import SettingsInventoryStats from "@/components/layout/settings/inventory-stats";
 import SettingsCloudSync from "@/components/layout/settings/cloud-sync";
 
 const globalSections = [
@@ -102,47 +96,9 @@ const globalSections = [
   },
 ] as const satisfies readonly SettingsSectionDefinition[];
 
-const taleSections = [
-  {
-    id: "story",
-    label: <Trans>Story</Trans>,
-    description: (
-      <Trans>Adjust the active tale mode, setup, and author notes.</Trans>
-    ),
-    groupId: "tale",
-    group: <Trans>Tale</Trans>,
-    icon: BookOpen,
-    component: SettingsTale,
-  },
-  {
-    id: "character",
-    label: <Trans>Character</Trans>,
-    description: <Trans>Manage the stats and inventory for this tale.</Trans>,
-    groupId: "tale",
-    group: <Trans>Tale</Trans>,
-    icon: UserRound,
-    component: SettingsInventoryStats,
-  },
-  {
-    id: "story-cards",
-    label: <Trans>Story Cards</Trans>,
-    description: (
-      <Trans>
-        Maintain the people, places, things, and concepts in memory.
-      </Trans>
-    ),
-    groupId: "memory",
-    group: <Trans>Memory</Trans>,
-    icon: Library,
-    component: SettingsStoryCards,
-  },
-] as const satisfies readonly SettingsSectionDefinition[];
-
 export type GlobalSettingsSectionId = (typeof globalSections)[number]["id"];
-export type TaleSettingsSectionId = (typeof taleSections)[number]["id"];
 
 const DEFAULT_GLOBAL_SECTION: GlobalSettingsSectionId = "appearance";
-const DEFAULT_TALE_SECTION: TaleSettingsSectionId = "story";
 
 interface SettingsModalProps {
   open: boolean;
@@ -188,37 +144,6 @@ export function SettingsModal({
         </Trans>
       }
       renderSectionExtra={renderSectionExtra}
-    />
-  );
-}
-
-interface TaleSettingsModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  defaultTab?: TaleSettingsSectionId;
-  visibleTabs?: readonly TaleSettingsSectionId[];
-}
-
-export function TaleSettingsModal({
-  open,
-  onOpenChange,
-  defaultTab = DEFAULT_TALE_SECTION,
-  visibleTabs,
-}: TaleSettingsModalProps) {
-  return (
-    <SettingsShell
-      open={open}
-      onOpenChange={onOpenChange}
-      sections={taleSections}
-      defaultSection={defaultTab}
-      visibleSections={visibleTabs}
-      title={<Trans>Tale Settings</Trans>}
-      description={
-        <Trans>
-          Edit the active tale&apos;s story context, character state, and
-          memory.
-        </Trans>
-      }
     />
   );
 }
