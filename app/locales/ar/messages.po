@@ -106,7 +106,7 @@ msgstr "صورة مصغرة لـ {0}"
 #. placeholder {0}: description.trim().length
 #: app/components/scenario/ScenarioBasicsFields.tsx:202
 msgid "{0}/600 characters for publishing"
-msgstr ""
+msgstr "{0}/600 حرف للنشر"
 
 #: app/components/layout/settings/tale.tsx:128
 #~ msgid "{authorNoteChars} characters • ~{authorNoteTokens} tokens"
@@ -271,11 +271,11 @@ msgstr "إضافة"
 
 #: app/components/scenario/PublishScenarioDialog.tsx:149
 msgid "Add a description before publishing."
-msgstr ""
+msgstr "أضف وصفاً قبل النشر."
 
 #: app/components/scenario/PublishScenarioDialog.tsx:145
 msgid "Add a scenario name before publishing."
-msgstr ""
+msgstr "أضف اسماً للسيناريو قبل النشر."
 
 #: app/components/layout/settings/inventory-stats.tsx:171
 msgid "Add a stat to track character attributes"
@@ -300,7 +300,7 @@ msgstr "أضف معلومات للنموذج..."
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:130
 msgid "Add cover"
-msgstr ""
+msgstr "إضافة غلاف"
 
 #: app/data/api-presets.ts:33
 msgid "Add credits to your account (To access non-free models)"
@@ -628,7 +628,7 @@ msgstr "الفئة"
 
 #: app/pages/scenarios/edit.tsx:212
 msgid "Changes stay in your draft until you publish an update."
-msgstr ""
+msgstr "تبقى التغييرات في مسودتك حتى تنشر تحديثاً."
 
 #: app/components/play/story-panel/story-panel.tsx:78
 #: app/components/quickstart/quickstart-wizard.tsx:355
@@ -648,15 +648,15 @@ msgstr "اسم الشخصية"
 
 #: app/data/api-presets.ts:41
 msgid "ChatGPT (Subscription)"
-msgstr ""
+msgstr "ChatGPT (اشتراك)"
 
 #: app/components/layout/settings/chatgpt-connection.tsx:87
 msgid "ChatGPT account connected"
-msgstr ""
+msgstr "حساب ChatGPT متصل"
 
 #: app/components/layout/settings/model.tsx:68
 msgid "ChatGPT manages output length and sampling. Your sampling settings are preserved for other providers."
-msgstr ""
+msgstr "يتحكم ChatGPT في طول المخرجات وطريقة التوليد. تبقى إعدادات أخذ العينات الخاصة بك محفوظة لمزودي الخدمة الآخرين."
 
 #: app/components/play/story-panel/ai-tab.tsx:82
 msgid "ChatGPT manages response length and sampling."
@@ -664,11 +664,11 @@ msgstr "يتحكم ChatGPT في طول الرد وطريقة التوليد."
 
 #: app/components/layout/settings/chatgpt-connection.tsx:142
 msgid "ChatGPT plan usage is not enabled. Continue with ChatGPT to enable it."
-msgstr ""
+msgstr "استخدام خطة ChatGPT غير مفعّل. اختر «المتابعة باستخدام ChatGPT» لتفعيله."
 
 #: app/components/layout/settings/chatgpt-connection.tsx:70
 msgid "ChatGPT sign-in is available in the desktop app on Windows, macOS, and Linux."
-msgstr ""
+msgstr "تسجيل الدخول عبر ChatGPT متاح في نسخة الأجهزة المكتبية على Windows وmacOS وLinux."
 
 #: app/components/layout/settings/settings-modal.tsx:80
 msgid "Check for app updates and install new versions."
@@ -684,7 +684,7 @@ msgstr "جاري التحقق"
 
 #: app/components/layout/settings/chatgpt-connection.tsx:65
 msgid "Checking ChatGPT connection..."
-msgstr ""
+msgstr "جارٍ التحقق من الاتصال بـ ChatGPT..."
 
 #: app/components/layout/settings/updates.tsx:77
 msgid "Checking for updates..."
@@ -692,7 +692,7 @@ msgstr "جاري التحقق من وجود تحديثات..."
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:72
 msgid "Choose a JPEG, PNG, or WebP image."
-msgstr ""
+msgstr "اختر صورة بصيغة JPEG أو PNG أو WebP."
 
 #: app/components/play/story-panel/ai-tab.tsx:122
 msgid "Choose a model above before you continue the story."
@@ -920,7 +920,7 @@ msgstr "موجّه النظام عند الاستمرار"
 
 #: app/components/layout/settings/chatgpt-connection.tsx:118
 msgid "Continue with ChatGPT"
-msgstr ""
+msgstr "المتابعة باستخدام ChatGPT"
 
 #: app/pages/home/home.tsx:850
 #~ msgid "Continue your tale"
@@ -957,15 +957,15 @@ msgstr "تعذّر فتح الرابط"
 
 #: app/components/layout/settings/chatgpt-connection.tsx:37
 msgid "Could not open your browser. Visit ChatGPT Settings → Usage."
-msgstr ""
+msgstr "تعذّر فتح المتصفح. اذهب إلى Settings ← Usage في ChatGPT."
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:91
 msgid "Cover image"
-msgstr ""
+msgstr "صورة الغلاف"
 
 #: app/components/scenario/PublishScenarioDialog.tsx:153
 msgid "Cover uploads are currently unavailable. Your draft is saved; try publishing again later."
-msgstr ""
+msgstr "رفع صور الغلاف غير متاح حالياً. تم حفظ مسودتك، فحاول النشر مرة أخرى لاحقاً."
 
 #: app/pages/home/home.tsx:860
 #: app/pages/scenarios/create.tsx:85
@@ -1225,11 +1225,11 @@ msgstr "تعطيل المزامنة"
 
 #: app/components/layout/settings/chatgpt-connection.tsx:132
 msgid "Disconnect"
-msgstr ""
+msgstr "قطع الاتصال"
 
 #: app/components/layout/settings/chatgpt-connection.tsx:130
 msgid "Disconnecting..."
-msgstr ""
+msgstr "جارٍ قطع الاتصال..."
 
 #: app/pages/home/home.tsx:813
 #: app/pages/scenarios/catalog-details.tsx:145
@@ -1310,6 +1310,7 @@ msgstr "تُرسم حول القصة في شاشة اللعب. «ثابت» يب
 msgid "Edit"
 msgstr "تعديل"
 
+#: app/components/play/log/story-editor.tsx:82
 #: app/components/play/play-log-display.tsx:165
 msgid "Edit entry"
 msgstr "تعديل المدخل"
@@ -1326,7 +1327,7 @@ msgstr "تعديل المدخل"
 #: app/pages/scenarios/catalog-details.tsx:367
 #: app/pages/scenarios/home.tsx:188
 msgid "Edit scenario"
-msgstr ""
+msgstr "تعديل السيناريو"
 
 #: app/pages/scenarios/edit.tsx:207
 msgid "Edit Scenario"
@@ -1499,7 +1500,7 @@ msgstr "تعذّر حل التعارض"
 #: app/pages/scenarios/edit.tsx:120
 #: app/pages/scenarios/edit.tsx:171
 msgid "Failed to save scenario"
-msgstr ""
+msgstr "تعذّر حفظ السيناريو"
 
 #: app/components/scenario/ScenarioStartWizard.tsx:61
 #: app/pages/scenarios/catalog-details.tsx:276
@@ -1542,7 +1543,7 @@ msgstr "تصفية حسب الوسوم"
 
 #: app/components/layout/settings/chatgpt-connection.tsx:103
 msgid "Finish signing in in your browser..."
-msgstr ""
+msgstr "أكمل تسجيل الدخول في متصفحك..."
 
 #: app/components/layout/settings/cloud-sync.tsx:1042
 msgid "Finish signing in through your browser. You can cancel and keep using Hakawati at any time."
@@ -1685,7 +1686,7 @@ msgstr "اذهب إلى قسم API في لوحة التحكم"
 
 #: app/components/layout/settings/chatgpt-connection.tsx:200
 msgid "Got it"
-msgstr ""
+msgstr "حسناً"
 
 #: app/data/quickstart-presets.ts:326
 #~ msgid "Ground the fantastic in plausible detail. Explore the human condition against the vastness of space or the weight of technological change."
@@ -1702,7 +1703,7 @@ msgstr "تطبيق حكواتي محدّث."
 
 #: app/components/layout/settings/chatgpt-connection.tsx:192
 msgid "Hakawati will now consume resources from your ChatGPT plan when you have the ChatGPT subscription provider selected."
-msgstr ""
+msgstr "سيستخدم حكواتي الآن موارد خطة ChatGPT الخاصة بك عند اختيار مزود اشتراك ChatGPT."
 
 #: app/data/quickstart-presets.ts:222
 #~ msgid "Handheld scanner"
@@ -2085,7 +2086,7 @@ msgstr "جارٍ تحميل سياسات النشر..."
 
 #: app/pages/scenarios/edit.tsx:188
 msgid "Loading scenario..."
-msgstr ""
+msgstr "جارٍ تحميل السيناريو..."
 
 #: app/pages/scenarios/home.tsx:495
 #: app/pages/scenarios/home.tsx:561
@@ -2195,7 +2196,7 @@ msgstr "إدارة التخزين"
 
 #: app/components/layout/settings/chatgpt-connection.tsx:32
 msgid "Manage usage"
-msgstr ""
+msgstr "إدارة الاستخدام"
 
 #: app/components/layout/settings/settings-modal.tsx:71
 msgid "Manage your account and cloud sync."
@@ -2396,11 +2397,11 @@ msgstr "لا توجد حكايات سحابية."
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:101
 msgid "No cover"
-msgstr ""
+msgstr "بلا غلاف"
 
 #: app/components/scenario/PublishScenarioDialog.tsx:250
 msgid "No cover image"
-msgstr ""
+msgstr "لا توجد صورة غلاف"
 
 #: app/components/layout/settings/cloud-sync.tsx:1079
 #: app/pages/home/home.tsx:142
@@ -2430,7 +2431,7 @@ msgstr "لا يوجد خوادم محلية."
 
 #: app/components/layout/model-select.tsx:161
 msgid "No models are available for this account."
-msgstr ""
+msgstr "لا توجد نماذج متاحة لهذا الحساب."
 
 #: app/pages/home/home.tsx:832
 #: app/pages/scenarios/home.tsx:567
@@ -2510,7 +2511,7 @@ msgstr "أبيض عاجي بلمسة زرقاء مخضرّة."
 
 #: app/data/api-presets.ts:47
 msgid "Official OpenAI (API)"
-msgstr ""
+msgstr "OpenAI الرسمي (API)"
 
 #: app/data/quickstart-presets.ts:245
 #~ msgid "Old Diary"
@@ -2576,7 +2577,7 @@ msgstr "المقطع الافتتاحي"
 
 #: app/data/api-presets.ts:24
 msgid "OpenRouter (API)"
-msgstr ""
+msgstr "OpenRouter (API)"
 
 #: app/components/layout/settings/api.tsx:263
 msgid "Optional for most local servers"
@@ -2809,7 +2810,7 @@ msgstr "نشر السيناريو"
 
 #: app/components/scenario/PublishScenarioDialog.tsx:184
 msgid "Publish the name, description, cover, and story content from this draft together. Later edits stay private until you publish again."
-msgstr ""
+msgstr "انشر الاسم والوصف والغلاف ومحتوى القصة من هذه المسودة معاً. تبقى التعديلات اللاحقة خاصة حتى تنشر مرة أخرى."
 
 #: app/components/scenario/PublishScenarioDialog.tsx:178
 #: app/components/scenario/PublishScenarioDialog.tsx:358
@@ -2834,7 +2835,7 @@ msgstr "نُشر في {0}"
 
 #: app/pages/scenarios/edit.tsx:220
 msgid "Published details could not be loaded. You can edit your draft; publishing will retry."
-msgstr ""
+msgstr "تعذّر تحميل التفاصيل المنشورة. يمكنك تعديل مسودتك، وسيُعاد تحميلها عند النشر."
 
 #: app/components/scenario/PublishScenarioDialog.tsx:223
 msgid "Published scenario details could not be loaded."
@@ -2921,7 +2922,7 @@ msgstr "راحة القراءة"
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:126
 msgid "Reading cover…"
-msgstr ""
+msgstr "جارٍ قراءة الغلاف…"
 
 #: app/components/scenario/ScenarioStartWizard.tsx:99
 msgid "Ready to start your tale?"
@@ -2978,7 +2979,7 @@ msgstr "إزالة المكون"
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:144
 msgid "Remove cover"
-msgstr ""
+msgstr "إزالة الغلاف"
 
 #: app/components/layout/settings/cloud-sync.tsx:1222
 #: app/pages/tales/home.tsx:329
@@ -3002,7 +3003,7 @@ msgstr "عقوبة التكرار"
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:128
 msgid "Replace cover"
-msgstr ""
+msgstr "استبدال الغلاف"
 
 #: app/pages/scenarios/home.tsx:176
 msgid "Report"
@@ -3026,7 +3027,7 @@ msgstr "إعادة الفحص"
 
 #: app/components/layout/settings/model.tsx:122
 msgid "Reserves room when selecting story history. This does not limit ChatGPT’s response length."
-msgstr ""
+msgstr "يحجز مساحة للرد عند اختيار سجل القصة. لا يحدّ هذا من طول ردود ChatGPT."
 
 #: app/components/layout/settings/appearance-fields.tsx:82
 #: app/components/layout/settings/game.tsx:120
@@ -3058,7 +3059,7 @@ msgstr "حل تعارض المزامنة"
 #: app/components/layout/settings/model.tsx:113
 #: app/components/layout/settings/model.tsx:140
 msgid "Response space in context"
-msgstr ""
+msgstr "مساحة الرد في السياق"
 
 #: app/components/play/story-panel/ai-tab.tsx:79
 msgid "Responses"
@@ -3128,7 +3129,7 @@ msgstr "رمي النرد"
 #: app/components/ui/inventory-item.tsx:77
 #: app/components/ui/stat-item.tsx:104
 msgid "Save"
-msgstr "حفط"
+msgstr "حفظ"
 
 #: app/pages/tales/home.tsx:319
 msgid "Save as Scenario"
@@ -3140,7 +3141,7 @@ msgstr "حفظ التغييرات"
 
 #: app/pages/scenarios/edit.tsx:152
 msgid "Save draft"
-msgstr ""
+msgstr "حفظ المسودة"
 
 #: app/pages/scenarios/edit.tsx:72
 #~ msgid "Save Scenario"
@@ -3185,15 +3186,15 @@ msgstr "إجراءات السيناريو"
 
 #: app/pages/scenarios/edit.tsx:192
 msgid "Scenario could not be loaded."
-msgstr ""
+msgstr "تعذّر تحميل السيناريو."
 
 #: app/components/scenario/PublishScenarioDialog.tsx:245
 msgid "Scenario cover"
-msgstr ""
+msgstr "غلاف السيناريو"
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:96
 msgid "Scenario cover preview"
-msgstr ""
+msgstr "معاينة غلاف السيناريو"
 
 #: app/components/scenario/ScenarioDetailsLayout.tsx:122
 msgid "Scenario details"
@@ -3385,19 +3386,19 @@ msgstr "يجب إعداد التطبيق"
 
 #: app/components/scenario/PublishScenarioDialog.tsx:151
 msgid "Shorten the description to 600 characters before publishing."
-msgstr ""
+msgstr "اختصر الوصف إلى 600 حرف قبل النشر."
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:211
 msgid "Shorten the description to 600 characters before publishing. You can still save this draft."
-msgstr ""
+msgstr "اختصر الوصف إلى 600 حرف قبل النشر. لا يزال بإمكانك حفظ هذه المسودة."
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:171
 msgid "Shorten the name to 160 characters before publishing. You can still save this draft."
-msgstr ""
+msgstr "اختصر الاسم إلى 160 حرفاً قبل النشر. لا يزال بإمكانك حفظ هذه المسودة."
 
 #: app/components/scenario/PublishScenarioDialog.tsx:147
 msgid "Shorten the scenario name to 160 characters before publishing."
-msgstr ""
+msgstr "اختصر اسم السيناريو إلى 160 حرفاً قبل النشر."
 
 #: app/components/catalog/CatalogTags.tsx:48
 msgid "Show all tags"
@@ -3417,7 +3418,7 @@ msgstr "إظهار عناصر التحكم في أخذ العينات"
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:186
 msgid "Shown in your library and the public catalog. It is not sent to the AI."
-msgstr ""
+msgstr "يظهر في مكتبتك وفي فهرس السيناريوهات العام. لا يتم إرساله إلى الذكاء الاصطناعي."
 
 #: app/components/layout/settings/cloud-sync.tsx:893
 msgid "Sign out"
@@ -3441,7 +3442,7 @@ msgstr "تم تسجيل الخروج"
 
 #: app/components/layout/settings/chatgpt-connection.tsx:166
 msgid "Signed out on this device. To confirm remote access has ended, disconnect Hakawati in ChatGPT Settings → Security and login."
-msgstr ""
+msgstr "تم تسجيل الخروج على هذا الجهاز. للتأكد من إنهاء الوصول عن بُعد، افصل حكواتي من Settings ← Security and login في ChatGPT."
 
 #: app/data/quickstart-presets.ts:58
 msgid "Skeptic"
@@ -3789,7 +3790,7 @@ msgstr "الكاتب يتصرف كمدير اللعبة، ويتتبع الخص�
 
 #: app/components/scenario/ScenarioBasicsFields.tsx:79
 msgid "The cover image could not be read. Please choose it again."
-msgstr ""
+msgstr "تعذّرت قراءة صورة الغلاف. يرجى اختيارها مرة أخرى."
 
 #: app/components/quickstart/steps/description-style-step.tsx:60
 #~ msgid "The description provides context about your scenario's setting, theme, and premise."
@@ -4059,7 +4060,7 @@ msgstr "المحفزات (مفصولة بفواصل)"
 
 #: app/components/layout/settings/chatgpt-connection.tsx:159
 msgid "Try again"
-msgstr ""
+msgstr "حاول مرة أخرى"
 
 #: app/components/layout/settings/settings-modal.tsx:52
 msgid "Tune token budgets, sampling, and repeatable seeds."
@@ -4311,7 +4312,7 @@ msgstr "افعل..."
 
 #: app/components/layout/settings/chatgpt-connection.tsx:189
 msgid "You’re now using your ChatGPT plan!"
-msgstr ""
+msgstr "أنت الآن تستخدم خطة ChatGPT الخاصة بك!"
 
 #: app/components/scenario/ScenarioStartWizard.tsx:105
 msgid "Your answer"

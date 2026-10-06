@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, type ReactNode } from "react";
+import { useLingui } from "@lingui/react/macro";
 import {
   placeCaret,
   serializeSegment,
@@ -29,6 +30,7 @@ export function StoryEditor({
   onCommit,
   onCancel,
 }: StoryEditorProps) {
+  const { t } = useLingui();
   const sourceRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const initialRef = useRef("");
@@ -77,9 +79,12 @@ export function StoryEditor({
         contentEditable
         role="textbox"
         aria-multiline="true"
-        aria-label="Edit entry"
+        aria-label={t`Edit entry`}
         data-story-editor=""
         className="whitespace-normal break-words outline-none [&>p+p]:mt-3"
+        onFocus={() => {
+          doneRef.current = false;
+        }}
         onBlur={finish}
         onKeyDown={(event) => {
           if (event.key === "Escape") {

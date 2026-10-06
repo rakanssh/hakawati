@@ -99,8 +99,10 @@ your chosen tags. Later edits stay in the draft until you publish another update
 Cover images are optimized automatically before upload.
 
 Each new tale gets its own copy of the scenario. Editing a scenario does not
-rewrite existing tales. During play, **Tale Settings** contains **Story**,
-**Story Cards**, and, in Game Master mode, **Character** settings.
+rewrite existing tales. During play, the story panel on the right has tabs for
+the tale's **Story**, story **Cards**, and, in Game Master mode, **Character**,
+along with **AI** for the narrator model and **Display** for theme and reading
+settings.
 
 ### Scenario questions
 

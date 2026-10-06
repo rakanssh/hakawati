@@ -4,6 +4,10 @@ import { createRoot } from "react-dom/client";
 import { describe, expect, it, vi } from "vitest";
 import { StoryText } from "./story-text";
 
+vi.mock("@lingui/react/macro", () => ({
+  useLingui: () => ({ t: (parts: TemplateStringsArray) => parts.join("") }),
+}));
+
 function renderStory(text: string | ComponentProps<typeof StoryText>) {
   const container = document.createElement("div");
   const props = typeof text === "string" ? { text } : text;

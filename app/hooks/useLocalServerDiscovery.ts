@@ -84,11 +84,11 @@ async function deriveLabel(baseUrl: string): Promise<string> {
 async function labelByHome(baseUrl: string): Promise<string | null> {
   try {
     const rootUrl = baseUrl.split("/").slice(0, -1).join("/");
-    const rootHtml = await tauriFetch(rootUrl).then((r) => r.text());
-    console.log(`Root of ${baseUrl}:`, rootHtml);
+    const rootHtml = (
+      await tauriFetch(rootUrl).then((r) => r.text())
+    ).toLowerCase();
     for (const name of knownNames) {
-      console.log(`Checking for ${name} in ${rootHtml.toLowerCase()}`);
-      if (rootHtml.toLowerCase().includes(name.toLowerCase())) {
+      if (rootHtml.includes(name.toLowerCase())) {
         return `${name}`;
       }
     }

@@ -1,7 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { StoryText } from "./story-text";
 import { serializeSegment, withOriginalSpacing } from "./story-edit";
+
+vi.mock("@lingui/react/macro", () => ({
+  useLingui: () => ({ t: (parts: TemplateStringsArray) => parts.join("") }),
+}));
 
 type Segment = { id: string; text: string };
 

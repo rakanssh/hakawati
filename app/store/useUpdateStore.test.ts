@@ -5,7 +5,7 @@ import type { Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useUpdateStore } from "./useUpdateStore";
-import { InlineEditableContent } from "@/components/sidebar/inline-editable-content";
+import { StoryText } from "@/components/play/log/story-text";
 import { enqueueLocalOperation } from "@/lib/local-write-queue";
 
 vi.mock("@tauri-apps/plugin-process", () => ({ relaunch: vi.fn() }));
@@ -19,6 +19,11 @@ vi.mock("@lingui/core/macro", () => ({
       (text, part, index) => `${text}${part}${values[index] ?? ""}`,
       "",
     ),
+}));
+vi.mock("@lingui/react/macro", () => ({
+  useLingui: () => ({
+    t: (parts: TemplateStringsArray) => parts.join(""),
+  }),
 }));
 
 function deferred() {
@@ -147,13 +152,14 @@ describe("update installation", () => {
     function Draft() {
       const [data, setData] = useState("Original");
       useAutoSave({ data, save: saved });
-      return createElement(InlineEditableContent, {
-        initialValue: data,
-        onCommit: (next) => {
+      return createElement(StoryText, {
+        segments: [{ id: "entry", text: data }],
+        editingSegmentId: "entry",
+        onCommitEdit: (_id, next) => {
           setData(next);
           void commit(next);
         },
-        onCancel: () => undefined,
+        onCancelEdit: () => undefined,
       });
     }
     act(() => root.render(createElement(Draft)));
@@ -163,10 +169,13 @@ describe("update installation", () => {
       await act(async () => {
         installing = useUpdateStore.getState().installUpdate();
       });
-      const editor = container.querySelector<HTMLElement>("[contenteditable]")!;
+      const editor = container.querySelector<HTMLElement>(
+        "[data-story-editor]",
+      )!;
       editor.tabIndex = 0;
       editor.focus();
-      editor.textContent = "Last edit";
+      editor.querySelector("[data-story-segment-id]")!.textContent =
+        "Last edit";
       expect(document.activeElement).toBe(editor);
       await act(async () => {
         download.resolve();

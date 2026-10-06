@@ -1310,6 +1310,7 @@ msgstr "Drawn around the story on the play screen. Still keeps it without moveme
 msgid "Edit"
 msgstr "Edit"
 
+#: app/components/play/log/story-editor.tsx:82
 #: app/components/play/play-log-display.tsx:165
 msgid "Edit entry"
 msgstr "Edit entry"

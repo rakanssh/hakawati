@@ -112,8 +112,9 @@ export function placeCaret(
   }
 
   if (!range) {
-    const spans = root.querySelectorAll(`[${SEGMENT}="${CSS.escape(id)}"]`);
-    const last = spans[spans.length - 1];
+    const last = [...root.querySelectorAll(`[${SEGMENT}]`)]
+      .filter((span) => span.getAttribute(SEGMENT) === id)
+      .at(-1);
     if (!last) return;
     range = document.createRange();
     range.selectNodeContents(last);
