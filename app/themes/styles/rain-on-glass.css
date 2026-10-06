@@ -1,0 +1,76 @@
+/* Rain on Glass: a grey afternoon through a misted window; the drops stay in the margins. */
+
+.theme-rain-on-glass {
+  color-scheme: light;
+  --app-background: oklch(0.953 0.008 250);
+  --app-surface-gradient: none;
+  --app-texture-image: none;
+  --app-texture-size: auto;
+  --app-texture-opacity: 0;
+  --app-texture-blend-mode: normal;
+  --background: oklch(0.945 0.009 250);
+  --foreground: oklch(0.235 0.021 250);
+  --card: oklch(0.967 0.004 250);
+  --card-foreground: oklch(0.235 0.021 250);
+  --popover: oklch(0.97 0.004 250);
+  --popover-foreground: oklch(0.235 0.021 250);
+  --primary: oklch(0.5 0.14 250);
+  --primary-foreground: oklch(0.985 0.006 250);
+  --secondary: oklch(0.909 0.012 250);
+  --secondary-foreground: oklch(0.29 0.019 250);
+  --muted: oklch(0.909 0.011 250);
+  --muted-foreground: oklch(0.5 0.021 250);
+  --accent: oklch(0.895 0.028 250);
+  --accent-foreground: oklch(0.28 0.056 250);
+  --destructive: oklch(0.55 0.17 25);
+  --destructive-foreground: oklch(0.985 0.004 250);
+  --border: oklch(0.83 0.015 250);
+  --input: oklch(0.83 0.015 250);
+  --ring: oklch(0.56 0.119 250);
+  --chart-1: oklch(0.5 0.14 250);
+  --chart-2: oklch(0.54 0.09 150);
+  --chart-3: oklch(0.54 0.09 232);
+  --chart-4: oklch(0.6 0.09 75);
+  --chart-5: oklch(0.54 0.1 25);
+  --sidebar: oklch(0.933 0.01 250);
+  --sidebar-foreground: oklch(0.27 0.021 250);
+  --sidebar-primary: oklch(0.5 0.14 250);
+  --sidebar-primary-foreground: oklch(0.985 0.006 250);
+  --sidebar-accent: oklch(0.9 0.026 250);
+  --sidebar-accent-foreground: oklch(0.28 0.056 250);
+  --sidebar-border: oklch(0.82 0.015 250);
+  --sidebar-ring: oklch(0.56 0.119 250);
+  --log-say: oklch(0.53 0.076 196);
+  --log-do: oklch(0.55 0.072 75);
+  --log-direct: oklch(0.5 0.119 250);
+  --log-thinking: oklch(0.56 0.06 292);
+  --log-thinking-foreground: oklch(0.38 0.043 292);
+  --success: oklch(0.52 0.105 150);
+  --success-foreground: oklch(0.985 0.004 150);
+  --story-character: oklch(0.54 0.076 232);
+  --story-character-foreground: oklch(0.34 0.055 232);
+  --story-thing: oklch(0.54 0.076 150);
+  --story-thing-foreground: oklch(0.34 0.055 150);
+  --story-place: oklch(0.54 0.076 295);
+  --story-place-foreground: oklch(0.34 0.055 295);
+  --story-concept: oklch(0.54 0.076 75);
+  --story-concept-foreground: oklch(0.34 0.055 75);
+  --story-uncategorized: oklch(0.52 0.021 250);
+  --story-uncategorized-foreground: oklch(0.38 0.021 250);
+}
+
+.theme-rain-on-glass {
+  --titlebar-background: color-mix(
+    in oklch,
+    var(--background) 55%,
+    transparent
+  );
+}
+
+.theme-rain-on-glass [data-titlebar] {
+  border-bottom-color: color-mix(in oklch, var(--border) 50%, transparent);
+}
+
+.theme-rain-on-glass [data-slot="sidebar-inner"] {
+  background: color-mix(in oklch, var(--sidebar) 84%, transparent);
+}

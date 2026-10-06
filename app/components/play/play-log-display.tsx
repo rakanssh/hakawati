@@ -11,7 +11,7 @@ import {
   NarrationItem,
 } from "@/lib/play-utils";
 import { useSettingsStore } from "@/store";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useIsMobile } from "@/hooks/useIsMobile";
 
 interface PlayLogDisplayProps {
@@ -43,6 +43,7 @@ export function PlayLogDisplay({
   onViewportScroll,
   narration,
 }: PlayLogDisplayProps) {
+  const { t } = useLingui();
   const fontSize = useSettingsStore((state) => state.fontSize);
   const highlightLatestSection = useSettingsStore(
     (state) => state.highlightLatestSection,
@@ -72,11 +73,14 @@ export function PlayLogDisplay({
       onViewportScroll={onViewportScroll}
       viewportClassName="!flex !flex-col"
       style={
-        { "--game-log-font-size": `${fontSize}rem` } as React.CSSProperties
+        {
+          "--game-log-font-size": `calc(${fontSize}rem * var(--story-scale, 1))`,
+        } as React.CSSProperties
       }
     >
       <div
-        className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-3 pt-8 sm:px-5 sm:pt-10 lg:px-7"
+        data-play-column=""
+        className="mx-auto flex min-h-full w-full max-w-(--play-column-max) flex-col px-3 pt-8 sm:px-5 sm:pt-10 lg:px-7"
         style={
           isMobilePlatform
             ? { paddingTop: "calc(3.5rem + env(safe-area-inset-top))" }
@@ -85,7 +89,7 @@ export function PlayLogDisplay({
       >
         {loadingOlder && (
           <div className="flex items-center justify-center py-2 text-muted-foreground">
-            <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2Icon className="me-2 h-4 w-4 animate-spin" />
             <span className="text-sm">
               <Trans>Loading older entries...</Trans>
             </span>
@@ -133,7 +137,7 @@ export function PlayLogDisplay({
                                 className="cursor-pointer"
                                 role="button"
                                 tabIndex={0}
-                                aria-label="Edit entry"
+                                aria-label={t`Edit entry`}
                                 onClick={() =>
                                   setCurrentlyEditingLogId(entry.id)
                                 }
@@ -166,7 +170,7 @@ export function PlayLogDisplay({
                         role={!isEditing && !isStreaming ? "button" : undefined}
                         tabIndex={!isEditing && !isStreaming ? 0 : undefined}
                         aria-label={
-                          !isEditing && !isStreaming ? "Edit entry" : undefined
+                          !isEditing && !isStreaming ? t`Edit entry` : undefined
                         }
                         onClick={
                           !isEditing && !isStreaming
@@ -217,8 +221,10 @@ export function PlayLogDisplay({
               className="text-muted-foreground"
               style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
             >
-              Take an action or send a director&apos;s note to start the
-              adventure.
+              <Trans>
+                Take an action or send a director&apos;s note to start the
+                adventure.
+              </Trans>
             </p>
           </div>
         )}

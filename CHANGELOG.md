@@ -2,6 +2,17 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Seven new themes! Brass Night, Orbit, Phosphor, Cartridge, Rain on Glass, Storybook, and Typewriter. Most draw scenery around the story on the play screen, and several bring their own type.
+- Themes are chosen from a gallery of live previews in Settings, and scenery can be animated, still, or off.
+
+### Changed
+
+- Bamboo and Cosmos are retired. Bamboo switches to Light and Cosmos to Orbit.
+
 ## [v1.1.0] - 2026-09-30
 
 ### Added

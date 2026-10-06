@@ -1,0 +1,160 @@
+/* Brass Night: the website's colours, type and frames. */
+
+.theme-brass-night {
+  color-scheme: dark;
+  --app-background: oklch(0.179 0.024 210);
+  --app-surface-gradient:
+    radial-gradient(
+      90% 80% at 80% 8%,
+      oklch(0.739 0.101 84 / 9%),
+      transparent 65%
+    ),
+    radial-gradient(
+      80% 85% at 8% 62%,
+      oklch(0.446 0.067 202 / 18%),
+      transparent 70%
+    );
+  --app-texture-image: none;
+  --app-texture-size: auto;
+  --app-texture-opacity: 0;
+  --app-texture-blend-mode: normal;
+  --background: oklch(0.191 0.024 210);
+  --foreground: oklch(0.93 0.032 87);
+  --card: oklch(0.236 0.028 210);
+  --card-foreground: oklch(0.93 0.032 87);
+  --popover: oklch(0.247 0.029 210);
+  --popover-foreground: oklch(0.93 0.032 87);
+  --primary: oklch(0.739 0.101 84);
+  --primary-foreground: oklch(0.171 0.024 210);
+  --secondary: oklch(0.286 0.028 210);
+  --secondary-foreground: oklch(0.89 0.032 87);
+  --muted: oklch(0.286 0.026 210);
+  --muted-foreground: oklch(0.74 0.038 87);
+  --accent: oklch(0.311 0.032 84);
+  --accent-foreground: oklch(0.9 0.016 84);
+  --destructive: oklch(0.717 0.113 38.8);
+  --destructive-foreground: oklch(0.171 0.024 210);
+  --border: oklch(0.739 0.101 84 / 22%);
+  --input: oklch(0.739 0.101 84 / 26%);
+  --ring: oklch(0.739 0.101 84);
+  --chart-1: oklch(0.739 0.101 84);
+  --chart-2: oklch(0.67 0.09 150);
+  --chart-3: oklch(0.67 0.09 232);
+  --chart-4: oklch(0.73 0.09 75);
+  --chart-5: oklch(0.67 0.1 25);
+  --sidebar: oklch(0.177 0.023 210);
+  --sidebar-foreground: oklch(0.9 0.032 87);
+  --sidebar-primary: oklch(0.739 0.101 84);
+  --sidebar-primary-foreground: oklch(0.171 0.024 210);
+  --sidebar-accent: oklch(0.291 0.03 84);
+  --sidebar-accent-foreground: oklch(0.9 0.018 84);
+  --sidebar-border: oklch(0.739 0.101 84 / 18%);
+  --sidebar-ring: oklch(0.739 0.101 84);
+  --log-say: oklch(0.72 0.085 200);
+  --log-do: oklch(0.72 0.085 84);
+  --log-direct: oklch(0.72 0.085 40);
+  --log-thinking: oklch(0.68 0.064 300);
+  --log-thinking-foreground: oklch(0.78 0.051 300);
+  --success: oklch(0.772 0.081 150.5);
+  --success-foreground: oklch(0.171 0.024 210);
+  --story-character: oklch(0.68 0.09 232);
+  --story-character-foreground: oklch(0.8 0.07 232);
+  --story-thing: oklch(0.68 0.09 150);
+  --story-thing-foreground: oklch(0.8 0.07 150);
+  --story-place: oklch(0.68 0.09 295);
+  --story-place-foreground: oklch(0.8 0.07 295);
+  --story-concept: oklch(0.68 0.09 75);
+  --story-concept-foreground: oklch(0.8 0.07 75);
+  --story-uncategorized: oklch(0.7 0.032 210);
+  --story-uncategorized-foreground: oklch(0.74 0.032 210);
+}
+
+.theme-brass-night {
+  --theme-font-story: "EB Garamond", Georgia, serif;
+  --theme-font-display: "Cinzel", Georgia, serif;
+  --theme-story-scale: 1.12;
+  --theme-story-leading: 1.62;
+}
+
+.theme-brass-night [data-titlebar] {
+  border-bottom-color: color-mix(in oklch, var(--primary) 28%, transparent);
+}
+
+/* Titles and labels in Cinzel capitals. */
+.theme-brass-night
+  :is([data-titlebar-title], [data-composer-mode], [data-sidebar-heading]) {
+  font-family: var(--theme-font-display);
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.theme-brass-night [data-titlebar-title] {
+  letter-spacing: 0.16em;
+}
+
+/* Your turns: a faint brass wash behind a single brass rule. */
+.theme-brass-night [data-log-entry] {
+  border: 0;
+  border-inline-start: 1px solid var(--primary);
+  border-radius: 0;
+  background: color-mix(in oklch, var(--primary) 6%, transparent);
+  box-shadow: none;
+  backdrop-filter: none;
+  padding: 0.5rem 1rem;
+}
+
+.theme-brass-night [data-log-entry-text] {
+  font-style: italic;
+}
+
+/* A brass hairline closes each passage. */
+.theme-brass-night [data-log-meta]::after {
+  content: "";
+  flex: 1;
+  min-width: 2rem;
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    color-mix(in oklch, var(--primary) 38%, transparent),
+    transparent 75%
+  );
+}
+
+.theme-brass-night[dir="rtl"] [data-log-meta]::after {
+  background: linear-gradient(
+    to left,
+    color-mix(in oklch, var(--primary) 38%, transparent),
+    transparent 75%
+  );
+}
+
+/* The website's double brass frame. */
+.theme-brass-night [data-composer-surface] {
+  border-radius: 0;
+  border-color: color-mix(in oklch, var(--primary) 55%, transparent);
+  outline: 1px solid color-mix(in oklch, var(--primary) 22%, transparent);
+  outline-offset: 4px;
+  background: color-mix(in oklch, var(--card) 85%, transparent);
+}
+
+.theme-brass-night
+  :is(
+    [data-composer-send],
+    [data-composer-mic],
+    .sidebar-chip,
+    [data-log-meta] [data-slot="badge"]
+  ) {
+  border-radius: 0;
+}
+
+.theme-brass-night
+  :is([data-slot="progress"], [data-slot="progress-indicator"]) {
+  border-radius: 0;
+}
+
+.theme-brass-night [data-slot="progress"] {
+  height: 6px;
+}

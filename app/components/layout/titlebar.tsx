@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { flushPendingAutoSaves } from "@/hooks/useAutoSave";
 import { useUpdateStore } from "@/store/useUpdateStore";
 import { useTaleStore } from "@/store/useTaleStore";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 const titlebarButtonClass = "h-7 w-7 rounded-xs p-0";
 const isBrowserPreview =
@@ -23,6 +24,7 @@ async function getAppWindow() {
 }
 
 export function Titlebar() {
+  const { t } = useLingui();
   const navigate = useNavigate();
   const routerState = useRouterState();
   const isShowButtons = true;
@@ -69,7 +71,8 @@ export function Titlebar() {
   return (
     <div
       dir="ltr"
-      className="fixed top-0 left-0 right-0 z-50 h-8 bg-background border-b"
+      data-titlebar=""
+      className="fixed top-0 left-0 right-0 z-50 h-8 border-b"
     >
       <div data-tauri-drag-region className="titlebar-drag absolute inset-0" />
       <div className="relative grid grid-cols-[6rem_minmax(0,1fr)_6rem] items-center h-full px-2 select-none pointer-events-none">
@@ -83,11 +86,14 @@ export function Titlebar() {
                     size="icon"
                     className={titlebarButtonClass}
                     onClick={() => navigate({ to: "/" })}
+                    aria-label={t`Home`}
                   >
                     <HomeIcon className="" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="top">Home</TooltipContent>
+                <TooltipContent side="top">
+                  <Trans>Home</Trans>
+                </TooltipContent>
               </Tooltip>
               <SettingsButton className={titlebarButtonClass} />
               {isPlayRoute && (
@@ -101,6 +107,7 @@ export function Titlebar() {
             <img src={fez} alt="Hakawati" className="w-5 h-5 shrink-0" />
             <span
               dir="auto"
+              data-titlebar-title=""
               className="truncate text-sm font-medium text-foreground"
               title={title}
             >
@@ -119,7 +126,7 @@ export function Titlebar() {
         {!isBrowserPreview && (
           <div className="titlebar-no-drag pointer-events-auto flex justify-end gap-1 w-fit absolute right-0">
             <button
-              aria-label="Minimize"
+              aria-label={t`Minimize`}
               className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-foreground/10 text-foreground/80 hover:text-foreground"
               onClick={async () => {
                 if (typeof window === "undefined") return;
@@ -130,7 +137,7 @@ export function Titlebar() {
               <MinusIcon className="w-4 h-4" />
             </button>
             <button
-              aria-label="Maximize"
+              aria-label={t`Maximize`}
               className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-foreground/10 text-foreground/80 hover:text-foreground"
               onClick={async () => {
                 if (typeof window === "undefined") return;
@@ -146,7 +153,7 @@ export function Titlebar() {
               <SquareIcon className="w-3.5 h-3.5" />
             </button>
             <button
-              aria-label="Close"
+              aria-label={t`Close`}
               className="inline-flex h-8 w-8 items-center justify-center rounded hover:bg-foreground/10 text-foreground/80 hover:text-foreground"
               onClick={async () => {
                 if (typeof window === "undefined") return;

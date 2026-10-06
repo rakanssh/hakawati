@@ -1,0 +1,175 @@
+/* Cartridge: an 8-bit sunset, notched pixel frames, and an arcade panel behind the story. */
+
+.theme-cartridge {
+  color-scheme: dark;
+  --app-background: oklch(0.138 0.05 285);
+  --app-surface-gradient: none;
+  --app-texture-image: none;
+  --app-texture-size: auto;
+  --app-texture-opacity: 0;
+  --app-texture-blend-mode: normal;
+  --background: oklch(0.15 0.05 285);
+  --foreground: oklch(0.94 0.03 285);
+  --card: oklch(0.195 0.057 285);
+  --card-foreground: oklch(0.94 0.03 285);
+  --popover: oklch(0.206 0.06 285);
+  --popover-foreground: oklch(0.94 0.03 285);
+  --primary: oklch(0.86 0.17 95);
+  --primary-foreground: oklch(0.13 0.05 285);
+  --secondary: oklch(0.245 0.057 285);
+  --secondary-foreground: oklch(0.9 0.03 285);
+  --muted: oklch(0.245 0.055 285);
+  --muted-foreground: oklch(0.72 0.036 285);
+  --accent: oklch(0.27 0.054 95);
+  --accent-foreground: oklch(0.9 0.027 95);
+  --destructive: oklch(0.65 0.17 25);
+  --destructive-foreground: oklch(0.98 0.004 285);
+  --border: oklch(0.9 0.102 285 / 13%);
+  --input: oklch(0.9 0.102 285 / 16%);
+  --ring: oklch(0.86 0.17 95);
+  --chart-1: oklch(0.86 0.17 95);
+  --chart-2: oklch(0.67 0.09 150);
+  --chart-3: oklch(0.67 0.09 232);
+  --chart-4: oklch(0.73 0.09 75);
+  --chart-5: oklch(0.67 0.1 25);
+  --sidebar: oklch(0.136 0.048 285);
+  --sidebar-foreground: oklch(0.91 0.03 285);
+  --sidebar-primary: oklch(0.86 0.17 95);
+  --sidebar-primary-foreground: oklch(0.13 0.05 285);
+  --sidebar-accent: oklch(0.25 0.056 95);
+  --sidebar-accent-foreground: oklch(0.9 0.026 95);
+  --sidebar-border: oklch(0.9 0.102 285 / 11%);
+  --sidebar-ring: oklch(0.86 0.17 95);
+  --log-say: oklch(0.72 0.085 220);
+  --log-do: oklch(0.72 0.085 95);
+  --log-direct: oklch(0.72 0.085 350);
+  --log-thinking: oklch(0.68 0.064 300);
+  --log-thinking-foreground: oklch(0.78 0.051 300);
+  --success: oklch(0.68 0.1 152);
+  --success-foreground: oklch(0.13 0.02 152);
+  --story-character: oklch(0.68 0.09 232);
+  --story-character-foreground: oklch(0.8 0.07 232);
+  --story-thing: oklch(0.68 0.09 150);
+  --story-thing-foreground: oklch(0.8 0.07 150);
+  --story-place: oklch(0.68 0.09 295);
+  --story-place-foreground: oklch(0.8 0.07 295);
+  --story-concept: oklch(0.68 0.09 75);
+  --story-concept-foreground: oklch(0.8 0.07 75);
+  --story-uncategorized: oklch(0.7 0.058 285);
+  --story-uncategorized-foreground: oklch(0.74 0.058 285);
+}
+
+.theme-cartridge {
+  --theme-font-story: "Pixelify Sans", ui-monospace, monospace;
+  --theme-font-display: "Press Start 2P", ui-monospace, monospace;
+  --theme-story-scale: 1.12;
+  --theme-story-leading: 1.45;
+  --play-column-max: 54rem;
+  --titlebar-background: color-mix(
+    in oklch,
+    var(--background) 55%,
+    transparent
+  );
+  --pixel-shadow: #0b0716;
+}
+
+.theme-cartridge [data-titlebar] {
+  border-bottom: 4px solid color-mix(in oklch, var(--border) 50%, transparent);
+}
+
+.theme-cartridge
+  :is(
+    [data-titlebar-title],
+    [data-composer-mode],
+    [data-sidebar-heading],
+    .sidebar-chip,
+    [data-log-meta] :is(button, [data-slot="badge"])
+  ) {
+  font-family: var(--theme-font-display);
+  font-size: 0.56rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.6;
+}
+
+.theme-cartridge :is([data-log-story], [data-log-entry-text]) {
+  text-shadow: 2px 2px 0 var(--pixel-shadow);
+}
+
+/* The story sits on a dark, finely dithered arcade panel with a pixel border. */
+.theme-cartridge [data-play-column] {
+  width: calc(100% - 1.5rem);
+  margin-block: 0.75rem;
+  background:
+    repeating-conic-gradient(oklch(1 0 0 / 0.035) 0 25%, transparent 0 50%) 0
+      0 / 4px 4px,
+    color-mix(in oklch, var(--background) 84%, transparent);
+  box-shadow:
+    0 -4px 0 0 var(--foreground),
+    0 4px 0 0 var(--foreground),
+    -4px 0 0 0 var(--foreground),
+    4px 0 0 0 var(--foreground),
+    inset 0 0 0 4px color-mix(in oklch, var(--foreground) 22%, transparent);
+}
+
+/* Notched dialogue boxes: your turns in the accent, the composer in the text colour. */
+.theme-cartridge :is([data-log-entry], [data-composer-surface]) {
+  border: 0;
+  border-radius: 0;
+  background: color-mix(in oklch, var(--card) 94%, transparent);
+  backdrop-filter: none;
+  box-shadow:
+    0 -4px 0 0 var(--foreground),
+    0 4px 0 0 var(--foreground),
+    -4px 0 0 0 var(--foreground),
+    4px 0 0 0 var(--foreground);
+}
+
+.theme-cartridge [data-log-entry] {
+  margin: 4px;
+  box-shadow:
+    0 -4px 0 0 var(--primary),
+    0 4px 0 0 var(--primary),
+    -4px 0 0 0 var(--primary),
+    4px 0 0 0 var(--primary);
+}
+
+.theme-cartridge [data-composer-surface]:focus-within {
+  box-shadow:
+    0 -4px 0 0 var(--primary),
+    0 4px 0 0 var(--primary),
+    -4px 0 0 0 var(--primary),
+    4px 0 0 0 var(--primary);
+}
+
+.theme-cartridge [data-log-entry-icon] {
+  color: var(--primary);
+}
+
+.theme-cartridge
+  :is(
+    [data-composer-send],
+    [data-composer-mic],
+    .sidebar-chip,
+    [data-log-meta] [data-slot="badge"],
+    [data-slot="progress"],
+    [data-slot="progress-indicator"]
+  ) {
+  border-radius: 0;
+}
+
+.theme-cartridge [data-slot="progress"] {
+  height: 10px;
+}
+
+.theme-cartridge [data-slot="progress-indicator"] {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--primary) 0 10px,
+    transparent 10px 12px
+  );
+}
+
+.theme-cartridge [data-slot="sidebar-inner"] {
+  background: color-mix(in oklch, var(--sidebar) 90%, transparent);
+}

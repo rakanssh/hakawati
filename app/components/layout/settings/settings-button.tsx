@@ -8,12 +8,13 @@ import {
 import { useUpdateStore } from "@/store/useUpdateStore";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 
 export function SettingsButton({
   className,
   ...props
 }: React.ComponentProps<typeof Button>) {
+  const { t } = useLingui();
   const [isOpen, setIsOpen] = useState(false);
   const [tooltipOpen, setTooltipOpen] = useState(false);
   const hasUpdateNotification = useUpdateStore(
@@ -72,6 +73,7 @@ export function SettingsButton({
             size="icon"
             onClick={() => setIsOpen(true)}
             className={cn("relative", className)}
+            aria-label={t`Settings`}
             {...props}
           >
             <SettingsIcon className="w-4 h-4" />

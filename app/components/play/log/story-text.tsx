@@ -226,6 +226,7 @@ export function StoryText({
             return (
               <span
                 data-story-segment-id={id}
+                data-story-highlight={id === highlightedSegmentId || undefined}
                 className={[
                   id === highlightedSegmentId &&
                     "box-decoration-clone rounded-[0.15rem] bg-primary/10",

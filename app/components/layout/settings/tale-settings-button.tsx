@@ -8,13 +8,14 @@ import {
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import { useTaleStore } from "@/store";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { GameMode } from "@/types";
 
 export function TaleSettingsButton({
   className,
   ...props
 }: React.ComponentProps<typeof Button>) {
+  const { t } = useLingui();
   const [isOpen, setIsOpen] = useState(false);
   const [tooltipOpen, setTooltipOpen] = useState(false);
   const gameMode = useTaleStore((s) => s.gameMode);
@@ -43,6 +44,7 @@ export function TaleSettingsButton({
             size="icon"
             onClick={() => setIsOpen(true)}
             className={cn("relative", className)}
+            aria-label={t`Tale Settings`}
             {...props}
           >
             <BookOpen className="w-4 h-4" />

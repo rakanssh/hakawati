@@ -15,7 +15,7 @@ import {
   Loader2Icon,
   Volume2Icon,
 } from "lucide-react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useSettingsStore } from "@/store";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +49,7 @@ export function LogBlockBubble({
   highlightedEntryId,
   narration,
 }: LogBlockBubbleProps) {
+  const { t } = useLingui();
   const [thinkingOpen, setThinkingOpen] = useState(false);
   const thinkingVisibility = useSettingsStore(
     (state) => state.thinkingVisibility,
@@ -79,7 +80,10 @@ export function LogBlockBubble({
       : thinkingEntries.length > 1;
   const latestStreamingEntry = block.entries.at(-1);
   const footerControls = (
-    <div className="mt-2 flex w-full flex-row flex-wrap items-center gap-1.5">
+    <div
+      data-log-meta=""
+      className="mt-2 flex w-full flex-row flex-wrap items-center gap-1.5"
+    >
       {narration && (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -93,7 +97,7 @@ export function LogBlockBubble({
               )}
               onClick={narration.onNarrate}
               disabled={narration.isLoading}
-              aria-label="Narrate section"
+              aria-label={t`Narrate section`}
             >
               {narration.isLoading ? (
                 <Loader2Icon className="h-3.5 w-3.5 animate-spin" />
@@ -112,7 +116,7 @@ export function LogBlockBubble({
           <button
             type="button"
             className="inline-flex h-7 items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-            aria-label="Toggle thinking output"
+            aria-label={t`Toggle thinking output`}
           >
             <BrainCircuitIcon className="h-3.5 w-3.5" />
             <span>
@@ -156,8 +160,9 @@ export function LogBlockBubble({
   }, [isStreaming, latestStreamingEntry?.text]);
 
   return (
-    <div className="flex w-full flex-col items-start">
+    <div data-log-block="" className="flex w-full flex-col items-start">
       <div
+        data-log-story=""
         className="relative w-full whitespace-pre-wrap break-words font-normal leading-[1.72] tracking-normal text-foreground/95"
         style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
       >
@@ -176,7 +181,10 @@ export function LogBlockBubble({
         )}
         {hasError && errorEntry && <ErrorTooltip error={errorEntry.error} />}
         {isStreaming && (
-          <span className="inline-block w-0.5 h-[1.1em] bg-primary/70 animate-pulse ml-0.5 align-middle" />
+          <span
+            data-log-caret=""
+            className="ms-0.5 inline-block h-[1.1em] w-0.5 animate-pulse bg-primary/70 align-middle"
+          />
         )}
       </div>
       {showThinkingSection ? (

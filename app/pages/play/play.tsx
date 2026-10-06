@@ -38,6 +38,7 @@ import { useAutoSave } from "@/hooks/useAutoSave";
 import { usePlaySession } from "@/hooks/usePlaySession";
 import { useTtsPlayback } from "@/hooks/useTtsPlayback";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { ThemeScene } from "@/themes/scenes/theme-scene";
 
 export default function Play() {
   const { t } = useLingui();
@@ -289,7 +290,10 @@ export default function Play() {
     }
 
     return (
-      <div className="play-log-texture relative grid h-full grid-rows-[1fr_auto]">
+      <div
+        data-play-stage=""
+        className="relative grid h-full grid-rows-[1fr_auto]"
+      >
         <PlayLogDisplay
           blocks={blocks}
           loadingOlder={loadingOlder}
@@ -365,9 +369,11 @@ export default function Play() {
 
   return (
     <>
+      <ThemeScene withSidebar={gameMode === GameMode.GM} />
       <MobilePlayHeader />
       {gameMode === GameMode.GM ? (
         <SidebarProvider
+          data-play-shell=""
           defaultOpen={true}
           className="min-h-0 h-full"
           style={

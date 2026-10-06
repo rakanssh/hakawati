@@ -1,49 +1,72 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { DirectionProvider } from "@radix-ui/react-direction";
 import {
   useSettingsStore,
   resolveTextDirection,
 } from "@/store/useSettingsStore";
 import {
-  getResolvedThemeDefinition,
-  isThemeId,
-  resolveThemeId,
+  THEME_FONT,
+  getTheme,
+  parseThemePreference,
+  resolveThemePreference,
   themeClassNames,
-  themeDefinitions,
-  type ResolvedThemeId,
-  type ThemeId,
-} from "@/lib/themes";
+  type ThemeDefinition,
+  type ThemePreference,
+} from "@/themes/registry";
+import { loadThemeFonts } from "@/themes/fonts";
+import { prepareThemeTextures } from "@/themes/textures";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
-  defaultTheme?: ThemeId;
+  defaultTheme?: ThemePreference;
   storageKey?: string;
 };
 
 type ThemeProviderState = {
-  theme: ThemeId;
-  resolvedTheme: ResolvedThemeId;
-  themes: typeof themeDefinitions;
-  setTheme: (theme: ThemeId) => void;
+  /** What the user picked, which may be "system". */
+  preference: ThemePreference;
+  /** The theme actually on screen. */
+  theme: ThemeDefinition;
+  setPreference: (preference: ThemePreference) => void;
 };
 
-const initialState: ThemeProviderState = {
-  theme: "system",
-  resolvedTheme: "light",
-  themes: themeDefinitions,
-  setTheme: () => null,
-};
+const ThemeProviderContext = createContext<ThemeProviderState | undefined>(
+  undefined,
+);
 
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
+function useSystemPrefersDark() {
+  const query = "(prefers-color-scheme: dark)";
+  const [prefersDark, setPrefersDark] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia(query).matches,
+  );
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const media = window.matchMedia(query);
+    const update = () => setPrefersDark(media.matches);
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  return prefersDark;
+}
 
 export function ThemeProvider({
   children,
   defaultTheme = "system",
   storageKey = "vite-ui-theme",
-  ...props
 }: ThemeProviderProps) {
   const uiScale = useSettingsStore((state) => state.uiScale);
   const fontFamily = useSettingsStore((state) => state.fontFamily);
+  const scenery = useSettingsStore((state) => state.themeScenery);
   const textDirection = useSettingsStore((state) => state.textDirection);
   const language = useSettingsStore((state) => state.language);
 
@@ -52,74 +75,75 @@ export function ThemeProvider({
     [textDirection, language],
   );
 
-  const [theme, setTheme] = useState<ThemeId>(() => {
+  const [preference, setPreferenceState] = useState<ThemePreference>(() => {
     try {
-      const storedTheme = localStorage.getItem(storageKey);
-      return isThemeId(storedTheme) ? storedTheme : defaultTheme;
+      return (
+        parseThemePreference(localStorage.getItem(storageKey)) ?? defaultTheme
+      );
     } catch {
       return defaultTheme;
     }
   });
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedThemeId>(() =>
-    resolveThemeId(theme),
+  // Re-resolve "system" whenever the OS switches between light and dark.
+  const systemPrefersDark = useSystemPrefersDark();
+  const theme = useMemo(
+    () => getTheme(resolveThemePreference(preference)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [preference, systemPrefersDark],
   );
 
   useEffect(() => {
-    const updateResolvedTheme = () => setResolvedTheme(resolveThemeId(theme));
-    updateResolvedTheme();
-
-    if (theme !== "system" || typeof window.matchMedia !== "function") {
-      return;
-    }
-
-    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    mediaQuery.addEventListener("change", updateResolvedTheme);
-    return () => mediaQuery.removeEventListener("change", updateResolvedTheme);
+    const root = document.documentElement;
+    root.classList.remove("light", "dark", ...themeClassNames);
+    root.classList.add(`theme-${theme.id}`, theme.mode);
+    loadThemeFonts(theme);
+    prepareThemeTextures(theme.id);
   }, [theme]);
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    const definition = getResolvedThemeDefinition(resolvedTheme);
-
-    root.classList.remove("light", "dark", ...themeClassNames);
-    root.classList.add(`theme-${resolvedTheme}`);
-    if (definition.baseMode === "dark") {
-      root.classList.add("dark");
-    }
-  }, [resolvedTheme]);
+    document.documentElement.dataset.scenery = scenery;
+  }, [scenery]);
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    root.style.setProperty("--ui-scale", uiScale.toString());
+    document.documentElement.style.setProperty("--ui-scale", String(uiScale));
   }, [uiScale]);
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    root.style.setProperty("--font-family", fontFamily);
+    // "theme" leaves the type to the theme; anything else overrides it everywhere.
+    const root = document.documentElement;
+    if (fontFamily === THEME_FONT) {
+      root.style.removeProperty("--font-family");
+      root.dataset.font = "theme";
+    } else {
+      root.style.setProperty("--font-family", fontFamily);
+      root.dataset.font = "custom";
+    }
   }, [fontFamily]);
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    root.dir = resolvedDirection;
+    document.documentElement.dir = resolvedDirection;
   }, [resolvedDirection]);
 
-  const value = {
-    theme,
-    resolvedTheme,
-    themes: themeDefinitions,
-    setTheme: (theme: ThemeId) => {
+  const setPreference = useCallback(
+    (next: ThemePreference) => {
       try {
-        localStorage.setItem(storageKey, theme);
+        localStorage.setItem(storageKey, next);
       } catch {
-        //ignore
+        // Storage can be unavailable; the choice still applies for this session.
       }
-      setTheme(theme);
+      setPreferenceState(next);
     },
-  };
+    [storageKey],
+  );
+
+  const value = useMemo(
+    () => ({ preference, theme, setPreference }),
+    [preference, theme, setPreference],
+  );
 
   return (
     <DirectionProvider dir={resolvedDirection}>
-      <ThemeProviderContext.Provider {...props} value={value}>
+      <ThemeProviderContext.Provider value={value}>
         {children}
       </ThemeProviderContext.Provider>
     </DirectionProvider>
@@ -128,9 +152,7 @@ export function ThemeProvider({
 
 export const useTheme = () => {
   const context = useContext(ThemeProviderContext);
-
   if (context === undefined)
     throw new Error("useTheme must be used within a ThemeProvider");
-
   return context;
 };

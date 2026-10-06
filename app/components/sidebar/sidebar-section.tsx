@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
 export const sidebarChipClass =
-  "min-h-6 cursor-pointer border-sidebar-border/80 bg-sidebar-accent/35 px-2.5 py-1 text-start text-xs font-medium text-sidebar-foreground whitespace-normal text-wrap hover:bg-sidebar-accent/60 dark:border-sidebar-foreground/25 dark:bg-sidebar-accent/60 dark:hover:bg-sidebar-accent/80";
+  "sidebar-chip min-h-6 cursor-pointer border-sidebar-border/80 bg-sidebar-accent/35 px-2.5 py-1 text-start text-xs font-medium text-sidebar-foreground whitespace-normal text-wrap hover:bg-sidebar-accent/60 dark:border-sidebar-foreground/25 dark:bg-sidebar-accent/60 dark:hover:bg-sidebar-accent/80";
 
 export const sidebarEmptyLabelClass = "text-xs text-sidebar-foreground/55";
 
@@ -24,7 +24,10 @@ export function SidebarSectionHeader({
   return (
     <div className="flex-shrink-0">
       <div className="flex min-h-8 items-center justify-between gap-3">
-        <Label className="text-[0.8rem] font-semibold text-sidebar-foreground/90">
+        <Label
+          data-sidebar-heading=""
+          className="text-[0.8rem] font-semibold text-sidebar-foreground/90"
+        >
           {children}
         </Label>
         <Button
@@ -37,7 +40,10 @@ export function SidebarSectionHeader({
           <PlusIcon className="w-4 h-4" />
         </Button>
       </div>
-      <Separator className="bg-sidebar-border/80 dark:bg-sidebar-foreground/20" />
+      <Separator
+        data-sidebar-rule=""
+        className="bg-sidebar-border/80 dark:bg-sidebar-foreground/20"
+      />
     </div>
   );
 }

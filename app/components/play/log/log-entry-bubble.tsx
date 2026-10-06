@@ -15,9 +15,31 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { cn } from "@/lib/utils";
 import { StoryText } from "./story-text";
+
+/** Player turns are boxed and marked with their voice; story-mode entries read like narration. */
+const PLAYER_VOICES = {
+  [LogEntryMode.SAY]: {
+    name: "say",
+    Icon: SpeechIcon,
+    borderClass: "border-s-log-say/55",
+    iconClass: "text-log-say",
+  },
+  [LogEntryMode.DO]: {
+    name: "do",
+    Icon: HandIcon,
+    borderClass: "border-s-log-do/55",
+    iconClass: "text-log-do",
+  },
+  [LogEntryMode.DIRECT]: {
+    name: "direct",
+    Icon: MegaphoneIcon,
+    borderClass: "border-s-log-direct/55",
+    iconClass: "text-log-direct",
+  },
+} as const;
 
 export interface LogEntryBubbleProps {
   entry: LogEntry;
@@ -34,6 +56,7 @@ function NarrationButton({
   isActive,
   onNarrate,
 }: NonNullable<LogEntryBubbleProps["narration"]>) {
+  const { t } = useLingui();
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -50,7 +73,7 @@ function NarrationButton({
             onNarrate();
           }}
           disabled={isLoading}
-          aria-label="Narrate section"
+          aria-label={t`Narrate section`}
         >
           {isLoading ? (
             <Loader2Icon className="h-3.5 w-3.5 animate-spin" />
@@ -90,38 +113,28 @@ export function LogEntryBubble({
       </div>
     ) : null;
 
-  if (mode === LogEntryMode.SAY) {
+  const voice =
+    mode && mode in PLAYER_VOICES
+      ? PLAYER_VOICES[mode as keyof typeof PLAYER_VOICES]
+      : undefined;
+  if (voice) {
+    const { Icon, name, borderClass, iconClass } = voice;
     return (
-      <div className="rounded-xs border border-l-2 border-border/60 border-l-log-say/55 bg-card/65 px-3 py-2 shadow-sm backdrop-blur-sm">
+      <div
+        data-log-entry={name}
+        className={cn(
+          "rounded-xs border border-s-2 border-border/60 bg-card/65 px-3 py-2 shadow-sm backdrop-blur-sm",
+          borderClass,
+        )}
+      >
         <div className="flex items-start" style={logFontSizeStyle}>
-          <SpeechIcon className={cn(actionIconClass, "text-log-say")} />
-          <div className={actionTextClass}>{body}</div>
-          {hasError && <ErrorTooltip error={error} />}
-        </div>
-        {footer}
-      </div>
-    );
-  }
-
-  if (mode === LogEntryMode.DO) {
-    return (
-      <div className="rounded-xs border border-l-2 border-border/60 border-l-log-do/55 bg-card/65 px-3 py-2 shadow-sm backdrop-blur-sm">
-        <div className="flex items-start" style={logFontSizeStyle}>
-          <HandIcon className={cn(actionIconClass, "text-log-do")} />
-          <div className={actionTextClass}>{body}</div>
-          {hasError && <ErrorTooltip error={error} />}
-        </div>
-        {footer}
-      </div>
-    );
-  }
-
-  if (mode === LogEntryMode.DIRECT) {
-    return (
-      <div className="rounded-xs border border-l-2 border-border/60 border-l-log-direct/55 bg-card/65 px-3 py-2 shadow-sm backdrop-blur-sm">
-        <div className="flex items-start" style={logFontSizeStyle}>
-          <MegaphoneIcon className={cn(actionIconClass, "text-log-direct")} />
-          <div className={actionTextClass}>{body}</div>
+          <Icon
+            data-log-entry-icon=""
+            className={cn(actionIconClass, iconClass)}
+          />
+          <div data-log-entry-text="" className={actionTextClass}>
+            {body}
+          </div>
           {hasError && <ErrorTooltip error={error} />}
         </div>
         {footer}
@@ -133,6 +146,7 @@ export function LogEntryBubble({
     <div className="flex flex-col items-start">
       <div className="flex items-start">
         <div
+          data-log-story=""
           className="inline whitespace-pre-wrap break-words font-normal leading-[1.72] text-foreground/95"
           style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
         >

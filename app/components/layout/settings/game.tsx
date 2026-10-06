@@ -14,10 +14,11 @@ import {
   type TextDirection,
   type ThinkingVisibility,
 } from "@/store/useSettingsStore";
-import { useTheme } from "@/components/theme-provider";
 import { FontSelector } from "./font-selector";
 import { type Locale, LOCALES, loadLocale } from "@/i18n";
-import type { ThemeId } from "@/lib/themes";
+import { THEME_SCENERY_OPTIONS, type ThemeScenery } from "@/themes/registry";
+import { cn } from "@/lib/utils";
+import { ThemePicker } from "./theme-picker";
 import {
   FONT_SIZE_MAX,
   FONT_SIZE_MIN,
@@ -32,7 +33,6 @@ import {
 
 export default function SettingsGame() {
   const { t } = useLingui();
-  const { theme, themes, setTheme } = useTheme();
   const {
     uiScale,
     setUiScale,
@@ -48,7 +48,14 @@ export default function SettingsGame() {
     setAutoNarrate,
     highlightLatestSection,
     setHighlightLatestSection,
+    themeScenery,
+    setThemeScenery,
   } = useSettingsStore();
+  const sceneryLabels: Record<ThemeScenery, string> = {
+    animated: t`Animated`,
+    still: t`Still`,
+    off: t`Off`,
+  };
 
   const handleLanguageChange = (value: string) => {
     const locale = value as Locale;
@@ -58,26 +65,44 @@ export default function SettingsGame() {
 
   return (
     <SettingsStack>
-      <SettingsPanel title={<Trans>Look and language</Trans>}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <SettingsField label={<Trans>Theme</Trans>}>
-            <Select
-              value={theme}
-              onValueChange={(value) => setTheme(value as ThemeId)}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={t`Select a theme`} />
-              </SelectTrigger>
-              <SelectContent>
-                {themes.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </SettingsField>
+      <SettingsPanel title={<Trans>Theme</Trans>}>
+        <ThemePicker />
+        <SettingsField
+          label={<Trans>Scenery</Trans>}
+          description={
+            <Trans>
+              Drawn around the story on the play screen. Still keeps it without
+              movement; Off keeps only the colours and type.
+            </Trans>
+          }
+        >
+          <div
+            role="radiogroup"
+            aria-label={t`Scenery`}
+            className="inline-flex w-fit rounded-xs border bg-muted/40 p-0.5"
+          >
+            {THEME_SCENERY_OPTIONS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                role="radio"
+                aria-checked={themeScenery === option}
+                onClick={() => setThemeScenery(option)}
+                className={cn(
+                  "rounded-[calc(var(--radius)-6px)] px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  themeScenery === option &&
+                    "bg-background text-foreground shadow-sm",
+                )}
+              >
+                {sceneryLabels[option]}
+              </button>
+            ))}
+          </div>
+        </SettingsField>
+      </SettingsPanel>
 
+      <SettingsPanel title={<Trans>Language</Trans>}>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <SettingsField label={<Trans>Language</Trans>}>
             <Select value={language} onValueChange={handleLanguageChange}>
               <SelectTrigger className="w-full">

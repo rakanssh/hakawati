@@ -1,0 +1,136 @@
+/* Storybook: watercolour in the corners, crayon doodles, hand lettering and wobbly ink borders. */
+
+.theme-storybook {
+  color-scheme: light;
+  --app-background: oklch(0.978 0.018 80);
+  --app-surface-gradient: none;
+  --background: oklch(0.97 0.02 80);
+  --foreground: oklch(0.3 0.07 262);
+  --card: oklch(0.992 0.01 80);
+  --card-foreground: oklch(0.3 0.07 262);
+  --popover: oklch(0.995 0.01 80);
+  --popover-foreground: oklch(0.3 0.07 262);
+  --primary: oklch(0.58 0.15 28);
+  --primary-foreground: oklch(0.985 0.006 28);
+  --secondary: oklch(0.934 0.024 80);
+  --secondary-foreground: oklch(0.35 0.07 262);
+  --muted: oklch(0.934 0.022 80);
+  --muted-foreground: oklch(0.5 0.056 262);
+  --accent: oklch(0.92 0.03 28);
+  --accent-foreground: oklch(0.28 0.06 28);
+  --destructive: oklch(0.55 0.17 25);
+  --destructive-foreground: oklch(0.985 0.004 80);
+  --border: oklch(0.855 0.028 80);
+  --input: oklch(0.855 0.028 80);
+  --ring: oklch(0.64 0.128 28);
+  --chart-1: oklch(0.58 0.15 28);
+  --chart-2: oklch(0.54 0.09 150);
+  --chart-3: oklch(0.54 0.09 232);
+  --chart-4: oklch(0.6 0.09 75);
+  --chart-5: oklch(0.54 0.1 25);
+  --sidebar: oklch(0.958 0.022 80);
+  --sidebar-foreground: oklch(0.33 0.07 262);
+  --sidebar-primary: oklch(0.58 0.15 28);
+  --sidebar-primary-foreground: oklch(0.985 0.006 28);
+  --sidebar-accent: oklch(0.925 0.033 28);
+  --sidebar-accent-foreground: oklch(0.28 0.06 28);
+  --sidebar-border: oklch(0.845 0.028 80);
+  --sidebar-ring: oklch(0.64 0.128 28);
+  --log-say: oklch(0.52 0.09 230);
+  --log-do: oklch(0.52 0.09 28);
+  --log-direct: oklch(0.52 0.09 300);
+  --log-thinking: oklch(0.48 0.068 160);
+  --log-thinking-foreground: oklch(0.38 0.054 160);
+  --success: oklch(0.52 0.105 150);
+  --success-foreground: oklch(0.985 0.004 150);
+  --story-character: oklch(0.54 0.09 232);
+  --story-character-foreground: oklch(0.34 0.065 232);
+  --story-thing: oklch(0.54 0.09 150);
+  --story-thing-foreground: oklch(0.34 0.065 150);
+  --story-place: oklch(0.54 0.09 295);
+  --story-place-foreground: oklch(0.34 0.065 295);
+  --story-concept: oklch(0.54 0.09 75);
+  --story-concept-foreground: oklch(0.34 0.065 75);
+  --story-uncategorized: oklch(0.52 0.036 80);
+  --story-uncategorized-foreground: oklch(0.38 0.036 80);
+}
+
+.theme-storybook {
+  --theme-font-story: "Shantell Sans", "Comic Sans MS", cursive;
+  --theme-font-display: "Shantell Sans", "Comic Sans MS", cursive;
+  --theme-story-leading: 1.7;
+  --titlebar-background: color-mix(
+    in oklch,
+    var(--background) 80%,
+    transparent
+  );
+  --app-texture-image: var(--fx-paper);
+  --app-texture-size: 260px 260px;
+  --app-texture-opacity: 1;
+  --app-texture-blend-mode: multiply;
+}
+
+.theme-storybook
+  :is(
+    [data-titlebar-title],
+    [data-composer-mode],
+    [data-sidebar-heading],
+    .sidebar-chip,
+    [data-log-meta]
+  ) {
+  font-family: var(--theme-font-display);
+}
+
+.theme-storybook :is([data-log-entry], [data-composer-surface]) {
+  position: relative;
+  border: 0;
+  border-radius: 255px 18px 225px 16px / 16px 225px 18px 255px;
+  background: color-mix(in oklch, var(--card) 72%, transparent);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+/* A hand-inked outline: uneven corners and a second, fainter stroke just off the first. */
+.theme-storybook :is([data-log-entry], [data-composer-surface])::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid color-mix(in oklch, var(--foreground) 70%, transparent);
+  border-radius: inherit;
+  box-shadow: 1px 1.5px 0 -0.5px
+    color-mix(in oklch, var(--foreground) 35%, transparent);
+  pointer-events: none;
+}
+
+.theme-storybook [data-composer-surface]:focus-within::after {
+  border-color: var(--primary);
+}
+
+.theme-storybook [data-composer-send] {
+  border-radius: 46% 54% 52% 48% / 55% 45% 55% 45%;
+}
+
+.theme-storybook .sidebar-chip {
+  border-radius: 12px;
+}
+
+.storybook-smoke {
+  stroke-dasharray: 6 5;
+  animation: storybook-smoke 2.4s linear infinite;
+}
+
+@keyframes storybook-smoke {
+  to {
+    stroke-dashoffset: -22;
+  }
+}
+
+.storybook-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 50% 45%,
+    transparent 55%,
+    oklch(0.75 0.06 70 / 0.22) 100%
+  );
+}

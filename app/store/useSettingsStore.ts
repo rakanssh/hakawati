@@ -20,10 +20,17 @@ import {
   ModelRoleSettings,
 } from "@/types";
 import type { Locale } from "@/i18n";
+import {
+  THEME_FONT,
+  isThemeScenery,
+  type ThemeScenery,
+} from "@/themes/registry";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type TextDirection = "system" | "ltr" | "rtl";
+
+const SETTINGS_VERSION = 7;
 export type ThinkingVisibility = "all" | "latest" | "none";
 
 export const DEFAULT_TTS_VOICE = "alloy";
@@ -200,6 +207,7 @@ type PersistedSettingsState = Partial<SettingsStoreType> & {
   thinkingVisibility?: ThinkingVisibility;
   autoNarrate?: boolean;
   highlightLatestSection?: boolean;
+  themeScenery?: ThemeScenery;
 };
 
 function normalizeRoleSettings(
@@ -286,6 +294,7 @@ function createLegacyRoleSettings(
 
 export function migrateSettingsState(
   persistedState: unknown,
+  version = SETTINGS_VERSION,
 ): SettingsStoreType {
   const state = (persistedState ?? {}) as PersistedSettingsState;
   const defaultRoles = createDefaultModelRoles();
@@ -330,6 +339,14 @@ export function migrateSettingsState(
     thinkingVisibility,
     autoNarrate: state.autoNarrate ?? false,
     highlightLatestSection: state.highlightLatestSection ?? true,
+    themeScenery: isThemeScenery(state.themeScenery)
+      ? state.themeScenery
+      : "animated",
+    // Before themes had their own type, "system-ui" was simply the default; let themes choose instead.
+    fontFamily:
+      version < 7 && (!state.fontFamily || state.fontFamily === "system-ui")
+        ? THEME_FONT
+        : (state.fontFamily ?? THEME_FONT),
   } as SettingsStoreType;
 }
 
@@ -381,6 +398,7 @@ export interface SettingsStoreType {
   thinkingVisibility: ThinkingVisibility;
   autoNarrate: boolean;
   highlightLatestSection: boolean;
+  themeScenery: ThemeScenery;
   chatGptPlanNoticeAcknowledged: boolean;
   acknowledgeChatGptPlanNotice: () => void;
 
@@ -429,6 +447,7 @@ export interface SettingsStoreType {
   setThinkingVisibility: (visibility: ThinkingVisibility) => void;
   setAutoNarrate: (autoNarrate: boolean) => void;
   setHighlightLatestSection: (highlight: boolean) => void;
+  setThemeScenery: (scenery: ThemeScenery) => void;
   resetGmPrompt: () => void;
   resetStorytellerPrompt: () => void;
   resetContinuePrompt: () => void;
@@ -459,7 +478,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
       maxTokens: 2048,
       seed: Math.floor(Math.random() * 1000000),
       uiScale: 1,
-      fontFamily: "system-ui",
+      fontFamily: THEME_FONT,
       fontSize: 1,
       textDirection: "system",
       language: "en",
@@ -476,6 +495,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
       thinkingVisibility: "all",
       autoNarrate: false,
       highlightLatestSection: true,
+      themeScenery: "animated",
       chatGptPlanNoticeAcknowledged: false,
       acknowledgeChatGptPlanNotice: () =>
         set({ chatGptPlanNoticeAcknowledged: true }),
@@ -733,6 +753,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
       setAutoNarrate: (autoNarrate: boolean) => set({ autoNarrate }),
       setHighlightLatestSection: (highlight: boolean) =>
         set({ highlightLatestSection: highlight }),
+      setThemeScenery: (themeScenery: ThemeScenery) => set({ themeScenery }),
       resetGmPrompt: () =>
         set({ customGmPrompt: undefined, useCustomGmPrompt: false }),
       resetStorytellerPrompt: () =>
@@ -781,19 +802,20 @@ export const useSettingsStore = create<SettingsStoreType>()(
           minP: undefined,
           topA: undefined,
           uiScale: 1,
-          fontFamily: "system-ui",
+          fontFamily: THEME_FONT,
           fontSize: 1,
           textDirection: "system",
           language: "en",
           thinkingVisibility: "all",
           autoNarrate: false,
           highlightLatestSection: true,
+          themeScenery: "animated",
         }),
     }),
     {
       name: "settings",
       migrate: migrateSettingsState,
-      version: 6,
+      version: SETTINGS_VERSION,
     },
   ),
 );

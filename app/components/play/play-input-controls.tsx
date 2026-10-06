@@ -298,6 +298,7 @@ export function PlayInputControls({
             <Button
               type="button"
               variant="ghost"
+              data-composer-mode=""
               className={cn(subtleActionSelectorClass, className)}
               aria-label={t`Select action mode`}
               title={currentActionLabel}
@@ -387,6 +388,7 @@ export function PlayInputControls({
             type="button"
             variant="ghost"
             size="icon"
+            data-composer-mic=""
             className={cn(
               "!h-10 !w-10 shrink-0 border shadow-none md:!h-9 md:!w-9",
               isRecording
@@ -415,6 +417,7 @@ export function PlayInputControls({
 
   const renderTextArea = () => (
     <Textarea
+      data-composer-input=""
       placeholder={t(getPlaceholderMessage(action))}
       value={input}
       onChange={(e) => setInput(e.target.value)}
@@ -488,6 +491,7 @@ export function PlayInputControls({
       onClick={canStopGeneration ? onStop : onSubmit}
       disabled={saving || (loading && !canStopGeneration)}
       size="icon"
+      data-composer-send=""
       className={cn("!h-10 !w-10 shrink-0 md:!h-9 md:!w-9", className)}
       aria-label={canStopGeneration ? t`Stop generating` : t`Submit action`}
     >
@@ -502,7 +506,7 @@ export function PlayInputControls({
   );
 
   const renderInputSurface = () => (
-    <div className={composerSurfaceClass}>
+    <div data-composer-surface="" className={composerSurfaceClass}>
       {speechRecorder.isRecording ? (
         renderRecordingComposer()
       ) : speechRecorder.isTranscribing ? (
@@ -601,13 +605,14 @@ export function PlayInputControls({
   );
 
   const renderComposer = () => (
-    <div className="composer-command-tier mx-auto w-full max-w-5xl">
+    <div className="composer-command-tier mx-auto w-full max-w-(--play-composer-max)">
       {renderInputSurface()}
     </div>
   );
 
   return (
     <div
+      data-composer=""
       className={cn(
         "pointer-events-auto z-20 w-full",
         isMobilePlatform ? "px-2 pt-2" : "p-3",

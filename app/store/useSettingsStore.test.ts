@@ -52,6 +52,31 @@ describe("useSettingsStore migration", () => {
     expect(migrated.openAiBaseUrl).toBe("https://openrouter.ai/api/v1");
   });
 
+  it("lets themes choose the type for settings saved before themes had fonts", () => {
+    expect(
+      migrateSettingsState({ fontFamily: "system-ui" }, 6).fontFamily,
+    ).toBe("theme");
+    expect(migrateSettingsState({}, 6).fontFamily).toBe("theme");
+    expect(
+      migrateSettingsState({ fontFamily: "Lexend, Arial, sans-serif" }, 6)
+        .fontFamily,
+    ).toBe("Lexend, Arial, sans-serif");
+    // Once themes have fonts, "System UI" is a deliberate choice.
+    expect(
+      migrateSettingsState({ fontFamily: "system-ui" }, 7).fontFamily,
+    ).toBe("system-ui");
+  });
+
+  it("defaults theme scenery to animated", () => {
+    expect(migrateSettingsState({}).themeScenery).toBe("animated");
+    expect(migrateSettingsState({ themeScenery: "still" }).themeScenery).toBe(
+      "still",
+    );
+    expect(
+      migrateSettingsState({ themeScenery: "moving" as never }).themeScenery,
+    ).toBe("animated");
+  });
+
   it("creates empty role configs when no legacy model settings exist", () => {
     const migrated = migrateSettingsState({});
 
@@ -248,7 +273,7 @@ describe("thinking-level settings", () => {
     expect(migrated.modelRoles.narrator.reasoningEffort).toBeUndefined();
     expect(migrated.modelRoles.utility.reasoningEffort).toBeUndefined();
     expect(migrated.modelRoles.narrator.model).toEqual(thinkingModel);
-    expect(useSettingsStore.persist.getOptions().version).toBe(6);
+    expect(useSettingsStore.persist.getOptions().version).toBe(7);
   });
 
   it("normalizes invalid persisted levels in active and inactive profiles", () => {

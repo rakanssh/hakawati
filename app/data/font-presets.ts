@@ -1,3 +1,5 @@
+import { THEME_FONT } from "@/themes/registry";
+
 export interface FontOption {
   id: string;
   name: string;
@@ -6,6 +8,12 @@ export interface FontOption {
 }
 
 export const fontPresets: FontOption[] = [
+  {
+    id: THEME_FONT,
+    name: "Theme default",
+    value: THEME_FONT,
+    preview: "Uses the type the theme was designed with",
+  },
   {
     id: "system-ui",
     name: "System UI",

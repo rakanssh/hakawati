@@ -1,15 +1,13 @@
 import { useTheme } from "@/components/theme-provider";
-import { getResolvedThemeDefinition } from "@/lib/themes";
 import type { CSSProperties } from "react";
 import { Toaster as Sonner, ToasterProps } from "sonner";
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { resolvedTheme = "light" } = useTheme();
-  const sonnerTheme = getResolvedThemeDefinition(resolvedTheme).baseMode;
+  const { theme } = useTheme();
 
   return (
     <Sonner
-      theme={sonnerTheme}
+      theme={theme.mode}
       className="toaster group"
       style={
         {

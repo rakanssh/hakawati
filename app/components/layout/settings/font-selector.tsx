@@ -19,7 +19,9 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 import { ChevronsUpDownIcon } from "lucide-react";
-import { fontPresets } from "@/data/font-presets";
+import { fontPresets, type FontOption } from "@/data/font-presets";
+import { THEME_FONT } from "@/themes/registry";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { cn } from "@/lib/utils";
 import { useSettingsStore } from "@/store";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -29,6 +31,16 @@ export function FontSelector() {
   const [fontSelectOpen, setFontSelectOpen] = useState(false);
   const { isCompactViewport, isMobilePlatform } = useIsMobile();
   const useDrawer = isCompactViewport || isMobilePlatform;
+  const { t } = useLingui();
+  const isThemeFont = (font: FontOption) => font.value === THEME_FONT;
+  const fontLabel = (font: FontOption) =>
+    isThemeFont(font) ? t`Theme default` : font.name;
+  const fontPreview = (font: FontOption) =>
+    isThemeFont(font)
+      ? t`Uses the type the theme was designed with`
+      : font.preview;
+  const fontStyle = (font: FontOption) =>
+    isThemeFont(font) ? undefined : { fontFamily: font.value };
 
   const currentFont = useMemo(() => {
     return (
@@ -38,28 +50,30 @@ export function FontSelector() {
 
   const fontList = (
     <CommandList className={cn(useDrawer && "max-h-[72dvh]")}>
-      <CommandEmpty>No font found.</CommandEmpty>
+      <CommandEmpty>
+        <Trans>No font found.</Trans>
+      </CommandEmpty>
       {fontPresets.map((font) => (
         <CommandItem
           key={font.id}
-          value={font.name}
+          value={fontLabel(font)}
           onSelect={() => {
             setFontFamily(font.value);
             setFontSelectOpen(false);
           }}
           className={cn(
             "rounded-xs p-3 ml-0 min-h-[44px]",
-            fontFamily === font.value && "border-l-2 border-foreground",
+            fontFamily === font.value && "border-s-2 border-foreground",
           )}
         >
           <div className="flex w-full items-center justify-between">
-            <span style={{ fontFamily: font.value }}>{font.name}</span>
-            {font.preview && (
+            <span style={fontStyle(font)}>{fontLabel(font)}</span>
+            {fontPreview(font) && (
               <span
-                className="text-xs text-muted-foreground ml-2"
-                style={{ fontFamily: font.value }}
+                className="ms-2 text-xs text-muted-foreground"
+                style={fontStyle(font)}
               >
-                {font.preview}
+                {fontPreview(font)}
               </span>
             )}
           </div>
@@ -78,18 +92,18 @@ export function FontSelector() {
           className="w-full justify-between"
           onClick={() => setFontSelectOpen(true)}
         >
-          <span style={{ fontFamily: currentFont.value }}>
-            {currentFont.name}
-          </span>
-          <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <span style={fontStyle(currentFont)}>{fontLabel(currentFont)}</span>
+          <ChevronsUpDownIcon className="ms-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
         <DrawerContent className="min-h-[60dvh]">
           <DrawerHeader>
-            <DrawerTitle>Select Font</DrawerTitle>
+            <DrawerTitle>
+              <Trans>Select Font</Trans>
+            </DrawerTitle>
           </DrawerHeader>
           <Command className="border-none">
             <CommandInput
-              placeholder="Search fonts..."
+              placeholder={t`Search fonts...`}
               className="rounded-xs"
             />
             {fontList}
@@ -108,15 +122,16 @@ export function FontSelector() {
           aria-expanded={fontSelectOpen}
           className="w-full justify-between"
         >
-          <span style={{ fontFamily: currentFont.value }}>
-            {currentFont.name}
-          </span>
-          <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <span style={fontStyle(currentFont)}>{fontLabel(currentFont)}</span>
+          <ChevronsUpDownIcon className="ms-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0 rounded-xs">
         <Command>
-          <CommandInput placeholder="Search fonts..." className="rounded-xs" />
+          <CommandInput
+            placeholder={t`Search fonts...`}
+            className="rounded-xs"
+          />
           {fontList}
         </Command>
       </PopoverContent>

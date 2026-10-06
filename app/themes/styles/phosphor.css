@@ -1,0 +1,203 @@
+/* Phosphor: a green-screen terminal behind curved glass. */
+
+.theme-phosphor {
+  color-scheme: dark;
+  --app-background: oklch(0.108 0.018 150);
+  --app-surface-gradient: none;
+  --app-texture-image: none;
+  --app-texture-size: auto;
+  --app-texture-opacity: 0;
+  --app-texture-blend-mode: normal;
+  --background: oklch(0.12 0.018 150);
+  --foreground: oklch(0.86 0.14 145);
+  --card: oklch(0.165 0.021 150);
+  --card-foreground: oklch(0.86 0.14 145);
+  --popover: oklch(0.176 0.022 150);
+  --popover-foreground: oklch(0.86 0.14 145);
+  --primary: oklch(0.84 0.17 145);
+  --primary-foreground: oklch(0.1 0.018 150);
+  --secondary: oklch(0.215 0.021 150);
+  --secondary-foreground: oklch(0.82 0.14 145);
+  --muted: oklch(0.215 0.02 150);
+  --muted-foreground: oklch(0.62 0.168 145);
+  --accent: oklch(0.24 0.054 145);
+  --accent-foreground: oklch(0.9 0.027 145);
+  --destructive: oklch(0.72 0.15 30);
+  --destructive-foreground: oklch(0.1 0.018 150);
+  --border: oklch(0.84 0.17 145 / 22%);
+  --input: oklch(0.84 0.17 145 / 26%);
+  --ring: oklch(0.84 0.17 145);
+  --chart-1: oklch(0.84 0.17 145);
+  --chart-2: oklch(0.67 0.09 150);
+  --chart-3: oklch(0.67 0.09 232);
+  --chart-4: oklch(0.73 0.09 75);
+  --chart-5: oklch(0.67 0.1 25);
+  --sidebar: oklch(0.106 0.017 150);
+  --sidebar-foreground: oklch(0.83 0.14 145);
+  --sidebar-primary: oklch(0.84 0.17 145);
+  --sidebar-primary-foreground: oklch(0.1 0.018 150);
+  --sidebar-accent: oklch(0.22 0.036 145);
+  --sidebar-accent-foreground: oklch(0.9 0.026 145);
+  --sidebar-border: oklch(0.84 0.17 145 / 18%);
+  --sidebar-ring: oklch(0.84 0.17 145);
+  --log-say: oklch(0.72 0.085 170);
+  --log-do: oklch(0.72 0.085 145);
+  --log-direct: oklch(0.72 0.085 85);
+  --log-thinking: oklch(0.68 0.064 200);
+  --log-thinking-foreground: oklch(0.78 0.051 200);
+  --success: oklch(0.8 0.15 145);
+  --success-foreground: oklch(0.1 0.018 150);
+  --story-character: oklch(0.68 0.09 232);
+  --story-character-foreground: oklch(0.8 0.07 232);
+  --story-thing: oklch(0.68 0.09 150);
+  --story-thing-foreground: oklch(0.8 0.07 150);
+  --story-place: oklch(0.68 0.09 295);
+  --story-place-foreground: oklch(0.8 0.07 295);
+  --story-concept: oklch(0.68 0.09 75);
+  --story-concept-foreground: oklch(0.8 0.07 75);
+  --story-uncategorized: oklch(0.7 0.026 150);
+  --story-uncategorized-foreground: oklch(0.74 0.026 150);
+}
+
+.theme-phosphor {
+  --theme-font-story: "VT323", ui-monospace, monospace;
+  --theme-font-display: "VT323", ui-monospace, monospace;
+  --theme-story-scale: 1.45;
+  --theme-story-leading: 1.38;
+  --titlebar-background: transparent;
+}
+
+.theme-phosphor [data-titlebar] {
+  border-bottom-color: transparent;
+}
+
+.theme-phosphor [data-titlebar-title] {
+  font-family: var(--theme-font-display);
+  font-size: 1.1rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* A soft, tight glow keeps the letters sharp enough to read for a long session. */
+.theme-phosphor [data-log-story] {
+  text-shadow: 0 0 4px color-mix(in oklch, var(--foreground) 32%, transparent);
+}
+
+/* VT323 has a single weight, so bold reads as the terminal's bright attribute instead of a smeared fake bold. */
+.theme-phosphor[data-font="theme"]
+  :is([data-log-story], [data-log-entry-text]) {
+  font-synthesis-weight: none;
+  letter-spacing: 0.015em;
+}
+
+.theme-phosphor[data-font="theme"]
+  :is([data-log-story], [data-log-entry-text])
+  :is(strong, b) {
+  color: oklch(0.97 0.09 145);
+  text-shadow: 0 0 6px color-mix(in oklch, var(--foreground) 50%, transparent);
+}
+
+/* Your turns are prompt lines in the phosphor colour. */
+.theme-phosphor [data-log-entry] {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  padding: 0;
+}
+
+.theme-phosphor [data-log-entry-icon] {
+  display: none;
+}
+
+.theme-phosphor [data-log-entry-text] {
+  color: var(--primary);
+  text-shadow: 0 0 4px color-mix(in oklch, var(--primary) 40%, transparent);
+}
+
+.theme-phosphor[data-font="theme"] [data-log-entry-text] {
+  line-height: 1.38;
+}
+
+.theme-phosphor [data-log-entry-text] p:first-of-type::before {
+  content: "> ";
+}
+
+.theme-phosphor
+  :is(
+    [data-composer-mode],
+    [data-sidebar-heading],
+    .sidebar-chip,
+    [data-log-meta] :is(button, [data-slot="badge"])
+  ) {
+  font-family: var(--theme-font-display);
+  font-size: 1.05rem;
+  font-weight: 400;
+}
+
+.theme-phosphor [data-composer-surface] {
+  border-radius: 0;
+  border-style: dashed;
+}
+
+.theme-phosphor [data-composer-input] {
+  caret-color: var(--primary);
+  caret-shape: block;
+}
+
+.theme-phosphor[data-font="theme"] [data-composer-input] {
+  font-size: 1.3rem;
+  line-height: 1.3;
+}
+
+.theme-phosphor
+  :is(
+    [data-composer-send],
+    [data-composer-mic],
+    .sidebar-chip,
+    [data-log-meta] [data-slot="badge"],
+    [data-slot="progress"],
+    [data-slot="progress-indicator"]
+  ) {
+  border-radius: 0;
+}
+
+.theme-phosphor [data-slot="progress-indicator"] {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--primary) 0 6px,
+    transparent 6px 8px
+  );
+}
+
+/* While the narrator writes, a block cursor blinks at the end of the line. */
+.theme-phosphor [data-log-caret] {
+  width: 0.55em;
+  height: 1em;
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary);
+  animation: theme-blink 1s steps(2, jump-none) infinite;
+}
+
+/* Curved CRT glass and its dark bezel. */
+.phosphor-glass {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    110% 80% at 28% 6%,
+    rgb(255 255 255 / 0.06),
+    transparent 50%
+  );
+}
+
+.phosphor-bezel {
+  position: absolute;
+  inset: 5px;
+  border-radius: 4% / 5%;
+  box-shadow:
+    0 0 0 60px #030503,
+    inset 0 0 10vmin rgb(0 0 0 / 0.75),
+    inset 0 0 8px rgb(0 0 0 / 0.9);
+}

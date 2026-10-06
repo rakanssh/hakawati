@@ -1,0 +1,262 @@
+/* Typewriter: a sheet feeding out of a black machine on a light oak desk. */
+
+.theme-typewriter {
+  color-scheme: light;
+  --app-background: oklch(0.765 0.068 68);
+  --app-texture-image: none;
+  --app-texture-size: auto;
+  --app-texture-opacity: 0;
+  --app-texture-blend-mode: normal;
+  --background: oklch(0.8 0.055 70);
+  --foreground: oklch(0.17 0.008 60);
+  --card: oklch(0.985 0.012 85);
+  --card-foreground: oklch(0.17 0.008 60);
+  --popover: oklch(0.989 0.012 85);
+  --popover-foreground: oklch(0.17 0.008 60);
+  --primary: oklch(0.42 0.17 28);
+  --primary-foreground: oklch(0.985 0.006 28);
+  --secondary: oklch(0.764 0.063 70);
+  --secondary-foreground: oklch(0.22 0.008 60);
+  --muted: oklch(0.764 0.057 70);
+  --muted-foreground: oklch(0.38 0.006 60);
+  --accent: oklch(0.75 0.055 28);
+  --accent-foreground: oklch(0.28 0.068 28);
+  --destructive: oklch(0.55 0.17 25);
+  --destructive-foreground: oklch(0.985 0.004 70);
+  --border: oklch(0.685 0.07 70);
+  --input: oklch(0.685 0.07 70);
+  --ring: oklch(0.48 0.145 28);
+  --chart-1: oklch(0.42 0.17 28);
+  --chart-2: oklch(0.54 0.09 150);
+  --chart-3: oklch(0.54 0.09 232);
+  --chart-4: oklch(0.6 0.09 75);
+  --chart-5: oklch(0.54 0.1 25);
+  --sidebar: oklch(0.788 0.061 70);
+  --sidebar-foreground: oklch(0.2 0.008 60);
+  --sidebar-primary: oklch(0.42 0.17 28);
+  --sidebar-primary-foreground: oklch(0.985 0.006 28);
+  --sidebar-accent: oklch(0.755 0.053 28);
+  --sidebar-accent-foreground: oklch(0.28 0.068 28);
+  --sidebar-border: oklch(0.675 0.07 70);
+  --sidebar-ring: oklch(0.48 0.145 28);
+  --log-say: oklch(0.52 0.081 255);
+  --log-do: oklch(0.52 0.081 28);
+  --log-direct: oklch(0.52 0.081 60);
+  --log-thinking: oklch(0.48 0.061 168);
+  --log-thinking-foreground: oklch(0.38 0.049 168);
+  --success: oklch(0.52 0.105 150);
+  --success-foreground: oklch(0.985 0.004 150);
+  --story-character: oklch(0.54 0.09 232);
+  --story-character-foreground: oklch(0.34 0.065 232);
+  --story-thing: oklch(0.54 0.09 150);
+  --story-thing-foreground: oklch(0.34 0.065 150);
+  --story-place: oklch(0.54 0.09 295);
+  --story-place-foreground: oklch(0.34 0.065 295);
+  --story-concept: oklch(0.54 0.09 75);
+  --story-concept-foreground: oklch(0.34 0.065 75);
+  --story-uncategorized: oklch(0.52 0.085 70);
+  --story-uncategorized-foreground: oklch(0.38 0.085 70);
+}
+
+.theme-typewriter {
+  --theme-font-story: "Courier Prime", "Courier New", monospace;
+  --theme-font-display: "Courier Prime", "Courier New", monospace;
+  --theme-story-leading: 1.75;
+  --play-column-max: 46rem;
+  --play-composer-max: 50rem;
+  --titlebar-background: color-mix(
+    in oklch,
+    var(--background) 55%,
+    transparent
+  );
+  /* Desk-lamp light from the top-left and the desk's edges in shadow, over oak planks drawn by
+     prepareThemeTextures (plain oak until they are ready). */
+  --app-surface-gradient:
+    radial-gradient(
+      120% 90% at 22% -12%,
+      oklch(0.99 0.03 85 / 0.4),
+      transparent 55%
+    ),
+    radial-gradient(
+      ellipse at 50% 42%,
+      transparent 55%,
+      oklch(0.3 0.05 50 / 0.24) 100%
+    ),
+    var(--typewriter-desk, none);
+  --app-surface-size: auto, auto, 1400px 900px;
+  /* Uneven ink: every strike lands a little lighter or darker. */
+  --typewriter-ink: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='120'%3E%3Cfilter id='i'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.13 0.07' numOctaves='2' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.7 0 0 0 0.5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23i)'/%3E%3C/svg%3E");
+}
+
+.theme-typewriter [data-titlebar] {
+  border-bottom-color: color-mix(in oklch, var(--border) 50%, transparent);
+}
+
+.theme-typewriter [data-titlebar-title] {
+  font-family: var(--theme-font-display);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* The story is the sheet of paper, its newest lines just above the roller. */
+.theme-typewriter [data-play-column] {
+  justify-content: flex-end;
+  padding: 2rem 3.4rem 4.75rem;
+  background-color: var(--card);
+  background-image: var(--fx-paper);
+  box-shadow:
+    0 0 0 1px oklch(0.45 0.04 60 / 0.14),
+    0 22px 44px -18px oklch(0.25 0.05 55 / 0.45);
+}
+
+@media (max-width: 640px) {
+  .theme-typewriter [data-play-column] {
+    padding-inline: 1.25rem;
+  }
+}
+
+.theme-typewriter[data-font="theme"]
+  :is([data-log-story], [data-log-entry-text]) {
+  -webkit-mask-image: var(--typewriter-ink);
+  mask-image: var(--typewriter-ink);
+  -webkit-mask-size: 240px 120px;
+  mask-size: 240px 120px;
+}
+
+/* Your turns are typed in the ribbon's colours, indented, with no box. */
+.theme-typewriter [data-log-entry] {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  padding: 0;
+  padding-inline-start: 1.75rem;
+}
+
+.theme-typewriter [data-log-entry-icon] {
+  display: none;
+}
+
+/* Actions in the red half of the ribbon; speech and directions in other inks. */
+.theme-typewriter [data-log-entry="do"] [data-log-entry-text] {
+  color: oklch(0.47 0.16 28);
+}
+
+.theme-typewriter [data-log-entry="say"] [data-log-entry-text] {
+  color: oklch(0.42 0.1 255);
+}
+
+.theme-typewriter [data-log-entry="direct"] [data-log-entry-text] {
+  color: oklch(0.44 0.08 60);
+}
+
+/* The latest passage is marked as if with a yellow highlighter. */
+.theme-typewriter [data-story-highlight] {
+  background-color: oklch(0.93 0.11 98 / 0.55);
+}
+
+.theme-typewriter [data-log-meta] {
+  opacity: 0.7;
+}
+
+/* The type bar's strike point, where the next letter lands. */
+.theme-typewriter [data-log-caret] {
+  width: 0.6em;
+  height: 2px;
+  margin-inline-start: 1px;
+  vertical-align: baseline;
+  background: var(--primary);
+  animation: theme-blink 1s steps(2, jump-none) infinite;
+}
+
+/* The input is set into the machine: a black ring with a gold pinstripe. */
+.theme-typewriter [data-composer-surface] {
+  border: 0;
+  border-radius: 6px;
+  background: var(--card);
+  box-shadow:
+    inset 0 1px 3px oklch(0 0 0 / 0.25),
+    0 0 0 3px oklch(0.24 0.006 250),
+    0 0 0 4px oklch(0.78 0.1 85 / 0.6);
+}
+
+.theme-typewriter [data-composer-surface]:focus-within {
+  box-shadow:
+    inset 0 1px 3px oklch(0 0 0 / 0.25),
+    0 0 0 3px oklch(0.24 0.006 250),
+    0 0 0 5px oklch(0.82 0.12 85);
+}
+
+.theme-typewriter [data-composer-input] {
+  caret-color: var(--primary);
+}
+
+/* The send button is a round typewriter key. */
+.theme-typewriter [data-composer-send] {
+  margin-inline-start: 0.375rem;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 38%,
+    oklch(0.34 0.01 60),
+    oklch(0.15 0.01 60)
+  );
+  color: oklch(0.96 0.01 80);
+  box-shadow:
+    0 0 0 2.5px oklch(0.84 0.01 250),
+    0 3px 0 2px oklch(0.55 0.01 250);
+}
+
+.theme-typewriter [data-composer-mic] {
+  border-radius: calc(var(--radius) - 4px);
+}
+
+.theme-typewriter :is(.sidebar-chip, [data-sidebar-heading]) {
+  font-family: var(--theme-font-display);
+}
+
+.theme-typewriter .sidebar-chip {
+  border-radius: 2px;
+  background: transparent;
+  border-color: oklch(0.45 0.02 60 / 0.35);
+}
+
+/* In Game Master, inventory and stats sit on a ruled index card resting on the desk. */
+.theme-typewriter [data-slot="sidebar-container"] {
+  border: 0;
+  background: none;
+  backdrop-filter: none;
+}
+
+.theme-typewriter [data-slot="sidebar-inner"] {
+  margin: 3rem 0.25rem 1.25rem 1rem;
+  height: auto;
+  border-radius: 2px;
+  color: var(--foreground);
+  transform: rotate(-0.8deg);
+  background:
+    repeating-linear-gradient(
+        180deg,
+        transparent 0 21px,
+        oklch(0.72 0.06 240 / 0.35) 21px 22px
+      )
+      0 44px / 100% calc(100% - 44px) no-repeat,
+    var(--fx-paper),
+    var(--card);
+  box-shadow: 0 14px 28px -14px oklch(0.25 0.05 55 / 0.55);
+}
+
+.theme-typewriter [data-slot="sidebar-content"] {
+  padding-top: 0.75rem;
+}
+
+.theme-typewriter [data-sidebar-heading] {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.theme-typewriter [data-sidebar-rule] {
+  background: oklch(0.6 0.15 25 / 0.55);
+}

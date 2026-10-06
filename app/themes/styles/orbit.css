@@ -1,0 +1,153 @@
+/* Orbit: a still night sky, frosted panels, and a slowly turning planet in the corner. */
+
+.theme-orbit {
+  color-scheme: dark;
+  --app-background: oklch(0.098 0.022 265);
+  --app-surface-gradient: none;
+  --app-texture-image: none;
+  --app-texture-size: auto;
+  --app-texture-opacity: 0;
+  --app-texture-blend-mode: normal;
+  --background: oklch(0.11 0.022 265);
+  --foreground: oklch(0.91 0.019 265);
+  --card: oklch(0.155 0.025 265);
+  --card-foreground: oklch(0.91 0.019 265);
+  --popover: oklch(0.166 0.026 265);
+  --popover-foreground: oklch(0.91 0.019 265);
+  --primary: oklch(0.84 0.075 265);
+  --primary-foreground: oklch(0.1 0.022 265);
+  --secondary: oklch(0.205 0.025 265);
+  --secondary-foreground: oklch(0.87 0.019 265);
+  --muted: oklch(0.205 0.024 265);
+  --muted-foreground: oklch(0.67 0.028 265);
+  --accent: oklch(0.23 0.024 265);
+  --accent-foreground: oklch(0.9 0.012 265);
+  --destructive: oklch(0.65 0.17 25);
+  --destructive-foreground: oklch(0.98 0.004 265);
+  --border: oklch(0.9 0.052 265 / 13%);
+  --input: oklch(0.9 0.052 265 / 16%);
+  --ring: oklch(0.84 0.075 265);
+  --chart-1: oklch(0.84 0.075 265);
+  --chart-2: oklch(0.67 0.09 150);
+  --chart-3: oklch(0.67 0.09 232);
+  --chart-4: oklch(0.73 0.09 75);
+  --chart-5: oklch(0.67 0.1 25);
+  --sidebar: oklch(0.096 0.021 265);
+  --sidebar-foreground: oklch(0.88 0.019 265);
+  --sidebar-primary: oklch(0.84 0.075 265);
+  --sidebar-primary-foreground: oklch(0.1 0.022 265);
+  --sidebar-accent: oklch(0.21 0.024 265);
+  --sidebar-accent-foreground: oklch(0.9 0.015 265);
+  --sidebar-border: oklch(0.9 0.052 265 / 11%);
+  --sidebar-ring: oklch(0.84 0.075 265);
+  --log-say: oklch(0.68 0.085 211);
+  --log-do: oklch(0.7 0.08 75);
+  --log-direct: oklch(0.8 0.075 265);
+  --log-thinking: oklch(0.66 0.08 319);
+  --log-thinking-foreground: oklch(0.77 0.06 319);
+  --success: oklch(0.68 0.1 152);
+  --success-foreground: oklch(0.1 0.02 152);
+  --story-character: oklch(0.68 0.09 232);
+  --story-character-foreground: oklch(0.8 0.07 232);
+  --story-thing: oklch(0.68 0.09 150);
+  --story-thing-foreground: oklch(0.8 0.07 150);
+  --story-place: oklch(0.68 0.09 295);
+  --story-place-foreground: oklch(0.8 0.07 295);
+  --story-concept: oklch(0.68 0.09 75);
+  --story-concept-foreground: oklch(0.8 0.07 75);
+  --story-uncategorized: oklch(0.7 0.03 265);
+  --story-uncategorized-foreground: oklch(0.74 0.03 265);
+}
+
+.theme-orbit {
+  --titlebar-background: color-mix(
+    in oklch,
+    var(--background) 55%,
+    transparent
+  );
+}
+
+.theme-orbit [data-titlebar] {
+  border-bottom-color: color-mix(in oklch, var(--border) 50%, transparent);
+}
+
+.theme-orbit :is([data-log-entry], [data-composer-surface]) {
+  background: color-mix(in oklch, var(--card) 52%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.theme-orbit [data-slot="sidebar-inner"] {
+  background: color-mix(in oklch, var(--sidebar) 82%, transparent);
+}
+
+/* Two soft, flat glows: violet at the top-left, warm near the planet. */
+.orbit-sky {
+  background:
+    radial-gradient(
+      circle 44vw at 11.5% 6.7%,
+      oklch(0.36 0.09 290 / 0.55),
+      oklch(0.36 0.09 290 / 0)
+    ),
+    radial-gradient(
+      circle 44vw at 100% 100%,
+      oklch(0.4 0.1 35 / 0.32),
+      oklch(0.4 0.1 35 / 0)
+    );
+}
+
+.orbit-planet {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
+
+/* The planet turns: bands at slightly different speeds, faster wisps, a storm now and then, a slow float. */
+.orbit-drift {
+  animation: orbit-drift 46s linear infinite;
+}
+.orbit-drift-b {
+  animation: orbit-drift 34s linear infinite;
+}
+.orbit-wisp {
+  animation: orbit-drift 20s linear infinite;
+}
+.orbit-spot {
+  animation: orbit-spot 52s linear infinite;
+}
+.orbit-float {
+  animation: orbit-float 26s ease-in-out infinite alternate;
+}
+.orbit-halo {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: orbit-halo 9s ease-in-out infinite alternate;
+}
+
+@keyframes orbit-drift {
+  to {
+    transform: translateX(160px);
+  }
+}
+@keyframes orbit-spot {
+  to {
+    transform: translateX(520px);
+  }
+}
+@keyframes orbit-float {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(-6px, -12px);
+  }
+}
+@keyframes orbit-halo {
+  from {
+    opacity: 0.7;
+    transform: scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.015);
+  }
+}
