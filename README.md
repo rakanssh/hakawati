@@ -6,9 +6,12 @@
   <a href="https://github.com/rakanssh/hakawati/releases"><img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey" alt="Platform"></a>
 </p>
 
-Hakawati is a free and open-source AI adventure client for Windows, macOS, and
-Linux. It works with your own AI provider or local model. Tales and scenarios are
-stored on your device; an optional account adds cloud sync and scenario publishing.
+![Slipstream Contraband in Game Master mode, with inventory and stats beside the story](./.github/assets/hakawati.webp)
+
+Hakawati is a free and open-source AI text adventure for Windows, macOS, and
+Linux. Play with your ChatGPT plan, your own API key, or a local model. Tales and
+scenarios are stored on your device; an optional account adds cloud sync and
+scenario publishing.
 
 [Download](https://github.com/rakanssh/hakawati/releases/latest) ·
 [Website](https://hakawati.dev) · [Changelog](CHANGELOG.md) ·
