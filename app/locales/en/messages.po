@@ -260,7 +260,7 @@ msgstr "About"
 msgid "Account & Sync"
 msgstr "Account & Sync"
 
-#: app/components/play/play-input-controls.tsx:278
+#: app/components/play/play-input-controls.tsx:279
 msgid "Act"
 msgstr "Act"
 
@@ -602,8 +602,8 @@ msgstr "by"
 msgid "Cancel"
 msgstr "Cancel"
 
-#: app/components/play/play-input-controls.tsx:465
-#: app/components/play/play-input-controls.tsx:471
+#: app/components/play/play-input-controls.tsx:466
+#: app/components/play/play-input-controls.tsx:472
 msgid "Cancel recording"
 msgstr "Cancel recording"
 
@@ -904,8 +904,7 @@ msgid "Continuation {0}"
 msgstr "Continuation {0}"
 
 #: app/components/layout/settings/cloud-sync.tsx:1360
-#: app/components/play/play-input-controls.tsx:514
-#: app/components/play/play-input-controls.tsx:536
+#: app/components/play/play-input-controls.tsx:524
 #: app/pages/home/home.tsx:745
 #: app/pages/tales/home.tsx:273
 msgid "Continue"
@@ -1212,7 +1211,7 @@ msgstr "Devices"
 msgid "Devices are unavailable."
 msgstr "Devices are unavailable."
 
-#: app/components/play/play-input-controls.tsx:281
+#: app/components/play/play-input-controls.tsx:282
 msgid "Direct"
 msgstr "Direct"
 
@@ -1375,7 +1374,7 @@ msgstr "Enter model id manually"
 msgid "Enter the base URL in the URL field"
 msgstr "Enter the base URL in the URL field"
 
-#: app/components/play/play-input-controls.tsx:451
+#: app/components/play/play-input-controls.tsx:452
 msgid "Enter your action"
 msgstr "Enter your action"
 
@@ -1517,7 +1516,7 @@ msgstr "Failed to start scenario"
 msgid "Failed to submit report"
 msgstr "Failed to submit report"
 
-#: app/components/play/play-input-controls.tsx:247
+#: app/components/play/play-input-controls.tsx:248
 msgid "Failed to transcribe speech."
 msgstr "Failed to transcribe speech."
 
@@ -1706,7 +1705,7 @@ msgstr "Hakawati is distributed under the GNU General Public License v3."
 msgid "Hakawati is up to date."
 msgstr "Hakawati is up to date."
 
-#: app/components/play/play-input-controls.tsx:236
+#: app/components/play/play-input-controls.tsx:237
 msgid "Hakawati needs microphone access to record speech."
 msgstr "Hakawati needs microphone access to record speech."
 
@@ -2278,7 +2277,7 @@ msgstr "Medium"
 #~ msgid "Mention the main theme or premise"
 #~ msgstr "Mention the main theme or premise"
 
-#: app/components/play/play-input-controls.tsx:235
+#: app/components/play/play-input-controls.tsx:236
 msgid "Microphone access is turned off for Hakawati. Allow it in your device settings to record speech."
 msgstr "Microphone access is turned off for Hakawati. Allow it in your device settings to record speech."
 
@@ -2954,7 +2953,7 @@ msgstr "Reconnecting"
 msgid "Reconnecting..."
 msgstr "Reconnecting..."
 
-#: app/components/play/play-input-controls.tsx:400
+#: app/components/play/play-input-controls.tsx:401
 msgid "Record speech"
 msgstr "Record speech"
 
@@ -2962,7 +2961,7 @@ msgstr "Record speech"
 #~ msgid "Recorder"
 #~ msgstr "Recorder"
 
-#: app/components/play/play-input-controls.tsx:241
+#: app/components/play/play-input-controls.tsx:242
 msgid "Recording stopped because you left Hakawati."
 msgstr "Recording stopped because you left Hakawati."
 
@@ -3132,8 +3131,8 @@ msgstr "Right to Left"
 msgid "Rogue"
 msgstr "Rogue"
 
-#: app/components/play/play-input-controls.tsx:382
-#: app/components/play/play-input-controls.tsx:388
+#: app/components/play/play-input-controls.tsx:383
+#: app/components/play/play-input-controls.tsx:389
 msgid "Roll a dice"
 msgstr "Roll a dice"
 
@@ -3175,7 +3174,7 @@ msgstr "Saving your progress. Hakawati will restart when the update is ready."
 msgid "Saving your tale…"
 msgstr "Saving your tale…"
 
-#: app/components/play/play-input-controls.tsx:279
+#: app/components/play/play-input-controls.tsx:280
 msgid "Say"
 msgstr "Say"
 
@@ -3324,7 +3323,7 @@ msgstr "Select a provider"
 #~ msgid "Select a world for your story"
 #~ msgstr "Select a world for your story"
 
-#: app/components/play/play-input-controls.tsx:321
+#: app/components/play/play-input-controls.tsx:322
 msgid "Select action mode"
 msgstr "Select action mode"
 
@@ -3554,16 +3553,16 @@ msgstr "Stats and inventory tracking"
 msgid "Still"
 msgstr "Still"
 
-#: app/components/play/play-input-controls.tsx:510
-msgid "Stop"
-msgstr "Stop"
+#: app/components/play/log/log-control.tsx:200
+#~ msgid "Stop"
+#~ msgstr "Stop"
 
-#: app/components/play/play-input-controls.tsx:485
-#: app/components/play/play-input-controls.tsx:491
+#: app/components/play/play-input-controls.tsx:486
+#: app/components/play/play-input-controls.tsx:492
 msgid "Stop and transcribe"
 msgstr "Stop and transcribe"
 
-#: app/components/play/play-input-controls.tsx:534
+#: app/components/play/play-input-controls.tsx:522
 msgid "Stop generating"
 msgstr "Stop generating"
 
@@ -3571,7 +3570,7 @@ msgstr "Stop generating"
 #~ msgid "Stop generating (Esc)"
 #~ msgstr "Stop generating (Esc)"
 
-#: app/components/play/play-input-controls.tsx:397
+#: app/components/play/play-input-controls.tsx:398
 msgid "Stop recording"
 msgstr "Stop recording"
 
@@ -3591,7 +3590,7 @@ msgstr "Storage usage"
 msgid "Storage usage is unavailable."
 msgstr "Storage usage is unavailable."
 
-#: app/components/play/play-input-controls.tsx:280
+#: app/components/play/play-input-controls.tsx:281
 #: app/components/play/story-panel/story-panel.tsx:64
 #: app/components/play/story-panel/story-panel.tsx:112
 #: app/components/play/story-panel/story-panel.tsx:347
@@ -3649,11 +3648,7 @@ msgstr "Storybook"
 msgid "Structured gameplay"
 msgstr "Structured gameplay"
 
-#: app/components/play/play-input-controls.tsx:519
-msgid "Submit"
-msgstr "Submit"
-
-#: app/components/play/play-input-controls.tsx:537
+#: app/components/play/play-input-controls.tsx:525
 msgid "Submit action"
 msgstr "Submit action"
 
@@ -4061,8 +4056,8 @@ msgstr "Top P"
 #~ msgid "trained in the art of war, carrying scars that tell stories and a blade that has tasted blood"
 #~ msgstr "trained in the art of war, carrying scars that tell stories and a blade that has tasted blood"
 
-#: app/components/play/play-input-controls.tsx:399
-#: app/components/play/play-input-controls.tsx:501
+#: app/components/play/play-input-controls.tsx:400
+#: app/components/play/play-input-controls.tsx:502
 msgid "Transcribing..."
 msgstr "Transcribing..."
 

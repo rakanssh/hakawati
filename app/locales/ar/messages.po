@@ -260,7 +260,7 @@ msgstr "عن التطبيق"
 msgid "Account & Sync"
 msgstr "الحساب والمزامنة"
 
-#: app/components/play/play-input-controls.tsx:278
+#: app/components/play/play-input-controls.tsx:279
 msgid "Act"
 msgstr "افعل"
 
@@ -602,8 +602,8 @@ msgstr "بواسطة"
 msgid "Cancel"
 msgstr "إلغاء"
 
-#: app/components/play/play-input-controls.tsx:465
-#: app/components/play/play-input-controls.tsx:471
+#: app/components/play/play-input-controls.tsx:466
+#: app/components/play/play-input-controls.tsx:472
 msgid "Cancel recording"
 msgstr "إلغاء التسجيل"
 
@@ -904,8 +904,7 @@ msgid "Continuation {0}"
 msgstr "تكملة {0}"
 
 #: app/components/layout/settings/cloud-sync.tsx:1360
-#: app/components/play/play-input-controls.tsx:514
-#: app/components/play/play-input-controls.tsx:536
+#: app/components/play/play-input-controls.tsx:524
 #: app/pages/home/home.tsx:745
 #: app/pages/tales/home.tsx:273
 msgid "Continue"
@@ -1212,7 +1211,7 @@ msgstr "الأجهزة"
 msgid "Devices are unavailable."
 msgstr "الأجهزة غير متاحة."
 
-#: app/components/play/play-input-controls.tsx:281
+#: app/components/play/play-input-controls.tsx:282
 msgid "Direct"
 msgstr "اخراج"
 
@@ -1375,7 +1374,7 @@ msgstr "أدخل معرف النموذج يدوياً"
 msgid "Enter the base URL in the URL field"
 msgstr "أدخل العنوان الأساسي (Base URL) في حقل الرابط"
 
-#: app/components/play/play-input-controls.tsx:451
+#: app/components/play/play-input-controls.tsx:452
 msgid "Enter your action"
 msgstr "أدخل إجراءك"
 
@@ -1517,7 +1516,7 @@ msgstr "تعذّر بدء السيناريو"
 msgid "Failed to submit report"
 msgstr "تعذّر إرسال البلاغ"
 
-#: app/components/play/play-input-controls.tsx:247
+#: app/components/play/play-input-controls.tsx:248
 msgid "Failed to transcribe speech."
 msgstr "فشل تحويل الكلام إلى نص."
 
@@ -1706,7 +1705,7 @@ msgstr "يتم توزيع حكواتي بموجب رخصة GNU General Public Li
 msgid "Hakawati is up to date."
 msgstr "تطبيق حكواتي محدّث."
 
-#: app/components/play/play-input-controls.tsx:236
+#: app/components/play/play-input-controls.tsx:237
 msgid "Hakawati needs microphone access to record speech."
 msgstr "يحتاج حكواتي إلى إذن الوصول إلى الميكروفون لتسجيل الكلام."
 
@@ -2278,7 +2277,7 @@ msgstr "متوسط"
 #~ msgid "Mention the main theme or premise"
 #~ msgstr "اذكر الموضوع الرئيسي أو الفكرة الأساسية"
 
-#: app/components/play/play-input-controls.tsx:235
+#: app/components/play/play-input-controls.tsx:236
 msgid "Microphone access is turned off for Hakawati. Allow it in your device settings to record speech."
 msgstr "الوصول إلى الميكروفون متوقف لحكواتي. اسمح به من إعدادات جهازك لتسجيل الكلام."
 
@@ -2954,7 +2953,7 @@ msgstr "جارٍ إعادة الاتصال"
 msgid "Reconnecting..."
 msgstr "جارٍ إعادة الاتصال..."
 
-#: app/components/play/play-input-controls.tsx:400
+#: app/components/play/play-input-controls.tsx:401
 msgid "Record speech"
 msgstr "تسجيل الكلام"
 
@@ -2962,7 +2961,7 @@ msgstr "تسجيل الكلام"
 #~ msgid "Recorder"
 #~ msgstr "مسجل"
 
-#: app/components/play/play-input-controls.tsx:241
+#: app/components/play/play-input-controls.tsx:242
 msgid "Recording stopped because you left Hakawati."
 msgstr "توقّف التسجيل لأنك غادرت حكواتي."
 
@@ -3132,8 +3131,8 @@ msgstr "من اليمين إلى اليسار"
 msgid "Rogue"
 msgstr "لص"
 
-#: app/components/play/play-input-controls.tsx:382
-#: app/components/play/play-input-controls.tsx:388
+#: app/components/play/play-input-controls.tsx:383
+#: app/components/play/play-input-controls.tsx:389
 msgid "Roll a dice"
 msgstr "رمي النرد"
 
@@ -3175,7 +3174,7 @@ msgstr "جارٍ حفظ تقدّمك. سيُعاد تشغيل حكواتي عن�
 msgid "Saving your tale…"
 msgstr "جارٍ حفظ حكايتك…"
 
-#: app/components/play/play-input-controls.tsx:279
+#: app/components/play/play-input-controls.tsx:280
 msgid "Say"
 msgstr "قل"
 
@@ -3324,7 +3323,7 @@ msgstr "اختر مزود"
 #~ msgid "Select a world for your story"
 #~ msgstr "اختر عالماً لقصتك"
 
-#: app/components/play/play-input-controls.tsx:321
+#: app/components/play/play-input-controls.tsx:322
 msgid "Select action mode"
 msgstr "اختر نوع الإجراء"
 
@@ -3554,16 +3553,16 @@ msgstr "تتبع الخصائص والمخزون"
 msgid "Still"
 msgstr "ثابت"
 
-#: app/components/play/play-input-controls.tsx:510
-msgid "Stop"
-msgstr "إيقاف"
+#: app/components/play/log/log-control.tsx:200
+#~ msgid "Stop"
+#~ msgstr "إيقاف"
 
-#: app/components/play/play-input-controls.tsx:485
-#: app/components/play/play-input-controls.tsx:491
+#: app/components/play/play-input-controls.tsx:486
+#: app/components/play/play-input-controls.tsx:492
 msgid "Stop and transcribe"
 msgstr "إيقاف وتحويل الكلام لنص"
 
-#: app/components/play/play-input-controls.tsx:534
+#: app/components/play/play-input-controls.tsx:522
 msgid "Stop generating"
 msgstr "إيقاف التوليد"
 
@@ -3571,7 +3570,7 @@ msgstr "إيقاف التوليد"
 #~ msgid "Stop generating (Esc)"
 #~ msgstr "إيقاف التوليد (Esc)"
 
-#: app/components/play/play-input-controls.tsx:397
+#: app/components/play/play-input-controls.tsx:398
 msgid "Stop recording"
 msgstr "إيقاف التسجيل"
 
@@ -3591,7 +3590,7 @@ msgstr "مساحة التخزين المستخدمة"
 msgid "Storage usage is unavailable."
 msgstr "معلومات استخدام التخزين غير متاحة."
 
-#: app/components/play/play-input-controls.tsx:280
+#: app/components/play/play-input-controls.tsx:281
 #: app/components/play/story-panel/story-panel.tsx:64
 #: app/components/play/story-panel/story-panel.tsx:112
 #: app/components/play/story-panel/story-panel.tsx:347
@@ -3649,11 +3648,7 @@ msgstr "كتاب حكايات"
 msgid "Structured gameplay"
 msgstr "لعبة منظمة"
 
-#: app/components/play/play-input-controls.tsx:519
-msgid "Submit"
-msgstr "إرسال"
-
-#: app/components/play/play-input-controls.tsx:537
+#: app/components/play/play-input-controls.tsx:525
 msgid "Submit action"
 msgstr "إرسال الإجراء"
 
@@ -4061,8 +4056,8 @@ msgstr "Top P"
 #~ msgid "trained in the art of war, carrying scars that tell stories and a blade that has tasted blood"
 #~ msgstr "خبير في فنون الحرب، يحمل ندوباً تروي قصصاً، ونصلاً ذاق طعم الدماء"
 
-#: app/components/play/play-input-controls.tsx:399
-#: app/components/play/play-input-controls.tsx:501
+#: app/components/play/play-input-controls.tsx:400
+#: app/components/play/play-input-controls.tsx:502
 msgid "Transcribing..."
 msgstr "جاري تحويل الكلام إلى نص..."
 

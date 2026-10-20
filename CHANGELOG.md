@@ -11,7 +11,7 @@ All notable changes to this project are documented in this file.
 ### Changed
 
 - Brass Night is now the default theme if you haven't picked one.
-- With nothing typed, the send button continues the story. It reads Continue, Submit, or Stop, and replaces the separate Continue button.
+- With nothing typed, the send button continues the story, replacing the separate Continue button.
 
 ### Fixed
 
