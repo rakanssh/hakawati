@@ -41,6 +41,7 @@ import { Platform, useIsMobile } from "@/hooks/useIsMobile";
 import {
   appendTranscriptToInput,
   MicrophonePermissionError,
+  RecordingInterruptedError,
   useSpeechRecorder,
 } from "@/hooks/useSpeechRecorder";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -231,6 +232,10 @@ export function PlayInputControls({
             ? t`Microphone access is turned off for Hakawati. Allow it in your device settings to record speech.`
             : t`Hakawati needs microphone access to record speech.`,
         );
+        return;
+      }
+      if (error instanceof RecordingInterruptedError) {
+        toast.info(t`Recording stopped because you left Hakawati.`);
         return;
       }
       const message =

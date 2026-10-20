@@ -23,6 +23,7 @@ import kotlin.math.abs
 
 private const val MICROPHONE = "microphone"
 private const val NOT_RECORDING = "Speech recording is not in progress."
+private const val INTERRUPTED = "recordingInterrupted"
 
 // Records speech for the play screen's mic button, called from speech_recorder.rs.
 // Like the desktop recorder it returns 16-bit PCM in a WAV file and reports a
@@ -31,10 +32,13 @@ private const val NOT_RECORDING = "Speech recording is not in progress."
   permissions = [Permission(strings = [Manifest.permission.RECORD_AUDIO], alias = MICROPHONE)]
 )
 class SpeechRecorderPlugin(activity: Activity) : Plugin(activity) {
+  // Commands and lifecycle events both run on the main thread.
   private var recording: Recording? = null
+  private var interrupted = false
 
   @Command
   fun startRecording(invoke: Invoke) {
+    interrupted = false
     if (recording != null) {
       invoke.reject("Speech recording is already in progress.")
       return
@@ -64,8 +68,7 @@ class SpeechRecorderPlugin(activity: Activity) : Plugin(activity) {
 
   @Command
   fun stopRecording(invoke: Invoke) {
-    val active = recording ?: return invoke.reject(NOT_RECORDING)
-    recording = null
+    val active = takeRecording() ?: return rejectNotRecording(invoke)
     val pcm = active.finish()
     if (pcm.isEmpty()) {
       invoke.reject("Recording did not capture any audio.")
@@ -80,21 +83,40 @@ class SpeechRecorderPlugin(activity: Activity) : Plugin(activity) {
 
   @Command
   fun getRecordingLevel(invoke: Invoke) {
-    val active = recording ?: return invoke.reject(NOT_RECORDING)
+    val active = recording ?: return rejectNotRecording(invoke)
     invoke.resolve(JSObject().apply { put("level", active.level.toDouble()) })
   }
 
   @Command
   fun cancelRecording(invoke: Invoke) {
-    val active = recording ?: return invoke.reject(NOT_RECORDING)
-    recording = null
+    val active = takeRecording() ?: return rejectNotRecording(invoke)
     active.finish()
     invoke.resolve()
   }
 
+  // Android hands apps in the background silence, so a recording left running
+  // would keep growing until the person came back. End it when Hakawati leaves
+  // the screen; the next command tells the play screen why.
+  override fun onStop() {
+    val active = takeRecording() ?: return
+    interrupted = true
+    active.finish()
+  }
+
   override fun onDestroy(activity: AppCompatActivity) {
-    recording?.finish()
-    recording = null
+    takeRecording()?.finish()
+  }
+
+  private fun takeRecording(): Recording? = recording.also { recording = null }
+
+  private fun rejectNotRecording(invoke: Invoke) {
+    val wasInterrupted = interrupted
+    interrupted = false
+    if (wasInterrupted) {
+      invoke.reject("Recording stopped because you left Hakawati.", INTERRUPTED)
+    } else {
+      invoke.reject(NOT_RECORDING)
+    }
   }
 
   private fun begin(invoke: Invoke) {

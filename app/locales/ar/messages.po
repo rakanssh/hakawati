@@ -260,7 +260,7 @@ msgstr "عن التطبيق"
 msgid "Account & Sync"
 msgstr "الحساب والمزامنة"
 
-#: app/components/play/play-input-controls.tsx:270
+#: app/components/play/play-input-controls.tsx:275
 msgid "Act"
 msgstr "افعل"
 
@@ -601,8 +601,8 @@ msgstr "بواسطة"
 msgid "Cancel"
 msgstr "إلغاء"
 
-#: app/components/play/play-input-controls.tsx:457
-#: app/components/play/play-input-controls.tsx:463
+#: app/components/play/play-input-controls.tsx:462
+#: app/components/play/play-input-controls.tsx:468
 msgid "Cancel recording"
 msgstr "إلغاء التسجيل"
 
@@ -1211,7 +1211,7 @@ msgstr "الأجهزة"
 msgid "Devices are unavailable."
 msgstr "الأجهزة غير متاحة."
 
-#: app/components/play/play-input-controls.tsx:273
+#: app/components/play/play-input-controls.tsx:278
 msgid "Direct"
 msgstr "اخراج"
 
@@ -1374,7 +1374,7 @@ msgstr "أدخل معرف النموذج يدوياً"
 msgid "Enter the base URL in the URL field"
 msgstr "أدخل العنوان الأساسي (Base URL) في حقل الرابط"
 
-#: app/components/play/play-input-controls.tsx:443
+#: app/components/play/play-input-controls.tsx:448
 msgid "Enter your action"
 msgstr "أدخل إجراءك"
 
@@ -1516,7 +1516,7 @@ msgstr "تعذّر بدء السيناريو"
 msgid "Failed to submit report"
 msgstr "تعذّر إرسال البلاغ"
 
-#: app/components/play/play-input-controls.tsx:239
+#: app/components/play/play-input-controls.tsx:244
 msgid "Failed to transcribe speech."
 msgstr "فشل تحويل الكلام إلى نص."
 
@@ -1705,7 +1705,7 @@ msgstr "يتم توزيع حكواتي بموجب رخصة GNU General Public Li
 msgid "Hakawati is up to date."
 msgstr "تطبيق حكواتي محدّث."
 
-#: app/components/play/play-input-controls.tsx:232
+#: app/components/play/play-input-controls.tsx:233
 msgid "Hakawati needs microphone access to record speech."
 msgstr "يحتاج حكواتي إلى إذن الوصول إلى الميكروفون لتسجيل الكلام."
 
@@ -2277,7 +2277,7 @@ msgstr "متوسط"
 #~ msgid "Mention the main theme or premise"
 #~ msgstr "اذكر الموضوع الرئيسي أو الفكرة الأساسية"
 
-#: app/components/play/play-input-controls.tsx:231
+#: app/components/play/play-input-controls.tsx:232
 msgid "Microphone access is turned off for Hakawati. Allow it in your device settings to record speech."
 msgstr "الوصول إلى الميكروفون متوقف لحكواتي. اسمح به من إعدادات جهازك لتسجيل الكلام."
 
@@ -2954,13 +2954,17 @@ msgstr "جارٍ إعادة الاتصال"
 msgid "Reconnecting..."
 msgstr "جارٍ إعادة الاتصال..."
 
-#: app/components/play/play-input-controls.tsx:392
+#: app/components/play/play-input-controls.tsx:397
 msgid "Record speech"
 msgstr "تسجيل الكلام"
 
 #: app/data/quickstart-presets.ts:139
 #~ msgid "Recorder"
 #~ msgstr "مسجل"
+
+#: app/components/play/play-input-controls.tsx:238
+msgid "Recording stopped because you left Hakawati."
+msgstr "توقّف التسجيل لأنك غادرت حكواتي."
 
 #: app/components/play/log/log-control.tsx:202
 msgid "Redo"
@@ -3128,8 +3132,8 @@ msgstr "من اليمين إلى اليسار"
 msgid "Rogue"
 msgstr "لص"
 
-#: app/components/play/play-input-controls.tsx:374
-#: app/components/play/play-input-controls.tsx:380
+#: app/components/play/play-input-controls.tsx:379
+#: app/components/play/play-input-controls.tsx:385
 msgid "Roll a dice"
 msgstr "رمي النرد"
 
@@ -3171,7 +3175,7 @@ msgstr "جارٍ حفظ تقدّمك. سيُعاد تشغيل حكواتي عن�
 msgid "Saving your tale…"
 msgstr "جارٍ حفظ حكايتك…"
 
-#: app/components/play/play-input-controls.tsx:271
+#: app/components/play/play-input-controls.tsx:276
 msgid "Say"
 msgstr "قل"
 
@@ -3320,7 +3324,7 @@ msgstr "اختر مزود"
 #~ msgid "Select a world for your story"
 #~ msgstr "اختر عالماً لقصتك"
 
-#: app/components/play/play-input-controls.tsx:313
+#: app/components/play/play-input-controls.tsx:318
 msgid "Select action mode"
 msgstr "اختر نوع الإجراء"
 
@@ -3553,13 +3557,13 @@ msgstr "ثابت"
 #~ msgid "Stop"
 #~ msgstr "إيقاف"
 
-#: app/components/play/play-input-controls.tsx:477
-#: app/components/play/play-input-controls.tsx:483
+#: app/components/play/play-input-controls.tsx:482
+#: app/components/play/play-input-controls.tsx:488
 msgid "Stop and transcribe"
 msgstr "إيقاف وتحويل الكلام لنص"
 
 #: app/components/play/log/log-control.tsx:242
-#: app/components/play/play-input-controls.tsx:506
+#: app/components/play/play-input-controls.tsx:511
 msgid "Stop generating"
 msgstr "إيقاف التوليد"
 
@@ -3567,7 +3571,7 @@ msgstr "إيقاف التوليد"
 msgid "Stop generating (Esc)"
 msgstr "إيقاف التوليد (Esc)"
 
-#: app/components/play/play-input-controls.tsx:389
+#: app/components/play/play-input-controls.tsx:394
 msgid "Stop recording"
 msgstr "إيقاف التسجيل"
 
@@ -3587,7 +3591,7 @@ msgstr "مساحة التخزين المستخدمة"
 msgid "Storage usage is unavailable."
 msgstr "معلومات استخدام التخزين غير متاحة."
 
-#: app/components/play/play-input-controls.tsx:272
+#: app/components/play/play-input-controls.tsx:277
 #: app/components/play/story-panel/story-panel.tsx:64
 #: app/components/play/story-panel/story-panel.tsx:112
 #: app/components/play/story-panel/story-panel.tsx:347
@@ -3645,7 +3649,7 @@ msgstr "كتاب حكايات"
 msgid "Structured gameplay"
 msgstr "لعبة منظمة"
 
-#: app/components/play/play-input-controls.tsx:506
+#: app/components/play/play-input-controls.tsx:511
 msgid "Submit action"
 msgstr "إرسال الإجراء"
 
@@ -4053,8 +4057,8 @@ msgstr "Top P"
 #~ msgid "trained in the art of war, carrying scars that tell stories and a blade that has tasted blood"
 #~ msgstr "خبير في فنون الحرب، يحمل ندوباً تروي قصصاً، ونصلاً ذاق طعم الدماء"
 
-#: app/components/play/play-input-controls.tsx:391
-#: app/components/play/play-input-controls.tsx:493
+#: app/components/play/play-input-controls.tsx:396
+#: app/components/play/play-input-controls.tsx:498
 msgid "Transcribing..."
 msgstr "جاري تحويل الكلام إلى نص..."
 

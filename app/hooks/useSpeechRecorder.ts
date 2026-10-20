@@ -36,6 +36,14 @@ export class MicrophonePermissionError extends Error {
   }
 }
 
+/** The mobile recorder ended the recording because the app left the screen. */
+export class RecordingInterruptedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RecordingInterruptedError";
+  }
+}
+
 const RECORDING_STATS_POLL_INTERVAL_MS = 50;
 
 function isNativeSpeechRecorderError(
@@ -59,6 +67,8 @@ export function normalizeMicrophoneError(error: unknown): Error {
         return new MicrophonePermissionError(error.message, false);
       case "microphonePermissionBlocked":
         return new MicrophonePermissionError(error.message, true);
+      case "recordingInterrupted":
+        return new RecordingInterruptedError(error.message);
       default:
         return new Error(error.message);
     }
@@ -125,8 +135,18 @@ export function useSpeechRecorder({
         if (!isRecordingRef.current) return;
         setLevel(Math.min(1, Math.max(0, recordingLevel.level)));
       })
-      .catch(() => undefined);
-  }, []);
+      .catch((error) => {
+        const reason = normalizeMicrophoneError(error);
+        if (!isRecordingRef.current) return;
+        if (!(reason instanceof RecordingInterruptedError)) return;
+        // The recording already ended natively, so there is nothing to stop.
+        isRecordingRef.current = false;
+        abortRef.current = null;
+        stopRecordingStats();
+        setStatus("idle");
+        onError(reason);
+      });
+  }, [onError, stopRecordingStats]);
 
   const startRecordingStats = useCallback(() => {
     stopRecordingStats();
@@ -200,7 +220,10 @@ export function useSpeechRecorder({
     void invoke("cancel_speech_recording")
       .catch((error) => {
         if (abortRef.current !== controller) return;
-        onError(normalizeMicrophoneError(error));
+        const reason = normalizeMicrophoneError(error);
+        // Already ended because the app left the screen, which is what cancel wants.
+        if (reason instanceof RecordingInterruptedError) return;
+        onError(reason);
       })
       .finally(() => {
         if (abortRef.current !== controller) return;

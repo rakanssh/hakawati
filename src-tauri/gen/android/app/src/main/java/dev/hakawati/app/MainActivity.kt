@@ -12,6 +12,7 @@ import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.ProcessLifecycleOwner
 
 class MainActivity : TauriActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,6 +22,10 @@ class MainActivity : TauriActivity() {
       navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
     )
     super.onCreate(savedInstanceState)
+    // Tauri's generated TauriActivity defines the observer that tells plugins the
+    // app left the screen but never registers it, so plugin onStop never ran.
+    // Adding an observer twice does nothing, so this stays safe once Tauri does.
+    ProcessLifecycleOwner.get().lifecycle.addObserver(TauriLifecycleObserver)
     initSecretStore(applicationContext)
     resizeForKeyboard()
   }
