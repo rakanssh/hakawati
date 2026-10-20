@@ -959,6 +959,10 @@ msgstr "تعذّر فتح الرابط"
 msgid "Could not open your browser. Visit ChatGPT Settings → Usage."
 msgstr "تعذّر فتح المتصفح. اذهب إلى Settings ← Usage في ChatGPT."
 
+#: app/hooks/useAndroidBackButton.ts:43
+msgid "Couldn't save your progress, so Hakawati stayed open. Go back again to retry."
+msgstr "تعذّر حفظ تقدّمك، لذا بقي حكواتي مفتوحًا. ارجع مرة أخرى لإعادة المحاولة."
+
 #: app/components/scenario/ScenarioBasicsFields.tsx:91
 msgid "Cover image"
 msgstr "صورة الغلاف"
