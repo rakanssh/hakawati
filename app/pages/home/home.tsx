@@ -27,6 +27,7 @@ import {
   useCatalogClient,
   useCatalogScenarioList,
 } from "@/hooks/useCatalogScenarios";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTaleLibrary } from "@/hooks/useTaleLibrary";
 import { imageBadgeClass } from "@/lib/card-badges";
 import { getSyncUiKind } from "@/lib/sync-ui";
@@ -67,6 +68,7 @@ import {
   Loader2,
   Plus,
   Play,
+  SettingsIcon,
   Sparkles,
   UserRound,
   WandSparkles,
@@ -252,6 +254,7 @@ export default function Home() {
   const utilityConfig = useSettingsStore((state) => state.modelRoles.utility);
   const { name, description, log, id: currentTaleId } = useTaleStore();
   const lastEntry = log.at(-1);
+  const { isMobilePlatform } = useIsMobile();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsTab, setSettingsTab] =
     useState<GlobalSettingsSectionId>("ai-setup");
@@ -650,7 +653,21 @@ export default function Home() {
               <Trans>Your library</Trans>
             </h1>
           </div>
-          {accountControl}
+          <div className="flex min-w-0 items-center gap-2">
+            {accountControl}
+            {/* Phones have no title bar, so settings open from the library. */}
+            {isMobilePlatform && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => openSettings("appearance")}
+                className="size-11 shrink-0 border-border/70 bg-card/60 shadow-none"
+                aria-label={t`Settings`}
+              >
+                <SettingsIcon className="size-4" />
+              </Button>
+            )}
+          </div>
         </header>
 
         {hasIssues && (

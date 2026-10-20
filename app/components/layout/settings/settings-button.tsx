@@ -6,6 +6,7 @@ import {
   type GlobalSettingsSectionId,
 } from "@/components/layout/settings";
 import { useUpdateStore } from "@/store/useUpdateStore";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -15,6 +16,7 @@ export function SettingsButton({
   ...props
 }: React.ComponentProps<typeof Button>) {
   const { t } = useLingui();
+  const { isMobilePlatform } = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [tooltipOpen, setTooltipOpen] = useState(false);
   const hasUpdateNotification = useUpdateStore(
@@ -27,7 +29,8 @@ export function SettingsButton({
     "generation",
     "prompting",
     "cloud-sync",
-    "maintenance",
+    // App stores deliver updates on phones.
+    ...(isMobilePlatform ? [] : (["maintenance"] as const)),
     "about",
   ];
 

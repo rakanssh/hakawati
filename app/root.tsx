@@ -24,7 +24,6 @@ import "./App.css";
 import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "./components/ui";
 import { Titlebar } from "./components/layout";
-import { MobileBottomNav } from "./components/layout/mobile-bottom-nav";
 import { isUpdaterAvailable, useUpdateStore } from "./store/useUpdateStore";
 import { useAndroidBackButton } from "./hooks/useAndroidBackButton";
 import { useDbReady } from "./hooks/useDbReady";
@@ -68,9 +67,6 @@ export default function AppShell() {
 
   const pathname = routerState.location.pathname;
   const isPlayRoute = pathname?.startsWith("/play");
-  const isQuickstartRoute = pathname?.startsWith("/quickstart");
-  const showMobileBottomNav =
-    isMobilePlatform && !isPlayRoute && !isQuickstartRoute;
 
   useEffect(() => {
     if (hasRunRef.current) return;
@@ -103,9 +99,7 @@ export default function AppShell() {
           style={
             isMobilePlatform && !isPlayRoute
               ? {
-                  paddingBottom: showMobileBottomNav
-                    ? "calc(3.5rem + env(safe-area-inset-bottom))"
-                    : "env(safe-area-inset-bottom)",
+                  paddingBottom: "env(safe-area-inset-bottom)",
                   paddingInlineStart: "env(safe-area-inset-left)",
                   paddingInlineEnd: "env(safe-area-inset-right)",
                 }
@@ -124,7 +118,6 @@ export default function AppShell() {
           )}
           {dbReady && <Outlet />}
         </div>
-        <MobileBottomNav />
         {showScaleIndicator && (
           <div
             role="status"
