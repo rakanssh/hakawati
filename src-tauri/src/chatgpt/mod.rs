@@ -74,7 +74,7 @@ pub enum HttpEvent {
 }
 
 fn available() -> bool {
-    !cfg!(any(target_os = "android", target_os = "ios"))
+    !cfg!(target_os = "ios")
 }
 fn now() -> u64 {
     SystemTime::now()
@@ -128,7 +128,7 @@ fn vault_root(app: &AppHandle) -> Result<std::path::PathBuf, String> {
 
 async fn open_vault(app: &AppHandle) -> Result<LockedVault, String> {
     if !available() {
-        return Err("ChatGPT sign-in is available in the desktop app".into());
+        return Err("ChatGPT sign-in is not available on iOS yet".into());
     }
     let root = vault_root(app)?;
     tauri::async_runtime::spawn_blocking(move || LockedVault::open(root))

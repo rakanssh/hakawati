@@ -44,5 +44,11 @@ hound = "3.5.1"
 keyring = "4.1.2"
 tauri-plugin-updater = "2"
 
+[target.'cfg(target_os = "android")'.dependencies]
+android-native-keyring-store = "1"
+jni = "0.21"
+keyring-core = "1"
+ndk-context = "0.1"
+
 [dev-dependencies]
 p256 = { version = "0.13", features = ["pkcs8"] }

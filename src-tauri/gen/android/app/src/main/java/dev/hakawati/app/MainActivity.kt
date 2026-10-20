@@ -1,5 +1,6 @@
 package dev.hakawati.app
 
+import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
@@ -20,8 +21,12 @@ class MainActivity : TauriActivity() {
       navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
     )
     super.onCreate(savedInstanceState)
+    initSecretStore(applicationContext)
     resizeForKeyboard()
   }
+
+  // Lets the Rust secret store reach the Android Keystore. super.onCreate loads the library.
+  private external fun initSecretStore(context: Context)
 
   override fun onWebViewCreate(webView: WebView) {
     webView.addJavascriptInterface(SystemBars(), "HakawatiSystemBars")

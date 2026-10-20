@@ -105,6 +105,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "android-native-keyring-store"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48c6349ddff23194f8fdce2ea8849380f5a4868c1648965b70e801e104cba9b3"
+dependencies = [
+ "base64 0.22.1",
+ "jni",
+ "keyring-core",
+ "log",
+ "ndk-context",
+ "regex",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.16",
+ "tracing",
+]
+
+[[package]]
 name = "android-tzdata"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2172,12 +2190,16 @@ name = "hakawati"
 version = "1.2.0"
 dependencies = [
  "aes-gcm",
+ "android-native-keyring-store",
  "base64 0.22.1",
  "cpal",
  "fs2",
  "hound",
+ "jni",
  "jsonwebtoken",
  "keyring",
+ "keyring-core",
+ "ndk-context",
  "p256",
  "reqwest 0.12.23",
  "serde",

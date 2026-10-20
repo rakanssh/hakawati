@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 and older. See data_extraction_rules.xml. -->
+<full-backup-content>
+  <exclude domain="sharedpref" path="keyring-default.xml" />
+  <exclude domain="root" path="chatgpt" />
+  <exclude domain="root" path="chatgpt-dev" />
+</full-backup-content>
