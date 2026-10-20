@@ -153,8 +153,23 @@ pub fn start_oauth_loopback(
     state.start(listener)
 }
 
+/// Opens the sign-in page for listener `id`; see sign_in_sheet.rs.
+#[tauri::command]
+pub async fn open_oauth_loopback_page(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, OAuthLoopbackState>,
+    id: String,
+    url: String,
+) -> Result<(), String> {
+    if !(url.starts_with("https://") || url.starts_with("http://")) {
+        return Err("Sign-in pages must be web addresses".to_string());
+    }
+    crate::sign_in_sheet::open(&app, &url, state.inner(), &id).await
+}
+
 #[tauri::command]
 pub async fn wait_oauth_loopback(
+    app: tauri::AppHandle,
     state: tauri::State<'_, OAuthLoopbackState>,
     foreground: tauri::State<'_, AppForeground>,
     id: String,
@@ -165,7 +180,9 @@ pub async fn wait_oauth_loopback(
         state.wait(&id, Duration::from_millis(timeout_ms))
     })
     .await
-    .map_err(|error| error.to_string())??;
+    .map_err(|error| error.to_string())?;
+    crate::sign_in_sheet::close(&app).await;
+    let callback = callback?;
     foreground.wait().await;
     Ok(callback)
 }

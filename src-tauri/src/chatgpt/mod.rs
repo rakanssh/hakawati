@@ -18,7 +18,6 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tauri::{ipc::Channel, AppHandle, Manager, State};
-use tauri_plugin_opener::OpenerExt;
 use tokio_util::sync::CancellationToken;
 use vault::{Connection, LockedVault, Tokens, Vault};
 
@@ -73,9 +72,6 @@ pub enum HttpEvent {
     End,
 }
 
-fn available() -> bool {
-    !cfg!(target_os = "ios")
-}
 fn now() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -99,7 +95,7 @@ fn public_session(data: &Vault) -> Session {
     let connection = data.connection.as_ref();
     let connected = connection.is_some_and(connected);
     Session {
-        available: available(),
+        available: true,
         connected,
         plan_usage_enabled: connected
             && connection
@@ -127,9 +123,6 @@ fn vault_root(app: &AppHandle) -> Result<std::path::PathBuf, String> {
 }
 
 async fn open_vault(app: &AppHandle) -> Result<LockedVault, String> {
-    if !available() {
-        return Err("ChatGPT sign-in is not available on iOS yet".into());
-    }
     let root = vault_root(app)?;
     tauri::async_runtime::spawn_blocking(move || LockedVault::open(root))
         .await
@@ -187,7 +180,7 @@ pub fn chatgpt_cancel_operation(state: State<'_, ChatGptState>, id: String) {
 
 #[tauri::command]
 pub async fn chatgpt_session(app: AppHandle) -> Result<Session, String> {
-    if !available() || !vault_root(&app)?.join("credentials.enc").exists() {
+    if !vault_root(&app)?.join("credentials.enc").exists() {
         return Ok(public_session(&Vault::default()));
     }
     Ok(public_session(&open_vault(&app).await?.data))
@@ -431,19 +424,21 @@ pub async fn chatgpt_sign_in(
         let wait = tauri::async_runtime::spawn_blocking(move || {
             listener_state.wait(&listener_id, Duration::from_secs(120))
         });
-        let browser = app.opener().open_url(url, None::<&str>);
-        if browser.is_err() {
+        let page = crate::sign_in_sheet::open(&app, &url, &state.loopback, &started.id).await;
+        if page.is_err() {
             let _ = state.loopback.signal_cancel(&started.id);
             let _ = wait.await;
-            return Err("Cannot open the system browser for ChatGPT sign-in".into());
+            return Err("Cannot open the ChatGPT sign-in page".into());
         }
         let callback = tokio::select! {
-            result = wait => result.map_err(|_| "ChatGPT callback listener stopped")?,
+            result = wait => result.map_err(|_| "ChatGPT callback listener stopped"),
             _ = cancel.cancelled() => {
                 let _ = state.loopback.signal_cancel(&started.id);
-                return Err(CANCELLED.into());
+                Err(CANCELLED)
             }
-        }?;
+        };
+        crate::sign_in_sheet::close(&app).await;
+        let callback = callback??;
         let foreground = app.state::<crate::oauth_loopback::AppForeground>();
         tokio::select! {
             _ = foreground.wait() => {}
