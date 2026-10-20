@@ -4,13 +4,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  UndoIcon,
-  RedoIcon,
-  RefreshCwIcon,
-  StepForwardIcon,
-  SquareIcon,
-} from "lucide-react";
+import { UndoIcon, RedoIcon, RefreshCwIcon } from "lucide-react";
 import { useTaleStore } from "@/store/useTaleStore";
 import { useEffect } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -206,54 +200,6 @@ export function RedoControl({
       </TooltipTrigger>
       <TooltipContent side="top">
         <Trans>Redo (Ctrl+Y)</Trans>
-      </TooltipContent>
-    </Tooltip>
-  );
-}
-
-interface ContinueControlProps {
-  onContinue: () => void;
-  onStop?: () => void;
-  loading?: boolean;
-  saving?: boolean;
-  className?: string;
-}
-
-export function ContinueControl({
-  onContinue,
-  onStop,
-  loading = false,
-  saving = false,
-  className,
-}: ContinueControlProps) {
-  const { t } = useLingui();
-  const canStop = loading && !!onStop;
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          type="button"
-          onClick={canStop ? onStop : onContinue}
-          disabled={canStop ? false : saving || loading}
-          variant="ghost"
-          size="icon"
-          className={className}
-          aria-label={canStop ? t`Stop generating` : t`Continue`}
-        >
-          {canStop ? (
-            <SquareIcon className="h-4 w-4" />
-          ) : (
-            <StepForwardIcon className="h-4 w-4 rtl:rotate-180" />
-          )}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="top">
-        {canStop ? (
-          <Trans>Stop generating (Esc)</Trans>
-        ) : (
-          <Trans>Continue</Trans>
-        )}
       </TooltipContent>
     </Tooltip>
   );

@@ -26,10 +26,10 @@ import {
   ArrowUpIcon,
   XIcon,
   SquareIcon,
+  StepForwardIcon,
 } from "lucide-react";
 import { LogEntryMode } from "@/types/log.type";
 import {
-  ContinueControl,
   RedoControl,
   RetryControl,
   UndoControl,
@@ -506,20 +506,33 @@ export function PlayInputControls({
     </div>
   );
 
+  // With nothing typed, the send button continues the story instead.
+  const continuesStory = !canStopGeneration && !input.trim();
+
   const renderSubmitButton = (className?: string) => (
     <Button
       type={canStopGeneration ? "button" : "submit"}
-      onClick={canStopGeneration ? onStop : onSubmit}
+      onClick={
+        canStopGeneration ? onStop : continuesStory ? onContinue : onSubmit
+      }
       disabled={saving || (loading && !canStopGeneration)}
       size="icon"
       data-composer-send=""
       className={cn("!h-10 !w-10 shrink-0 md:!h-9 md:!w-9", className)}
-      aria-label={canStopGeneration ? t`Stop generating` : t`Submit action`}
+      aria-label={
+        canStopGeneration
+          ? t`Stop generating`
+          : continuesStory
+            ? t`Continue`
+            : t`Submit action`
+      }
     >
       {canStopGeneration ? (
         <SquareIcon className="w-4 h-4" />
       ) : saving ? (
         <SaveIcon className="w-4 h-4 animate-spin" />
+      ) : continuesStory ? (
+        <StepForwardIcon className="w-4 h-4 rtl:rotate-180" />
       ) : (
         <SendIcon className="w-4 h-4" />
       )}
@@ -541,7 +554,6 @@ export function PlayInputControls({
             <div className="flex min-w-0 items-center gap-1.5">
               {renderModifierControls("min-w-0")}
               {renderHistoryControls()}
-              {renderGenerationControls()}
             </div>
             <div className="flex min-w-0 items-center justify-end gap-1.5">
               {renderSubmitControls()}
@@ -587,24 +599,6 @@ export function PlayInputControls({
       />
       <RedoControl
         handleRedo={onRedo}
-        loading={loading}
-        saving={saving}
-        className={quietIconButtonClass}
-      />
-    </div>
-  );
-
-  const renderGenerationControls = (className?: string) => (
-    <div
-      className={cn(
-        "flex shrink-0 items-center justify-end gap-0.5 md:gap-1",
-        composerControlsLocked && "pointer-events-none opacity-60",
-        className,
-      )}
-    >
-      <ContinueControl
-        onContinue={onContinue}
-        onStop={onStop}
         loading={loading}
         saving={saving}
         className={quietIconButtonClass}
