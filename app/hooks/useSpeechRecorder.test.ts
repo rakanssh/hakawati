@@ -4,7 +4,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   appendTranscriptToInput,
   base64ToBlob,
+  MicrophonePermissionError,
   nativeRecordingToBlob,
+  normalizeMicrophoneError,
   useSpeechRecorder,
 } from "./useSpeechRecorder";
 
@@ -132,6 +134,40 @@ describe("native recording helpers", () => {
   });
 });
 
+describe("normalizeMicrophoneError", () => {
+  it("keeps desktop string errors as their message", () => {
+    expect(
+      normalizeMicrophoneError("No microphone input device was found."),
+    ).toEqual(new Error("No microphone input device was found."));
+  });
+
+  it("marks a refused mobile microphone permission", () => {
+    const denied = normalizeMicrophoneError({
+      code: "microphonePermissionDenied",
+      message: "Hakawati needs microphone access to record speech.",
+    });
+    const blocked = normalizeMicrophoneError({
+      code: "microphonePermissionBlocked",
+      message: "Microphone access is turned off for Hakawati.",
+    });
+
+    expect(denied).toBeInstanceOf(MicrophonePermissionError);
+    expect((denied as MicrophonePermissionError).blocked).toBe(false);
+    expect(blocked).toBeInstanceOf(MicrophonePermissionError);
+    expect((blocked as MicrophonePermissionError).blocked).toBe(true);
+  });
+
+  it("keeps the message of other mobile recorder failures", () => {
+    const error = normalizeMicrophoneError({
+      code: null,
+      message: "Recording did not capture any audio.",
+    });
+
+    expect(error).not.toBeInstanceOf(MicrophonePermissionError);
+    expect(error.message).toBe("Recording did not capture any audio.");
+  });
+});
+
 describe("useSpeechRecorder", () => {
   it("starts and stops native recording, then emits transcript", async () => {
     const onTranscript = vi.fn();
@@ -239,6 +275,31 @@ describe("useSpeechRecorder", () => {
     expect(transcribeSpeechMock).not.toHaveBeenCalled();
     expect(onTranscript).not.toHaveBeenCalled();
     expect(onError).not.toHaveBeenCalled();
+
+    harness.cleanup();
+  });
+
+  it("reports a refused microphone permission and stays idle", async () => {
+    const onTranscript = vi.fn();
+    const onError = vi.fn();
+    invokeMock.mockImplementation((command: string) => {
+      if (command === "start_speech_recording") {
+        return Promise.reject({
+          code: "microphonePermissionDenied",
+          message: "Hakawati needs microphone access to record speech.",
+        });
+      }
+      return Promise.reject(new Error(`Unexpected command: ${command}`));
+    });
+    const harness = renderRecorderHarness({ onTranscript, onError });
+
+    await act(async () => {
+      await harness.controls.start();
+    });
+
+    expect(harness.controls.status).toBe("idle");
+    expect(onError).toHaveBeenCalledWith(expect.any(MicrophonePermissionError));
+    expect(invokeMock).not.toHaveBeenCalledWith("get_speech_recording_level");
 
     harness.cleanup();
   });

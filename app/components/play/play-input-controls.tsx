@@ -37,9 +37,10 @@ import {
 } from "@/components/play/log";
 import { getPlaceholderMessage, Action } from "@/lib/play-utils";
 import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { Platform, useIsMobile } from "@/hooks/useIsMobile";
 import {
   appendTranscriptToInput,
+  MicrophonePermissionError,
   useSpeechRecorder,
 } from "@/hooks/useSpeechRecorder";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -217,12 +218,21 @@ export function PlayInputControls({
   onRedo,
 }: PlayInputControlsProps) {
   const { t } = useLingui();
-  const { isMobilePlatform } = useIsMobile();
+  const { isMobilePlatform, platform } = useIsMobile();
+  const canRecordSpeech = platform !== Platform.IOS;
   const speechRecorder = useSpeechRecorder({
     onTranscript: (text) => {
       setInput((current) => appendTranscriptToInput(current, text));
     },
     onError: (error) => {
+      if (error instanceof MicrophonePermissionError) {
+        toast.error(
+          error.blocked
+            ? t`Microphone access is turned off for Hakawati. Allow it in your device settings to record speech.`
+            : t`Hakawati needs microphone access to record speech.`,
+        );
+        return;
+      }
       const message =
         error instanceof Error
           ? error.message
@@ -599,9 +609,9 @@ export function PlayInputControls({
         className,
       )}
     >
-      {/* Speech recording has no mobile backend yet. */}
-      {!isMobilePlatform && renderSpeechButton("rounded-e-none")}
-      {renderSubmitButton(isMobilePlatform ? undefined : "rounded-s-none")}
+      {/* Speech recording has no iOS backend yet. */}
+      {canRecordSpeech && renderSpeechButton("rounded-e-none")}
+      {renderSubmitButton(canRecordSpeech ? "rounded-s-none" : undefined)}
     </div>
   );
 

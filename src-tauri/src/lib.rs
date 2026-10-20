@@ -568,7 +568,7 @@ pub fn run() {
         .manage(oauth_loopback::AppForeground::default())
         .manage(chatgpt::ChatGptState::default())
         .manage(database_transaction::DatabaseTransactions::default())
-        .manage(speech_recorder::SpeechRecorderState::default())
+        .plugin(speech_recorder::init())
         .invoke_handler(tauri::generate_handler![
             greet,
             chatgpt::chatgpt_session,

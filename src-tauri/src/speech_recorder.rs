@@ -1,4 +1,6 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use tauri::plugin::{Builder, TauriPlugin};
+use tauri::{Manager, Wry};
 
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 mod desktop {
@@ -373,27 +375,66 @@ mod desktop {
 
 #[cfg(any(target_os = "android", target_os = "ios"))]
 mod mobile {
-    use super::{SpeechRecordingAudio, SpeechRecordingLevel};
+    use super::{SpeechRecorderError, SpeechRecordingAudio, SpeechRecordingLevel};
+    use serde::de::DeserializeOwned;
+    use tauri::plugin::mobile::PluginInvokeError;
+    use tauri::plugin::{PluginApi, PluginHandle};
+    use tauri::Wry;
 
-    #[derive(Default)]
-    pub struct SpeechRecorderState;
+    // Recording runs in SpeechRecorderPlugin.kt in the Android project; iOS has no
+    // recorder yet.
+    pub struct SpeechRecorderState(Option<PluginHandle<Wry>>);
 
-    pub fn start_recording(_state: &SpeechRecorderState) -> Result<(), String> {
-        Err("Speech recording is not supported on this platform yet.".to_string())
+    pub fn create_state(api: PluginApi<Wry, ()>) -> Result<SpeechRecorderState, PluginInvokeError> {
+        #[cfg(target_os = "android")]
+        let plugin = Some(api.register_android_plugin("dev.hakawati.app", "SpeechRecorderPlugin")?);
+        #[cfg(target_os = "ios")]
+        let plugin = {
+            let _ = api;
+            None
+        };
+        Ok(SpeechRecorderState(plugin))
     }
 
-    pub fn stop_recording(_state: &SpeechRecorderState) -> Result<SpeechRecordingAudio, String> {
-        Err("Speech recording is not supported on this platform yet.".to_string())
+    async fn run<T: DeserializeOwned>(
+        state: &SpeechRecorderState,
+        command: &str,
+    ) -> Result<T, SpeechRecorderError> {
+        let plugin = state.0.as_ref().ok_or_else(|| {
+            SpeechRecorderError::from("Speech recording is not supported on this platform yet.")
+        })?;
+        plugin
+            .run_mobile_plugin_async(command, ())
+            .await
+            .map_err(|error| match error {
+                PluginInvokeError::InvokeRejected(response) => SpeechRecorderError {
+                    code: response.code,
+                    message: response
+                        .message
+                        .unwrap_or_else(|| "Speech recording failed.".to_string()),
+                },
+                error => SpeechRecorderError::from(error.to_string().as_str()),
+            })
     }
 
-    pub fn get_recording_level(
-        _state: &SpeechRecorderState,
-    ) -> Result<SpeechRecordingLevel, String> {
-        Err("Speech recording is not supported on this platform yet.".to_string())
+    pub async fn start_recording(state: &SpeechRecorderState) -> Result<(), SpeechRecorderError> {
+        run(state, "startRecording").await
     }
 
-    pub fn cancel_recording(_state: &SpeechRecorderState) -> Result<(), String> {
-        Err("Speech recording is not supported on this platform yet.".to_string())
+    pub async fn stop_recording(
+        state: &SpeechRecorderState,
+    ) -> Result<SpeechRecordingAudio, SpeechRecorderError> {
+        run(state, "stopRecording").await
+    }
+
+    pub async fn get_recording_level(
+        state: &SpeechRecorderState,
+    ) -> Result<SpeechRecordingLevel, SpeechRecorderError> {
+        run(state, "getRecordingLevel").await
+    }
+
+    pub async fn cancel_recording(state: &SpeechRecorderState) -> Result<(), SpeechRecorderError> {
+        run(state, "cancelRecording").await
     }
 }
 
@@ -404,24 +445,58 @@ use mobile as platform;
 
 pub use platform::SpeechRecorderState;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SpeechRecordingAudio {
     mime_type: String,
     data_base64: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SpeechRecordingLevel {
     level: f32,
 }
 
+/// A mobile recorder failure. `code` marks the ones the interface explains in
+/// its own words, such as a refused microphone permission.
+#[cfg(any(target_os = "android", target_os = "ios"))]
+#[derive(Debug, Serialize)]
+pub struct SpeechRecorderError {
+    code: Option<String>,
+    message: String,
+}
+
+#[cfg(any(target_os = "android", target_os = "ios"))]
+impl From<&str> for SpeechRecorderError {
+    fn from(message: &str) -> Self {
+        Self {
+            code: None,
+            message: message.to_string(),
+        }
+    }
+}
+
+/// Registers the recorder state, and on Android the plugin that records.
+pub fn init() -> TauriPlugin<Wry> {
+    Builder::new("speech-recorder")
+        .setup(|app, _api| {
+            #[cfg(not(any(target_os = "android", target_os = "ios")))]
+            app.manage(SpeechRecorderState::default());
+            #[cfg(any(target_os = "android", target_os = "ios"))]
+            app.manage(mobile::create_state(_api)?);
+            Ok(())
+        })
+        .build()
+}
+
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[tauri::command]
 pub fn start_speech_recording(state: tauri::State<'_, SpeechRecorderState>) -> Result<(), String> {
     platform::start_recording(&state)
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[tauri::command]
 pub fn stop_speech_recording(
     state: tauri::State<'_, SpeechRecorderState>,
@@ -429,6 +504,7 @@ pub fn stop_speech_recording(
     platform::stop_recording(&state)
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[tauri::command]
 pub fn get_speech_recording_level(
     state: tauri::State<'_, SpeechRecorderState>,
@@ -436,7 +512,42 @@ pub fn get_speech_recording_level(
     platform::get_recording_level(&state)
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[tauri::command]
 pub fn cancel_speech_recording(state: tauri::State<'_, SpeechRecorderState>) -> Result<(), String> {
     platform::cancel_recording(&state)
+}
+
+// Mobile commands wait on the Kotlin plugin, which may first ask for the
+// microphone permission, so they run off the IPC thread.
+#[cfg(any(target_os = "android", target_os = "ios"))]
+#[tauri::command]
+pub async fn start_speech_recording(
+    state: tauri::State<'_, SpeechRecorderState>,
+) -> Result<(), SpeechRecorderError> {
+    platform::start_recording(&state).await
+}
+
+#[cfg(any(target_os = "android", target_os = "ios"))]
+#[tauri::command]
+pub async fn stop_speech_recording(
+    state: tauri::State<'_, SpeechRecorderState>,
+) -> Result<SpeechRecordingAudio, SpeechRecorderError> {
+    platform::stop_recording(&state).await
+}
+
+#[cfg(any(target_os = "android", target_os = "ios"))]
+#[tauri::command]
+pub async fn get_speech_recording_level(
+    state: tauri::State<'_, SpeechRecorderState>,
+) -> Result<SpeechRecordingLevel, SpeechRecorderError> {
+    platform::get_recording_level(&state).await
+}
+
+#[cfg(any(target_os = "android", target_os = "ios"))]
+#[tauri::command]
+pub async fn cancel_speech_recording(
+    state: tauri::State<'_, SpeechRecorderState>,
+) -> Result<(), SpeechRecorderError> {
+    platform::cancel_recording(&state).await
 }

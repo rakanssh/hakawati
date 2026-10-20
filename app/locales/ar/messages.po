@@ -43,7 +43,7 @@ msgstr "..."
 msgid "(${0} downloaded)"
 msgstr "(تم تنزيل ${0})"
 
-#: app/components/layout/settings/api.tsx:228
+#: app/components/layout/settings/api.tsx:232
 msgid "(auth required)"
 msgstr "(تتطلب مصادقة)"
 
@@ -260,7 +260,7 @@ msgstr "عن التطبيق"
 msgid "Account & Sync"
 msgstr "الحساب والمزامنة"
 
-#: app/components/play/play-input-controls.tsx:260
+#: app/components/play/play-input-controls.tsx:270
 msgid "Act"
 msgstr "افعل"
 
@@ -420,7 +420,7 @@ msgstr "كل إعدادات الذكاء الاصطناعي"
 #~ msgid "Allow small moments of warmth or levity to color the scene, even if danger is present."
 #~ msgstr "اسمح للحظات صغيرة من الدفء أو الخفة أن تلون المشهد، حتى في وجود الخطر."
 
-#: app/components/layout/settings/api.tsx:339
+#: app/components/layout/settings/api.tsx:343
 msgid "alloy"
 msgstr "alloy"
 
@@ -452,7 +452,7 @@ msgstr "هل هناك أي شيء آخر قبل بدء الحكاية؟"
 msgid "Anything the tale should know before it begins..."
 msgstr "أي شيء يجب أن تعرفه الحكاية قبل أن تبدأ..."
 
-#: app/components/layout/settings/api.tsx:249
+#: app/components/layout/settings/api.tsx:253
 msgid "API Key"
 msgstr "مفتاح API"
 
@@ -497,7 +497,7 @@ msgstr "تشغيل سرد القصة الجديد تلقائياً بعد انت
 msgid "Awaiting moderation"
 msgstr "بانتظار المراجعة"
 
-#: app/components/quickstart/quickstart-wizard.tsx:685
+#: app/components/quickstart/quickstart-wizard.tsx:686
 #: app/components/scenario/ScenarioStartWizard.tsx:185
 msgid "Back"
 msgstr "السابق"
@@ -601,8 +601,8 @@ msgstr "بواسطة"
 msgid "Cancel"
 msgstr "إلغاء"
 
-#: app/components/play/play-input-controls.tsx:447
-#: app/components/play/play-input-controls.tsx:453
+#: app/components/play/play-input-controls.tsx:457
+#: app/components/play/play-input-controls.tsx:463
 msgid "Cancel recording"
 msgstr "إلغاء التسجيل"
 
@@ -710,7 +710,7 @@ msgstr "اختر سيناريو أو اضغط على \"بداية سريعة\" �
 #~ msgid "Choose how much model reasoning appears in the log."
 #~ msgstr "اختر مقدار تفكير النموذج الذي يظهر في السجل."
 
-#: app/components/question-input.tsx:97
+#: app/components/question-input.tsx:99
 msgid "Choose one of these options."
 msgstr "اختر أحد هذه الخيارات."
 
@@ -742,7 +742,7 @@ msgstr "اختر الحكايات المحلية التي تريد مزامنت�
 msgid "Clear filters"
 msgstr "مسح عوامل التصفية"
 
-#: app/components/question-input.tsx:44
+#: app/components/question-input.tsx:46
 msgid "Clear input"
 msgstr "مسح الإدخال"
 
@@ -986,7 +986,7 @@ msgstr "أنشئ مفتاحاً سرياً (Secret Key) جديداً والصق�
 msgid "Create a new stat with initial and maximum values."
 msgstr "إنشاء خاصية جديدة مع قيمة ابتدائية وقيمة قصوى."
 
-#: app/components/quickstart/quickstart-wizard.tsx:627
+#: app/components/quickstart/quickstart-wizard.tsx:628
 msgid "Create a tale with a guided setup"
 msgstr "أنشئ حكاية بإعداد موجّه"
 
@@ -1040,7 +1040,7 @@ msgstr "الإصدار الحالي: {0}"
 #~ msgid "cursed, or gifted, with glimpses beyond the veil, never certain if what you see is truth or madness"
 #~ msgstr "ملعون أو موهوب بلمحات مما وراء الحجاب، غير متأكد إن كان ما تراه حقيقة أم جنوناً"
 
-#: app/components/layout/settings/api.tsx:326
+#: app/components/layout/settings/api.tsx:330
 msgid "Custom"
 msgstr "مخصص"
 
@@ -1207,7 +1207,7 @@ msgstr "الأجهزة"
 msgid "Devices are unavailable."
 msgstr "الأجهزة غير متاحة."
 
-#: app/components/play/play-input-controls.tsx:263
+#: app/components/play/play-input-controls.tsx:273
 msgid "Direct"
 msgstr "اخراج"
 
@@ -1262,7 +1262,7 @@ msgid "Downloading update… "
 msgstr "جاري تحميل التحديث... "
 
 #. placeholder {0}: formatBytes(newDownloadedBytes)
-#: app/store/useUpdateStore.ts:190
+#: app/store/useUpdateStore.ts:196
 msgid "Downloading update... ({0})"
 msgstr "جاري تحميل التحديث... ({0})"
 
@@ -1370,7 +1370,7 @@ msgstr "أدخل معرف النموذج يدوياً"
 msgid "Enter the base URL in the URL field"
 msgstr "أدخل العنوان الأساسي (Base URL) في حقل الرابط"
 
-#: app/components/play/play-input-controls.tsx:433
+#: app/components/play/play-input-controls.tsx:443
 msgid "Enter your action"
 msgstr "أدخل إجراءك"
 
@@ -1429,7 +1429,7 @@ msgstr "مرتفع جدًا"
 msgid "Failed to block publisher"
 msgstr "تعذّر حظر الناشر"
 
-#: app/store/useUpdateStore.ts:150
+#: app/store/useUpdateStore.ts:156
 msgid "Failed to check for updates."
 msgstr "فشل التحقق من وجود تحديثات."
 
@@ -1443,11 +1443,11 @@ msgid "Failed to generate scenario: {0}"
 msgstr "فشل توليد السيناريو: {0}"
 
 #. placeholder {0}: error instanceof Error ? error.message : "Unknown error"
-#: app/components/quickstart/quickstart-wizard.tsx:535
+#: app/components/quickstart/quickstart-wizard.tsx:536
 msgid "Failed to generate tale: {0}"
 msgstr "فشل توليد الحكاية: {0}"
 
-#: app/store/useUpdateStore.ts:223
+#: app/store/useUpdateStore.ts:229
 msgid "Failed to install the update."
 msgstr "فشل تثبيت التحديث."
 
@@ -1512,7 +1512,7 @@ msgstr "تعذّر بدء السيناريو"
 msgid "Failed to submit report"
 msgstr "تعذّر إرسال البلاغ"
 
-#: app/components/play/play-input-controls.tsx:229
+#: app/components/play/play-input-controls.tsx:239
 msgid "Failed to transcribe speech."
 msgstr "فشل تحويل الكلام إلى نص."
 
@@ -1620,7 +1620,7 @@ msgstr "توليد"
 msgid "Generate Scenario"
 msgstr "توليد سيناريو"
 
-#: app/components/quickstart/quickstart-wizard.tsx:705
+#: app/components/quickstart/quickstart-wizard.tsx:706
 msgid "Generate Tale"
 msgstr "توليد الحكاية"
 
@@ -1697,9 +1697,13 @@ msgid "Hakawati is distributed under the GNU General Public License v3."
 msgstr "يتم توزيع حكواتي بموجب رخصة GNU General Public License v3"
 
 #: app/components/layout/settings/updates.tsx:134
-#: app/store/useUpdateStore.ts:107
+#: app/store/useUpdateStore.ts:113
 msgid "Hakawati is up to date."
 msgstr "تطبيق حكواتي محدّث."
+
+#: app/components/play/play-input-controls.tsx:232
+msgid "Hakawati needs microphone access to record speech."
+msgstr "يحتاج حكواتي إلى إذن الوصول إلى الميكروفون لتسجيل الكلام."
 
 #: app/components/layout/settings/chatgpt-connection.tsx:192
 msgid "Hakawati will now consume resources from your ChatGPT plan when you have the ChatGPT subscription provider selected."
@@ -1730,7 +1734,7 @@ msgstr "مخفي"
 msgid "Hidden by moderation"
 msgstr "مخفي بقرار المراجعة"
 
-#: app/components/layout/settings/api.tsx:271
+#: app/components/layout/settings/api.tsx:275
 msgid "Hide API key"
 msgstr "إخفاء مفتاح API"
 
@@ -1798,7 +1802,7 @@ msgstr "كيفية إضافة الأسئلة"
 msgid "http://192.168.1.20:8787"
 msgstr "http://192.168.1.20:8787"
 
-#: app/components/layout/settings/api.tsx:170
+#: app/components/layout/settings/api.tsx:174
 msgid "http://localhost:11434/v1"
 msgstr "http://localhost:11434/v1"
 
@@ -1862,7 +1866,7 @@ msgstr "المخزون الأوّلي"
 msgid "Initial Stats"
 msgstr "الخصائص الأوّلية"
 
-#: app/store/useUpdateStore.ts:134
+#: app/store/useUpdateStore.ts:140
 msgid "Install"
 msgstr "تثبيت"
 
@@ -1879,7 +1883,7 @@ msgid "Installed version"
 msgstr "الإصدار المثبت"
 
 #: app/components/layout/settings/updates.tsx:129
-#: app/root.tsx:142
+#: app/root.tsx:156
 msgid "Installing update…"
 msgstr "جارٍ تثبيت التحديث…"
 
@@ -1954,7 +1958,7 @@ msgstr "الاحتفاظ بالنسخة السحابية"
 msgid "Keep This Device"
 msgstr "الاحتفاظ بنسخة هذا الجهاز"
 
-#: app/components/quickstart/quickstart-wizard.tsx:674
+#: app/components/quickstart/quickstart-wizard.tsx:675
 msgid "Keep this tale local only"
 msgstr "إبقاء هذه الحكاية محلية فقط"
 
@@ -2122,7 +2126,7 @@ msgstr "جاري تحميل..."
 msgid "Local"
 msgstr "محلي"
 
-#: app/components/layout/settings/api.tsx:197
+#: app/components/layout/settings/api.tsx:201
 msgid "Local API servers"
 msgstr "خوادم API المحلية"
 
@@ -2202,8 +2206,8 @@ msgstr "إدارة الاستخدام"
 msgid "Manage your account and cloud sync."
 msgstr "إدارة حسابك والمزامنة السحابية."
 
-#: app/store/useUpdateStore.ts:77
-#: app/store/useUpdateStore.ts:164
+#: app/store/useUpdateStore.ts:83
+#: app/store/useUpdateStore.ts:170
 msgid "Manual updates are only available in the desktop app."
 msgstr "التحديثات اليدوية متاحة فقط في نسخة الأجهزة المكتبية."
 
@@ -2269,6 +2273,10 @@ msgstr "متوسط"
 #~ msgid "Mention the main theme or premise"
 #~ msgstr "اذكر الموضوع الرئيسي أو الفكرة الأساسية"
 
+#: app/components/play/play-input-controls.tsx:231
+msgid "Microphone access is turned off for Hakawati. Allow it in your device settings to record speech."
+msgstr "الوصول إلى الميكروفون متوقف لحكواتي. اسمح به من إعدادات جهازك لتسجيل الكلام."
+
 #: app/components/layout/settings/model.tsx:280
 #: app/components/layout/settings/model.tsx:288
 msgid "Min P"
@@ -2287,7 +2295,7 @@ msgstr "تصغير"
 msgid "Missing settings: {0}. Configure your API in Settings."
 msgstr "الإعدادات المفقودة: {0}. قم بتعيين API في الإعدادات."
 
-#: app/components/layout/settings/api.tsx:288
+#: app/components/layout/settings/api.tsx:292
 #: app/components/play/story-panel/ai-tab.tsx:56
 msgid "Model"
 msgstr "النموذج"
@@ -2376,7 +2384,7 @@ msgstr "سيناريو جديد"
 #~ msgid "New Tale"
 #~ msgstr "حكاية جديدة"
 
-#: app/components/quickstart/quickstart-wizard.tsx:708
+#: app/components/quickstart/quickstart-wizard.tsx:709
 #: app/components/scenario/ScenarioStartWizard.tsx:201
 #: app/pages/scenarios/home.tsx:687
 #: app/pages/tales/home.tsx:390
@@ -2425,7 +2433,7 @@ msgstr "لا توجد مدخلات بعد."
 msgid "No font found."
 msgstr "لم يُعثر على خط."
 
-#: app/components/layout/settings/api.tsx:215
+#: app/components/layout/settings/api.tsx:219
 msgid "No local servers found."
 msgstr "لا يوجد خوادم محلية."
 
@@ -2579,11 +2587,11 @@ msgstr "المقطع الافتتاحي"
 msgid "OpenRouter (API)"
 msgstr "OpenRouter (API)"
 
-#: app/components/layout/settings/api.tsx:263
+#: app/components/layout/settings/api.tsx:267
 msgid "Optional for most local servers"
 msgstr "اختياري لمعظم الخوادم المحلية"
 
-#: app/components/layout/settings/api.tsx:252
+#: app/components/layout/settings/api.tsx:256
 msgid "Optional for most local servers."
 msgstr "اختياري لمعظم الخوادم المحلية."
 
@@ -2599,7 +2607,7 @@ msgstr "اختياري. اتركه فارغاً إذا كنت لا تريد تح
 msgid "Optional. Leave this blank to let the tale fill in the gaps."
 msgstr "اختياري. اتركه فارغاً لتدع الحكاية تملأ الفجوات."
 
-#: app/components/question-input.tsx:95
+#: app/components/question-input.tsx:97
 msgid "Or choose one of these options."
 msgstr "أو اختر أحد هذه الخيارات."
 
@@ -2768,7 +2776,7 @@ msgstr "المزود"
 msgid "Provider default"
 msgstr "الافتراضي للمزود"
 
-#: app/components/layout/settings/api.tsx:304
+#: app/components/layout/settings/api.tsx:308
 msgid "Provider voice id for speech generation. OpenAI-compatible providers commonly support alloy."
 msgstr "معرف صوت المزود لتوليد الكلام. تدعم المزودات المتوافقة مع OpenAI عادةً صوت alloy."
 
@@ -2882,7 +2890,7 @@ msgstr "للاستفسارات والمشكلات والطلبات المتعل�
 #~ msgstr "بداية سريعة:"
 
 #: app/components/layout/mobile-bottom-nav.tsx:62
-#: app/components/quickstart/quickstart-wizard.tsx:624
+#: app/components/quickstart/quickstart-wizard.tsx:625
 #: app/pages/home/home.tsx:581
 msgid "Quickstart"
 msgstr "بداية سريعة"
@@ -2942,7 +2950,7 @@ msgstr "جارٍ إعادة الاتصال"
 msgid "Reconnecting..."
 msgstr "جارٍ إعادة الاتصال..."
 
-#: app/components/play/play-input-controls.tsx:382
+#: app/components/play/play-input-controls.tsx:392
 msgid "Record speech"
 msgstr "تسجيل الكلام"
 
@@ -3017,7 +3025,7 @@ msgstr "سبب البلاغ"
 msgid "Report submitted"
 msgstr "تم إرسال البلاغ"
 
-#: app/components/layout/settings/api.tsx:204
+#: app/components/layout/settings/api.tsx:208
 msgid "Rescan"
 msgstr "إعادة الفحص"
 
@@ -3116,8 +3124,8 @@ msgstr "من اليمين إلى اليسار"
 msgid "Rogue"
 msgstr "لص"
 
-#: app/components/play/play-input-controls.tsx:364
-#: app/components/play/play-input-controls.tsx:370
+#: app/components/play/play-input-controls.tsx:374
+#: app/components/play/play-input-controls.tsx:380
 msgid "Roll a dice"
 msgstr "رمي النرد"
 
@@ -3151,7 +3159,7 @@ msgstr "حفظ المسودة"
 msgid "Saving profile"
 msgstr "جارٍ حفظ الملف الشخصي"
 
-#: app/root.tsx:145
+#: app/root.tsx:159
 msgid "Saving your progress. Hakawati will restart when the update is ready."
 msgstr "جارٍ حفظ تقدّمك. سيُعاد تشغيل حكواتي عندما يصبح التحديث جاهزاً."
 
@@ -3159,7 +3167,7 @@ msgstr "جارٍ حفظ تقدّمك. سيُعاد تشغيل حكواتي عن�
 msgid "Saving your tale…"
 msgstr "جارٍ حفظ حكايتك…"
 
-#: app/components/play/play-input-controls.tsx:261
+#: app/components/play/play-input-controls.tsx:271
 msgid "Say"
 msgstr "قل"
 
@@ -3167,11 +3175,11 @@ msgstr "قل"
 #~ msgid "Say: Speak something out loud."
 #~ msgstr "قل: قل شيئاً."
 
-#: app/components/layout/settings/api.tsx:210
+#: app/components/layout/settings/api.tsx:214
 msgid "Scanning for local servers..."
 msgstr "جاري البحث عن خوادم محلية..."
 
-#: app/components/layout/settings/api.tsx:204
+#: app/components/layout/settings/api.tsx:208
 msgid "Scanning..."
 msgstr "جاري البحث..."
 
@@ -3308,7 +3316,7 @@ msgstr "اختر مزود"
 #~ msgid "Select a world for your story"
 #~ msgstr "اختر عالماً لقصتك"
 
-#: app/components/play/play-input-controls.tsx:303
+#: app/components/play/play-input-controls.tsx:313
 msgid "Select action mode"
 msgstr "اختر نوع الإجراء"
 
@@ -3342,7 +3350,7 @@ msgstr "جدي"
 
 #: app/components/layout/model-select.tsx:230
 #: app/components/layout/model-select.tsx:302
-#: app/components/layout/settings/api.tsx:183
+#: app/components/layout/settings/api.tsx:187
 msgid "Set"
 msgstr "ضبط"
 
@@ -3404,7 +3412,7 @@ msgstr "اختصر اسم السيناريو إلى 160 حرفاً قبل الن
 msgid "Show all tags"
 msgstr "عرض جميع الوسوم"
 
-#: app/components/layout/settings/api.tsx:271
+#: app/components/layout/settings/api.tsx:275
 msgid "Show API key"
 msgstr "اظهر مفتاح API"
 
@@ -3498,7 +3506,7 @@ msgstr "بدء الحكاية"
 msgid "Start the server (Different tools have different ways to start the server, look up your tool's documentation)"
 msgstr "قم بتشغيل الخادم (تختلف طرق تشغيل الخادم باختلاف الأدوات، راجع وثائق أداتك)"
 
-#: app/store/useUpdateStore.ts:178
+#: app/store/useUpdateStore.ts:184
 msgid "Starting download..."
 msgstr "جاري بدء التحميل..."
 
@@ -3541,13 +3549,13 @@ msgstr "ثابت"
 #~ msgid "Stop"
 #~ msgstr "إيقاف"
 
-#: app/components/play/play-input-controls.tsx:467
-#: app/components/play/play-input-controls.tsx:473
+#: app/components/play/play-input-controls.tsx:477
+#: app/components/play/play-input-controls.tsx:483
 msgid "Stop and transcribe"
 msgstr "إيقاف وتحويل الكلام لنص"
 
 #: app/components/play/log/log-control.tsx:242
-#: app/components/play/play-input-controls.tsx:496
+#: app/components/play/play-input-controls.tsx:506
 msgid "Stop generating"
 msgstr "إيقاف التوليد"
 
@@ -3555,7 +3563,7 @@ msgstr "إيقاف التوليد"
 msgid "Stop generating (Esc)"
 msgstr "إيقاف التوليد (Esc)"
 
-#: app/components/play/play-input-controls.tsx:379
+#: app/components/play/play-input-controls.tsx:389
 msgid "Stop recording"
 msgstr "إيقاف التسجيل"
 
@@ -3575,7 +3583,7 @@ msgstr "مساحة التخزين المستخدمة"
 msgid "Storage usage is unavailable."
 msgstr "معلومات استخدام التخزين غير متاحة."
 
-#: app/components/play/play-input-controls.tsx:262
+#: app/components/play/play-input-controls.tsx:272
 #: app/components/play/story-panel/story-panel.tsx:64
 #: app/components/play/story-panel/story-panel.tsx:112
 #: app/components/play/story-panel/story-panel.tsx:347
@@ -3633,7 +3641,7 @@ msgstr "كتاب حكايات"
 msgid "Structured gameplay"
 msgstr "لعبة منظمة"
 
-#: app/components/play/play-input-controls.tsx:496
+#: app/components/play/play-input-controls.tsx:506
 msgid "Submit action"
 msgstr "إرسال الإجراء"
 
@@ -3651,7 +3659,7 @@ msgstr "وسوم مقترحة"
 msgid "Support"
 msgstr "الدعم"
 
-#: app/components/question-input.tsx:109
+#: app/components/question-input.tsx:111
 msgid "Surprise Me"
 msgstr "فاجئني"
 
@@ -3930,7 +3938,7 @@ msgstr "يُستخدم هذا النموذج لإجراءات متنوعة مث�
 msgid "This model is used to generate story."
 msgstr "يُستخدم هذا النموذج لتوليد القصة."
 
-#: app/components/layout/settings/api.tsx:299
+#: app/components/layout/settings/api.tsx:303
 msgid "This model publishes supported voices. Pick one from the suggestions."
 msgstr "ينشر هذا النموذج الأصوات المدعومة. اختر واحداً من الاقتراحات."
 
@@ -4041,8 +4049,8 @@ msgstr "Top P"
 #~ msgid "trained in the art of war, carrying scars that tell stories and a blade that has tasted blood"
 #~ msgstr "خبير في فنون الحرب، يحمل ندوباً تروي قصصاً، ونصلاً ذاق طعم الدماء"
 
-#: app/components/play/play-input-controls.tsx:381
-#: app/components/play/play-input-controls.tsx:483
+#: app/components/play/play-input-controls.tsx:391
+#: app/components/play/play-input-controls.tsx:493
 msgid "Transcribing..."
 msgstr "جاري تحويل الكلام إلى نص..."
 
@@ -4155,11 +4163,11 @@ msgid "Update {0} available"
 msgstr "التحديث {0} متاح"
 
 #. placeholder {0}: update.version
-#: app/store/useUpdateStore.ts:131
+#: app/store/useUpdateStore.ts:137
 msgid "Update {0} is available."
 msgstr "التحديث {0} متاح."
 
-#: app/store/useUpdateStore.ts:209
+#: app/store/useUpdateStore.ts:215
 msgid "Update downloaded. Restarting..."
 msgstr "تم تحميل التحديث. جاري إعادة التشغيل..."
 
@@ -4169,7 +4177,7 @@ msgstr "تم تحميل التحديث. جاري إعادة التشغيل..."
 msgid "Updated"
 msgstr "آخر تحديث"
 
-#: app/components/layout/settings/api.tsx:237
+#: app/components/layout/settings/api.tsx:241
 msgid "Use"
 msgstr "استخدام"
 
@@ -4194,7 +4202,7 @@ msgid "Use the Rescan button to detect your server (This will only work if the s
 msgstr "استخدم زر إعادة الفحص لاكتشاف خادمك (سيعمل هذا فقط إذا كان الخادم قيد التشغيل ويمكن الوصول إليه)"
 
 #: app/components/layout/settings/game.tsx:112
-#: app/root.tsx:130
+#: app/root.tsx:138
 msgid "User interface scale"
 msgstr "مقياس الواجهة"
 
@@ -4245,7 +4253,7 @@ msgstr "عرض شروط GPLv3"
 msgid "Visit NanoGPT (Account optional)"
 msgstr "قم بزيارة NanoGPT (الحساب اختياري)"
 
-#: app/components/layout/settings/api.tsx:296
+#: app/components/layout/settings/api.tsx:300
 msgid "Voice"
 msgstr "الصوت"
 
