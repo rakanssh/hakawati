@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Hakawati for Android, with dictation, sign-in, and cloud sync.
+
+### Changed
+
+- Brass Night is now the default theme if you haven't picked one.
+- With nothing typed, the send button continues the story. It reads Continue, Submit, or Stop, and replaces the separate Continue button.
+
+### Fixed
+
+- Settings pages now scroll in narrow windows.
+
 ## [v1.2.0] - 2026-10-06
 
 ### Added
