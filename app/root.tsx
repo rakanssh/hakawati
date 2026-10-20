@@ -77,7 +77,7 @@ export default function AppShell() {
   }, []);
 
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+    <ThemeProvider defaultTheme="brass-night" storageKey="vite-ui-theme">
       <div
         className="flex h-screen flex-col overflow-hidden"
         style={
