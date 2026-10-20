@@ -14,7 +14,6 @@ import {
 import {
   DicesIcon,
   HandIcon,
-  SendIcon,
   SpeechIcon,
   BookIcon,
   MegaphoneIcon,
@@ -25,8 +24,6 @@ import {
   MicIcon,
   ArrowUpIcon,
   XIcon,
-  SquareIcon,
-  StepForwardIcon,
 } from "lucide-react";
 import { LogEntryMode } from "@/types/log.type";
 import {
@@ -509,6 +506,20 @@ export function PlayInputControls({
   // With nothing typed, the send button continues the story instead.
   const continuesStory = !canStopGeneration && !input.trim();
 
+  const submitLabels = [
+    { id: "stop", show: canStopGeneration, text: t`Stop` },
+    {
+      id: "continue",
+      show: !canStopGeneration && continuesStory,
+      text: t`Continue`,
+    },
+    {
+      id: "submit",
+      show: !canStopGeneration && !continuesStory,
+      text: t`Submit`,
+    },
+  ];
+
   const renderSubmitButton = (className?: string) => (
     <Button
       type={canStopGeneration ? "button" : "submit"}
@@ -516,9 +527,8 @@ export function PlayInputControls({
         canStopGeneration ? onStop : continuesStory ? onContinue : onSubmit
       }
       disabled={saving || (loading && !canStopGeneration)}
-      size="icon"
       data-composer-send=""
-      className={cn("!h-10 !w-10 shrink-0 md:!h-9 md:!w-9", className)}
+      className={cn("!h-10 shrink-0 px-3 md:!h-9", className)}
       aria-label={
         canStopGeneration
           ? t`Stop generating`
@@ -527,15 +537,24 @@ export function PlayInputControls({
             : t`Submit action`
       }
     >
-      {canStopGeneration ? (
-        <SquareIcon className="w-4 h-4" />
-      ) : saving ? (
-        <SaveIcon className="w-4 h-4 animate-spin" />
-      ) : continuesStory ? (
-        <StepForwardIcon className="w-4 h-4 rtl:rotate-180" />
-      ) : (
-        <SendIcon className="w-4 h-4" />
-      )}
+      {/* Every label shares one cell, so the button keeps the width of the
+          longest in any language and never jumps as the input fills. */}
+      <span className="grid items-center justify-items-center">
+        {submitLabels.map(({ id, show, text }) => (
+          <span
+            key={id}
+            className={cn(
+              "col-start-1 row-start-1",
+              (!show || saving) && "invisible",
+            )}
+          >
+            {text}
+          </span>
+        ))}
+        {saving && (
+          <SaveIcon className="col-start-1 row-start-1 h-4 w-4 animate-spin" />
+        )}
+      </span>
     </Button>
   );
 
