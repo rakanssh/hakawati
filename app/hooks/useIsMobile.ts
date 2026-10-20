@@ -52,6 +52,15 @@ function detectPlatform(): Platform {
 }
 
 /**
+ * True on the Android and iOS builds. Usable outside components because the
+ * platform never changes while the app runs.
+ */
+export function isMobilePlatform(): boolean {
+  const platform = detectPlatform();
+  return platform === Platform.ANDROID || platform === Platform.IOS;
+}
+
+/**
  * Hook to detect mobile viewport and mobile platform.
  * @returns Object containing mobile detection information
  */

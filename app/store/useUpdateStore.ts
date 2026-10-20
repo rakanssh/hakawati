@@ -6,6 +6,7 @@ import { persist } from "zustand/middleware";
 import { formatBytes } from "@/lib/utils";
 import { t } from "@lingui/core/macro";
 import { flushPendingAutoSaves } from "@/hooks/useAutoSave";
+import { isMobilePlatform } from "@/hooks/useIsMobile";
 
 export type UpdatePhase =
   | "idle"
@@ -48,6 +49,11 @@ export function isTauriEnvironment(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
+/** Only the desktop app ships the updater plugin; app stores update mobile builds. */
+export function isUpdaterAvailable(): boolean {
+  return isTauriEnvironment() && !isMobilePlatform();
+}
+
 async function closeUpdate(update: Update | null | undefined) {
   try {
     if (update) {
@@ -61,7 +67,7 @@ async function closeUpdate(update: Update | null | undefined) {
 export const useUpdateStore = create<UpdateState>()(
   persist(
     (set, get) => ({
-      phase: isTauriEnvironment() ? "idle" : "unsupported",
+      phase: isUpdaterAvailable() ? "idle" : "unsupported",
       checkedAt: null,
       errorMessage: null,
       downloadedBytes: 0,
@@ -72,7 +78,7 @@ export const useUpdateStore = create<UpdateState>()(
       pendingChangelogNotes: null,
 
       checkForUpdates: async (options) => {
-        if (!isTauriEnvironment()) {
+        if (!isUpdaterAvailable()) {
           set({ phase: "unsupported" });
           toast.info(t`Manual updates are only available in the desktop app.`);
           return;
@@ -159,7 +165,7 @@ export const useUpdateStore = create<UpdateState>()(
           return;
         }
 
-        if (!isTauriEnvironment()) {
+        if (!isUpdaterAvailable()) {
           set({ phase: "unsupported" });
           toast.info(t`Manual updates are only available in the desktop app.`);
           return;

@@ -99,6 +99,8 @@ export function ThemeProvider({
     root.classList.add(`theme-${theme.id}`, theme.mode);
     loadThemeFonts(theme);
     prepareThemeTextures(theme.id);
+    // Android draws its status bar over the app, so match the icons to the theme.
+    window.HakawatiSystemBars?.setDarkIcons(theme.mode === "light");
   }, [theme]);
 
   useEffect(() => {

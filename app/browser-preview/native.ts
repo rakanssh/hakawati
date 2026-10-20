@@ -4,6 +4,7 @@ import Database from "./sql";
 import { version } from "../../package.json";
 
 export const getVersion = async () => version;
+export const onBackButtonPress = async () => ({ unregister: async () => {} });
 export const appLocalDataDir = async () => "browser-preview";
 export const join = async (...parts: string[]) => parts.join("/");
 export const writeText = (text: string) => navigator.clipboard.writeText(text);

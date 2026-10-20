@@ -524,7 +524,8 @@ export function QuickstartPage() {
 
       taleStore.resetAllState();
       setLastPlayedTaleId(taleId);
-      navigate({ to: "/play" });
+      // The finished wizard should not be a stop on the way back.
+      navigate({ to: "/play", replace: true });
     } catch (error) {
       if (abort.signal.aborted || abortRef.current !== abort) return;
       if (error instanceof DOMException && error.name === "AbortError") {

@@ -1,0 +1,7 @@
+{
+  "identifier": "mobile-capability",
+  "description": "Lets the Android back gesture leave the app from the home screen",
+  "platforms": ["android", "iOS"],
+  "windows": ["main"],
+  "permissions": ["process:allow-exit"]
+}

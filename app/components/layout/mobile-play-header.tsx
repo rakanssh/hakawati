@@ -15,9 +15,10 @@ export function MobilePlayHeader() {
   if (!isMobilePlatform) return null;
   if (!routerState.location.pathname?.startsWith("/play")) return null;
 
+  // The fade keeps scrolled story text out from under the status bar and buttons.
   return (
     <div
-      className="pointer-events-none fixed top-0 inset-x-0 z-50 flex items-center gap-2 p-2"
+      className="pointer-events-none fixed top-0 inset-x-0 z-50 flex items-center gap-2 bg-linear-to-b from-background from-75% to-transparent p-2 pb-4"
       style={{
         paddingTop: "calc(0.5rem + env(safe-area-inset-top))",
         paddingInlineStart: "calc(0.5rem + env(safe-area-inset-left))",

@@ -599,8 +599,9 @@ export function PlayInputControls({
         className,
       )}
     >
-      {renderSpeechButton("rounded-e-none")}
-      {renderSubmitButton("rounded-s-none")}
+      {/* Speech recording has no mobile backend yet. */}
+      {!isMobilePlatform && renderSpeechButton("rounded-e-none")}
+      {renderSubmitButton(isMobilePlatform ? undefined : "rounded-s-none")}
     </div>
   );
 

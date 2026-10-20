@@ -154,6 +154,10 @@ function RoleApiSettings({ role }: { role: ModelRole }) {
               <Input
                 value={baseUrl}
                 onChange={(e) => setBaseUrl(e.target.value)}
+                inputMode="url"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
                 onBlur={() => {
                   if (
                     isEditableUrl &&
