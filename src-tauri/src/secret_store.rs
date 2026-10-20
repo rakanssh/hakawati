@@ -33,31 +33,6 @@ pub(crate) fn keyring_entry(service: &str, user: &str) -> Result<Entry, Error> {
     Entry::new(service, user)
 }
 
-/// MainActivity calls this before the web view loads. The Android store reaches the
-/// Keystore and SharedPreferences through ndk-context, which Tauri leaves unset.
-#[cfg(target_os = "android")]
-#[no_mangle]
-pub extern "system" fn Java_dev_hakawati_app_MainActivity_initSecretStore(
-    env: jni::JNIEnv,
-    _activity: jni::objects::JObject,
-    context: jni::objects::JObject,
-) {
-    static INIT: std::sync::Once = std::sync::Once::new();
-    INIT.call_once(|| {
-        let (Ok(vm), Ok(context)) = (env.get_java_vm(), env.new_global_ref(&context)) else {
-            return;
-        };
-        // The application context lives as long as the process, so keep the reference.
-        let context = std::mem::ManuallyDrop::new(context);
-        unsafe {
-            ndk_context::initialize_android_context(
-                vm.get_java_vm_pointer().cast(),
-                context.as_obj().as_raw().cast(),
-            );
-        }
-    });
-}
-
 mod platform {
     use super::{hosted_refresh_token_account, keyring_entry, Entry, Error, SERVICE_NAME};
 
