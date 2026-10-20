@@ -13,6 +13,19 @@ val tauriProperties = Properties().apply {
     }
 }
 
+// Release signing reads keystore.properties next to settings.gradle (kept out of
+// git) or, in CI, HAKAWATI_KEYSTORE_* variables. Without either, release builds
+// are left unsigned.
+val keystoreProperties = Properties().apply {
+    val propFile = rootProject.file("keystore.properties")
+    if (propFile.exists()) {
+        propFile.inputStream().use { load(it) }
+    }
+}
+fun signingValue(property: String, env: String): String? =
+    keystoreProperties.getProperty(property) ?: System.getenv(env)
+val releaseStoreFile = signingValue("storeFile", "HAKAWATI_KEYSTORE_FILE")
+
 android {
     compileSdk = 36
     namespace = "dev.hakawati.app"
@@ -23,6 +36,16 @@ android {
         targetSdk = 36
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
+    }
+    signingConfigs {
+        if (releaseStoreFile != null) {
+            create("release") {
+                storeFile = rootProject.file(releaseStoreFile)
+                storePassword = signingValue("storePassword", "HAKAWATI_KEYSTORE_PASSWORD")
+                keyAlias = signingValue("keyAlias", "HAKAWATI_KEY_ALIAS")
+                keyPassword = signingValue("keyPassword", "HAKAWATI_KEY_PASSWORD")
+            }
+        }
     }
     buildTypes {
         getByName("debug") {
@@ -37,6 +60,7 @@ android {
             }
         }
         getByName("release") {
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = true
             proguardFiles(
                 *fileTree(".") { include("**/*.pro") }

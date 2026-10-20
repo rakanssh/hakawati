@@ -18,3 +18,7 @@ keystore.properties
 
 /.tauri
 /tauri.settings.gradle
+
+# Signing keys
+*.jks
+*.keystore
