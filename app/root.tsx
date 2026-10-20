@@ -85,10 +85,14 @@ export default function AppShell() {
             ? {
                 height: "100dvh",
                 minHeight: "100svh",
-                // Outside the scroller, so pages never scroll under the status bar.
+                // Outside the scroller, so pages never scroll under the status
+                // bar or the navigation buttons. Play pads its own header and composer.
                 paddingTop: isPlayRoute
                   ? undefined
                   : "env(safe-area-inset-top)",
+                paddingBottom: isPlayRoute
+                  ? undefined
+                  : "env(safe-area-inset-bottom)",
               }
             : undefined
         }
@@ -99,7 +103,6 @@ export default function AppShell() {
           style={
             isMobilePlatform && !isPlayRoute
               ? {
-                  paddingBottom: "env(safe-area-inset-bottom)",
                   paddingInlineStart: "env(safe-area-inset-left)",
                   paddingInlineEnd: "env(safe-area-inset-right)",
                 }
