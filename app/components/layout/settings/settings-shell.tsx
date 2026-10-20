@@ -251,7 +251,8 @@ export function SettingsShell<TId extends string>({
             <section
               className={cn(
                 "min-h-0 bg-card sm:flex sm:flex-col",
-                showSettingsList ? "hidden" : "flex flex-col",
+                // Phones stack the panes, so the detail needs a height to scroll in.
+                showSettingsList ? "hidden" : "flex h-full flex-col",
               )}
             >
               <ScrollArea className="h-full">
