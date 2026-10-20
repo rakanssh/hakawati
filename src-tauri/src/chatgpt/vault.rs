@@ -164,7 +164,6 @@ impl LockedVault {
     }
 }
 
-#[cfg(not(target_os = "ios"))]
 fn encryption_key(vault_exists: bool) -> Result<Vec<u8>, String> {
     use crate::secret_store::{keyring_entry, Error};
     let service = if cfg!(debug_assertions) {
@@ -187,11 +186,6 @@ fn encryption_key(vault_exists: bool) -> Result<Vec<u8>, String> {
         }
         Err(_) => Err("Cannot unlock ChatGPT credentials: OS keyring access is required".into()),
     }
-}
-
-#[cfg(target_os = "ios")]
-fn encryption_key(_vault_exists: bool) -> Result<Vec<u8>, String> {
-    Err("ChatGPT sign-in is not available on iOS yet".into())
 }
 
 #[cfg(test)]

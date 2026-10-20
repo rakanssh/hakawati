@@ -50,5 +50,9 @@ jni = "0.21"
 keyring-core = "1"
 ndk-context = "0.1"
 
+[target.'cfg(target_os = "ios")'.dependencies]
+apple-native-keyring-store = { version = "1", features = ["protected"] }
+keyring-core = "1"
+
 [dev-dependencies]
 p256 = { version = "0.13", features = ["pkcs8"] }

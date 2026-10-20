@@ -2191,6 +2191,7 @@ version = "1.2.0"
 dependencies = [
  "aes-gcm",
  "android-native-keyring-store",
+ "apple-native-keyring-store",
  "base64 0.22.1",
  "cpal",
  "fs2",

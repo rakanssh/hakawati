@@ -6,9 +6,10 @@ pub fn hosted_refresh_token_account(profile_id: &str) -> String {
 
 // Desktop uses the OS keyring. Android keeps secrets in a private SharedPreferences
 // file, encrypted with an AES key that is generated inside the Android Keystore.
+// iOS keeps them in the app's own Keychain, on this device only.
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 pub(crate) use keyring::v1::{Entry, Error};
-#[cfg(target_os = "android")]
+#[cfg(any(target_os = "android", target_os = "ios"))]
 pub(crate) use keyring_core::{Entry, Error};
 
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
@@ -16,14 +17,17 @@ pub(crate) fn keyring_entry(service: &str, user: &str) -> Result<Entry, Error> {
     Entry::new(service, user)
 }
 
-#[cfg(target_os = "android")]
+#[cfg(any(target_os = "android", target_os = "ios"))]
 pub(crate) fn keyring_entry(service: &str, user: &str) -> Result<Entry, Error> {
     static STORE: std::sync::Mutex<()> = std::sync::Mutex::new(());
     let guard = STORE
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
     if keyring_core::get_default_store().is_none() {
+        #[cfg(target_os = "android")]
         keyring_core::set_default_store(android_native_keyring_store::Store::new()?);
+        #[cfg(target_os = "ios")]
+        keyring_core::set_default_store(apple_native_keyring_store::protected::Store::new()?);
     }
     drop(guard);
     Entry::new(service, user)
@@ -54,7 +58,6 @@ pub extern "system" fn Java_dev_hakawati_app_MainActivity_initSecretStore(
     });
 }
 
-#[cfg(not(target_os = "ios"))]
 mod platform {
     use super::{hosted_refresh_token_account, keyring_entry, Entry, Error, SERVICE_NAME};
 
@@ -82,21 +85,6 @@ mod platform {
             Ok(()) | Err(Error::NoEntry) => Ok(()),
             Err(error) => Err(error.to_string()),
         }
-    }
-}
-
-#[cfg(target_os = "ios")]
-mod platform {
-    pub fn set(_profile_id: &str, _token: &str) -> Result<(), String> {
-        Err("secure storage is not available on iOS yet".to_string())
-    }
-
-    pub fn get(_profile_id: &str) -> Result<Option<String>, String> {
-        Err("secure storage is not available on iOS yet".to_string())
-    }
-
-    pub fn delete(_profile_id: &str) -> Result<(), String> {
-        Ok(())
     }
 }
 
