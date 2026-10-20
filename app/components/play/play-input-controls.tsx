@@ -37,7 +37,11 @@ import {
 } from "@/components/play/log";
 import { getPlaceholderMessage, Action } from "@/lib/play-utils";
 import { cn } from "@/lib/utils";
-import { Platform, useIsMobile } from "@/hooks/useIsMobile";
+import {
+  isMobilePlatform as isMobilePlatformDevice,
+  Platform,
+  useIsMobile,
+} from "@/hooks/useIsMobile";
 import {
   appendTranscriptToInput,
   MicrophonePermissionError,
@@ -91,7 +95,9 @@ const WAVEFORM_BAR_GAP_PX = 2;
 const WAVEFORM_BAR_SLOT_WIDTH_PX = WAVEFORM_BAR_WIDTH_PX + WAVEFORM_BAR_GAP_PX;
 const WAVEFORM_UPDATE_INTERVAL_MS = 55;
 const WAVEFORM_NOISE_FLOOR = 0.008;
-const WAVEFORM_INPUT_GAIN = 9.5;
+// Phone mics sit close to the mouth and add their own gain, so speech that a
+// desktop mic barely registers already fills the waveform there.
+const WAVEFORM_INPUT_GAIN = isMobilePlatformDevice() ? 2 : 9.5;
 const WAVEFORM_MIN_HEIGHT_PX = 3;
 const WAVEFORM_HEIGHT_RANGE_PX = 31;
 const WAVEFORM_MIN_OPACITY = 0.48;
