@@ -2200,6 +2200,7 @@ dependencies = [
  "tauri-plugin-process",
  "tauri-plugin-sql",
  "tauri-plugin-updater",
+ "tauri-utils",
  "tokio",
  "tokio-util",
  "uuid",

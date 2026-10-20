@@ -36,7 +36,6 @@ import { getPlaceholderMessage, Action } from "@/lib/play-utils";
 import { cn } from "@/lib/utils";
 import {
   isMobilePlatform as isMobilePlatformDevice,
-  Platform,
   useIsMobile,
 } from "@/hooks/useIsMobile";
 import {
@@ -222,8 +221,7 @@ export function PlayInputControls({
   onRedo,
 }: PlayInputControlsProps) {
   const { t } = useLingui();
-  const { isMobilePlatform, platform } = useIsMobile();
-  const canRecordSpeech = platform !== Platform.IOS;
+  const { isMobilePlatform } = useIsMobile();
   const speechRecorder = useSpeechRecorder({
     onTranscript: (text) => {
       setInput((current) => appendTranscriptToInput(current, text));
@@ -633,9 +631,8 @@ export function PlayInputControls({
         className,
       )}
     >
-      {/* Speech recording has no iOS backend yet. */}
-      {canRecordSpeech && renderSpeechButton("rounded-e-none")}
-      {renderSubmitButton(canRecordSpeech ? "rounded-s-none" : undefined)}
+      {renderSpeechButton("rounded-e-none")}
+      {renderSubmitButton("rounded-s-none")}
     </div>
   );
 

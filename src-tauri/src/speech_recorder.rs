@@ -381,18 +381,18 @@ mod mobile {
     use tauri::plugin::{PluginApi, PluginHandle};
     use tauri::Wry;
 
-    // Recording runs in SpeechRecorderPlugin.kt in the Android project; iOS has no
-    // recorder yet.
+    // Recording runs in SpeechRecorderPlugin.kt in the Android project and in
+    // SpeechRecorderPlugin.swift in the ios/Plugins Swift package.
     pub struct SpeechRecorderState(Option<PluginHandle<Wry>>);
+
+    #[cfg(target_os = "ios")]
+    tauri::ios_plugin_binding!(init_plugin_speech_recorder);
 
     pub fn create_state(api: PluginApi<Wry, ()>) -> Result<SpeechRecorderState, PluginInvokeError> {
         #[cfg(target_os = "android")]
         let plugin = Some(api.register_android_plugin("dev.hakawati.app", "SpeechRecorderPlugin")?);
         #[cfg(target_os = "ios")]
-        let plugin = {
-            let _ = api;
-            None
-        };
+        let plugin = Some(api.register_ios_plugin(init_plugin_speech_recorder)?);
         Ok(SpeechRecorderState(plugin))
     }
 
@@ -477,7 +477,7 @@ impl From<&str> for SpeechRecorderError {
     }
 }
 
-/// Registers the recorder state, and on Android the plugin that records.
+/// Registers the recorder state, and on mobile the plugin that records.
 pub fn init() -> TauriPlugin<Wry> {
     Builder::new("speech-recorder")
         .setup(|app, _api| {
