@@ -80,7 +80,6 @@ export function MobileBottomNav() {
       <SettingsModal
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
-        defaultTab="ai-setup"
         visibleTabs={nonPlayTabs}
       />
     </>
