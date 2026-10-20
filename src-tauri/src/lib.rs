@@ -548,7 +548,16 @@ pub fn run() {
     let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
 
     #[cfg(any(target_os = "android", target_os = "ios"))]
-    let builder = builder;
+    let builder = builder.on_window_event(|window, event| {
+        let foreground = match event {
+            tauri::WindowEvent::Suspended => false,
+            tauri::WindowEvent::Resumed => true,
+            _ => return,
+        };
+        window
+            .state::<oauth_loopback::AppForeground>()
+            .set(foreground);
+    });
 
     builder
         .plugin(tauri_plugin_clipboard_manager::init())
@@ -556,6 +565,7 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_process::init())
         .manage(oauth_loopback::OAuthLoopbackState::default())
+        .manage(oauth_loopback::AppForeground::default())
         .manage(chatgpt::ChatGptState::default())
         .manage(database_transaction::DatabaseTransactions::default())
         .manage(speech_recorder::SpeechRecorderState::default())

@@ -444,6 +444,11 @@ pub async fn chatgpt_sign_in(
                 return Err(CANCELLED.into());
             }
         }?;
+        let foreground = app.state::<crate::oauth_loopback::AppForeground>();
+        tokio::select! {
+            _ = foreground.wait() => {}
+            _ = cancel.cancelled() => return Err(CANCELLED.into()),
+        }
         let (code, client_id) = callback_code(
             &callback,
             &started.redirect_uri,
