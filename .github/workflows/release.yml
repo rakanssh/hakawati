@@ -193,3 +193,117 @@ jobs:
           releaseDraft: true
           prerelease: ${{ needs.verify.outputs.prerelease == 'true' }}
           args: "${{ matrix.args }} -- --locked"
+
+  android:
+    # Runs after the desktop builds so their draft release exists to attach to.
+    needs: [verify, release]
+    environment: production
+    permissions:
+      contents: write
+    runs-on: ubuntu-22.04
+    env:
+      NDK_VERSION: "30.0.16248370"
+      ANDROID_TARGETS: "--target aarch64 --target armv7 --target x86_64"
+    steps:
+      - name: Require production configuration and signing secrets
+        env:
+          VITE_HAKAWATI_SYNC_SERVER_URL: ${{ vars.VITE_HAKAWATI_SYNC_SERVER_URL }}
+          HAKAWATI_ANDROID_KEYSTORE_BASE64: ${{ secrets.HAKAWATI_ANDROID_KEYSTORE_BASE64 }}
+          HAKAWATI_KEYSTORE_PASSWORD: ${{ secrets.HAKAWATI_KEYSTORE_PASSWORD }}
+          HAKAWATI_KEY_ALIAS: ${{ secrets.HAKAWATI_KEY_ALIAS }}
+          HAKAWATI_KEY_PASSWORD: ${{ secrets.HAKAWATI_KEY_PASSWORD }}
+        run: |
+          missing=0
+          for name in VITE_HAKAWATI_SYNC_SERVER_URL HAKAWATI_ANDROID_KEYSTORE_BASE64 HAKAWATI_KEYSTORE_PASSWORD HAKAWATI_KEY_ALIAS HAKAWATI_KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Set $name in the GitHub production environment."
+              missing=1
+            fi
+          done
+          exit $missing
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Java setup
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      - name: Android SDK setup
+        uses: android-actions/setup-android@v3
+
+      - name: Install the Android NDK
+        run: |
+          sdkmanager --install "ndk;$NDK_VERSION"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: "aarch64-linux-android,armv7-linux-androideabi,x86_64-linux-android"
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+          shared-key: "tauri-android"
+          cache-on-failure: true
+
+      - name: Sync node version and setup cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+          cache: "npm"
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install cargo-about
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-about
+
+      - name: Write the upload keystore
+        env:
+          HAKAWATI_ANDROID_KEYSTORE_BASE64: ${{ secrets.HAKAWATI_ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          echo "$HAKAWATI_ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+          echo "HAKAWATI_KEYSTORE_FILE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+
+      - name: Build the Android app
+        env:
+          VITE_HAKAWATI_SYNC_SERVER_URL: ${{ vars.VITE_HAKAWATI_SYNC_SERVER_URL }}
+          HAKAWATI_KEYSTORE_PASSWORD: ${{ secrets.HAKAWATI_KEYSTORE_PASSWORD }}
+          HAKAWATI_KEY_ALIAS: ${{ secrets.HAKAWATI_KEY_ALIAS }}
+          HAKAWATI_KEY_PASSWORD: ${{ secrets.HAKAWATI_KEY_PASSWORD }}
+        run: |
+          # One bundle for Google Play, which serves each device its own ABI,
+          # and one APK per ABI for installing directly.
+          npx tauri android build --ci --aab $ANDROID_TARGETS
+          npx tauri android build --ci --apk --split-per-abi $ANDROID_TARGETS
+
+      - name: Attach the Android builds to the draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.verify.outputs.tag }}
+        run: |
+          set -eo pipefail
+          mkdir -p android-release
+          version="${RELEASE_TAG#v}"
+          find src-tauri/gen/android/app/build/outputs \( -name '*.apk' -o -name '*.aab' \) -print0 |
+            while IFS= read -r -d '' file; do
+              name=$(basename "$file")
+              case "$name" in
+                *unsigned*)
+                  echo "::error::$name is unsigned; check the keystore secrets."
+                  exit 1
+                  ;;
+              esac
+              abi=${name#app-}
+              abi=${abi%-release.*}
+              cp "$file" "android-release/Hakawati_${version}_android_${abi}.${name##*.}"
+            done
+          ls -l android-release
+          gh release upload "$RELEASE_TAG" android-release/* --clobber
