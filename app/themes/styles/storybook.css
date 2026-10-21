@@ -111,7 +111,7 @@
 }
 
 /* The wobbly frame can't join a tab, so the mode tabs sit just above it. */
-.theme-storybook :is([data-composer-tab], [data-composer-roll]) {
+.theme-storybook :is([data-composer-tab], [data-composer-tabs] > :last-child) {
   margin-bottom: 6px;
 }
 

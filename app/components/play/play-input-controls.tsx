@@ -284,8 +284,11 @@ export function PlayInputControls({
 
   const composerControlsLocked = speechRecorder.status !== "idle";
   const canStopGeneration = loading && !!onStop;
-  const composerSurfaceClass =
-    "flex min-h-[6.25rem] min-w-0 overflow-hidden rounded-lg rounded-ss-none border border-border/75 bg-[var(--composer-background)] p-1.5 shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18 md:min-h-[6rem]";
+  const composerSurfaceClass = cn(
+    "flex min-w-0 overflow-hidden rounded-lg rounded-ss-none border border-border/75 bg-[var(--composer-background)] shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18",
+    // On phones the box is a single row, so the story keeps the screen.
+    isMobilePlatform ? "p-1" : "min-h-[6.25rem] p-1.5 md:min-h-[6rem]",
+  );
   useLogControlShortcuts({
     handleUndo: onUndo,
     handleRedo: onRedo,
@@ -338,8 +341,8 @@ export function PlayInputControls({
                 : "border-transparent bg-background/60 text-muted-foreground hover:bg-muted/50 hover:text-foreground",
               isMobilePlatform
                 ? active
-                  ? "h-11 px-3.5"
-                  : "h-10 w-11"
+                  ? "h-10 px-3"
+                  : "h-9 w-10"
                 : active
                   ? "h-10 px-4"
                   : "h-9 px-3.5",
@@ -357,7 +360,8 @@ export function PlayInputControls({
     </div>
   );
 
-  // Rolling changes the kind of turn, like the mode, so it sits beside the tabs.
+  // Rolling changes the kind of turn, like the mode, so it sits beside the tabs;
+  // phones fit it into the input row instead.
   const renderRollToggle = () => (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -374,11 +378,15 @@ export function PlayInputControls({
           }
           disabled={loading}
           className={cn(
-            "mb-1 flex shrink-0 items-center justify-center gap-1.5 rounded-full border text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50",
-            isMobilePlatform ? "size-11" : "h-9 px-3.5",
+            "flex shrink-0 items-center justify-center gap-1.5 border text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50",
+            isMobilePlatform
+              ? "size-10 rounded-md"
+              : "mb-1 h-9 rounded-full px-3.5",
             action.isRolling
               ? "border-success/50 bg-success/12 text-success"
-              : "border-border/75 bg-[var(--composer-background)] text-muted-foreground hover:bg-muted hover:text-foreground",
+              : isMobilePlatform
+                ? "border-transparent text-muted-foreground hover:bg-muted/45 hover:text-foreground"
+                : "border-border/75 bg-[var(--composer-background)] text-muted-foreground hover:bg-muted hover:text-foreground",
             composerControlsLocked && "pointer-events-none opacity-60",
           )}
         >
@@ -413,7 +421,7 @@ export function PlayInputControls({
             data-composer-mic=""
             className={cn(
               "shrink-0 rounded-full border shadow-none",
-              isMobilePlatform ? "size-[2.875rem]" : "size-10",
+              "size-10",
               isRecording
                 ? "border-destructive/45 bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive"
                 : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -521,7 +529,7 @@ export function PlayInputControls({
       data-composer-send=""
       className={cn(
         "shrink-0 rounded-full",
-        isMobilePlatform ? "size-[3.375rem]" : "size-12",
+        isMobilePlatform ? "size-11" : "size-12",
       )}
       aria-label={
         canStopGeneration
@@ -545,13 +553,13 @@ export function PlayInputControls({
   );
 
   const renderHistoryControls = () => {
-    // Phones get bigger icons; desktop has room to name each action.
-    const buttonClass = isMobilePlatform ? "size-12" : "h-10 px-3";
+    // Desktop has room to name each action; phones show icons beside the tabs.
+    const buttonClass = isMobilePlatform ? "size-10" : "h-10 px-3";
     return (
       <div
         className={cn(
-          "flex min-w-0 items-center",
-          isMobilePlatform ? "-ms-1" : "gap-0.5",
+          "flex min-w-0 shrink-0 items-center",
+          !isMobilePlatform && "gap-0.5",
           composerControlsLocked && "pointer-events-none opacity-60",
         )}
       >
@@ -598,6 +606,20 @@ export function PlayInputControls({
         renderRecordingComposer()
       ) : speechRecorder.isTranscribing ? (
         renderTranscribingComposer()
+      ) : isMobilePlatform ? (
+        <div className="flex min-w-0 flex-1 items-end gap-1">
+          <div className="min-w-0 flex-1">{renderTextArea()}</div>
+          <div
+            className={cn(
+              "flex shrink-0 items-center gap-1",
+              composerControlsLocked && "pointer-events-none opacity-60",
+            )}
+          >
+            {renderRollToggle()}
+            {renderSpeechButton()}
+            {renderSubmitButton()}
+          </div>
+        </div>
       ) : (
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="min-w-0">{renderTextArea()}</div>
@@ -615,9 +637,12 @@ export function PlayInputControls({
       data-composer-frame=""
       className="composer-command-tier mx-auto w-full max-w-(--play-composer-max)"
     >
-      <div className="flex min-w-0 items-end justify-between gap-2">
+      <div
+        data-composer-tabs=""
+        className="flex min-w-0 items-end justify-between gap-2"
+      >
         {renderModeTabs()}
-        {renderRollToggle()}
+        {isMobilePlatform ? renderHistoryControls() : renderRollToggle()}
       </div>
       {renderInputSurface()}
     </div>

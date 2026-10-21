@@ -186,7 +186,7 @@
 }
 
 /* The ring can't wrap a tab, so the mode tabs are keys above the machine. */
-.theme-typewriter :is([data-composer-tab], [data-composer-roll]) {
+.theme-typewriter :is([data-composer-tab], [data-composer-tabs] > :last-child) {
   margin-bottom: 8px;
 }
 

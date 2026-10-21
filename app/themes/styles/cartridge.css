@@ -147,7 +147,7 @@
 }
 
 /* The notched frame can't join a tab, so the mode tabs are small boxes above it. */
-.theme-cartridge :is([data-composer-tab], [data-composer-roll]) {
+.theme-cartridge :is([data-composer-tab], [data-composer-tabs] > :last-child) {
   margin-bottom: 10px;
 }
 
