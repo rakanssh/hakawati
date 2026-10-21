@@ -55,3 +55,8 @@ keyring-core = "1"
 
 [dev-dependencies]
 p256 = { version = "0.13", features = ["pkcs8"] }
+
+# Xcode 27's strip leaves macro libraries that macOS refuses to load ("mis-aligned
+# LINKEDIT string pool"), so code that only runs during the build is not stripped.
+[profile.release.build-override]
+strip = false
