@@ -149,7 +149,7 @@ msgstr "{descriptionChars} حرف • ~{descriptionTokens} رمز"
 msgid "{localEntryCount} {0}"
 msgstr "{localEntryCount} {0}"
 
-#: app/pages/scenarios/home.tsx:592
+#: app/pages/scenarios/home.tsx:602
 #: app/pages/tales/home.tsx:271
 msgid "{name} thumbnail"
 msgstr "صورة مصغرة لـ {name}"
@@ -541,12 +541,14 @@ msgstr "العنوان الأساسي"
 msgid "Best with more capable models. Requires tool calling."
 msgstr "أفضل مع نماذج أكثر قدرة. يتطلب دعم استدعاء الأدوات."
 
-#. placeholder {0}: scenario.author.displayName
-#: app/pages/scenarios/home.tsx:343
+#. placeholder {0}: pendingBlock?.author.displayName ?? ""
+#: app/pages/scenarios/home.tsx:869
 msgid "Block {0}? You will no longer see their scenarios."
 msgstr "حظر {0}؟ لن تظهر لك سيناريوهاته بعد ذلك."
 
-#: app/pages/scenarios/home.tsx:182
+#: app/pages/scenarios/home.tsx:183
+#: app/pages/scenarios/home.tsx:866
+#: app/pages/scenarios/home.tsx:880
 msgid "Block publisher"
 msgstr "حظر الناشر"
 
@@ -596,14 +598,16 @@ msgstr "بواسطة"
 #: app/components/tales/tale-conflict-dialog.tsx:131
 #: app/components/ui/inventory-item.tsx:73
 #: app/components/ui/stat-item.tsx:100
-#: app/pages/scenarios/home.tsx:801
+#: app/pages/scenarios/home.tsx:811
+#: app/pages/scenarios/home.tsx:846
+#: app/pages/scenarios/home.tsx:874
 #: app/pages/tales/home.tsx:414
 #: app/pages/tales/home.tsx:445
 msgid "Cancel"
 msgstr "إلغاء"
 
-#: app/components/play/play-input-controls.tsx:468
-#: app/components/play/play-input-controls.tsx:474
+#: app/components/play/play-input-controls.tsx:469
+#: app/components/play/play-input-controls.tsx:475
 msgid "Cancel recording"
 msgstr "إلغاء التسجيل"
 
@@ -739,7 +743,7 @@ msgstr "اختر الحكايات المحلية التي تريد مزامنت�
 #~ msgid "Choose your play style"
 #~ msgstr "اختر نوع اللعبة"
 
-#: app/pages/scenarios/home.tsx:546
+#: app/pages/scenarios/home.tsx:556
 msgid "Clear filters"
 msgstr "مسح عوامل التصفية"
 
@@ -904,7 +908,7 @@ msgid "Continuation {0}"
 msgstr "تكملة {0}"
 
 #: app/components/layout/settings/cloud-sync.tsx:1360
-#: app/components/play/play-input-controls.tsx:529
+#: app/components/play/play-input-controls.tsx:530
 #: app/pages/home/home.tsx:745
 #: app/pages/tales/home.tsx:273
 msgid "Continue"
@@ -974,7 +978,7 @@ msgstr "رفع صور الغلاف غير متاح حالياً. تم حفظ م�
 #: app/pages/home/home.tsx:877
 #: app/pages/scenarios/create.tsx:85
 #: app/pages/scenarios/create.tsx:111
-#: app/pages/scenarios/home.tsx:434
+#: app/pages/scenarios/home.tsx:444
 msgid "Create"
 msgstr "إنشاء"
 
@@ -1095,8 +1099,8 @@ msgstr "تعليمات الذكاء الاصطناعي الافتراضية..."
 #: app/components/prompt-components/PromptComponentsEditor.tsx:216
 #: app/components/storybook/StoryCard.tsx:121
 #: app/components/storybook/StoryCard.tsx:122
-#: app/pages/scenarios/home.tsx:658
-#: app/pages/scenarios/home.tsx:807
+#: app/pages/scenarios/home.tsx:668
+#: app/pages/scenarios/home.tsx:817
 #: app/pages/tales/home.tsx:352
 #: app/pages/tales/home.tsx:420
 msgid "Delete"
@@ -1110,7 +1114,7 @@ msgstr "تعذّر الحذف"
 msgid "Delete this AI component?"
 msgstr "حذف مكون الذكاء الاصطناعي هذا؟"
 
-#: app/pages/scenarios/home.tsx:790
+#: app/pages/scenarios/home.tsx:800
 msgid "Delete this scenario?"
 msgstr "حذف هذا السيناريو؟"
 
@@ -1241,7 +1245,7 @@ msgstr "جارٍ قطع الاتصال..."
 
 #: app/pages/home/home.tsx:830
 #: app/pages/scenarios/catalog-details.tsx:145
-#: app/pages/scenarios/home.tsx:458
+#: app/pages/scenarios/home.tsx:468
 msgid "Discover"
 msgstr "استكشف"
 
@@ -1314,7 +1318,7 @@ msgstr "تُرسم حول القصة في شاشة اللعب. «ثابت» يب
 #: app/components/storybook/StoryCard.tsx:111
 #: app/pages/scenarios/details.tsx:258
 #: app/pages/scenarios/edit.tsx:140
-#: app/pages/scenarios/home.tsx:627
+#: app/pages/scenarios/home.tsx:637
 msgid "Edit"
 msgstr "تعديل"
 
@@ -1333,7 +1337,7 @@ msgstr "تعديل المدخل"
 
 #: app/components/scenario/PublishScenarioDialog.tsx:267
 #: app/pages/scenarios/catalog-details.tsx:367
-#: app/pages/scenarios/home.tsx:188
+#: app/pages/scenarios/home.tsx:189
 msgid "Edit scenario"
 msgstr "تعديل السيناريو"
 
@@ -1378,7 +1382,7 @@ msgstr "أدخل معرف النموذج يدوياً"
 msgid "Enter the base URL in the URL field"
 msgstr "أدخل العنوان الأساسي (Base URL) في حقل الرابط"
 
-#: app/components/play/play-input-controls.tsx:454
+#: app/components/play/play-input-controls.tsx:455
 msgid "Enter your action"
 msgstr "أدخل إجراءك"
 
@@ -1420,12 +1424,12 @@ msgstr "عنوان المدخل"
 msgid "EXPERIMENTAL"
 msgstr "تجريبي"
 
-#: app/pages/scenarios/home.tsx:140
-#: app/pages/scenarios/home.tsx:594
+#: app/pages/scenarios/home.tsx:141
+#: app/pages/scenarios/home.tsx:604
 msgid "Explore scenario"
 msgstr "استكشاف السيناريو"
 
-#: app/pages/scenarios/home.tsx:649
+#: app/pages/scenarios/home.tsx:659
 msgid "Export JSON"
 msgstr "تصدير JSON"
 
@@ -1433,7 +1437,7 @@ msgstr "تصدير JSON"
 msgid "Extra high"
 msgstr "مرتفع جدًا"
 
-#: app/pages/scenarios/home.tsx:355
+#: app/pages/scenarios/home.tsx:365
 msgid "Failed to block publisher"
 msgstr "تعذّر حظر الناشر"
 
@@ -1459,11 +1463,11 @@ msgstr "فشل توليد الحكاية: {0}"
 msgid "Failed to install the update."
 msgstr "فشل تثبيت التحديث."
 
-#: app/pages/scenarios/home.tsx:696
+#: app/pages/scenarios/home.tsx:706
 msgid "Failed to load public scenarios."
 msgstr "تعذّر تحميل السيناريوهات العامة."
 
-#: app/pages/scenarios/home.tsx:735
+#: app/pages/scenarios/home.tsx:745
 msgid "Failed to load published scenarios."
 msgstr "تعذّر تحميل السيناريوهات المنشورة."
 
@@ -1473,7 +1477,7 @@ msgid "Failed to load scenario."
 msgstr "تعذّر تحميل السيناريو."
 
 #: app/pages/home/home.tsx:914
-#: app/pages/scenarios/home.tsx:579
+#: app/pages/scenarios/home.tsx:589
 msgid "Failed to load scenarios."
 msgstr "فشل تحميل السيناريوهات."
 
@@ -1487,7 +1491,7 @@ msgstr "فشل تحميل الحكايات."
 #: app/pages/scenarios/catalog-details.tsx:480
 #: app/pages/scenarios/create.tsx:205
 #: app/pages/scenarios/details.tsx:384
-#: app/pages/scenarios/home.tsx:845
+#: app/pages/scenarios/home.tsx:918
 msgid "Failed to publish scenario"
 msgstr "تعذّر نشر السيناريو"
 
@@ -1516,7 +1520,7 @@ msgstr "تعذّر حفظ السيناريو"
 msgid "Failed to start scenario"
 msgstr "تعذّر بدء السيناريو"
 
-#: app/pages/scenarios/home.tsx:334
+#: app/pages/scenarios/home.tsx:347
 msgid "Failed to submit report"
 msgstr "تعذّر إرسال البلاغ"
 
@@ -1524,7 +1528,7 @@ msgstr "تعذّر إرسال البلاغ"
 msgid "Failed to transcribe speech."
 msgstr "فشل تحويل الكلام إلى نص."
 
-#: app/pages/scenarios/home.tsx:369
+#: app/pages/scenarios/home.tsx:379
 msgid "Failed to unpublish scenario"
 msgstr "تعذّر إلغاء نشر السيناريو"
 
@@ -1544,8 +1548,8 @@ msgstr "خيال"
 #~ msgid "Favor dread over shock. Build unease through atmosphere, wrongness, and the unknown or unknowable. Let the imagination do most of the work. Not everything needs to be explained."
 #~ msgstr "غلِّب أجواء الرهبة على الصدمات المفاجئة. ابنِ شعوراً بالريب من خلال الأجواء، والخلل، والمجهول. اترك للخيال المساحة الأكبر، فليس كل شيء يحتاج إلى تفسير."
 
-#: app/pages/scenarios/home.tsx:540
-#: app/pages/scenarios/home.tsx:541
+#: app/pages/scenarios/home.tsx:550
+#: app/pages/scenarios/home.tsx:551
 msgid "Filter by tags"
 msgstr "تصفية حسب الوسوم"
 
@@ -1615,7 +1619,7 @@ msgid "Game Mode"
 msgstr "نوع اللعبة"
 
 #: app/components/scenario/GenerateScenarioDialog.tsx:114
-#: app/pages/scenarios/home.tsx:438
+#: app/pages/scenarios/home.tsx:448
 msgid "Generate"
 msgstr "توليد"
 
@@ -1734,7 +1738,7 @@ msgstr "سيستخدم حكواتي الآن موارد خطة ChatGPT الخا�
 msgid "Help for {label}"
 msgstr "مساعدة بخصوص {label}"
 
-#: app/pages/scenarios/home.tsx:148
+#: app/pages/scenarios/home.tsx:149
 msgid "Hidden"
 msgstr "مخفي"
 
@@ -1761,8 +1765,8 @@ msgstr "تمييز آخر قسم"
 
 #: app/components/layout/titlebar.tsx:89
 #: app/components/layout/titlebar.tsx:95
-#: app/pages/scenarios/home.tsx:417
-#: app/pages/scenarios/home.tsx:423
+#: app/pages/scenarios/home.tsx:427
+#: app/pages/scenarios/home.tsx:433
 #: app/pages/tales/home.tsx:185
 #: app/pages/tales/home.tsx:197
 msgid "Home"
@@ -1830,7 +1834,7 @@ msgstr "أوافق على قواعد النشر وأفهم أن السيناري
 msgid "If the tool requires auth, look up how to generate a key (Ollama requires this)"
 msgstr "إذا كانت الأداة تتطلب مصادقة (auth)، ابحث عن كيفية توليد مفتاح (Ollama يتطلب ذلك)"
 
-#: app/pages/scenarios/home.tsx:473
+#: app/pages/scenarios/home.tsx:483
 msgid "Import"
 msgstr "استيراد"
 
@@ -1838,7 +1842,7 @@ msgstr "استيراد"
 #~ msgid "In Game Master mode, the AI keeps track of stats and inventory."
 #~ msgstr "في وضع مدير اللعبة، يتتبع الكاتب الخصائص والمخزون."
 
-#: app/pages/scenarios/home.tsx:152
+#: app/pages/scenarios/home.tsx:153
 msgid "In review"
 msgstr "قيد المراجعة"
 
@@ -2070,8 +2074,8 @@ msgstr "تحميل {name}"
 msgid "Load {title}"
 msgstr "تحميل {title}"
 
-#: app/pages/scenarios/home.tsx:725
-#: app/pages/scenarios/home.tsx:774
+#: app/pages/scenarios/home.tsx:735
+#: app/pages/scenarios/home.tsx:784
 msgid "Load more"
 msgstr "تحميل المزيد"
 
@@ -2100,8 +2104,8 @@ msgstr "جارٍ تحميل سياسات النشر..."
 msgid "Loading scenario..."
 msgstr "جارٍ تحميل السيناريو..."
 
-#: app/pages/scenarios/home.tsx:495
-#: app/pages/scenarios/home.tsx:561
+#: app/pages/scenarios/home.tsx:505
+#: app/pages/scenarios/home.tsx:571
 msgid "Loading scenarios"
 msgstr "جارٍ تحميل السيناريوهات"
 
@@ -2115,7 +2119,7 @@ msgstr "جارٍ تحميل السيناريوهات"
 #: app/pages/home/home.tsx:837
 #: app/pages/scenarios/catalog-details.tsx:331
 #: app/pages/scenarios/details.tsx:214
-#: app/pages/scenarios/home.tsx:574
+#: app/pages/scenarios/home.tsx:584
 #: app/pages/tales/home.tsx:221
 msgid "Loading..."
 msgstr "جاري التحميل..."
@@ -2129,7 +2133,7 @@ msgstr "جاري تحميل..."
 
 #: app/data/api-presets.ts:95
 #: app/pages/home/home.tsx:158
-#: app/pages/scenarios/home.tsx:451
+#: app/pages/scenarios/home.tsx:461
 #: app/pages/tales/home.tsx:263
 msgid "Local"
 msgstr "محلي"
@@ -2324,7 +2328,7 @@ msgstr "الإعداد الافتراضي للنموذج"
 #~ msgid "most comfortable at the helm of a ship, trusting your vessel and reflexes more than most people"
 #~ msgstr "يرتاح عند دفة السفينة، واثقاً بمركبه وردود فعله أكثر من الناس"
 
-#: app/pages/scenarios/home.tsx:526
+#: app/pages/scenarios/home.tsx:536
 msgid "Most started"
 msgstr "الأكثر لعبًا"
 
@@ -2379,7 +2383,7 @@ msgstr "يحتاج إلى مراجعة"
 msgid "Neutral charcoal with a soft white accent."
 msgstr "رمادي فحمي محايد بلمسة بيضاء هادئة."
 
-#: app/pages/scenarios/home.tsx:513
+#: app/pages/scenarios/home.tsx:523
 msgid "New"
 msgstr "الأحدث"
 
@@ -2394,7 +2398,7 @@ msgstr "سيناريو جديد"
 
 #: app/components/quickstart/quickstart-wizard.tsx:709
 #: app/components/scenario/ScenarioStartWizard.tsx:201
-#: app/pages/scenarios/home.tsx:687
+#: app/pages/scenarios/home.tsx:697
 #: app/pages/tales/home.tsx:390
 msgid "Next"
 msgstr "التالي"
@@ -2424,7 +2428,7 @@ msgstr "لا توجد صورة غلاف"
 #: app/pages/home/home.tsx:147
 #: app/pages/home/home.tsx:240
 #: app/pages/scenarios/details.tsx:321
-#: app/pages/scenarios/home.tsx:589
+#: app/pages/scenarios/home.tsx:599
 #: app/pages/tales/home.tsx:268
 msgid "No description yet."
 msgstr "لا يوجد وصف بعد."
@@ -2450,11 +2454,11 @@ msgid "No models are available for this account."
 msgstr "لا توجد نماذج متاحة لهذا الحساب."
 
 #: app/pages/home/home.tsx:849
-#: app/pages/scenarios/home.tsx:567
+#: app/pages/scenarios/home.tsx:577
 msgid "No public scenarios yet."
 msgstr "لا توجد سيناريوهات عامة بعد."
 
-#: app/pages/scenarios/home.tsx:565
+#: app/pages/scenarios/home.tsx:575
 msgid "No published scenarios yet."
 msgstr "لا توجد سيناريوهات منشورة بعد."
 
@@ -2462,7 +2466,7 @@ msgstr "لا توجد سيناريوهات منشورة بعد."
 msgid "No registered devices."
 msgstr "لا توجد أجهزة مسجّلة."
 
-#: app/pages/scenarios/home.tsx:563
+#: app/pages/scenarios/home.tsx:573
 msgid "No scenarios match your search or tags."
 msgstr "لا توجد سيناريوهات تطابق بحثك أو الوسوم المحددة."
 
@@ -2624,7 +2628,7 @@ msgid "Orbit"
 msgstr "مدار"
 
 #. placeholder {0}: Math.max(1, Math.ceil(total / limit) || 1)
-#: app/pages/scenarios/home.tsx:678
+#: app/pages/scenarios/home.tsx:688
 #: app/pages/tales/home.tsx:381
 msgid "Page {page} of {0}"
 msgstr "الصفحة {page} من {0}"
@@ -2713,7 +2717,7 @@ msgstr "تشغيل السرد"
 #~ msgid "Pocket Knife"
 #~ msgstr "سكين جيب"
 
-#: app/pages/scenarios/home.tsx:516
+#: app/pages/scenarios/home.tsx:526
 msgid "Popular"
 msgstr "الأكثر شعبية"
 
@@ -2726,7 +2730,7 @@ msgstr "الأكثر شعبية"
 msgid "Presence penalty"
 msgstr "عقوبة التواجد"
 
-#: app/pages/scenarios/home.tsx:675
+#: app/pages/scenarios/home.tsx:685
 #: app/pages/tales/home.tsx:378
 msgid "Prev"
 msgstr "السابق"
@@ -2816,7 +2820,7 @@ msgstr "السيناريوهات العامة غير متاحة."
 #: app/pages/scenarios/create.tsx:97
 #: app/pages/scenarios/details.tsx:271
 #: app/pages/scenarios/edit.tsx:179
-#: app/pages/scenarios/home.tsx:639
+#: app/pages/scenarios/home.tsx:649
 msgid "Publish"
 msgstr "نشر"
 
@@ -2833,14 +2837,14 @@ msgstr "انشر الاسم والوصف والغلاف ومحتوى القصة 
 #: app/pages/scenarios/catalog-details.tsx:375
 #: app/pages/scenarios/details.tsx:269
 #: app/pages/scenarios/edit.tsx:177
-#: app/pages/scenarios/home.tsx:637
+#: app/pages/scenarios/home.tsx:647
 msgid "Publish update"
 msgstr "نشر تحديث"
 
 #: app/pages/scenarios/catalog-details.tsx:145
 #: app/pages/scenarios/catalog-details.tsx:391
-#: app/pages/scenarios/home.tsx:466
-#: app/pages/scenarios/home.tsx:598
+#: app/pages/scenarios/home.tsx:476
+#: app/pages/scenarios/home.tsx:608
 msgid "Published"
 msgstr "منشور"
 
@@ -2857,7 +2861,7 @@ msgstr "تعذّر تحميل التفاصيل المنشورة. يمكنك تع
 msgid "Published scenario details could not be loaded."
 msgstr "تعذّر تحميل تفاصيل السيناريو المنشور."
 
-#: app/pages/scenarios/home.tsx:351
+#: app/pages/scenarios/home.tsx:361
 msgid "Publisher blocked"
 msgstr "تم حظر الناشر"
 
@@ -2957,7 +2961,7 @@ msgstr "جارٍ إعادة الاتصال"
 msgid "Reconnecting..."
 msgstr "جارٍ إعادة الاتصال..."
 
-#: app/components/play/play-input-controls.tsx:403
+#: app/components/play/play-input-controls.tsx:404
 msgid "Record speech"
 msgstr "تسجيل الكلام"
 
@@ -3025,17 +3029,23 @@ msgstr "عقوبة التكرار"
 msgid "Replace cover"
 msgstr "استبدال الغلاف"
 
-#: app/pages/scenarios/home.tsx:176
+#: app/pages/scenarios/home.tsx:177
+#: app/pages/scenarios/home.tsx:852
 msgid "Report"
 msgstr "إبلاغ"
 
-#: app/pages/scenarios/home.tsx:327
+#: app/pages/scenarios/home.tsx:840
+#: app/pages/scenarios/home.tsx:841
 msgid "Report reason"
 msgstr "سبب البلاغ"
 
-#: app/pages/scenarios/home.tsx:331
+#: app/pages/scenarios/home.tsx:344
 msgid "Report submitted"
 msgstr "تم إرسال البلاغ"
+
+#: app/pages/scenarios/home.tsx:831
+msgid "Report this scenario?"
+msgstr "الإبلاغ عن هذا السيناريو؟"
 
 #: app/components/layout/settings/api.tsx:208
 msgid "Rescan"
@@ -3093,8 +3103,8 @@ msgstr "جارٍ استعادة الجلسة"
 #: app/components/play/log/log-control.tsx:126
 #: app/components/scenario/PublishScenarioDialog.tsx:231
 #: app/pages/scenarios/edit.tsx:197
-#: app/pages/scenarios/home.tsx:698
-#: app/pages/scenarios/home.tsx:737
+#: app/pages/scenarios/home.tsx:708
+#: app/pages/scenarios/home.tsx:747
 msgid "Retry"
 msgstr "إعادة المحاولة"
 
@@ -3137,12 +3147,12 @@ msgstr "من اليمين إلى اليسار"
 msgid "Rogue"
 msgstr "لص"
 
-#: app/components/play/play-input-controls.tsx:386
+#: app/components/play/play-input-controls.tsx:387
 msgid "Roll"
 msgstr "النرد"
 
-#: app/components/play/play-input-controls.tsx:367
-#: app/components/play/play-input-controls.tsx:391
+#: app/components/play/play-input-controls.tsx:368
+#: app/components/play/play-input-controls.tsx:392
 msgid "Roll a dice"
 msgstr "رمي النرد"
 
@@ -3205,7 +3215,7 @@ msgstr "جاري البحث..."
 msgid "Scenario"
 msgstr "سيناريو"
 
-#: app/pages/scenarios/home.tsx:609
+#: app/pages/scenarios/home.tsx:619
 msgid "Scenario actions"
 msgstr "إجراءات السيناريو"
 
@@ -3226,14 +3236,14 @@ msgid "Scenario details"
 msgstr "تفاصيل السيناريو"
 
 #: app/pages/scenarios/details.tsx:89
-#: app/pages/scenarios/home.tsx:304
+#: app/pages/scenarios/home.tsx:311
 msgid "Scenario not found"
 msgstr "لم يُعثر على السيناريو"
 
 #: app/pages/scenarios/create.tsx:199
 #: app/pages/scenarios/details.tsx:376
 #: app/pages/scenarios/edit.tsx:306
-#: app/pages/scenarios/home.tsx:837
+#: app/pages/scenarios/home.tsx:910
 msgid "Scenario published"
 msgstr "تم نشر السيناريو"
 
@@ -3241,23 +3251,23 @@ msgstr "تم نشر السيناريو"
 #: app/pages/scenarios/create.tsx:198
 #: app/pages/scenarios/details.tsx:373
 #: app/pages/scenarios/edit.tsx:305
-#: app/pages/scenarios/home.tsx:834
+#: app/pages/scenarios/home.tsx:907
 msgid "Scenario submitted for moderation"
 msgstr "تم إرسال السيناريو للمراجعة"
 
-#: app/pages/scenarios/home.tsx:362
+#: app/pages/scenarios/home.tsx:372
 msgid "Scenario unpublished"
 msgstr "تم إلغاء نشر السيناريو"
 
 #: app/pages/scenarios/catalog-details.tsx:474
 #: app/pages/scenarios/details.tsx:375
-#: app/pages/scenarios/home.tsx:836
+#: app/pages/scenarios/home.tsx:909
 msgid "Scenario update published"
 msgstr "تم نشر تحديث السيناريو"
 
 #: app/components/scenario/ScenarioBreadcrumb.tsx:21
 #: app/pages/scenarios/create.tsx:84
-#: app/pages/scenarios/home.tsx:426
+#: app/pages/scenarios/home.tsx:436
 msgid "Scenarios"
 msgstr "سيناريوهات"
 
@@ -3293,8 +3303,8 @@ msgstr "ابحث في الخطوط..."
 msgid "Search model..."
 msgstr "ابحث عن نموذج..."
 
-#: app/pages/scenarios/home.tsx:485
-#: app/pages/scenarios/home.tsx:486
+#: app/pages/scenarios/home.tsx:495
+#: app/pages/scenarios/home.tsx:496
 msgid "Search scenarios"
 msgstr "البحث في السيناريوهات"
 
@@ -3482,7 +3492,7 @@ msgstr "جندي"
 msgid "Something went wrong."
 msgstr "حدث خطأ ما."
 
-#: app/pages/scenarios/home.tsx:506
+#: app/pages/scenarios/home.tsx:516
 msgid "Sort scenarios"
 msgstr "ترتيب السيناريوهات"
 
@@ -3571,12 +3581,12 @@ msgstr "ثابت"
 #~ msgid "Stop"
 #~ msgstr "إيقاف"
 
-#: app/components/play/play-input-controls.tsx:488
-#: app/components/play/play-input-controls.tsx:494
+#: app/components/play/play-input-controls.tsx:489
+#: app/components/play/play-input-controls.tsx:495
 msgid "Stop and transcribe"
 msgstr "إيقاف وتحويل الكلام لنص"
 
-#: app/components/play/play-input-controls.tsx:527
+#: app/components/play/play-input-controls.tsx:528
 msgid "Stop generating"
 msgstr "إيقاف التوليد"
 
@@ -3584,7 +3594,7 @@ msgstr "إيقاف التوليد"
 #~ msgid "Stop generating (Esc)"
 #~ msgstr "إيقاف التوليد (Esc)"
 
-#: app/components/play/play-input-controls.tsx:400
+#: app/components/play/play-input-controls.tsx:401
 msgid "Stop recording"
 msgstr "إيقاف التسجيل"
 
@@ -3662,7 +3672,7 @@ msgstr "كتاب حكايات"
 msgid "Structured gameplay"
 msgstr "لعبة منظمة"
 
-#: app/components/play/play-input-controls.tsx:530
+#: app/components/play/play-input-controls.tsx:531
 msgid "Submit action"
 msgstr "إرسال الإجراء"
 
@@ -3792,6 +3802,10 @@ msgstr "حكايات"
 #: app/data/quickstart-presets.ts:146
 #~ msgid "Tarot Cards"
 #~ msgstr "بطاقات تارو"
+
+#: app/pages/scenarios/home.tsx:834
+msgid "Tell the moderators what is wrong with it."
+msgstr "أخبر المشرفين بما فيه من مخالفة."
 
 #: app/components/layout/settings/model.tsx:147
 #: app/components/layout/settings/model.tsx:159
@@ -4001,7 +4015,7 @@ msgstr "ستبقى هذه النسخة خاصة حتى تتم الموافقة �
 #~ msgstr "سيؤدي هذا إلى حذف {0} وسجلها المحفوظ نهائياً. لا يمكن التراجع عن هذا الإجراء."
 
 #. placeholder {0}: pendingDelete?.name
-#: app/pages/scenarios/home.tsx:793
+#: app/pages/scenarios/home.tsx:803
 #: app/pages/tales/home.tsx:406
 msgid "This will permanently delete {0}. This action cannot be undone."
 msgstr "سيؤدي هذا إلى حذف {0} نهائياً. لا يمكن التراجع عن هذا الإجراء."
@@ -4070,8 +4084,8 @@ msgstr "Top P"
 #~ msgid "trained in the art of war, carrying scars that tell stories and a blade that has tasted blood"
 #~ msgstr "خبير في فنون الحرب، يحمل ندوباً تروي قصصاً، ونصلاً ذاق طعم الدماء"
 
-#: app/components/play/play-input-controls.tsx:402
-#: app/components/play/play-input-controls.tsx:504
+#: app/components/play/play-input-controls.tsx:403
+#: app/components/play/play-input-controls.tsx:505
 msgid "Transcribing..."
 msgstr "جاري تحويل الكلام إلى نص..."
 
@@ -4163,7 +4177,7 @@ msgstr "وقت غير معروف"
 msgid "Unpin"
 msgstr "إلغاء التثبيت"
 
-#: app/pages/scenarios/home.tsx:193
+#: app/pages/scenarios/home.tsx:194
 msgid "Unpublish"
 msgstr "إلغاء النشر"
 
@@ -4195,7 +4209,7 @@ msgstr "تم تحميل التحديث. جاري إعادة التشغيل..."
 
 #: app/pages/scenarios/catalog-details.tsx:397
 #: app/pages/scenarios/details.tsx:292
-#: app/pages/scenarios/home.tsx:521
+#: app/pages/scenarios/home.tsx:531
 msgid "Updated"
 msgstr "آخر تحديث"
 
@@ -4249,7 +4263,7 @@ msgstr "القيمة"
 #~ msgid "Venice AI"
 #~ msgstr "Venice AI"
 
-#: app/pages/scenarios/home.tsx:171
+#: app/pages/scenarios/home.tsx:172
 msgid "View"
 msgstr "عرض"
 
@@ -4258,7 +4272,7 @@ msgstr "عرض"
 msgid "View {0}"
 msgstr "عرض {0}"
 
-#: app/pages/scenarios/home.tsx:593
+#: app/pages/scenarios/home.tsx:603
 msgid "View {name}"
 msgstr "عرض {name}"
 
