@@ -1,12 +1,8 @@
 import { Button } from "../../ui/button";
 import { SettingsIcon } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
-import {
-  SettingsModal,
-  type GlobalSettingsSectionId,
-} from "@/components/layout/settings";
+import { SettingsModal } from "@/components/layout/settings";
 import { useUpdateStore } from "@/store/useUpdateStore";
-import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -16,23 +12,11 @@ export function SettingsButton({
   ...props
 }: React.ComponentProps<typeof Button>) {
   const { t } = useLingui();
-  const { isMobilePlatform } = useIsMobile();
   const [isOpen, setIsOpen] = useState(false);
   const [tooltipOpen, setTooltipOpen] = useState(false);
   const hasUpdateNotification = useUpdateStore(
     (state) => state.hasNotification,
   );
-
-  const visibleTabs: readonly GlobalSettingsSectionId[] = [
-    "appearance",
-    "ai-setup",
-    "generation",
-    "prompting",
-    "cloud-sync",
-    // App stores deliver updates on phones.
-    ...(isMobilePlatform ? [] : (["maintenance"] as const)),
-    "about",
-  ];
 
   // Close tooltip when dialog opens
   useEffect(() => {
@@ -93,11 +77,7 @@ export function SettingsButton({
         </TooltipContent>
       </Tooltip>
 
-      <SettingsModal
-        open={isOpen}
-        onOpenChange={setIsOpen}
-        visibleTabs={visibleTabs}
-      />
+      <SettingsModal open={isOpen} onOpenChange={setIsOpen} />
     </>
   );
 }

@@ -771,7 +771,7 @@ export default function SettingsCloudSync() {
         title={
           <span className="inline-flex items-center gap-2">
             <Cloud className="size-4" />
-            <Trans>Account & Sync</Trans>
+            <Trans>Your account</Trans>
           </span>
         }
       >

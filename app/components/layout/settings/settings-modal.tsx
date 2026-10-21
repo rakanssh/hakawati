@@ -13,6 +13,7 @@ import {
   type SettingsSectionDefinition,
 } from "@/components/layout/settings/settings-shell";
 import { useUpdateStore } from "@/store/useUpdateStore";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 import SettingsGame from "@/components/layout/settings/game";
 import SettingsApi from "@/components/layout/settings/api";
@@ -69,8 +70,8 @@ const globalSections = [
     id: "cloud-sync",
     label: <Trans>Account & Sync</Trans>,
     description: <Trans>Manage your account and cloud sync.</Trans>,
-    groupId: "app",
-    group: <Trans>App</Trans>,
+    groupId: "account",
+    group: <Trans>Account</Trans>,
     icon: Cloud,
     component: SettingsCloudSync,
   },
@@ -104,15 +105,22 @@ interface SettingsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultTab?: GlobalSettingsSectionId;
-  visibleTabs?: readonly GlobalSettingsSectionId[];
 }
+
+// App stores deliver updates on phones.
+const MOBILE_HIDDEN_SECTIONS: readonly GlobalSettingsSectionId[] = [
+  "maintenance",
+];
+const MOBILE_SECTIONS = globalSections
+  .map((section) => section.id)
+  .filter((id) => !MOBILE_HIDDEN_SECTIONS.includes(id));
 
 export function SettingsModal({
   open,
   onOpenChange,
   defaultTab = DEFAULT_GLOBAL_SECTION,
-  visibleTabs,
 }: SettingsModalProps) {
+  const { isMobilePlatform } = useIsMobile();
   const hasUpdateNotification = useUpdateStore(
     (state) => state.hasNotification,
   );
@@ -135,7 +143,7 @@ export function SettingsModal({
       onOpenChange={onOpenChange}
       sections={globalSections}
       defaultSection={defaultTab}
-      visibleSections={visibleTabs}
+      visibleSections={isMobilePlatform ? MOBILE_SECTIONS : undefined}
       title={<Trans>Settings</Trans>}
       description={
         <Trans>
