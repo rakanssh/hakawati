@@ -1,19 +1,15 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { MinusIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import {
   usePrefersReducedMotion,
   useThemeScenery,
 } from "@/hooks/useThemeScenery";
 import { THEME_SCENERY_OPTIONS, type ThemeScenery } from "@/themes/registry";
-import { FONT_SIZE_MAX, FONT_SIZE_MIN } from "@/lib/appearance-limits";
-import { FontSelector } from "./font-selector";
-import { SettingsField } from "./settings-layout";
 import { Segmented } from "./settings-rows";
 
-// Appearance controls shared by the Settings dialog and the story panel.
+// Appearance controls shared by Settings and the story panel.
 
 /** Animated, Still, or Off, with a note when the system asks for less motion. */
 export function SceneryOptions() {
@@ -51,15 +47,6 @@ export function SceneryOptions() {
   );
 }
 
-export function SceneryField() {
-  return (
-    <SettingsField label={<Trans>Scenery</Trans>}>
-      <SceneryOptions />
-    </SettingsField>
-  );
-}
-
-/** A percentage nudged up or down a step at a time. */
 export function SizeStepper({
   value,
   min,
@@ -107,52 +94,5 @@ export function SizeStepper({
         <PlusIcon className="size-4" />
       </Button>
     </div>
-  );
-}
-
-export function StoryTextSizeField() {
-  const { t } = useLingui();
-  const fontSize = useSettingsStore((state) => state.fontSize);
-  const setFontSize = useSettingsStore((state) => state.setFontSize);
-
-  return (
-    <SettingsField label={<Trans>Text size</Trans>}>
-      <SizeStepper
-        value={fontSize}
-        min={FONT_SIZE_MIN}
-        max={FONT_SIZE_MAX}
-        label={t`Text size`}
-        onChange={setFontSize}
-      />
-    </SettingsField>
-  );
-}
-
-export function FontFamilyField({ className }: { className?: string }) {
-  return (
-    <SettingsField label={<Trans>Font</Trans>} className={className}>
-      <FontSelector />
-    </SettingsField>
-  );
-}
-
-export function HighlightLatestField() {
-  const highlightLatestSection = useSettingsStore(
-    (state) => state.highlightLatestSection,
-  );
-  const setHighlightLatestSection = useSettingsStore(
-    (state) => state.setHighlightLatestSection,
-  );
-
-  return (
-    <label className="flex items-center gap-2 text-sm">
-      <Checkbox
-        checked={highlightLatestSection}
-        onCheckedChange={(checked) =>
-          setHighlightLatestSection(checked === true)
-        }
-      />
-      <Trans>Highlight the latest passage</Trans>
-    </label>
   );
 }

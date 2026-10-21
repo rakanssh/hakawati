@@ -21,7 +21,9 @@ import SettingsGame, {
 import SettingsAiSetup, {
   AiSetupTitle,
 } from "@/components/layout/settings/ai-setup";
-import SettingsModel from "@/components/layout/settings/model";
+import SettingsModel, {
+  GenerationTitle,
+} from "@/components/layout/settings/model";
 import SettingsAdvanced, {
   PromptingTitle,
 } from "@/components/layout/settings/advanced";
@@ -55,6 +57,7 @@ const globalSections = [
     icon: Bot,
     component: SettingsAiSetup,
     subpageTitle: AiSetupTitle,
+    wide: true,
   },
   {
     id: "generation",
@@ -66,6 +69,7 @@ const globalSections = [
     group: <Trans>AI</Trans>,
     icon: SlidersHorizontal,
     component: SettingsModel,
+    subpageTitle: GenerationTitle,
   },
   {
     id: "prompting",

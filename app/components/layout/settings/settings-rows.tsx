@@ -153,6 +153,22 @@ export function PlainRow({
   return <div className={cn(rowClass, className)}>{children}</div>;
 }
 
+/** A row with its label above a control that needs the full width. */
+export function BlockRow({
+  title,
+  children,
+}: {
+  title: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-2 border-b border-border/60 px-3.5 py-3 last:border-b-0">
+      <span className="text-sm font-semibold">{title}</span>
+      {children}
+    </div>
+  );
+}
+
 export function StatusBanner({
   tone,
   title,

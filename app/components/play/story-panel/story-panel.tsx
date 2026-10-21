@@ -25,7 +25,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { SettingsLayoutProvider } from "@/components/layout/settings/settings-layout";
 import SettingsTale from "@/components/layout/settings/tale";
 import SettingsStoryCards from "@/components/layout/settings/story-cards";
 import SettingsInventoryStats from "@/components/layout/settings/inventory-stats";
@@ -148,13 +147,11 @@ function StoryPanelContent({ onClose }: { onClose: () => void }) {
         ))}
       </TabsList>
       <ScrollArea className="min-h-0 flex-1">
-        <SettingsLayoutProvider variant="plain">
-          {tabs.map(({ id, render }) => (
-            <TabsContent key={id} value={id} className="px-4 pt-4 pb-6">
-              {render()}
-            </TabsContent>
-          ))}
-        </SettingsLayoutProvider>
+        {tabs.map(({ id, render }) => (
+          <TabsContent key={id} value={id} className="px-4 pt-4 pb-6">
+            {render()}
+          </TabsContent>
+        ))}
       </ScrollArea>
     </Tabs>
   );

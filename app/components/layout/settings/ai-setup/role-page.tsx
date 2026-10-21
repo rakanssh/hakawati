@@ -11,18 +11,12 @@ import {
 import { isPresetAllowedForRole } from "@/data/api-presets";
 import { cn } from "@/lib/utils";
 import { useLLMProviders } from "@/hooks/useLLMProviders";
-import {
-  getModelReasoning,
-  normalizeReasoningEffort,
-  reasoningProvider,
-} from "@/services/llm/reasoning";
-import type { ReasoningEffort } from "@/services/llm/schema";
 import { usesReasoning } from "@/store/model-connections";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { ApiPreset, type ModelRole } from "@/types";
 import { useSettingsNavigation } from "../settings-shell";
 import { ChatGptUsageLink } from "../chatgpt-connection";
-import { EffortLabel } from "../thinking-level";
+import { ThinkingLevel } from "../thinking-level";
 import { ModelPicker, useDescribeModel } from "./model-picker";
 import { pageKey } from "./pages";
 import { ProviderBadge, RoleIcon, useConnectionNames } from "./parts";
@@ -31,7 +25,6 @@ import {
   PlainRow,
   RadioRow,
   RowText,
-  Segmented,
   SetupList,
   SetupSection,
   ToggleSwitch,
@@ -176,56 +169,6 @@ function ModelSection({
   );
 }
 
-function ThinkingSection({ role }: { role: "narrator" | "utility" }) {
-  const { t } = useLingui();
-  const config = useSettingsStore((state) => state.modelRoles[role]);
-  const maxTokens = useSettingsStore((state) => state.maxTokens);
-  const setRoleReasoningEffort = useSettingsStore(
-    (state) => state.setRoleReasoningEffort,
-  );
-  const isChatGpt = config.activePreset === ApiPreset.CHATGPT;
-  const capabilities = getModelReasoning(
-    config.model,
-    reasoningProvider(config.baseUrl, isChatGpt),
-  );
-  const efforts = capabilities?.supportedEfforts ?? [];
-  if (efforts.length === 0) return null;
-  const effort = normalizeReasoningEffort(config.reasoningEffort, capabilities);
-  const hasLowOutputLimit =
-    role === "narrator" &&
-    !isChatGpt &&
-    effort !== undefined &&
-    effort !== "none" &&
-    maxTokens < 8192;
-
-  return (
-    <SetupSection title={<Trans>Thinking</Trans>}>
-      <Segmented<ReasoningEffort | "default">
-        label={t`Thinking`}
-        value={effort ?? "default"}
-        options={[
-          { value: "default", label: <Trans>Default</Trans> },
-          ...efforts.map((value) => ({
-            value,
-            label: <EffortLabel effort={value} />,
-          })),
-        ]}
-        onChange={(value) =>
-          setRoleReasoningEffort(role, value === "default" ? undefined : value)
-        }
-      />
-      {hasLowOutputLimit && (
-        <p className="px-0.5 text-sm leading-relaxed text-muted-foreground">
-          <Trans>
-            Thinking and the answer share your output limit. Increase Max Output
-            Tokens if responses are cut short.
-          </Trans>
-        </p>
-      )}
-    </SetupSection>
-  );
-}
-
 function NarrationSection() {
   const { t } = useLingui();
   const autoNarrate = useSettingsStore((state) => state.autoNarrate);
@@ -314,7 +257,7 @@ function RoleWithModels({
       <ConnectionChooser role={role} />
       <ModelSection role={role} providers={providers} />
       {usesReasoning(role) && (
-        <ThinkingSection role={role as "narrator" | "utility"} />
+        <ThinkingLevel role={role as "narrator" | "utility"} />
       )}
       {role === "textToSpeech" && <VoiceSection />}
       {role === "textToSpeech" && <NarrationSection />}

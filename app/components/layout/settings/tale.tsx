@@ -1,24 +1,15 @@
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useTaleStore } from "@/store/useTaleStore";
 import { countTokens } from "@/services/llm/tokenCounter";
 import { usePersistTale } from "@/hooks/useGameSaves";
 import { GameMode } from "@/types";
 import { PromptComponentsEditor } from "@/components/prompt-components/PromptComponentsEditor";
 import { TALE_COMPONENT_TYPES } from "@/lib/prompt-components";
-import { BookIcon, SwordIcon } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
-  SettingsField,
-  SettingsPanel,
-  SettingsStack,
-} from "@/components/layout/settings/settings-layout";
+  Segmented,
+  SetupSection,
+} from "@/components/layout/settings/settings-rows";
 
 export default function SettingsTale() {
   const { t } = useLingui();
@@ -38,27 +29,14 @@ export default function SettingsTale() {
   const descriptionChars = description.length;
   const descriptionTokens = countTokens(description);
 
-  const getGamemodeDescription = (mode: GameMode) => {
-    if (mode === GameMode.GM)
-      return t`AI runs the full game: it tells the story, manages inventory, and updates stats. Best with smarter models. Requires tool calling to be supported by the model.`;
-    return t`AI tells the story only: no inventory or stats are tracked, just narrative. Works with any model.`;
-  };
-
   const handleGameModeChange = (value: GameMode) => {
     setGameMode(value);
     save(id);
   };
 
-  function getGameModeOptions() {
-    return Object.values(GameMode).map((mode) => ({
-      label: mode === GameMode.GM ? t`Game Master` : t`Story Teller`,
-      value: mode,
-    }));
-  }
-
   return (
-    <SettingsStack>
-      <SettingsPanel title={<Trans>AI Components</Trans>}>
+    <div className="flex flex-col gap-6">
+      <SetupSection title={<Trans>AI components</Trans>}>
         <PromptComponentsEditor
           components={components}
           allowedTypes={TALE_COMPONENT_TYPES}
@@ -71,63 +49,52 @@ export default function SettingsTale() {
           onUpdate={updateComponent}
           onRemove={removeComponent}
         />
-      </SettingsPanel>
+      </SetupSection>
 
-      <SettingsPanel title={<Trans>Tale mode</Trans>}>
-        <SettingsField
-          label={<Trans>Game Mode</Trans>}
-          description={getGamemodeDescription(gameMode)}
-        >
-          <Select value={gameMode} onValueChange={handleGameModeChange}>
-            <SelectTrigger className="w-full @md:w-[240px]">
-              <SelectValue placeholder={t`Select a game mode`} />
-            </SelectTrigger>
-            <SelectContent>
-              {getGameModeOptions().map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  <div className="flex flex-row gap-2">
-                    {option.value === GameMode.GM && (
-                      <SwordIcon className="w-4 h-4" />
-                    )}
-                    {option.value === GameMode.STORY_TELLER && (
-                      <BookIcon className="w-4 h-4" />
-                    )}
-                    <span>{option.label}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </SettingsField>
-      </SettingsPanel>
-
-      <SettingsPanel title={<Trans>Description</Trans>}>
-        <SettingsField
-          label={
-            <div className="flex items-center justify-between gap-3">
-              <span>
-                <Trans>Library summary</Trans>
-              </span>
-              <span className="text-xs font-normal text-muted-foreground">
-                <Trans>
-                  {descriptionChars} characters • ~{descriptionTokens} tokens
-                </Trans>
-              </span>
-            </div>
-          }
-          description={
+      <SetupSection title={<Trans>Mode</Trans>}>
+        <Segmented<GameMode>
+          fill
+          label={t`Mode`}
+          value={gameMode}
+          options={[
+            {
+              value: GameMode.STORY_TELLER,
+              label: <Trans>Story Teller</Trans>,
+            },
+            { value: GameMode.GM, label: <Trans>Game Master</Trans> },
+          ]}
+          onChange={handleGameModeChange}
+        />
+        <p className="px-0.5 text-sm text-muted-foreground">
+          {gameMode === GameMode.GM ? (
             <Trans>
-              A short library-facing summary. It is not sent to the AI.
+              The AI also tracks inventory and stats. It needs a model that can
+              use tools.
             </Trans>
-          }
-        >
-          <Textarea
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            rows={6}
-          />
-        </SettingsField>
-      </SettingsPanel>
-    </SettingsStack>
+          ) : (
+            <Trans>The AI tells the story. Works with any model.</Trans>
+          )}
+        </p>
+      </SetupSection>
+
+      <SetupSection title={<Trans>Library summary</Trans>}>
+        <Textarea
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          rows={6}
+          aria-label={t`Library summary`}
+        />
+        <p className="flex flex-wrap justify-between gap-x-3 px-0.5 text-sm text-muted-foreground">
+          <span>
+            <Trans>Shown in your library, not sent to the AI.</Trans>
+          </span>
+          <span className="tabular-nums">
+            <Trans>
+              {descriptionChars} characters · ~{descriptionTokens} tokens
+            </Trans>
+          </span>
+        </p>
+      </SetupSection>
+    </div>
   );
 }

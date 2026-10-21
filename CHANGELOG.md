@@ -19,6 +19,7 @@ All notable changes to this project are documented in this file.
 - Redesigned Account & Sync: a switch for cloud sync, usage at a glance, and separate pages for cloud tales, devices, and tales waiting for a choice.
 - Redesigned Appearance and Prompting. Each prompt opens on its own page, sizes change with − and + buttons, and "Read new narration aloud" moved to the Text to Speech page in AI Setup.
 - Settings on desktop has a simpler sidebar, and Maintenance is now called Updates.
+- Generation, Updates, About, and the story panel's Story, AI, and Display tabs share the new settings layout, and settings no longer stretch across wide windows.
 
 ### Fixed
 

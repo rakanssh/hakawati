@@ -12,6 +12,9 @@ vi.mock("@lingui/core/macro", () => ({
 }));
 vi.mock("@lingui/react/macro", () => ({
   Trans: ({ children }: { children: ReactNode }) => children,
+  useLingui: () => ({
+    t: (parts: TemplateStringsArray) => parts.join(""),
+  }),
 }));
 
 const thinkingModel: LLMModel = {
@@ -28,7 +31,6 @@ describe("ThinkingLevel", () => {
     (
       globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
     ).IS_REACT_ACT_ENVIRONMENT = true;
-    HTMLElement.prototype.scrollIntoView = vi.fn();
     useSettingsStore.setState(useSettingsStore.getInitialState());
     const settings = useSettingsStore.getState();
     const id = settings.addConnection({
@@ -52,31 +54,27 @@ describe("ThinkingLevel", () => {
     await act(async () => root.render(createElement(ThinkingLevel, { role })));
   }
 
-  async function open(role = "narrator") {
-    const trigger = container.querySelector<HTMLButtonElement>(
-      `#${role}-thinking-level`,
-    )!;
-    await act(async () => {
-      trigger.focus();
-      trigger.dispatchEvent(
-        new KeyboardEvent("keydown", {
-          key: "Enter",
-          bubbles: true,
-          cancelable: true,
-        }),
-      );
-    });
+  function groups() {
+    return [...container.querySelectorAll<HTMLElement>('[role="radiogroup"]')];
   }
 
-  async function choose(label: string) {
-    const option = Array.from(
-      document.querySelectorAll<HTMLElement>('[role="option"]'),
-    ).find((item) => item.textContent === label);
+  function options(group: HTMLElement) {
+    return [...group.querySelectorAll<HTMLButtonElement>('[role="radio"]')];
+  }
+
+  function checked(group: HTMLElement) {
+    return options(group).find(
+      (option) => option.getAttribute("aria-checked") === "true",
+    )?.textContent;
+  }
+
+  async function choose(group: HTMLElement, label: string) {
+    const option = options(group).find((item) => item.textContent === label);
     expect(option).toBeDefined();
     await act(async () => option!.click());
   }
 
-  it("offers only published efforts and Model default, independently for both roles", async () => {
+  it("offers only published efforts and Default, independently for both roles", async () => {
     const settings = useSettingsStore.getState();
     settings.setRoleModel("narrator", thinkingModel);
     settings.setRoleModel("utility", thinkingModel);
@@ -92,31 +90,24 @@ describe("ThinkingLevel", () => {
       ),
     );
 
-    expect(
-      container.querySelector('label[for="narrator-thinking-level"]')
-        ?.textContent,
-    ).toBe("Thinking level");
-    expect(
-      container.querySelector("#narrator-thinking-level")?.textContent,
-    ).toBe("Model default");
-    expect(
-      container.querySelector("#utility-thinking-level")?.textContent,
-    ).toBe("Low");
-    await open();
-    expect(
-      Array.from(document.querySelectorAll('[role="option"]')).map(
-        (item) => item.textContent,
-      ),
-    ).toEqual(["Model default", "Low", "High"]);
-    await choose("High");
+    const [narrator, utility] = groups();
+    expect(options(narrator).map((option) => option.textContent)).toEqual([
+      "Default",
+      "Low",
+      "High",
+    ]);
+    expect(checked(narrator)).toBe("Default");
+    expect(checked(utility)).toBe("Low");
+
+    await choose(narrator, "High");
     expect(
       useSettingsStore.getState().modelRoles.narrator.reasoningEffort,
     ).toBe("high");
     expect(useSettingsStore.getState().modelRoles.utility.reasoningEffort).toBe(
       "low",
     );
-    await open();
-    await choose("Model default");
+
+    await choose(narrator, "Default");
     expect(
       useSettingsStore.getState().modelRoles.narrator.reasoningEffort,
     ).toBeUndefined();
@@ -125,32 +116,29 @@ describe("ThinkingLevel", () => {
     );
   });
 
-  it("shows disabled Model default for unknown generic model support", async () => {
+  it("hides the control when a generic provider's model support is unknown", async () => {
     useSettingsStore.getState().setRoleModel("narrator", {
       id: "gpt-5",
       name: "Unverified compatible model",
     });
     await render();
-    const trigger =
-      container.querySelector<HTMLButtonElement>('[role="combobox"]')!;
-    expect(trigger.disabled).toBe(true);
-    expect(trigger.textContent).toBe("Model default");
+    expect(groups()).toHaveLength(0);
   });
 
-  it("disables the selector for an unselected or explicitly unsupported model", async () => {
+  it("hides the control for an unselected or explicitly unsupported model", async () => {
     await render();
-    expect(
-      container.querySelector<HTMLButtonElement>('[role="combobox"]')?.disabled,
-    ).toBe(true);
+    expect(groups()).toHaveLength(0);
     await act(async () =>
       useSettingsStore.getState().setRoleModel("narrator", {
         ...thinkingModel,
         reasoning: { supportedEfforts: [] },
       }),
     );
-    expect(
-      container.querySelector<HTMLButtonElement>('[role="combobox"]')?.disabled,
-    ).toBe(true);
+    expect(groups()).toHaveLength(0);
+    await act(async () =>
+      useSettingsStore.getState().setRoleModel("narrator", thinkingModel),
+    );
+    expect(groups()).toHaveLength(1);
   });
 
   it("warns about a small API output budget while preserving the user's limit", async () => {
@@ -177,9 +165,7 @@ describe("ThinkingLevel", () => {
     settings.setRoleModel("narrator", thinkingModel);
     settings.setRoleReasoningEffort("narrator", "high");
     await render();
-    expect(
-      container.querySelector<HTMLButtonElement>('[role="combobox"]')?.disabled,
-    ).toBe(false);
-    expect(container.textContent).not.toContain("Max Output");
+    expect(checked(groups()[0])).toBe("High");
+    expect(container.textContent).not.toContain("output limit");
   });
 });

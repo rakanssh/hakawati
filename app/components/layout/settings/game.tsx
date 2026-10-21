@@ -19,6 +19,7 @@ import { ThemePreview } from "./theme-preview";
 import { SceneryOptions, SizeStepper } from "./appearance-fields";
 import { useSettingsNavigation } from "./settings-shell";
 import {
+  BlockRow,
   LinkRow,
   PlainRow,
   RadioRow,
@@ -28,9 +29,6 @@ import {
   SetupSection,
   ToggleSwitch,
 } from "./settings-rows";
-
-const blockRowClass =
-  "flex flex-col gap-2 border-b border-border/60 px-3.5 py-3 last:border-b-0";
 
 function ThemeSwatch({ preference }: { preference: ThemePreference }) {
   if (preference === "system") {
@@ -86,12 +84,9 @@ function Overview() {
             trailing={<ThemeSwatch preference={preference} />}
             onClick={() => navigation.push("theme")}
           />
-          <div className={blockRowClass}>
-            <span className="text-sm font-semibold">
-              <Trans>Scenery</Trans>
-            </span>
+          <BlockRow title={<Trans>Scenery</Trans>}>
             <SceneryOptions />
-          </div>
+          </BlockRow>
         </SetupList>
       </SetupSection>
 
@@ -134,10 +129,7 @@ function Overview() {
               label={t`Highlight the latest passage`}
             />
           </PlainRow>
-          <div className={blockRowClass}>
-            <span className="text-sm font-semibold">
-              <Trans>Show AI thinking</Trans>
-            </span>
+          <BlockRow title={<Trans>Show AI thinking</Trans>}>
             <Segmented<ThinkingVisibility>
               fill
               label={t`Show AI thinking`}
@@ -149,7 +141,7 @@ function Overview() {
               ]}
               onChange={setThinkingVisibility}
             />
-          </div>
+          </BlockRow>
         </SetupList>
       </SetupSection>
 
@@ -164,10 +156,7 @@ function Overview() {
             }
             onClick={() => navigation.push("language")}
           />
-          <div className={blockRowClass}>
-            <span className="text-sm font-semibold">
-              <Trans>Direction</Trans>
-            </span>
+          <BlockRow title={<Trans>Direction</Trans>}>
             <Segmented<TextDirection>
               fill
               label={t`Direction`}
@@ -179,7 +168,7 @@ function Overview() {
               ]}
               onChange={setTextDirection}
             />
-          </div>
+          </BlockRow>
         </SetupList>
       </SetupSection>
     </div>

@@ -1,11 +1,4 @@
-import { Trans } from "@lingui/react/macro";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
   getModelReasoning,
   normalizeReasoningEffort,
@@ -14,9 +7,7 @@ import {
 import type { ReasoningEffort } from "@/services/llm/schema";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { ApiPreset } from "@/types/api.type";
-import { SettingsField } from "./settings-layout";
-
-const MODEL_DEFAULT = "model-default";
+import { Segmented, SetupSection } from "./settings-rows";
 
 export function EffortLabel({ effort }: { effort: ReasoningEffort }) {
   switch (effort) {
@@ -37,20 +28,22 @@ export function EffortLabel({ effort }: { effort: ReasoningEffort }) {
   }
 }
 
+/** The thinking levels the role's model offers; hidden when it offers none. */
 export function ThinkingLevel({ role }: { role: "narrator" | "utility" }) {
+  const { t } = useLingui();
   const config = useSettingsStore((state) => state.modelRoles[role]);
+  const maxTokens = useSettingsStore((state) => state.maxTokens);
   const setRoleReasoningEffort = useSettingsStore(
     (state) => state.setRoleReasoningEffort,
   );
-  const maxTokens = useSettingsStore((state) => state.maxTokens);
   const isChatGpt = config.activePreset === ApiPreset.CHATGPT;
   const capabilities = getModelReasoning(
     config.model,
     reasoningProvider(config.baseUrl, isChatGpt),
   );
   const efforts = capabilities?.supportedEfforts ?? [];
+  if (efforts.length === 0) return null;
   const effort = normalizeReasoningEffort(config.reasoningEffort, capabilities);
-  const id = `${role}-thinking-level`;
   const hasLowOutputLimit =
     role === "narrator" &&
     !isChatGpt &&
@@ -59,39 +52,29 @@ export function ThinkingLevel({ role }: { role: "narrator" | "utility" }) {
     maxTokens < 8192;
 
   return (
-    <SettingsField label={<Trans>Thinking level</Trans>} htmlFor={id}>
-      <Select
-        value={effort ?? MODEL_DEFAULT}
-        disabled={efforts.length === 0}
-        onValueChange={(value) =>
-          setRoleReasoningEffort(
-            role,
-            value === MODEL_DEFAULT ? undefined : (value as ReasoningEffort),
-          )
+    <SetupSection title={<Trans>Thinking</Trans>}>
+      <Segmented<ReasoningEffort | "default">
+        label={t`Thinking`}
+        value={effort ?? "default"}
+        options={[
+          { value: "default", label: <Trans>Default</Trans> },
+          ...efforts.map((value) => ({
+            value,
+            label: <EffortLabel effort={value} />,
+          })),
+        ]}
+        onChange={(value) =>
+          setRoleReasoningEffort(role, value === "default" ? undefined : value)
         }
-      >
-        <SelectTrigger id={id} className="w-full">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={MODEL_DEFAULT}>
-            <Trans>Model default</Trans>
-          </SelectItem>
-          {efforts.map((value) => (
-            <SelectItem key={value} value={value}>
-              <EffortLabel effort={value} />
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      />
       {hasLowOutputLimit && (
-        <p className="text-sm leading-relaxed text-muted-foreground">
+        <p className="px-0.5 text-sm leading-relaxed text-muted-foreground">
           <Trans>
-            Thinking and the answer share your output limit. Increase Max Output
-            Tokens if responses are cut short.
+            Thinking and the answer share your output limit. Raise Max output
+            tokens in Generation if replies are cut short.
           </Trans>
         </p>
       )}
-    </SettingsField>
+    </SetupSection>
   );
 }

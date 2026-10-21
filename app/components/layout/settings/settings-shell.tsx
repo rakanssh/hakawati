@@ -37,6 +37,8 @@ export interface SettingsSectionDefinition<TId extends string = string> {
   component: ComponentType;
   /** Titles the section's subpages in the header, when it has any. */
   subpageTitle?: ComponentType<{ page: string }>;
+  /** Lets the section use more width on large screens, for side-by-side columns. */
+  wide?: boolean;
 }
 
 export interface SettingsNavigation {
@@ -374,7 +376,13 @@ export function SettingsShell<TId extends string>({
               className="min-h-0 flex-1"
               viewportRef={detailViewportRef}
             >
-              <div className="w-full px-4 py-4 sm:max-w-none sm:px-6 sm:py-6 lg:px-8 xl:px-10">
+              <div
+                className={cn(
+                  // Rows stay readable on wide screens instead of spreading across the pane.
+                  "w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 xl:px-10",
+                  activeDefinition?.wide ? "max-w-5xl" : "max-w-3xl",
+                )}
+              >
                 <SettingsNavigationContext.Provider value={navigation}>
                   {ActiveComponent && <ActiveComponent />}
                 </SettingsNavigationContext.Provider>
