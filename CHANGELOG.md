@@ -6,7 +6,7 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
-- Hakawati for Android, with dictation, sign-in, and cloud sync.
+- Hakawati for Android and iOS, with dictation, sign-in, and cloud sync.
 
 ### Changed
 

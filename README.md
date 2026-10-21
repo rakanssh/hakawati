@@ -3,13 +3,13 @@
 <p align="center">
   <a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3"></a>
   <a href="https://github.com/rakanssh/hakawati/releases/latest"><img src="https://img.shields.io/github/v/release/rakanssh/hakawati" alt="Release"></a>
-  <a href="https://github.com/rakanssh/hakawati/releases"><img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android-lightgrey" alt="Platform"></a>
+  <a href="https://github.com/rakanssh/hakawati/releases"><img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android%20%7C%20iOS-lightgrey" alt="Platform"></a>
 </p>
 
 ![Slipstream Contraband in Game Master mode, with inventory and stats beside the story](./.github/assets/hakawati.webp)
 
 Hakawati is a free and open-source AI text adventure for Windows, macOS, Linux,
-and Android. Play with your ChatGPT plan, your own API key, or a local model. Tales and
+Android, and iOS. Play with your ChatGPT plan, your own API key, or a local model. Tales and
 scenarios are stored on your device; an optional account adds cloud sync and
 scenario publishing.
 
@@ -206,6 +206,19 @@ environment variables. Without either, they are left unsigned.
 ```sh
 npm run tauri -- android build --apk
 ```
+
+### Run on iOS
+
+On a Mac, install Xcode and the iOS Rust targets as described in
+[Tauri's prerequisites](https://v2.tauri.app/start/prerequisites/), then run on a
+simulator or connected device:
+
+```sh
+npm run tauri -- ios dev "iPhone 17 Pro"
+```
+
+The app's own Swift code (dictation and the sign-in sheet) lives in
+`src-tauri/ios/Plugins` and is built by `src-tauri/build.rs`.
 
 ### Browser preview
 
