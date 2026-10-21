@@ -159,7 +159,7 @@ msgstr "شاشة طرفية خضراء بحروف متوهجة."
 msgid "A grey afternoon through a misted city window."
 msgstr "عصرٌ رمادي من خلف نافذة مدينة يكسوها البخار."
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:46
+#: app/components/layout/settings/ai-setup/add-connection.tsx:43
 msgid "A server on your network"
 msgstr "خادم على شبكتك"
 
@@ -363,12 +363,12 @@ msgstr "الحساب اختياري، ويتيح لك مزامنة حكايات�
 msgid "Animated"
 msgstr "متحرك"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:51
+#: app/components/layout/settings/ai-setup/add-connection.tsx:48
 #: app/data/api-presets.ts:86
 msgid "Another provider"
 msgstr "مزوّد آخر"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:52
+#: app/components/layout/settings/ai-setup/add-connection.tsx:49
 msgid "Any OpenAI-compatible address"
 msgstr "أي عنوان متوافق مع OpenAI"
 
@@ -1075,10 +1075,6 @@ msgstr "جاري تحميل التحديث... ({0})"
 #: app/components/layout/settings/appearance-fields.tsx:35
 msgid "Drawn around the story on the play screen. Still keeps it without movement; Off keeps only the colours and type."
 msgstr "تُرسم حول القصة في شاشة اللعب. «ثابت» يبقيها دون حركة، و«إيقاف» يبقي الألوان والخطوط فقط."
-
-#: app/components/layout/settings/ai-setup/add-connection.tsx:105
-msgid "Easiest"
-msgstr "الأسهل"
 
 #: app/components/storybook/StoryCard.tsx:110
 #: app/components/storybook/StoryCard.tsx:111
@@ -1874,10 +1870,6 @@ msgstr "النماذج"
 msgid "Models appear once you’re signed in"
 msgstr "تظهر النماذج بعد تسجيل الدخول"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:109
-msgid "More providers"
-msgstr "مزوّدون آخرون"
-
 #: app/pages/scenarios/home.tsx:536
 msgid "Most started"
 msgstr "الأكثر لعبًا"
@@ -1900,7 +1892,7 @@ msgstr "غموض"
 msgid "Name"
 msgstr "الاسم"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:41
+#: app/components/layout/settings/ai-setup/add-connection.tsx:38
 #: app/data/api-presets.ts:69
 msgid "NanoGPT"
 msgstr "NanoGPT"
@@ -2087,7 +2079,7 @@ msgstr "إيقاف"
 msgid "Off-white with a teal accent."
 msgstr "أبيض عاجي بلمسة زرقاء مخضرّة."
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:47
+#: app/components/layout/settings/ai-setup/add-connection.tsx:44
 msgid "Ollama, LM Studio, KoboldCpp…"
 msgstr "Ollama وLM Studio وKoboldCpp…"
 
@@ -2113,7 +2105,7 @@ msgstr "فتح الإعدادات"
 msgid "Open story panel"
 msgstr "فتح لوحة القصة"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:36
+#: app/components/layout/settings/ai-setup/add-connection.tsx:33
 #: app/data/api-presets.ts:52
 msgid "OpenAI"
 msgstr "OpenAI"
@@ -2166,7 +2158,7 @@ msgstr "الصفحة {page} من {0}"
 msgid "Pause narration"
 msgstr "إيقاف السرد مؤقتاً"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:42
+#: app/components/layout/settings/ai-setup/add-connection.tsx:39
 msgid "Pay per use, many open models"
 msgstr "الدفع حسب الاستخدام، ونماذج مفتوحة كثيرة"
 
@@ -3209,7 +3201,7 @@ msgstr "الكاتب يتصرف كمدير اللعبة، ويتتبع الخص�
 msgid "The cover image could not be read. Please choose it again."
 msgstr "تعذّرت قراءة صورة الغلاف. يرجى اختيارها مرة أخرى."
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:37
+#: app/components/layout/settings/ai-setup/add-connection.tsx:34
 msgid "The official API, with your OpenAI key"
 msgstr "الواجهة الرسمية، بمفتاح OpenAI الخاص بك"
 

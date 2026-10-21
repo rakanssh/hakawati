@@ -159,7 +159,7 @@ msgstr "A green-screen terminal with glowing type."
 msgid "A grey afternoon through a misted city window."
 msgstr "A grey afternoon through a misted city window."
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:46
+#: app/components/layout/settings/ai-setup/add-connection.tsx:43
 msgid "A server on your network"
 msgstr "A server on your network"
 
@@ -363,12 +363,12 @@ msgstr "An optional account lets you sync tales across devices and publish scena
 msgid "Animated"
 msgstr "Animated"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:51
+#: app/components/layout/settings/ai-setup/add-connection.tsx:48
 #: app/data/api-presets.ts:86
 msgid "Another provider"
 msgstr "Another provider"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:52
+#: app/components/layout/settings/ai-setup/add-connection.tsx:49
 msgid "Any OpenAI-compatible address"
 msgstr "Any OpenAI-compatible address"
 
@@ -1075,10 +1075,6 @@ msgstr "Downloading update... ({0})"
 #: app/components/layout/settings/appearance-fields.tsx:35
 msgid "Drawn around the story on the play screen. Still keeps it without movement; Off keeps only the colours and type."
 msgstr "Drawn around the story on the play screen. Still keeps it without movement; Off keeps only the colours and type."
-
-#: app/components/layout/settings/ai-setup/add-connection.tsx:105
-msgid "Easiest"
-msgstr "Easiest"
 
 #: app/components/storybook/StoryCard.tsx:110
 #: app/components/storybook/StoryCard.tsx:111
@@ -1874,10 +1870,6 @@ msgstr "Models"
 msgid "Models appear once you’re signed in"
 msgstr "Models appear once you’re signed in"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:109
-msgid "More providers"
-msgstr "More providers"
-
 #: app/pages/scenarios/home.tsx:536
 msgid "Most started"
 msgstr "Most started"
@@ -1900,7 +1892,7 @@ msgstr "Mystery"
 msgid "Name"
 msgstr "Name"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:41
+#: app/components/layout/settings/ai-setup/add-connection.tsx:38
 #: app/data/api-presets.ts:69
 msgid "NanoGPT"
 msgstr "NanoGPT"
@@ -2087,7 +2079,7 @@ msgstr "Off"
 msgid "Off-white with a teal accent."
 msgstr "Off-white with a teal accent."
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:47
+#: app/components/layout/settings/ai-setup/add-connection.tsx:44
 msgid "Ollama, LM Studio, KoboldCpp…"
 msgstr "Ollama, LM Studio, KoboldCpp…"
 
@@ -2113,7 +2105,7 @@ msgstr "Open Settings"
 msgid "Open story panel"
 msgstr "Open story panel"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:36
+#: app/components/layout/settings/ai-setup/add-connection.tsx:33
 #: app/data/api-presets.ts:52
 msgid "OpenAI"
 msgstr "OpenAI"
@@ -2166,7 +2158,7 @@ msgstr "Page {page} of {0}"
 msgid "Pause narration"
 msgstr "Pause narration"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:42
+#: app/components/layout/settings/ai-setup/add-connection.tsx:39
 msgid "Pay per use, many open models"
 msgstr "Pay per use, many open models"
 
@@ -3209,7 +3201,7 @@ msgstr "The AI acts as a Game Master, tracking stats and inventory"
 msgid "The cover image could not be read. Please choose it again."
 msgstr "The cover image could not be read. Please choose it again."
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:37
+#: app/components/layout/settings/ai-setup/add-connection.tsx:34
 msgid "The official API, with your OpenAI key"
 msgstr "The official API, with your OpenAI key"
 

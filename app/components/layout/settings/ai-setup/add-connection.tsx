@@ -5,7 +5,7 @@ import { useSettingsStore } from "@/store/useSettingsStore";
 import { ApiPreset, type ModelRole } from "@/types";
 import { useSettingsNavigation } from "../settings-shell";
 import { pageKey } from "./pages";
-import { LinkRow, ProviderBadge, SetupList, SetupSection } from "./parts";
+import { LinkRow, ProviderBadge, SetupList } from "./parts";
 
 interface ProviderOption {
   preset: ApiPreset;
@@ -13,7 +13,7 @@ interface ProviderOption {
   detail: ReactNode;
 }
 
-const EASIEST: ProviderOption[] = [
+const PROVIDERS: ProviderOption[] = [
   {
     preset: ApiPreset.CHATGPT,
     title: <Trans>ChatGPT plan</Trans>,
@@ -28,9 +28,6 @@ const EASIEST: ProviderOption[] = [
       <Trans>One key for hundreds of models, some free. Pay per use.</Trans>
     ),
   },
-];
-
-const MORE: ProviderOption[] = [
   {
     preset: ApiPreset.OPENAI,
     title: <Trans>OpenAI</Trans>,
@@ -85,10 +82,11 @@ export function AddConnection({ role }: { role?: ModelRole }) {
     navigation.push(pageKey({ kind: "new", preset, role }));
   }
 
-  const list = (options: ProviderOption[]) =>
-    options
-      .filter((option) => !role || isPresetAllowedForRole(option.preset, role))
-      .map((option) => (
+  return (
+    <SetupList>
+      {PROVIDERS.filter(
+        (option) => !role || isPresetAllowedForRole(option.preset, role),
+      ).map((option) => (
         <LinkRow
           key={option.preset}
           leading={<ProviderBadge preset={option.preset} />}
@@ -96,19 +94,7 @@ export function AddConnection({ role }: { role?: ModelRole }) {
           detail={option.detail}
           onClick={() => choose(option.preset)}
         />
-      ));
-  const easiest = list(EASIEST);
-
-  return (
-    <div className="flex flex-col gap-6">
-      {easiest.length > 0 && (
-        <SetupSection title={<Trans>Easiest</Trans>}>
-          <SetupList>{easiest}</SetupList>
-        </SetupSection>
-      )}
-      <SetupSection title={<Trans>More providers</Trans>}>
-        <SetupList>{list(MORE)}</SetupList>
-      </SetupSection>
-    </div>
+      ))}
+    </SetupList>
   );
 }
