@@ -115,7 +115,8 @@
   margin-bottom: 6px;
 }
 
-.theme-storybook [data-composer-tab] {
+.theme-storybook
+  :is([data-composer-tab], [data-composer-mic], [data-composer-roll]) {
   border-radius: 12px;
 }
 

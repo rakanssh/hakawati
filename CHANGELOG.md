@@ -20,6 +20,7 @@ All notable changes to this project are documented in this file.
 - Redesigned Appearance and Prompting. Each prompt opens on its own page, sizes change with − and + buttons, and "Read new narration aloud" moved to the Text to Speech page in AI Setup.
 - Settings on desktop has a simpler sidebar, and Maintenance is now called Updates.
 - Generation, Updates, About, and the story panel's Story, AI, and Display tabs share the new settings layout, and settings no longer stretch across wide windows.
+- The input box and its buttons use the same square corners as the rest of the app; themes with their own style, such as Storybook and Typewriter, keep their shapes.
 
 ### Fixed
 

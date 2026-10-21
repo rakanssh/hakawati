@@ -215,8 +215,8 @@
     0 3px 0 2px oklch(0.55 0.01 250);
 }
 
-.theme-typewriter [data-composer-mic] {
-  border-radius: calc(var(--radius) - 4px);
+.theme-typewriter :is([data-composer-mic], [data-composer-roll]) {
+  border-radius: 6px;
 }
 
 .theme-typewriter :is(.sidebar-chip, [data-sidebar-heading]) {

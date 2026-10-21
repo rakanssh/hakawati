@@ -285,7 +285,7 @@ export function PlayInputControls({
   const composerControlsLocked = speechRecorder.status !== "idle";
   const canStopGeneration = loading && !!onStop;
   const composerSurfaceClass = cn(
-    "flex min-w-0 overflow-hidden rounded-lg rounded-ss-none border border-border/75 bg-[var(--composer-background)] shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18",
+    "flex min-w-0 overflow-hidden rounded-xs rounded-ss-none border border-border/75 bg-[var(--composer-background)] shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18",
     // On phones the box is a single row, so the story keeps the screen.
     isMobilePlatform ? "p-1" : "min-h-[6.25rem] p-1.5 md:min-h-[6rem]",
   );
@@ -332,7 +332,7 @@ export function PlayInputControls({
               })
             }
             className={cn(
-              "flex shrink-0 items-center justify-center gap-1.5 rounded-t-lg border border-b-0 font-medium transition-colors",
+              "flex shrink-0 items-center justify-center gap-1.5 rounded-t-xs border border-b-0 font-medium transition-colors",
               active
                 ? cn(
                     "relative z-10 -mb-px border-border/75 bg-[var(--composer-background)] font-semibold",
@@ -385,9 +385,8 @@ export function PlayInputControls({
           disabled={loading}
           className={cn(
             "flex shrink-0 items-center justify-center gap-1.5 border text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50",
-            isMobilePlatform
-              ? "size-10 rounded-md"
-              : "mb-1 h-9 rounded-full px-3.5",
+            "rounded-xs",
+            isMobilePlatform ? "size-10" : "mb-1 h-9 px-3.5",
             action.isRolling
               ? "border-success/50 bg-success/12 text-success"
               : isMobilePlatform
@@ -426,7 +425,7 @@ export function PlayInputControls({
             size="icon"
             data-composer-mic=""
             className={cn(
-              "shrink-0 rounded-full border shadow-none",
+              "shrink-0 rounded-xs border shadow-none",
               "size-10",
               isRecording
                 ? "border-destructive/45 bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive"
@@ -534,7 +533,7 @@ export function PlayInputControls({
       size="icon"
       data-composer-send=""
       className={cn(
-        "shrink-0 rounded-full",
+        "shrink-0 rounded-xs",
         isMobilePlatform ? "size-11" : "size-12",
       )}
       aria-label={
