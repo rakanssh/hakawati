@@ -300,8 +300,12 @@ function worthKeeping(
   active: boolean,
 ) {
   if (preset === ApiPreset.CHATGPT) return active || Boolean(profile.model);
-  if (apiPresetMap[preset].editableUrl) return Boolean(profile.baseUrl?.trim());
-  return active || Boolean(profile.apiKey?.trim() || profile.model);
+  // A key or model is kept even when an address was never saved, so it isn't lost.
+  const saved = Boolean(profile.apiKey?.trim() || profile.model);
+  if (apiPresetMap[preset].editableUrl) {
+    return saved || Boolean(profile.baseUrl?.trim());
+  }
+  return active || saved;
 }
 
 /**
@@ -370,7 +374,9 @@ export function connectionsFromLegacyRoles(
       }
     }
     for (const profile of Object.values(legacy.retiredProfiles ?? {})) {
-      if (profile.baseUrl?.trim()) connect(ApiPreset.GENERIC, profile);
+      if (worthKeeping(ApiPreset.GENERIC, profile, false)) {
+        connect(ApiPreset.GENERIC, profile);
+      }
     }
     roleAssignments[role] = {
       connectionId,

@@ -193,7 +193,9 @@ export default function SettingsCloudSync() {
   const [disabledReason, setDisabledReason] = useState<string | null>(null);
   const [undecidedTales, setUndecidedTales] = useState<UndecidedTale[]>([]);
   const [editingProfile, setEditingProfile] = useState(false);
-  const { page, push: openPage, back: closePage } = useSettingsNavigation();
+  // Saving can finish after the player has moved to another page, so only the tales page closes itself.
+  const { page, push: openPage, leave } = useSettingsNavigation();
+  const leaveUndecided = () => leave("undecided");
   const [accountUsage, setAccountUsage] = useState<HostedAccountUsage | null>(
     null,
   );
@@ -596,7 +598,7 @@ export default function SettingsCloudSync() {
         setSyncEnabled(false);
         setDisabledReason("user_disabled");
         setUndecidedTales([]);
-        if (page === "undecided") closePage();
+        leaveUndecided();
         setStatus("");
         notifySyncChanged();
       });
@@ -677,7 +679,7 @@ export default function SettingsCloudSync() {
         policy,
       );
       const remaining = await refreshUndecidedTales();
-      if (remaining.length === 0) closePage();
+      if (remaining.length === 0) leaveUndecided();
       notifySyncChanged();
     });
   }
@@ -692,7 +694,7 @@ export default function SettingsCloudSync() {
         policy,
       );
       setUndecidedTales([]);
-      closePage();
+      leaveUndecided();
       notifySyncChanged();
     });
   }

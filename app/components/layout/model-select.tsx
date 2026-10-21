@@ -1,4 +1,4 @@
-import { useSettingsStore, useTaleStore } from "@/store";
+import { useSettingsStore } from "@/store";
 import { Input } from "../ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "../ui/drawer";
@@ -17,12 +17,11 @@ import { useCallback, useState } from "react";
 import { useLLMProviders } from "@/hooks/useLLMProviders";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { LLMModel } from "@/services/llm/schema";
-import { toast } from "sonner";
-import { ApiPreset, GameMode, ModelRole } from "@/types";
+import { ApiPreset, ModelRole } from "@/types";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { getModelMetaLabels } from "./model-select-meta";
-import { DEFAULT_TTS_VOICE } from "@/store/useSettingsStore";
+import { manualModel, useChooseModel } from "@/hooks/useChooseModel";
 import { ChatGptUsageLink } from "./settings/chatgpt-connection";
 
 interface ModelSelectProps {
@@ -34,14 +33,10 @@ export function ModelSelect({ role = "narrator" }: ModelSelectProps) {
   const activePreset = useSettingsStore(
     (state) => state.modelRoles[role].activePreset,
   );
-  const roleVoice = useSettingsStore((state) => state.modelRoles[role].voice);
-  const setRoleModel = useSettingsStore((state) => state.setRoleModel);
-  const setRoleVoice = useSettingsStore((state) => state.setRoleVoice);
   const [open, setOpen] = useState(false);
   const [manualModelId, setManualModelId] = useState("");
   const { models, loading, error, refresh, enabled } = useLLMProviders(role);
   const isChatGpt = activePreset === ApiPreset.CHATGPT;
-  const { gameMode } = useTaleStore();
   const { isCompactViewport, isMobilePlatform } = useIsMobile();
   const useDrawer = isCompactViewport || isMobilePlatform;
   const { t } = useLingui();
@@ -50,39 +45,22 @@ export function ModelSelect({ role = "narrator" }: ModelSelectProps) {
     role === "textToSpeech" &&
     (activePreset === ApiPreset.GENERIC || activePreset === ApiPreset.LOCAL);
 
+  const chooseModel = useChooseModel(role);
+
   const handleModelChange = useCallback(
     (model: LLMModel) => {
-      if (
-        role === "narrator" &&
-        !model.supportsToolCalls &&
-        gameMode === GameMode.GM
-      ) {
-        toast.warning(
-          t`Model cannot be confirmed to support tool calling. GM mode may not work properly.`,
-        );
-      }
-      setRoleModel(role, model);
-      if (role === "textToSpeech" && model.supportedVoices?.length) {
-        const currentVoice = roleVoice?.trim();
-        if (
-          !currentVoice ||
-          currentVoice === DEFAULT_TTS_VOICE ||
-          !model.supportedVoices.includes(currentVoice)
-        ) {
-          setRoleVoice(role, model.supportedVoices[0]);
-        }
-      }
+      chooseModel(model);
       setOpen(false);
     },
-    [gameMode, role, roleVoice, setRoleModel, setRoleVoice, t],
+    [chooseModel],
   );
 
   const handleManualModelSet = useCallback(() => {
     const id = manualModelId.trim();
     if (!id) return;
-    setRoleModel(role, { id, name: id });
+    chooseModel(manualModel(id));
     setManualModelId("");
-  }, [manualModelId, role, setRoleModel]);
+  }, [chooseModel, manualModelId]);
 
   function modelMeta(m: LLMModel): string[] {
     return getModelMetaLabels(m, role);

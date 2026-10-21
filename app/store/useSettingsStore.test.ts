@@ -282,6 +282,42 @@ describe("useSettingsStore migration", () => {
     );
   });
 
+  it("keeps a key saved for a custom provider whose address was never set", () => {
+    const migrated = migrateSettingsState({
+      modelRoles: {
+        narrator: {
+          activePreset: ApiPreset.OPENROUTER,
+          apiKey: "openrouter-key",
+          profiles: {
+            [ApiPreset.OPENROUTER]: {
+              baseUrl: OPENROUTER_URL,
+              apiKey: "openrouter-key",
+              model: undefined,
+            },
+            [ApiPreset.GENERIC]: {
+              baseUrl: "",
+              apiKey: "custom-key",
+              model: undefined,
+            },
+            [ApiPreset.LOCAL]: {
+              baseUrl: "",
+              apiKey: "",
+              model: undefined,
+            },
+          },
+        },
+      },
+    });
+    expect(
+      migrated.connections.map((c) => [c.preset, c.apiKey]).sort(),
+    ).toEqual(
+      [
+        [ApiPreset.GENERIC, "custom-key"],
+        [ApiPreset.OPENROUTER, "openrouter-key"],
+      ].sort(),
+    );
+  });
+
   it("keeps speech roles off ChatGPT and keeps the narration voice", () => {
     const migrated = migrateSettingsState({
       modelRoles: {

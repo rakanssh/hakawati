@@ -219,6 +219,38 @@ describe("useLLMProviders account and provider transitions", () => {
     }
   });
 
+  it("keeps a model typed in by id when the catalog doesn't list it", async () => {
+    selectProvider(ApiPreset.OPENAI);
+    useSettingsStore
+      .getState()
+      .setRoleModel("narrator", { ...model("my-finetune"), manual: true });
+    getRoleModels.mockResolvedValueOnce([model("listed")]);
+    const harness = renderProviders();
+    try {
+      await act(async () => {});
+      expect(useSettingsStore.getState().modelRoles.narrator.model?.id).toBe(
+        "my-finetune",
+      );
+    } finally {
+      harness.cleanup();
+    }
+  });
+
+  it("replaces a listed model the provider no longer offers", async () => {
+    selectProvider(ApiPreset.OPENAI);
+    useSettingsStore.getState().setRoleModel("narrator", model("retired"));
+    getRoleModels.mockResolvedValueOnce([model("listed")]);
+    const harness = renderProviders();
+    try {
+      await act(async () => {});
+      expect(useSettingsStore.getState().modelRoles.narrator.model?.id).toBe(
+        "listed",
+      );
+    } finally {
+      harness.cleanup();
+    }
+  });
+
   it("rechecks an API-key catalog after the key changes at the same URL", async () => {
     selectProvider(ApiPreset.OPENAI);
     const firstCatalog = pendingModels();

@@ -7,6 +7,10 @@ import { Cloud } from "lucide-react";
 import SettingsCloudSync, { CloudSyncTitle } from "./cloud-sync";
 import { SettingsShell } from "./settings-shell";
 import { deleteHostedRefreshToken } from "@/services/secret-store";
+import {
+  decideAllTaleSyncPreferences,
+  listUndecidedTales,
+} from "@/services/new-tale-sync";
 
 i18n.load("en", {});
 i18n.activate("en");
@@ -618,6 +622,48 @@ describe("SettingsCloudSync storage usage", () => {
     });
     expect(document.querySelector("#sync-display-name")).toBeNull();
 
+    view.cleanup();
+  });
+  it("stays on the page you moved to when saving tale choices finishes", async () => {
+    vi.mocked(listUndecidedTales).mockResolvedValue([
+      { id: "tale-1", name: "Lost Tale", description: "", updatedAt: 0 },
+    ]);
+    let finish!: () => void;
+    vi.mocked(decideAllTaleSyncPreferences).mockReturnValue(
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const view = render();
+    await flush();
+    const button = (start: string) =>
+      [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+        (element) => element.textContent?.startsWith(start),
+      )!;
+    const title = () =>
+      document.querySelector('[data-slot="dialog-title"]')?.textContent;
+
+    act(() => button("Tales waiting for a choice").click());
+    await flush();
+    expect(title()).toBe("Tales waiting for a choice");
+    act(() => button("Sync all").click());
+    act(() =>
+      document
+        .querySelector<HTMLButtonElement>('button[aria-label="Back"]')!
+        .click(),
+    );
+    act(() => button("Devices").click());
+    await flush();
+    expect(title()).toBe("Devices");
+
+    await act(async () => {
+      finish();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(title()).toBe("Devices");
+
+    vi.mocked(listUndecidedTales).mockResolvedValue([]);
     view.cleanup();
   });
 });

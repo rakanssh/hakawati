@@ -1,15 +1,14 @@
 import { useMemo, useState } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { CheckIcon, RefreshCwIcon, SearchIcon } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { useLLMProviders } from "@/hooks/useLLMProviders";
 import type { LLMModel } from "@/services/llm/schema";
-import { DEFAULT_TTS_VOICE, useSettingsStore } from "@/store/useSettingsStore";
-import { useTaleStore } from "@/store/useTaleStore";
-import { ApiPreset, GameMode, type ModelRole } from "@/types";
+import { manualModel, useChooseModel } from "@/hooks/useChooseModel";
+import { useSettingsStore } from "@/store/useSettingsStore";
+import { ApiPreset, type ModelRole } from "@/types";
 import { getModelMetaLabels } from "../../model-select-meta";
 import { PlainRow, SetupList, StatusBanner } from "../settings-rows";
 
@@ -84,9 +83,7 @@ export function ModelPicker({
   const { t } = useLingui();
   const { models, loading, error, refresh } = providers;
   const config = useSettingsStore((state) => state.modelRoles[role]);
-  const setRoleModel = useSettingsStore((state) => state.setRoleModel);
-  const setRoleVoice = useSettingsStore((state) => state.setRoleVoice);
-  const gameMode = useTaleStore((state) => state.gameMode);
+  const chooseModel = useChooseModel(role);
   const describe = useDescribeModel(role);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
@@ -122,32 +119,13 @@ export function ModelPicker({
   }, [filter, models, query]);
 
   function pick(model: LLMModel) {
-    if (
-      role === "narrator" &&
-      !model.supportsToolCalls &&
-      gameMode === GameMode.GM
-    ) {
-      toast.warning(
-        t`Model cannot be confirmed to support tool calling. GM mode may not work properly.`,
-      );
-    }
-    setRoleModel(role, model);
-    if (role === "textToSpeech" && model.supportedVoices?.length) {
-      const voice = config.voice?.trim();
-      if (
-        !voice ||
-        voice === DEFAULT_TTS_VOICE ||
-        !model.supportedVoices.includes(voice)
-      ) {
-        setRoleVoice(role, model.supportedVoices[0]);
-      }
-    }
+    chooseModel(model);
     onPicked();
   }
 
   function applyManualId() {
     const id = manualId?.trim();
-    if (id) pick({ id, name: id });
+    if (id) pick(manualModel(id));
   }
 
   return (

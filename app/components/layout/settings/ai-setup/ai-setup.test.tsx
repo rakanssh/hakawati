@@ -179,6 +179,30 @@ describe("AI Setup", () => {
     expect(text()).toContain("Story Model");
   });
 
+  it("doesn't save an empty key when Enter is pressed", async () => {
+    const settings = useSettingsStore.getState();
+    settings.addConnection({
+      preset: ApiPreset.OPENROUTER,
+      apiKey: "sk-or-v1-abcdefgh4f2a",
+    });
+    await render();
+    await click("Key saved");
+    await click("Replace");
+    const field = document.querySelector<HTMLInputElement>(
+      'input[type="password"]',
+    )!;
+    expect(field.value).toBe("");
+    await act(async () => {
+      field.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
+      );
+    });
+    expect(useSettingsStore.getState().connections[0].apiKey).toBe(
+      "sk-or-v1-abcdefgh4f2a",
+    );
+    expect(document.querySelector('input[type="password"]')).not.toBeNull();
+  });
+
   it("removes a connection and unassigns its roles", async () => {
     const settings = useSettingsStore.getState();
     const id = settings.addConnection({

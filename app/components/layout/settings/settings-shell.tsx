@@ -48,6 +48,8 @@ export interface SettingsNavigation {
   /** Swaps the open subpage for another, so going back skips it. */
   replace: (page: string) => void;
   back: () => void;
+  /** Closes the page only if it is still the open one, for work that finishes after the player may have moved on. */
+  leave: (page: string) => void;
   /** Returns to the section's own page. */
   reset: () => void;
 }
@@ -57,6 +59,7 @@ const SettingsNavigationContext = createContext<SettingsNavigation>({
   push: () => {},
   replace: () => {},
   back: () => {},
+  leave: () => {},
   reset: () => {},
 });
 
@@ -136,6 +139,10 @@ export function SettingsShell<TId extends string>({
       push: (page) => setSubpages((pages) => [...pages, page]),
       replace: (page) => setSubpages((pages) => [...pages.slice(0, -1), page]),
       back: () => setSubpages((pages) => pages.slice(0, -1)),
+      leave: (page) =>
+        setSubpages((pages) =>
+          pages[pages.length - 1] === page ? pages.slice(0, -1) : pages,
+        ),
       reset: () => setSubpages([]),
     }),
     [],

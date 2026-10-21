@@ -344,6 +344,8 @@ function KeySection({ connection }: { connection: ApiConnection }) {
   const optional = apiPresetMap[connection.preset].editableUrl;
 
   function save() {
+    // Every role on this connection would lose access to an empty required key.
+    if (!optional && !draft.trim()) return;
     updateConnection(connection.id, { apiKey: draft });
     setEditing(false);
   }
