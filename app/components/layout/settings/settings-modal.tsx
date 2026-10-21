@@ -23,7 +23,9 @@ import SettingsModel from "@/components/layout/settings/model";
 import SettingsAdvanced from "@/components/layout/settings/advanced";
 import SettingsUpdates from "@/components/layout/settings/updates";
 import SettingsAbout from "@/components/layout/settings/about";
-import SettingsCloudSync from "@/components/layout/settings/cloud-sync";
+import SettingsCloudSync, {
+  CloudSyncTitle,
+} from "@/components/layout/settings/cloud-sync";
 
 const globalSections = [
   {
@@ -77,6 +79,7 @@ const globalSections = [
     group: <Trans>Account</Trans>,
     icon: Cloud,
     component: SettingsCloudSync,
+    subpageTitle: CloudSyncTitle,
   },
   {
     id: "maintenance",

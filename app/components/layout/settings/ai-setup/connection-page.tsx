@@ -31,16 +31,14 @@ import { ChatGptConnection, ChatGptUsageLink } from "../chatgpt-connection";
 import { ProviderHelpModal } from "../provider-help-modal";
 import { useAssignNewConnection } from "./add-connection";
 import { pageKey } from "./pages";
+import { RoleName, keyTail, useConnectionNames } from "./parts";
 import {
   LinkRow,
   PlainRow,
-  RoleName,
   SetupList,
   SetupSection,
   StatusBanner,
-  keyTail,
-  useConnectionNames,
-} from "./parts";
+} from "../settings-rows";
 
 function isHttpUrl(value: string) {
   try {

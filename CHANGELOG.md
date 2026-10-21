@@ -7,6 +7,7 @@ All notable changes to this project are documented in this file.
 ### Added
 
 - Hakawati for Android and iOS, with dictation, sign-in, and cloud sync.
+- Change your account's display name in Account & Sync.
 
 ### Changed
 
@@ -15,6 +16,7 @@ All notable changes to this project are documented in this file.
 - Redesigned the input box: action modes are tabs along its top (Say is now Speak), dice rolls switch on beside them, and its buttons are labelled on desktop and larger on phones.
 - Redesigned AI Setup: save a provider once as a connection, then pick one for each role. Your saved providers and keys carry over.
 - Utility is now called Helper, and uses the Narrator's model unless you give it its own.
+- Redesigned Account & Sync: a switch for cloud sync, usage at a glance, and separate pages for cloud tales, devices, and tales waiting for a choice.
 
 ### Fixed
 

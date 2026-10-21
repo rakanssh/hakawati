@@ -25,16 +25,14 @@ import { ChatGptUsageLink } from "../chatgpt-connection";
 import { EffortLabel } from "../thinking-level";
 import { ModelPicker, useDescribeModel } from "./model-picker";
 import { pageKey } from "./pages";
+import { ProviderBadge, RoleIcon, useConnectionNames } from "./parts";
 import {
   LinkRow,
-  ProviderBadge,
   RadioRow,
-  RoleIcon,
   Segmented,
   SetupList,
   SetupSection,
-  useConnectionNames,
-} from "./parts";
+} from "../settings-rows";
 
 type Providers = ReturnType<typeof useLLMProviders>;
 

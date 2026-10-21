@@ -18,16 +18,18 @@ import { ConnectionPage, NewConnectionPage } from "./connection-page";
 import { pageKey, parsePage, type AiSetupPage } from "./pages";
 import { RoleScreen } from "./role-page";
 import {
-  LinkRow,
   ProviderBadge,
   RoleIcon,
   RoleName,
-  SetupList,
-  SetupSection,
-  StatusBanner,
   keyTail,
   useConnectionNames,
 } from "./parts";
+import {
+  LinkRow,
+  SetupList,
+  SetupSection,
+  StatusBanner,
+} from "../settings-rows";
 
 function RoleDescription({ role }: { role: ModelRole }) {
   switch (role) {

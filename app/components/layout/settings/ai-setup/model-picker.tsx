@@ -11,7 +11,7 @@ import { DEFAULT_TTS_VOICE, useSettingsStore } from "@/store/useSettingsStore";
 import { useTaleStore } from "@/store/useTaleStore";
 import { ApiPreset, GameMode, type ModelRole } from "@/types";
 import { getModelMetaLabels } from "../../model-select-meta";
-import { PlainRow, SetupList, StatusBanner } from "./parts";
+import { PlainRow, SetupList, StatusBanner } from "../settings-rows";
 
 type Providers = ReturnType<typeof useLLMProviders>;
 type Filter = "all" | "tools" | "free" | "long";

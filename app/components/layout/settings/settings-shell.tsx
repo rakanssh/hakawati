@@ -128,15 +128,19 @@ export function SettingsShell<TId extends string>({
   const prevOpenRef = useRef(open);
   const detailViewportRef = useRef<HTMLDivElement>(null);
   const subpage = subpages[subpages.length - 1] ?? null;
-  const navigation = useMemo<SettingsNavigation>(
+  // The actions keep their identity, so sections can depend on them in effects.
+  const navigationActions = useMemo<Omit<SettingsNavigation, "page">>(
     () => ({
-      page: subpage,
       push: (page) => setSubpages((pages) => [...pages, page]),
       replace: (page) => setSubpages((pages) => [...pages.slice(0, -1), page]),
       back: () => setSubpages((pages) => pages.slice(0, -1)),
       reset: () => setSubpages([]),
     }),
-    [subpage],
+    [],
+  );
+  const navigation = useMemo<SettingsNavigation>(
+    () => ({ page: subpage, ...navigationActions }),
+    [navigationActions, subpage],
   );
 
   useEffect(() => {

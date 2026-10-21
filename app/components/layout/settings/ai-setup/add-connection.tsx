@@ -5,7 +5,8 @@ import { useSettingsStore } from "@/store/useSettingsStore";
 import { ApiPreset, type ModelRole } from "@/types";
 import { useSettingsNavigation } from "../settings-shell";
 import { pageKey } from "./pages";
-import { LinkRow, ProviderBadge, SetupList } from "./parts";
+import { ProviderBadge } from "./parts";
+import { LinkRow, SetupList } from "../settings-rows";
 
 interface ProviderOption {
   preset: ApiPreset;

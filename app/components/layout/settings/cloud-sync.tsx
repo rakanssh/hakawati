@@ -1,24 +1,25 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentType,
+  type ReactNode,
+} from "react";
 import { getVersion } from "@tauri-apps/api/app";
 import {
-  AlertTriangle,
+  BookOpen,
   Cloud,
-  CloudOff,
-  HardDrive,
+  Database,
+  Inbox,
   LogOut,
-  MonitorSmartphone,
-  Power,
+  ShieldCheck,
+  Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Trans, useLingui } from "@lingui/react/macro";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,11 +32,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { useSettingsNavigation } from "@/components/layout/settings/settings-shell";
 import {
-  SettingsField,
-  SettingsPanel,
-  SettingsStack,
-} from "@/components/layout/settings/settings-layout";
+  LinkRow,
+  PlainRow,
+  RowText,
+  SetupList,
+  SetupSection,
+  StatusBanner,
+  ToggleSwitch,
+} from "@/components/layout/settings/settings-rows";
 import { getSyncUiKind } from "@/lib/sync-ui";
 import { HAKAWATI_CLIENT_VERSION } from "@/services/cloud-capabilities";
 import { defaultCloudBaseUrl, useSyncSettingsStore } from "@/store";
@@ -194,9 +200,8 @@ export default function SettingsCloudSync() {
   const [syncEnabled, setSyncEnabled] = useState(true);
   const [disabledReason, setDisabledReason] = useState<string | null>(null);
   const [undecidedTales, setUndecidedTales] = useState<UndecidedTale[]>([]);
-  const [resolverOpen, setResolverOpen] = useState(false);
-  const [storageOpen, setStorageOpen] = useState(false);
-  const [devicesOpen, setDevicesOpen] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const { page, push: openPage, back: closePage } = useSettingsNavigation();
   const [accountUsage, setAccountUsage] = useState<HostedAccountUsage | null>(
     null,
   );
@@ -268,8 +273,6 @@ export default function SettingsCloudSync() {
       ? profile.baseUrl.length > 0
       : canConnect && accountLabel.trim().length > 0);
 
-  const syncUiStatus =
-    syncUiKind === "reconnecting" ? t`Reconnecting...` : status;
   const hasAnySession = Boolean(accessToken || hasRefreshToken || accountLabel);
   const cloudConfigured = hostedProfile.baseUrl.length > 0;
   const showSyncControls = hasAnySession || activeSyncMode === "personal";
@@ -324,10 +327,16 @@ export default function SettingsCloudSync() {
       }
       const tales = await listUndecidedTales(profileId, profile.accountId);
       if (profileId === profile.id || options.open) setUndecidedTales(tales);
-      if (options.open && tales.length > 0) setResolverOpen(true);
+      if (options.open && tales.length > 0) openPage("undecided");
       return tales;
     },
-    [profile.accountId, profile.baseUrl.length, profile.id, syncEnabled],
+    [
+      openPage,
+      profile.accountId,
+      profile.baseUrl.length,
+      profile.id,
+      syncEnabled,
+    ],
   );
 
   useEffect(() => {
@@ -393,9 +402,8 @@ export default function SettingsCloudSync() {
   }, [accessToken, hostedProfile, showHostedDevices]);
 
   useEffect(() => {
-    if (!devicesOpen) return;
     void refreshHostedDevices();
-  }, [devicesOpen, refreshHostedDevices]);
+  }, [refreshHostedDevices]);
 
   async function signInForToken() {
     signInControllerRef.current?.abort();
@@ -494,6 +502,7 @@ export default function SettingsCloudSync() {
       });
       setStatus(t`Profile completed`);
       toast.success(t`Profile completed`);
+      setEditingProfile(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : t`Sync failed`;
       setStatus(message);
@@ -595,7 +604,7 @@ export default function SettingsCloudSync() {
         setSyncEnabled(false);
         setDisabledReason("user_disabled");
         setUndecidedTales([]);
-        setResolverOpen(false);
+        if (page === "undecided") closePage();
         setStatus("");
         notifySyncChanged();
       });
@@ -675,7 +684,8 @@ export default function SettingsCloudSync() {
         taleId,
         policy,
       );
-      await refreshUndecidedTales();
+      const remaining = await refreshUndecidedTales();
+      if (remaining.length === 0) closePage();
       notifySyncChanged();
     });
   }
@@ -690,7 +700,7 @@ export default function SettingsCloudSync() {
         policy,
       );
       setUndecidedTales([]);
-      setResolverOpen(false);
+      closePage();
       notifySyncChanged();
     });
   }
@@ -765,267 +775,299 @@ export default function SettingsCloudSync() {
     }
   }
 
-  return (
-    <SettingsStack>
-      <SettingsPanel
-        title={
-          <span className="inline-flex items-center gap-2">
-            <Cloud className="size-4" />
-            <Trans>Your account</Trans>
-          </span>
-        }
-      >
-        <p className="text-sm leading-relaxed text-muted-foreground">
-          <Trans>
-            An optional account lets you sync tales across devices and publish
-            scenarios.
-          </Trans>
-        </p>
-        <div className="flex flex-col gap-3 border-t border-border/70 pt-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
-          <div className="flex min-w-0 items-center gap-3">
-            <Avatar className="size-10 border border-border/70">
-              <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
-                {syncUiKind === "reconnecting" ? (
-                  <Cloud className="size-4 animate-pulse" />
-                ) : accountLabel ? (
-                  avatarInitial(accountLabel)
-                ) : (
-                  <Cloud className="size-4" />
-                )}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-                <div className="truncate font-semibold">
-                  {accountLabel ? (
-                    accountLabel
-                  ) : syncUiKind === "personal" ? (
-                    <Trans>Personal Sync</Trans>
-                  ) : syncUiKind === "profile-incomplete" ? (
-                    <Trans>Complete profile</Trans>
-                  ) : syncUiKind === "reconnecting" ? (
-                    <Trans>Reconnecting...</Trans>
-                  ) : (
-                    <Trans>Not signed in</Trans>
-                  )}
-                </div>
-              </div>
-              <div className="mt-1 grid gap-0.5 text-sm">
-                <div
-                  className={
-                    syncUiKind === "device-limit" || !cloudConfigured
-                      ? "flex min-w-0 items-center gap-2 text-destructive"
-                      : "flex min-w-0 items-center gap-2 text-muted-foreground"
-                  }
-                >
-                  <Cloud className="size-3.5 shrink-0" />
-                  <span className="truncate">
-                    {syncUiKind === "signed-in" ? (
-                      <Trans>Cloud sync on</Trans>
-                    ) : syncUiKind === "reconnecting" ? (
-                      <Trans>Reconnecting</Trans>
-                    ) : syncUiKind === "sync-off" ? (
-                      <Trans>Sync off</Trans>
-                    ) : syncUiKind === "device-limit" ? (
-                      <Trans>Device limit reached</Trans>
-                    ) : syncUiKind === "personal" ? (
-                      <Trans>Personal</Trans>
-                    ) : syncUiKind === "profile-incomplete" ? (
-                      <Trans>Profile incomplete</Trans>
-                    ) : (
-                      <Trans>Local profile</Trans>
-                    )}
-                  </span>
-                </div>
-                {!cloudConfigured ? (
-                  <div className="flex min-w-0 items-center gap-2 text-destructive">
-                    <AlertTriangle className="size-3.5 shrink-0" />
-                    <span className="truncate">
-                      <Trans>Cloud service is not configured</Trans>
-                    </span>
-                  </div>
-                ) : null}
-                {syncUiStatus ? (
-                  <div className="truncate text-muted-foreground">
-                    {syncUiStatus}
-                  </div>
-                ) : null}
-                {showHostedUsage && accountUsage ? (
-                  <div className="flex min-w-0 items-center gap-2 text-muted-foreground">
-                    <HardDrive className="size-3.5 shrink-0" />
-                    <div className="grid min-w-0 gap-0.5">
-                      <span className="truncate">
-                        {accountUsage.tales.used}/{accountUsage.tales.limit}{" "}
-                        <Trans>tales</Trans>
-                      </span>
-                      <span className="truncate">
-                        {formatMegabytes(accountUsage.storage.usedBytes)} /{" "}
-                        {formatMegabytes(accountUsage.storage.limitBytes)}{" "}
-                        <Trans>storage</Trans>
-                      </span>
-                    </div>
-                  </div>
-                ) : null}
-                {showHostedUsage && usageError ? (
-                  <div className="truncate text-muted-foreground">
-                    <Trans>Storage usage is unavailable.</Trans>
-                  </div>
-                ) : null}
-              </div>
-            </div>
+  const syncState: { text: string; className?: string } =
+    syncUiKind === "signed-in"
+      ? { text: t`On for this device`, className: "text-success" }
+      : syncUiKind === "reconnecting"
+        ? { text: t`Reconnecting…` }
+        : syncUiKind === "device-limit"
+          ? { text: t`Device limit reached`, className: "text-destructive" }
+          : syncUiKind === "sign-in-required"
+            ? { text: t`Sign in again to sync`, className: "text-destructive" }
+            : syncUiKind === "profile-incomplete"
+              ? { text: t`Profile incomplete` }
+              : syncUiKind === "personal"
+                ? { text: t`Personal` }
+                : { text: t`Off for this device` };
+  const statusLine = status ? (
+    <p className="px-0.5 text-sm text-muted-foreground">{status}</p>
+  ) : null;
+
+  let content: ReactNode;
+  if (page === "undecided") {
+    content = (
+      <UndecidedTales
+        tales={undecidedTales}
+        busy={busy !== null}
+        onDecide={(taleId, policy) => void decideOne(taleId, policy)}
+        onDecideAll={(policy) => void decideAll(policy)}
+      />
+    );
+  } else if (page === "storage") {
+    content = (
+      <CloudTales
+        usage={accountUsage}
+        items={storageItems}
+        loading={taleLibrary.remoteLoading}
+        unavailable={Boolean(taleLibrary.remoteError)}
+        removing={removingCloudTale !== null}
+        onRemove={(item) => void removeCloudStorageItem(item)}
+      />
+    );
+  } else if (page === "devices") {
+    content = (
+      <Devices
+        devices={hostedDevices}
+        loading={devicesLoading}
+        unavailable={Boolean(devicesError)}
+        currentId={hostedProfile.deviceId}
+        currentRegistered={currentDeviceRegistered}
+        unregistering={unregisteringDevice !== null}
+        onUnregister={(device) => void unregisterDevice(device)}
+      />
+    );
+  } else if (page === "service") {
+    content = (
+      <div className="flex flex-col gap-6">
+        <SetupSection title={<Trans>Cloud URL</Trans>}>
+          <div className="flex flex-wrap gap-2">
+            <Input
+              className="h-11 min-w-0 flex-1 basis-48"
+              value={cloudBaseUrl}
+              onChange={(event) => changeHostedCloudUrl(event.target.value)}
+              placeholder={t`https://sync.example.com`}
+              aria-label={t`Cloud URL`}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11"
+              disabled={busy !== null || cloudBaseUrl === defaultCloudUrl}
+              onClick={() => changeHostedCloudUrl(defaultCloudUrl)}
+            >
+              <Trans>Reset to Default</Trans>
+            </Button>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2 2xl:justify-end">
-            {needsBrowserLogin ? (
+        </SetupSection>
+        <SetupSection title={<Trans>Device name</Trans>}>
+          <Input
+            className="h-11"
+            value={deviceName}
+            onChange={(event) => setDeviceName(event.target.value)}
+            aria-label={t`Device name`}
+          />
+        </SetupSection>
+        <SetupSection title={<Trans>Platform</Trans>}>
+          <Input
+            className="h-11"
+            value={devicePlatform}
+            onChange={(event) => setDevicePlatform(event.target.value)}
+            aria-label={t`Platform`}
+          />
+        </SetupSection>
+        {PERSONAL_SYNC_ENABLED ? (
+          <SetupSection title={<Trans>Personal sync server</Trans>}>
+            <div className="flex flex-wrap gap-2">
+              <Input
+                className="h-11 min-w-0 flex-1 basis-48"
+                value={personalBaseUrl}
+                onChange={(event) => setPersonalBaseUrl(event.target.value)}
+                placeholder={t`http://192.168.1.20:8787`}
+                aria-label={t`Personal Sync URL`}
+              />
               <Button
-                variant="default"
+                variant="outline"
+                className="h-11"
+                onClick={connectPersonal}
+                disabled={!personalProfile.baseUrl || busy !== null}
+              >
+                <Trans>Connect Personal Sync</Trans>
+              </Button>
+            </div>
+          </SetupSection>
+        ) : null}
+        {statusLine}
+      </div>
+    );
+  } else if (syncUiKind === "local") {
+    content = (
+      <SignedOut
+        canSignIn={canConnect && busy === null}
+        cloudConfigured={cloudConfigured}
+        onSignIn={connect}
+        status={statusLine}
+      />
+    );
+  } else {
+    content = (
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center gap-3.5 px-0.5">
+          <Avatar className="size-14 border border-primary/45">
+            <AvatarFallback className="bg-primary/15 text-lg font-bold text-primary">
+              {syncUiKind === "reconnecting" ? (
+                <Cloud className="size-5 animate-pulse" />
+              ) : accountLabel ? (
+                avatarInitial(accountLabel)
+              ) : (
+                <Cloud className="size-5" />
+              )}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="truncate text-base font-semibold">
+              {accountLabel ||
+                (syncUiKind === "personal" ? (
+                  <Trans>Personal Sync</Trans>
+                ) : (
+                  <Trans>Your account</Trans>
+                ))}
+            </span>
+            {accountDisplayName && accountEmail ? (
+              <span className="truncate text-sm text-muted-foreground">
+                {accountEmail}
+              </span>
+            ) : null}
+          </div>
+          {hasUsableToken && accountDisplayName ? (
+            <Button
+              variant="outline"
+              disabled={busy !== null}
+              onClick={() => {
+                setProfileDisplayName(accountDisplayName);
+                setEditingProfile(true);
+              }}
+            >
+              <Trans>Edit</Trans>
+            </Button>
+          ) : null}
+        </div>
+
+        {needsBrowserLogin ? (
+          <StatusBanner
+            tone="destructive"
+            title={<Trans>Sign in again to keep syncing</Trans>}
+            action={
+              <Button
+                size="sm"
                 onClick={connect}
                 disabled={!canConnect || busy !== null}
               >
-                <Cloud className="size-4" />
-                <Trans>Log in / Sign up</Trans>
+                <Trans>Sign in</Trans>
               </Button>
+            }
+          />
+        ) : null}
+        {!cloudConfigured ? (
+          <StatusBanner
+            tone="destructive"
+            title={<Trans>Cloud service is not configured</Trans>}
+          />
+        ) : null}
+
+        {showSyncControls ? (
+          <SetupList>
+            <PlainRow>
+              <RowText
+                title={<Trans>Cloud sync</Trans>}
+                detail={syncState.text}
+                detailClassName={syncState.className}
+              />
+              <ToggleSwitch
+                checked={syncEnabled}
+                onCheckedChange={() => void toggleSync()}
+                disabled={!canToggleActiveProfile}
+                label={t`Cloud sync`}
+              />
+            </PlainRow>
+            {showHostedUsage && accountUsage ? (
+              <div className="flex flex-col gap-3 px-3.5 py-3.5">
+                <UsageBars usage={accountUsage} />
+              </div>
             ) : null}
-            {showSyncControls ? (
-              <>
-                {hasAnySession ? (
-                  <Button variant="outline" onClick={signOut}>
-                    <LogOut className="size-4" />
-                    <Trans>Sign out</Trans>
-                  </Button>
-                ) : null}
-                <Button
-                  variant={syncEnabled ? "outline" : "secondary"}
-                  onClick={toggleSync}
-                  disabled={!canToggleActiveProfile}
-                >
-                  <Power className="size-4" />
-                  {syncEnabled ? (
-                    <Trans>Disable sync</Trans>
-                  ) : (
-                    <Trans>Enable sync</Trans>
-                  )}
-                </Button>
-              </>
+            {showHostedUsage && usageError ? (
+              <PlainRow className="text-sm text-muted-foreground">
+                <Trans>Storage usage is unavailable.</Trans>
+              </PlainRow>
             ) : null}
+          </SetupList>
+        ) : null}
+
+        {canReviewUndecidedTales || showHostedUsage || showHostedDevices ? (
+          <SetupList>
             {canReviewUndecidedTales ? (
-              <Button
-                variant="secondary"
-                onClick={() => setResolverOpen(true)}
+              <LinkRow
+                leading={<RowIcon icon={Inbox} />}
+                title={<Trans>Tales waiting for a choice</Trans>}
+                trailing={
+                  <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-xs bg-primary px-1.5 text-[0.8rem] font-bold text-primary-foreground">
+                    {undecidedTales.length}
+                  </span>
+                }
                 disabled={busy !== null}
-              >
-                <Trans>Review undecided tales</Trans>
-              </Button>
+                onClick={() => openPage("undecided")}
+              />
             ) : null}
             {showHostedUsage ? (
-              <Button
-                variant="secondary"
-                onClick={() => setStorageOpen(true)}
-                disabled={busy !== null}
-              >
-                <HardDrive className="size-4" />
-                <Trans>Manage storage</Trans>
-              </Button>
+              <LinkRow
+                leading={<RowIcon icon={Database} />}
+                title={<Trans>Tales in the cloud</Trans>}
+                trailing={
+                  <RowValue>
+                    {accountUsage?.tales.used ?? storageItems.length}
+                  </RowValue>
+                }
+                onClick={() => openPage("storage")}
+              />
             ) : null}
             {showHostedDevices ? (
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setDevicesLoading(true);
-                  setDevicesOpen(true);
-                }}
-                disabled={busy !== null}
-              >
-                <MonitorSmartphone className="size-4" />
-                <Trans>Manage devices</Trans>
-              </Button>
+              <LinkRow
+                leading={<RowIcon icon={Smartphone} />}
+                title={<Trans>Devices</Trans>}
+                trailing={
+                  devicesLoading && hostedDevices.length === 0 ? null : (
+                    <RowValue>
+                      <UsageCount
+                        used={hostedDevices.length}
+                        limit={HOSTED_DEVICE_LIMIT}
+                      />
+                    </RowValue>
+                  )
+                }
+                onClick={() => openPage("devices")}
+              />
             ) : null}
-          </div>
-        </div>
-      </SettingsPanel>
+          </SetupList>
+        ) : null}
 
-      <SettingsPanel title={<Trans>Advanced</Trans>}>
-        <Accordion type="single" collapsible>
-          <AccordionItem value="cloud">
-            <AccordionTrigger>
-              <Trans>Cloud service</Trans>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <SettingsField label={<Trans>Cloud URL</Trans>}>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Input
-                      className="min-w-0 flex-1 basis-48"
-                      value={cloudBaseUrl}
-                      onChange={(event) =>
-                        changeHostedCloudUrl(event.target.value)
-                      }
-                      placeholder={t`https://sync.example.com`}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={
-                        busy !== null || cloudBaseUrl === defaultCloudUrl
-                      }
-                      onClick={() => changeHostedCloudUrl(defaultCloudUrl)}
-                    >
-                      <Trans>Reset to Default</Trans>
-                    </Button>
-                  </div>
-                </SettingsField>
-                <SettingsField label={<Trans>Device Name</Trans>}>
-                  <Input
-                    value={deviceName}
-                    onChange={(event) => setDeviceName(event.target.value)}
-                  />
-                </SettingsField>
-                <SettingsField label={<Trans>Platform</Trans>}>
-                  <Input
-                    value={devicePlatform}
-                    onChange={(event) => setDevicePlatform(event.target.value)}
-                  />
-                </SettingsField>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-          {PERSONAL_SYNC_ENABLED ? (
-            <AccordionItem value="personal">
-              <AccordionTrigger>
-                <Trans>Personal sync server</Trans>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <SettingsField label={<Trans>Personal Sync URL</Trans>}>
-                    <Input
-                      value={personalBaseUrl}
-                      onChange={(event) =>
-                        setPersonalBaseUrl(event.target.value)
-                      }
-                      placeholder={t`http://192.168.1.20:8787`}
-                    />
-                  </SettingsField>
-                </div>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={connectPersonal}
-                    disabled={!personalProfile.baseUrl || busy !== null}
-                  >
-                    <Cloud className="size-4" />
-                    <Trans>Connect Personal Sync</Trans>
-                  </Button>
-                  {activeSyncMode === "personal" ? (
-                    <Badge variant="outline">
-                      <Trans>Personal active</Trans>
-                    </Badge>
-                  ) : null}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ) : null}
-        </Accordion>
-      </SettingsPanel>
+        {hasAnySession ? (
+          <button
+            type="button"
+            onClick={signOut}
+            className="flex min-h-13 items-center gap-3.5 rounded-xs border border-border/70 bg-background/60 px-3.5 text-start text-sm font-medium text-destructive transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none"
+          >
+            <span className="flex size-9 shrink-0 items-center justify-center">
+              <LogOut aria-hidden="true" className="size-5" />
+            </span>
+            <Trans>Sign out</Trans>
+          </button>
+        ) : null}
+        {statusLine}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      {content}
+      {page === null ? (
+        <button
+          type="button"
+          onClick={() => openPage("service")}
+          className="self-center px-2 py-1 text-[0.8rem] text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
+        >
+          <Trans>Cloud service settings</Trans>
+        </button>
+      ) : null}
 
       <Dialog
         open={Boolean(signInController)}
@@ -1053,287 +1095,20 @@ export default function SettingsCloudSync() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={resolverOpen} onOpenChange={setResolverOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              <Trans>Review undecided tales</Trans>
-            </DialogTitle>
-            <DialogDescription>
-              <Trans>
-                Choose which local tales should sync now and which should stay
-                private.
-              </Trans>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="max-h-[50vh] overflow-y-auto pe-1">
-            <div className="grid gap-2">
-              {undecidedTales.map((tale) => (
-                <div
-                  key={tale.id}
-                  className="grid gap-2 border border-border/70 p-2 sm:grid-cols-[1fr_auto] sm:items-center"
-                >
-                  <div className="min-w-0">
-                    <div className="truncate font-medium">{tale.name}</div>
-                    <div className="truncate text-sm text-muted-foreground">
-                      {tale.description || t`No description yet.`}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(tale.updatedAt).toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="flex gap-2 sm:justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => void decideOne(tale.id, "private")}
-                      disabled={busy !== null}
-                    >
-                      <Trans>Private</Trans>
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => void decideOne(tale.id, "sync")}
-                      disabled={busy !== null}
-                    >
-                      <Trans>Sync</Trans>
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              {undecidedTales.length === 0 ? (
-                <div className="border border-dashed border-border/80 p-3 text-center text-sm text-muted-foreground">
-                  <Trans>No undecided tales.</Trans>
-                </div>
-              ) : null}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => setResolverOpen(false)}
-              disabled={busy !== null}
-            >
-              <Trans>Later</Trans>
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => void decideAll("private")}
-              disabled={busy !== null || undecidedTales.length === 0}
-            >
-              <Trans>Keep all private</Trans>
-            </Button>
-            <Button
-              onClick={() => void decideAll("sync")}
-              disabled={busy !== null || undecidedTales.length === 0}
-            >
-              <Trans>Sync all</Trans>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={storageOpen} onOpenChange={setStorageOpen}>
-        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              <Trans>Manage storage</Trans>
-            </DialogTitle>
-            <DialogDescription>
-              <Trans>
-                Free up space by removing cloud copies (tales will stay on this
-                device).
-              </Trans>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-3">
-            {accountUsage ? (
-              <div className="grid gap-3 border border-border/70 p-3 text-sm">
-                <div className="grid gap-1.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-muted-foreground">
-                      <Trans>Tales</Trans>
-                    </span>
-                    <span className="shrink-0 tabular-nums">
-                      {accountUsage.tales.used}/{accountUsage.tales.limit}
-                    </span>
-                  </div>
-                  <Progress
-                    aria-label={t`Tale usage`}
-                    value={usagePercent(
-                      accountUsage.tales.used,
-                      accountUsage.tales.limit,
-                    )}
-                  />
-                </div>
-                <div className="grid gap-1.5">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-muted-foreground">
-                      <Trans>Storage</Trans>
-                    </span>
-                    <span className="shrink-0 tabular-nums">
-                      {formatMegabytes(accountUsage.storage.usedBytes)} /{" "}
-                      {formatMegabytes(accountUsage.storage.limitBytes)}
-                    </span>
-                  </div>
-                  <Progress
-                    aria-label={t`Storage usage`}
-                    value={usagePercent(
-                      accountUsage.storage.usedBytes,
-                      accountUsage.storage.limitBytes,
-                    )}
-                  />
-                </div>
-              </div>
-            ) : null}
-            {taleLibrary.remoteLoading ? (
-              <div className="text-sm text-muted-foreground">
-                <Trans>Loading...</Trans>
-              </div>
-            ) : null}
-            {taleLibrary.remoteError ? (
-              <div className="text-sm text-muted-foreground">
-                <Trans>Cloud tales are unavailable.</Trans>
-              </div>
-            ) : null}
-            <div className="max-h-[50vh] overflow-y-auto pe-1">
-              <div className="grid gap-2">
-                {storageItems.map((storageItem) => (
-                  <div
-                    key={storageItem.key}
-                    className="grid gap-2 border border-border/70 p-2 sm:grid-cols-[1fr_auto] sm:items-center"
-                  >
-                    <div className="min-w-0">
-                      <div className="truncate font-medium">
-                        {storageItem.name}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatBytes(storageItem.storageBytes)} -{" "}
-                        {formatExactDateTime(storageItem.updatedAt)}
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => void removeCloudStorageItem(storageItem)}
-                      disabled={removingCloudTale !== null}
-                    >
-                      <CloudOff className="size-4" />
-                      <Trans>Remove from cloud</Trans>
-                    </Button>
-                  </div>
-                ))}
-                {!taleLibrary.remoteLoading && storageItems.length === 0 ? (
-                  <div className="border border-dashed border-border/80 p-3 text-center text-sm text-muted-foreground">
-                    <Trans>No cloud tales.</Trans>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={devicesOpen} onOpenChange={setDevicesOpen}>
-        <DialogContent className="w-[calc(100vw-2rem)] sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              <Trans>Manage devices</Trans>
-            </DialogTitle>
-            <DialogDescription>
-              <Trans>Unregister old devices to free a sync slot.</Trans>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-3">
-            <div className="grid gap-1.5 border border-border/70 p-3 text-sm">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">
-                  <Trans>Devices</Trans>
-                </span>
-                <span className="shrink-0 tabular-nums">
-                  {hostedDevices.length}/{HOSTED_DEVICE_LIMIT}
-                </span>
-              </div>
-              <Progress
-                aria-label={t`Device usage`}
-                value={usagePercent(hostedDevices.length, HOSTED_DEVICE_LIMIT)}
-              />
-              {!devicesLoading && !currentDeviceRegistered ? (
-                <div className="text-xs text-muted-foreground">
-                  <Trans>This device is not registered.</Trans>
-                </div>
-              ) : null}
-            </div>
-            {devicesLoading ? (
-              <div className="text-sm text-muted-foreground">
-                <Trans>Loading...</Trans>
-              </div>
-            ) : null}
-            {devicesError ? (
-              <div className="text-sm text-muted-foreground">
-                <Trans>Devices are unavailable.</Trans>
-              </div>
-            ) : null}
-            <div className="max-h-[50vh] overflow-y-auto pe-1">
-              <div className="grid gap-2">
-                {hostedDevices.map((device) => {
-                  const isCurrent = device.id === hostedProfile.deviceId;
-                  return (
-                    <div
-                      key={device.id}
-                      className="grid gap-2 border border-border/70 p-2 sm:grid-cols-[1fr_auto] sm:items-center"
-                    >
-                      <div className="min-w-0">
-                        <div className="flex min-w-0 flex-wrap items-center gap-2">
-                          <div className="truncate font-medium">
-                            {device.name}
-                          </div>
-                          {isCurrent ? (
-                            <Badge variant="outline">
-                              <Trans>Current</Trans>
-                            </Badge>
-                          ) : null}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {device.platform} - {device.appVersion}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          <Trans>Last seen</Trans>{" "}
-                          {formatExactDateTime(device.lastSeenAt)}
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => void unregisterDevice(device)}
-                        disabled={isCurrent || unregisteringDevice !== null}
-                      >
-                        <MonitorSmartphone className="size-4" />
-                        {isCurrent ? (
-                          <Trans>Current device</Trans>
-                        ) : (
-                          <Trans>Unregister</Trans>
-                        )}
-                      </Button>
-                    </div>
-                  );
-                })}
-                {!devicesLoading && hostedDevices.length === 0 ? (
-                  <div className="border border-dashed border-border/80 p-3 text-center text-sm text-muted-foreground">
-                    <Trans>No registered devices.</Trans>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={needsProfileCompletion}>
+      <Dialog
+        open={needsProfileCompletion || editingProfile}
+        onOpenChange={(open) => {
+          if (!open) setEditingProfile(false);
+        }}
+      >
         <DialogContent showCloseButton={false}>
           <DialogHeader>
             <DialogTitle>
-              <Trans>Complete your profile</Trans>
+              {needsProfileCompletion ? (
+                <Trans>Complete your profile</Trans>
+              ) : (
+                <Trans>Edit profile</Trans>
+              )}
             </DialogTitle>
             <DialogDescription>
               <Trans>
@@ -1349,19 +1124,434 @@ export default function SettingsCloudSync() {
               id="sync-display-name"
               value={profileDisplayName}
               onChange={(event) => setProfileDisplayName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") void completeProfile();
+              }}
               autoFocus
             />
           </div>
           <DialogFooter>
+            {needsProfileCompletion ? null : (
+              <Button
+                variant="outline"
+                onClick={() => setEditingProfile(false)}
+                disabled={profileBusy}
+              >
+                <Trans>Cancel</Trans>
+              </Button>
+            )}
             <Button
               onClick={completeProfile}
               disabled={profileBusy || profileDisplayName.trim().length === 0}
             >
-              <Trans>Continue</Trans>
+              {needsProfileCompletion ? (
+                <Trans>Continue</Trans>
+              ) : (
+                <Trans>Save</Trans>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </SettingsStack>
+    </div>
+  );
+}
+
+/** Heads Account & Sync's subpages in the settings header. */
+export function CloudSyncTitle({ page }: { page: string }) {
+  switch (page) {
+    case "undecided":
+      return <Trans>Tales waiting for a choice</Trans>;
+    case "storage":
+      return <Trans>Tales in the cloud</Trans>;
+    case "devices":
+      return <Trans>Devices</Trans>;
+    case "service":
+      return <Trans>Cloud service</Trans>;
+    default:
+      return <Trans>Account & Sync</Trans>;
+  }
+}
+
+function RowIcon({
+  icon: Icon,
+}: {
+  icon: ComponentType<{ className?: string }>;
+}) {
+  return (
+    <span className="flex size-9 shrink-0 items-center justify-center text-primary">
+      <Icon aria-hidden="true" className="size-5" />
+    </span>
+  );
+}
+
+function RowValue({ children }: { children: ReactNode }) {
+  return (
+    <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
+      {children}
+    </span>
+  );
+}
+
+function Benefit({
+  icon: Icon,
+  title,
+  detail,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  title: ReactNode;
+  detail?: ReactNode;
+}) {
+  return (
+    <li className="flex items-center gap-3.5">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-xs bg-card text-primary">
+        <Icon aria-hidden="true" className="size-4.5" />
+      </span>
+      <span className="flex flex-col gap-0.5">
+        <span className="text-sm font-semibold">{title}</span>
+        {detail ? (
+          <span className="text-sm text-muted-foreground">{detail}</span>
+        ) : null}
+      </span>
+    </li>
+  );
+}
+
+function SignedOut({
+  canSignIn,
+  cloudConfigured,
+  onSignIn,
+  status,
+}: {
+  canSignIn: boolean;
+  cloudConfigured: boolean;
+  onSignIn: () => void;
+  status: ReactNode;
+}) {
+  return (
+    <div className="mx-auto flex w-full max-w-md flex-col gap-7 py-2 sm:py-6">
+      <div className="flex flex-col items-center gap-3.5 text-center">
+        <div className="flex size-18 items-center justify-center rounded-xs border border-primary/40 bg-primary/15 text-primary">
+          <Cloud aria-hidden="true" className="size-8" />
+        </div>
+        <h3 className="text-xl font-semibold leading-tight">
+          <Trans>Take your tales anywhere</Trans>
+        </h3>
+      </div>
+      <ul className="flex flex-col gap-4">
+        <Benefit
+          icon={Smartphone}
+          title={<Trans>Sync on every device</Trans>}
+        />
+        <Benefit
+          icon={BookOpen}
+          title={<Trans>Publish your scenarios</Trans>}
+        />
+        <Benefit
+          icon={ShieldCheck}
+          title={<Trans>You choose what syncs</Trans>}
+          detail={<Trans>Keep any tale private to this device.</Trans>}
+        />
+      </ul>
+      {!cloudConfigured ? (
+        <StatusBanner
+          tone="destructive"
+          title={<Trans>Cloud service is not configured</Trans>}
+        />
+      ) : null}
+      <Button
+        className="h-12 text-base"
+        onClick={onSignIn}
+        disabled={!canSignIn}
+      >
+        <Trans>Sign in or create an account</Trans>
+      </Button>
+      {status}
+    </div>
+  );
+}
+
+function UsageCount({
+  used,
+  limit,
+}: {
+  used: number | string;
+  limit: number | string;
+}) {
+  const { t } = useLingui();
+  return <>{t`${used} of ${limit}`}</>;
+}
+
+function UsageBar({
+  label,
+  used,
+  limit,
+  percent,
+  ariaLabel,
+}: {
+  label: ReactNode;
+  used: number | string;
+  limit: number | string;
+  percent: number;
+  ariaLabel: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center justify-between gap-3 text-sm">
+        <span>{label}</span>
+        <span className="shrink-0 tabular-nums text-muted-foreground">
+          <UsageCount used={used} limit={limit} />
+        </span>
+      </div>
+      <Progress aria-label={ariaLabel} value={percent} />
+    </div>
+  );
+}
+
+function UsageBars({ usage }: { usage: HostedAccountUsage }) {
+  const { t } = useLingui();
+  const talesUsed = usage.tales.used;
+  const talesLimit = usage.tales.limit;
+  const storageUsed = formatMegabytes(usage.storage.usedBytes);
+  const storageLimit = formatMegabytes(usage.storage.limitBytes);
+  return (
+    <>
+      <UsageBar
+        label={<Trans>Tales</Trans>}
+        used={talesUsed}
+        limit={talesLimit}
+        percent={usagePercent(talesUsed, talesLimit)}
+        ariaLabel={t`Tale usage`}
+      />
+      <UsageBar
+        label={<Trans>Storage</Trans>}
+        used={storageUsed}
+        limit={storageLimit}
+        percent={usagePercent(
+          usage.storage.usedBytes,
+          usage.storage.limitBytes,
+        )}
+        ariaLabel={t`Storage usage`}
+      />
+    </>
+  );
+}
+
+const itemRowClass =
+  "flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border/60 px-3.5 py-2.5 last:border-b-0";
+
+function UndecidedTales({
+  tales,
+  busy,
+  onDecide,
+  onDecideAll,
+}: {
+  tales: UndecidedTale[];
+  busy: boolean;
+  onDecide: (taleId: string, policy: "sync" | "private") => void;
+  onDecideAll: (policy: "sync" | "private") => void;
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <SetupList>
+        {tales.map((tale) => (
+          <div key={tale.id} className={itemRowClass}>
+            <RowText
+              title={tale.name}
+              detail={tale.description || formatExactDateTime(tale.updatedAt)}
+            />
+            <div className="flex shrink-0 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onDecide(tale.id, "private")}
+                disabled={busy}
+              >
+                <Trans>Private</Trans>
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => onDecide(tale.id, "sync")}
+                disabled={busy}
+              >
+                <Trans>Sync</Trans>
+              </Button>
+            </div>
+          </div>
+        ))}
+        {tales.length === 0 ? (
+          <PlainRow className="text-sm text-muted-foreground">
+            <Trans>No tales waiting.</Trans>
+          </PlainRow>
+        ) : null}
+      </SetupList>
+      {tales.length > 0 ? (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            onClick={() => onDecideAll("private")}
+            disabled={busy}
+          >
+            <Trans>Keep all private</Trans>
+          </Button>
+          <Button onClick={() => onDecideAll("sync")} disabled={busy}>
+            <Trans>Sync all</Trans>
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function CloudTales({
+  usage,
+  items,
+  loading,
+  unavailable,
+  removing,
+  onRemove,
+}: {
+  usage: HostedAccountUsage | null;
+  items: CloudStorageItem[];
+  loading: boolean;
+  unavailable: boolean;
+  removing: boolean;
+  onRemove: (item: CloudStorageItem) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-6">
+      {usage ? (
+        <div className="flex flex-col gap-3 rounded-xs border border-border/70 bg-background/60 p-3.5">
+          <UsageBars usage={usage} />
+        </div>
+      ) : null}
+      <div className="flex flex-col gap-2">
+        <SetupList>
+          {items.map((item) => (
+            <div key={item.key} className={itemRowClass}>
+              <RowText
+                title={item.name}
+                detail={`${formatBytes(item.storageBytes)} · ${formatExactDateTime(item.updatedAt)}`}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onRemove(item)}
+                disabled={removing}
+              >
+                <Trans>Remove from cloud</Trans>
+              </Button>
+            </div>
+          ))}
+          {loading ? (
+            <PlainRow className="text-sm text-muted-foreground">
+              <Trans>Loading...</Trans>
+            </PlainRow>
+          ) : items.length === 0 ? (
+            <PlainRow className="text-sm text-muted-foreground">
+              <Trans>No cloud tales.</Trans>
+            </PlainRow>
+          ) : null}
+        </SetupList>
+        {unavailable ? (
+          <p className="px-0.5 text-sm text-muted-foreground">
+            <Trans>Cloud tales are unavailable.</Trans>
+          </p>
+        ) : null}
+        <p className="px-0.5 text-sm text-muted-foreground">
+          <Trans>
+            Tales on this device stay here when you remove their cloud copy.
+          </Trans>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function Devices({
+  devices,
+  loading,
+  unavailable,
+  currentId,
+  currentRegistered,
+  unregistering,
+  onUnregister,
+}: {
+  devices: SyncDevice[];
+  loading: boolean;
+  unavailable: boolean;
+  currentId: string | null | undefined;
+  currentRegistered: boolean;
+  unregistering: boolean;
+  onUnregister: (device: SyncDevice) => void;
+}) {
+  const { t } = useLingui();
+  const count = devices.length;
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2 rounded-xs border border-border/70 bg-background/60 p-3.5">
+        <UsageBar
+          label={<Trans>Devices</Trans>}
+          used={count}
+          limit={HOSTED_DEVICE_LIMIT}
+          percent={usagePercent(count, HOSTED_DEVICE_LIMIT)}
+          ariaLabel={t`Device usage`}
+        />
+        {!loading && !currentRegistered ? (
+          <p className="text-sm text-muted-foreground">
+            <Trans>This device is not registered.</Trans>
+          </p>
+        ) : null}
+      </div>
+      <div className="flex flex-col gap-2">
+        <SetupList>
+          {devices.map((device) => {
+            const isCurrent = device.id === currentId;
+            const lastSeen = formatExactDateTime(device.lastSeenAt);
+            return (
+              <div key={device.id} className={itemRowClass}>
+                <RowText
+                  title={
+                    <>
+                      {device.name}
+                      {isCurrent ? (
+                        <span className="ms-2 text-[0.75rem] font-normal text-primary">
+                          <Trans>This device</Trans>
+                        </span>
+                      ) : null}
+                    </>
+                  }
+                  detail={`${device.platform} · ${device.appVersion} · ${t`Last seen ${lastSeen}`}`}
+                />
+                {isCurrent ? null : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onUnregister(device)}
+                    disabled={unregistering}
+                  >
+                    <Trans>Unregister</Trans>
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+          {loading ? (
+            <PlainRow className="text-sm text-muted-foreground">
+              <Trans>Loading...</Trans>
+            </PlainRow>
+          ) : devices.length === 0 ? (
+            <PlainRow className="text-sm text-muted-foreground">
+              <Trans>No registered devices.</Trans>
+            </PlainRow>
+          ) : null}
+        </SetupList>
+        {unavailable ? (
+          <p className="px-0.5 text-sm text-muted-foreground">
+            <Trans>Devices are unavailable.</Trans>
+          </p>
+        ) : null}
+      </div>
+    </div>
   );
 }
