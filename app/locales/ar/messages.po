@@ -130,7 +130,7 @@ msgstr "حكاية {title}"
 msgid "{used} of {limit}"
 msgstr "{used} من {limit}"
 
-#: app/components/layout/settings/about.tsx:127
+#: app/components/layout/settings/about.tsx:124
 msgid "© 2025 Rakan AlShammari"
 msgstr "© 2025 راكان الشّمّري"
 
@@ -672,7 +672,7 @@ msgstr "تغيّر رابط الخدمة السحابية. سجّل الدخول
 msgid "Comedic"
 msgstr "كوميدي"
 
-#: app/components/layout/settings/about.tsx:102
+#: app/components/layout/settings/about.tsx:99
 #: app/components/scenario/PublishScenarioDialog.tsx:334
 msgid "Community Guidelines"
 msgstr "إرشادات المجتمع"
@@ -1334,7 +1334,7 @@ msgstr "الحصول على مفتاح API"
 msgid "Get the base URL from your API provider (usually ends with /v1)"
 msgstr "احصل على العنوان الأساسي من مزود الخدمة (عادةً ما ينتهي بـ /v1)"
 
-#: app/components/layout/settings/about.tsx:112
+#: app/components/layout/settings/about.tsx:109
 msgid "GNU General Public License v3"
 msgstr "رخصة جنو العمومية العامة، الإصدار 3"
 
@@ -1461,7 +1461,7 @@ msgstr "استيراد"
 msgid "In review"
 msgstr "قيد المراجعة"
 
-#: app/components/layout/settings/about.tsx:119
+#: app/components/layout/settings/about.tsx:116
 msgid "In the LICENSES folder that comes with the app"
 msgstr "في مجلد LICENSES المرفق بالتطبيق"
 
@@ -1612,7 +1612,7 @@ msgstr "الطول"
 msgid "Library summary"
 msgstr "ملخص المكتبة"
 
-#: app/components/layout/settings/about.tsx:108
+#: app/components/layout/settings/about.tsx:105
 msgid "License"
 msgstr "الرخصة"
 
@@ -2190,7 +2190,7 @@ msgstr "المنصة"
 msgid "Play narration"
 msgstr "تشغيل السرد"
 
-#: app/components/layout/settings/about.tsx:88
+#: app/components/layout/settings/about.tsx:85
 msgid "Policies"
 msgstr "السياسات"
 
@@ -2208,7 +2208,7 @@ msgstr "عقوبة التواجد"
 msgid "Prev"
 msgstr "السابق"
 
-#: app/components/layout/settings/about.tsx:97
+#: app/components/layout/settings/about.tsx:94
 msgid "Privacy Policy"
 msgstr "سياسة الخصوصية"
 
@@ -2322,10 +2322,6 @@ msgstr "السؤال {questionNumber} من {totalQuestions}"
 #: app/components/scenario/ScenarioStartWizard.tsx:159
 msgid "Question progress"
 msgstr "التقدّم في الأسئلة"
-
-#: app/components/layout/settings/about.tsx:84
-msgid "Questions, problems, or account and privacy requests."
-msgstr "للاستفسارات والمشكلات والطلبات المتعلقة بالحساب والخصوصية."
 
 #: app/components/quickstart/quickstart-wizard.tsx:625
 #: app/pages/home/home.tsx:578
@@ -3134,7 +3130,7 @@ msgstr "أخبر المشرفين بما فيه من مخالفة."
 msgid "Temperature"
 msgstr "درجة الحرارة"
 
-#: app/components/layout/settings/about.tsx:92
+#: app/components/layout/settings/about.tsx:89
 #: app/components/scenario/PublishScenarioDialog.tsx:332
 msgid "Terms of Service"
 msgstr "شروط الخدمة"
@@ -3232,7 +3228,7 @@ msgstr "يتشارك التفكير والإجابة هذا الحد"
 msgid "Thinking and the answer share your output limit. Raise Max output tokens in Generation if replies are cut short."
 msgstr "يتشارك التفكير والإجابة حد الإخراج. ارفع الحد الأقصى لرموز الإخراج في التوليد إن انقطعت الردود."
 
-#: app/components/layout/settings/about.tsx:117
+#: app/components/layout/settings/about.tsx:114
 msgid "Third-party licenses"
 msgstr "تراخيص الأطراف الثالثة"
 

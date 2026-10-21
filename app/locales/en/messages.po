@@ -130,7 +130,7 @@ msgstr "{title} tale"
 msgid "{used} of {limit}"
 msgstr "{used} of {limit}"
 
-#: app/components/layout/settings/about.tsx:127
+#: app/components/layout/settings/about.tsx:124
 msgid "© 2025 Rakan AlShammari"
 msgstr "© 2025 Rakan AlShammari"
 
@@ -672,7 +672,7 @@ msgstr "Cloud URL changed. Sign in again to continue."
 msgid "Comedic"
 msgstr "Comedic"
 
-#: app/components/layout/settings/about.tsx:102
+#: app/components/layout/settings/about.tsx:99
 #: app/components/scenario/PublishScenarioDialog.tsx:334
 msgid "Community Guidelines"
 msgstr "Community Guidelines"
@@ -1334,7 +1334,7 @@ msgstr "Get API Key"
 msgid "Get the base URL from your API provider (usually ends with /v1)"
 msgstr "Get the base URL from your API provider (usually ends with /v1)"
 
-#: app/components/layout/settings/about.tsx:112
+#: app/components/layout/settings/about.tsx:109
 msgid "GNU General Public License v3"
 msgstr "GNU General Public License v3"
 
@@ -1461,7 +1461,7 @@ msgstr "Import"
 msgid "In review"
 msgstr "In review"
 
-#: app/components/layout/settings/about.tsx:119
+#: app/components/layout/settings/about.tsx:116
 msgid "In the LICENSES folder that comes with the app"
 msgstr "In the LICENSES folder that comes with the app"
 
@@ -1612,7 +1612,7 @@ msgstr "Length"
 msgid "Library summary"
 msgstr "Library summary"
 
-#: app/components/layout/settings/about.tsx:108
+#: app/components/layout/settings/about.tsx:105
 msgid "License"
 msgstr "License"
 
@@ -2190,7 +2190,7 @@ msgstr "Platform"
 msgid "Play narration"
 msgstr "Play narration"
 
-#: app/components/layout/settings/about.tsx:88
+#: app/components/layout/settings/about.tsx:85
 msgid "Policies"
 msgstr "Policies"
 
@@ -2208,7 +2208,7 @@ msgstr "Presence penalty"
 msgid "Prev"
 msgstr "Prev"
 
-#: app/components/layout/settings/about.tsx:97
+#: app/components/layout/settings/about.tsx:94
 msgid "Privacy Policy"
 msgstr "Privacy Policy"
 
@@ -2322,10 +2322,6 @@ msgstr "Question {questionNumber} of {totalQuestions}"
 #: app/components/scenario/ScenarioStartWizard.tsx:159
 msgid "Question progress"
 msgstr "Question progress"
-
-#: app/components/layout/settings/about.tsx:84
-msgid "Questions, problems, or account and privacy requests."
-msgstr "Questions, problems, or account and privacy requests."
 
 #: app/components/quickstart/quickstart-wizard.tsx:625
 #: app/pages/home/home.tsx:578
@@ -3134,7 +3130,7 @@ msgstr "Tell the moderators what is wrong with it."
 msgid "Temperature"
 msgstr "Temperature"
 
-#: app/components/layout/settings/about.tsx:92
+#: app/components/layout/settings/about.tsx:89
 #: app/components/scenario/PublishScenarioDialog.tsx:332
 msgid "Terms of Service"
 msgstr "Terms of Service"
@@ -3232,7 +3228,7 @@ msgstr "Thinking and the answer share this"
 msgid "Thinking and the answer share your output limit. Raise Max output tokens in Generation if replies are cut short."
 msgstr "Thinking and the answer share your output limit. Raise Max output tokens in Generation if replies are cut short."
 
-#: app/components/layout/settings/about.tsx:117
+#: app/components/layout/settings/about.tsx:114
 msgid "Third-party licenses"
 msgstr "Third-party licenses"
 

@@ -80,9 +80,6 @@ export default function SettingsAbout() {
             </Button>
           </PlainRow>
         </SetupList>
-        <p className="px-0.5 text-sm text-muted-foreground">
-          <Trans>Questions, problems, or account and privacy requests.</Trans>
-        </p>
       </SetupSection>
 
       <SetupSection title={<Trans>Policies</Trans>}>
