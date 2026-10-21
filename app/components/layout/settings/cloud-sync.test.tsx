@@ -11,6 +11,11 @@ import { deleteHostedRefreshToken } from "@/services/secret-store";
 i18n.load("en", {});
 i18n.activate("en");
 
+vi.mock("@lingui/core/macro", () => ({
+  plural: (count: number, forms: { one: string; other: string }) =>
+    (count === 1 ? forms.one : forms.other).replace("#", String(count)),
+}));
+
 vi.mock("@lingui/react/macro", () => ({
   Trans: ({ children }: { children: unknown }) => children,
   useLingui: () => ({
@@ -64,6 +69,8 @@ const syncServiceMocks = vi.hoisted(() => ({
   prepareHostedSync: vi.fn(),
   registerSyncDevice: vi.fn(),
   signInHostedSync: vi.fn(),
+  isHostedSignInCancelledError: vi.fn(() => false),
+  HostedSignInCancelledError: class extends Error {},
   updateHostedAccountProfile: vi.fn(),
   unregisterHostedDevice: vi.fn(),
 }));
@@ -128,6 +135,7 @@ vi.mock("@/hooks/useTaleLibrary", () => ({
         },
       },
     ],
+    total: 12,
     remoteLoading: false,
     remoteError: null,
     removeLibraryTaleFromCloud: taleLibraryMocks.removeLibraryTaleFromCloud,
@@ -303,8 +311,13 @@ describe("SettingsCloudSync storage usage", () => {
     const view = render();
     await flush();
 
-    expect(document.body.textContent).toContain("3 of 50");
-    expect(document.body.textContent).toContain("1.5 MB of 10 MB");
+    expect(document.body.textContent).toContain(
+      "3 of 50 tales · 1.5 MB of 10 MB",
+    );
+    // The bars stay on the cloud tales page.
+    expect(
+      document.body.querySelectorAll('[data-slot="progress"]'),
+    ).toHaveLength(0);
 
     view.cleanup();
   });
@@ -513,7 +526,7 @@ describe("SettingsCloudSync storage usage", () => {
 
     view.cleanup();
   });
-  it("invites a signed-out player to sign in", async () => {
+  it("shows a signed-out player the same page with a sign-in button", async () => {
     Object.assign(syncStoreState, {
       accessToken: "",
       hasRefreshToken: false,
@@ -524,12 +537,26 @@ describe("SettingsCloudSync storage usage", () => {
     const view = render();
     await flush();
 
-    expect(document.body.textContent).toContain("Take your tales anywhere");
+    expect(document.body.textContent).toContain("Not signed in");
+    expect(document.body.textContent).toContain("Sign in to sync");
+    expect(document.body.textContent).toContain(
+      "Your 12 tales are only on this device.",
+    );
     const signIn = [...document.body.querySelectorAll("button")].find(
-      (button) => button.textContent === "Sign in or create an account",
+      (button) => button.textContent === "Sign in",
     );
     expect(signIn?.disabled).toBe(false);
+    const toggle = document.querySelector<HTMLButtonElement>('[role="switch"]');
+    expect(toggle?.disabled).toBe(true);
+    expect(toggle?.getAttribute("aria-checked")).toBe("false");
     expect(document.body.textContent).not.toContain("Sign out");
+
+    syncServiceMocks.signInHostedSync.mockRejectedValue(
+      new Error("Sign-in failed"),
+    );
+    await act(async () => signIn!.click());
+    expect(syncServiceMocks.signInHostedSync).toHaveBeenCalled();
+    expect(toastMocks.error).toHaveBeenCalledWith("Sign-in failed");
 
     view.cleanup();
   });

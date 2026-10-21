@@ -4,20 +4,12 @@ import {
   useMemo,
   useRef,
   useState,
-  type ComponentType,
   type ReactNode,
 } from "react";
 import { getVersion } from "@tauri-apps/api/app";
-import {
-  BookOpen,
-  Cloud,
-  Database,
-  Inbox,
-  LogOut,
-  ShieldCheck,
-  Smartphone,
-} from "lucide-react";
+import { Cloud, UserRound } from "lucide-react";
 import { toast } from "sonner";
+import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -83,7 +75,7 @@ import {
 } from "@/services/new-tale-sync";
 import { useTaleLibrary } from "@/hooks/useTaleLibrary";
 import type { LibraryTaleItem } from "@/lib/tale-library";
-import { formatBytes, formatExactDateTime } from "@/lib/utils";
+import { cn, formatBytes, formatExactDateTime } from "@/lib/utils";
 
 const HOSTED_PROFILE_ID = "hosted";
 const PERSONAL_PROFILE_ID = "personal";
@@ -788,7 +780,9 @@ export default function SettingsCloudSync() {
               ? { text: t`Profile incomplete` }
               : syncUiKind === "personal"
                 ? { text: t`Personal` }
-                : { text: t`Off for this device` };
+                : syncUiKind === "local"
+                  ? { text: t`Sign in to sync` }
+                  : { text: t`Off for this device` };
   const statusLine = status ? (
     <p className="px-0.5 text-sm text-muted-foreground">{status}</p>
   ) : null;
@@ -889,22 +883,39 @@ export default function SettingsCloudSync() {
         {statusLine}
       </div>
     );
-  } else if (syncUiKind === "local") {
-    content = (
-      <SignedOut
-        canSignIn={canConnect && busy === null}
-        cloudConfigured={cloudConfigured}
-        onSignIn={connect}
-        status={statusLine}
-      />
-    );
   } else {
+    const signedOut = syncUiKind === "local";
+    const talesUsed = accountUsage?.tales.used ?? 0;
+    const talesLimit = accountUsage?.tales.limit ?? 0;
+    const storageUsed = formatMegabytes(accountUsage?.storage.usedBytes ?? 0);
+    const storageLimit = formatMegabytes(accountUsage?.storage.limitBytes ?? 0);
+    const usageLine =
+      showHostedUsage && accountUsage
+        ? t`${talesUsed} of ${talesLimit} tales · ${storageUsed} of ${storageLimit}`
+        : showHostedUsage && usageError
+          ? t`Storage usage is unavailable.`
+          : null;
+    const localTales = taleLibrary.total ?? 0;
     content = (
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-3.5 px-0.5">
-          <Avatar className="size-14 border border-primary/45">
-            <AvatarFallback className="bg-primary/15 text-lg font-bold text-primary">
-              {syncUiKind === "reconnecting" ? (
+          <Avatar
+            className={cn(
+              "size-14 border",
+              signedOut ? "border-border" : "border-primary/45",
+            )}
+          >
+            <AvatarFallback
+              className={cn(
+                "text-lg font-bold",
+                signedOut
+                  ? "bg-card text-muted-foreground"
+                  : "bg-primary/15 text-primary",
+              )}
+            >
+              {signedOut ? (
+                <UserRound className="size-6" />
+              ) : syncUiKind === "reconnecting" ? (
                 <Cloud className="size-5 animate-pulse" />
               ) : accountLabel ? (
                 avatarInitial(accountLabel)
@@ -915,12 +926,16 @@ export default function SettingsCloudSync() {
           </Avatar>
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <span className="truncate text-base font-semibold">
-              {accountLabel ||
+              {signedOut ? (
+                <Trans>Not signed in</Trans>
+              ) : (
+                accountLabel ||
                 (syncUiKind === "personal" ? (
                   <Trans>Personal Sync</Trans>
                 ) : (
                   <Trans>Your account</Trans>
-                ))}
+                ))
+              )}
             </span>
             {accountDisplayName && accountEmail ? (
               <span className="truncate text-sm text-muted-foreground">
@@ -928,7 +943,11 @@ export default function SettingsCloudSync() {
               </span>
             ) : null}
           </div>
-          {hasUsableToken && accountDisplayName ? (
+          {signedOut ? (
+            <Button onClick={connect} disabled={!canConnect || busy !== null}>
+              <Trans>Sign in</Trans>
+            </Button>
+          ) : hasUsableToken && accountDisplayName ? (
             <Button
               variant="outline"
               disabled={busy !== null}
@@ -942,7 +961,7 @@ export default function SettingsCloudSync() {
           ) : null}
         </div>
 
-        {needsBrowserLogin ? (
+        {needsBrowserLogin && !signedOut ? (
           <StatusBanner
             tone="destructive"
             title={<Trans>Sign in again to keep syncing</Trans>}
@@ -964,39 +983,44 @@ export default function SettingsCloudSync() {
           />
         ) : null}
 
-        {showSyncControls ? (
+        {showSyncControls || signedOut ? (
           <SetupList>
             <PlainRow>
               <RowText
                 title={<Trans>Cloud sync</Trans>}
-                detail={syncState.text}
-                detailClassName={syncState.className}
+                detail={
+                  <>
+                    <span className={cn("block", syncState.className)}>
+                      {syncState.text}
+                    </span>
+                    {usageLine ? (
+                      <span className="block">{usageLine}</span>
+                    ) : null}
+                  </>
+                }
               />
               <ToggleSwitch
-                checked={syncEnabled}
+                checked={syncEnabled && !signedOut}
                 onCheckedChange={() => void toggleSync()}
-                disabled={!canToggleActiveProfile}
+                disabled={signedOut || !canToggleActiveProfile}
                 label={t`Cloud sync`}
               />
             </PlainRow>
-            {showHostedUsage && accountUsage ? (
-              <div className="flex flex-col gap-3 px-3.5 py-3.5">
-                <UsageBars usage={accountUsage} />
-              </div>
-            ) : null}
-            {showHostedUsage && usageError ? (
-              <PlainRow className="text-sm text-muted-foreground">
-                <Trans>Storage usage is unavailable.</Trans>
-              </PlainRow>
-            ) : null}
           </SetupList>
+        ) : null}
+        {signedOut && localTales > 0 ? (
+          <p className="-mt-2 px-0.5 text-sm text-muted-foreground">
+            {plural(localTales, {
+              one: "Your tale is only on this device.",
+              other: "Your # tales are only on this device.",
+            })}
+          </p>
         ) : null}
 
         {canReviewUndecidedTales || showHostedUsage || showHostedDevices ? (
           <SetupList>
             {canReviewUndecidedTales ? (
               <LinkRow
-                leading={<RowIcon icon={Inbox} />}
                 title={<Trans>Tales waiting for a choice</Trans>}
                 trailing={
                   <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-xs bg-primary px-1.5 text-[0.8rem] font-bold text-primary-foreground">
@@ -1009,19 +1033,12 @@ export default function SettingsCloudSync() {
             ) : null}
             {showHostedUsage ? (
               <LinkRow
-                leading={<RowIcon icon={Database} />}
                 title={<Trans>Tales in the cloud</Trans>}
-                trailing={
-                  <RowValue>
-                    {accountUsage?.tales.used ?? storageItems.length}
-                  </RowValue>
-                }
                 onClick={() => openPage("storage")}
               />
             ) : null}
             {showHostedDevices ? (
               <LinkRow
-                leading={<RowIcon icon={Smartphone} />}
                 title={<Trans>Devices</Trans>}
                 trailing={
                   devicesLoading && hostedDevices.length === 0 ? null : (
@@ -1043,11 +1060,8 @@ export default function SettingsCloudSync() {
           <button
             type="button"
             onClick={signOut}
-            className="flex min-h-13 items-center gap-3.5 rounded-xs border border-border/70 bg-background/60 px-3.5 text-start text-sm font-medium text-destructive transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none"
+            className="flex min-h-13 items-center rounded-xs border border-border/70 bg-background/60 px-3.5 text-start text-sm font-medium text-destructive transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none"
           >
-            <span className="flex size-9 shrink-0 items-center justify-center">
-              <LogOut aria-hidden="true" className="size-5" />
-            </span>
             <Trans>Sign out</Trans>
           </button>
         ) : null}
@@ -1173,101 +1187,11 @@ export function CloudSyncTitle({ page }: { page: string }) {
   }
 }
 
-function RowIcon({
-  icon: Icon,
-}: {
-  icon: ComponentType<{ className?: string }>;
-}) {
-  return (
-    <span className="flex size-9 shrink-0 items-center justify-center text-primary">
-      <Icon aria-hidden="true" className="size-5" />
-    </span>
-  );
-}
-
 function RowValue({ children }: { children: ReactNode }) {
   return (
     <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
       {children}
     </span>
-  );
-}
-
-function Benefit({
-  icon: Icon,
-  title,
-  detail,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  title: ReactNode;
-  detail?: ReactNode;
-}) {
-  return (
-    <li className="flex items-center gap-3.5">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-xs bg-card text-primary">
-        <Icon aria-hidden="true" className="size-4.5" />
-      </span>
-      <span className="flex flex-col gap-0.5">
-        <span className="text-sm font-semibold">{title}</span>
-        {detail ? (
-          <span className="text-sm text-muted-foreground">{detail}</span>
-        ) : null}
-      </span>
-    </li>
-  );
-}
-
-function SignedOut({
-  canSignIn,
-  cloudConfigured,
-  onSignIn,
-  status,
-}: {
-  canSignIn: boolean;
-  cloudConfigured: boolean;
-  onSignIn: () => void;
-  status: ReactNode;
-}) {
-  return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-7 py-2 sm:py-6">
-      <div className="flex flex-col items-center gap-3.5 text-center">
-        <div className="flex size-18 items-center justify-center rounded-xs border border-primary/40 bg-primary/15 text-primary">
-          <Cloud aria-hidden="true" className="size-8" />
-        </div>
-        <h3 className="text-xl font-semibold leading-tight">
-          <Trans>Take your tales anywhere</Trans>
-        </h3>
-      </div>
-      <ul className="flex flex-col gap-4">
-        <Benefit
-          icon={Smartphone}
-          title={<Trans>Sync on every device</Trans>}
-        />
-        <Benefit
-          icon={BookOpen}
-          title={<Trans>Publish your scenarios</Trans>}
-        />
-        <Benefit
-          icon={ShieldCheck}
-          title={<Trans>You choose what syncs</Trans>}
-          detail={<Trans>Keep any tale private to this device.</Trans>}
-        />
-      </ul>
-      {!cloudConfigured ? (
-        <StatusBanner
-          tone="destructive"
-          title={<Trans>Cloud service is not configured</Trans>}
-        />
-      ) : null}
-      <Button
-        className="h-12 text-base"
-        onClick={onSignIn}
-        disabled={!canSignIn}
-      >
-        <Trans>Sign in or create an account</Trans>
-      </Button>
-      {status}
-    </div>
   );
 }
 
