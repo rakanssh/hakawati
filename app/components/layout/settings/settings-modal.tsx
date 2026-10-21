@@ -16,7 +16,9 @@ import { useUpdateStore } from "@/store/useUpdateStore";
 import { useIsMobile } from "@/hooks/useIsMobile";
 
 import SettingsGame from "@/components/layout/settings/game";
-import SettingsApi from "@/components/layout/settings/api";
+import SettingsAiSetup, {
+  AiSetupTitle,
+} from "@/components/layout/settings/ai-setup";
 import SettingsModel from "@/components/layout/settings/model";
 import SettingsAdvanced from "@/components/layout/settings/advanced";
 import SettingsUpdates from "@/components/layout/settings/updates";
@@ -44,7 +46,8 @@ const globalSections = [
     groupId: "ai",
     group: <Trans>AI</Trans>,
     icon: Bot,
-    component: SettingsApi,
+    component: SettingsAiSetup,
+    subpageTitle: AiSetupTitle,
   },
   {
     id: "generation",

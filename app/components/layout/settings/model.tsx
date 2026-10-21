@@ -23,8 +23,10 @@ import {
 
 export default function SettingsModel() {
   const { t } = useLingui();
+  const activePreset = useSettingsStore(
+    (state) => state.modelRoles.narrator.activePreset,
+  );
   const {
-    activePreset,
     contextWindow,
     modelContextLength,
     maxTokens,

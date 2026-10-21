@@ -1,4 +1,6 @@
 import {
+  createContext,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -33,6 +35,32 @@ export interface SettingsSectionDefinition<TId extends string = string> {
   group: ReactElement;
   icon: LucideIcon;
   component: ComponentType;
+  /** Titles the section's subpages in the header, when it has any. */
+  subpageTitle?: ComponentType<{ page: string }>;
+}
+
+export interface SettingsNavigation {
+  /** The open subpage, or null on the section's own page. */
+  page: string | null;
+  push: (page: string) => void;
+  /** Swaps the open subpage for another, so going back skips it. */
+  replace: (page: string) => void;
+  back: () => void;
+  /** Returns to the section's own page. */
+  reset: () => void;
+}
+
+const SettingsNavigationContext = createContext<SettingsNavigation>({
+  page: null,
+  push: () => {},
+  replace: () => {},
+  back: () => {},
+  reset: () => {},
+});
+
+/** Lets a section open pages of its own under the settings header. */
+export function useSettingsNavigation() {
+  return useContext(SettingsNavigationContext);
 }
 
 interface SettingsShellProps<TId extends string> {
@@ -96,7 +124,24 @@ export function SettingsShell<TId extends string>({
     );
   });
   const [showingDetail, setShowingDetail] = useState(!useCompactLayout);
+  const [subpages, setSubpages] = useState<string[]>([]);
   const prevOpenRef = useRef(open);
+  const detailViewportRef = useRef<HTMLDivElement>(null);
+  const subpage = subpages[subpages.length - 1] ?? null;
+  const navigation = useMemo<SettingsNavigation>(
+    () => ({
+      page: subpage,
+      push: (page) => setSubpages((pages) => [...pages, page]),
+      replace: (page) => setSubpages((pages) => [...pages.slice(0, -1), page]),
+      back: () => setSubpages((pages) => pages.slice(0, -1)),
+      reset: () => setSubpages([]),
+    }),
+    [subpage],
+  );
+
+  useEffect(() => {
+    if (detailViewportRef.current) detailViewportRef.current.scrollTop = 0;
+  }, [subpage]);
 
   useEffect(() => {
     const wasOpen = prevOpenRef.current;
@@ -108,6 +153,7 @@ export function SettingsShell<TId extends string>({
         effectiveDefaultSection) as TId;
 
       setActiveSection(nextActive);
+      setSubpages([]);
       setShowingDetail(
         !useCompactLayout ||
           availableSections.length <= 1 ||
@@ -143,24 +189,42 @@ export function SettingsShell<TId extends string>({
 
   function selectSection(sectionId: TId) {
     setActiveSection(sectionId);
+    setSubpages([]);
     if (useCompactLayout) {
       setShowingDetail(true);
     }
   }
 
   const showSettingsList = useCompactLayout && !showingDetail;
+  const SubpageTitle = activeDefinition?.subpageTitle;
+  const showingSubpage = subpage !== null && !showSettingsList;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
+        onEscapeKeyDown={(event) => {
+          if (!showingSubpage) return;
+          event.preventDefault();
+          navigation.back();
+        }}
         className="top-0 left-0 flex h-dvh !w-screen !max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] ps-[env(safe-area-inset-left)] pe-[env(safe-area-inset-right)]"
       >
         <div className="flex min-h-0 flex-1 flex-col bg-background">
           <header className="flex shrink-0 items-center gap-2 border-b bg-background px-3 py-3 md:px-6">
-            {useCompactLayout &&
-            showingDetail &&
-            availableSections.length > 1 ? (
+            {showingSubpage ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Back"
+                onClick={navigation.back}
+              >
+                <ChevronLeftIcon className="size-4 rtl:rotate-180" />
+              </Button>
+            ) : useCompactLayout &&
+              showingDetail &&
+              availableSections.length > 1 ? (
               <Button
                 type="button"
                 variant="ghost"
@@ -174,7 +238,13 @@ export function SettingsShell<TId extends string>({
 
             <div className="min-w-0 flex-1">
               <DialogTitle className="truncate text-lg leading-tight md:text-xl">
-                {showSettingsList ? title : (activeDefinition?.label ?? title)}
+                {showSettingsList ? (
+                  title
+                ) : showingSubpage && SubpageTitle ? (
+                  <SubpageTitle page={subpage} />
+                ) : (
+                  (activeDefinition?.label ?? title)
+                )}
               </DialogTitle>
               <DialogDescription className="sr-only">
                 {!showSettingsList
@@ -255,9 +325,11 @@ export function SettingsShell<TId extends string>({
                 showSettingsList ? "hidden" : "flex h-full flex-col",
               )}
             >
-              <ScrollArea className="h-full">
+              <ScrollArea className="h-full" viewportRef={detailViewportRef}>
                 <div className="w-full px-4 py-4 sm:max-w-none sm:px-6 sm:py-6 lg:px-8 xl:px-10">
-                  {ActiveComponent && <ActiveComponent />}
+                  <SettingsNavigationContext.Provider value={navigation}>
+                    {ActiveComponent && <ActiveComponent />}
+                  </SettingsNavigationContext.Provider>
                 </div>
               </ScrollArea>
             </section>

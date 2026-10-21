@@ -41,6 +41,11 @@ function pendingModels() {
 
 const model = (id: string): LLMModel => ({ id, name: id });
 
+function selectProvider(preset: ApiPreset) {
+  const settings = useSettingsStore.getState();
+  settings.setRoleConnection("narrator", settings.addConnection({ preset }));
+}
+
 function renderProviders() {
   const container = document.createElement("div");
   document.body.appendChild(container);
@@ -73,9 +78,7 @@ describe("useLLMProviders account and provider transitions", () => {
     vi.resetAllMocks();
     useChatGpt.mockReturnValue(account());
     useSettingsStore.setState(useSettingsStore.getInitialState());
-    useSettingsStore
-      .getState()
-      .setRoleActivePreset("narrator", ApiPreset.CHATGPT);
+    selectProvider(ApiPreset.CHATGPT);
     useSettingsStore.getState().clearChatGptModels("account-a");
   });
 
@@ -107,9 +110,7 @@ describe("useLLMProviders account and provider transitions", () => {
   });
 
   it("ignores the previous provider catalog when switching providers with the same URL", async () => {
-    useSettingsStore
-      .getState()
-      .setRoleActivePreset("narrator", ApiPreset.OPENAI);
+    selectProvider(ApiPreset.OPENAI);
     const apiCatalog = pendingModels();
     const planCatalog = pendingModels();
     getRoleModels
@@ -119,11 +120,7 @@ describe("useLLMProviders account and provider transitions", () => {
     try {
       const oldSignal = getRoleModels.mock.calls[0][1] as AbortSignal;
       const apiUrl = useSettingsStore.getState().modelRoles.narrator.baseUrl;
-      act(() =>
-        useSettingsStore
-          .getState()
-          .setRoleActivePreset("narrator", ApiPreset.CHATGPT),
-      );
+      act(() => selectProvider(ApiPreset.CHATGPT));
       expect(useSettingsStore.getState().modelRoles.narrator.baseUrl).toBe(
         apiUrl,
       );
@@ -154,11 +151,14 @@ describe("useLLMProviders account and provider transitions", () => {
     const harness = renderProviders();
     try {
       const firstSignal = getRoleModels.mock.calls[0][1] as AbortSignal;
+      // The account store re-renders its subscribers; the mock needs a render.
       useChatGpt.mockReturnValue(account(null, false));
       act(() => useSettingsStore.getState().clearChatGptModels());
+      harness.render();
       expect(firstSignal.aborted).toBe(true);
       useChatGpt.mockReturnValue(account("account-b"));
       act(() => useSettingsStore.getState().clearChatGptModels("account-b"));
+      harness.render();
       await act(async () => {
         secondCatalog.resolve([model("account-b-model")]);
       });
@@ -220,9 +220,7 @@ describe("useLLMProviders account and provider transitions", () => {
   });
 
   it("rechecks an API-key catalog after the key changes at the same URL", async () => {
-    useSettingsStore
-      .getState()
-      .setRoleActivePreset("narrator", ApiPreset.OPENAI);
+    selectProvider(ApiPreset.OPENAI);
     const firstCatalog = pendingModels();
     getRoleModels
       .mockReturnValueOnce(firstCatalog.promise)
@@ -233,7 +231,10 @@ describe("useLLMProviders account and provider transitions", () => {
       await act(async () => {
         useSettingsStore
           .getState()
-          .setRoleApiKey("narrator", "replacement-key");
+          .updateConnection(
+            useSettingsStore.getState().modelRoles.narrator.connectionId!,
+            { apiKey: "replacement-key" },
+          );
       });
       await act(async () => {
         firstCatalog.resolve([model("old-key-model")]);

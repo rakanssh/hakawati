@@ -14,10 +14,13 @@ async function startPreview() {
   // A reload recreates disposable data; previously created route IDs expire.
   window.history.replaceState(null, "", "/");
   const settings = useSettingsStore.getState();
-  settings.setActivePreset(ApiPreset.GENERIC);
-  settings.setOpenAiBaseUrl(PREVIEW_BASE_URL);
-  settings.setApiKey("");
-  settings.setModel(PREVIEW_MODEL);
+  const connectionId = settings.addConnection({
+    preset: ApiPreset.GENERIC,
+    baseUrl: PREVIEW_BASE_URL,
+    label: "Preview",
+  });
+  settings.setRoleConnection("narrator", connectionId);
+  settings.setRoleModel("narrator", PREVIEW_MODEL);
   useSyncSettingsStore.getState().clearSession();
   useSyncSettingsStore.getState().setCloudBaseUrl("");
   useSyncSettingsStore.getState().setPersonalBaseUrl("");

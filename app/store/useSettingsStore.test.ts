@@ -5,7 +5,6 @@ import {
   DEFAULT_TTS_VOICE,
   isModelRoleConfigured,
   migrateSettingsState,
-  createDefaultModelRoles,
   useSettingsStore,
 } from "./useSettingsStore";
 
@@ -20,36 +19,59 @@ const legacyModel: LLMModel = {
   contextLength: 8192,
 };
 
+const otherModel: LLMModel = { id: "other-model", name: "Other Model" };
+
+const OPENROUTER_URL = "https://openrouter.ai/api/v1";
+
+function connectionFor(
+  state: ReturnType<typeof migrateSettingsState>,
+  preset: ApiPreset,
+) {
+  return state.connections.find((c) => c.preset === preset);
+}
+
+beforeEach(() => {
+  useSettingsStore.setState(useSettingsStore.getInitialState());
+});
+
+afterEach(() => {
+  useSettingsStore.setState(useSettingsStore.getInitialState());
+});
+
 describe("useSettingsStore migration", () => {
-  it("copies legacy single-model settings into narrator and utility roles", () => {
+  it("turns legacy single-model settings into one shared connection", () => {
     const migrated = migrateSettingsState({
       activePreset: ApiPreset.OPENROUTER,
-      openAiBaseUrl: "https://openrouter.ai/api/v1",
+      openAiBaseUrl: OPENROUTER_URL,
       apiKey: "legacy-key",
       model: legacyModel,
       profiles: {
         [ApiPreset.OPENROUTER]: {
-          baseUrl: "https://openrouter.ai/api/v1",
+          baseUrl: OPENROUTER_URL,
           apiKey: "legacy-key",
           model: legacyModel,
         },
       },
     });
 
-    expect(migrated.modelRoles.narrator).toMatchObject({
-      activePreset: ApiPreset.OPENROUTER,
-      baseUrl: "https://openrouter.ai/api/v1",
-      apiKey: "legacy-key",
-      model: legacyModel,
-    });
-    expect(migrated.modelRoles.utility).toMatchObject({
-      activePreset: ApiPreset.OPENROUTER,
-      baseUrl: "https://openrouter.ai/api/v1",
-      apiKey: "legacy-key",
-      model: legacyModel,
-    });
-    expect(migrated.model).toBe(legacyModel);
-    expect(migrated.openAiBaseUrl).toBe("https://openrouter.ai/api/v1");
+    expect(migrated.connections).toEqual([
+      expect.objectContaining({
+        preset: ApiPreset.OPENROUTER,
+        apiKey: "legacy-key",
+      }),
+    ]);
+    for (const role of ["narrator", "utility"] as const) {
+      expect(migrated.modelRoles[role]).toMatchObject({
+        activePreset: ApiPreset.OPENROUTER,
+        baseUrl: OPENROUTER_URL,
+        apiKey: "legacy-key",
+        model: legacyModel,
+      });
+    }
+    expect(migrated.roleAssignments.utility.sameAsNarrator).toBe(true);
+    expect(migrated.modelContextLength).toBe(8192);
+    expect(migrated).not.toHaveProperty("openAiBaseUrl");
+    expect(migrated).not.toHaveProperty("profiles");
   });
 
   it("lets themes choose the type for settings saved before themes had fonts", () => {
@@ -77,15 +99,23 @@ describe("useSettingsStore migration", () => {
     ).toBeUndefined();
   });
 
-  it("creates empty role configs when no legacy model settings exist", () => {
+  it("starts with no connections when nothing was set up", () => {
     const migrated = migrateSettingsState({});
 
+    expect(migrated.connections).toEqual([]);
     expect(isModelRoleConfigured(migrated.modelRoles.narrator)).toBe(false);
     expect(isModelRoleConfigured(migrated.modelRoles.utility)).toBe(false);
+    expect(migrated.roleAssignments.utility.sameAsNarrator).toBe(true);
+    expect(Object.keys(migrated.modelRoles).sort()).toEqual(
+      [...MODEL_ROLES].sort(),
+    );
+    expect(migrated.modelRoles.textToSpeech.voice).toBe(DEFAULT_TTS_VOICE);
+    expect(migrated.autoNarrate).toBe(false);
+    expect(migrated.highlightLatestSection).toBe(true);
   });
 
   it.each(["legacy", "role"])(
-    "preserves an active Venice configuration as Generic OpenAI in %s settings",
+    "keeps an active Venice configuration as another provider in %s settings",
     (format) => {
       const profile = {
         baseUrl: "https://api.venice.ai/api/v1",
@@ -104,32 +134,18 @@ describe("useSettingsStore migration", () => {
         activePreset: ApiPreset.GENERIC,
         ...profile,
       });
-      expect(migrated.modelRoles.narrator.profiles[ApiPreset.GENERIC]).toEqual(
-        profile,
-      );
-      expect(migrated.modelRoles.narrator.profiles).not.toHaveProperty(
-        "venice",
-      );
-      expect(migrated.activePreset).toBe(ApiPreset.GENERIC);
-      expect(migrated.openAiBaseUrl).toBe(profile.baseUrl);
+      expect(migrated.connections).toEqual([
+        expect.objectContaining({
+          preset: ApiPreset.GENERIC,
+          baseUrl: profile.baseUrl,
+          apiKey: profile.apiKey,
+        }),
+      ]);
     },
   );
 
-  it("creates persisted schema slots for future speech roles", () => {
-    const migrated = migrateSettingsState({});
-
-    expect(Object.keys(migrated.modelRoles).sort()).toEqual(
-      [...MODEL_ROLES].sort(),
-    );
-    expect(migrated.modelRoles.speechToText).toBeDefined();
-    expect(migrated.modelRoles.textToSpeech).toBeDefined();
-    expect(migrated.modelRoles.textToSpeech.voice).toBe(DEFAULT_TTS_VOICE);
-    expect(migrated.autoNarrate).toBe(false);
-    expect(migrated.highlightLatestSection).toBe(true);
-  });
-
   it.each(["legacy", "narrator", "utility"])(
-    "retains the displaced Generic profile when Venice is active in %s settings",
+    "keeps the Generic profile Venice displaced as its own connection in %s settings",
     (format) => {
       const generic = {
         baseUrl: "https://custom.example/v1",
@@ -152,17 +168,19 @@ describe("useSettingsStore migration", () => {
       expect(migrated.modelRoles[role]).toMatchObject({
         activePreset: ApiPreset.GENERIC,
         ...venice,
-        profiles: { generic: venice },
-        retiredProfiles: { generic },
       });
-      // A later persisted-state migration must keep the recovery copy intact.
-      const remigrated = migrateSettingsState(
+      expect(migrated.connections.map((c) => c.baseUrl).sort()).toEqual(
+        [generic.baseUrl, venice.baseUrl].sort(),
+      );
+      // Settings saved after the migration load without migrating again.
+      const reloaded = migrateSettingsState(
         JSON.parse(JSON.stringify(migrated)),
       );
-      expect(remigrated.modelRoles[role].retiredProfiles).toEqual({ generic });
-      expect(remigrated.modelRoles[role].profiles[ApiPreset.GENERIC]).toEqual(
-        venice,
-      );
+      expect(reloaded.connections).toEqual(migrated.connections);
+      expect(reloaded.modelRoles[role]).toMatchObject({
+        ...venice,
+        model: venice.model,
+      });
     },
   );
 
@@ -194,59 +212,243 @@ describe("useSettingsStore migration", () => {
       const role = format === "utility" ? "utility" : "narrator";
       expect(migrated.modelRoles[role]).toMatchObject({
         activePreset: ApiPreset.GENERIC,
-        ...venice,
-        retiredProfiles: { generic },
+        baseUrl: venice.baseUrl,
+        apiKey: venice.apiKey,
       });
-      expect(
-        migrated.modelRoles[role].profiles[ApiPreset.GENERIC].model,
-      ).toBeUndefined();
+      expect(migrated.modelRoles[role].model).toBeUndefined();
       expect(isModelRoleConfigured(migrated.modelRoles[role])).toBe(false);
     },
   );
 
-  it("adds ChatGPT profiles to existing role settings without changing their providers", () => {
-    const modelRoles = createDefaultModelRoles();
-    for (const config of Object.values(modelRoles)) {
-      delete (config.profiles as Partial<typeof config.profiles>)[
-        ApiPreset.CHATGPT
-      ];
-    }
-    modelRoles.narrator = {
-      ...modelRoles.narrator,
-      apiKey: "existing-key",
-      model: legacyModel,
-    };
-    const migrated = migrateSettingsState({ modelRoles });
-    expect(migrated.modelRoles.narrator).toMatchObject({
-      activePreset: ApiPreset.GENERIC,
-      apiKey: "existing-key",
+  it("shares one connection between roles on the same account and keeps each role's model", () => {
+    const openRouter = (model: LLMModel) => ({
+      activePreset: ApiPreset.OPENROUTER,
+      profiles: {
+        [ApiPreset.OPENROUTER]: {
+          baseUrl: OPENROUTER_URL,
+          apiKey: "shared-key",
+          model,
+        },
+      },
+    });
+    const migrated = migrateSettingsState({
+      modelRoles: {
+        narrator: openRouter(legacyModel),
+        utility: openRouter(otherModel),
+      },
+    });
+
+    expect(migrated.connections).toHaveLength(1);
+    const id = migrated.connections[0].id;
+    expect(migrated.roleAssignments.narrator).toMatchObject({
+      connectionId: id,
       model: legacyModel,
     });
-    expect(migrated.modelRoles.narrator.profiles[ApiPreset.CHATGPT]).toEqual({
-      baseUrl: "https://api.openai.com/v1",
-      apiKey: "",
+    expect(migrated.roleAssignments.utility).toMatchObject({
+      connectionId: id,
+      model: otherModel,
+      sameAsNarrator: false,
+    });
+  });
+
+  it("keeps saved keys of inactive providers and the model each role chose there", () => {
+    const migrated = migrateSettingsState({
+      modelRoles: {
+        narrator: {
+          activePreset: ApiPreset.OPENAI,
+          profiles: {
+            [ApiPreset.OPENAI]: {
+              baseUrl: "https://api.openai.com/v1",
+              apiKey: "openai-key",
+              model: otherModel,
+            },
+            [ApiPreset.OPENROUTER]: {
+              baseUrl: OPENROUTER_URL,
+              apiKey: "openrouter-key",
+              model: legacyModel,
+            },
+          },
+        },
+      },
+    });
+    const openRouter = connectionFor(migrated, ApiPreset.OPENROUTER)!;
+    expect(openRouter.apiKey).toBe("openrouter-key");
+    expect(migrated.modelRoles.narrator.activePreset).toBe(ApiPreset.OPENAI);
+
+    useSettingsStore.setState(migrated);
+    useSettingsStore.getState().setRoleConnection("narrator", openRouter.id);
+    expect(useSettingsStore.getState().modelRoles.narrator.model).toEqual(
+      legacyModel,
+    );
+  });
+
+  it("keeps speech roles off ChatGPT and keeps the narration voice", () => {
+    const migrated = migrateSettingsState({
+      modelRoles: {
+        speechToText: { activePreset: ApiPreset.CHATGPT, model: legacyModel },
+        textToSpeech: {
+          activePreset: ApiPreset.OPENROUTER,
+          apiKey: "tts-key",
+          model: otherModel,
+          voice: "nova",
+        },
+      },
+    });
+    expect(migrated.modelRoles.speechToText.connectionId).toBeNull();
+    expect(migrated.modelRoles.textToSpeech).toMatchObject({
+      activePreset: ApiPreset.OPENROUTER,
+      model: otherModel,
+      voice: "nova",
+    });
+  });
+});
+
+describe("connections", () => {
+  it("returns the existing connection for the same account, and keeps one ChatGPT", () => {
+    const settings = useSettingsStore.getState();
+    const first = settings.addConnection({
+      preset: ApiPreset.OPENROUTER,
+      apiKey: " key-a ",
+    });
+    expect(
+      settings.addConnection({ preset: ApiPreset.OPENROUTER, apiKey: "key-a" }),
+    ).toBe(first);
+    expect(
+      settings.addConnection({ preset: ApiPreset.OPENROUTER, apiKey: "key-b" }),
+    ).not.toBe(first);
+    const chatGpt = settings.addConnection({ preset: ApiPreset.CHATGPT });
+    expect(settings.addConnection({ preset: ApiPreset.CHATGPT })).toBe(chatGpt);
+    expect(useSettingsStore.getState().connections).toHaveLength(3);
+  });
+
+  it("uses the preset's own address for fixed providers", () => {
+    const settings = useSettingsStore.getState();
+    const id = settings.addConnection({
+      preset: ApiPreset.OPENROUTER,
+      baseUrl: "https://elsewhere.example/v1",
+      apiKey: "key",
+    });
+    settings.setRoleConnection("narrator", id);
+    expect(useSettingsStore.getState().modelRoles.narrator.baseUrl).toBe(
+      OPENROUTER_URL,
+    );
+  });
+
+  it("restores the model a role last used on each connection", () => {
+    const settings = useSettingsStore.getState();
+    const a = settings.addConnection({
+      preset: ApiPreset.OPENROUTER,
+      apiKey: "a",
+    });
+    const b = settings.addConnection({ preset: ApiPreset.OPENAI, apiKey: "b" });
+    settings.setRoleConnection("narrator", a);
+    settings.setRoleModel("narrator", legacyModel);
+    settings.setRoleConnection("narrator", b);
+    expect(
+      useSettingsStore.getState().modelRoles.narrator.model,
+    ).toBeUndefined();
+    settings.setRoleModel("narrator", otherModel);
+    settings.setRoleConnection("narrator", a);
+    expect(useSettingsStore.getState().modelRoles.narrator.model).toEqual(
+      legacyModel,
+    );
+    settings.setRoleConnection("narrator", b);
+    expect(useSettingsStore.getState().modelRoles.narrator.model).toEqual(
+      otherModel,
+    );
+  });
+
+  it("refuses connections a role cannot use", () => {
+    const settings = useSettingsStore.getState();
+    const chatGpt = settings.addConnection({ preset: ApiPreset.CHATGPT });
+    settings.setRoleConnection("speechToText", chatGpt);
+    expect(
+      useSettingsStore.getState().roleAssignments.speechToText.connectionId,
+    ).toBeNull();
+  });
+
+  it("lets the utility follow the narrator, then start from its choice", () => {
+    const settings = useSettingsStore.getState();
+    const id = settings.addConnection({
+      preset: ApiPreset.OPENROUTER,
+      apiKey: "key",
+    });
+    settings.setRoleConnection("narrator", id);
+    settings.setRoleModel("narrator", legacyModel);
+    expect(useSettingsStore.getState().modelRoles.utility).toEqual(
+      useSettingsStore.getState().modelRoles.narrator,
+    );
+
+    settings.setUtilitySameAsNarrator(false);
+    settings.setRoleModel("utility", otherModel);
+    const state = useSettingsStore.getState();
+    expect(state.modelRoles.utility).toMatchObject({
+      connectionId: id,
+      model: otherModel,
+    });
+    expect(state.modelRoles.narrator.model).toEqual(legacyModel);
+  });
+
+  it("clears models when a connection's address changes", () => {
+    const settings = useSettingsStore.getState();
+    const id = settings.addConnection({
+      preset: ApiPreset.GENERIC,
+      baseUrl: "https://one.example/v1",
+    });
+    settings.setRoleConnection("narrator", id);
+    settings.setRoleModel("narrator", legacyModel);
+    settings.updateConnection(id, { apiKey: "new-key" });
+    expect(useSettingsStore.getState().modelRoles.narrator).toMatchObject({
+      apiKey: "new-key",
+      model: legacyModel,
+    });
+    settings.updateConnection(id, { baseUrl: "https://two.example/v1" });
+    expect(useSettingsStore.getState().modelRoles.narrator).toMatchObject({
+      baseUrl: "https://two.example/v1",
       model: undefined,
     });
   });
 
-  it("clears account-specific models including inactive ChatGPT profiles without changing other providers", () => {
-    const modelRoles = createDefaultModelRoles();
-    modelRoles.narrator.activePreset = ApiPreset.CHATGPT;
-    modelRoles.narrator.model = legacyModel;
-    modelRoles.utility.model = legacyModel;
-    modelRoles.utility.apiKey = "other-provider-key";
-    modelRoles.utility.profiles[ApiPreset.CHATGPT].model = legacyModel;
-    useSettingsStore.setState({ modelRoles });
-    useSettingsStore.getState().clearChatGptModels("second-account");
+  it("unassigns roles when their connection is removed", () => {
     const settings = useSettingsStore.getState();
-    expect(settings.modelRoles.narrator.model).toBeUndefined();
-    expect(settings.model).toBeUndefined();
-    expect(settings.modelRoles.utility.model).toEqual(legacyModel);
-    expect(settings.modelRoles.utility.apiKey).toBe("other-provider-key");
+    const id = settings.addConnection({
+      preset: ApiPreset.OPENROUTER,
+      apiKey: "key",
+    });
+    settings.setRoleConnection("narrator", id);
+    settings.setRoleModel("narrator", legacyModel);
+    settings.setRoleConnection("textToSpeech", id);
+    settings.removeConnection(id);
+    const state = useSettingsStore.getState();
+    expect(state.connections).toEqual([]);
+    expect(state.modelRoles.narrator.connectionId).toBeNull();
+    expect(state.modelRoles.narrator.model).toBeUndefined();
+    expect(state.modelRoles.textToSpeech.connectionId).toBeNull();
+  });
+
+  it("clears account-specific models, including saved ones, without touching other providers", () => {
+    const settings = useSettingsStore.getState();
+    const chatGpt = settings.addConnection({ preset: ApiPreset.CHATGPT });
+    const other = settings.addConnection({
+      preset: ApiPreset.OPENROUTER,
+      apiKey: "other-provider-key",
+    });
+    settings.setRoleConnection("narrator", chatGpt);
+    settings.setRoleModel("narrator", legacyModel);
+    settings.setUtilitySameAsNarrator(false);
+    settings.setRoleModel("utility", legacyModel);
+    settings.setRoleConnection("utility", other);
+    settings.setRoleModel("utility", otherModel);
+    settings.clearChatGptModels("second-account");
+
+    const state = useSettingsStore.getState();
+    expect(state.modelRoles.narrator.model).toBeUndefined();
+    expect(state.modelContextLength).toBe(0);
+    expect(state.modelRoles.utility.model).toEqual(otherModel);
     expect(
-      settings.modelRoles.utility.profiles[ApiPreset.CHATGPT].model,
+      state.roleAssignments.utility.savedModels?.[chatGpt],
     ).toBeUndefined();
-    expect(settings.chatGptProfileId).toBe("second-account");
+    expect(state.chatGptProfileId).toBe("second-account");
   });
 });
 
@@ -257,99 +459,76 @@ describe("thinking-level settings", () => {
     reasoning: { supportedEfforts: ["low", "medium", "high"] },
   };
 
-  beforeEach(() => {
-    useSettingsStore.setState(useSettingsStore.getInitialState());
-  });
-
-  afterEach(() => {
-    useSettingsStore.setState(useSettingsStore.getInitialState());
-  });
+  function connect(preset = ApiPreset.OPENROUTER, apiKey = "key") {
+    const settings = useSettingsStore.getState();
+    const id = settings.addConnection({ preset, apiKey });
+    settings.setRoleConnection("narrator", id);
+    return id;
+  }
 
   it("migrates existing role profiles to Model default without choosing an effort", () => {
-    const modelRoles = createDefaultModelRoles();
-    modelRoles.narrator.model = thinkingModel;
-    modelRoles.utility.model = thinkingModel;
-    const migrated = migrateSettingsState({ modelRoles });
-    expect(migrated.modelRoles.narrator.reasoningEffort).toBeUndefined();
-    expect(migrated.modelRoles.utility.reasoningEffort).toBeUndefined();
-    expect(migrated.modelRoles.narrator.model).toEqual(thinkingModel);
-    expect(useSettingsStore.persist.getOptions().version).toBe(7);
-  });
-
-  it("normalizes invalid persisted levels in active and inactive profiles", () => {
     const migrated = migrateSettingsState({
       modelRoles: {
         narrator: {
           activePreset: ApiPreset.OPENROUTER,
+          apiKey: "key",
+          model: thinkingModel,
+        },
+      },
+    });
+    expect(migrated.modelRoles.narrator.reasoningEffort).toBeUndefined();
+    expect(migrated.modelRoles.narrator.model).toEqual(thinkingModel);
+    expect(useSettingsStore.persist.getOptions().version).toBe(8);
+  });
+
+  it("normalizes invalid persisted levels", () => {
+    const migrated = migrateSettingsState({
+      modelRoles: {
+        narrator: {
+          activePreset: ApiPreset.OPENROUTER,
+          apiKey: "key",
           model: thinkingModel,
           reasoningEffort: "max",
-          profiles: {
-            [ApiPreset.OPENROUTER]: {
-              baseUrl: "https://openrouter.ai/api/v1",
-              model: thinkingModel,
-              reasoningEffort: "max",
-            },
-            [ApiPreset.GENERIC]: {
-              baseUrl: "https://custom.example/v1",
-              model: legacyModel,
-              reasoningEffort: "high",
-            },
-          },
         },
         utility: {
+          activePreset: ApiPreset.OPENROUTER,
+          apiKey: "key",
           model: thinkingModel,
           reasoningEffort: "low",
         },
       },
     });
     expect(migrated.modelRoles.narrator.reasoningEffort).toBeUndefined();
-    expect(
-      migrated.modelRoles.narrator.profiles[ApiPreset.OPENROUTER]
-        .reasoningEffort,
-    ).toBeUndefined();
-    expect(
-      migrated.modelRoles.narrator.profiles[ApiPreset.GENERIC].reasoningEffort,
-    ).toBeUndefined();
     expect(migrated.modelRoles.utility.reasoningEffort).toBe("low");
   });
 
-  it("stores independent levels for each role and provider profile", () => {
+  it("stores independent levels for each role and connection", () => {
     const settings = useSettingsStore.getState();
-    settings.setRoleActivePreset("narrator", ApiPreset.OPENROUTER);
+    const openRouter = connect();
     settings.setRoleModel("narrator", thinkingModel);
     settings.setRoleReasoningEffort("narrator", "high");
-    settings.setRoleModel("utility", thinkingModel);
+    settings.setUtilitySameAsNarrator(false);
     settings.setRoleReasoningEffort("utility", "low");
-    settings.setThinkingVisibility("none");
 
-    settings.setRoleActivePreset("narrator", ApiPreset.OPENAI);
+    const openAi = connect(ApiPreset.OPENAI);
     settings.setRoleModel("narrator", thinkingModel);
     expect(
       useSettingsStore.getState().modelRoles.narrator.reasoningEffort,
     ).toBeUndefined();
     settings.setRoleReasoningEffort("narrator", "medium");
-    settings.setRoleActivePreset("narrator", ApiPreset.OPENROUTER);
+    settings.setRoleConnection("narrator", openRouter);
 
     const current = useSettingsStore.getState();
     expect(current.modelRoles.narrator.reasoningEffort).toBe("high");
     expect(
-      current.modelRoles.narrator.profiles[ApiPreset.OPENAI].reasoningEffort,
+      current.roleAssignments.narrator.savedModels?.[openAi].reasoningEffort,
     ).toBe("medium");
     expect(current.modelRoles.utility.reasoningEffort).toBe("low");
-    expect(current.thinkingVisibility).toBe("none");
-    settings.setRoleReasoningEffort("narrator", undefined);
-    expect(
-      useSettingsStore.getState().modelRoles.narrator.reasoningEffort,
-    ).toBeUndefined();
-    expect(
-      useSettingsStore.getState().modelRoles.narrator.profiles[
-        ApiPreset.OPENROUTER
-      ].reasoningEffort,
-    ).toBeUndefined();
   });
 
   it("retains a supported effort on model refresh and clears unsupported choices", () => {
     const settings = useSettingsStore.getState();
+    connect();
     settings.setRoleModel("narrator", thinkingModel);
     settings.setRoleReasoningEffort("narrator", "high");
     settings.setRoleModel("narrator", { ...thinkingModel, name: "Refreshed" });
@@ -374,75 +553,48 @@ describe("thinking-level settings", () => {
     ).toBeUndefined();
   });
 
-  it("clears thinking levels when a URL or API account changes", () => {
+  it("clears thinking levels when the account behind a connection changes", () => {
     const settings = useSettingsStore.getState();
+    const id = connect();
     settings.setRoleModel("narrator", thinkingModel);
     settings.setRoleReasoningEffort("narrator", "high");
-    settings.setRoleApiKey("narrator", "different-account");
+    settings.updateConnection(id, { apiKey: "different-account" });
     expect(
       useSettingsStore.getState().modelRoles.narrator.reasoningEffort,
     ).toBeUndefined();
-    settings.setRoleReasoningEffort("narrator", "high");
-    settings.setRoleBaseUrl("narrator", "https://other.example/v1");
-    expect(
-      useSettingsStore.getState().modelRoles.narrator.model,
-    ).toBeUndefined();
-    expect(
-      useSettingsStore.getState().modelRoles.narrator.reasoningEffort,
-    ).toBeUndefined();
+    expect(useSettingsStore.getState().modelRoles.narrator.model).toEqual(
+      thinkingModel,
+    );
   });
 
-  it("clears active and saved ChatGPT levels when the subscription account changes", () => {
+  it("persists connections and levels, and rebuilds roles on reload", async () => {
     const settings = useSettingsStore.getState();
-    settings.setRoleActivePreset("narrator", ApiPreset.CHATGPT);
+    connect();
     settings.setRoleModel("narrator", thinkingModel);
     settings.setRoleReasoningEffort("narrator", "high");
-    settings.setRoleActivePreset("utility", ApiPreset.CHATGPT);
-    settings.setRoleModel("utility", thinkingModel);
-    settings.setRoleReasoningEffort("utility", "low");
-    settings.setRoleActivePreset("utility", ApiPreset.OPENROUTER);
-    settings.setRoleModel("utility", thinkingModel);
-    settings.setRoleReasoningEffort("utility", "medium");
-    settings.clearChatGptModels("new-account");
-
-    const current = useSettingsStore.getState();
-    expect(current.modelRoles.narrator.reasoningEffort).toBeUndefined();
-    expect(
-      current.modelRoles.narrator.profiles[ApiPreset.CHATGPT].reasoningEffort,
-    ).toBeUndefined();
-    expect(
-      current.modelRoles.utility.profiles[ApiPreset.CHATGPT].reasoningEffort,
-    ).toBeUndefined();
-    expect(current.modelRoles.utility.reasoningEffort).toBe("medium");
-  });
-
-  it("persists thinking levels and Model default through reload", async () => {
-    const settings = useSettingsStore.getState();
-    settings.setRoleModel("narrator", thinkingModel);
-    settings.setRoleReasoningEffort("narrator", "high");
-    settings.setRoleModel("utility", thinkingModel);
-    settings.setRoleReasoningEffort("utility", "low");
-    settings.setRoleReasoningEffort("utility", undefined);
     const saved = localStorage.getItem("settings")!;
-    expect(JSON.parse(saved).state.modelRoles.narrator.reasoningEffort).toBe(
-      "high",
-    );
-    expect(JSON.parse(saved).state.modelRoles.utility).not.toHaveProperty(
-      "reasoningEffort",
-    );
+    const persisted = JSON.parse(saved).state;
+    expect(persisted).not.toHaveProperty("modelRoles");
+    expect(persisted.roleAssignments.narrator.reasoningEffort).toBe("high");
+    expect(persisted.connections[0].apiKey).toBe("key");
+
     useSettingsStore.setState(useSettingsStore.getInitialState());
     localStorage.setItem("settings", saved);
     await useSettingsStore.persist.rehydrate();
-    expect(
-      useSettingsStore.getState().modelRoles.narrator.reasoningEffort,
-    ).toBe("high");
-    expect(
-      useSettingsStore.getState().modelRoles.utility.reasoningEffort,
-    ).toBeUndefined();
+    expect(useSettingsStore.getState().modelRoles.narrator).toMatchObject({
+      activePreset: ApiPreset.OPENROUTER,
+      model: thinkingModel,
+      reasoningEffort: "high",
+    });
+    expect(useSettingsStore.getState().modelRoles.utility.model).toEqual(
+      thinkingModel,
+    );
   });
 
   it("does not apply thinking levels to speech roles", () => {
     const settings = useSettingsStore.getState();
+    const id = connect();
+    settings.setRoleConnection("textToSpeech", id);
     settings.setRoleModel("textToSpeech", thinkingModel);
     settings.setRoleReasoningEffort("textToSpeech", "high");
     expect(

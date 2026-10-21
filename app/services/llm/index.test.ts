@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiPreset, ResponseMode } from "@/types";
 import type { LLMModel } from "./schema";
-import {
-  createDefaultModelRoles,
-  useSettingsStore,
-} from "@/store/useSettingsStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import { generateScenario } from "./scenarioGenerator";
 import {
   getRoleModels,
@@ -75,6 +72,11 @@ function responseError(status: number, json: unknown) {
     json: async () => json,
     text: async () => JSON.stringify(json),
   };
+}
+
+// The services read each role's resolved settings, so tests set those directly.
+function createDefaultModelRoles() {
+  return { ...useSettingsStore.getInitialState().modelRoles };
 }
 
 function setConfiguredRoles() {

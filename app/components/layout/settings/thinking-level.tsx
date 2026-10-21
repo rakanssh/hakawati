@@ -18,7 +18,7 @@ import { SettingsField } from "./settings-layout";
 
 const MODEL_DEFAULT = "model-default";
 
-function EffortLabel({ effort }: { effort: ReasoningEffort }) {
+export function EffortLabel({ effort }: { effort: ReasoningEffort }) {
   switch (effort) {
     case "none":
       return <Trans>None</Trans>;

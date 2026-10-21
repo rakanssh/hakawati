@@ -136,8 +136,11 @@ describe("ChatGPT provider through game and utility flows", () => {
     ).IS_REACT_ACT_ENVIRONMENT = true;
     vi.clearAllMocks();
     useSettingsStore.setState(useSettingsStore.getInitialState());
+    const chatGpt = useSettingsStore
+      .getState()
+      .addConnection({ preset: ApiPreset.CHATGPT });
     for (const role of ["narrator", "utility"] as const) {
-      useSettingsStore.getState().setRoleActivePreset(role, ApiPreset.CHATGPT);
+      useSettingsStore.getState().setRoleConnection(role, chatGpt);
       useSettingsStore.getState().setRoleModel(role, {
         id: `chatgpt-${role}`,
         name: `ChatGPT ${role}`,
@@ -295,9 +298,14 @@ describe("ChatGPT provider through game and utility flows", () => {
       settings.setPresencePenalty(0.3);
       settings.setSeed(42);
       settings.setMaxTokens(8192);
+      const generic = settings.addConnection({
+        preset: ApiPreset.GENERIC,
+        baseUrl: "https://other.example/v1",
+      });
+      const chatGpt = settings.addConnection({ preset: ApiPreset.CHATGPT });
       for (const role of ["narrator", "utility"] as const) {
-        settings.setRoleActivePreset(role, ApiPreset.GENERIC);
-        settings.setRoleActivePreset(role, ApiPreset.CHATGPT);
+        settings.setRoleConnection(role, generic);
+        settings.setRoleConnection(role, chatGpt);
       }
       expect(
         useSettingsStore.getState().modelRoles.narrator.reasoningEffort,

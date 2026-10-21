@@ -30,6 +30,13 @@ describe("ThinkingLevel", () => {
     ).IS_REACT_ACT_ENVIRONMENT = true;
     HTMLElement.prototype.scrollIntoView = vi.fn();
     useSettingsStore.setState(useSettingsStore.getInitialState());
+    const settings = useSettingsStore.getState();
+    const id = settings.addConnection({
+      preset: ApiPreset.GENERIC,
+      baseUrl: "https://models.example/v1",
+    });
+    settings.setRoleConnection("narrator", id);
+    settings.setRoleConnection("utility", id);
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -163,7 +170,10 @@ describe("ThinkingLevel", () => {
 
   it("does not suggest changing output limits for a ChatGPT subscription", async () => {
     const settings = useSettingsStore.getState();
-    settings.setRoleActivePreset("narrator", ApiPreset.CHATGPT);
+    settings.setRoleConnection(
+      "narrator",
+      settings.addConnection({ preset: ApiPreset.CHATGPT }),
+    );
     settings.setRoleModel("narrator", thinkingModel);
     settings.setRoleReasoningEffort("narrator", "high");
     await render();

@@ -13,11 +13,14 @@ All notable changes to this project are documented in this file.
 - Brass Night is now the default theme if you haven't picked one.
 - With nothing typed, the send button continues the story, replacing the separate Continue button.
 - Redesigned the input box: action modes are tabs along its top (Say is now Speak), dice rolls switch on beside them, and its buttons are labelled on desktop and larger on phones.
+- Redesigned AI Setup: save a provider once as a connection, then pick one for each role. Your saved providers and keys carry over.
+- Utility is now called Helper, and uses the Narrator's model unless you give it its own.
 
 ### Fixed
 
 - Settings pages now scroll in narrow windows.
 - Reporting a public scenario and blocking its publisher now work on macOS.
+- Settings opened from the library now show every section.
 
 ## [v1.2.0] - 2026-10-06
 

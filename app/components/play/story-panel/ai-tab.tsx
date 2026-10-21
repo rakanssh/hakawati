@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useLingui as useLinguiCore } from "@lingui/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { SlidersHorizontalIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,7 +14,8 @@ import {
   SettingsModal,
   type GlobalSettingsSectionId,
 } from "@/components/layout/settings/settings-modal";
-import { apiPresetMap } from "@/data/api-presets";
+import { useConnectionNames } from "@/components/layout/settings/ai-setup/parts";
+import { findConnection } from "@/store/model-connections";
 import {
   isModelRoleConfigured,
   useSettingsStore,
@@ -25,8 +25,11 @@ import { ApiPreset } from "@/types";
 /** The few model settings worth reaching mid-story; everything else stays in Settings. */
 export function AiTab() {
   const { t } = useLingui();
-  const { _ } = useLinguiCore();
   const narrator = useSettingsStore((state) => state.modelRoles.narrator);
+  const connection = useSettingsStore((state) =>
+    findConnection(state.connections, narrator.connectionId),
+  );
+  const connectionName = useConnectionNames();
   const maxTokens = useSettingsStore((state) => state.maxTokens);
   const temperature = useSettingsStore((state) => state.temperature);
   const modelContextLength = useSettingsStore(
@@ -38,8 +41,7 @@ export function AiTab() {
     useState<GlobalSettingsSectionId | null>(null);
 
   const isChatGpt = narrator.activePreset === ApiPreset.CHATGPT;
-  const providerLabel = apiPresetMap[narrator.activePreset]?.label;
-  const hasProvider = isChatGpt || narrator.baseUrl.trim().length > 0;
+  const hasProvider = Boolean(connection);
   const maxOutput =
     modelContextLength > 0 ? modelContextLength : Number.MAX_SAFE_INTEGER;
 
@@ -48,9 +50,9 @@ export function AiTab() {
       <SettingsPanel title={<Trans>Narrator</Trans>}>
         {hasProvider ? (
           <>
-            {providerLabel && (
+            {connection && (
               <p className="-mt-2 text-xs text-muted-foreground">
-                <Trans>Using {_(providerLabel)}</Trans>
+                <Trans>Using {connectionName(connection)}</Trans>
               </p>
             )}
             <SettingsField label={<Trans>Model</Trans>}>

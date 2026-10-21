@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useChatGptStore } from "./useChatGptStore";
-import { createDefaultModelRoles, useSettingsStore } from "./useSettingsStore";
+import { useSettingsStore } from "./useSettingsStore";
 import { ApiPreset } from "@/types";
 import type { ChatGptSession } from "@/services/chatgpt";
 
@@ -48,12 +48,14 @@ function pendingSession() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  const modelRoles = createDefaultModelRoles();
-  modelRoles.narrator.activePreset = ApiPreset.CHATGPT;
-  modelRoles.narrator.model = selectedModel;
-  modelRoles.narrator.profiles[ApiPreset.CHATGPT].model = selectedModel;
+  useSettingsStore.setState(useSettingsStore.getInitialState());
+  const settings = useSettingsStore.getState();
+  settings.setRoleConnection(
+    "narrator",
+    settings.addConnection({ preset: ApiPreset.CHATGPT }),
+  );
+  settings.setRoleModel("narrator", selectedModel);
   useSettingsStore.setState({
-    modelRoles,
     chatGptProfileId: "account-a",
     chatGptPlanNoticeAcknowledged: false,
   });
