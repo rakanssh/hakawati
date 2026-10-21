@@ -23,7 +23,6 @@ interface PlayLogDisplayProps {
   setCurrentlyEditingLogId: (id: string | null) => void;
   updateLogEntry: (id: string, updates: Partial<LogEntry>) => void;
   viewportRef: React.RefObject<HTMLDivElement | null>;
-  bottomRef: React.RefObject<HTMLDivElement | null>;
   onViewportScroll: () => void;
   narration?: {
     activeItemId: string | null;
@@ -40,7 +39,6 @@ export function PlayLogDisplay({
   setCurrentlyEditingLogId,
   updateLogEntry,
   viewportRef,
-  bottomRef,
   onViewportScroll,
   narration,
 }: PlayLogDisplayProps) {
@@ -94,7 +92,7 @@ export function PlayLogDisplay({
         >
           <div
             data-play-column=""
-            className="mx-auto flex min-h-full w-full max-w-(--play-column-max) flex-col px-3 pt-8 sm:px-5 sm:pt-7 lg:px-7"
+            className="mx-auto flex min-h-full w-full max-w-(--play-column-max) flex-col px-3 pt-8 pb-2.5 sm:px-5 sm:pt-7 lg:px-7"
             style={
               isMobilePlatform
                 ? { paddingTop: "calc(3.5rem + env(safe-area-inset-top))" }
@@ -235,7 +233,6 @@ export function PlayLogDisplay({
                 </p>
               </div>
             )}
-            <div ref={bottomRef} className="mt-2 h-px" />
           </div>
         </ScrollArea>
       </div>

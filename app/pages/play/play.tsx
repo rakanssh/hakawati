@@ -109,7 +109,6 @@ export default function Play() {
     stickToBottom,
     setStickToBottom,
     viewportRef,
-    bottomRef,
     scrollToBottom,
     handleScroll,
     loadingOlder,
@@ -207,11 +206,8 @@ export default function Play() {
 
   useEffect(() => {
     if (!stickToBottom) return;
-    bottomRef.current?.scrollIntoView({
-      behavior: loading ? "auto" : "smooth",
-      block: "end",
-    });
-  }, [log, loading, stickToBottom, bottomRef]);
+    scrollToBottom(loading ? "auto" : "smooth");
+  }, [log, loading, stickToBottom, scrollToBottom]);
 
   useEffect(() => {
     if (
@@ -303,7 +299,6 @@ export default function Play() {
           setCurrentlyEditingLogId={setCurrentlyEditingLogId}
           updateLogEntry={commitLogEntryEdit}
           viewportRef={viewportRef}
-          bottomRef={bottomRef}
           onViewportScroll={handleScroll}
           narration={{
             activeItemId: ttsPlayback.activeItemId,
