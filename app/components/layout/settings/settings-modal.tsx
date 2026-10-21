@@ -89,7 +89,7 @@ const globalSections = [
   },
   {
     id: "maintenance",
-    label: <Trans>Maintenance</Trans>,
+    label: <Trans>Updates</Trans>,
     description: <Trans>Check for app updates and install new versions.</Trans>,
     groupId: "support",
     group: <Trans>Support</Trans>,

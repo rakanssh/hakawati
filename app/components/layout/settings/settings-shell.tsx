@@ -214,81 +214,62 @@ export function SettingsShell<TId extends string>({
         }}
         className="top-0 left-0 flex h-dvh !w-screen !max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] ps-[env(safe-area-inset-left)] pe-[env(safe-area-inset-right)]"
       >
-        <div className="flex min-h-0 flex-1 flex-col bg-background">
-          <header className="flex shrink-0 items-center gap-2 border-b bg-background px-3 py-3 md:px-6">
-            {showingSubpage ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label="Back"
-                onClick={navigation.back}
-              >
-                <ChevronLeftIcon className="size-4 rtl:rotate-180" />
-              </Button>
-            ) : useCompactLayout &&
-              showingDetail &&
-              availableSections.length > 1 ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label="Back to settings"
-                onClick={() => setShowingDetail(false)}
-              >
-                <ChevronLeftIcon className="size-4 rtl:rotate-180" />
-              </Button>
-            ) : null}
-
-            <div className="min-w-0 flex-1">
-              <DialogTitle className="truncate text-lg leading-tight md:text-xl">
-                {showSettingsList ? (
-                  title
-                ) : showingSubpage && SubpageTitle ? (
-                  <SubpageTitle page={subpage} />
-                ) : (
-                  (activeDefinition?.label ?? title)
-                )}
-              </DialogTitle>
-              <DialogDescription className="sr-only">
-                {!showSettingsList
-                  ? (activeDefinition?.description ?? description)
-                  : description}
-              </DialogDescription>
+        <div className="flex min-h-0 flex-1 flex-col bg-background sm:grid sm:grid-cols-[260px_minmax(0,1fr)] lg:grid-cols-[280px_minmax(0,1fr)]">
+          {/* Phones show the list and a section one at a time; wider screens keep the list beside it. */}
+          <aside
+            className={cn(
+              "min-h-0 flex-col bg-background sm:flex sm:border-e",
+              showSettingsList ? "flex flex-1" : "hidden",
+            )}
+          >
+            <div className="flex shrink-0 items-center gap-2 border-b px-3 py-3 sm:border-b-0 sm:px-5 sm:pt-5 sm:pb-2">
+              {showSettingsList ? (
+                <>
+                  <DialogTitle className="min-w-0 flex-1 truncate text-lg leading-tight">
+                    {title}
+                  </DialogTitle>
+                  <DialogDescription className="sr-only">
+                    {description}
+                  </DialogDescription>
+                </>
+              ) : (
+                <span className="min-w-0 flex-1 truncate text-lg font-semibold leading-tight">
+                  {title}
+                </span>
+              )}
+              <DialogClose asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Close settings"
+                  className="shrink-0 sm:hidden"
+                >
+                  <XIcon className="size-4" />
+                </Button>
+              </DialogClose>
             </div>
 
-            <DialogClose asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label="Close settings"
-                className="shrink-0"
-              >
-                <XIcon className="size-4" />
-              </Button>
-            </DialogClose>
-          </header>
-
-          <div className="min-h-0 flex-1 sm:grid sm:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[340px_minmax(0,1fr)]">
-            <ScrollArea
-              className={cn(
-                "min-h-0 bg-background sm:block sm:border-e",
-                showSettingsList ? "block h-full" : "hidden",
-              )}
-            >
+            <ScrollArea className="min-h-0 flex-1">
               <nav
-                className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 sm:max-w-none sm:p-5 lg:p-6"
+                className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 sm:max-w-none sm:gap-5 sm:px-3 sm:pt-2 sm:pb-5"
                 aria-label="Settings"
               >
                 {groupedSections.map((group, groupIndex) => (
-                  <div key={groupIndex} className="flex flex-col gap-2">
-                    <div className="px-1 text-xs font-medium uppercase tracking-normal text-muted-foreground">
+                  <div
+                    key={groupIndex}
+                    className="flex flex-col gap-2 sm:gap-1"
+                  >
+                    <div
+                      data-sidebar-heading=""
+                      className="px-1 text-xs font-semibold text-muted-foreground sm:px-2.5"
+                    >
                       {group.label}
                     </div>
-                    <div className="overflow-hidden rounded-xs border bg-card">
+                    <div className="overflow-hidden rounded-xs border bg-card sm:flex sm:flex-col sm:gap-0.5 sm:overflow-visible sm:border-0 sm:bg-transparent">
                       {group.sections.map((section) => {
                         const Icon = section.icon;
+                        const active = section.id === activeSection;
 
                         return (
                           <button
@@ -296,23 +277,24 @@ export function SettingsShell<TId extends string>({
                             type="button"
                             className={cn(
                               "relative flex min-h-12 w-full items-center gap-3 border-b px-3 py-3 text-start text-sm transition-colors last:border-b-0 hover:bg-accent hover:text-accent-foreground",
-                              !useCompactLayout &&
-                                section.id === activeSection &&
-                                "bg-accent text-accent-foreground",
+                              "sm:min-h-9 sm:gap-2.5 sm:rounded-xs sm:border-b-0 sm:px-2.5 sm:py-1.5 sm:text-foreground/85 sm:hover:bg-accent/60",
+                              active &&
+                                "sm:bg-primary/15 sm:text-primary sm:hover:bg-primary/20 sm:hover:text-primary",
                             )}
                             onClick={() => selectSection(section.id)}
-                            aria-current={
-                              section.id === activeSection ? "page" : undefined
-                            }
+                            aria-current={active ? "page" : undefined}
                           >
-                            <Icon className="size-4 shrink-0 text-muted-foreground" />
-                            <span className="min-w-0 flex-1 truncate font-medium">
+                            <Icon className="size-4 shrink-0 text-muted-foreground sm:text-current" />
+                            <span
+                              className={cn(
+                                "min-w-0 flex-1 truncate font-medium",
+                                active ? "sm:font-semibold" : "sm:font-normal",
+                              )}
+                            >
                               {section.label}
                             </span>
                             {renderSectionExtra?.(section.id)}
-                            {useCompactLayout ? (
-                              <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground rtl:rotate-180" />
-                            ) : null}
+                            <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground sm:hidden rtl:rotate-180" />
                           </button>
                         );
                       })}
@@ -321,23 +303,84 @@ export function SettingsShell<TId extends string>({
                 ))}
               </nav>
             </ScrollArea>
+          </aside>
 
-            <section
-              className={cn(
-                "min-h-0 bg-card sm:flex sm:flex-col",
-                // Phones stack the panes, so the detail needs a height to scroll in.
-                showSettingsList ? "hidden" : "flex h-full flex-col",
-              )}
+          <section
+            className={cn(
+              "min-h-0 flex-col bg-card sm:flex",
+              showSettingsList ? "hidden" : "flex flex-1",
+            )}
+          >
+            <header className="flex shrink-0 items-center gap-2 border-b px-3 py-3 md:px-6">
+              {showingSubpage ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Back"
+                  onClick={navigation.back}
+                >
+                  <ChevronLeftIcon className="size-4 rtl:rotate-180" />
+                </Button>
+              ) : useCompactLayout &&
+                showingDetail &&
+                availableSections.length > 1 ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Back to settings"
+                  onClick={() => setShowingDetail(false)}
+                >
+                  <ChevronLeftIcon className="size-4 rtl:rotate-180" />
+                </Button>
+              ) : null}
+
+              <div className="min-w-0 flex-1">
+                {showSettingsList ? (
+                  <span className="block truncate text-lg font-semibold leading-tight md:text-xl">
+                    {activeDefinition?.label ?? title}
+                  </span>
+                ) : (
+                  <>
+                    <DialogTitle className="truncate text-lg leading-tight md:text-xl">
+                      {showingSubpage && SubpageTitle ? (
+                        <SubpageTitle page={subpage} />
+                      ) : (
+                        (activeDefinition?.label ?? title)
+                      )}
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">
+                      {activeDefinition?.description ?? description}
+                    </DialogDescription>
+                  </>
+                )}
+              </div>
+
+              <DialogClose asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Close settings"
+                  className="shrink-0"
+                >
+                  <XIcon className="size-4" />
+                </Button>
+              </DialogClose>
+            </header>
+
+            <ScrollArea
+              className="min-h-0 flex-1"
+              viewportRef={detailViewportRef}
             >
-              <ScrollArea className="h-full" viewportRef={detailViewportRef}>
-                <div className="w-full px-4 py-4 sm:max-w-none sm:px-6 sm:py-6 lg:px-8 xl:px-10">
-                  <SettingsNavigationContext.Provider value={navigation}>
-                    {ActiveComponent && <ActiveComponent />}
-                  </SettingsNavigationContext.Provider>
-                </div>
-              </ScrollArea>
-            </section>
-          </div>
+              <div className="w-full px-4 py-4 sm:max-w-none sm:px-6 sm:py-6 lg:px-8 xl:px-10">
+                <SettingsNavigationContext.Provider value={navigation}>
+                  {ActiveComponent && <ActiveComponent />}
+                </SettingsNavigationContext.Provider>
+              </div>
+            </ScrollArea>
+          </section>
         </div>
       </DialogContent>
     </Dialog>

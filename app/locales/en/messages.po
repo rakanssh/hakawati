@@ -1748,10 +1748,6 @@ msgstr "Mage"
 msgid "magic, city"
 msgstr "magic, city"
 
-#: app/components/layout/settings/settings-modal.tsx:92
-msgid "Maintenance"
-msgstr "Maintenance"
-
 #: app/components/layout/settings/chatgpt-connection.tsx:32
 msgid "Manage usage"
 msgstr "Manage usage"
@@ -3458,6 +3454,10 @@ msgstr "Update downloaded. Restarting..."
 #: app/pages/scenarios/home.tsx:531
 msgid "Updated"
 msgstr "Updated"
+
+#: app/components/layout/settings/settings-modal.tsx:92
+msgid "Updates"
+msgstr "Updates"
 
 #: app/components/layout/settings/ai-setup/model-picker.tsx:299
 msgid "Use"
