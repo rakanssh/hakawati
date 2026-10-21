@@ -548,7 +548,7 @@ pub fn run() {
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
 
-    #[cfg(any(target_os = "android", target_os = "ios"))]
+    #[cfg(target_os = "android")]
     let builder = builder.on_window_event(|window, event| {
         let foreground = match event {
             tauri::WindowEvent::Suspended => false,

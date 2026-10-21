@@ -29,7 +29,10 @@ pub struct OAuthLoopbackState {
 
 /// Android cuts off network access for apps in the background, and the browser is
 /// still in front when a sign-in callback arrives, so code exchanges wait until the
-/// user is back in Hakawati. Desktop windows never report being suspended.
+/// user is back in Hakawati. Only Android reports this; elsewhere the app is always
+/// treated as in front. (iOS signs in through a sheet over the app, and its
+/// "suspended" also fires for a pulled-down Control Center, with nothing to undo it
+/// when the app comes back without leaving.)
 pub struct AppForeground(tokio::sync::watch::Sender<bool>);
 
 impl Default for AppForeground {
@@ -39,7 +42,7 @@ impl Default for AppForeground {
 }
 
 impl AppForeground {
-    #[cfg_attr(not(mobile), allow(dead_code))]
+    #[cfg_attr(not(target_os = "android"), allow(dead_code))]
     pub fn set(&self, foreground: bool) {
         self.0.send_replace(foreground);
     }
