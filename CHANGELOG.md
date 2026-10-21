@@ -17,6 +17,7 @@ All notable changes to this project are documented in this file.
 ### Fixed
 
 - Settings pages now scroll in narrow windows.
+- Reporting a public scenario and blocking its publisher now work on macOS.
 
 ## [v1.2.0] - 2026-10-06
 
