@@ -110,6 +110,19 @@
   border-radius: 46% 54% 52% 48% / 55% 45% 55% 45%;
 }
 
+/* The wobbly frame can't join a tab, so the mode tabs sit just above it. */
+.theme-storybook :is([data-composer-tab], [data-composer-tabs] > :last-child) {
+  margin-bottom: 6px;
+}
+
+.theme-storybook [data-composer-tab] {
+  border-radius: 12px;
+}
+
+.theme-storybook [data-composer-tab][data-active] {
+  border: 2px solid color-mix(in oklch, var(--foreground) 70%, transparent);
+}
+
 .theme-storybook .sidebar-chip {
   border-radius: 12px;
 }

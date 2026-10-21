@@ -3,6 +3,7 @@ mod database_transaction;
 mod migration_backup;
 mod oauth_loopback;
 mod secret_store;
+mod sign_in_sheet;
 mod speech_recorder;
 
 #[derive(Clone, serde::Serialize)]
@@ -547,8 +548,17 @@ pub fn run() {
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
 
-    #[cfg(any(target_os = "android", target_os = "ios"))]
-    let builder = builder;
+    #[cfg(target_os = "android")]
+    let builder = builder.on_window_event(|window, event| {
+        let foreground = match event {
+            tauri::WindowEvent::Suspended => false,
+            tauri::WindowEvent::Resumed => true,
+            _ => return,
+        };
+        window
+            .state::<oauth_loopback::AppForeground>()
+            .set(foreground);
+    });
 
     builder
         .plugin(tauri_plugin_clipboard_manager::init())
@@ -556,9 +566,11 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_process::init())
         .manage(oauth_loopback::OAuthLoopbackState::default())
+        .manage(oauth_loopback::AppForeground::default())
         .manage(chatgpt::ChatGptState::default())
         .manage(database_transaction::DatabaseTransactions::default())
-        .manage(speech_recorder::SpeechRecorderState::default())
+        .plugin(speech_recorder::init())
+        .plugin(sign_in_sheet::init())
         .invoke_handler(tauri::generate_handler![
             greet,
             chatgpt::chatgpt_session,
@@ -572,6 +584,7 @@ pub fn run() {
             database_transaction::query_database_transaction,
             database_transaction::end_database_transaction,
             oauth_loopback::start_oauth_loopback,
+            oauth_loopback::open_oauth_loopback_page,
             oauth_loopback::wait_oauth_loopback,
             oauth_loopback::cancel_oauth_loopback,
             secret_store::set_hosted_refresh_token,

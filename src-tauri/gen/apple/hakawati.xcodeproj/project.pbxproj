@@ -1,0 +1,482 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		033B89D219E0BDDF53203633 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 2BA33239E1AE5C4EF891403B /* assets */; };
+		0485318900F4A6E6BC9A35E1 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A84E1D4049EEFB5D5AE5B85B /* LaunchScreen.storyboard */; };
+		05A852B41F4D0FC89AD17EF3 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CDD5321095FDA0113A04DDCB /* CoreGraphics.framework */; };
+		0D9A857237F153CEB30A2932 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8613DE99308181E3172AC211 /* UIKit.framework */; };
+		706DC8348828BCF739A15E82 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AD9989E535F1B944CAED92D6 /* QuartzCore.framework */; };
+		7C0FD65AF973E14387975D34 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0C165BA5F78D496D756022EF /* MetalKit.framework */; };
+		8C0DDA5382E5D2AE28B105BC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6F280FC2CE6122DF6D20C4AF /* Assets.xcassets */; };
+		9EAF44C87332A65523717CC7 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 07EAEF6B660A32EAC21C9D67 /* Metal.framework */; };
+		A6B206430C89D6CC86EDB654 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 89AB3F70598FC544EE4933CA /* main.mm */; };
+		D1353546C35BA54E2B96C4E9 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 885779B56CF6C826CB05EE6B /* WebKit.framework */; };
+		D143DA815145DC1171020B20 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD83A8014AD22B34935ABFDC /* Security.framework */; };
+		EE637021B74347324F83E62B /* libapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3B5576FCA6703ACE4A1CDC18 /* libapp.a */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		03AF8CF374376B484CC7A37B /* hakawati_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = hakawati_iOS.entitlements; sourceTree = "<group>"; };
+		07EAEF6B660A32EAC21C9D67 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		08DB16100B93DEA873F0BC73 /* speech_recorder.rs */ = {isa = PBXFileReference; path = speech_recorder.rs; sourceTree = "<group>"; };
+		0C165BA5F78D496D756022EF /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
+		15D22DD6C988F5BBA47497D5 /* vault.rs */ = {isa = PBXFileReference; path = vault.rs; sourceTree = "<group>"; };
+		19CF70DEEAE996488CD0E19C /* main.rs */ = {isa = PBXFileReference; path = main.rs; sourceTree = "<group>"; };
+		23A49A574D64CBD8F32F64B6 /* migration_backup.rs */ = {isa = PBXFileReference; path = migration_backup.rs; sourceTree = "<group>"; };
+		2BA33239E1AE5C4EF891403B /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = SOURCE_ROOT; };
+		3B5576FCA6703ACE4A1CDC18 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
+		5DC2F6408527C8BC214C5587 /* secret_store.rs */ = {isa = PBXFileReference; path = secret_store.rs; sourceTree = "<group>"; };
+		60534D4FB6BE3B7A14F723B3 /* hakawati_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = hakawati_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6E0ED56E6882EBEB203F60F4 /* mod.rs */ = {isa = PBXFileReference; path = mod.rs; sourceTree = "<group>"; };
+		6F280FC2CE6122DF6D20C4AF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		8613DE99308181E3172AC211 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		885779B56CF6C826CB05EE6B /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
+		89AB3F70598FC544EE4933CA /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
+		94D2895224EAF641244E65B9 /* database_transaction.rs */ = {isa = PBXFileReference; path = database_transaction.rs; sourceTree = "<group>"; };
+		9605A73896148FC88E1D561D /* oauth_loopback.rs */ = {isa = PBXFileReference; path = oauth_loopback.rs; sourceTree = "<group>"; };
+		9BF3915A2574D73B0751E181 /* bindings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bindings.h; sourceTree = "<group>"; };
+		A84E1D4049EEFB5D5AE5B85B /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		AD9989E535F1B944CAED92D6 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		B2F7D8784C9E3B30817E1262 /* lib.rs */ = {isa = PBXFileReference; path = lib.rs; sourceTree = "<group>"; };
+		BFD2D257261D5EC3B9480FEF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		CDD5321095FDA0113A04DDCB /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		FD83A8014AD22B34935ABFDC /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		E60EA444174C19FAA0EEA9CB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EE637021B74347324F83E62B /* libapp.a in Frameworks */,
+				05A852B41F4D0FC89AD17EF3 /* CoreGraphics.framework in Frameworks */,
+				9EAF44C87332A65523717CC7 /* Metal.framework in Frameworks */,
+				7C0FD65AF973E14387975D34 /* MetalKit.framework in Frameworks */,
+				706DC8348828BCF739A15E82 /* QuartzCore.framework in Frameworks */,
+				D143DA815145DC1171020B20 /* Security.framework in Frameworks */,
+				0D9A857237F153CEB30A2932 /* UIKit.framework in Frameworks */,
+				D1353546C35BA54E2B96C4E9 /* WebKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0E03AFA54120FF2EE5DD48F3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				60534D4FB6BE3B7A14F723B3 /* hakawati_iOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		12F79EE328176FAEE0C93589 /* bindings */ = {
+			isa = PBXGroup;
+			children = (
+				9BF3915A2574D73B0751E181 /* bindings.h */,
+			);
+			path = bindings;
+			sourceTree = "<group>";
+		};
+		2AFF4133C98C30ECCB04B7F9 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				40A8637196F9277F5DBE4598 /* hakawati */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		40A8637196F9277F5DBE4598 /* hakawati */ = {
+			isa = PBXGroup;
+			children = (
+				89AB3F70598FC544EE4933CA /* main.mm */,
+				12F79EE328176FAEE0C93589 /* bindings */,
+			);
+			path = hakawati;
+			sourceTree = "<group>";
+		};
+		4B974230B5D97A2084106ABC /* chatgpt */ = {
+			isa = PBXGroup;
+			children = (
+				6E0ED56E6882EBEB203F60F4 /* mod.rs */,
+				15D22DD6C988F5BBA47497D5 /* vault.rs */,
+			);
+			path = chatgpt;
+			sourceTree = "<group>";
+		};
+		659E852A08FADC416D342527 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				CDD5321095FDA0113A04DDCB /* CoreGraphics.framework */,
+				3B5576FCA6703ACE4A1CDC18 /* libapp.a */,
+				07EAEF6B660A32EAC21C9D67 /* Metal.framework */,
+				0C165BA5F78D496D756022EF /* MetalKit.framework */,
+				AD9989E535F1B944CAED92D6 /* QuartzCore.framework */,
+				FD83A8014AD22B34935ABFDC /* Security.framework */,
+				8613DE99308181E3172AC211 /* UIKit.framework */,
+				885779B56CF6C826CB05EE6B /* WebKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		8F6CD762418FAA82B94A3DB4 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				94D2895224EAF641244E65B9 /* database_transaction.rs */,
+				B2F7D8784C9E3B30817E1262 /* lib.rs */,
+				19CF70DEEAE996488CD0E19C /* main.rs */,
+				23A49A574D64CBD8F32F64B6 /* migration_backup.rs */,
+				9605A73896148FC88E1D561D /* oauth_loopback.rs */,
+				5DC2F6408527C8BC214C5587 /* secret_store.rs */,
+				08DB16100B93DEA873F0BC73 /* speech_recorder.rs */,
+				4B974230B5D97A2084106ABC /* chatgpt */,
+			);
+			name = src;
+			path = ../../src;
+			sourceTree = "<group>";
+		};
+		BD387871E5D18F0C2BD03A15 /* hakawati_iOS */ = {
+			isa = PBXGroup;
+			children = (
+				03AF8CF374376B484CC7A37B /* hakawati_iOS.entitlements */,
+				BFD2D257261D5EC3B9480FEF /* Info.plist */,
+			);
+			path = hakawati_iOS;
+			sourceTree = "<group>";
+		};
+		F6397AA9F49C27704B9F8077 /* Externals */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Externals;
+			sourceTree = "<group>";
+		};
+		FE257F6C7BD15C1EC794FD56 = {
+			isa = PBXGroup;
+			children = (
+				2BA33239E1AE5C4EF891403B /* assets */,
+				6F280FC2CE6122DF6D20C4AF /* Assets.xcassets */,
+				A84E1D4049EEFB5D5AE5B85B /* LaunchScreen.storyboard */,
+				F6397AA9F49C27704B9F8077 /* Externals */,
+				BD387871E5D18F0C2BD03A15 /* hakawati_iOS */,
+				2AFF4133C98C30ECCB04B7F9 /* Sources */,
+				8F6CD762418FAA82B94A3DB4 /* src */,
+				659E852A08FADC416D342527 /* Frameworks */,
+				0E03AFA54120FF2EE5DD48F3 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		63A947D152BE9E99B10310BE /* hakawati_iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C9EAE726DCE1C8B8A909F303 /* Build configuration list for PBXNativeTarget "hakawati_iOS" */;
+			buildPhases = (
+				E24B2616821270E796816B63 /* Build Rust Code */,
+				D614714D6893CC18D9F82A90 /* Sources */,
+				02E772DCCD4AA1F24363C25E /* Resources */,
+				E60EA444174C19FAA0EEA9CB /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = hakawati_iOS;
+			packageProductDependencies = (
+			);
+			productName = hakawati_iOS;
+			productReference = 60534D4FB6BE3B7A14F723B3 /* hakawati_iOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BCFEE9FB544245955E05A9B1 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 4FE742DAAC8D17AF85A70723 /* Build configuration list for PBXProject "hakawati" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = FE257F6C7BD15C1EC794FD56;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 0E03AFA54120FF2EE5DD48F3 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				63A947D152BE9E99B10310BE /* hakawati_iOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		02E772DCCD4AA1F24363C25E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8C0DDA5382E5D2AE28B105BC /* Assets.xcassets in Resources */,
+				0485318900F4A6E6BC9A35E1 /* LaunchScreen.storyboard in Resources */,
+				033B89D219E0BDDF53203633 /* assets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		E24B2616821270E796816B63 /* Build Rust Code */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build Rust Code";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/Externals/x86_64/${CONFIGURATION}/libapp.a",
+				"$(SRCROOT)/Externals/arm64/${CONFIGURATION}/libapp.a",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "npm run -- tauri ios xcode-script -v --platform \"${PLATFORM_DISPLAY_NAME:?}\" --sdk-root \"${SDKROOT:?}\" --framework-search-paths \"${FRAMEWORK_SEARCH_PATHS:?}\" --header-search-paths \"${HEADER_SEARCH_PATHS:?}\" --gcc-preprocessor-definitions \"${GCC_PREPROCESSOR_DEFINITIONS:-}\" --configuration \"${CONFIGURATION:?}\" ${FORCE_COLOR} ${ARCHS:?}\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D614714D6893CC18D9F82A90 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A6B206430C89D6CC86EDB654 /* main.mm in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		4A26AB533397FA4F3EC9ACD5 /* release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ARCHS = (
+					arm64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = hakawati_iOS/hakawati_iOS.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_BITCODE = NO;
+				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\".\"",
+				);
+				INFOPLIST_FILE = hakawati_iOS/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = dev.hakawati.app;
+				PRODUCT_NAME = "Hakawati";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALID_ARCHS = arm64;
+			};
+			name = release;
+		};
+		9D00E39ADADEE44AC1D21244 /* debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ARCHS = (
+					arm64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = hakawati_iOS/hakawati_iOS.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_BITCODE = NO;
+				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\".\"",
+				);
+				INFOPLIST_FILE = hakawati_iOS/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = dev.hakawati.app;
+				PRODUCT_NAME = "Hakawati";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALID_ARCHS = arm64;
+			};
+			name = debug;
+		};
+		B3BF55DAE90F5390C9F18E1E /* debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = debug;
+		};
+		B583B843AA119F558EAF5D0A /* release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4FE742DAAC8D17AF85A70723 /* Build configuration list for PBXProject "hakawati" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B3BF55DAE90F5390C9F18E1E /* debug */,
+				B583B843AA119F558EAF5D0A /* release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = debug;
+		};
+		C9EAE726DCE1C8B8A909F303 /* Build configuration list for PBXNativeTarget "hakawati_iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9D00E39ADADEE44AC1D21244 /* debug */,
+				4A26AB533397FA4F3EC9ACD5 /* release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = BCFEE9FB544245955E05A9B1 /* Project object */;
+}

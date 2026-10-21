@@ -27,6 +27,31 @@ pub struct OAuthLoopbackState {
     cancellers: Arc<Mutex<HashMap<String, OAuthLoopbackCanceller>>>,
 }
 
+/// Android cuts off network access for apps in the background, and the browser is
+/// still in front when a sign-in callback arrives, so code exchanges wait until the
+/// user is back in Hakawati. Only Android reports this; elsewhere the app is always
+/// treated as in front. (iOS signs in through a sheet over the app, and its
+/// "suspended" also fires for a pulled-down Control Center, with nothing to undo it
+/// when the app comes back without leaving.)
+pub struct AppForeground(tokio::sync::watch::Sender<bool>);
+
+impl Default for AppForeground {
+    fn default() -> Self {
+        Self(tokio::sync::watch::channel(true).0)
+    }
+}
+
+impl AppForeground {
+    #[cfg_attr(not(target_os = "android"), allow(dead_code))]
+    pub fn set(&self, foreground: bool) {
+        self.0.send_replace(foreground);
+    }
+
+    pub async fn wait(&self) {
+        let _ = self.0.subscribe().wait_for(|foreground| *foreground).await;
+    }
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OAuthLoopbackStart {
@@ -131,16 +156,38 @@ pub fn start_oauth_loopback(
     state.start(listener)
 }
 
+/// Opens the sign-in page for listener `id`; see sign_in_sheet.rs.
+#[tauri::command]
+pub async fn open_oauth_loopback_page(
+    app: tauri::AppHandle,
+    state: tauri::State<'_, OAuthLoopbackState>,
+    id: String,
+    url: String,
+) -> Result<(), String> {
+    if !(url.starts_with("https://") || url.starts_with("http://")) {
+        return Err("Sign-in pages must be web addresses".to_string());
+    }
+    crate::sign_in_sheet::open(&app, &url, state.inner(), &id).await
+}
+
 #[tauri::command]
 pub async fn wait_oauth_loopback(
+    app: tauri::AppHandle,
     state: tauri::State<'_, OAuthLoopbackState>,
+    foreground: tauri::State<'_, AppForeground>,
     id: String,
     timeout_ms: u64,
 ) -> Result<String, String> {
     let state = state.inner().clone();
-    tauri::async_runtime::spawn_blocking(move || state.wait(&id, Duration::from_millis(timeout_ms)))
-        .await
-        .map_err(|error| error.to_string())?
+    let callback = tauri::async_runtime::spawn_blocking(move || {
+        state.wait(&id, Duration::from_millis(timeout_ms))
+    })
+    .await
+    .map_err(|error| error.to_string())?;
+    crate::sign_in_sheet::close(&app).await;
+    let callback = callback?;
+    foreground.wait().await;
+    Ok(callback)
 }
 
 #[tauri::command]
@@ -262,13 +309,31 @@ fn read_callback_path(
 
 #[cfg(test)]
 mod tests {
-    use super::{OAuthLoopbackState, OAUTH_CANCELLED};
+    use super::{AppForeground, OAuthLoopbackState, OAUTH_CANCELLED};
     use std::{
         io::{Read, Write},
         net::{TcpListener, TcpStream},
+        sync::{mpsc, Arc},
         thread,
         time::Duration,
     };
+
+    #[test]
+    fn code_exchange_waits_until_the_app_is_back_in_front() {
+        let foreground = Arc::new(AppForeground::default());
+        tauri::async_runtime::block_on(foreground.wait());
+        foreground.set(false);
+        let (resumed_tx, resumed_rx) = mpsc::channel();
+        let waiter_foreground = foreground.clone();
+        let waiter = thread::spawn(move || {
+            tauri::async_runtime::block_on(waiter_foreground.wait());
+            resumed_tx.send(()).unwrap();
+        });
+        assert!(resumed_rx.recv_timeout(Duration::from_millis(100)).is_err());
+        foreground.set(true);
+        resumed_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+        waiter.join().unwrap();
+    }
 
     #[test]
     fn cancellation_releases_a_waiting_login_and_its_port() {

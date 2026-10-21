@@ -4,14 +4,42 @@ pub fn hosted_refresh_token_account(profile_id: &str) -> String {
     format!("hosted:{profile_id}:refresh_token")
 }
 
+// Desktop uses the OS keyring. Android keeps secrets in a private SharedPreferences
+// file, encrypted with an AES key that is generated inside the Android Keystore.
+// iOS keeps them in the app's own Keychain, readable while the device is unlocked.
+// Like the encrypted ChatGPT vault in Application Support, they move to a new device
+// with an encrypted backup, so a restored vault can still be unlocked.
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
-mod platform {
-    use keyring::v1::{Entry, Error};
+pub(crate) use keyring::v1::{Entry, Error};
+#[cfg(any(target_os = "android", target_os = "ios"))]
+pub(crate) use keyring_core::{Entry, Error};
 
-    use super::{hosted_refresh_token_account, SERVICE_NAME};
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+pub(crate) fn keyring_entry(service: &str, user: &str) -> Result<Entry, Error> {
+    Entry::new(service, user)
+}
+
+#[cfg(any(target_os = "android", target_os = "ios"))]
+pub(crate) fn keyring_entry(service: &str, user: &str) -> Result<Entry, Error> {
+    static STORE: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    let guard = STORE
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
+    if keyring_core::get_default_store().is_none() {
+        #[cfg(target_os = "android")]
+        keyring_core::set_default_store(android_native_keyring_store::Store::new()?);
+        #[cfg(target_os = "ios")]
+        keyring_core::set_default_store(apple_native_keyring_store::protected::Store::new()?);
+    }
+    drop(guard);
+    Entry::new(service, user)
+}
+
+mod platform {
+    use super::{hosted_refresh_token_account, keyring_entry, Entry, Error, SERVICE_NAME};
 
     fn entry(profile_id: &str) -> Result<Entry, String> {
-        Entry::new(SERVICE_NAME, &hosted_refresh_token_account(profile_id))
+        keyring_entry(SERVICE_NAME, &hosted_refresh_token_account(profile_id))
             .map_err(|error| error.to_string())
     }
 
@@ -34,21 +62,6 @@ mod platform {
             Ok(()) | Err(Error::NoEntry) => Ok(()),
             Err(error) => Err(error.to_string()),
         }
-    }
-}
-
-#[cfg(any(target_os = "android", target_os = "ios"))]
-mod platform {
-    pub fn set(_profile_id: &str, _token: &str) -> Result<(), String> {
-        Err("secure storage is not implemented on mobile yet".to_string())
-    }
-
-    pub fn get(_profile_id: &str) -> Result<Option<String>, String> {
-        Err("secure storage is not implemented on mobile yet".to_string())
-    }
-
-    pub fn delete(_profile_id: &str) -> Result<(), String> {
-        Ok(())
     }
 }
 

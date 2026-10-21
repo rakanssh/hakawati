@@ -128,36 +128,10 @@ textarea::-webkit-scrollbar-thumb {
   }
 }
 
-@layer utilities {
-  @container (max-width: 440px) {
-    .composer-command-controls button {
-      width: 2.25rem !important;
-      min-width: 2.25rem;
-    }
-
-    .composer-command-button {
-      min-width: 2.5rem;
-      padding-inline: 0;
-    }
-
-    .composer-command-controls .composer-command-selector {
-      width: 2.625rem !important;
-      min-width: 2.625rem;
-      gap: 0.125rem;
-      padding-inline: 0.25rem;
-    }
-
-    .composer-command-select-affordance {
-      border-inline-start: 0;
-      padding-inline-start: 0;
-    }
-  }
-
-  @container (max-width: 20rem) {
-    .composer-command-controls button {
-      width: 2rem !important;
-      min-width: 2rem;
-    }
+/* Only icons fit across a very narrow composer, so the open tab drops its name too. */
+@container (max-width: 15rem) {
+  .composer-tab-active-label {
+    display: none;
   }
 }
 

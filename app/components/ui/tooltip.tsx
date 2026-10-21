@@ -3,7 +3,11 @@
 import * as React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 
+import { isMobilePlatform } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
+
+// Touch has no hover, so a tooltip opened by focus would stay up until dismissed.
+const TOOLTIPS_DISABLED = isMobilePlatform();
 
 function TooltipProvider({
   delayDuration = 0,
@@ -23,7 +27,11 @@ function Tooltip({
 }: React.ComponentProps<typeof TooltipPrimitive.Root>) {
   return (
     <TooltipProvider>
-      <TooltipPrimitive.Root data-slot="tooltip" {...props} />
+      <TooltipPrimitive.Root
+        data-slot="tooltip"
+        {...props}
+        open={TOOLTIPS_DISABLED ? false : props.open}
+      />
     </TooltipProvider>
   );
 }

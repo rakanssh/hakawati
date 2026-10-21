@@ -1,6 +1,5 @@
 import { fetch } from "@tauri-apps/plugin-http";
 import { invoke } from "@tauri-apps/api/core";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   asApiObject,
   parseApiError,
@@ -515,7 +514,13 @@ export async function signInHostedSync(input: {
     if (input.signal.aborted) onAbort();
   });
   try {
-    await Promise.race([openUrl(authUrl), cancelled]);
+    await Promise.race([
+      invoke("open_oauth_loopback_page", {
+        id: loopback.id,
+        url: authUrl.toString(),
+      }),
+      cancelled,
+    ]);
     const waitForCallback = invoke<string>("wait_oauth_loopback", {
       id: loopback.id,
       timeoutMs: input.timeoutMs ?? 120_000,

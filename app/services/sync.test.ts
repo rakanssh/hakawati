@@ -35,10 +35,6 @@ const tauriCore = vi.hoisted(() => ({
   invoke: vi.fn(),
 }));
 
-const opener = vi.hoisted(() => ({
-  openUrl: vi.fn(),
-}));
-
 const coverImages = vi.hoisted(() => ({ optimize: vi.fn() }));
 
 vi.mock("@/lib/cover-image", async (importOriginal) => ({
@@ -75,10 +71,6 @@ vi.mock("@tauri-apps/plugin-http", () => ({
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: tauriCore.invoke,
-}));
-
-vi.mock("@tauri-apps/plugin-opener", () => ({
-  openUrl: opener.openUrl,
 }));
 
 vi.mock("@/repositories/tale.repository", () => ({
@@ -161,6 +153,20 @@ function jsonResponse(body: unknown) {
     json: () => Promise.resolve(body),
     text: () => Promise.resolve(JSON.stringify(body)),
   };
+}
+
+function signInPageCall() {
+  return tauriCore.invoke.mock.calls.find(
+    ([command]) => command === "open_oauth_loopback_page",
+  );
+}
+
+function signInPageOpened() {
+  return signInPageCall() !== undefined;
+}
+
+function signInPageUrl() {
+  return new URL(String(signInPageCall()?.[1]?.url));
 }
 
 describe("sync transport", () => {
@@ -1864,8 +1870,9 @@ describe("sync transport", () => {
           id: "oauth-123",
           redirectUri: "http://127.0.0.1:1234/callback",
         })
+        .mockResolvedValueOnce(undefined)
         .mockImplementationOnce(async () => {
-          const openedUrl = new URL(String(opener.openUrl.mock.calls[0][0]));
+          const openedUrl = signInPageUrl();
           return `http://127.0.0.1:1234/callback?code=abc&state=${openedUrl.searchParams.get("state")}`;
         });
 
@@ -1889,10 +1896,9 @@ describe("sync transport", () => {
       expect(result.accessToken).toBe("access-token");
       expect(result.expiresIn).toBe(3600);
       expect(result.refreshToken).toBe("refresh-token");
-      expect(opener.openUrl).toHaveBeenCalledWith(
-        expect.objectContaining({
-          searchParams: expect.any(URLSearchParams),
-        }),
+      expect(tauriCore.invoke).toHaveBeenCalledWith(
+        "open_oauth_loopback_page",
+        { id: "oauth-123", url: expect.any(String) },
       );
       expect(http.fetch).toHaveBeenLastCalledWith(
         "https://auth.example/token",
@@ -1905,7 +1911,7 @@ describe("sync transport", () => {
         String(http.fetch.mock.calls.at(-1)?.[1]?.body),
       );
       expect(tokenBody.get("resource")).toBe("hakawati");
-      const openedUrl = new URL(String(opener.openUrl.mock.calls[0][0]));
+      const openedUrl = signInPageUrl();
       expect(openedUrl.searchParams.get("scope")).toBe(
         "openid profile offline_access",
       );
@@ -1965,12 +1971,12 @@ describe("sync transport", () => {
           code: "invalid_grant",
           message: "Session revoked",
         });
-        expect(opener.openUrl).not.toHaveBeenCalled();
+        expect(signInPageOpened()).toBe(false);
         return;
       }
       const result = await request;
 
-      expect(opener.openUrl).not.toHaveBeenCalled();
+      expect(signInPageOpened()).toBe(false);
       expect(result).toMatchObject({
         accessToken: "new-access-token",
         expiresIn: 3600,
@@ -2016,8 +2022,9 @@ describe("sync transport", () => {
         id: "oauth-123",
         redirectUri: "http://127.0.0.1:1234/callback",
       })
+      .mockResolvedValueOnce(undefined)
       .mockImplementationOnce(async () => {
-        const openedUrl = new URL(String(opener.openUrl.mock.calls[0][0]));
+        const openedUrl = signInPageUrl();
         return `http://127.0.0.1:1234/callback?code=abc&state=${openedUrl.searchParams.get("state")}`;
       });
 

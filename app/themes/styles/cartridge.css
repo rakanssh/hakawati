@@ -146,10 +146,27 @@
   color: var(--primary);
 }
 
+/* The notched frame can't join a tab, so the mode tabs are small boxes above it. */
+.theme-cartridge :is([data-composer-tab], [data-composer-tabs] > :last-child) {
+  margin-bottom: 10px;
+}
+
+.theme-cartridge [data-composer-tab][data-active] {
+  border: 0;
+  background: color-mix(in oklch, var(--card) 94%, transparent);
+  box-shadow:
+    0 -3px 0 0 var(--foreground),
+    0 3px 0 0 var(--foreground),
+    -3px 0 0 0 var(--foreground),
+    3px 0 0 0 var(--foreground);
+}
+
 .theme-cartridge
   :is(
     [data-composer-send],
     [data-composer-mic],
+    [data-composer-tab],
+    [data-composer-roll],
     .sidebar-chip,
     [data-log-meta] [data-slot="badge"],
     [data-slot="progress"],

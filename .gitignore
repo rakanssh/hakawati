@@ -18,6 +18,10 @@ src-tauri/target/
 
 src-tauri/bundle/
 src-tauri/.cargo-vendor/
+# Tauri's Swift API, copied in by build.rs for iOS builds, and Swift package output
+src-tauri/ios/.tauri/
+src-tauri/ios/**/.build/
+src-tauri/ios/**/Package.resolved
 
 .DS_Store
 Thumbs.db

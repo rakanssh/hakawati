@@ -131,19 +131,25 @@
   );
 }
 
-/* The website's double brass frame. */
-.theme-brass-night [data-composer-surface] {
+/* A brass frame; the open mode tab shares it. */
+.theme-brass-night
+  :is([data-composer-surface], [data-composer-tab][data-active]) {
   border-radius: 0;
   border-color: color-mix(in oklch, var(--primary) 55%, transparent);
-  outline: 1px solid color-mix(in oklch, var(--primary) 22%, transparent);
-  outline-offset: 4px;
   background: color-mix(in oklch, var(--card) 85%, transparent);
+}
+
+/* Opaque, so the frame's top edge doesn't show through where the tab joins it. */
+.theme-brass-night [data-composer-tab][data-active] {
+  background: color-mix(in oklch, var(--card) 85%, var(--background));
 }
 
 .theme-brass-night
   :is(
     [data-composer-send],
     [data-composer-mic],
+    [data-composer-tab],
+    [data-composer-roll],
     .sidebar-chip,
     [data-log-meta] [data-slot="badge"]
   ) {

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sign-in secrets are encrypted with Android Keystore keys that never leave the
+     device, so a copy restored elsewhere could not be unlocked. Leave them behind. -->
+<data-extraction-rules>
+  <cloud-backup>
+    <exclude domain="sharedpref" path="keyring-default.xml" />
+    <exclude domain="root" path="chatgpt" />
+    <exclude domain="root" path="chatgpt-dev" />
+  </cloud-backup>
+  <device-transfer>
+    <exclude domain="sharedpref" path="keyring-default.xml" />
+    <exclude domain="root" path="chatgpt" />
+    <exclude domain="root" path="chatgpt-dev" />
+  </device-transfer>
+</data-extraction-rules>

@@ -23,6 +23,7 @@ export interface StageGeometry {
   stage: Box | null;
   /** The reading column's horizontal extent (its vertical extent scrolls). */
   column: { left: number; right: number } | null;
+  /** The composer: its mode tabs and the input box under them. */
   composer: Box | null;
 }
 
@@ -42,7 +43,7 @@ function measureStage(): StageGeometry {
     height: window.innerHeight,
     stage: toBox(document.querySelector("[data-play-stage]")),
     column: column ? { left: column.left, right: column.right } : null,
-    composer: toBox(document.querySelector("[data-composer-surface]")),
+    composer: toBox(document.querySelector("[data-composer-frame]")),
   };
 }
 
@@ -85,7 +86,7 @@ export function useStageGeometry(): StageGeometry {
         document.documentElement,
         document.querySelector("[data-play-stage]"),
         document.querySelector("[data-play-column]"),
-        document.querySelector("[data-composer-surface]"),
+        document.querySelector("[data-composer-frame]"),
       ].filter((el): el is Element => !!el);
       if (
         parts.length === observed.length &&

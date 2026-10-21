@@ -1,5 +1,6 @@
-//! Native-only credential storage. The OS keyring protects the encryption key;
-//! the encrypted vault avoids Windows Credential Manager's small blob limit.
+//! Native-only credential storage. The OS keyring (the Android Keystore on Android)
+//! protects the encryption key; the encrypted vault avoids Windows Credential
+//! Manager's small blob limit.
 use aes_gcm::{
     aead::{Aead, AeadCore, KeyInit, OsRng},
     Aes256Gcm, Nonce,
@@ -163,16 +164,15 @@ impl LockedVault {
     }
 }
 
-#[cfg(not(any(target_os = "android", target_os = "ios")))]
 fn encryption_key(vault_exists: bool) -> Result<Vec<u8>, String> {
-    use keyring::v1::{Entry, Error};
+    use crate::secret_store::{keyring_entry, Error};
     let service = if cfg!(debug_assertions) {
         "hakawati.chatgpt.dev"
     } else {
         "hakawati.chatgpt"
     };
     let entry =
-        Entry::new(service, "vault-key-v1").map_err(|_| "ChatGPT OS keyring is unavailable")?;
+        keyring_entry(service, "vault-key-v1").map_err(|_| "ChatGPT OS keyring is unavailable")?;
     match entry.get_password() {
         Ok(encoded) => STANDARD
             .decode(encoded)
@@ -186,11 +186,6 @@ fn encryption_key(vault_exists: bool) -> Result<Vec<u8>, String> {
         }
         Err(_) => Err("Cannot unlock ChatGPT credentials: OS keyring access is required".into()),
     }
-}
-
-#[cfg(any(target_os = "android", target_os = "ios"))]
-fn encryption_key(_vault_exists: bool) -> Result<Vec<u8>, String> {
-    Err("ChatGPT sign-in is available in the desktop app".into())
 }
 
 #[cfg(test)]

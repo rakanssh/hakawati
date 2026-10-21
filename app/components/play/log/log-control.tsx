@@ -4,13 +4,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  UndoIcon,
-  RedoIcon,
-  RefreshCwIcon,
-  StepForwardIcon,
-  SquareIcon,
-} from "lucide-react";
+import { UndoIcon, RedoIcon, RefreshCwIcon } from "lucide-react";
 import { useTaleStore } from "@/store/useTaleStore";
 import { useEffect } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -93,11 +87,17 @@ export function useLogControlShortcuts({
   }, [effectiveUndo, effectiveRedo, handleRetry, handleStop, loading, saving]);
 }
 
+// The composer sizes these, larger on phones than on desktop.
+const historyButtonClass =
+  "shrink-0 gap-2 border border-transparent bg-transparent text-muted-foreground shadow-none hover:bg-muted/45 hover:text-foreground";
+
 interface RetryControlProps {
   className?: string;
   handleRetry: () => void;
   loading?: boolean;
   saving?: boolean;
+  /** Names the action beside its icon; hidden again in a narrow composer. */
+  showLabel?: boolean;
 }
 
 export function RetryControl({
@@ -105,6 +105,7 @@ export function RetryControl({
   handleRetry,
   loading = false,
   saving = false,
+  showLabel = false,
 }: RetryControlProps) {
   const { t } = useLingui();
 
@@ -114,16 +115,16 @@ export function RetryControl({
         <Button
           type="button"
           variant="ghost"
-          size="icon"
-          className={cn(
-            "composer-command-button !h-10 !w-10 min-w-10 shrink-0 border border-transparent bg-transparent p-0 text-muted-foreground shadow-none hover:border-border hover:bg-muted/45 hover:text-foreground md:!h-9 md:!w-9",
-            className,
-          )}
+          size={showLabel ? "default" : "icon"}
+          className={cn(historyButtonClass, className)}
           onClick={handleRetry}
           disabled={loading || saving}
           aria-label={t`Retry`}
         >
-          <RefreshCwIcon className="h-4 w-4" strokeWidth={1.5} />
+          <RefreshCwIcon className="size-5" strokeWidth={1.5} />
+          {showLabel && (
+            <span className="composer-command-label">{t`Retry`}</span>
+          )}
         </Button>
       </TooltipTrigger>
       <TooltipContent side="top">
@@ -139,6 +140,7 @@ interface HistoryControlButtonProps {
   handleRedo?: () => void;
   loading?: boolean;
   saving?: boolean;
+  showLabel?: boolean;
 }
 
 export function UndoControl({
@@ -146,6 +148,7 @@ export function UndoControl({
   handleUndo,
   loading = false,
   saving = false,
+  showLabel = false,
 }: HistoryControlButtonProps) {
   const { t } = useLingui();
   const { undo } = useTaleStore();
@@ -157,16 +160,16 @@ export function UndoControl({
         <Button
           type="button"
           variant="ghost"
-          size="icon"
-          className={cn(
-            "!h-10 !w-10 border border-transparent bg-transparent p-0 text-muted-foreground shadow-none hover:border-border hover:bg-muted/45 hover:text-foreground md:!h-9 md:!w-9",
-            className,
-          )}
+          size={showLabel ? "default" : "icon"}
+          className={cn(historyButtonClass, className)}
           onClick={effectiveUndo}
           disabled={loading || saving}
           aria-label={t`Undo`}
         >
-          <UndoIcon className="h-4 w-4 rtl:scale-x-[-1]" />
+          <UndoIcon className="size-5 rtl:scale-x-[-1]" strokeWidth={1.5} />
+          {showLabel && (
+            <span className="composer-command-label">{t`Undo`}</span>
+          )}
         </Button>
       </TooltipTrigger>
       <TooltipContent side="top">
@@ -181,6 +184,7 @@ export function RedoControl({
   handleRedo,
   loading = false,
   saving = false,
+  showLabel = false,
 }: HistoryControlButtonProps) {
   const { t } = useLingui();
   const { redo } = useTaleStore();
@@ -192,68 +196,20 @@ export function RedoControl({
         <Button
           type="button"
           variant="ghost"
-          size="icon"
-          className={cn(
-            "!h-10 !w-10 border border-transparent bg-transparent p-0 text-muted-foreground shadow-none hover:border-border hover:bg-muted/45 hover:text-foreground md:!h-9 md:!w-9",
-            className,
-          )}
+          size={showLabel ? "default" : "icon"}
+          className={cn(historyButtonClass, className)}
           onClick={effectiveRedo}
           disabled={loading || saving}
           aria-label={t`Redo`}
         >
-          <RedoIcon className="h-4 w-4 rtl:scale-x-[-1]" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="top">
-        <Trans>Redo (Ctrl+Y)</Trans>
-      </TooltipContent>
-    </Tooltip>
-  );
-}
-
-interface ContinueControlProps {
-  onContinue: () => void;
-  onStop?: () => void;
-  loading?: boolean;
-  saving?: boolean;
-  className?: string;
-}
-
-export function ContinueControl({
-  onContinue,
-  onStop,
-  loading = false,
-  saving = false,
-  className,
-}: ContinueControlProps) {
-  const { t } = useLingui();
-  const canStop = loading && !!onStop;
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          type="button"
-          onClick={canStop ? onStop : onContinue}
-          disabled={canStop ? false : saving || loading}
-          variant="ghost"
-          size="icon"
-          className={className}
-          aria-label={canStop ? t`Stop generating` : t`Continue`}
-        >
-          {canStop ? (
-            <SquareIcon className="h-4 w-4" />
-          ) : (
-            <StepForwardIcon className="h-4 w-4 rtl:rotate-180" />
+          <RedoIcon className="size-5 rtl:scale-x-[-1]" strokeWidth={1.5} />
+          {showLabel && (
+            <span className="composer-command-label">{t`Redo`}</span>
           )}
         </Button>
       </TooltipTrigger>
       <TooltipContent side="top">
-        {canStop ? (
-          <Trans>Stop generating (Esc)</Trans>
-        ) : (
-          <Trans>Continue</Trans>
-        )}
+        <Trans>Redo (Ctrl+Y)</Trans>
       </TooltipContent>
     </Tooltip>
   );

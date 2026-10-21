@@ -137,7 +137,7 @@
   font-weight: 400;
 }
 
-.theme-phosphor [data-composer-surface] {
+.theme-phosphor :is([data-composer-surface], [data-composer-tab][data-active]) {
   border-radius: 0;
   border-style: dashed;
 }
@@ -156,6 +156,8 @@
   :is(
     [data-composer-send],
     [data-composer-mic],
+    [data-composer-tab],
+    [data-composer-roll],
     .sidebar-chip,
     [data-log-meta] [data-slot="badge"],
     [data-slot="progress"],

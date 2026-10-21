@@ -3,13 +3,13 @@
 <p align="center">
   <a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3"></a>
   <a href="https://github.com/rakanssh/hakawati/releases/latest"><img src="https://img.shields.io/github/v/release/rakanssh/hakawati" alt="Release"></a>
-  <a href="https://github.com/rakanssh/hakawati/releases"><img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey" alt="Platform"></a>
+  <a href="https://github.com/rakanssh/hakawati/releases"><img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux%20%7C%20Android%20%7C%20iOS-lightgrey" alt="Platform"></a>
 </p>
 
 ![Slipstream Contraband in Game Master mode, with inventory and stats beside the story](./.github/assets/hakawati.webp)
 
-Hakawati is a free and open-source AI text adventure for Windows, macOS, and
-Linux. Play with your ChatGPT plan, your own API key, or a local model. Tales and
+Hakawati is a free and open-source AI text adventure for Windows, macOS, Linux,
+Android, and iOS. Play with your ChatGPT plan, your own API key, or a local model. Tales and
 scenarios are stored on your device; an optional account adds cloud sync and
 scenario publishing.
 
@@ -185,6 +185,41 @@ generates the frontend and license notices, then writes the executable and insta
 
 Official tagged releases use the signing configuration in
 [the release workflow](.github/workflows/release.yml).
+
+### Run on Android
+
+Install the Android SDK and NDK and a JDK from 17 to 24 (Gradle 8.14 does not run
+on JDK 25), and set `ANDROID_HOME`, `NDK_HOME`, and `JAVA_HOME` as described in
+[Tauri's prerequisites](https://v2.tauri.app/start/prerequisites/). Then, with a
+device or emulator connected:
+
+```sh
+npm run tauri -- android dev
+```
+
+Release builds are signed with the keystore described in
+`src-tauri/gen/android/keystore.properties` (`storeFile`, `storePassword`,
+`keyAlias`, and `keyPassword`; kept out of git) or in the `HAKAWATI_KEYSTORE_FILE`,
+`HAKAWATI_KEYSTORE_PASSWORD`, `HAKAWATI_KEY_ALIAS`, and `HAKAWATI_KEY_PASSWORD`
+environment variables. Without either, they are left unsigned.
+
+```sh
+npm run tauri -- android build --apk
+```
+
+### Run on iOS
+
+On a Mac, install Xcode and the iOS Rust targets as described in
+[Tauri's prerequisites](https://v2.tauri.app/start/prerequisites/), plus
+`rustup component add llvm-tools`, which release builds need with Xcode 27. Then
+run on a simulator or connected device:
+
+```sh
+npm run tauri -- ios dev "iPhone 17 Pro"
+```
+
+The app's own Swift code (dictation and the sign-in sheet) lives in
+`src-tauri/ios/Plugins` and is built by `src-tauri/build.rs`.
 
 ### Browser preview
 

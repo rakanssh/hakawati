@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- Hakawati for Android and iOS, with dictation, sign-in, and cloud sync.
+
+### Changed
+
+- Brass Night is now the default theme if you haven't picked one.
+- With nothing typed, the send button continues the story, replacing the separate Continue button.
+- Redesigned the input box: action modes are tabs along its top (Say is now Speak), dice rolls switch on beside them, and its buttons are labelled on desktop and larger on phones.
+
+### Fixed
+
+- Settings pages now scroll in narrow windows.
+- Reporting a public scenario and blocking its publisher now work on macOS.
+
 ## [v1.2.0] - 2026-10-06
 
 ### Added

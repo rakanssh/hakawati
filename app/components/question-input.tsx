@@ -2,6 +2,7 @@ import type { ComponentProps } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { isMobilePlatform } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 
 export type Suggestion = { id: string; label: string };
@@ -26,6 +27,7 @@ export function ClearableInput({
   const { t } = useLingui();
   return (
     <div className="relative">
+      {/* On phones, focusing would open the keyboard over the suggestions. */}
       <Input
         {...inputProps}
         id={id}
@@ -33,7 +35,7 @@ export function ClearableInput({
         onChange={(event) => onValueChange(event.target.value)}
         placeholder={placeholder}
         className="h-14 rounded-xs border-border/75 bg-background/70 px-14 text-center text-lg shadow-lg shadow-background/20 backdrop-blur-sm md:text-xl"
-        autoFocus
+        autoFocus={!isMobilePlatform()}
       />
       {value && (
         <Button

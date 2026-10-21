@@ -342,7 +342,10 @@ describe("Quickstart generation waiting screen", () => {
 
     expect(mocks.resetAllState).toHaveBeenCalledOnce();
     expect(mocks.setLastPlayedTaleId).toHaveBeenCalledExactlyOnceWith("tale-1");
-    expect(mocks.navigate).toHaveBeenCalledExactlyOnceWith({ to: "/play" });
+    expect(mocks.navigate).toHaveBeenCalledExactlyOnceWith({
+      to: "/play",
+      replace: true,
+    });
     expect(mocks.toastError).not.toHaveBeenCalled();
   });
 

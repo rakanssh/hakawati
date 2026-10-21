@@ -4,7 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   appendTranscriptToInput,
   base64ToBlob,
+  MicrophonePermissionError,
   nativeRecordingToBlob,
+  normalizeMicrophoneError,
+  RecordingInterruptedError,
   useSpeechRecorder,
 } from "./useSpeechRecorder";
 
@@ -132,6 +135,40 @@ describe("native recording helpers", () => {
   });
 });
 
+describe("normalizeMicrophoneError", () => {
+  it("keeps desktop string errors as their message", () => {
+    expect(
+      normalizeMicrophoneError("No microphone input device was found."),
+    ).toEqual(new Error("No microphone input device was found."));
+  });
+
+  it("marks a refused mobile microphone permission", () => {
+    const denied = normalizeMicrophoneError({
+      code: "microphonePermissionDenied",
+      message: "Hakawati needs microphone access to record speech.",
+    });
+    const blocked = normalizeMicrophoneError({
+      code: "microphonePermissionBlocked",
+      message: "Microphone access is turned off for Hakawati.",
+    });
+
+    expect(denied).toBeInstanceOf(MicrophonePermissionError);
+    expect((denied as MicrophonePermissionError).blocked).toBe(false);
+    expect(blocked).toBeInstanceOf(MicrophonePermissionError);
+    expect((blocked as MicrophonePermissionError).blocked).toBe(true);
+  });
+
+  it("keeps the message of other mobile recorder failures", () => {
+    const error = normalizeMicrophoneError({
+      code: null,
+      message: "Recording did not capture any audio.",
+    });
+
+    expect(error).not.toBeInstanceOf(MicrophonePermissionError);
+    expect(error.message).toBe("Recording did not capture any audio.");
+  });
+});
+
 describe("useSpeechRecorder", () => {
   it("starts and stops native recording, then emits transcript", async () => {
     const onTranscript = vi.fn();
@@ -238,6 +275,105 @@ describe("useSpeechRecorder", () => {
     expect(invokeMock).toHaveBeenCalledWith("cancel_speech_recording");
     expect(transcribeSpeechMock).not.toHaveBeenCalled();
     expect(onTranscript).not.toHaveBeenCalled();
+    expect(onError).not.toHaveBeenCalled();
+
+    harness.cleanup();
+  });
+
+  it("reports a refused microphone permission and stays idle", async () => {
+    const onTranscript = vi.fn();
+    const onError = vi.fn();
+    invokeMock.mockImplementation((command: string) => {
+      if (command === "start_speech_recording") {
+        return Promise.reject({
+          code: "microphonePermissionDenied",
+          message: "Hakawati needs microphone access to record speech.",
+        });
+      }
+      return Promise.reject(new Error(`Unexpected command: ${command}`));
+    });
+    const harness = renderRecorderHarness({ onTranscript, onError });
+
+    await act(async () => {
+      await harness.controls.start();
+    });
+
+    expect(harness.controls.status).toBe("idle");
+    expect(onError).toHaveBeenCalledWith(expect.any(MicrophonePermissionError));
+    expect(invokeMock).not.toHaveBeenCalledWith("get_speech_recording_level");
+
+    harness.cleanup();
+  });
+
+  it("returns to idle when the recorder ends because the app left the screen", async () => {
+    const onTranscript = vi.fn();
+    const onError = vi.fn();
+    let interrupted = false;
+    invokeMock.mockImplementation((command: string) => {
+      if (command === "start_speech_recording") return Promise.resolve();
+      if (command === "get_speech_recording_level") {
+        return interrupted
+          ? Promise.reject({
+              code: "recordingInterrupted",
+              message: "Recording stopped because you left Hakawati.",
+            })
+          : Promise.resolve({ level: 0.2 });
+      }
+      return Promise.reject(new Error(`Unexpected command: ${command}`));
+    });
+    vi.useFakeTimers();
+    const harness = renderRecorderHarness({ onTranscript, onError });
+
+    await act(async () => {
+      await harness.controls.start();
+    });
+    expect(harness.controls.status).toBe("recording");
+
+    interrupted = true;
+    await act(async () => {
+      vi.advanceTimersByTime(60);
+    });
+    await flushPromises();
+
+    expect(harness.controls.status).toBe("idle");
+    expect(harness.controls.level).toBe(0);
+    expect(onError).toHaveBeenCalledExactlyOnceWith(
+      expect.any(RecordingInterruptedError),
+    );
+    expect(invokeMock).not.toHaveBeenCalledWith("stop_speech_recording");
+    expect(transcribeSpeechMock).not.toHaveBeenCalled();
+
+    harness.cleanup();
+    vi.useRealTimers();
+  });
+
+  it("does not report an interrupted recording as a cancel failure", async () => {
+    const onTranscript = vi.fn();
+    const onError = vi.fn();
+    invokeMock.mockImplementation((command: string) => {
+      if (command === "start_speech_recording") return Promise.resolve();
+      if (command === "get_speech_recording_level") {
+        return Promise.resolve({ level: 0 });
+      }
+      if (command === "cancel_speech_recording") {
+        return Promise.reject({
+          code: "recordingInterrupted",
+          message: "Recording stopped because you left Hakawati.",
+        });
+      }
+      return Promise.reject(new Error(`Unexpected command: ${command}`));
+    });
+    const harness = renderRecorderHarness({ onTranscript, onError });
+
+    await act(async () => {
+      await harness.controls.start();
+    });
+    act(() => {
+      harness.controls.cancel();
+    });
+    await flushPromises();
+
+    expect(harness.controls.status).toBe("idle");
     expect(onError).not.toHaveBeenCalled();
 
     harness.cleanup();

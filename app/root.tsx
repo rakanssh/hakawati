@@ -24,8 +24,8 @@ import "./App.css";
 import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "./components/ui";
 import { Titlebar } from "./components/layout";
-import { MobileBottomNav } from "./components/layout/mobile-bottom-nav";
-import { isTauriEnvironment, useUpdateStore } from "./store/useUpdateStore";
+import { isUpdaterAvailable, useUpdateStore } from "./store/useUpdateStore";
+import { useAndroidBackButton } from "./hooks/useAndroidBackButton";
 import { useDbReady } from "./hooks/useDbReady";
 import { useHostedTokenRefresh } from "./hooks/useHostedTokenRefresh";
 import { useIsMobile } from "./hooks/useIsMobile";
@@ -53,6 +53,7 @@ export default function AppShell() {
   const routerState = useRouterState();
   useHostedTokenRefresh(dbReady);
   useSyncBackground(dbReady);
+  useAndroidBackButton();
   const uiScale = useSettingsStore((state) => state.uiScale);
   const setUiScale = useSettingsStore((state) => state.setUiScale);
   const { showIndicator: showScaleIndicator, isIndicatorVisible } = useZoom({
@@ -66,25 +67,33 @@ export default function AppShell() {
 
   const pathname = routerState.location.pathname;
   const isPlayRoute = pathname?.startsWith("/play");
-  const isQuickstartRoute = pathname?.startsWith("/quickstart");
-  const showMobileBottomNav =
-    isMobilePlatform && !isPlayRoute && !isQuickstartRoute;
 
   useEffect(() => {
     if (hasRunRef.current) return;
     hasRunRef.current = true;
-    if (!isTauriEnvironment()) return;
+    if (!isUpdaterAvailable()) return;
     void checkForUpdates({ suppressUpToDateToast: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+    <ThemeProvider defaultTheme="brass-night" storageKey="vite-ui-theme">
       <div
         className="flex h-screen flex-col overflow-hidden"
         style={
           isMobilePlatform
-            ? { height: "100dvh", minHeight: "100svh" }
+            ? {
+                height: "100dvh",
+                minHeight: "100svh",
+                // Outside the scroller, so pages never scroll under the status
+                // bar or the navigation buttons. Play pads its own header and composer.
+                paddingTop: isPlayRoute
+                  ? undefined
+                  : "env(safe-area-inset-top)",
+                paddingBottom: isPlayRoute
+                  ? undefined
+                  : "env(safe-area-inset-bottom)",
+              }
             : undefined
         }
       >
@@ -94,10 +103,6 @@ export default function AppShell() {
           style={
             isMobilePlatform && !isPlayRoute
               ? {
-                  paddingTop: "env(safe-area-inset-top)",
-                  paddingBottom: showMobileBottomNav
-                    ? "calc(3.5rem + env(safe-area-inset-bottom))"
-                    : "env(safe-area-inset-bottom)",
                   paddingInlineStart: "env(safe-area-inset-left)",
                   paddingInlineEnd: "env(safe-area-inset-right)",
                 }
@@ -116,7 +121,6 @@ export default function AppShell() {
           )}
           {dbReady && <Outlet />}
         </div>
-        <MobileBottomNav />
         {showScaleIndicator && (
           <div
             role="status"
@@ -133,7 +137,13 @@ export default function AppShell() {
             </div>
           </div>
         )}
-        <Toaster richColors expand position="top-right" />
+        <Toaster
+          richColors
+          expand
+          position="top-right"
+          offset={{ top: "calc(24px + env(safe-area-inset-top))" }}
+          mobileOffset={{ top: "calc(16px + env(safe-area-inset-top))" }}
+        />
         <AlertDialog open={installingUpdate}>
           <AlertDialogContent
             onEscapeKeyDown={(event) => event.preventDefault()}

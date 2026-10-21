@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -271,6 +272,12 @@ export default function ScenariosHome() {
   const [pendingDelete, setPendingDelete] =
     useState<PendingScenarioDelete | null>(null);
   const [pendingPublish, setPendingPublish] = useState<Scenario | null>(null);
+  // The app's own dialogs: Apple's web view shows no window.prompt or confirm.
+  const [pendingReport, setPendingReport] =
+    useState<CatalogScenarioRecord | null>(null);
+  const [reportReason, setReportReason] = useState("");
+  const [pendingBlock, setPendingBlock] =
+    useState<CatalogScenarioRecord | null>(null);
   const setScenarioTab = (value: string) => {
     const next: ScenarioTab =
       value === "discover" || value === "published" ? value : "local";
@@ -323,11 +330,17 @@ export default function ScenariosHome() {
       },
     });
   };
-  const reportPublicScenario = async (scenario: CatalogScenarioRecord) => {
-    const reason = window.prompt(t`Report reason`);
-    if (!reason?.trim()) return;
+  const reportPublicScenario = (scenario: CatalogScenarioRecord) => {
+    setReportReason("");
+    setPendingReport(scenario);
+  };
+  const submitReport = async () => {
+    const scenario = pendingReport;
+    const reason = reportReason.trim();
+    if (!scenario || !reason) return;
+    setPendingReport(null);
     try {
-      await catalogActions.report(scenario.id, reason.trim());
+      await catalogActions.report(scenario.id, reason);
       toast.success(t`Report submitted`);
     } catch (error) {
       toast.error(
@@ -335,16 +348,13 @@ export default function ScenariosHome() {
       );
     }
   };
-  const blockPublicScenarioPublisher = async (
-    scenario: CatalogScenarioRecord,
-  ) => {
-    if (
-      !window.confirm(
-        t`Block ${scenario.author.displayName}? You will no longer see their scenarios.`,
-      )
-    ) {
-      return;
-    }
+  const blockPublicScenarioPublisher = (scenario: CatalogScenarioRecord) => {
+    setPendingBlock(scenario);
+  };
+  const confirmBlock = async () => {
+    const scenario = pendingBlock;
+    if (!scenario) return;
+    setPendingBlock(null);
     try {
       await catalogActions.blockPublisher(scenario.author.id);
       setTagInputKey((key) => key + 1);
@@ -805,6 +815,69 @@ export default function ScenariosHome() {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               <Trans>Delete</Trans>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog
+        open={Boolean(pendingReport)}
+        onOpenChange={(open) => {
+          if (!open) setPendingReport(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              <Trans>Report this scenario?</Trans>
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              <Trans>Tell the moderators what is wrong with it.</Trans>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Textarea
+            value={reportReason}
+            onChange={(event) => setReportReason(event.target.value)}
+            placeholder={t`Report reason`}
+            aria-label={t`Report reason`}
+            rows={3}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              <Trans>Cancel</Trans>
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void submitReport()}
+              disabled={!reportReason.trim()}
+            >
+              <Trans>Report</Trans>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog
+        open={Boolean(pendingBlock)}
+        onOpenChange={(open) => {
+          if (!open) setPendingBlock(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              <Trans>Block publisher</Trans>
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t`Block ${pendingBlock?.author.displayName ?? ""}? You will no longer see their scenarios.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              <Trans>Cancel</Trans>
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void confirmBlock()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              <Trans>Block publisher</Trans>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

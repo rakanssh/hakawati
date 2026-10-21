@@ -18,15 +18,62 @@ interface NativeSpeechLevel {
   level: number;
 }
 
+/** How the mobile recorder reports failures; desktop rejects with a string. */
+interface NativeSpeechRecorderError {
+  code: string | null;
+  message: string;
+}
+
+/** The person refused the microphone permission the mobile recorder asked for. */
+export class MicrophonePermissionError extends Error {
+  /** True once Android stops asking, so only the device settings can allow it. */
+  readonly blocked: boolean;
+
+  constructor(message: string, blocked: boolean) {
+    super(message);
+    this.name = "MicrophonePermissionError";
+    this.blocked = blocked;
+  }
+}
+
+/** The mobile recorder ended the recording because the app left the screen. */
+export class RecordingInterruptedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RecordingInterruptedError";
+  }
+}
+
 const RECORDING_STATS_POLL_INTERVAL_MS = 50;
+
+function isNativeSpeechRecorderError(
+  error: unknown,
+): error is NativeSpeechRecorderError {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    typeof (error as NativeSpeechRecorderError).message === "string"
+  );
+}
 
 export function normalizeMicrophoneError(error: unknown): Error {
   if (typeof error === "string") {
     return new Error(error);
   }
-  return error instanceof Error
-    ? error
-    : new Error("Failed to start microphone recording.");
+  if (error instanceof Error) return error;
+  if (isNativeSpeechRecorderError(error)) {
+    switch (error.code) {
+      case "microphonePermissionDenied":
+        return new MicrophonePermissionError(error.message, false);
+      case "microphonePermissionBlocked":
+        return new MicrophonePermissionError(error.message, true);
+      case "recordingInterrupted":
+        return new RecordingInterruptedError(error.message);
+      default:
+        return new Error(error.message);
+    }
+  }
+  return new Error("Failed to start microphone recording.");
 }
 
 export function base64ToBlob(dataBase64: string, mimeType: string): Blob {
@@ -88,8 +135,18 @@ export function useSpeechRecorder({
         if (!isRecordingRef.current) return;
         setLevel(Math.min(1, Math.max(0, recordingLevel.level)));
       })
-      .catch(() => undefined);
-  }, []);
+      .catch((error) => {
+        const reason = normalizeMicrophoneError(error);
+        if (!isRecordingRef.current) return;
+        if (!(reason instanceof RecordingInterruptedError)) return;
+        // The recording already ended natively, so there is nothing to stop.
+        isRecordingRef.current = false;
+        abortRef.current = null;
+        stopRecordingStats();
+        setStatus("idle");
+        onError(reason);
+      });
+  }, [onError, stopRecordingStats]);
 
   const startRecordingStats = useCallback(() => {
     stopRecordingStats();
@@ -163,7 +220,10 @@ export function useSpeechRecorder({
     void invoke("cancel_speech_recording")
       .catch((error) => {
         if (abortRef.current !== controller) return;
-        onError(normalizeMicrophoneError(error));
+        const reason = normalizeMicrophoneError(error);
+        // Already ended because the app left the screen, which is what cancel wants.
+        if (reason instanceof RecordingInterruptedError) return;
+        onError(reason);
       })
       .finally(() => {
         if (abortRef.current !== controller) return;
