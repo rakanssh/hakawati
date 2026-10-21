@@ -261,8 +261,8 @@ msgid "Account & Sync"
 msgstr "Account & Sync"
 
 #: app/components/play/play-input-controls.tsx:279
-#~ msgid "Act"
-#~ msgstr "Act"
+msgid "Act"
+msgstr "Act"
 
 #: app/components/prompt-components/PromptComponentsEditor.tsx:129
 #: app/components/storybook/StorybookEditor.tsx:239
@@ -602,8 +602,8 @@ msgstr "by"
 msgid "Cancel"
 msgstr "Cancel"
 
-#: app/components/play/play-input-controls.tsx:469
-#: app/components/play/play-input-controls.tsx:475
+#: app/components/play/play-input-controls.tsx:468
+#: app/components/play/play-input-controls.tsx:474
 msgid "Cancel recording"
 msgstr "Cancel recording"
 
@@ -904,7 +904,7 @@ msgid "Continuation {0}"
 msgstr "Continuation {0}"
 
 #: app/components/layout/settings/cloud-sync.tsx:1360
-#: app/components/play/play-input-controls.tsx:530
+#: app/components/play/play-input-controls.tsx:529
 #: app/pages/home/home.tsx:745
 #: app/pages/tales/home.tsx:273
 msgid "Continue"
@@ -1212,16 +1212,16 @@ msgid "Devices are unavailable."
 msgstr "Devices are unavailable."
 
 #: app/components/play/play-input-controls.tsx:282
-#~ msgid "Direct"
-#~ msgstr "Direct"
+msgid "Direct"
+msgstr "Direct"
 
 #: app/pages/home/home.tsx:585
 #~ msgid "Direct: An out of character note telling the AI to do something."
 #~ msgstr "Direct: An out of character note telling the AI to do something."
 
 #: app/components/play/play-input-controls.tsx:283
-msgid "Director"
-msgstr "Director"
+#~ msgid "Director"
+#~ msgstr "Director"
 
 #: app/lib/play-utils.ts:22
 msgid "Director's Note..."
@@ -1378,7 +1378,7 @@ msgstr "Enter model id manually"
 msgid "Enter the base URL in the URL field"
 msgstr "Enter the base URL in the URL field"
 
-#: app/components/play/play-input-controls.tsx:455
+#: app/components/play/play-input-controls.tsx:454
 msgid "Enter your action"
 msgstr "Enter your action"
 
@@ -2366,7 +2366,6 @@ msgstr "Narrate section"
 #~ msgstr "Narration Style (Optional)"
 
 #: app/components/layout/settings/api.tsx:34
-#: app/components/play/play-input-controls.tsx:282
 #: app/components/play/story-panel/ai-tab.tsx:48
 msgid "Narrator"
 msgstr "Narrator"
@@ -2958,7 +2957,7 @@ msgstr "Reconnecting"
 msgid "Reconnecting..."
 msgstr "Reconnecting..."
 
-#: app/components/play/play-input-controls.tsx:404
+#: app/components/play/play-input-controls.tsx:403
 msgid "Record speech"
 msgstr "Record speech"
 
@@ -3138,12 +3137,12 @@ msgstr "Right to Left"
 msgid "Rogue"
 msgstr "Rogue"
 
-#: app/components/play/play-input-controls.tsx:387
+#: app/components/play/play-input-controls.tsx:386
 msgid "Roll"
 msgstr "Roll"
 
-#: app/components/play/play-input-controls.tsx:368
-#: app/components/play/play-input-controls.tsx:392
+#: app/components/play/play-input-controls.tsx:367
+#: app/components/play/play-input-controls.tsx:391
 msgid "Roll a dice"
 msgstr "Roll a dice"
 
@@ -3334,7 +3333,7 @@ msgstr "Select a provider"
 #~ msgid "Select a world for your story"
 #~ msgstr "Select a world for your story"
 
-#: app/components/play/play-input-controls.tsx:303
+#: app/components/play/play-input-controls.tsx:302
 msgid "Select action mode"
 msgstr "Select action mode"
 
@@ -3491,6 +3490,10 @@ msgstr "Sort scenarios"
 msgid "Space Marine"
 msgstr "Space Marine"
 
+#: app/components/play/play-input-controls.tsx:280
+msgid "Speak"
+msgstr "Speak"
+
 #: app/components/quickstart/steps/description-style-step.tsx:119
 #~ msgid "Specify perspective (first/second person)"
 #~ msgstr "Specify perspective (first/second person)"
@@ -3568,12 +3571,12 @@ msgstr "Still"
 #~ msgid "Stop"
 #~ msgstr "Stop"
 
-#: app/components/play/play-input-controls.tsx:489
-#: app/components/play/play-input-controls.tsx:495
+#: app/components/play/play-input-controls.tsx:488
+#: app/components/play/play-input-controls.tsx:494
 msgid "Stop and transcribe"
 msgstr "Stop and transcribe"
 
-#: app/components/play/play-input-controls.tsx:528
+#: app/components/play/play-input-controls.tsx:527
 msgid "Stop generating"
 msgstr "Stop generating"
 
@@ -3581,7 +3584,7 @@ msgstr "Stop generating"
 #~ msgid "Stop generating (Esc)"
 #~ msgstr "Stop generating (Esc)"
 
-#: app/components/play/play-input-controls.tsx:401
+#: app/components/play/play-input-controls.tsx:400
 msgid "Stop recording"
 msgstr "Stop recording"
 
@@ -3601,6 +3604,7 @@ msgstr "Storage usage"
 msgid "Storage usage is unavailable."
 msgstr "Storage usage is unavailable."
 
+#: app/components/play/play-input-controls.tsx:281
 #: app/components/play/story-panel/story-panel.tsx:64
 #: app/components/play/story-panel/story-panel.tsx:112
 #: app/components/play/story-panel/story-panel.tsx:347
@@ -3658,7 +3662,7 @@ msgstr "Storybook"
 msgid "Structured gameplay"
 msgstr "Structured gameplay"
 
-#: app/components/play/play-input-controls.tsx:531
+#: app/components/play/play-input-controls.tsx:530
 msgid "Submit action"
 msgstr "Submit action"
 
@@ -4066,8 +4070,8 @@ msgstr "Top P"
 #~ msgid "trained in the art of war, carrying scars that tell stories and a blade that has tasted blood"
 #~ msgstr "trained in the art of war, carrying scars that tell stories and a blade that has tasted blood"
 
-#: app/components/play/play-input-controls.tsx:403
-#: app/components/play/play-input-controls.tsx:505
+#: app/components/play/play-input-controls.tsx:402
+#: app/components/play/play-input-controls.tsx:504
 msgid "Transcribing..."
 msgstr "Transcribing..."
 
@@ -4325,16 +4329,16 @@ msgstr "World"
 #~ msgstr "Write with weight and consequence. Actions have repercussions. Death is real. Stakes matter."
 
 #: app/components/play/play-input-controls.tsx:280
-msgid "You"
-msgstr "You"
+#~ msgid "You"
+#~ msgstr "You"
 
 #: app/data/quickstart-presets.ts:422
 #~ msgid "You are {characterName}, a {0} {archetypeHook}. You exist in {worldDesc}."
 #~ msgstr "You are {characterName}, a {0} {archetypeHook}. You exist in {worldDesc}."
 
 #: app/components/play/play-input-controls.tsx:281
-msgid "You say"
-msgstr "You say"
+#~ msgid "You say"
+#~ msgstr "You say"
 
 #: app/lib/play-utils.ts:15
 msgid "You say..."

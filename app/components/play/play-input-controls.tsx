@@ -275,12 +275,11 @@ export function PlayInputControls({
     ? action.type
     : LogEntryMode.DO;
 
-  // Each mode reads as who is speaking, like the name tags in a visual novel.
   const actionModeTabLabels = {
-    [LogEntryMode.DO]: t`You`,
-    [LogEntryMode.SAY]: t`You say`,
-    [LogEntryMode.STORY]: t`Narrator`,
-    [LogEntryMode.DIRECT]: t`Director`,
+    [LogEntryMode.DO]: t`Act`,
+    [LogEntryMode.SAY]: t`Speak`,
+    [LogEntryMode.STORY]: t`Story`,
+    [LogEntryMode.DIRECT]: t`Direct`,
   } satisfies Record<InputActionMode, string>;
 
   const composerControlsLocked = speechRecorder.status !== "idle";
