@@ -26,6 +26,7 @@ All notable changes to this project are documented in this file.
 - Settings pages now scroll in narrow windows.
 - Reporting a public scenario and blocking its publisher now work on macOS.
 - Settings opened from the library now show every section.
+- On the play screen, the story stays inside its frame as it scrolls, and the scrollbar sits inside the frame instead of at the window's edge.
 
 ## [v1.2.0] - 2026-10-06
 

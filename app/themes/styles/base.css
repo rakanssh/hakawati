@@ -80,11 +80,18 @@
   box-decoration-break: clone;
 }
 
-/* The reading surface behind the story column. Themes give it a material; it stays clear by default. */
+/* The reading surface the story scrolls in. Themes give it a material; it stays clear by default. */
 [data-play-backdrop] {
   top: 0.75rem;
   bottom: 0.25rem;
   border-radius: calc(var(--radius) + 2px);
+}
+
+/* Keep the scrollbar clear of the surface's rounded corners. */
+[data-play-backdrop] [data-slot="scroll-area-scrollbar"] {
+  height: auto;
+  margin-block: 0.75rem;
+  margin-inline-end: 0.25rem;
 }
 
 /* Edge to edge on narrow screens, where the column fills the width. */
