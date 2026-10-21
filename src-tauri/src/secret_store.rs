@@ -6,7 +6,9 @@ pub fn hosted_refresh_token_account(profile_id: &str) -> String {
 
 // Desktop uses the OS keyring. Android keeps secrets in a private SharedPreferences
 // file, encrypted with an AES key that is generated inside the Android Keystore.
-// iOS keeps them in the app's own Keychain, on this device only.
+// iOS keeps them in the app's own Keychain, readable while the device is unlocked.
+// Like the encrypted ChatGPT vault in Application Support, they move to a new device
+// with an encrypted backup, so a restored vault can still be unlocked.
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 pub(crate) use keyring::v1::{Entry, Error};
 #[cfg(any(target_os = "android", target_os = "ios"))]
