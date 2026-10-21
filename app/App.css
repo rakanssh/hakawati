@@ -128,6 +128,13 @@ textarea::-webkit-scrollbar-thumb {
   }
 }
 
+/* Only icons fit across a very narrow composer, so the open tab drops its name too. */
+@container (max-width: 15rem) {
+  .composer-tab-active-label {
+    display: none;
+  }
+}
+
 /* Tauri window drag helpers */
 .titlebar-drag {
   -webkit-app-region: drag;

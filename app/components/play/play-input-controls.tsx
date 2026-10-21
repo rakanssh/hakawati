@@ -350,7 +350,13 @@ export function PlayInputControls({
           >
             <Icon className="size-[1.125rem]" />
             {!iconOnly && (
-              <span className={cn(!active && "composer-command-label")}>
+              <span
+                className={
+                  active
+                    ? "composer-tab-active-label"
+                    : "composer-command-label"
+                }
+              >
                 {label}
               </span>
             )}
@@ -637,12 +643,17 @@ export function PlayInputControls({
       data-composer-frame=""
       className="composer-command-tier mx-auto w-full max-w-(--play-composer-max)"
     >
+      {/* When the tabs and the controls beside them don't fit on one line (large
+          UI scale, narrow phone), the controls move to a line above, so the tabs
+          stay on the box. */}
       <div
         data-composer-tabs=""
-        className="flex min-w-0 items-end justify-between gap-2"
+        className="flex min-w-0 flex-wrap-reverse items-start justify-between gap-x-2 gap-y-1"
       >
         {renderModeTabs()}
-        {isMobilePlatform ? renderHistoryControls() : renderRollToggle()}
+        <div className="ms-auto flex">
+          {isMobilePlatform ? renderHistoryControls() : renderRollToggle()}
+        </div>
       </div>
       {renderInputSurface()}
     </div>
