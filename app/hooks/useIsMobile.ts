@@ -39,6 +39,9 @@ function detectPlatform(): Platform {
     if (ua.includes("android")) return Platform.ANDROID;
     if (ua.includes("iphone") || ua.includes("ipad") || ua.includes("ipod"))
       return Platform.IOS;
+    // An iPad's web view reports a desktop Mac; a Mac has no touch points.
+    if (ua.includes("macintosh") && navigator.maxTouchPoints > 1)
+      return Platform.IOS;
 
     if (navigator.platform) {
       const platform = navigator.platform.toLowerCase();
