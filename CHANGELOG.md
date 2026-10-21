@@ -12,7 +12,7 @@ All notable changes to this project are documented in this file.
 
 - Brass Night is now the default theme if you haven't picked one.
 - With nothing typed, the send button continues the story, replacing the separate Continue button.
-- Redesigned the input box: action modes are tabs along its top, dice rolls switch on beside them, and its buttons are labelled on desktop and larger on phones.
+- Redesigned the input box: action modes are tabs along its top (Say is now Speak), dice rolls switch on beside them, and its buttons are labelled on desktop and larger on phones.
 
 ### Fixed
 
