@@ -1,12 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -19,14 +13,12 @@ import {
   BookIcon,
   MegaphoneIcon,
   SaveIcon,
-  ChevronUpIcon,
-  CheckIcon,
   Loader2Icon,
   MicIcon,
   ArrowUpIcon,
   XIcon,
   SquareIcon,
-  StepForwardIcon,
+  TriangleIcon,
 } from "lucide-react";
 import { LogEntryMode } from "@/types/log.type";
 import {
@@ -87,6 +79,14 @@ const ACTION_MODE_ICONS = {
   [LogEntryMode.STORY]: BookIcon,
   [LogEntryMode.DIRECT]: MegaphoneIcon,
 } satisfies Record<InputActionMode, typeof HandIcon>;
+
+// The open tab wears the colour the log gives that kind of turn.
+const ACTION_MODE_TAB_COLORS = {
+  [LogEntryMode.DO]: "text-log-do",
+  [LogEntryMode.SAY]: "text-log-say",
+  [LogEntryMode.STORY]: "text-primary",
+  [LogEntryMode.DIRECT]: "text-log-direct",
+} satisfies Record<InputActionMode, string>;
 
 const WAVEFORM_MAX_FITTED_BAR_COUNT = 260;
 const WAVEFORM_BAR_WIDTH_PX = 2;
@@ -275,27 +275,18 @@ export function PlayInputControls({
     ? action.type
     : LogEntryMode.DO;
 
-  const actionModeLabels = {
-    [LogEntryMode.DO]: t`Act`,
-    [LogEntryMode.SAY]: t`Say`,
-    [LogEntryMode.STORY]: t`Story`,
-    [LogEntryMode.DIRECT]: t`Direct`,
+  // Each mode reads as who is speaking, like the name tags in a visual novel.
+  const actionModeTabLabels = {
+    [LogEntryMode.DO]: t`You`,
+    [LogEntryMode.SAY]: t`You say`,
+    [LogEntryMode.STORY]: t`Narrator`,
+    [LogEntryMode.DIRECT]: t`Director`,
   } satisfies Record<InputActionMode, string>;
 
-  const renderModeIcon = (mode: InputActionMode) => {
-    const Icon = ACTION_MODE_ICONS[mode];
-    return <Icon className="w-4 h-4" />;
-  };
-
-  const currentActionLabel = actionModeLabels[currentActionMode];
   const composerControlsLocked = speechRecorder.status !== "idle";
   const canStopGeneration = loading && !!onStop;
-  const quietIconButtonClass =
-    "composer-command-button !h-10 !w-10 min-w-10 border border-transparent bg-transparent p-0 text-muted-foreground shadow-none hover:border-transparent hover:bg-muted/35 hover:text-foreground md:!h-9 md:!w-9";
-  const subtleActionSelectorClass =
-    "composer-command-button composer-command-selector !h-10 !w-auto min-w-10 gap-1.5 rounded-xs border border-transparent bg-transparent px-2.5 text-muted-foreground shadow-none hover:border-border/70 hover:bg-muted/35 hover:text-foreground focus-visible:border-ring/55 md:!h-9 md:px-2";
   const composerSurfaceClass =
-    "flex min-h-[6.25rem] min-w-0 overflow-hidden rounded-xs border border-border/75 bg-[var(--composer-background)] p-1.5 shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18 md:min-h-[6rem]";
+    "flex min-h-[6.25rem] min-w-0 overflow-hidden rounded-lg rounded-ss-none border border-border/75 bg-[var(--composer-background)] p-1.5 shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18 md:min-h-[6rem]";
   useLogControlShortcuts({
     handleUndo: onUndo,
     handleRedo: onRedo,
@@ -305,41 +296,32 @@ export function PlayInputControls({
     saving,
   });
 
-  const renderModeMenu = ({
-    className,
-  }: {
-    className?: string;
-  } = {}) => (
-    <DropdownMenu>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              data-composer-mode=""
-              className={cn(subtleActionSelectorClass, className)}
-              aria-label={t`Select action mode`}
-              title={currentActionLabel}
-            >
-              <span className="flex items-center gap-1.5">
-                {renderModeIcon(currentActionMode)}
-                <span className="composer-command-label">
-                  {currentActionLabel}
-                </span>
-              </span>
-              <span className="composer-command-select-affordance flex items-center text-muted-foreground">
-                <ChevronUpIcon className="h-3.5 w-3.5" />
-              </span>
-            </Button>
-          </DropdownMenuTrigger>
-        </TooltipTrigger>
-        <TooltipContent side="top">{currentActionLabel}</TooltipContent>
-      </Tooltip>
-      <DropdownMenuContent align="start" side="top" className="min-w-36">
-        {ACTION_MODES.map((mode) => (
-          <DropdownMenuItem
+  // The open tab joins the input box; on phones the others shrink to icons.
+  const renderModeTabs = () => (
+    <div
+      role="group"
+      aria-label={t`Select action mode`}
+      data-composer-mode=""
+      className={cn(
+        "flex min-w-0 items-end gap-1",
+        composerControlsLocked && "pointer-events-none opacity-60",
+      )}
+    >
+      {ACTION_MODES.map((mode) => {
+        const active = currentActionMode === mode;
+        const Icon = ACTION_MODE_ICONS[mode];
+        const label = actionModeTabLabels[mode];
+        const iconOnly = isMobilePlatform && !active;
+
+        return (
+          <button
             key={mode}
+            type="button"
+            data-composer-tab=""
+            data-active={active ? "" : undefined}
+            aria-pressed={active}
+            aria-label={label}
+            title={label}
             onClick={() =>
               setAction({
                 type: mode,
@@ -347,32 +329,43 @@ export function PlayInputControls({
               })
             }
             className={cn(
-              action.type === mode && "bg-accent text-accent-foreground",
+              "flex shrink-0 items-center justify-center gap-1.5 rounded-t-lg border border-b-0 text-sm font-medium transition-colors",
+              active
+                ? cn(
+                    "relative z-10 -mb-px border-border/75 bg-[var(--composer-background)] font-semibold",
+                    ACTION_MODE_TAB_COLORS[mode],
+                  )
+                : "border-transparent bg-muted/40 text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+              isMobilePlatform
+                ? active
+                  ? "h-11 px-3.5"
+                  : "h-10 w-11"
+                : active
+                  ? "h-10 px-4"
+                  : "h-9 px-3.5",
             )}
           >
-            {renderModeIcon(mode)}
-            <span>{actionModeLabels[mode]}</span>
-            {action.type === mode && <CheckIcon className="ms-auto h-4 w-4" />}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <Icon className="size-[1.125rem]" />
+            {!iconOnly && (
+              <span className={cn(!active && "composer-command-label")}>
+                {label}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
   );
 
-  const renderDiceToggle = (className?: string) => (
+  // Rolling changes the kind of turn, like the mode, so it sits beside the tabs.
+  const renderRollToggle = () => (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button
+        <button
           type="button"
-          variant="ghost"
-          size="icon"
-          className={cn(
-            "!h-10 !w-10 shrink-0 border shadow-none md:!h-9 md:!w-9",
-            action.isRolling
-              ? "border-success/45 bg-success/10 text-success hover:bg-success/15 hover:text-success"
-              : "border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-muted/45 hover:text-foreground",
-            className,
-          )}
+          data-composer-roll=""
+          aria-pressed={action.isRolling}
+          aria-label={t`Roll a dice`}
           onClick={() =>
             setAction({
               type: action.type,
@@ -380,10 +373,20 @@ export function PlayInputControls({
             })
           }
           disabled={loading}
-          aria-label={t`Roll a dice`}
+          className={cn(
+            "mb-1 flex shrink-0 items-center justify-center gap-1.5 rounded-full border text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50",
+            isMobilePlatform ? "size-11" : "h-9 px-3.5",
+            action.isRolling
+              ? "border-success/50 bg-success/12 text-success"
+              : "border-border/75 text-muted-foreground hover:bg-muted/45 hover:text-foreground",
+            composerControlsLocked && "pointer-events-none opacity-60",
+          )}
         >
-          <DicesIcon strokeWidth={1.5} />
-        </Button>
+          <DicesIcon className="size-[1.125rem]" strokeWidth={1.5} />
+          {!isMobilePlatform && (
+            <span className="composer-command-label">{t`Roll`}</span>
+          )}
+        </button>
       </TooltipTrigger>
       <TooltipContent side="top">
         <Trans>Roll a dice</Trans>
@@ -391,7 +394,7 @@ export function PlayInputControls({
     </Tooltip>
   );
 
-  const renderSpeechButton = (className?: string) => {
+  const renderSpeechButton = () => {
     const isRecording = speechRecorder.status === "recording";
     const isTranscribing = speechRecorder.status === "transcribing";
     const label = isRecording
@@ -409,22 +412,22 @@ export function PlayInputControls({
             size="icon"
             data-composer-mic=""
             className={cn(
-              "!h-10 !w-10 shrink-0 border shadow-none md:!h-9 md:!w-9",
+              "shrink-0 rounded-full border shadow-none",
+              isMobilePlatform ? "size-[2.875rem]" : "size-10",
               isRecording
                 ? "border-destructive/45 bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive"
-                : "border-transparent bg-transparent text-muted-foreground hover:border-border hover:bg-muted/45 hover:text-foreground",
-              className,
+                : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
             onClick={speechRecorder.toggle}
             disabled={(loading || saving || isTranscribing) && !isRecording}
             aria-label={label}
           >
             {isTranscribing ? (
-              <Loader2Icon className="h-4 w-4 animate-spin" />
+              <Loader2Icon className="size-5 animate-spin" />
             ) : (
               <MicIcon
                 strokeWidth={1.5}
-                className={cn(isRecording && "animate-pulse")}
+                className={cn("size-5", isRecording && "animate-pulse")}
               />
             )}
           </Button>
@@ -448,7 +451,7 @@ export function PlayInputControls({
         }
       }}
       rows={1}
-      className="max-h-[240px] min-h-10 resize-none border-0 !bg-transparent px-2 py-2.5 text-sm shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:!bg-transparent md:py-2"
+      className="max-h-[240px] min-h-10 resize-none border-0 !bg-transparent px-2.5 py-2.5 text-base shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:!bg-transparent md:py-2 md:text-lg"
       aria-label={t`Enter your action`}
     />
   );
@@ -507,7 +510,7 @@ export function PlayInputControls({
   // With nothing typed, the send button continues the story instead.
   const continuesStory = !canStopGeneration && !input.trim();
 
-  const renderSubmitButton = (className?: string) => (
+  const renderSubmitButton = () => (
     <Button
       type={canStopGeneration ? "button" : "submit"}
       onClick={
@@ -516,7 +519,10 @@ export function PlayInputControls({
       disabled={saving || (loading && !canStopGeneration)}
       size="icon"
       data-composer-send=""
-      className={cn("!h-10 !w-10 shrink-0 md:!h-9 md:!w-9", className)}
+      className={cn(
+        "shrink-0 rounded-full",
+        isMobilePlatform ? "size-[3.375rem]" : "size-12",
+      )}
       aria-label={
         canStopGeneration
           ? t`Stop generating`
@@ -526,15 +532,64 @@ export function PlayInputControls({
       }
     >
       {canStopGeneration ? (
-        <SquareIcon className="w-4 h-4" />
+        <SquareIcon className="size-4 fill-current" />
       ) : saving ? (
-        <SaveIcon className="w-4 h-4 animate-spin" />
+        <SaveIcon className="size-5 animate-spin" />
       ) : continuesStory ? (
-        <StepForwardIcon className="w-4 h-4 rtl:rotate-180" />
+        // A visual novel's "advance" marker.
+        <TriangleIcon className="size-4 rotate-180 fill-current" />
       ) : (
-        <SendIcon className="w-4 h-4" />
+        <SendIcon className="size-5" />
       )}
     </Button>
+  );
+
+  const renderHistoryControls = () => {
+    // Phones get bigger icons; desktop has room to name each action.
+    const buttonClass = isMobilePlatform ? "size-12" : "h-10 px-3";
+    return (
+      <div
+        className={cn(
+          "flex min-w-0 items-center",
+          isMobilePlatform ? "-ms-1" : "gap-0.5",
+          composerControlsLocked && "pointer-events-none opacity-60",
+        )}
+      >
+        <UndoControl
+          handleUndo={onUndo}
+          loading={loading}
+          saving={saving}
+          showLabel={!isMobilePlatform}
+          className={buttonClass}
+        />
+        <RetryControl
+          handleRetry={onRetry}
+          loading={loading}
+          saving={saving}
+          showLabel={!isMobilePlatform}
+          className={buttonClass}
+        />
+        <RedoControl
+          handleRedo={onRedo}
+          loading={loading}
+          saving={saving}
+          showLabel={!isMobilePlatform}
+          className={buttonClass}
+        />
+      </div>
+    );
+  };
+
+  const renderSubmitControls = () => (
+    <div
+      className={cn(
+        "flex shrink-0 items-center justify-end gap-2",
+        composerControlsLocked && "pointer-events-none opacity-60",
+      )}
+    >
+      {renderSpeechButton()}
+      {renderSubmitButton()}
+    </div>
   );
 
   const renderInputSurface = () => (
@@ -545,80 +600,22 @@ export function PlayInputControls({
         renderTranscribingComposer()
       ) : (
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <div className="min-w-0">
-            <div className="min-w-0 flex-1">{renderTextArea()}</div>
-          </div>
-          <div className="composer-command-controls flex min-w-0 items-center justify-between gap-1.5">
-            <div className="flex min-w-0 items-center gap-1.5">
-              {renderModifierControls("min-w-0")}
-              {renderHistoryControls()}
-            </div>
-            <div className="flex min-w-0 items-center justify-end gap-1.5">
-              {renderSubmitControls()}
-            </div>
+          <div className="min-w-0">{renderTextArea()}</div>
+          <div className="composer-command-controls flex min-w-0 items-center justify-between gap-2">
+            {renderHistoryControls()}
+            {renderSubmitControls()}
           </div>
         </div>
       )}
     </div>
   );
 
-  const renderModifierControls = (className?: string) => (
-    <div
-      className={cn(
-        "flex shrink-0 items-center gap-0.5 md:gap-1",
-        composerControlsLocked && "pointer-events-none opacity-60",
-        className,
-      )}
-    >
-      {renderModeMenu()}
-      {renderDiceToggle()}
-    </div>
-  );
-
-  const renderHistoryControls = (className?: string) => (
-    <div
-      className={cn(
-        "flex shrink-0 items-center justify-center gap-0 md:gap-0.5",
-        composerControlsLocked && "pointer-events-none opacity-60",
-        className,
-      )}
-    >
-      <UndoControl
-        handleUndo={onUndo}
-        loading={loading}
-        saving={saving}
-        className={quietIconButtonClass}
-      />
-      <RetryControl
-        handleRetry={onRetry}
-        loading={loading}
-        saving={saving}
-        className={quietIconButtonClass}
-      />
-      <RedoControl
-        handleRedo={onRedo}
-        loading={loading}
-        saving={saving}
-        className={quietIconButtonClass}
-      />
-    </div>
-  );
-
-  const renderSubmitControls = (className?: string) => (
-    <div
-      className={cn(
-        "flex shrink-0 items-center justify-end gap-0",
-        composerControlsLocked && "pointer-events-none opacity-60",
-        className,
-      )}
-    >
-      {renderSpeechButton("rounded-e-none")}
-      {renderSubmitButton("rounded-s-none")}
-    </div>
-  );
-
   const renderComposer = () => (
     <div className="composer-command-tier mx-auto w-full max-w-(--play-composer-max)">
+      <div className="flex min-w-0 items-end justify-between gap-2">
+        {renderModeTabs()}
+        {renderRollToggle()}
+      </div>
       {renderInputSurface()}
     </div>
   );

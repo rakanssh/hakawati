@@ -185,6 +185,21 @@
   caret-color: var(--primary);
 }
 
+/* The ring can't wrap a tab, so the mode tabs are keys above the machine. */
+.theme-typewriter :is([data-composer-tab], [data-composer-roll]) {
+  margin-bottom: 8px;
+}
+
+.theme-typewriter [data-composer-tab] {
+  border: 0;
+  border-radius: 6px;
+}
+
+.theme-typewriter [data-composer-tab][data-active] {
+  background: var(--card);
+  box-shadow: 0 0 0 2px oklch(0.24 0.006 250);
+}
+
 /* The send button is a round typewriter key. */
 .theme-typewriter [data-composer-send] {
   margin-inline-start: 0.375rem;
