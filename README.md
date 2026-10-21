@@ -210,8 +210,9 @@ npm run tauri -- android build --apk
 ### Run on iOS
 
 On a Mac, install Xcode and the iOS Rust targets as described in
-[Tauri's prerequisites](https://v2.tauri.app/start/prerequisites/), then run on a
-simulator or connected device:
+[Tauri's prerequisites](https://v2.tauri.app/start/prerequisites/), plus
+`rustup component add llvm-tools`, which release builds need with Xcode 27. Then
+run on a simulator or connected device:
 
 ```sh
 npm run tauri -- ios dev "iPhone 17 Pro"

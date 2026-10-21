@@ -344,6 +344,9 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: "aarch64-apple-ios"
+          # swift-rs needs llvm-objcopy to keep the Swift plugins' entry points
+          # visible on Xcode 27, or the release build fails to link them.
+          components: "llvm-tools"
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
