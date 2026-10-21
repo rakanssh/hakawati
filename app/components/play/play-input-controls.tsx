@@ -302,7 +302,8 @@ export function PlayInputControls({
       aria-label={t`Select action mode`}
       data-composer-mode=""
       className={cn(
-        "flex min-w-0 items-end gap-1",
+        // Themes restyle the tab type here, so the tabs inherit its size.
+        "flex min-w-0 items-end gap-1 text-sm",
         composerControlsLocked && "pointer-events-none opacity-60",
       )}
     >
@@ -328,13 +329,13 @@ export function PlayInputControls({
               })
             }
             className={cn(
-              "flex shrink-0 items-center justify-center gap-1.5 rounded-t-lg border border-b-0 text-sm font-medium transition-colors",
+              "flex shrink-0 items-center justify-center gap-1.5 rounded-t-lg border border-b-0 font-medium transition-colors",
               active
                 ? cn(
                     "relative z-10 -mb-px border-border/75 bg-[var(--composer-background)] font-semibold",
                     ACTION_MODE_TAB_COLORS[mode],
                   )
-                : "border-transparent bg-muted/40 text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                : "border-transparent bg-background/60 text-muted-foreground hover:bg-muted/50 hover:text-foreground",
               isMobilePlatform
                 ? active
                   ? "h-11 px-3.5"
@@ -377,7 +378,7 @@ export function PlayInputControls({
             isMobilePlatform ? "size-11" : "h-9 px-3.5",
             action.isRolling
               ? "border-success/50 bg-success/12 text-success"
-              : "border-border/75 text-muted-foreground hover:bg-muted/45 hover:text-foreground",
+              : "border-border/75 bg-[var(--composer-background)] text-muted-foreground hover:bg-muted hover:text-foreground",
             composerControlsLocked && "pointer-events-none opacity-60",
           )}
         >
@@ -610,7 +611,10 @@ export function PlayInputControls({
   );
 
   const renderComposer = () => (
-    <div className="composer-command-tier mx-auto w-full max-w-(--play-composer-max)">
+    <div
+      data-composer-frame=""
+      className="composer-command-tier mx-auto w-full max-w-(--play-composer-max)"
+    >
       <div className="flex min-w-0 items-end justify-between gap-2">
         {renderModeTabs()}
         {renderRollToggle()}
