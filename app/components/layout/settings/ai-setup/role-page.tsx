@@ -28,10 +28,13 @@ import { pageKey } from "./pages";
 import { ProviderBadge, RoleIcon, useConnectionNames } from "./parts";
 import {
   LinkRow,
+  PlainRow,
   RadioRow,
+  RowText,
   Segmented,
   SetupList,
   SetupSection,
+  ToggleSwitch,
 } from "../settings-rows";
 
 type Providers = ReturnType<typeof useLLMProviders>;
@@ -223,6 +226,26 @@ function ThinkingSection({ role }: { role: "narrator" | "utility" }) {
   );
 }
 
+function NarrationSection() {
+  const { t } = useLingui();
+  const autoNarrate = useSettingsStore((state) => state.autoNarrate);
+  const setAutoNarrate = useSettingsStore((state) => state.setAutoNarrate);
+  return (
+    <SetupSection title={<Trans>Narration</Trans>}>
+      <SetupList>
+        <PlainRow>
+          <RowText title={<Trans>Read new narration aloud</Trans>} />
+          <ToggleSwitch
+            checked={autoNarrate}
+            onCheckedChange={setAutoNarrate}
+            label={t`Read new narration aloud`}
+          />
+        </PlainRow>
+      </SetupList>
+    </SetupSection>
+  );
+}
+
 function VoiceSection() {
   const { t } = useLingui();
   const config = useSettingsStore((state) => state.modelRoles.textToSpeech);
@@ -294,6 +317,7 @@ function RoleWithModels({
         <ThinkingSection role={role as "narrator" | "utility"} />
       )}
       {role === "textToSpeech" && <VoiceSection />}
+      {role === "textToSpeech" && <NarrationSection />}
     </div>
   );
 }

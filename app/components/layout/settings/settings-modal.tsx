@@ -15,12 +15,16 @@ import {
 import { useUpdateStore } from "@/store/useUpdateStore";
 import { useIsMobile } from "@/hooks/useIsMobile";
 
-import SettingsGame from "@/components/layout/settings/game";
+import SettingsGame, {
+  AppearanceTitle,
+} from "@/components/layout/settings/game";
 import SettingsAiSetup, {
   AiSetupTitle,
 } from "@/components/layout/settings/ai-setup";
 import SettingsModel from "@/components/layout/settings/model";
-import SettingsAdvanced from "@/components/layout/settings/advanced";
+import SettingsAdvanced, {
+  PromptingTitle,
+} from "@/components/layout/settings/advanced";
 import SettingsUpdates from "@/components/layout/settings/updates";
 import SettingsAbout from "@/components/layout/settings/about";
 import SettingsCloudSync, {
@@ -38,6 +42,7 @@ const globalSections = [
     group: <Trans>App</Trans>,
     icon: Palette,
     component: SettingsGame,
+    subpageTitle: AppearanceTitle,
   },
   {
     id: "ai-setup",
@@ -70,6 +75,7 @@ const globalSections = [
     group: <Trans>AI</Trans>,
     icon: Sparkles,
     component: SettingsAdvanced,
+    subpageTitle: PromptingTitle,
   },
   {
     id: "cloud-sync",

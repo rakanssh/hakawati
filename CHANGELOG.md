@@ -17,6 +17,7 @@ All notable changes to this project are documented in this file.
 - Redesigned AI Setup: save a provider once as a connection, then pick one for each role. Your saved providers and keys carry over.
 - Utility is now called Helper, and uses the Narrator's model unless you give it its own.
 - Redesigned Account & Sync: a switch for cloud sync, usage at a glance, and separate pages for cloud tales, devices, and tales waiting for a choice.
+- Redesigned Appearance and Prompting. Each prompt opens on its own page, sizes change with − and + buttons, and "Read new narration aloud" moved to the Text to Speech page in AI Setup.
 
 ### Fixed
 

@@ -202,17 +202,25 @@ export function Segmented<T extends string>({
   value,
   options,
   onChange,
+  fill,
 }: {
   label: string;
   value: T;
   options: { value: T; label: ReactNode }[];
   onChange: (value: T) => void;
+  /** Spreads the options evenly across the full width. */
+  fill?: boolean;
 }) {
   return (
     <div
       role="radiogroup"
       aria-label={label}
-      className="inline-flex w-fit max-w-full flex-wrap rounded-xs border bg-muted/40 p-0.5"
+      className={cn(
+        "rounded-xs border bg-muted/40 p-0.5",
+        fill
+          ? "grid w-full auto-cols-fr grid-flow-col"
+          : "inline-flex w-fit max-w-full flex-wrap",
+      )}
     >
       {options.map((option) => (
         <button

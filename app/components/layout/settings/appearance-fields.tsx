@@ -1,6 +1,6 @@
 import { Trans, useLingui } from "@lingui/react/macro";
+import { MinusIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { NumberInput } from "@/components/ui";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import {
@@ -9,13 +9,14 @@ import {
 } from "@/hooks/useThemeScenery";
 import { THEME_SCENERY_OPTIONS, type ThemeScenery } from "@/themes/registry";
 import { FONT_SIZE_MAX, FONT_SIZE_MIN } from "@/lib/appearance-limits";
-import { cn } from "@/lib/utils";
 import { FontSelector } from "./font-selector";
 import { SettingsField } from "./settings-layout";
+import { Segmented } from "./settings-rows";
 
 // Appearance controls shared by the Settings dialog and the story panel.
 
-export function SceneryField() {
+/** Animated, Still, or Off, with a note when the system asks for less motion. */
+export function SceneryOptions() {
   const { t } = useLingui();
   const chosen = useSettingsStore((state) => state.themeScenery);
   const themeScenery = useThemeScenery();
@@ -28,48 +29,84 @@ export function SceneryField() {
   };
 
   return (
-    <SettingsField
-      label={<Trans>Scenery</Trans>}
-      description={
-        <>
+    <>
+      <Segmented<ThemeScenery>
+        fill
+        label={t`Scenery`}
+        value={themeScenery}
+        options={THEME_SCENERY_OPTIONS.map((option) => ({
+          value: option,
+          label: labels[option],
+        }))}
+        onChange={setThemeScenery}
+      />
+      {!chosen && reducedMotion ? (
+        <p className="text-sm text-muted-foreground">
           <Trans>
-            Drawn around the story on the play screen. Still keeps it without
-            movement; Off keeps only the colours and type.
+            Your system asks for reduced motion, so scenery starts still.
           </Trans>
-          {!chosen && reducedMotion && (
-            <>
-              {" "}
-              <Trans>
-                Your system asks for reduced motion, so scenery starts still.
-              </Trans>
-            </>
-          )}
-        </>
-      }
-    >
-      <div
-        role="radiogroup"
-        aria-label={t`Scenery`}
-        className="inline-flex w-fit rounded-xs border bg-muted/40 p-0.5"
-      >
-        {THEME_SCENERY_OPTIONS.map((option) => (
-          <button
-            key={option}
-            type="button"
-            role="radio"
-            aria-checked={themeScenery === option}
-            onClick={() => setThemeScenery(option)}
-            className={cn(
-              "rounded-[calc(var(--radius)-6px)] px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              themeScenery === option &&
-                "bg-background text-foreground shadow-sm",
-            )}
-          >
-            {labels[option]}
-          </button>
-        ))}
-      </div>
+        </p>
+      ) : null}
+    </>
+  );
+}
+
+export function SceneryField() {
+  return (
+    <SettingsField label={<Trans>Scenery</Trans>}>
+      <SceneryOptions />
     </SettingsField>
+  );
+}
+
+/** A percentage nudged up or down a step at a time. */
+export function SizeStepper({
+  value,
+  min,
+  max,
+  step = 0.1,
+  label,
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  label: string;
+  onChange: (value: number) => void;
+}) {
+  const { t } = useLingui();
+  const percent = Math.round(value * 100);
+  return (
+    <div
+      role="group"
+      aria-label={label}
+      className="flex shrink-0 items-center gap-1.5"
+    >
+      <Button
+        variant="outline"
+        size="icon"
+        className="size-9"
+        aria-label={t`Smaller`}
+        disabled={value <= min + 0.001}
+        onClick={() => onChange(Math.max(min, value - step))}
+      >
+        <MinusIcon className="size-4" />
+      </Button>
+      <span className="min-w-14 text-center text-sm tabular-nums">
+        {percent}%
+      </span>
+      <Button
+        variant="outline"
+        size="icon"
+        className="size-9"
+        aria-label={t`Larger`}
+        disabled={value >= max - 0.001}
+        onClick={() => onChange(Math.min(max, value + step))}
+      >
+        <PlusIcon className="size-4" />
+      </Button>
+    </div>
   );
 }
 
@@ -79,32 +116,21 @@ export function StoryTextSizeField() {
   const setFontSize = useSettingsStore((state) => state.setFontSize);
 
   return (
-    <SettingsField label={<Trans>Font Size (0.5 - 4.0)</Trans>}>
-      <div className="flex flex-row items-center gap-2">
-        <NumberInput
-          min={FONT_SIZE_MIN}
-          max={FONT_SIZE_MAX}
-          step={0.05}
-          value={fontSize}
-          onValueCommit={(value) => setFontSize(value)}
-          aria-label={t`Game log font size`}
-        />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setFontSize(1)}
-          disabled={Math.abs(fontSize - 1) < 0.01}
-        >
-          <Trans>Reset</Trans>
-        </Button>
-      </div>
+    <SettingsField label={<Trans>Text size</Trans>}>
+      <SizeStepper
+        value={fontSize}
+        min={FONT_SIZE_MIN}
+        max={FONT_SIZE_MAX}
+        label={t`Text size`}
+        onChange={setFontSize}
+      />
     </SettingsField>
   );
 }
 
 export function FontFamilyField({ className }: { className?: string }) {
   return (
-    <SettingsField label={<Trans>Font Family</Trans>} className={className}>
+    <SettingsField label={<Trans>Font</Trans>} className={className}>
       <FontSelector />
     </SettingsField>
   );
@@ -119,16 +145,14 @@ export function HighlightLatestField() {
   );
 
   return (
-    <SettingsField label={<Trans>Latest section</Trans>}>
-      <label className="flex items-center gap-2 text-sm">
-        <Checkbox
-          checked={highlightLatestSection}
-          onCheckedChange={(checked) =>
-            setHighlightLatestSection(checked === true)
-          }
-        />
-        <Trans>Highlight last section</Trans>
-      </label>
-    </SettingsField>
+    <label className="flex items-center gap-2 text-sm">
+      <Checkbox
+        checked={highlightLatestSection}
+        onCheckedChange={(checked) =>
+          setHighlightLatestSection(checked === true)
+        }
+      />
+      <Trans>Highlight the latest passage</Trans>
+    </label>
   );
 }
