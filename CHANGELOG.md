@@ -7,34 +7,22 @@ All notable changes to this project are documented in this file.
 ### Added
 
 - Hakawati for Android and iOS, with dictation, sign-in, and cloud sync.
-- Change your account's display name in Account & Sync.
 
 ### Changed
 
-- Brass Night is now the default theme if you haven't picked one.
-- With nothing typed, the send button continues the story, replacing the separate Continue button.
-- Redesigned the input box: action modes are tabs along its top (Say is now Speak), dice rolls switch on beside them, and its buttons are labelled on desktop and larger on phones.
-- Redesigned AI Setup: save a provider once as a connection, then pick one for each role. Your saved providers and keys carry over.
-- Utility is now called Helper, and uses the Narrator's model unless you give it its own.
-- Redesigned Account & Sync: a switch for cloud sync, usage at a glance, and separate pages for cloud tales, devices, and tales waiting for a choice.
-- Redesigned Appearance and Prompting. Each prompt opens on its own page, sizes change with − and + buttons, and "Read new narration aloud" moved to the Text to Speech page in AI Setup.
-- Settings on desktop has a simpler sidebar, and Maintenance is now called Updates.
-- Generation, Updates, About, and the story panel's Story, AI, and Display tabs share the new settings layout, and settings no longer stretch across wide windows.
-- On desktop, Settings opens in a window over the app. Each control sits beside its label, the font, language, and model are picked from dropdowns, and Prompting shows its list beside the editor.
-- The story's frame, the input box, its buttons, and the Scroll to bottom button use the same square corners as the rest of the app in every theme. Storybook keeps its hand-drawn edges.
+- Redesigned Settings. On desktop it opens in its own window.
+- AI Setup saves each provider once as a connection that any role can use. Your providers and keys carry over.
+- Utility is now called Helper and follows the Narrator unless you give it its own model. Maintenance is now called Updates.
+- Account & Sync has a cloud sync switch, and you can change your display name.
+- Redesigned the input box: action modes are tabs along its top (Say is now Speak), with Roll beside them. With nothing typed, send continues the story.
+- Brass Night is now the default theme.
 
 ### Fixed
 
-- Settings pages now scroll in narrow windows.
-- Reporting a public scenario and blocking its publisher now work on macOS.
-- Settings opened from the library now show every section.
-- On the play screen, the story stays inside its frame as it scrolls, and the scrollbar sits inside the frame instead of at the window's edge.
-- In the Typewriter theme, the story no longer bounces back up when you scroll to the bottom, and new text stays above the roller.
-- Switching between Act, Speak, Story, and Direct, or turning Roll on, no longer closes the phone keyboard.
-- Swiping across a menu button, such as Create on the home screen, scrolls the page instead of opening the menu.
-- The input box now resizes to fit its text when you resize the window.
-- Turning Roll on lights the button in the theme's own color instead of green, and the input no longer shows a dice emoji.
-- Leaving the play screen while the narrator is still writing keeps what was written so far, like Stop. Before, the tale could fall out of step with its save, and Retry or Continue then failed to save.
+- Leaving the play screen while the narrator is writing no longer stops the next turn from saving.
+- The story stays inside its frame as it scrolls, and Typewriter no longer bounces back up at the bottom.
+- Settings scroll in narrow windows and show every section when opened from the library.
+- Reporting a public scenario and blocking its publisher work on macOS.
 
 ## [v1.2.0] - 2026-10-06
 
