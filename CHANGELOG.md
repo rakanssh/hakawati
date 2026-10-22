@@ -21,7 +21,7 @@ All notable changes to this project are documented in this file.
 - Settings on desktop has a simpler sidebar, and Maintenance is now called Updates.
 - Generation, Updates, About, and the story panel's Story, AI, and Display tabs share the new settings layout, and settings no longer stretch across wide windows.
 - On desktop, Settings opens in a window over the app. Each control sits beside its label, the font, language, and model are picked from dropdowns, and Prompting shows its list beside the editor.
-- The input box, its buttons, and the Scroll to bottom button use the same square corners as the rest of the app, Storybook and Typewriter included.
+- The story's frame, the input box, its buttons, and the Scroll to bottom button use the same square corners as the rest of the app in every theme. Storybook keeps its hand-drawn edges.
 
 ### Fixed
 

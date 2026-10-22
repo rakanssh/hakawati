@@ -225,7 +225,6 @@
 
 /* The reading surface: a terminal window with a faint phosphor glow. */
 .theme-phosphor [data-play-backdrop] {
-  border-radius: 6px;
   background:
     radial-gradient(
       120% 90% at 50% 40%,

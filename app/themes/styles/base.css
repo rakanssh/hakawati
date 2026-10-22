@@ -80,11 +80,11 @@
   box-decoration-break: clone;
 }
 
-/* The reading surface the story scrolls in. Themes give it a material; it stays clear by default. */
+/* The reading surface the story scrolls in, with the app's corners. Themes give it a material; it stays clear by default. */
 [data-play-backdrop] {
   top: 0.75rem;
   bottom: 0.25rem;
-  border-radius: calc(var(--radius) + 2px);
+  border-radius: var(--radius-xs);
 
   /* Edge to edge on phones, where the column fills the width, from just below the status bar. */
   @variant phone {
