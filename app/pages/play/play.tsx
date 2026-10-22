@@ -358,7 +358,7 @@ export default function Play() {
             <Button
               variant="secondary"
               size="icon"
-              className="h-10 w-10 rounded-full shadow-lg border border-border"
+              className="h-10 w-10 rounded-xs shadow-lg border border-border"
               onClick={() => scrollToBottom()}
               aria-label={t`Scroll to bottom`}
             >
