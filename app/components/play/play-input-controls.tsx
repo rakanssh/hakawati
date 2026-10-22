@@ -255,10 +255,10 @@ export function PlayInputControls({
     },
   });
   const cancelSpeechRecording = speechRecorder.cancel;
-  const isSpeechRecording = speechRecorder.isRecording;
+  const isSpeechActive = speechRecorder.status !== "idle";
 
   useEffect(() => {
-    if (!isSpeechRecording) return;
+    if (!isSpeechActive) return;
 
     const handleEscapeKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
@@ -274,7 +274,7 @@ export function PlayInputControls({
         capture: true,
       });
     };
-  }, [cancelSpeechRecording, isSpeechRecording]);
+  }, [cancelSpeechRecording, isSpeechActive]);
 
   const currentActionMode = isInputActionMode(action.type)
     ? action.type
@@ -482,25 +482,27 @@ export function PlayInputControls({
     />
   );
 
+  const renderSpeechCancelButton = (label: string) => (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="!h-9 !w-9 shrink-0 border border-destructive/35 bg-transparent text-destructive shadow-none hover:border-destructive/55 hover:bg-destructive/10 hover:text-destructive"
+          onClick={speechRecorder.cancel}
+          aria-label={label}
+        >
+          <XIcon className="h-4 w-4" strokeWidth={1.5} />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="top">{label}</TooltipContent>
+    </Tooltip>
+  );
+
   const renderRecordingComposer = () => (
     <div className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="!h-9 !w-9 shrink-0 border border-destructive/35 bg-transparent text-destructive shadow-none hover:border-destructive/55 hover:bg-destructive/10 hover:text-destructive"
-            onClick={speechRecorder.cancel}
-            aria-label={t`Cancel recording`}
-          >
-            <XIcon className="h-4 w-4" strokeWidth={1.5} />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="top">
-          <Trans>Cancel recording</Trans>
-        </TooltipContent>
-      </Tooltip>
+      {renderSpeechCancelButton(t`Cancel recording`)}
       <span className="w-11 shrink-0 font-mono text-sm tabular-nums text-primary">
         {formatRecordingTime(speechRecorder.elapsedSeconds)}
       </span>
@@ -526,6 +528,7 @@ export function PlayInputControls({
 
   const renderTranscribingComposer = () => (
     <div className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2 text-sm text-muted-foreground">
+      {renderSpeechCancelButton(t`Cancel transcription`)}
       <Loader2Icon className="h-4 w-4 shrink-0 animate-spin" />
       <span className="truncate">
         <Trans>Transcribing...</Trans>

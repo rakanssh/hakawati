@@ -1,6 +1,15 @@
 import { StreamChunk, ToolCallDelta } from "./schema";
+import { assertNotAborted } from "./adapters/responses";
 
 const TEXT_VALUE_KEYS = ["text", "content", "output_text", "delta"] as const;
+
+/**
+ * How long a reply may take to start. A local server reading a long prompt, or
+ * a model thinking without streaming its thoughts, sends nothing meanwhile.
+ */
+export const STREAM_START_TIMEOUT_MS = 5 * 60_000;
+/** Once a reply is arriving, a pause this long means the connection was lost. */
+export const STREAM_IDLE_TIMEOUT_MS = 60_000;
 
 function collectTextFragments(value: unknown, out: string[]): void {
   if (typeof value === "string") {
@@ -80,13 +89,10 @@ function toStreamChunk(json: unknown): StreamChunk | null {
   return null;
 }
 
-/**
- * Parse OpenAI streaming response and yield chunks containing content and/or tool_calls
- */
+/** One SSE data line: its delta, and why the provider ended the reply, if it did. */
 function parseDataLine(
   line: string,
-  outputLimitAdjustable: boolean,
-): StreamChunk | "done" | null {
+): { chunk: StreamChunk | null; finishReason?: string } | "done" | null {
   if (!line.startsWith("data:")) return null;
   const payload = line.slice(5).trim();
   if (payload === "[DONE]") return "done";
@@ -96,63 +102,132 @@ function parseDataLine(
   } catch {
     return null;
   }
-  if (json && typeof json === "object") {
-    const response = json as {
-      error?: { message?: string } | string;
-      choices?: Array<{ finish_reason?: string }>;
-    };
-    if (response.error) {
-      throw new Error(
-        typeof response.error === "string"
-          ? response.error
-          : response.error.message ||
-            "The provider could not complete the response.",
-      );
-    }
-    if (response.choices?.[0]?.finish_reason === "length") {
-      throw new Error(
-        outputLimitAdjustable
-          ? "The response reached its output token limit before finishing. Thinking and the answer share this limit. Increase Max Output Tokens or choose a lower thinking level and try again."
-          : "The response reached its output token limit before finishing. Choose a lower Utility thinking level or use a shorter request and try again.",
-      );
-    }
+  const response = (json ?? {}) as {
+    error?: { message?: string } | string;
+    choices?: Array<{ finish_reason?: unknown }>;
+  };
+  if (response.error) {
+    throw new Error(
+      typeof response.error === "string"
+        ? response.error
+        : response.error.message ||
+          "The provider could not complete the response.",
+    );
   }
-  return toStreamChunk(json);
+  const finishReason = response.choices?.[0]?.finish_reason;
+  return {
+    chunk: toStreamChunk(json),
+    ...(typeof finishReason === "string" ? { finishReason } : {}),
+  };
 }
 
+/** Rejects a reply the provider ended before it was complete. */
+function assertFinishedNormally(
+  finishReason: string,
+  outputLimitAdjustable: boolean,
+): void {
+  if (finishReason === "length") {
+    throw new Error(
+      outputLimitAdjustable
+        ? "The response reached its output token limit before finishing. Thinking and the answer share this limit. Increase Max Output Tokens or choose a lower thinking level and try again."
+        : "The response reached its output token limit before finishing. Choose a lower Utility thinking level or use a shorter request and try again.",
+    );
+  }
+  if (finishReason === "content_filter") {
+    throw new Error(
+      "The provider's content filter stopped the response. Retry, rephrase the turn, or choose another model.",
+    );
+  }
+  if (finishReason === "error") {
+    throw new Error("The provider could not complete the response.");
+  }
+}
+
+/** The next bytes of the body, or an error once it has sent nothing for `timeoutMs`. */
+async function readWithin(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  timeoutMs: number,
+): Promise<ReadableStreamReadResult<Uint8Array>> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const minutes = Math.round(timeoutMs / 60_000);
+  try {
+    return await Promise.race([
+      reader.read(),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () =>
+            reject(
+              new Error(
+                `The response stalled for ${minutes} minute${minutes === 1 ? "" : "s"}. Check your connection and retry.`,
+              ),
+            ),
+          timeoutMs,
+        );
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Parse an OpenAI-compatible SSE stream into chunks of text, thinking and tool calls. */
 export async function* parseOpenAIStream(
   body: ReadableStream<Uint8Array>,
-  options: { outputLimitAdjustable?: boolean } = {},
+  options: { outputLimitAdjustable?: boolean; signal?: AbortSignal } = {},
 ): AsyncGenerator<StreamChunk> {
+  const { signal } = options;
+  const outputLimitAdjustable = options.outputLimitAdjustable !== false;
   const reader = body.getReader();
   const decoder = new TextDecoder("utf-8");
+  // A stalled body never settles a pending read, so Stop ends the read itself.
+  const cancel = () => void reader.cancel().catch(() => undefined);
+  signal?.addEventListener("abort", cancel, { once: true });
   let buffer = "";
+  let started = false;
+  let finished = false;
 
   try {
     while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
+      assertNotAborted(signal);
+      const { done, value } = await readWithin(
+        reader,
+        started ? STREAM_IDLE_TIMEOUT_MS : STREAM_START_TIMEOUT_MS,
+      );
+      assertNotAborted(signal);
+      buffer += done
+        ? decoder.decode()
+        : decoder.decode(value, { stream: true });
 
       const lines = buffer.split(/\r?\n/);
-      buffer = lines.pop() ?? "";
+      buffer = done ? "" : (lines.pop() ?? "");
 
       for (const line of lines) {
-        const chunk = parseDataLine(
-          line,
-          options.outputLimitAdjustable !== false,
-        );
-        if (chunk === "done") return;
-        if (chunk) yield chunk;
+        const event = parseDataLine(line);
+        if (event === "done") return;
+        if (!event) continue;
+        if (event.chunk) {
+          started = true;
+          yield event.chunk;
+        }
+        if (event.finishReason) {
+          finished = true;
+          assertFinishedNormally(event.finishReason, outputLimitAdjustable);
+        }
       }
+      if (done) break;
     }
-
-    const lastChunk = parseDataLine(
-      buffer + decoder.decode(),
-      options.outputLimitAdjustable !== false,
-    );
-    if (lastChunk && lastChunk !== "done") yield lastChunk;
+    // Without [DONE] or a finish reason, the connection dropped mid-reply.
+    if (!finished) {
+      throw new Error(
+        "The connection ended before the response finished. Retry the request.",
+      );
+    }
+  } catch (error) {
+    // Whatever the body reports after Stop, the reply was stopped.
+    assertNotAborted(signal);
+    throw error;
   } finally {
+    signal?.removeEventListener("abort", cancel);
     // Breaking out of decoding must also stop the underlying HTTP response.
     await reader.cancel().catch(() => undefined);
     reader.releaseLock();

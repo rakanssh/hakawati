@@ -31,6 +31,8 @@ export interface SyncSettingsStore {
   accountEmail: string;
   hostedDeviceIdsByAccountId: Record<string, string>;
   hostedRefreshFailed: boolean;
+  // The cloud refuses this app version. Checked again on every sync pass.
+  cloudUpdateRequired: boolean;
   setCloudBaseUrl: (baseUrl: string) => void;
   setPersonalBaseUrl: (baseUrl: string) => void;
   setActiveSyncMode: (mode: "hosted" | "personal") => void;
@@ -46,6 +48,7 @@ export interface SyncSettingsStore {
     email?: string | null;
   }) => void;
   setHostedRefreshFailed: (hostedRefreshFailed: boolean) => void;
+  setCloudUpdateRequired: (cloudUpdateRequired: boolean) => void;
   clearSession: () => void;
   setDeviceId: (deviceId: string) => void;
   getOrCreateHostedDeviceId: (accountId: string) => string;
@@ -94,6 +97,7 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
       accountEmail: "",
       hostedDeviceIdsByAccountId: {},
       hostedRefreshFailed: false,
+      cloudUpdateRequired: false,
       setCloudBaseUrl: (cloudBaseUrl) =>
         set((state) =>
           cloudBaseUrl === state.cloudBaseUrl
@@ -104,6 +108,7 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
                 accessTokenExpiresAt: null,
                 hasRefreshToken: false,
                 hostedRefreshFailed: false,
+                cloudUpdateRequired: false,
                 accountId: "",
                 accountDisplayName: "",
                 accountEmail: "",
@@ -142,6 +147,8 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
         }),
       setHostedRefreshFailed: (hostedRefreshFailed) =>
         set({ hostedRefreshFailed }),
+      setCloudUpdateRequired: (cloudUpdateRequired) =>
+        set({ cloudUpdateRequired }),
       clearSession: () =>
         set({
           accessToken: "",

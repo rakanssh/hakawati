@@ -8,6 +8,7 @@ import {
   nativeRecordingToBlob,
   normalizeMicrophoneError,
   RecordingInterruptedError,
+  TRANSCRIPTION_TIMEOUT_MS,
   useSpeechRecorder,
 } from "./useSpeechRecorder";
 
@@ -345,6 +346,72 @@ describe("useSpeechRecorder", () => {
 
     harness.cleanup();
     vi.useRealTimers();
+  });
+
+  describe("when transcription stalls", () => {
+    /** Records, then stops on a transcription request that never answers. */
+    async function stopIntoStalledTranscription(
+      onTranscript = vi.fn(),
+      onError = vi.fn(),
+    ) {
+      mockNativeRecorder();
+      transcribeSpeechMock.mockReturnValue(new Promise(() => undefined));
+      const harness = renderRecorderHarness({ onTranscript, onError });
+      await act(async () => {
+        await harness.controls.start();
+      });
+      act(() => {
+        harness.controls.stop();
+      });
+      await flushPromises();
+      await flushPromises();
+      expect(harness.controls.status).toBe("transcribing");
+      const [, signal] = transcribeSpeechMock.mock.calls[0] as [
+        Blob,
+        AbortSignal,
+      ];
+      return { harness, signal, onTranscript, onError };
+    }
+
+    it("can be cancelled, freeing the composer", async () => {
+      const { harness, signal, onTranscript, onError } =
+        await stopIntoStalledTranscription();
+
+      act(() => {
+        harness.controls.cancel();
+      });
+
+      expect(harness.controls.status).toBe("idle");
+      expect(signal.aborted).toBe(true);
+      expect(onTranscript).not.toHaveBeenCalled();
+      expect(onError).not.toHaveBeenCalled();
+      harness.cleanup();
+    });
+
+    it("gives up after a while and reports it", async () => {
+      vi.useFakeTimers();
+      try {
+        const { harness, signal, onError } =
+          await stopIntoStalledTranscription();
+
+        await act(async () => {
+          vi.advanceTimersByTime(TRANSCRIPTION_TIMEOUT_MS);
+        });
+
+        expect(harness.controls.status).toBe("idle");
+        expect(signal.aborted).toBe(true);
+        expect(onError).toHaveBeenCalledExactlyOnceWith(
+          expect.objectContaining({ message: "Transcription timed out." }),
+        );
+        await act(async () => {
+          await harness.controls.start();
+        });
+        expect(harness.controls.status).toBe("recording");
+        harness.cleanup();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 
   it("does not report an interrupted recording as a cancel failure", async () => {

@@ -23,6 +23,18 @@ All notable changes to this project are documented in this file.
 - The story stays inside its frame as it scrolls, and Typewriter no longer bounces back up at the bottom.
 - Settings scroll in narrow windows and show every section when opened from the library.
 - Reporting a public scenario and blocking its publisher work on macOS.
+- Stop ends a stalled reply, and a reply that stops arriving ends with an error instead of waiting forever.
+- When a turn fails, the log shows why, and the narrator no longer reads the error as part of the story. Replies cut off by a content filter are marked as failed.
+- Retry after a Story passage writes what follows it instead of replacing it.
+- Using an item removes one copy instead of every item with that name.
+- Transcribing speech can be cancelled, and gives up if it takes too long.
+- Importing a scenario you already have adds a copy instead of replacing yours.
+- Long tales no longer slow down taking turns, and the narrator starts replying without a pause.
+- The tale you played last no longer needs review each time you switch devices. It picks up what you played on the other device.
+- Dropped connections and a full cloud no longer show as conflicts. Tales the cloud can't take show Cloud full or Not synced instead of uploading over and over.
+- Hakawati says "Update Hakawati to sync" when the cloud needs a newer version.
+- Pulling a tale from the cloud keeps its cover, and a device removed from your account no longer adds itself back.
+- Sign-in waits 10 minutes instead of 2.
 
 ## [v1.2.0] - 2026-10-06
 

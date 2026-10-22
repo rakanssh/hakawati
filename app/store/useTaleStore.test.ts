@@ -133,13 +133,34 @@ describe("exact GM action undo", () => {
     useTaleStore.setState({ inventory });
     const before = snapshot();
     useTaleStore.getState().removeFromInventoryByName("Key");
+    useTaleStore.getState().removeFromInventoryByName("Key");
     completeTurn(before, [
+      { type: "REMOVE_FROM_INVENTORY", payload: { item: "Key" } },
       { type: "REMOVE_FROM_INVENTORY", payload: { item: "Key" } },
     ]);
     useTaleStore.getState().undo();
     expect(useTaleStore.getState().inventory).toEqual(inventory);
     useTaleStore.getState().redo();
     expect(useTaleStore.getState().inventory).toEqual([]);
+  });
+
+  it("removes one copy of an item the player holds several of", () => {
+    const potion = (id: string) => ({ id, name: "Health Potion" });
+    useTaleStore.setState({
+      inventory: [potion("potion-1"), { id: "rope", name: "Rope" }],
+    });
+    useTaleStore.getState().addToInventory("Health Potion");
+    const newest = useTaleStore.getState().inventory[2];
+
+    useTaleStore.getState().removeFromInventoryByName("Health Potion");
+    expect(useTaleStore.getState().inventory).toEqual([
+      potion("potion-1"),
+      { id: "rope", name: "Rope" },
+    ]);
+    expect(useTaleStore.getState().inventory).not.toContainEqual(newest);
+
+    useTaleStore.getState().removeFromInventoryByName("Lantern");
+    expect(useTaleStore.getState().inventory).toHaveLength(2);
   });
 
   it("restores exact state when retry removes and then restores a GM entry", () => {

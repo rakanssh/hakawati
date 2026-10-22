@@ -122,12 +122,13 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
         body: JSON.stringify(body),
         signal,
       }).then(async (r) => {
-        if (!r.ok) throw new Error(await r.text());
+        if (!r.ok) throw new Error(await readErrorMessage(r, "Request failed"));
         if (req.stream) {
           return {
             content: "",
             iterator: parseOpenAIStream(r.body!, {
               outputLimitAdjustable: connection.role !== "utility",
+              signal,
             }),
             raw: r,
             usage: {

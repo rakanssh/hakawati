@@ -3,7 +3,6 @@ import { GameMode } from "@/types/context.type";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 import type { TalePackageV1 } from "@/types/export.type";
 import type { TaleSyncState } from "@/repositories/sync.repository";
-import { useTaleStore } from "@/store/useTaleStore";
 import { HAKAWATI_CLIENT_VERSION } from "./cloud-capabilities";
 import {
   assertSyncAvailable,
@@ -24,6 +23,7 @@ import {
   unregisterHostedDevice,
   uploadTalePackage,
   applyRemoteTalePackage,
+  type RemoteTale,
   type SyncCapabilities,
 } from "./sync";
 
@@ -57,6 +57,7 @@ const taleRepo = vi.hoisted(() => ({
 
 const syncRepo = vi.hoisted(() => ({
   acknowledgeTaleSyncWrite: vi.fn(),
+  adoptTaleSyncRevisions: vi.fn(async () => true),
   getTaleSyncState: vi.fn(),
   setSyncProfileDisabled: vi.fn(),
   setTaleSyncStatus: vi.fn(),
@@ -179,7 +180,6 @@ describe("sync transport", () => {
         height: 1,
       }),
     );
-    useTaleStore.setState({ id: "other-tale", loadingTaleId: null });
   });
 
   afterEach(() => {
@@ -212,9 +212,41 @@ describe("sync transport", () => {
     expect(http.fetch).toHaveBeenCalledOnce();
   });
 
-  it("refuses an unsupported cloud-save protocol even when sync is advertised available", () => {
+  it.each([
+    ["a newer cloud-save protocol", { cloudSaveProtocol: 2 }],
+    ["a newer minimum app version", { minimumClientVersion: "99.0.0" }],
+    [
+      "this app as unsupported",
+      {
+        compatibility: {
+          state: "unsupported" as const,
+          reason: "client_version_too_old",
+        },
+      },
+    ],
+  ])("asks for an app update when the cloud reports %s", (_case, change) => {
+    let refusal: unknown;
+    try {
+      assertSyncAvailable({ ...capabilitiesFixture(), ...change });
+    } catch (error) {
+      refusal = error;
+    }
+    expect(refusal).toMatchObject({
+      status: 426,
+      code: "unsupported_client",
+      message: "Update Hakawati to sync.",
+    });
+  });
+
+  it("reports cloud sync as unavailable when the cloud turns it off", () => {
     expect(() =>
-      assertSyncAvailable({ ...capabilitiesFixture(), cloudSaveProtocol: 2 }),
+      assertSyncAvailable({
+        ...capabilitiesFixture(),
+        features: {
+          ...capabilitiesFixture().features,
+          sync: { state: "unavailable" },
+        },
+      }),
     ).toThrow(/unavailable/);
   });
 
@@ -566,7 +598,7 @@ describe("sync transport", () => {
           updatedAt: "2026-09-10",
           lastEntryPreview: null,
         },
-        idempotencyKey: "cover-replace",
+        writerId: "device-1",
         capabilities: capabilitiesFixture(),
       });
       expect(transport.post).toHaveBeenCalledTimes(changed ? 2 : 0);
@@ -767,7 +799,7 @@ describe("sync transport", () => {
     expect(syncRepo.upsertTaleSyncStateIfTaleVersion).not.toHaveBeenCalled();
   });
 
-  it("does not link a local tale when hosted upload rejects an unregistered device", async () => {
+  it("turns sync off without registering again when the account removed this device", async () => {
     taleRepo.exportTalePackage.mockResolvedValueOnce(samplePackage());
     const transport = {
       ...transportFixture(),
@@ -805,9 +837,184 @@ describe("sync transport", () => {
     });
     expect(syncRepo.setSyncProfileDisabled).toHaveBeenCalledWith(
       "cloud",
-      "device_limit",
+      "user_disabled",
     );
   });
+
+  it.each([
+    ["package", { maxPackageBytes: 200, maxStateBytes: 512 * 1024 }],
+    ["state", { maxPackageBytes: 2 * 1024 * 1024, maxStateBytes: 10 }],
+  ])(
+    "refuses a tale over the cloud's %s size limit before uploading its cover",
+    async (_limit, limits) => {
+      taleRepo.exportTalePackage.mockResolvedValueOnce(samplePackage());
+      const transport = transportFixture();
+
+      await expect(
+        uploadTalePackage({
+          profile: {
+            id: "cloud",
+            baseUrl: "https://sync.example",
+            mode: "hosted",
+          },
+          transport,
+          localTaleId: "local-tale",
+          idempotencyKey: "idem-too-large",
+          capabilities: { ...capabilitiesFixture(), limits },
+        }),
+      ).rejects.toMatchObject({ code: "package_too_large" });
+
+      expect(coverImages.optimize).not.toHaveBeenCalled();
+      expect(transport.post).not.toHaveBeenCalled();
+      expect(http.fetch).not.toHaveBeenCalled();
+    },
+  );
+
+  it("records a linked tale over the size limit without uploading it", async () => {
+    taleRepo.exportTalePackage.mockResolvedValueOnce(samplePackage());
+    syncRepo.getTaleSyncState.mockResolvedValueOnce({
+      profileId: "cloud",
+      localTaleId: "local-tale",
+      remoteTaleId: "remote-tale",
+      contentRev: "2",
+      metadataRev: "3",
+      lastSyncedAt: 1,
+      pendingStatus: "push",
+      lastErrorCode: null,
+    });
+    const transport = transportFixture();
+
+    await expect(
+      replaceRemoteTalePackage({
+        profile: {
+          id: "cloud",
+          baseUrl: "https://sync.example",
+          mode: "hosted",
+        },
+        transport,
+        localTaleId: "local-tale",
+        idempotencyKey: "idem-too-large",
+        capabilities: {
+          ...capabilitiesFixture(),
+          limits: { maxPackageBytes: 200, maxStateBytes: 512 * 1024 },
+        },
+      }),
+    ).rejects.toMatchObject({ code: "package_too_large" });
+
+    expect(transport.put).not.toHaveBeenCalled();
+    expect(transport.post).not.toHaveBeenCalled();
+    expect(syncRepo.setTaleSyncStatus).toHaveBeenCalledWith({
+      profileId: "cloud",
+      localTaleId: "local-tale",
+      pendingStatus: "error",
+      lastErrorCode: "package_too_large",
+    });
+  });
+
+  it("reuses the cover a failed create uploaded instead of uploading another", async () => {
+    taleRepo.exportTalePackage.mockResolvedValue(samplePackage());
+    http.fetch.mockResolvedValue({ ok: true });
+    const createBodies: unknown[] = [];
+    const transport = {
+      ...transportFixture(),
+      post: vi.fn(async (path: string, body?: unknown) => {
+        if (path === "/v1/assets/cover-upload-intents") {
+          return {
+            asset: { assetId: "retry-cover" },
+            upload: { url: "https://storage.example/retry-cover", headers: {} },
+          };
+        }
+        if (path === "/v1/assets/retry-cover/complete") return {};
+        createBodies.push(body);
+        if (createBodies.length === 1) {
+          throw new SyncHttpError("Quota exceeded.", 409, "quota_exceeded");
+        }
+        return { id: "remote-tale", contentRev: 1, metadataRev: 1 };
+      }),
+    };
+    const upload = () =>
+      uploadTalePackage({
+        profile: {
+          id: "cloud",
+          accountId: "account-retry",
+          baseUrl: "https://sync.example",
+          mode: "hosted",
+        },
+        transport,
+        localTaleId: "local-tale",
+        idempotencyKey: "idem-retry",
+        capabilities: capabilitiesFixture(),
+      });
+
+    await expect(upload()).rejects.toMatchObject({ code: "quota_exceeded" });
+    await upload();
+
+    expect(
+      transport.post.mock.calls.filter(
+        ([path]) => path === "/v1/assets/cover-upload-intents",
+      ),
+    ).toHaveLength(1);
+    expect(http.fetch).toHaveBeenCalledOnce();
+    expect(createBodies).toEqual([
+      {
+        package: expect.objectContaining({
+          tale: expect.objectContaining({ coverAssetId: "retry-cover" }),
+        }),
+      },
+      {
+        package: expect.objectContaining({
+          tale: expect.objectContaining({ coverAssetId: "retry-cover" }),
+        }),
+      },
+    ]);
+  });
+
+  it.each(["quota_exceeded", "package_too_large", "413"])(
+    "does not push a tale refused with %s again until it changes",
+    async (code) => {
+      syncRepo.getTaleSyncState.mockResolvedValue({
+        profileId: "cloud",
+        localTaleId: "local-tale",
+        remoteTaleId: "remote-tale",
+        contentRev: "2",
+        metadataRev: "3",
+        lastSyncedAt: 1,
+        pendingStatus: "error",
+        lastErrorCode: code,
+      });
+      const transport = transportFixture();
+
+      const result = await syncLinkedTale({
+        profile: {
+          id: "cloud",
+          baseUrl: "https://sync.example",
+          mode: "hosted",
+        },
+        transport,
+        localTaleId: "local-tale",
+        remoteTale: {
+          id: "remote-tale",
+          sourceTaleId: "local-tale",
+          title: "Local Tale",
+          description: null,
+          gameMode: GameMode.STORY_TELLER,
+          coverAssetId: null,
+          thumbnailAssetId: null,
+          contentRev: 2,
+          metadataRev: 3,
+          turnCount: 1,
+          updatedAt: "2026-09-10",
+          lastEntryPreview: null,
+        },
+        writerId: "device-1",
+        capabilities: capabilitiesFixture("unavailable"),
+      });
+
+      expect(result).toBe("skipped");
+      expect(taleRepo.exportTalePackage).not.toHaveBeenCalled();
+      expect(transport.put).not.toHaveBeenCalled();
+    },
+  );
 
   it("sends baseContentRev from sync state when replacing remote package", async () => {
     taleRepo.exportTalePackage.mockResolvedValueOnce(samplePackage());
@@ -916,7 +1123,7 @@ describe("sync transport", () => {
         updatedAt: "2026-09-10",
         lastEntryPreview: null,
       },
-      idempotencyKey: "first-snapshot",
+      writerId: "device-1",
       capabilities: capabilitiesFixture("unavailable"),
     };
     expect(await syncLinkedTale(input)).toBe("pushed");
@@ -936,7 +1143,6 @@ describe("sync transport", () => {
       await syncLinkedTale({
         ...input,
         remoteTale: { ...input.remoteTale, contentRev: 2, metadataRev: 2 },
-        idempotencyKey: "next-snapshot",
       }),
     ).toBe("pushed");
     expect(transport.put).toHaveBeenCalledTimes(2);
@@ -1132,6 +1338,49 @@ describe("sync transport", () => {
     });
   });
 
+  it.each([
+    "quota_exceeded",
+    "idempotency_conflict",
+    "idempotency_in_progress",
+  ])("records a %s refusal as an error, not a conflict", async (code) => {
+    taleRepo.exportTalePackage.mockResolvedValueOnce(samplePackage());
+    syncRepo.getTaleSyncState.mockResolvedValueOnce({
+      profileId: "cloud",
+      localTaleId: "local-tale",
+      remoteTaleId: "remote-tale",
+      contentRev: "2",
+      metadataRev: "3",
+      lastSyncedAt: 1,
+      pendingStatus: "push",
+      lastErrorCode: null,
+    });
+    const transport = {
+      ...transportFixture(),
+      put: vi.fn().mockRejectedValue(new SyncHttpError("Refused", 409, code)),
+    };
+
+    await expect(
+      replaceRemoteTalePackage({
+        profile: {
+          id: "cloud",
+          baseUrl: "https://sync.example",
+          mode: "hosted",
+        },
+        transport,
+        localTaleId: "local-tale",
+        capabilities: capabilitiesFixture("unavailable"),
+        idempotencyKey: "idem-refused",
+      }),
+    ).rejects.toMatchObject({ code });
+
+    expect(syncRepo.setTaleSyncStatus).toHaveBeenCalledWith({
+      profileId: "cloud",
+      localTaleId: "local-tale",
+      pendingStatus: "error",
+      lastErrorCode: code,
+    });
+  });
+
   it("detects when a listed remote tale has newer revisions", () => {
     const state = {
       remoteTaleId: "remote-tale",
@@ -1157,39 +1406,27 @@ describe("sync transport", () => {
     expect(remoteTaleChanged(state, { ...remote, id: "other" })).toBe(false);
   });
 
-  it.each(["closed", "loaded", "loading", "opened-during-download"])(
-    "handles automatic remote changes when the local tale is %s",
-    async (openState) => {
-      if (openState === "loaded") useTaleStore.setState({ id: "local-tale" });
-      if (openState === "loading")
-        useTaleStore.setState({ loadingTaleId: "local-tale" });
-      syncRepo.getTaleSyncState
-        .mockResolvedValueOnce({
-          profileId: "cloud",
-          localTaleId: "local-tale",
-          remoteTaleId: "remote-tale",
-          contentRev: "2",
-          metadataRev: "3",
-          lastSyncedAt: 1,
-          pendingStatus: "idle",
-          lastErrorCode: null,
-        })
-        .mockResolvedValueOnce({
-          profileId: "cloud",
-          localTaleId: "local-tale",
-          remoteTaleId: "remote-tale",
-          contentRev: "2",
-          metadataRev: "3",
-          lastSyncedAt: 1,
-          pendingStatus: "idle",
-          lastErrorCode: null,
-        });
+  it.each(["closed", "in play", "played during download"])(
+    "pulls automatic remote changes into a tale that is %s, or waits",
+    async (playState) => {
+      // Being open is not enough to block a pull: Home reopens the last
+      // played tale on launch. Only a tale being played waits.
+      let playing = playState === "in play";
+      const state: TaleSyncState = {
+        profileId: "cloud",
+        localTaleId: "local-tale",
+        remoteTaleId: "remote-tale",
+        contentRev: "2",
+        metadataRev: "3",
+        lastSyncedAt: 1,
+        pendingStatus: "idle",
+        lastErrorCode: null,
+      };
+      syncRepo.getTaleSyncState.mockResolvedValue(state);
       const transport = {
         ...transportFixture(),
         get: vi.fn().mockImplementation(async () => {
-          if (openState === "opened-during-download") {
-            useTaleStore.setState({ loadingTaleId: "local-tale" });
-          }
+          if (playState === "played during download") playing = true;
           return {
             id: "remote-tale",
             contentRev: 4,
@@ -1222,34 +1459,27 @@ describe("sync transport", () => {
           updatedAt: "2026-06-19T00:00:00.000Z",
           lastEntryPreview: null,
         },
-        canPull: () => {
-          const active = useTaleStore.getState();
-          return (
-            active.id !== "local-tale" && active.loadingTaleId !== "local-tale"
-          );
-        },
-        idempotencyKey: "idem-sync",
+        canPull: () => !playing,
+        writerId: "device-1",
         capabilities: capabilitiesFixture("unavailable"),
       });
 
-      if (openState !== "closed") {
-        expect(result).toBe("conflict");
+      if (playState !== "closed") {
+        // The pull waits for a later pass. Nothing changed locally, so this
+        // is not a conflict.
+        expect(result).toBe("skipped");
+        expect(syncRepo.setTaleSyncStatus).not.toHaveBeenCalled();
         expect(
           syncRepo.upsertTaleSyncStateIfTaleVersion,
         ).not.toHaveBeenCalled();
-        expect(syncRepo.setTaleSyncStatus).toHaveBeenCalledWith(
-          expect.objectContaining({
-            pendingStatus: "conflict",
-            lastErrorCode: "local_changed",
-          }),
-        );
-        if (openState !== "opened-during-download") {
+        if (playState === "in play") {
           expect(transport.get).not.toHaveBeenCalled();
           expect(taleRepo.replaceTaleWithPackage).not.toHaveBeenCalled();
         }
         return;
       }
       expect(result).toBe("pulled");
+      expect(syncRepo.setTaleSyncStatus).not.toHaveBeenCalled();
       expect(taleRepo.replaceTaleWithPackage).toHaveBeenCalledWith(
         "local-tale",
         expect.objectContaining({
@@ -1315,7 +1545,7 @@ describe("sync transport", () => {
         updatedAt: "2026-06-19T00:00:00.000Z",
         lastEntryPreview: null,
       },
-      idempotencyKey: "idem-sync",
+      writerId: "device-1",
       capabilities: capabilitiesFixture("unavailable"),
     });
 
@@ -1382,7 +1612,7 @@ describe("sync transport", () => {
           updatedAt: "2026-06-19T00:00:00.000Z",
           lastEntryPreview: null,
         },
-        idempotencyKey: "idem-sync",
+        writerId: "device-1",
       }),
     ).rejects.toMatchObject({ code: "auth" });
 
@@ -1433,7 +1663,7 @@ describe("sync transport", () => {
         updatedAt: "2026-06-19T00:00:00.000Z",
         lastEntryPreview: null,
       },
-      idempotencyKey: "idem-sync",
+      writerId: "device-1",
     });
 
     expect(result).toBe("conflict");
@@ -1502,7 +1732,7 @@ describe("sync transport", () => {
         lastEntryPreview: null,
       },
       canPull: () => false,
-      idempotencyKey: "idem-sync",
+      writerId: "device-1",
       capabilities: capabilitiesFixture("unavailable"),
     });
 
@@ -1517,7 +1747,7 @@ describe("sync transport", () => {
           turns: expect.arrayContaining([expect.objectContaining({ seq: 1 })]),
         }),
       }),
-      { idempotencyKey: "idem-sync" },
+      { idempotencyKey: expect.stringMatching(/^sync-[0-9a-f]{64}$/) },
     );
     expect(transport.patch).not.toHaveBeenCalled();
     expect(transport.post).not.toHaveBeenCalled();
@@ -1569,7 +1799,7 @@ describe("sync transport", () => {
         updatedAt: "2026-09-10",
         lastEntryPreview: null,
       },
-      idempotencyKey: "idle-pull",
+      writerId: "device-1",
     });
     expect(result).toBe("conflict");
     expect(transport.get).not.toHaveBeenCalled();
@@ -1618,31 +1848,81 @@ describe("sync transport", () => {
     expect(syncRepo.setTaleSyncStatus).not.toHaveBeenCalled();
   });
 
-  it.each([false, true])(
-    "reconciles a lost write response using wire content, preserving newer local edits: %s",
-    async (newerLocalEdit) => {
+  it("reconciles a lost write response using wire content", async () => {
+    const pkg = samplePackage();
+    pkg.tale.source = {
+      type: "catalog",
+      scenarioId: "scenario",
+      scenarioVersionId: "version",
+      scenarioTitle: "Gate",
+    };
+    taleRepo.exportTalePackage.mockResolvedValue(pkg);
+    syncRepo.getTaleSyncState.mockResolvedValue({
+      profileId: "cloud",
+      localTaleId: "local-tale",
+      remoteTaleId: "remote-tale",
+      contentRev: "2",
+      metadataRev: "3",
+      lastSyncedAt: 1,
+      pendingStatus: "error",
+      lastErrorCode: "sync_failed",
+    });
+    const transport = {
+      ...transportFixture(),
+      get: vi.fn().mockResolvedValue({
+        id: "remote-tale",
+        contentRev: 3,
+        metadataRev: 4,
+        package: toSyncTalePackage(structuredClone(pkg), { mode: "hosted" }),
+      }),
+    };
+    const result = await syncLinkedTale({
+      profile: {
+        id: "cloud",
+        baseUrl: "https://sync.example",
+        mode: "hosted",
+      },
+      transport,
+      localTaleId: "local-tale",
+      remoteTale: lostWriteRemoteTale(pkg),
+      writerId: "device-1",
+    });
+    expect(result).toBe("pushed");
+    expect(transport.put).not.toHaveBeenCalled();
+    expect(syncRepo.upsertTaleSyncStateIfTaleVersion).toHaveBeenCalledOnce();
+    expect(taleRepo.replaceTaleWithPackage).not.toHaveBeenCalled();
+  });
+
+  it.each(["push", "error"] as const)(
+    "pushes local edits made after its own write's response was lost: %s",
+    async (pendingStatus) => {
       const pkg = samplePackage();
-      pkg.tale.source = {
-        type: "catalog",
-        scenarioId: "scenario",
-        scenarioVersionId: "version",
-        scenarioTitle: "Gate",
-      };
       const remotePackage = toSyncTalePackage(structuredClone(pkg), {
         mode: "hosted",
       });
-      if (newerLocalEdit) pkg.turns[0].entries[0].text = "A newer local edit";
+      pkg.turns[0].entries[0].text = "A newer local edit";
       taleRepo.exportTalePackage.mockResolvedValue(pkg);
-      syncRepo.getTaleSyncState.mockResolvedValue({
+      const lostWriteState: TaleSyncState = {
         profileId: "cloud",
         localTaleId: "local-tale",
         remoteTaleId: "remote-tale",
         contentRev: "2",
         metadataRev: "3",
         lastSyncedAt: 1,
-        pendingStatus: "error",
-        lastErrorCode: "sync_failed",
-      });
+        // A save after the lost write puts the link back to "push".
+        pendingStatus,
+        lastErrorCode: pendingStatus === "error" ? "sync_failed" : null,
+      };
+      syncRepo.getTaleSyncState
+        .mockResolvedValueOnce(lostWriteState)
+        .mockResolvedValueOnce(lostWriteState)
+        .mockResolvedValue({
+          ...lostWriteState,
+          contentRev: "3",
+          metadataRev: "4",
+          pendingStatus: "push",
+          lastErrorCode: null,
+        });
       const transport = {
         ...transportFixture(),
         get: vi.fn().mockResolvedValue({
@@ -1651,7 +1931,22 @@ describe("sync transport", () => {
           metadataRev: 4,
           package: remotePackage,
         }),
+        put: vi
+          .fn()
+          .mockRejectedValueOnce(
+            new SyncHttpError(
+              "Idempotency key was reused with a different request.",
+              409,
+              "idempotency_conflict",
+            ),
+          )
+          .mockResolvedValueOnce({
+            id: "remote-tale",
+            contentRev: 4,
+            metadataRev: 5,
+          }),
       };
+
       const result = await syncLinkedTale({
         profile: {
           id: "cloud",
@@ -1660,30 +1955,159 @@ describe("sync transport", () => {
         },
         transport,
         localTaleId: "local-tale",
-        remoteTale: {
-          id: "remote-tale",
-          sourceTaleId: "local-tale",
-          title: pkg.tale.title,
-          description: pkg.tale.description,
-          gameMode: GameMode.STORY_TELLER,
-          coverAssetId: null,
-          thumbnailAssetId: null,
-          contentRev: 3,
-          metadataRev: 4,
-          turnCount: 1,
-          updatedAt: "2026-09-10",
-          lastEntryPreview: null,
-        },
-        idempotencyKey: "ambiguous-write",
+        remoteTale: lostWriteRemoteTale(pkg),
+        writerId: "device-1",
+        capabilities: capabilitiesFixture("unavailable"),
       });
-      expect(result).toBe(newerLocalEdit ? "conflict" : "pushed");
-      expect(transport.put).not.toHaveBeenCalled();
-      expect(syncRepo.upsertTaleSyncStateIfTaleVersion).toHaveBeenCalledTimes(
-        newerLocalEdit ? 0 : 1,
+
+      expect(result).toBe("pushed");
+      expect(syncRepo.adoptTaleSyncRevisions).toHaveBeenCalledWith({
+        expectedState: lostWriteState,
+        contentRev: "3",
+        metadataRev: "4",
+      });
+      expect(transport.put).toHaveBeenCalledTimes(2);
+      const [first, second] = transport.put.mock.calls;
+      // The first try resends at the lost write's revision, under its key.
+      expect(first[1]).toMatchObject({ baseContentRev: 2, baseMetadataRev: 3 });
+      expect(second[1]).toMatchObject({
+        baseContentRev: 3,
+        baseMetadataRev: 4,
+        package: { turns: [{ entries: [{ text: "A newer local edit" }] }] },
+      });
+      expect(second[2].idempotencyKey).not.toBe(first[2].idempotencyKey);
+      expect(syncRepo.setTaleSyncStatus).not.toHaveBeenCalledWith(
+        expect.objectContaining({ pendingStatus: "conflict" }),
       );
-      expect(taleRepo.replaceTaleWithPackage).not.toHaveBeenCalled();
+      expect(syncRepo.acknowledgeTaleSyncWrite).toHaveBeenLastCalledWith(
+        expect.objectContaining({ contentRev: "4", metadataRev: "5" }),
+      );
     },
   );
+
+  it("keeps another device's write at the same revision a conflict", async () => {
+    const pkg = samplePackage();
+    pkg.turns[0].entries[0].text = "A local edit";
+    taleRepo.exportTalePackage.mockResolvedValue(pkg);
+    syncRepo.getTaleSyncState.mockResolvedValue({
+      profileId: "cloud",
+      localTaleId: "local-tale",
+      remoteTaleId: "remote-tale",
+      contentRev: "2",
+      metadataRev: "3",
+      lastSyncedAt: 1,
+      pendingStatus: "push",
+      lastErrorCode: null,
+    });
+    const transport = {
+      ...transportFixture(),
+      put: vi
+        .fn()
+        .mockRejectedValue(
+          new SyncHttpError(
+            "This tale changed elsewhere.",
+            409,
+            "content_conflict",
+          ),
+        ),
+    };
+
+    const result = await syncLinkedTale({
+      profile: {
+        id: "cloud",
+        baseUrl: "https://sync.example",
+        mode: "hosted",
+      },
+      transport,
+      localTaleId: "local-tale",
+      remoteTale: lostWriteRemoteTale(pkg),
+      writerId: "device-1",
+      capabilities: capabilitiesFixture("unavailable"),
+    });
+
+    expect(result).toBe("conflict");
+    expect(transport.put).toHaveBeenCalledOnce();
+    expect(syncRepo.adoptTaleSyncRevisions).not.toHaveBeenCalled();
+    expect(syncRepo.setTaleSyncStatus).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pendingStatus: "conflict",
+        lastErrorCode: "content_conflict",
+      }),
+    );
+  });
+
+  it("pushes local edits made after its own create's response was lost", async () => {
+    const pkg = samplePackage();
+    const remotePackage = toSyncTalePackage(structuredClone(pkg), {
+      mode: "hosted",
+    });
+    pkg.turns[0].entries[0].text = "A newer local edit";
+    taleRepo.exportTalePackage.mockResolvedValue(pkg);
+    // Linked again by its source ID after the create's response was lost.
+    const recoveredState: TaleSyncState = {
+      profileId: "cloud",
+      localTaleId: "local-tale",
+      remoteTaleId: "remote-tale",
+      contentRev: null,
+      metadataRev: null,
+      lastSyncedAt: null,
+      pendingStatus: "error",
+      lastErrorCode: "sync_failed",
+    };
+    syncRepo.getTaleSyncState
+      .mockResolvedValueOnce(recoveredState)
+      .mockResolvedValue({
+        ...recoveredState,
+        contentRev: "1",
+        metadataRev: "1",
+        pendingStatus: "push",
+        lastErrorCode: null,
+      });
+    const transport = {
+      ...transportFixture(),
+      get: vi.fn().mockResolvedValue({
+        id: "remote-tale",
+        contentRev: 1,
+        metadataRev: 1,
+        package: remotePackage,
+      }),
+      put: vi.fn().mockResolvedValue({
+        id: "remote-tale",
+        contentRev: 2,
+        metadataRev: 2,
+      }),
+    };
+
+    const result = await syncLinkedTale({
+      profile: {
+        id: "cloud",
+        baseUrl: "https://sync.example",
+        mode: "hosted",
+      },
+      transport,
+      localTaleId: "local-tale",
+      remoteTale: {
+        ...lostWriteRemoteTale(pkg),
+        contentRev: 1,
+        metadataRev: 1,
+      },
+      writerId: "device-1",
+      capabilities: capabilitiesFixture("unavailable"),
+    });
+
+    expect(result).toBe("pushed");
+    expect(syncRepo.adoptTaleSyncRevisions).toHaveBeenCalledWith({
+      expectedState: recoveredState,
+      contentRev: "1",
+      metadataRev: "1",
+    });
+    expect(transport.put).toHaveBeenCalledOnce();
+    expect(transport.put.mock.calls[0][1]).toMatchObject({
+      baseContentRev: 1,
+      baseMetadataRev: 1,
+    });
+    expect(syncRepo.setTaleSyncStatus).not.toHaveBeenCalled();
+  });
 
   it.each([false, true])(
     "bootstraps hosted sync and rejects late registration after signout: %s",
@@ -2039,6 +2463,50 @@ describe("sync transport", () => {
     ).rejects.toThrow("Code verifier did not match");
   });
 
+  it("gives a first sign-in ten minutes to finish in the browser", async () => {
+    http.fetch
+      .mockResolvedValueOnce(jsonResponse(capabilitiesFixture()))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          provider: "logto",
+          issuer: "https://auth.example/oidc",
+          audience: "hakawati",
+          clientId: "client",
+          scopes: ["openid"],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          authorization_endpoint: "https://auth.example/authorize",
+          token_endpoint: "https://auth.example/token",
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ access_token: "access-token" }));
+    tauriCore.invoke
+      .mockResolvedValueOnce({
+        id: "oauth-123",
+        redirectUri: "http://127.0.0.1:1234/callback",
+      })
+      .mockResolvedValueOnce(undefined)
+      .mockImplementationOnce(async () => {
+        const openedUrl = signInPageUrl();
+        return `http://127.0.0.1:1234/callback?code=abc&state=${openedUrl.searchParams.get("state")}`;
+      });
+
+    await signInHostedSync({
+      profile: {
+        id: "cloud",
+        baseUrl: "https://sync.example",
+        mode: "hosted",
+      },
+    });
+
+    expect(tauriCore.invoke).toHaveBeenCalledWith("wait_oauth_loopback", {
+      id: "oauth-123",
+      timeoutMs: 10 * 60_000,
+    });
+  });
+
   it("updates the hosted account profile", async () => {
     const transport = {
       ...transportFixture(),
@@ -2265,13 +2733,31 @@ function capabilitiesFixture(
       publishing: { state: "available" },
     },
     limits: {
-      maxPackageBytes: 1024,
-      maxStateBytes: 1024,
+      maxPackageBytes: 2 * 1024 * 1024,
+      maxStateBytes: 512 * 1024,
     },
     scenarioCatalog: {
       packageFormatVersion: 1,
       thumbnailUploads:
         coverStorage === "available" ? "enabled" : "storage-not-configured",
     },
+  };
+}
+
+// The cloud copy one replace past a link at content 2, metadata 3.
+function lostWriteRemoteTale(pkg: TalePackageV1): RemoteTale {
+  return {
+    id: "remote-tale",
+    sourceTaleId: "local-tale",
+    title: pkg.tale.title,
+    description: pkg.tale.description,
+    gameMode: GameMode.STORY_TELLER,
+    coverAssetId: null,
+    thumbnailAssetId: null,
+    contentRev: 3,
+    metadataRev: 4,
+    turnCount: 1,
+    updatedAt: "2026-09-10",
+    lastEntryPreview: null,
   };
 }

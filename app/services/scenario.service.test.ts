@@ -174,6 +174,7 @@ describe("scenario service exports", () => {
         version: 1,
         exportedAt: new Date().toISOString(),
         data: {
+          id: "scenario-0",
           name: "Old Forest",
           initialGameMode: GameMode.STORY_TELLER,
           initialDescription: "A haunted forest waits.",
@@ -193,6 +194,7 @@ describe("scenario service exports", () => {
       }),
     );
 
+    expect(scenario.id).toBe("");
     expect(scenario.description).toBe("A haunted forest waits.");
     expect(scenario.content).toEqual(
       expect.arrayContaining([
@@ -258,6 +260,7 @@ describe("scenario service exports", () => {
       }),
     );
 
+    expect(scenario.id).toBe("");
     expect(scenario.content).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -317,6 +320,7 @@ describe("scenario service exports", () => {
     });
 
     const scenario = deserializeScenarioExport(json);
+    expect(scenario.id).toBe("");
     expect(scenario.content[0]).toMatchObject({
       type: "story_card",
       triggers: ["forest"],

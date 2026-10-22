@@ -1,3 +1,5 @@
+import type { LibraryTaleItem } from "@/lib/tale-library";
+
 export type SyncUiKind =
   | "local"
   | "personal"
@@ -52,4 +54,39 @@ export function getSyncUiKind(input: {
   return hasAccount || hasToken || input.hasRefreshToken
     ? "sign-in-required"
     : "local";
+}
+
+// The cloud keeps refusing these writes until the tale changes or space is
+// freed, so sending the same tale again only repeats a full upload.
+const REFUSED_SYNC_ERROR_CODES = new Set([
+  "quota_exceeded",
+  "package_too_large",
+  "400",
+  "413",
+]);
+
+export function isRefusedSyncError(code: string | null | undefined) {
+  return typeof code === "string" && REFUSED_SYNC_ERROR_CODES.has(code);
+}
+
+export type TaleSyncBadge =
+  | "local"
+  | "cloud"
+  | "conflict"
+  | "cloud-full"
+  | "not-synced";
+
+export function getTaleSyncBadge(item: LibraryTaleItem): TaleSyncBadge {
+  if (item.source === "remote") return "cloud";
+  if (!item.sync) return "local";
+  if (item.sync.status === "conflict") return "conflict";
+  if (
+    item.sync.status === "error" &&
+    isRefusedSyncError(item.sync.lastErrorCode)
+  ) {
+    return item.sync.lastErrorCode === "quota_exceeded"
+      ? "cloud-full"
+      : "not-synced";
+  }
+  return "cloud";
 }

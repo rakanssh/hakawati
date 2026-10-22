@@ -140,6 +140,8 @@ export function serializeScenarioExport(scenario: Scenario): string {
   return JSON.stringify(payload, null, 2);
 }
 
+// Imports drop the exported id, so saving one creates a new scenario instead of
+// overwriting the scenario it was exported from.
 export function deserializeScenarioExport(json: string): Scenario {
   const raw = JSON.parse(json);
   if (raw?.version === 3) {
@@ -147,6 +149,7 @@ export function deserializeScenarioExport(json: string): Scenario {
     const scenario = payload.data as Scenario;
     return {
       ...scenario,
+      id: "",
       content: normalizeScenarioContent(scenario.content),
       thumbnail: null,
     };
@@ -156,7 +159,7 @@ export function deserializeScenarioExport(json: string): Scenario {
     const payload = ScenarioV2Schema.parse(raw as ScenarioExportV2);
     const scenario = payload.data;
     return {
-      id: scenario.id,
+      id: "",
       name: scenario.name,
       initialGameMode:
         scenario.initialGameMode === GameMode.GM
@@ -185,7 +188,7 @@ export function deserializeScenarioExport(json: string): Scenario {
   const gameMode =
     data.initialGameMode === GameMode.GM ? GameMode.GM : GameMode.STORY_TELLER;
   return {
-    id: data.id ?? "",
+    id: "",
     name: data.name,
     initialGameMode: gameMode,
     description: data.initialDescription,

@@ -627,6 +627,38 @@ describe("thinking level provider adapters", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("cancels a pending Chat Completions read", async () => {
+    const controller = new AbortController();
+    const cancel = vi.fn();
+    fetchMock.mockResolvedValue(new Response(new ReadableStream({ cancel })));
+    const result = await OpenAiClient({
+      baseUrl: "https://openrouter.ai/api/v1",
+    }).chat({ ...request, stream: true }, controller.signal);
+    const pending = result.iterator!.next();
+    controller.abort();
+    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+    expect(cancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports why Chat Completions rejected a request", async () => {
+    const client = OpenAiClient({ baseUrl: "https://openrouter.ai/api/v1" });
+    fetchMock.mockResolvedValue(
+      Response.json(
+        { error: { message: "No auth credentials found", code: 401 } },
+        { status: 401 },
+      ),
+    );
+    await expect(client.chat(request)).rejects.toThrow(
+      /^No auth credentials found$/,
+    );
+    fetchMock.mockResolvedValue(
+      new Response(null, { status: 502, statusText: "Bad Gateway" }),
+    );
+    await expect(client.chat(request)).rejects.toThrow(
+      "Request failed (502 Bad Gateway)",
+    );
+  });
+
   it("surfaces Chat Completions output-budget exhaustion", async () => {
     fetchMock.mockResolvedValue(completion("length"));
     await expect(

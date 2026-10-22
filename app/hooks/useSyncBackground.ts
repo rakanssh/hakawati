@@ -2,32 +2,50 @@ import { useEffect, useMemo, useRef } from "react";
 import { i18n } from "@lingui/core";
 import { toast } from "sonner";
 import { createUploadIdempotencyKey } from "@/lib/sync-idempotency";
+import { isRefusedSyncError } from "@/lib/sync-ui";
 import {
   deleteTaleSyncState,
   getSyncProfile,
   listTaleSyncPreferences,
   listTaleSyncStates,
+  retryCloudFullTaleSyncs,
   setSyncProfileDisabled,
   setTaleSyncPreference,
+  setTaleSyncStatus,
   upsertTaleSyncState,
 } from "@/repositories/sync.repository";
+import { isTaleInPlay, showPulledTale } from "@/services/open-tale-sync";
 import {
   assertSyncAvailable,
   createSyncTransport,
   fetchSyncCapabilities,
+  isUpdateRequiredError,
   listAllRemoteTales,
   listHostedDevices,
+  SyncHttpError,
   syncLinkedTale,
   uploadTalePackage,
   type SyncProfile,
 } from "@/services/sync";
 import { addSyncWakeListener, notifySyncChanged } from "@/services/sync-wakeup";
 import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
-import { useTaleStore } from "@/store/useTaleStore";
 
 const HOSTED_PROFILE_ID = "hosted";
 const PERSONAL_PROFILE_ID = "personal";
 const SYNC_INTERVAL_MS = 60_000;
+
+// The cloud refused a write for lack of space. New tales, and changes too once
+// a change was refused, wait until the cloud holds fewer tales instead of
+// uploading whole tales into a full cloud.
+type CloudFull = {
+  scope: string;
+  remoteTaleCount: number;
+  holdsChanges: boolean;
+};
+
+function isCloudFullError(error: unknown) {
+  return error instanceof SyncHttpError && error.code === "quota_exceeded";
+}
 
 export function useSyncBackground(dbReady: boolean) {
   const cloudBaseUrl = useSyncSettingsStore((state) => state.cloudBaseUrl);
@@ -44,10 +62,16 @@ export function useSyncBackground(dbReady: boolean) {
   const hostedDeviceIdsByAccountId = useSyncSettingsStore(
     (state) => state.hostedDeviceIdsByAccountId,
   );
+  const setCloudUpdateRequired = useSyncSettingsStore(
+    (state) => state.setCloudUpdateRequired,
+  );
   const runningRef = useRef(false);
   const rerunRef = useRef(false);
   const latestRunRef = useRef<(() => Promise<void>) | null>(null);
   const notifiedUploadOperationKeysRef = useRef(new Set<string>());
+  const refusedUploadsRef = useRef(new Set<string>());
+  const cloudFullRef = useRef<CloudFull | null>(null);
+  const retriedCloudFullScopesRef = useRef(new Set<string>());
 
   const profile = useMemo<SyncProfile>(
     () => ({
@@ -105,6 +129,12 @@ export function useSyncBackground(dbReady: boolean) {
           enabled: storedProfile.enabled,
           disabledReason: storedProfile.disabledReason ?? null,
         };
+        const scope = JSON.stringify([
+          activeProfile.id,
+          activeProfile.baseUrl,
+          activeProfile.accountId ?? "",
+        ]);
+        const writerId = activeProfile.deviceId || deviceId.trim();
         const transport = createSyncTransport({
           profile: activeProfile,
           signal,
@@ -114,12 +144,15 @@ export function useSyncBackground(dbReady: boolean) {
         const capabilities = await fetchSyncCapabilities(transport);
         if (signal.aborted) return;
         assertSyncAvailable(capabilities);
+        setCloudUpdateRequired(false);
         if (activeProfile.mode === "hosted") {
           if (!activeProfile.accountId) return;
           const devices = await listHostedDevices(transport);
           if (signal.aborted) return;
           if (!devices.some((device) => device.id === activeProfile.deviceId)) {
-            await setSyncProfileDisabled(activeProfile.id, "device_limit");
+            // Removed from the account elsewhere. It stays off until turned
+            // back on here, rather than registering itself again.
+            await setSyncProfileDisabled(activeProfile.id, "user_disabled");
             return;
           }
         }
@@ -136,6 +169,49 @@ export function useSyncBackground(dbReady: boolean) {
         const stateByLocalId = new Map(
           syncStates.map((state) => [state.localTaleId, state]),
         );
+
+        const cloudFull =
+          cloudFullRef.current?.scope === scope ? cloudFullRef.current : null;
+        if (!cloudFull || remoteTales.length < cloudFull.remoteTaleCount) {
+          // Space may have been freed since the cloud refused these tales.
+          if (cloudFull || !retriedCloudFullScopesRef.current.has(scope)) {
+            await retryCloudFullTaleSyncs(
+              activeProfile.id,
+              activeProfile.accountId,
+            );
+            if (signal.aborted) return;
+            retriedCloudFullScopesRef.current.add(scope);
+          }
+          cloudFullRef.current = null;
+        }
+        const noteCloudFull = (holdsChanges: boolean) => {
+          if (cloudFullRef.current) {
+            cloudFullRef.current.holdsChanges ||= holdsChanges;
+            return;
+          }
+          cloudFullRef.current = {
+            scope,
+            remoteTaleCount: remoteTales.length,
+            holdsChanges,
+          };
+          toast.error(i18n._("Cloud storage is full"));
+        };
+
+        const forgetRemovedCloudTale = async (localTaleId: string) => {
+          await setTaleSyncPreference({
+            profileId: activeProfile.id,
+            accountId: activeProfile.accountId,
+            localTaleId,
+            policy: "private",
+          });
+          if (signal.aborted) return;
+          await deleteTaleSyncState({
+            profileId: activeProfile.id,
+            accountId: activeProfile.accountId,
+            localTaleId,
+          });
+        };
+        const forgottenLocalIds = new Set<string>();
 
         for (const preference of syncPreferences) {
           if (signal.aborted) return;
@@ -168,20 +244,13 @@ export function useSyncBackground(dbReady: boolean) {
             : false;
           if (hasRemoteLink) continue;
           if (state) {
-            await setTaleSyncPreference({
-              profileId: activeProfile.id,
-              accountId: activeProfile.accountId,
-              localTaleId: state.localTaleId,
-              policy: "private",
-            });
-            if (signal.aborted) return;
-            await deleteTaleSyncState({
-              profileId: activeProfile.id,
-              accountId: activeProfile.accountId,
-              localTaleId: state.localTaleId,
-            });
+            await forgetRemovedCloudTale(state.localTaleId);
+            forgottenLocalIds.add(state.localTaleId);
             continue;
           }
+          const refusedKey = JSON.stringify([scope, preference.localTaleId]);
+          if (cloudFullRef.current || refusedUploadsRef.current.has(refusedKey))
+            continue;
           const idempotencyKey = await createUploadIdempotencyKey(
             activeProfile.id,
             activeProfile.accountId ?? "personal",
@@ -199,7 +268,21 @@ export function useSyncBackground(dbReady: boolean) {
             });
           } catch (error) {
             if (signal.aborted) return;
+            if (isUpdateRequiredError(error)) throw error;
             console.warn("Background tale upload failed", error);
+            if (isCloudFullError(error)) {
+              noteCloudFull(false);
+              continue;
+            }
+            // Sending the same tale again would be refused the same way, as
+            // would a create whose key was spent on a tale since removed.
+            if (
+              error instanceof SyncHttpError &&
+              (isRefusedSyncError(error.code) ||
+                error.code === "idempotency_conflict")
+            ) {
+              refusedUploadsRef.current.add(refusedKey);
+            }
             if (!notifiedUploadOperationKeysRef.current.has(idempotencyKey)) {
               notifiedUploadOperationKeysRef.current.add(idempotencyKey);
               toast.error(i18n._("Failed to upload tale to cloud"));
@@ -210,31 +293,55 @@ export function useSyncBackground(dbReady: boolean) {
         for (const state of syncStates) {
           if (signal.aborted) return;
           const remoteTale = remoteById.get(state.remoteTaleId);
-          if (!remoteTale) continue;
+          if (!remoteTale) {
+            // Keep-both copies and tales opened from the cloud have no sync
+            // preference, so the loop above never unlinks them.
+            if (!forgottenLocalIds.has(state.localTaleId)) {
+              await forgetRemovedCloudTale(state.localTaleId);
+            }
+            continue;
+          }
+          // Tales refused earlier were queued again above, but this list
+          // still shows their refusal.
+          const hasChanges =
+            state.pendingStatus === "push" ||
+            (state.pendingStatus === "error" &&
+              state.lastErrorCode === "quota_exceeded");
+          if (cloudFullRef.current?.holdsChanges && hasChanges) {
+            await setTaleSyncStatus({
+              profileId: activeProfile.id,
+              accountId: activeProfile.accountId,
+              localTaleId: state.localTaleId,
+              pendingStatus: "error",
+              lastErrorCode: "quota_exceeded",
+            });
+            if (signal.aborted) return;
+          }
           try {
-            await syncLinkedTale({
+            const result = await syncLinkedTale({
               profile: activeProfile,
               transport,
               localTaleId: state.localTaleId,
               remoteTale,
-              idempotencyKey: `sync-${activeProfile.id}-${state.localTaleId}-${state.contentRev ?? "0"}-${state.metadataRev ?? "0"}`,
+              writerId,
               capabilities,
-              canPull: () => {
-                const active = useTaleStore.getState();
-                return (
-                  active.id !== state.localTaleId &&
-                  active.loadingTaleId !== state.localTaleId
-                );
-              },
+              canPull: () => !isTaleInPlay(state.localTaleId),
             });
+            if (result === "pulled" && !signal.aborted) {
+              await showPulledTale(state.localTaleId);
+            }
           } catch (error) {
             if (signal.aborted) return;
+            if (isUpdateRequiredError(error)) throw error;
             console.warn("Background sync failed", error);
+            if (isCloudFullError(error)) noteCloudFull(true);
           }
         }
       } catch (error) {
-        if (!signal.aborted)
+        if (!signal.aborted) {
+          if (isUpdateRequiredError(error)) setCloudUpdateRequired(true);
           console.warn("Background sync refresh failed", error);
+        }
       } finally {
         if (!signal.aborted) notifySyncChanged();
         runningRef.current = false;
@@ -258,5 +365,12 @@ export function useSyncBackground(dbReady: boolean) {
       removeWakeListener();
       window.clearInterval(intervalId);
     };
-  }, [accessToken, accessTokenExpiresAt, dbReady, profile]);
+  }, [
+    accessToken,
+    accessTokenExpiresAt,
+    dbReady,
+    deviceId,
+    profile,
+    setCloudUpdateRequired,
+  ]);
 }

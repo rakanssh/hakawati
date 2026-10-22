@@ -24,7 +24,54 @@ const mocks = vi.hoisted(() => ({
   loadTale: vi.fn(),
   navigate: vi.fn(),
   getSyncProfile: vi.fn(),
+  tales: {
+    items: [] as unknown[],
+    syncActive: false,
+  },
+  syncSettings: {} as Record<string, unknown>,
 }));
+
+const signedOutSyncSettings = {
+  cloudBaseUrl: "https://cloud.example",
+  personalBaseUrl: "",
+  activeSyncMode: "hosted",
+  accessToken: "",
+  accessTokenExpiresAt: null,
+  hasRefreshToken: false,
+  hostedRefreshFailed: false,
+  cloudUpdateRequired: false,
+  deviceId: "device-1",
+  accountId: "",
+  hostedDeviceIdsByAccountId: {},
+  deviceName: "Desktop",
+  devicePlatform: "Windows",
+  accountDisplayName: "",
+  accountEmail: "",
+};
+
+function syncedTale(
+  name: string,
+  status: string,
+  lastErrorCode: string | null = null,
+) {
+  return {
+    source: "local",
+    localTale: {
+      id: name,
+      name,
+      description: "",
+      thumbnail: null,
+      updatedAt: 1,
+    },
+    sync: {
+      profileId: "hosted",
+      remoteTaleId: `remote-${name}`,
+      metadataRev: "1",
+      status,
+      lastErrorCode,
+    },
+  };
+}
 
 vi.mock("@lingui/react/macro", () => ({
   Trans: ({ children }: { children: ReactNode }) => children,
@@ -51,10 +98,12 @@ vi.mock("@/hooks/useGameSaves", () => ({
 }));
 vi.mock("@/hooks/useTaleLibrary", () => ({
   useTaleLibrary: () => ({
-    items: [],
+    items: mocks.tales.items,
     loading: false,
     error: null,
     remoteError: null,
+    syncActive: mocks.tales.syncActive,
+    syncStatesLoading: false,
   }),
 }));
 vi.mock("@/hooks/useScenarios", () => ({
@@ -81,28 +130,10 @@ vi.mock("@/store/useSettingsStore", () => {
     isModelRoleConfigured: () => true,
   };
 });
-vi.mock("@/store/useSyncSettingsStore", () => {
-  const state = {
-    cloudBaseUrl: "https://cloud.example",
-    personalBaseUrl: "",
-    activeSyncMode: "hosted",
-    accessToken: "",
-    accessTokenExpiresAt: null,
-    hasRefreshToken: false,
-    hostedRefreshFailed: false,
-    deviceId: "device-1",
-    accountId: "",
-    hostedDeviceIdsByAccountId: {},
-    deviceName: "Desktop",
-    devicePlatform: "Windows",
-    accountDisplayName: "",
-    accountEmail: "",
-  };
-  return {
-    useSyncSettingsStore: (select: (value: typeof state) => unknown) =>
-      select(state),
-  };
-});
+vi.mock("@/store/useSyncSettingsStore", () => ({
+  useSyncSettingsStore: (select: (value: Record<string, unknown>) => unknown) =>
+    select(mocks.syncSettings),
+}));
 vi.mock("@/store/useTaleStore", () => ({
   useTaleStore: () => ({ id: "", name: "", description: "", log: [] }),
 }));
@@ -166,6 +197,9 @@ describe("Home catalog loading layout", () => {
       error: null,
     });
     mocks.getSyncProfile.mockResolvedValue(null);
+    mocks.tales.items = [];
+    mocks.tales.syncActive = false;
+    mocks.syncSettings = { ...signedOutSyncSettings };
     container = document.createElement("div");
     document.body.append(container);
     root = createRoot(container);
@@ -273,6 +307,46 @@ describe("Home catalog loading layout", () => {
       ]);
     },
   );
+
+  it("shows tales the cloud refused as failed, not as in the cloud", async () => {
+    mocks.tales.syncActive = true;
+    mocks.tales.items = [
+      syncedTale("Full", "error", "quota_exceeded"),
+      syncedTale("Huge", "error", "package_too_large"),
+      syncedTale("Waiting", "push"),
+      syncedTale("Retrying", "error", "sync_failed"),
+    ];
+    await render();
+
+    const badge = (name: string) =>
+      container.querySelector(`[aria-label="Load ${name}"]`)?.textContent;
+    expect(badge("Full")).toContain("Cloud full");
+    expect(badge("Huge")).toContain("Not synced");
+    expect(badge("Waiting")).toContain("Cloud");
+    expect(badge("Retrying")).toContain("Cloud");
+    expect(badge("Retrying")).not.toContain("Not synced");
+  });
+
+  it("asks for an app update when the cloud refuses this version", async () => {
+    mocks.syncSettings = {
+      ...signedOutSyncSettings,
+      accessToken: "token",
+      accountId: "account-1",
+      accountDisplayName: "Player",
+      cloudUpdateRequired: true,
+    };
+    mocks.getSyncProfile.mockResolvedValue({
+      enabled: true,
+      disabledReason: null,
+    });
+    await render();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).toContain("Update Hakawati to sync");
+    expect(container.textContent).not.toContain("Cloud sync on");
+  });
 
   it("does not reserve a cloud shelf when no cloud server is configured", async () => {
     mocks.catalog.baseUrl = "";

@@ -425,7 +425,9 @@ describe("ChatGPT provider through game and utility flows", () => {
         harness.controls.executeLlmSend("Unlock the vault", LogEntryMode.DO),
       );
       expect(entry?.text).toBe("The vault shakes.");
-      expect(entry?.error).toBeInstanceOf(Error);
+      expect(entry?.error).toEqual(
+        expect.stringContaining("ChatGPT plan usage limit reached."),
+      );
       expect(entry?.actions).toBeUndefined();
       expect(useTaleStore.getState().stats[0].value).toBe(95);
       expect(persistence.saveTurn).toHaveBeenCalledWith("chatgpt-tale", [

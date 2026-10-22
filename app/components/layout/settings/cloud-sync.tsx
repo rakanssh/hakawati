@@ -152,6 +152,9 @@ export default function SettingsCloudSync() {
   const hostedRefreshFailed = useSyncSettingsStore(
     (state) => state.hostedRefreshFailed,
   );
+  const cloudUpdateRequired = useSyncSettingsStore(
+    (state) => state.cloudUpdateRequired,
+  );
   const deviceId = useSyncSettingsStore((state) => state.deviceId);
   const accountId = useSyncSettingsStore((state) => state.accountId);
   const hostedDeviceIdsByAccountId = useSyncSettingsStore(
@@ -770,21 +773,27 @@ export default function SettingsCloudSync() {
   }
 
   const syncState: { text: string; className?: string } =
-    syncUiKind === "signed-in"
-      ? { text: t`On for this device`, className: "text-success" }
-      : syncUiKind === "reconnecting"
-        ? { text: t`Reconnecting…` }
-        : syncUiKind === "device-limit"
-          ? { text: t`Device limit reached`, className: "text-destructive" }
-          : syncUiKind === "sign-in-required"
-            ? { text: t`Sign in again to sync`, className: "text-destructive" }
-            : syncUiKind === "profile-incomplete"
-              ? { text: t`Profile incomplete` }
-              : syncUiKind === "personal"
-                ? { text: t`Personal` }
-                : syncUiKind === "local"
-                  ? { text: t`Sign in to sync` }
-                  : { text: t`Off for this device` };
+    cloudUpdateRequired &&
+    (syncUiKind === "signed-in" || syncUiKind === "personal")
+      ? { text: t`Update Hakawati to sync`, className: "text-destructive" }
+      : syncUiKind === "signed-in"
+        ? { text: t`On for this device`, className: "text-success" }
+        : syncUiKind === "reconnecting"
+          ? { text: t`Reconnecting…` }
+          : syncUiKind === "device-limit"
+            ? { text: t`Device limit reached`, className: "text-destructive" }
+            : syncUiKind === "sign-in-required"
+              ? {
+                  text: t`Sign in again to sync`,
+                  className: "text-destructive",
+                }
+              : syncUiKind === "profile-incomplete"
+                ? { text: t`Profile incomplete` }
+                : syncUiKind === "personal"
+                  ? { text: t`Personal` }
+                  : syncUiKind === "local"
+                    ? { text: t`Sign in to sync` }
+                    : { text: t`Off for this device` };
   const statusLine = status ? (
     <p className="px-0.5 text-sm text-muted-foreground">{status}</p>
   ) : null;

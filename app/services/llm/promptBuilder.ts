@@ -29,6 +29,18 @@ import {
   injectMode,
 } from "./contextAssembly";
 
+/** Earlier versions saved this as the text of a reply that failed. */
+const FAILED_REPLY_PLACEHOLDER =
+  "An error occurred while processing your request.";
+
+/**
+ * A failed reply belongs in the prompt only for the text that arrived before
+ * it failed: the player reads that, and Continue picks up from it.
+ */
+function isFailedReplyPlaceholder(entry: LogEntry): boolean {
+  return entry.error !== undefined && entry.text === FAILED_REPLY_PLACEHOLDER;
+}
+
 interface BuildMessageParams {
   log: LogEntry[];
   stats: Stat[];
@@ -171,7 +183,8 @@ ${inventoryBlock}
     lateMeta,
     userMessage: userMsg,
     promptBudget,
-    includeLogEntry: (entry) => entry !== currentPlayerEntry,
+    includeLogEntry: (entry) =>
+      entry !== currentPlayerEntry && !isFailedReplyPlaceholder(entry),
     onRequiredTokensExceeded: (requiredTokens) => {
       toast.warning(
         `Context limit exceeded. Required messages use ${requiredTokens} tokens but only ${promptBudget} are available.`,

@@ -304,6 +304,57 @@ export async function acknowledgeTaleSyncWrite(input: {
   });
 }
 
+// Moves the link onto revisions this device wrote but never saw acknowledged.
+// The local tale has changed since, so it stays queued for a push.
+export async function adoptTaleSyncRevisions(input: {
+  expectedState: TaleSyncState;
+  contentRev: string;
+  metadataRev: string;
+}): Promise<boolean> {
+  return enqueueLocalOperation(async () => {
+    const db = await getDb();
+    const state = input.expectedState;
+    const result = await db.execute(
+      `UPDATE tale_sync_state
+       SET content_rev = ?, metadata_rev = ?, last_synced_at = ?,
+           pending_status = 'push', last_error_code = NULL
+       WHERE profile_id = ? AND account_id = ? AND local_tale_id = ?
+         AND remote_tale_id = ? AND content_rev IS ? AND metadata_rev IS ?
+         AND pending_status <> 'conflict'`,
+      [
+        input.contentRev,
+        input.metadataRev,
+        Date.now(),
+        state.profileId,
+        accountScope(state.accountId),
+        state.localTaleId,
+        state.remoteTaleId,
+        state.contentRev,
+        state.metadataRev,
+      ],
+    );
+    return result.rowsAffected > 0;
+  });
+}
+
+// Tales refused for lack of cloud space get another attempt once space may
+// have been freed.
+export async function retryCloudFullTaleSyncs(
+  profileId: string,
+  accountId?: string | null,
+): Promise<void> {
+  await enqueueLocalOperation(async () => {
+    const db = await getDb();
+    await db.execute(
+      `UPDATE tale_sync_state
+       SET pending_status = 'push', last_error_code = NULL
+       WHERE profile_id = ? AND account_id = ? AND pending_status = 'error'
+         AND last_error_code = 'quota_exceeded'`,
+      [profileId, accountScope(accountId)],
+    );
+  });
+}
+
 export async function deleteTaleSyncState(input: {
   profileId: string;
   accountId?: string | null;
