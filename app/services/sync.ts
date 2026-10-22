@@ -13,6 +13,7 @@ import {
 } from "@/repositories/tale.repository";
 import {
   acknowledgeTaleSyncWrite,
+  adoptTaleSyncRevisions,
   getTaleSyncState,
   setSyncProfileDisabled,
   setTaleSyncStatus,
@@ -28,9 +29,12 @@ import {
   sha256Hex,
   type OptimizedCoverImage,
 } from "@/lib/cover-image";
+import { createLinkedWriteIdempotencyKey } from "@/lib/sync-idempotency";
+import { isRefusedSyncError } from "@/lib/sync-ui";
 import {
   cloudFeatureAvailable,
   HAKAWATI_CLIENT_HEADERS,
+  isCloudClientCompatible,
   parseCloudCapabilities,
   type CloudCapabilities,
 } from "@/services/cloud-capabilities";
@@ -259,6 +263,11 @@ function isUnregisteredDeviceError(error: unknown): boolean {
   );
 }
 
+// The server refuses writes from app versions it no longer supports.
+export function isUpdateRequiredError(error: unknown): boolean {
+  return error instanceof SyncHttpError && error.status === 426;
+}
+
 const bodyValue = asApiObject;
 
 function rev(value: unknown): string | null {
@@ -451,6 +460,9 @@ async function fetchOidcDiscovery(issuer: string): Promise<OidcDiscovery> {
   return (await response.json()) as OidcDiscovery;
 }
 
+// A first sign-in can include creating an account and confirming an email.
+const SIGN_IN_TIMEOUT_MS = 10 * 60_000;
+
 async function cancelOAuthLoopback(id: string): Promise<void> {
   await Promise.resolve(invoke("cancel_oauth_loopback", { id })).catch(
     () => undefined,
@@ -523,7 +535,7 @@ export async function signInHostedSync(input: {
     ]);
     const waitForCallback = invoke<string>("wait_oauth_loopback", {
       id: loopback.id,
-      timeoutMs: input.timeoutMs ?? 120_000,
+      timeoutMs: input.timeoutMs ?? SIGN_IN_TIMEOUT_MS,
     });
     callbackValue = await Promise.race([waitForCallback, cancelled]);
   } catch (error) {
@@ -786,11 +798,18 @@ export function canUploadCoverAssets(capabilities: SyncCapabilities): boolean {
 
 export function assertSyncAvailable(capabilities: SyncCapabilities) {
   if (
-    !cloudFeatureAvailable(capabilities, "sync") ||
+    !isCloudClientCompatible(capabilities) ||
     capabilities.cloudSaveProtocol !== 1
   ) {
     throw new SyncHttpError(
-      "Cloud sync is unavailable for this Hakawati version.",
+      "Update Hakawati to sync.",
+      426,
+      "unsupported_client",
+    );
+  }
+  if (!cloudFeatureAvailable(capabilities, "sync")) {
+    throw new SyncHttpError(
+      "Cloud sync is unavailable.",
       503,
       "sync_unavailable",
     );
@@ -801,18 +820,24 @@ function localThumbnailAsset(pkg: TalePackageV1) {
   return pkg.assets.find((asset) => asset.id === pkg.tale.thumbnailAssetId);
 }
 
+type UploadedCover = Pick<
+  CoverAssetReference,
+  "assetId" | "contentType" | "byteSize" | "sha256"
+>;
+
 async function uploadHostedCoverAsset(
   transport: SyncTransport,
   cover: OptimizedCoverImage,
-): Promise<string> {
+): Promise<UploadedCover> {
   const { bytes, contentType, width, height } = cover;
   transport.signal?.throwIfAborted();
+  const sha256 = await sha256Hex(bytes);
   const intent = bodyValue(
     await transport.post("/v1/assets/cover-upload-intents", {
       visibility: "private",
       contentType,
       byteSize: bytes.byteLength,
-      sha256: await sha256Hex(bytes),
+      sha256,
       width,
       height,
     }),
@@ -849,11 +874,11 @@ async function uploadHostedCoverAsset(
     `/v1/assets/${encodeURIComponent(assetId)}/complete`,
     {},
   );
-  return assetId;
+  return { assetId, contentType, byteSize: bytes.byteLength, sha256 };
 }
 
 async function matchesExistingCover(
-  existing: CoverAssetReference | null | undefined,
+  existing: UploadedCover | null | undefined,
   cover: { bytes: Uint8Array; contentType: string },
 ): Promise<boolean> {
   return Boolean(
@@ -864,9 +889,75 @@ async function matchesExistingCover(
   );
 }
 
+async function findMatchingCover(
+  candidates: Array<UploadedCover | null | undefined>,
+  cover: { bytes: Uint8Array; contentType: string },
+): Promise<UploadedCover | undefined> {
+  for (const candidate of candidates) {
+    if (candidate && (await matchesExistingCover(candidate, cover))) {
+      return candidate;
+    }
+  }
+  return undefined;
+}
+
+// A write that fails after its cover uploaded leaves that cover unused in the
+// cloud, where it still counts against the account. Its retries reuse it.
+const uploadedCovers = new Map<string, UploadedCover>();
+
+function uploadedCoverKey(profile: SyncProfile, localTaleId: string) {
+  return JSON.stringify([
+    profile.id,
+    syncBaseUrl(profile.baseUrl),
+    profile.accountId ?? "",
+    localTaleId,
+  ]);
+}
+
+function forgetUploadedCover(profile: SyncProfile, localTaleId: string) {
+  uploadedCovers.delete(uploadedCoverKey(profile, localTaleId));
+}
+
+// The server may have refused the cover itself, so upload a new one next time.
+function forgetCoverRejectedWith(
+  error: unknown,
+  profile: SyncProfile,
+  localTaleId: string,
+) {
+  if (error instanceof SyncHttpError && error.status === 400) {
+    forgetUploadedCover(profile, localTaleId);
+  }
+}
+
+const jsonEncoder = new TextEncoder();
+
+function jsonBytes(value: unknown): number {
+  return jsonEncoder.encode(JSON.stringify(value)).byteLength;
+}
+
+// Same length as the asset ID the server will assign the cover.
+const COVER_ASSET_ID_PLACEHOLDER = "00000000-0000-0000-0000-000000000000";
+
+function assertWithinSyncLimits(
+  pkg: SyncTalePackageV1,
+  capabilities: SyncCapabilities,
+) {
+  if (
+    jsonBytes(pkg) > capabilities.limits.maxPackageBytes ||
+    jsonBytes(pkg.state.data) > capabilities.limits.maxStateBytes
+  ) {
+    throw new SyncHttpError(
+      "This tale is too large to sync.",
+      413,
+      "package_too_large",
+    );
+  }
+}
+
 async function toUploadSyncPackage(input: {
   profile: SyncProfile;
   transport: SyncTransport;
+  localTaleId: string;
   localPackage: TalePackageV1;
   capabilities?: SyncCapabilities;
   existingCover?: CoverAssetReference | null;
@@ -874,29 +965,42 @@ async function toUploadSyncPackage(input: {
   const capabilities =
     input.capabilities ?? (await fetchSyncCapabilities(input.transport));
   assertSyncAvailable(capabilities);
-  const coverAsset =
-    input.profile.mode === "hosted"
-      ? localThumbnailAsset(input.localPackage)
-      : undefined;
+  const hosted = input.profile.mode === "hosted";
+  const coverAsset = hosted
+    ? localThumbnailAsset(input.localPackage)
+    : undefined;
+  // The server refuses an oversized tale whatever its cover, so measure it
+  // before uploading one.
+  assertWithinSyncLimits(
+    toSyncTalePackage(input.localPackage, {
+      mode: input.profile.mode,
+      ...(hosted && (coverAsset || input.existingCover?.assetId)
+        ? { coverAssetId: COVER_ASSET_ID_PLACEHOLDER }
+        : {}),
+    }),
+    capabilities,
+  );
   // Cloud imports omit binary assets locally. Keep their existing cover on saves.
-  let coverAssetId =
-    input.profile.mode === "hosted" ? input.existingCover?.assetId : undefined;
+  let coverAssetId = hosted ? input.existingCover?.assetId : undefined;
   if (coverAsset) {
     const original = {
       bytes: base64ToBytes(coverAsset.dataBase64),
       contentType: coverAsset.contentType,
     };
-    const existing = input.existingCover;
+    const coverKey = uploadedCoverKey(input.profile, input.localTaleId);
+    const candidates = [input.existingCover, uploadedCovers.get(coverKey)];
     // Retain previously uploaded originals; optimize only when an upload is needed.
-    if (
-      !(await matchesExistingCover(existing, original)) &&
-      canUploadCoverAssets(capabilities)
-    ) {
+    const kept = await findMatchingCover(candidates, original);
+    if (kept) {
+      coverAssetId = kept.assetId;
+    } else if (canUploadCoverAssets(capabilities)) {
       const optimized = await optimizeCoverImage(original);
       input.transport.signal?.throwIfAborted();
-      if (!(await matchesExistingCover(existing, optimized))) {
-        coverAssetId = await uploadHostedCoverAsset(input.transport, optimized);
-      }
+      const uploaded =
+        (await findMatchingCover(candidates, optimized)) ??
+        (await uploadHostedCoverAsset(input.transport, optimized));
+      uploadedCovers.set(coverKey, uploaded);
+      coverAssetId = uploaded.assetId;
     }
   }
   return toSyncTalePackage(input.localPackage, {
@@ -984,8 +1088,17 @@ async function reconcileAmbiguousSuccessfulSync(input: {
   });
 }
 
+// Only a revision conflict asks the player to choose a copy. Other refusals,
+// such as a full cloud, are errors that a retry or the player can fix.
+const REVISION_CONFLICT_CODES = new Set([
+  "content_conflict",
+  "metadata_conflict",
+]);
+
 function syncFailureStatus(error: unknown): "conflict" | "error" {
-  return error instanceof SyncHttpError && error.status === 409
+  return error instanceof SyncHttpError &&
+    error.status === 409 &&
+    REVISION_CONFLICT_CODES.has(error.code)
     ? "conflict"
     : "error";
 }
@@ -1035,7 +1148,9 @@ export async function syncLinkedTale(input: {
   transport: SyncTransport;
   localTaleId: string;
   remoteTale: RemoteTale;
-  idempotencyKey: string;
+  // This device's ID. Write keys carry it so that the server tells this
+  // device's retries apart from another device's write at the same revision.
+  writerId: string;
   capabilities?: SyncCapabilities;
   canPull?: () => boolean;
 }): Promise<LinkedTaleSyncResult> {
@@ -1051,21 +1166,51 @@ export async function syncLinkedTale(input: {
     return "skipped";
   }
 
-  const remoteChanged = remoteTaleChanged(state, input.remoteTale);
-  if (
-    remoteChanged &&
-    state.pendingStatus === "error" &&
-    state.lastErrorCode === "sync_failed" &&
-    (await reconcileAmbiguousSuccessfulSync({
+  // A dirty tale may include edits to earlier turns as well as new turns.
+  // Replace one complete snapshot: turn count alone cannot prove append-only
+  // history, and a separate metadata write can acknowledge unfinished content.
+  const push = async (base: TaleSyncState) => {
+    await replaceRemoteTalePackage({
       profile: input.profile,
       transport: input.transport,
-      state,
       localTaleId: input.localTaleId,
-    }))
-  ) {
-    return "pushed";
-  }
+      idempotencyKey: await createLinkedWriteIdempotencyKey(
+        input.profile.id,
+        input.writerId,
+        input.localTaleId,
+        base.contentRev,
+        base.metadataRev,
+      ),
+      capabilities: input.capabilities,
+      existingCover:
+        input.remoteTale.cover?.assetId === input.remoteTale.coverAssetId
+          ? input.remoteTale.cover
+          : undefined,
+    });
+    return "pushed" as const;
+  };
+  // The cloud refused this tale as it is; it gets another try once it changes.
+  const refused =
+    state.pendingStatus === "error" && isRefusedSyncError(state.lastErrorCode);
+  const remoteChanged = remoteTaleChanged(state, input.remoteTale);
+
   if (remoteChanged && hasLocalPendingWork(state)) {
+    // A refused write never reached the cloud, so the change came from elsewhere.
+    if (!refused) {
+      if (
+        state.pendingStatus === "error" &&
+        (await reconcileAmbiguousSuccessfulSync({
+          profile: input.profile,
+          transport: input.transport,
+          state,
+          localTaleId: input.localTaleId,
+        }))
+      ) {
+        return "pushed";
+      }
+      const resumed = await resumeAfterOwnWrite(input, state, push);
+      if (resumed) return resumed;
+    }
     await setTaleSyncStatus({
       profileId: input.profile.id,
       accountId: input.profile.accountId,
@@ -1077,37 +1222,68 @@ export async function syncLinkedTale(input: {
   }
 
   if (remoteChanged) {
-    const applied = await applyRemoteTalePackage({
+    const pulled = await pullRemoteTalePackage({
       profile: input.profile,
       transport: input.transport,
       localTaleId: input.localTaleId,
       requireClean: true,
       canReplace: input.canPull,
     });
-    if (!applied) return "conflict";
-    return "pulled";
+    return pulled === "deferred" ? "skipped" : pulled;
   }
 
-  if (!hasLocalPendingWork(state)) {
+  if (!hasLocalPendingWork(state) || refused) {
     return "skipped";
   }
+  return push(state);
+}
 
-  // A dirty tale may include edits to earlier turns as well as new turns.
-  // Replace one complete snapshot: turn count alone cannot prove append-only
-  // history, and a separate metadata write can acknowledge unfinished content.
-  await replaceRemoteTalePackage({
-    profile: input.profile,
-    transport: input.transport,
-    localTaleId: input.localTaleId,
-    idempotencyKey: input.idempotencyKey,
-    capabilities: input.capabilities,
-    existingCover:
-      input.remoteTale.cover?.assetId === input.remoteTale.coverAssetId
-        ? input.remoteTale.cover
-        : undefined,
-  });
-
-  return "pushed";
+// When a write lands but its response is lost, the next pass sees the cloud
+// copy move. If that move was this device's own write, the link catches up to
+// it and the local changes made since are pushed, instead of a conflict.
+async function resumeAfterOwnWrite(
+  input: { profile: SyncProfile; localTaleId: string; remoteTale: RemoteTale },
+  state: TaleSyncState,
+  push: (base: TaleSyncState) => Promise<"pushed">,
+): Promise<"pushed" | "conflict" | null> {
+  const remote = input.remoteTale;
+  if (state.contentRev === null && state.metadataRev === null) {
+    // A lost create, linked again by its source ID. Nothing else has written
+    // to the cloud copy while it is still at its first revision.
+    if (remote.contentRev !== 1 || remote.metadataRev !== 1) return null;
+  } else {
+    // A replace bumps both revisions, so exactly one write followed the link.
+    if (
+      remote.contentRev !== Number(state.contentRev) + 1 ||
+      remote.metadataRev !== Number(state.metadataRev) + 1
+    ) {
+      return null;
+    }
+    // Resending at the linked revision reuses the lost write's key. The server
+    // refuses a reused key only when the write that first used it landed.
+    try {
+      return await push(state);
+    } catch (error) {
+      if (!(error instanceof SyncHttpError)) throw error;
+      if (syncFailureStatus(error) === "conflict") return "conflict";
+      if (error.code !== "idempotency_conflict") throw error;
+    }
+  }
+  const adopted = {
+    ...state,
+    contentRev: String(remote.contentRev),
+    metadataRev: String(remote.metadataRev),
+  };
+  if (
+    !(await adoptTaleSyncRevisions({
+      expectedState: state,
+      contentRev: adopted.contentRev,
+      metadataRev: adopted.metadataRev,
+    }))
+  ) {
+    return null;
+  }
+  return push(adopted);
 }
 
 function toLocalTalePackage(
@@ -1210,6 +1386,7 @@ export async function uploadTalePackage(input: {
     const syncPackage = await toUploadSyncPackage({
       profile: input.profile,
       transport: input.transport,
+      localTaleId: input.localTaleId,
       localPackage: pkg,
       capabilities: input.capabilities,
     });
@@ -1220,6 +1397,7 @@ export async function uploadTalePackage(input: {
         { idempotencyKey: input.idempotencyKey },
       ),
     );
+    forgetUploadedCover(input.profile, input.localTaleId);
     const remoteTaleId =
       typeof result.id === "string" && result.id.trim().length > 0
         ? result.id
@@ -1256,12 +1434,15 @@ export async function uploadTalePackage(input: {
     }
   } catch (error) {
     input.transport.signal?.throwIfAborted();
-    if (
-      input.profile.mode === "hosted" &&
-      (isDeviceLimitError(error) || isUnregisteredDeviceError(error))
-    ) {
+    if (input.profile.mode === "hosted" && isDeviceLimitError(error)) {
       await setSyncProfileDisabled(input.profile.id, "device_limit");
     }
+    // Removed from the account elsewhere. It stays off until turned back on
+    // here, rather than registering itself again.
+    if (input.profile.mode === "hosted" && isUnregisteredDeviceError(error)) {
+      await setSyncProfileDisabled(input.profile.id, "user_disabled");
+    }
+    forgetCoverRejectedWith(error, input.profile, input.localTaleId);
     await setTaleSyncFailure(
       {
         profileId: input.profile.id,
@@ -1298,6 +1479,7 @@ export async function replaceRemoteTalePackage(input: {
     const syncPackage = await toUploadSyncPackage({
       profile: input.profile,
       transport: input.transport,
+      localTaleId: input.localTaleId,
       localPackage: pkg,
       capabilities: input.capabilities,
       existingCover: input.existingCover,
@@ -1323,6 +1505,7 @@ export async function replaceRemoteTalePackage(input: {
       ),
     );
     input.transport.signal?.throwIfAborted();
+    forgetUploadedCover(input.profile, input.localTaleId);
     await acknowledgeTaleSyncWrite({
       expectedState: state,
       expectedSaveVersion,
@@ -1332,6 +1515,7 @@ export async function replaceRemoteTalePackage(input: {
     return result;
   } catch (error) {
     input.transport.signal?.throwIfAborted();
+    forgetCoverRejectedWith(error, input.profile, input.localTaleId);
     await setTaleSyncFailure(
       {
         profileId: input.profile.id,
@@ -1419,6 +1603,16 @@ export async function applyRemoteTalePackage(input: {
   requireClean?: boolean;
   canReplace?: () => boolean;
 }): Promise<boolean> {
+  return (await pullRemoteTalePackage(input)) === "pulled";
+}
+
+async function pullRemoteTalePackage(input: {
+  profile: SyncProfile;
+  transport: SyncTransport;
+  localTaleId: string;
+  requireClean?: boolean;
+  canReplace?: () => boolean;
+}): Promise<"pulled" | "deferred" | "conflict"> {
   // Read the version before the link status. A save before this snapshot is
   // detected as dirty; a later save is rejected by the replacement CAS.
   const expectedSaveVersion = await getTaleSaveVersion(input.localTaleId);
@@ -1430,13 +1624,7 @@ export async function applyRemoteTalePackage(input: {
   if (!state) {
     throw new Error("Tale is not linked to this sync profile");
   }
-
-  if (
-    input.requireClean &&
-    (hasLocalPendingWork(state) ||
-      state.pendingStatus === "conflict" ||
-      input.canReplace?.() === false)
-  ) {
+  const markLocalChanged = async () => {
     await setTaleSyncStatus({
       profileId: input.profile.id,
       accountId: input.profile.accountId,
@@ -1444,8 +1632,25 @@ export async function applyRemoteTalePackage(input: {
       pendingStatus: "conflict",
       lastErrorCode: "local_changed",
     });
-    return false;
+    return "conflict" as const;
+  };
+
+  if (
+    input.requireClean &&
+    (hasLocalPendingWork(state) || state.pendingStatus === "conflict")
+  ) {
+    return markLocalChanged();
   }
+  // A tale being played can't be replaced yet. Its saved copy has no unsynced
+  // changes, so it takes the pull on a later pass instead of a conflict.
+  let deferred = false;
+  const canReplace =
+    input.canReplace &&
+    (() => {
+      deferred = input.canReplace?.() === false;
+      return !deferred;
+    });
+  if (canReplace?.() === false) return "deferred";
   let remote: RemoteTalePackageResponse;
   try {
     remote = await downloadRemoteTalePackage(
@@ -1475,20 +1680,13 @@ export async function applyRemoteTalePackage(input: {
     toLocalTalePackage(remote.package),
     {
       expectedSaveVersion,
-      // An open tale owns an in-memory snapshot, even before its next save.
-      // Recheck inside the write queue in case it opened during the download.
-      ...(input.canReplace ? { canReplace: input.canReplace } : {}),
+      // A tale being played owns an in-memory snapshot, even before its next
+      // save. Recheck inside the write queue in case play began meanwhile.
+      ...(canReplace ? { canReplace } : {}),
     },
   );
   if (replaced === false) {
-    await setTaleSyncStatus({
-      profileId: input.profile.id,
-      accountId: input.profile.accountId,
-      localTaleId: input.localTaleId,
-      pendingStatus: "conflict",
-      lastErrorCode: "local_changed",
-    });
-    return false;
+    return deferred ? "deferred" : markLocalChanged();
   }
   await upsertTaleSyncStateIfTaleVersion(
     {
@@ -1504,5 +1702,5 @@ export async function applyRemoteTalePackage(input: {
     },
     expectedSaveVersion + 1,
   );
-  return true;
+  return "pulled";
 }

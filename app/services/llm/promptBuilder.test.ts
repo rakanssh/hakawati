@@ -641,6 +641,58 @@ describe("promptBuilder", () => {
       expect(assistantMessages[0].content).toBe("Real content");
     });
 
+    it("leaves failed replies out, except text that arrived before the failure", async () => {
+      const { useTaleStore } = await import("@/store/useTaleStore");
+      vi.mocked(useTaleStore.getState).mockReturnValue({
+        log: [
+          createMockLogEntry({ id: "1", text: "Open the door" }),
+          // Earlier versions saved this text, and `{}` for the error.
+          createMockLogEntry({
+            id: "2",
+            role: LogEntryRole.GM,
+            text: "An error occurred while processing your request.",
+            mode: LogEntryMode.STORY,
+            error: {},
+          }),
+          createMockLogEntry({ id: "3", text: "Kick the door" }),
+          createMockLogEntry({
+            id: "4",
+            role: LogEntryRole.GM,
+            text: "",
+            mode: LogEntryMode.STORY,
+            error: "Request failed (502 Bad Gateway)",
+          }),
+          createMockLogEntry({ id: "5", text: "Push the door" }),
+          createMockLogEntry({
+            id: "6",
+            role: LogEntryRole.GM,
+            text: "The door creaks",
+            mode: LogEntryMode.STORY,
+            error: "The connection ended before the response finished.",
+          }),
+        ],
+        oldestLoadedIndex: 0,
+        totalLogCount: 6,
+        ensureLogEntriesLoaded: vi.fn(),
+      } as unknown as TaleStoreType);
+
+      const result = await buildMessage({
+        log: [],
+        stats: [],
+        inventory: [],
+        lastMessage: { text: "Step inside", mode: LogEntryMode.DO },
+        storyCards: [],
+        model: createMockModel(),
+        gameMode: GameMode.STORY_TELLER,
+      });
+
+      expect(
+        result.messages
+          .filter((m) => m.role === "assistant")
+          .map((m) => m.content),
+      ).toEqual(["The door creaks"]);
+    });
+
     it("should filter out the current user message from history", async () => {
       const { useTaleStore } = await import("@/store/useTaleStore");
       vi.mocked(useTaleStore.getState).mockReturnValue({

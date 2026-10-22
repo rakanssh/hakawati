@@ -221,8 +221,17 @@ async function selectTaleRow(
   return rows?.[0] ?? null;
 }
 
-async function requireTaleRow(db: Database, taleId: string): Promise<TaleRow> {
-  const row = await selectTaleRow(db, taleId);
+// Writes only need the save version; the full row would also bring the cover
+// image across IPC.
+async function requireTaleRow(
+  db: Database,
+  taleId: string,
+): Promise<Pick<TaleRow, "id" | "save_version">> {
+  const rows = await db.select<Array<Pick<TaleRow, "id" | "save_version">>>(
+    `SELECT id, save_version FROM tales WHERE id = ? LIMIT 1`,
+    [taleId],
+  );
+  const row = rows?.[0];
   if (!row) throw new Error("Tale not found");
   return row;
 }
@@ -345,6 +354,10 @@ async function selectTurnCount(db: Database, taleId: string): Promise<number> {
   return rows?.[0]?.count ?? 0;
 }
 
+// Play writes almost always change the newest turns, so entries are looked up
+// there before searching the whole tale.
+const RECENT_TURN_LOOKUP_COUNT = 4;
+
 async function selectTurnRowsForEntryIds(
   db: Database,
   taleId: string,
@@ -354,39 +367,63 @@ async function selectTurnRowsForEntryIds(
   if (uniqueEntryIds.length === 0) return [];
 
   const placeholders = uniqueEntryIds.map(() => "?").join(", ");
-  return db.select<TaleTurnRow[]>(
-    `SELECT DISTINCT tt.*
-     FROM tale_turns tt, json_each(tt.entries_json) entry
-     WHERE tt.tale_id = ?
-       AND json_extract(entry.value, '$.id') IN (${placeholders})
-     ORDER BY tt.seq ASC`,
-    [taleId, ...uniqueEntryIds],
+  const selectTurnsContainingEntries = (turns: string, params: unknown[]) =>
+    db.select<TaleTurnRow[]>(
+      `SELECT DISTINCT tt.*
+       FROM ${turns} tt, json_each(tt.entries_json) entry
+       WHERE json_extract(entry.value, '$.id') IN (${placeholders})
+       ORDER BY tt.seq ASC`,
+      [...params, ...uniqueEntryIds],
+    );
+
+  const recentRows = await selectTurnsContainingEntries(
+    `(SELECT * FROM tale_turns WHERE tale_id = ? ORDER BY seq DESC LIMIT ?)`,
+    [taleId, RECENT_TURN_LOOKUP_COUNT],
+  );
+  const recentEntryIds = new Set(
+    recentRows.flatMap((row) => parseTurnEntries(row).map((entry) => entry.id)),
+  );
+  if (uniqueEntryIds.every((entryId) => recentEntryIds.has(entryId))) {
+    return recentRows;
+  }
+
+  return selectTurnsContainingEntries(
+    `(SELECT * FROM tale_turns WHERE tale_id = ?)`,
+    [taleId],
   );
 }
 
-async function reindexTurns(db: Database, taleId: string): Promise<void> {
-  const rows = await db.select<TaleTurnRow[]>(
-    `SELECT * FROM tale_turns WHERE tale_id = ? ORDER BY seq ASC`,
-    [taleId],
-  );
-  let entryStartIndex = 0;
-
-  for (let index = 0; index < rows.length; index += 1) {
-    const entries = sanitizeTurnEntries(parseTurnEntries(rows[index]));
+// Keeps seqs contiguous and entry indexes in order after the turns up to
+// afterSeq were replaced. Seqs are negated first because SQLite checks
+// UNIQUE(tale_id, seq) row by row.
+async function shiftTurnsAfter(
+  db: Database,
+  taleId: string,
+  afterSeq: number,
+  seqDelta: number,
+  entryDelta: number,
+): Promise<void> {
+  if (seqDelta === 0) {
+    if (entryDelta === 0) return;
     await db.execute(
       `UPDATE tale_turns
-       SET seq = ?, entry_start_index = ?, entry_count = ?, entries_json = ?
-       WHERE id = ?`,
-      [
-        index + 1,
-        entryStartIndex,
-        entries.length,
-        JSON.stringify(entries),
-        rows[index].id,
-      ],
+       SET entry_start_index = entry_start_index + ?
+       WHERE tale_id = ? AND seq > ?`,
+      [entryDelta, taleId, afterSeq],
     );
-    entryStartIndex += entries.length;
+    return;
   }
+
+  await db.execute(
+    `UPDATE tale_turns
+     SET seq = -(seq + ?), entry_start_index = entry_start_index + ?
+     WHERE tale_id = ? AND seq > ?`,
+    [seqDelta, entryDelta, taleId, afterSeq],
+  );
+  await db.execute(
+    `UPDATE tale_turns SET seq = -seq WHERE tale_id = ? AND seq < 0`,
+    [taleId],
+  );
 }
 
 async function insertTurn(
@@ -839,18 +876,16 @@ export async function replaceTurnContainingEntries(
       }
 
       const firstRow = spanRows[0];
-      const shiftedSeq = (await selectTurnCount(db, taleId)) + 1;
+      const replacedEntryCount = spanRows.reduce(
+        (count, row) => count + row.entry_count,
+        0,
+      );
 
       await db.execute(
-        `UPDATE tale_turns SET seq = ? WHERE tale_id = ? AND seq = ?`,
-        [shiftedSeq, taleId, firstSeq],
-      );
-      await db.execute(
         `DELETE FROM tale_turns WHERE tale_id = ? AND seq BETWEEN ? AND ?`,
-        [taleId, firstSeq + 1, lastSeq],
+        [taleId, firstSeq, lastSeq],
       );
-      await db.execute(`DELETE FROM tale_turns WHERE id = ?`, [firstRow.id]);
-      await insertTurn(
+      const entryCount = await insertTurn(
         db,
         taleId,
         turn,
@@ -858,7 +893,13 @@ export async function replaceTurnContainingEntries(
         firstRow.entry_start_index,
         now,
       );
-      await reindexTurns(db, taleId);
+      await shiftTurnsAfter(
+        db,
+        taleId,
+        lastSeq,
+        firstSeq - lastSeq,
+        entryCount - replacedEntryCount,
+      );
       await refreshTaleLogSummary(db, taleId);
       await replaceState(db, taleId, state, now);
       await replaceSession(db, taleId, session, now);
@@ -921,8 +962,6 @@ export async function trimLogToEntryCount(
             );
           }
         }
-
-        await reindexTurns(db, taleId);
       }
 
       await refreshTaleLogSummary(db, taleId);
@@ -1503,11 +1542,12 @@ export async function replaceTaleWithPackage(
         return false;
       }
       await markLinkedTaleForPush(db, taleId);
+      // Cloud packages carry no cover bytes, so a pulled tale keeps its own.
       await db.execute(
         `UPDATE tales SET
            name = ?,
            description = ?,
-           thumbnail_data = ?,
+           thumbnail_data = COALESCE(?, thumbnail_data),
            author_note = ?,
            components = ?,
            story_cards = ?,

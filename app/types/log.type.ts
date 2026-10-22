@@ -27,6 +27,9 @@ export type LogEntry = {
   actions?: LLMAction[];
   actionState?: { before: LogActionState; after: LogActionState };
   chainId?: string;
+  /** A passage the player wrote with Story, saved as GM narration. */
+  isStoryInput?: boolean;
+  /** Why the reply failed, or `true` without a reason. Older saves may hold `{}`. */
   error?: unknown;
   _tokenCount?: number;
 };

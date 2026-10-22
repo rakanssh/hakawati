@@ -39,6 +39,7 @@ import { useState } from "react";
 import type { LibraryTaleItem } from "@/lib/tale-library";
 import type { TaleConflictChoice } from "@/hooks/useTaleLibrary";
 import { imageBadgeClass, imageMenuButtonClass } from "@/lib/card-badges";
+import { getTaleSyncBadge } from "@/lib/sync-ui";
 
 type PendingTaleDelete = {
   item: LibraryTaleItem;
@@ -245,10 +246,8 @@ export default function TalesHome() {
               "");
           const thumbnail = isRemote ? null : item.localTale.thumbnail;
           const scenarioHead = isRemote ? null : item.localTale.scenarioHead;
-          const hasConflict =
-            syncActive &&
-            item.source === "local" &&
-            item.sync?.status === "conflict";
+          const badge = syncActive ? getTaleSyncBadge(item) : "local";
+          const hasConflict = badge === "conflict";
           const isSynced =
             syncActive && (isRemote || Boolean(!isRemote && item.sync));
           const syncStatusUnknown =
@@ -258,9 +257,13 @@ export default function TalesHome() {
             syncStatesLoading;
           const statusLabel = hasConflict
             ? t`Needs review`
-            : isSynced
-              ? t`Cloud`
-              : t`Local`;
+            : badge === "cloud-full"
+              ? t`Cloud full`
+              : badge === "not-synced"
+                ? t`Not synced`
+                : isSynced
+                  ? t`Cloud`
+                  : t`Local`;
           return (
             <ScenarioPreviewCard
               key={isRemote ? `remote-${id}` : `local-${id}`}
@@ -275,7 +278,9 @@ export default function TalesHome() {
                 syncActive && !syncStatusUnknown ? (
                   <Badge
                     className={`${imageBadgeClass} ${
-                      hasConflict ? "text-destructive" : ""
+                      badge === "local" || badge === "cloud"
+                        ? ""
+                        : "text-destructive"
                     }`}
                   >
                     {statusLabel}

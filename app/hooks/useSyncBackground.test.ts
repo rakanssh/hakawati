@@ -6,8 +6,8 @@ import {
   addSyncChangedListener,
   wakeSyncBackground,
 } from "@/services/sync-wakeup";
+import { SyncHttpError } from "@/services/sync";
 import { useSyncBackground } from "./useSyncBackground";
-import { useTaleStore } from "@/store/useTaleStore";
 
 i18n.load("en", {});
 i18n.activate("en");
@@ -17,9 +17,16 @@ const syncRepoMocks = vi.hoisted(() => ({
   getSyncProfile: vi.fn(),
   listTaleSyncPreferences: vi.fn(),
   listTaleSyncStates: vi.fn(),
+  retryCloudFullTaleSyncs: vi.fn(),
   setSyncProfileDisabled: vi.fn(),
   setTaleSyncPreference: vi.fn(),
+  setTaleSyncStatus: vi.fn(),
   upsertTaleSyncState: vi.fn(),
+}));
+
+const openTaleMocks = vi.hoisted(() => ({
+  isTaleInPlay: vi.fn(() => false),
+  showPulledTale: vi.fn(),
 }));
 
 const syncServiceMocks = vi.hoisted(() => {
@@ -45,6 +52,7 @@ const syncStoreState = vi.hoisted(() => ({
   deviceId: "device-1",
   accountId: "account-1",
   hostedDeviceIdsByAccountId: { "account-1": "device-1" },
+  setCloudUpdateRequired: vi.fn(),
 }));
 
 const toastMocks = vi.hoisted(() => ({
@@ -52,7 +60,11 @@ const toastMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/repositories/sync.repository", () => syncRepoMocks);
-vi.mock("@/services/sync", () => syncServiceMocks);
+vi.mock("@/services/sync", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/services/sync")>()),
+  ...syncServiceMocks,
+}));
+vi.mock("@/services/open-tale-sync", () => openTaleMocks);
 vi.mock("@/prompts", () => ({ getActiveStorytellerPrompt: () => "" }));
 vi.mock("@/store/useSyncSettingsStore", () => ({
   useSyncSettingsStore: (selector: (state: typeof syncStoreState) => unknown) =>
@@ -129,6 +141,11 @@ describe("useSyncBackground", () => {
     syncRepoMocks.listTaleSyncPreferences.mockResolvedValue([]);
     syncRepoMocks.listTaleSyncStates.mockResolvedValue([]);
     syncRepoMocks.upsertTaleSyncState.mockResolvedValue(undefined);
+    syncRepoMocks.retryCloudFullTaleSyncs.mockResolvedValue(undefined);
+    syncRepoMocks.setTaleSyncStatus.mockResolvedValue(undefined);
+    openTaleMocks.isTaleInPlay.mockReturnValue(false);
+    syncServiceMocks.uploadTalePackage.mockResolvedValue(undefined);
+    syncServiceMocks.syncLinkedTale.mockResolvedValue("skipped");
     syncServiceMocks.fetchSyncCapabilities.mockResolvedValue({
       server: "hakawati-cloud",
       apiVersion: "1",
@@ -214,7 +231,7 @@ describe("useSyncBackground", () => {
     enabledHarness.cleanup();
   });
 
-  it("turns hosted sync off when the current device is not registered", async () => {
+  it("turns sync off without registering again when this device was removed", async () => {
     syncServiceMocks.listHostedDevices.mockResolvedValueOnce([
       { id: "other-device" },
     ]);
@@ -224,7 +241,7 @@ describe("useSyncBackground", () => {
 
     expect(syncRepoMocks.setSyncProfileDisabled).toHaveBeenCalledWith(
       "hosted",
-      "device_limit",
+      "user_disabled",
     );
     expect(syncServiceMocks.listAllRemoteTales).not.toHaveBeenCalled();
     expect(syncServiceMocks.uploadTalePackage).not.toHaveBeenCalled();
@@ -433,13 +450,12 @@ describe("useSyncBackground", () => {
       }),
     );
 
+    // Open is not enough to hold a pull back; being played is.
     const { canPull } = syncServiceMocks.syncLinkedTale.mock.calls[0][0];
-    useTaleStore.setState({ id: "other-tale", loadingTaleId: null });
     expect(canPull()).toBe(true);
-    useTaleStore.setState({ loadingTaleId: "local-1" });
+    openTaleMocks.isTaleInPlay.mockReturnValue(true);
     expect(canPull()).toBe(false);
-    useTaleStore.setState({ id: "local-1", loadingTaleId: null });
-    expect(canPull()).toBe(false);
+    expect(openTaleMocks.isTaleInPlay).toHaveBeenLastCalledWith("local-1");
 
     harness.cleanup();
   });
@@ -543,4 +559,323 @@ describe("useSyncBackground", () => {
     expect(syncServiceMocks.listAllRemoteTales).toHaveBeenCalledTimes(2);
     harness.cleanup();
   });
+  it("shows the pulled version once the open tale takes a pull", async () => {
+    syncRepoMocks.listTaleSyncStates.mockResolvedValue([
+      {
+        profileId: "hosted",
+        localTaleId: "local-1",
+        remoteTaleId: "remote-1",
+        pendingStatus: "idle",
+      },
+      {
+        profileId: "hosted",
+        localTaleId: "local-2",
+        remoteTaleId: "remote-2",
+        pendingStatus: "idle",
+      },
+    ]);
+    syncServiceMocks.listAllRemoteTales.mockResolvedValue([
+      { id: "remote-1", title: "Pulled" },
+      { id: "remote-2", title: "Unchanged" },
+    ]);
+    syncServiceMocks.syncLinkedTale.mockImplementation(
+      async ({ localTaleId }: { localTaleId: string }) =>
+        localTaleId === "local-1" ? "pulled" : "skipped",
+    );
+    const harness = renderHarness();
+
+    try {
+      await waitForAssertion(() =>
+        expect(openTaleMocks.showPulledTale).toHaveBeenCalledWith("local-1"),
+      );
+      expect(openTaleMocks.showPulledTale).toHaveBeenCalledOnce();
+    } finally {
+      harness.cleanup();
+    }
+  });
+
+  it("unlinks a tale opened from the cloud once its cloud copy is removed", async () => {
+    // Tales opened from the cloud and kept copies have no sync preference.
+    syncRepoMocks.listTaleSyncStates.mockResolvedValue([
+      {
+        profileId: "hosted",
+        accountId: "account-1",
+        localTaleId: "opened-from-cloud",
+        remoteTaleId: "remote-removed",
+        pendingStatus: "idle",
+      },
+    ]);
+    const harness = renderHarness();
+
+    try {
+      await waitForAssertion(() =>
+        expect(syncRepoMocks.deleteTaleSyncState).toHaveBeenCalledWith({
+          profileId: "hosted",
+          accountId: "account-1",
+          localTaleId: "opened-from-cloud",
+        }),
+      );
+      expect(syncRepoMocks.setTaleSyncPreference).toHaveBeenCalledWith({
+        profileId: "hosted",
+        accountId: "account-1",
+        localTaleId: "opened-from-cloud",
+        policy: "private",
+      });
+      expect(syncServiceMocks.syncLinkedTale).not.toHaveBeenCalled();
+    } finally {
+      harness.cleanup();
+    }
+  });
+
+  it("tells the player to update when the cloud refuses this app version", async () => {
+    syncServiceMocks.assertSyncAvailable.mockImplementationOnce(() => {
+      throw new SyncHttpError(
+        "Update Hakawati to sync.",
+        426,
+        "unsupported_client",
+      );
+    });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const harness = renderHarness();
+
+    try {
+      await waitForAssertion(() =>
+        expect(syncStoreState.setCloudUpdateRequired).toHaveBeenCalledWith(
+          true,
+        ),
+      );
+      expect(syncServiceMocks.listAllRemoteTales).not.toHaveBeenCalled();
+
+      act(() => {
+        wakeSyncBackground();
+      });
+      await waitForAssertion(() =>
+        expect(syncStoreState.setCloudUpdateRequired).toHaveBeenLastCalledWith(
+          false,
+        ),
+      );
+    } finally {
+      warn.mockRestore();
+      harness.cleanup();
+    }
+  });
+
+  it("stops the pass when a write is refused for this app version", async () => {
+    syncRepoMocks.listTaleSyncPreferences.mockResolvedValue([
+      { localTaleId: "local-new", policy: "sync", updatedAt: 1 },
+    ]);
+    syncRepoMocks.listTaleSyncStates.mockResolvedValue([
+      {
+        profileId: "hosted",
+        localTaleId: "local-1",
+        remoteTaleId: "remote-1",
+        pendingStatus: "push",
+      },
+    ]);
+    syncServiceMocks.listAllRemoteTales.mockResolvedValue([
+      { id: "remote-1", title: "Remote" },
+    ]);
+    syncServiceMocks.uploadTalePackage.mockRejectedValue(
+      new SyncHttpError("Too old", 426, "unsupported_client"),
+    );
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const harness = renderHarness();
+
+    try {
+      await waitForAssertion(() =>
+        expect(syncStoreState.setCloudUpdateRequired).toHaveBeenLastCalledWith(
+          true,
+        ),
+      );
+      expect(syncServiceMocks.syncLinkedTale).not.toHaveBeenCalled();
+      expect(toastMocks.error).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+      harness.cleanup();
+    }
+  });
+
+  it("waits for cloud space before uploading new tales again", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    syncRepoMocks.listTaleSyncPreferences.mockResolvedValue([
+      { localTaleId: "local-a", policy: "sync", updatedAt: 1 },
+      { localTaleId: "local-b", policy: "sync", updatedAt: 1 },
+    ]);
+    const others = [
+      { id: "other-1", sourceTaleId: "other-1" },
+      { id: "other-2", sourceTaleId: "other-2" },
+    ];
+    syncServiceMocks.listAllRemoteTales.mockResolvedValue(others);
+    syncServiceMocks.uploadTalePackage.mockRejectedValue(
+      new SyncHttpError("Quota exceeded.", 409, "quota_exceeded"),
+    );
+    const harness = renderHarness();
+
+    try {
+      await waitForAssertion(() =>
+        expect(toastMocks.error).toHaveBeenCalledWith("Cloud storage is full"),
+      );
+      expect(syncServiceMocks.uploadTalePackage).toHaveBeenCalledOnce();
+
+      act(() => {
+        wakeSyncBackground();
+      });
+      await waitForAssertion(() =>
+        expect(syncServiceMocks.listAllRemoteTales).toHaveBeenCalledTimes(2),
+      );
+      await harness.flush();
+      expect(syncServiceMocks.uploadTalePackage).toHaveBeenCalledOnce();
+      expect(toastMocks.error).toHaveBeenCalledOnce();
+
+      // A tale left the cloud, so there may be room again.
+      syncServiceMocks.listAllRemoteTales.mockResolvedValue(others.slice(1));
+      act(() => {
+        wakeSyncBackground();
+      });
+      await waitForAssertion(() =>
+        expect(syncServiceMocks.uploadTalePackage).toHaveBeenCalledTimes(2),
+      );
+      expect(syncRepoMocks.retryCloudFullTaleSyncs).toHaveBeenCalledTimes(2);
+    } finally {
+      warn.mockRestore();
+      harness.cleanup();
+    }
+  });
+
+  it("holds a linked tale's changes while the cloud is full", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    syncRepoMocks.listTaleSyncStates.mockResolvedValue([
+      {
+        profileId: "hosted",
+        localTaleId: "local-1",
+        remoteTaleId: "remote-1",
+        pendingStatus: "push",
+      },
+    ]);
+    syncServiceMocks.listAllRemoteTales.mockResolvedValue([
+      { id: "remote-1", title: "Remote" },
+    ]);
+    syncServiceMocks.syncLinkedTale.mockRejectedValueOnce(
+      new SyncHttpError("Quota exceeded.", 409, "quota_exceeded"),
+    );
+    const harness = renderHarness();
+
+    try {
+      await waitForAssertion(() =>
+        expect(toastMocks.error).toHaveBeenCalledWith("Cloud storage is full"),
+      );
+      expect(syncRepoMocks.setTaleSyncStatus).not.toHaveBeenCalled();
+
+      act(() => {
+        wakeSyncBackground();
+      });
+      await waitForAssertion(() =>
+        expect(syncServiceMocks.syncLinkedTale).toHaveBeenCalledTimes(2),
+      );
+      // Its next change is held as refused rather than uploaded into a full cloud.
+      expect(syncRepoMocks.setTaleSyncStatus).toHaveBeenCalledWith({
+        profileId: "hosted",
+        accountId: "account-1",
+        localTaleId: "local-1",
+        pendingStatus: "error",
+        lastErrorCode: "quota_exceeded",
+      });
+      expect(
+        syncRepoMocks.setTaleSyncStatus.mock.invocationCallOrder[0],
+      ).toBeLessThan(
+        syncServiceMocks.syncLinkedTale.mock.invocationCallOrder[1],
+      );
+    } finally {
+      warn.mockRestore();
+      harness.cleanup();
+    }
+  });
+
+  it("tries tales refused for a full cloud once per session, one at a time", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    // Both were refused in an earlier session.
+    syncRepoMocks.listTaleSyncStates.mockResolvedValue(
+      ["local-1", "local-2"].map((localTaleId, index) => ({
+        profileId: "hosted",
+        localTaleId,
+        remoteTaleId: `remote-${index + 1}`,
+        pendingStatus: "error",
+        lastErrorCode: "quota_exceeded",
+      })),
+    );
+    syncServiceMocks.listAllRemoteTales.mockResolvedValue([
+      { id: "remote-1", title: "One" },
+      { id: "remote-2", title: "Two" },
+    ]);
+    syncServiceMocks.syncLinkedTale.mockRejectedValueOnce(
+      new SyncHttpError("Quota exceeded.", 409, "quota_exceeded"),
+    );
+    const harness = renderHarness();
+
+    try {
+      await waitForAssertion(() =>
+        expect(syncServiceMocks.syncLinkedTale).toHaveBeenCalledTimes(2),
+      );
+      expect(syncRepoMocks.retryCloudFullTaleSyncs).toHaveBeenCalledOnce();
+      // The first refusal holds the second tale instead of uploading it too.
+      expect(syncRepoMocks.setTaleSyncStatus).toHaveBeenCalledOnce();
+      expect(syncRepoMocks.setTaleSyncStatus).toHaveBeenCalledWith(
+        expect.objectContaining({
+          localTaleId: "local-2",
+          pendingStatus: "error",
+          lastErrorCode: "quota_exceeded",
+        }),
+      );
+
+      act(() => {
+        wakeSyncBackground();
+      });
+      await waitForAssertion(() =>
+        expect(syncServiceMocks.syncLinkedTale).toHaveBeenCalledTimes(4),
+      );
+      expect(syncRepoMocks.retryCloudFullTaleSyncs).toHaveBeenCalledOnce();
+    } finally {
+      warn.mockRestore();
+      harness.cleanup();
+    }
+  });
+
+  it.each([
+    [413, "package_too_large"],
+    // The create's key went to a tale that was removed since.
+    [409, "idempotency_conflict"],
+  ])(
+    "does not upload a tale the cloud refused with %s %s again",
+    async (status, code) => {
+      const warn = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => undefined);
+      syncRepoMocks.listTaleSyncPreferences.mockResolvedValue([
+        { localTaleId: "local-huge", policy: "sync", updatedAt: 1 },
+      ]);
+      syncServiceMocks.uploadTalePackage.mockRejectedValue(
+        new SyncHttpError("Refused", status, code),
+      );
+      const harness = renderHarness();
+
+      try {
+        await waitForAssertion(() =>
+          expect(toastMocks.error).toHaveBeenCalledWith(
+            "Failed to upload tale to cloud",
+          ),
+        );
+        act(() => {
+          wakeSyncBackground();
+        });
+        await waitForAssertion(() =>
+          expect(syncServiceMocks.listAllRemoteTales).toHaveBeenCalledTimes(2),
+        );
+        await harness.flush();
+        expect(syncServiceMocks.uploadTalePackage).toHaveBeenCalledOnce();
+      } finally {
+        warn.mockRestore();
+        harness.cleanup();
+      }
+    },
+  );
 });

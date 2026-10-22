@@ -1,5 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
-import { parseOpenAIStream } from "./streaming";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  parseOpenAIStream,
+  STREAM_IDLE_TIMEOUT_MS,
+  STREAM_START_TIMEOUT_MS,
+} from "./streaming";
 import { PlainTextDecoder, ToolCallingDecoder } from "./decoders";
 import { StreamChunk } from "./schema";
 
@@ -21,6 +25,33 @@ async function collect<T>(iterator: AsyncIterable<T>): Promise<T[]> {
   }
   return out;
 }
+
+/** A body that sends `lines` and then nothing, like a connection that went quiet. */
+function makeStalledStream(lines: string[] = []) {
+  const cancel = vi.fn();
+  let send!: (line: string) => void;
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      send = (line) => controller.enqueue(new TextEncoder().encode(line));
+      for (const line of lines) send(`${line}\n`);
+    },
+    cancel,
+  });
+  return { stream, cancel, send: (line: string) => send(`${line}\n`) };
+}
+
+function trackSettled(promise: Promise<unknown>) {
+  const state = { settled: false };
+  promise.then(
+    () => (state.settled = true),
+    () => (state.settled = true),
+  );
+  return state;
+}
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe("parseOpenAIStream", () => {
   it("reports an exhausted thinking/output budget instead of accepting an empty answer", async () => {
@@ -145,6 +176,129 @@ describe("parseOpenAIStream", () => {
     const chunks = await collect(parseOpenAIStream(stream));
 
     expect(chunks).toEqual([{ thinking: "Plan: check" }]);
+  });
+
+  it("ends a stalled read when the reply is stopped", async () => {
+    const controller = new AbortController();
+    const { stream, cancel } = makeStalledStream([
+      'data: {"choices":[{"delta":{"content":"The door"}}]}',
+    ]);
+    const iterator = parseOpenAIStream(stream, { signal: controller.signal });
+    expect((await iterator.next()).value).toEqual({ content: "The door" });
+
+    const pending = iterator.next();
+    controller.abort();
+
+    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(stream.locked).toBe(false);
+  });
+
+  it("reports an error stream after Stop as stopped", async () => {
+    const controller = new AbortController();
+    const stream = new ReadableStream<Uint8Array>({
+      start(source) {
+        controller.signal.addEventListener("abort", () =>
+          source.error("Request cancelled"),
+        );
+      },
+    });
+    const pending = parseOpenAIStream(stream, {
+      signal: controller.signal,
+    }).next();
+    controller.abort();
+
+    await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+  });
+
+  it("ends a reply that stops sending bytes partway", async () => {
+    vi.useFakeTimers();
+    const { stream, cancel } = makeStalledStream([
+      'data: {"choices":[{"delta":{"content":"The door"}}]}',
+    ]);
+    const iterator = parseOpenAIStream(stream);
+    expect((await iterator.next()).value).toEqual({ content: "The door" });
+
+    const assertion = expect(iterator.next()).rejects.toThrow(
+      "The response stalled for 1 minute",
+    );
+    await vi.advanceTimersByTimeAsync(STREAM_IDLE_TIMEOUT_MS);
+
+    await assertion;
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(stream.locked).toBe(false);
+  });
+
+  it("waits longer for a reply to start than for one that is arriving", async () => {
+    vi.useFakeTimers();
+    const { stream } = makeStalledStream([
+      'data: {"choices":[{"delta":{"role":"assistant"}}]}',
+    ]);
+    const pending = parseOpenAIStream(stream).next();
+    const state = trackSettled(pending);
+
+    await vi.advanceTimersByTimeAsync(STREAM_IDLE_TIMEOUT_MS * 2);
+    expect(state.settled).toBe(false);
+
+    const assertion = expect(pending).rejects.toThrow(
+      "The response stalled for 5 minutes",
+    );
+    await vi.advanceTimersByTimeAsync(STREAM_START_TIMEOUT_MS);
+    await assertion;
+  });
+
+  it("keeps waiting while the provider sends keep-alive comments", async () => {
+    vi.useFakeTimers();
+    const { stream, send } = makeStalledStream([
+      'data: {"choices":[{"delta":{"content":"The door"}}]}',
+    ]);
+    const iterator = parseOpenAIStream(stream);
+    await iterator.next();
+    const pending = iterator.next();
+    const state = trackSettled(pending);
+
+    await vi.advanceTimersByTimeAsync(STREAM_IDLE_TIMEOUT_MS - 1_000);
+    send(": keep-alive");
+    await vi.advanceTimersByTimeAsync(STREAM_IDLE_TIMEOUT_MS - 1_000);
+    expect(state.settled).toBe(false);
+
+    send('data: {"choices":[{"delta":{"content":" opens."}}]}');
+    expect((await pending).value).toEqual({ content: " opens." });
+  });
+
+  it("flags a reply the content filter stopped, after the text that came first", async () => {
+    const stream = makeSseStream([
+      'data: {"choices":[{"delta":{"content":"The blade"},"finish_reason":"content_filter"}]}',
+      "data: [DONE]",
+    ]);
+    const iterator = parseOpenAIStream(stream);
+
+    expect((await iterator.next()).value).toEqual({ content: "The blade" });
+    await expect(iterator.next()).rejects.toThrow("content filter");
+    expect(stream.locked).toBe(false);
+  });
+
+  it("flags a stream that ends without [DONE] or a finish reason", async () => {
+    const stream = makeSseStream([
+      'data: {"choices":[{"delta":{"content":"The door"}}]}',
+    ]);
+    const iterator = parseOpenAIStream(stream);
+
+    expect((await iterator.next()).value).toEqual({ content: "The door" });
+    await expect(iterator.next()).rejects.toThrow(
+      "The connection ended before the response finished",
+    );
+  });
+
+  it("accepts a stream that gives a finish reason without [DONE]", async () => {
+    const stream = makeSseStream([
+      'data: {"choices":[{"delta":{"content":"The door opens."}}]}',
+      'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}',
+    ]);
+
+    expect(await collect(parseOpenAIStream(stream))).toEqual([
+      { content: "The door opens." },
+    ]);
   });
 });
 

@@ -17,6 +17,7 @@ type MergedMessage = {
   role: "user" | "assistant";
   content: string;
   chainKey?: string;
+  firstEntry: LogEntry;
 };
 
 export interface AssembleContextMessagesParams {
@@ -61,14 +62,28 @@ export function injectMode(text: string, mode?: LogEntryMode): string {
   return text;
 }
 
-function getEntryTokens(entry: LogEntry): number {
-  if (entry._tokenCount !== undefined) {
-    return entry._tokenCount;
+// Token counts of history messages, kept across requests and redone when a
+// message's content changes. Counts are per message rather than per entry
+// because a GM chain's joined text can tokenize differently from its parts.
+const historyTokenCache = new WeakMap<
+  LogEntry,
+  Pick<MergedMessage, "role" | "content"> & { tokens: number }
+>();
+
+function getHistoryMessageTokens(message: MergedMessage): number {
+  const cached = historyTokenCache.get(message.firstEntry);
+  if (cached?.role === message.role && cached.content === message.content) {
+    return cached.tokens;
   }
 
-  const content = injectMode(entry.text, entry.mode);
-  const tokens = countMessageTokens([{ role: "user", content }]);
-  entry._tokenCount = tokens;
+  const tokens = countMessageTokens([
+    { role: message.role, content: message.content },
+  ]);
+  historyTokenCache.set(message.firstEntry, {
+    role: message.role,
+    content: message.content,
+    tokens,
+  });
   return tokens;
 }
 
@@ -108,6 +123,11 @@ function buildStoryBookPrompt(cards: StoryCard[]): string {
   return output;
 }
 
+function countStoryBookTokens(cards: StoryCard[]): number {
+  const content = buildStoryBookPrompt(cards);
+  return content ? countMessageTokens([{ role: "system", content }]) : 0;
+}
+
 function mergeLogEntries(log: LogEntry[]): MergedMessage[] {
   const merged: MergedMessage[] = [];
 
@@ -125,12 +145,14 @@ function mergeLogEntries(log: LogEntry[]): MergedMessage[] {
           role: "assistant",
           content,
           chainKey,
+          firstEntry: entry,
         });
       }
     } else {
       merged.push({
         role: "user",
         content,
+        firstEntry: entry,
       });
     }
   }
@@ -154,35 +176,31 @@ export function assembleContextMessages(
     onNoHistoryIncluded,
   } = params;
 
-  const tokenCountFor = (messages: ChatMessage[]) =>
-    countMessageTokens(messages);
-  const baseRequired = [...requiredMeta, ...lateMeta, userMessage];
-  const requiredTokens = tokenCountFor(baseRequired);
+  // A prompt's token count is the sum of its messages' counts, so the totals
+  // below are kept as running sums instead of recounting the whole prompt.
+  const requiredTokens = countMessageTokens([
+    ...requiredMeta,
+    ...lateMeta,
+    userMessage,
+  ]);
   if (requiredTokens > promptBudget) {
     onRequiredTokensExceeded?.(requiredTokens);
   }
 
   const effectiveLog = includeLogEntry ? log.filter(includeLogEntry) : log;
-  for (const entry of effectiveLog) {
-    getEntryTokens(entry);
-  }
-
   const mergedLog = mergeLogEntries(effectiveLog);
 
   const pinnedCards = storyCards.filter((card) => card.isPinned);
   const includedCardIds = new Set<string>(pinnedCards.map((card) => card.id));
-  const pinnedStoryBookContent = buildStoryBookPrompt(pinnedCards);
 
-  const baseWithPinned = [...baseRequired];
-  if (pinnedStoryBookContent) {
-    baseWithPinned.push({ role: "system", content: pinnedStoryBookContent });
-  }
-
-  const requiredWithPinned = tokenCountFor(baseWithPinned);
+  const requiredWithPinned = requiredTokens + countStoryBookTokens(pinnedCards);
   if (requiredWithPinned > promptBudget) {
     onRequiredWithPinnedExceeded?.(requiredWithPinned);
   }
 
+  let includedCards = storyCards.filter((card) => includedCardIds.has(card.id));
+  let storyBookTokens = countStoryBookTokens(includedCards);
+  let historyTokens = 0;
   const selectedHistory: ChatMessage[] = [];
   let hitTokenLimit = false;
 
@@ -196,40 +214,28 @@ export function assembleContextMessages(
       continue;
     }
 
-    const chatMessage: ChatMessage = {
-      role: message.role,
-      content: message.content,
-    };
-
     const matchedCards = collectCardsForText(message.content, storyCards);
     const newCards = matchedCards.filter(
       (card) => !includedCardIds.has(card.id),
     );
+    const tentativeStoryBookTokens =
+      newCards.length > 0
+        ? countStoryBookTokens([...includedCards, ...newCards])
+        : storyBookTokens;
+    const messageTokens = getHistoryMessageTokens(message);
 
-    const allIncludedCards = storyCards.filter((card) =>
-      includedCardIds.has(card.id),
-    );
-    const tentativeCards = [...allIncludedCards, ...newCards];
-    const tentativeStoryBookContent = buildStoryBookPrompt(tentativeCards);
-
-    const messagesIfIncluded: ChatMessage[] = [...requiredMeta];
-    if (tentativeStoryBookContent) {
-      messagesIfIncluded.push({
-        role: "system",
-        content: tentativeStoryBookContent,
-      });
-    }
-    messagesIfIncluded.push(
-      ...selectedHistory,
-      chatMessage,
-      ...lateMeta,
-      userMessage,
-    );
-
-    const totalTokens = tokenCountFor(messagesIfIncluded);
+    const totalTokens =
+      requiredTokens + tentativeStoryBookTokens + historyTokens + messageTokens;
     if (totalTokens <= promptBudget) {
-      selectedHistory.unshift(chatMessage);
-      newCards.forEach((card) => includedCardIds.add(card.id));
+      selectedHistory.unshift({ role: message.role, content: message.content });
+      historyTokens += messageTokens;
+      if (newCards.length > 0) {
+        newCards.forEach((card) => includedCardIds.add(card.id));
+        includedCards = storyCards.filter((card) =>
+          includedCardIds.has(card.id),
+        );
+        storyBookTokens = countStoryBookTokens(includedCards);
+      }
     } else {
       hitTokenLimit = true;
       break;
@@ -240,9 +246,6 @@ export function assembleContextMessages(
     onNoHistoryIncluded?.();
   }
 
-  const includedCards = storyCards.filter((card) =>
-    includedCardIds.has(card.id),
-  );
   const storyBookContent = buildStoryBookPrompt(includedCards);
 
   const messages: ChatMessage[] = [...requiredMeta];
@@ -255,6 +258,6 @@ export function assembleContextMessages(
 
   return {
     messages,
-    usedTokens: tokenCountFor(messages),
+    usedTokens: requiredTokens + storyBookTokens + historyTokens,
   };
 }

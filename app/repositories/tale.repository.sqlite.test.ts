@@ -1098,6 +1098,106 @@ describe("tale repository SQLite storage", () => {
     expect(await getTaleSyncState(original)).toBeNull();
   });
 
+  it("adopts a landed write's revisions only from the link that sent it", async () => {
+    applyMigrations(dbState.current!);
+    const taleId = await createEmptyTale();
+    const {
+      adoptTaleSyncRevisions,
+      getTaleSyncState,
+      setTaleSyncStatus,
+      upsertSyncProfile,
+      upsertTaleSyncState,
+    } = await import("./sync.repository");
+    await upsertSyncProfile({
+      id: "hosted",
+      baseUrl: "https://sync.example",
+      mode: "hosted",
+    });
+    const lostWrite = {
+      profileId: "hosted",
+      accountId: "account-a",
+      localTaleId: taleId,
+      remoteTaleId: "remote-a",
+      contentRev: "2",
+      metadataRev: "3",
+      lastSyncedAt: 1,
+      pendingStatus: "error" as const,
+      lastErrorCode: "idempotency_conflict",
+    };
+    await upsertTaleSyncState(lostWrite);
+    const adoption = {
+      expectedState: lostWrite,
+      contentRev: "3",
+      metadataRev: "4",
+    };
+
+    await expect(adoptTaleSyncRevisions(adoption)).resolves.toBe(true);
+    await expect(getTaleSyncState(lostWrite)).resolves.toMatchObject({
+      contentRev: "3",
+      metadataRev: "4",
+      // The local edits made since the lost write still need a push.
+      pendingStatus: "push",
+      lastErrorCode: null,
+    });
+    // A stale link can't adopt again, and a conflict waits for the player.
+    await expect(adoptTaleSyncRevisions(adoption)).resolves.toBe(false);
+    await upsertTaleSyncState(lostWrite);
+    await setTaleSyncStatus({ ...lostWrite, pendingStatus: "conflict" });
+    await expect(adoptTaleSyncRevisions(adoption)).resolves.toBe(false);
+  });
+
+  it("retries tales refused for a full cloud in one account only", async () => {
+    applyMigrations(dbState.current!);
+    const {
+      getTaleSyncState,
+      retryCloudFullTaleSyncs,
+      upsertSyncProfile,
+      upsertTaleSyncState,
+    } = await import("./sync.repository");
+    await upsertSyncProfile({
+      id: "hosted",
+      baseUrl: "https://sync.example",
+      mode: "hosted",
+    });
+    const link = async (
+      accountId: string,
+      pendingStatus: "error" | "push",
+      lastErrorCode: string | null,
+    ) => {
+      const state = {
+        profileId: "hosted",
+        accountId,
+        localTaleId: await createEmptyTale(),
+        remoteTaleId: `remote-${accountId}`,
+        contentRev: "1",
+        metadataRev: "1",
+        lastSyncedAt: 1,
+        pendingStatus,
+        lastErrorCode,
+      };
+      await upsertTaleSyncState(state);
+      return state;
+    };
+    const full = await link("account-a", "error", "quota_exceeded");
+    const tooLarge = await link("account-a", "error", "package_too_large");
+    const otherAccount = await link("account-b", "error", "quota_exceeded");
+
+    await retryCloudFullTaleSyncs("hosted", "account-a");
+
+    await expect(getTaleSyncState(full)).resolves.toMatchObject({
+      pendingStatus: "push",
+      lastErrorCode: null,
+    });
+    await expect(getTaleSyncState(tooLarge)).resolves.toMatchObject({
+      pendingStatus: "error",
+      lastErrorCode: "package_too_large",
+    });
+    await expect(getTaleSyncState(otherAccount)).resolves.toMatchObject({
+      pendingStatus: "error",
+      lastErrorCode: "quota_exceeded",
+    });
+  });
+
   it("rejects turn replacement when requested entry anchors are missing", async () => {
     applyMigrations(dbState.current!);
     const { appendTurn, getLogEntries, replaceTurnContainingEntries } =
@@ -1485,6 +1585,44 @@ describe("tale repository SQLite storage", () => {
     expect(JSON.parse(sessionRow.undo_stack_json)).toEqual([]);
   });
 
+  it("keeps the local cover when a pulled package carries no cover bytes", async () => {
+    const db = dbState.current!;
+    applyMigrations(db);
+    const { createTale, exportTalePackage, getTale, replaceTaleWithPackage } =
+      await import("./tale.repository");
+    const localCover = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 1]);
+    const localId = await createEmptyTale(localCover);
+    const remoteSourceId = await createTale({
+      name: "Remote Canon",
+      description: "Pulled from the cloud.",
+      components: [],
+      storyCards: [],
+      stats: [],
+      inventory: [],
+      log: [gmEntry("remote-gm")],
+      gameMode: GameMode.STORY_TELLER,
+      undoStack: [],
+    });
+    // Cloud packages never carry cover bytes.
+    const pulled = await exportTalePackage(remoteSourceId);
+    expect(pulled.assets).toEqual([]);
+
+    expect(await replaceTaleWithPackage(localId, pulled)).toBe(true);
+
+    const replaced = await getTale(localId);
+    expect(replaced?.name).toBe("Remote Canon");
+    expect(Array.from(replaced?.thumbnail ?? [])).toEqual(
+      Array.from(localCover),
+    );
+
+    const newCover = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 2]);
+    const withCover = await exportTalePackage(await createEmptyTale(newCover));
+    expect(await replaceTaleWithPackage(localId, withCover)).toBe(true);
+    expect(Array.from((await getTale(localId))?.thumbnail ?? [])).toEqual(
+      Array.from(newCover),
+    );
+  });
+
   it("edits log text without replacing current state or session snapshots", async () => {
     const db = dbState.current!;
     applyMigrations(db);
@@ -1684,6 +1822,227 @@ describe("tale repository SQLite storage", () => {
     expect(
       (await getLogEntries(taleId, 0, 10)).map((entry) => entry.id),
     ).toEqual(["player-1", "gm-1", "gm-2"]);
+  });
+
+  it("keeps turns contiguous when replacing or trimming them anywhere in a tale", async () => {
+    const db = dbState.current!;
+    applyMigrations(db);
+    const {
+      appendTurn,
+      getLogEntries,
+      replaceTurnContainingEntries,
+      trimLogToEntryCount,
+    } = await import("./tale.repository");
+    const taleId = await createEmptyTale();
+    const state = emptyState();
+    const session = createTaleSessionState();
+    let turns: string[][] = [];
+    let nextId = 0;
+    const newIds = (count: number) =>
+      Array.from({ length: count }, () => `entry-${nextId++}`);
+
+    // Seqs count up from 1 and every turn starts where the previous one ended.
+    const expectStoredTurns = async () => {
+      const rows = db.raw
+        .prepare(
+          `SELECT seq, entry_start_index, entry_count, entries_json
+           FROM tale_turns WHERE tale_id = ? ORDER BY seq`,
+        )
+        .all(taleId) as Array<{
+        seq: number;
+        entry_start_index: number;
+        entry_count: number;
+        entries_json: string;
+      }>;
+      let start = 0;
+      expect(
+        rows.map((row) => [
+          row.seq,
+          row.entry_start_index,
+          row.entry_count,
+          JSON.parse(row.entries_json).map((entry: LogEntry) => entry.id),
+        ]),
+      ).toEqual(
+        turns.map((ids, index) => {
+          const expected = [index + 1, start, ids.length, ids];
+          start += ids.length;
+          return expected;
+        }),
+      );
+      expect(
+        (await getLogEntries(taleId, 0, 100)).map((entry) => entry.id),
+      ).toEqual(turns.flat());
+      expect(
+        db.raw.prepare("SELECT log_count FROM tales WHERE id = ?").get(taleId),
+      ).toEqual({ log_count: turns.flat().length });
+    };
+
+    for (const size of [2, 1, 3, 2, 1, 2, 2, 1]) {
+      const ids = newIds(size);
+      await appendTurn(
+        taleId,
+        { entries: ids.map((id) => gmEntry(id)), createdAt: nextId },
+        state,
+        session,
+      );
+      turns.push(ids);
+    }
+    await expectStoredTurns();
+
+    // [first turn, turns replaced, entries in the replacement]
+    for (const [start, length, size] of [
+      [3, 3, 1],
+      [0, 1, 3],
+      [2, 1, 1],
+      [1, 2, 4],
+      [3, 2, 2],
+      [0, 3, 1],
+    ]) {
+      const replaced = turns.slice(start, start + length);
+      const ids = [replaced[0][0], ...newIds(size - 1)];
+      await replaceTurnContainingEntries(
+        taleId,
+        replaced.flat(),
+        { entries: ids.map((id) => gmEntry(id)), createdAt: nextId },
+        state,
+        session,
+      );
+      turns.splice(start, length, ids);
+      await expectStoredTurns();
+    }
+
+    for (const count of [7, 5, 4, 1]) {
+      await trimLogToEntryCount(taleId, count, state, session);
+      const kept: string[][] = [];
+      for (const ids of turns) {
+        const room = count - kept.flat().length;
+        if (room > 0) kept.push(ids.slice(0, room));
+      }
+      turns = kept;
+      await expectStoredTurns();
+    }
+  });
+
+  it("costs the same to play at the end of a short or a long tale", async () => {
+    const db = dbState.current!;
+    applyMigrations(db);
+    const { getLogEntries, replaceTurns } = await import("./tale.repository");
+    const service = await import("../services/tale.service");
+    const tale: TaleMutableSnapshot = {
+      name: "Iron Valley",
+      description: "A local tale.",
+      components: [],
+      storyCards: [],
+      stats: [],
+      inventory: [],
+      gameMode: GameMode.STORY_TELLER,
+      undoStack: [],
+    };
+
+    // Statements that would cross IPC, and the rows they read.
+    let work = { statements: 0, rowsRead: 0, coverReads: 0 };
+    const { execute, select } = db;
+    db.execute = async (sql, params) => {
+      work.statements += 1;
+      return execute(sql, params);
+    };
+    db.select = async <T>(sql: string, params?: SqlParam[]) => {
+      const rows = (await select(sql, params)) as Record<string, unknown>[];
+      work.statements += 1;
+      work.rowsRead += rows.length;
+      work.coverReads += rows.filter((row) => "thumbnail_data" in row).length;
+      return rows as T;
+    };
+    const totalChanges = () =>
+      (
+        db.raw.prepare("SELECT total_changes() AS rows").get() as {
+          rows: number;
+        }
+      ).rows;
+
+    const playAtTheEnd = async (turnCount: number) => {
+      const taleId = await createEmptyTale(new Uint8Array(4096));
+      await replaceTurns(
+        taleId,
+        Array.from({ length: turnCount }, (_, index) => ({
+          id: `${taleId}-${index}`,
+          seq: index + 1,
+          entries: [playerEntry(`p-${index}`), gmEntry(`g-${index}`)],
+          createdAt: index,
+        })),
+      );
+      // Older turns hold invalid JSON, so a write that reads them fails.
+      db.raw
+        .prepare(
+          "UPDATE tale_turns SET entries_json = 'invalid' WHERE tale_id = ? AND seq <= ?",
+        )
+        .run(taleId, turnCount - 4);
+      const player = playerEntry("player", "Open the door.");
+      const gm = gmEntry("gm", "The hinges scream.");
+      const retried = gmEntry("gm-retry", "The door opens.");
+      const continuation = gmEntry("gm-2", "Dust falls.");
+      const retriedContinuation = gmEntry("gm-3", "Light spills in.");
+
+      work = { statements: 0, rowsRead: 0, coverReads: 0 };
+      const changesBefore = totalChanges();
+      await service.commitTaleTurn({ id: taleId, tale, entries: [player] });
+      await service.completePendingTaleTurn({
+        id: taleId,
+        tale,
+        pendingEntries: [player],
+        entries: [player, gm],
+      });
+      await service.retryTaleTurn({
+        id: taleId,
+        tale,
+        previousEntries: [player, gm],
+        entries: [player, retried],
+      });
+      await service.commitTaleTurn({
+        id: taleId,
+        tale,
+        entries: [continuation],
+      });
+      await service.retryTaleLogEntry({
+        id: taleId,
+        tale,
+        previousEntry: continuation,
+        replacementEntry: retriedContinuation,
+      });
+      await service.editTaleLogEntry({
+        id: taleId,
+        tale,
+        entryId: retried.id,
+        patch: { text: "The door swings open." },
+      });
+      await service.undoTaleLogToEntryCount({
+        id: taleId,
+        tale,
+        entryCount: turnCount * 2 + 2,
+      });
+      await service.redoTaleLogEntry({
+        id: taleId,
+        tale,
+        entry: retriedContinuation,
+      });
+      const measured = { ...work, rowsWritten: totalChanges() - changesBefore };
+
+      expect(
+        (await getLogEntries(taleId, turnCount * 2, 10)).map((entry) => [
+          entry.id,
+          entry.text,
+        ]),
+      ).toEqual([
+        ["player", "Open the door."],
+        ["gm-retry", "The door swings open."],
+        ["gm-3", "Light spills in."],
+      ]);
+      return measured;
+    };
+
+    const short = await playAtTheEnd(3);
+    expect(short.coverReads).toBe(0);
+    expect(await playAtTheEnd(400)).toEqual(short);
   });
 });
 

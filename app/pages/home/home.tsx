@@ -30,7 +30,7 @@ import {
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTaleLibrary } from "@/hooks/useTaleLibrary";
 import { imageBadgeClass } from "@/lib/card-badges";
-import { getSyncUiKind } from "@/lib/sync-ui";
+import { getSyncUiKind, getTaleSyncBadge } from "@/lib/sync-ui";
 import { HAKAWATI_CLIENT_VERSION } from "@/services/cloud-capabilities";
 import {
   getSyncProfile,
@@ -146,16 +146,19 @@ function TaleCard({
       item.localTale.description ||
       t`No description yet.`;
   const thumbnail = isRemote ? null : item.localTale.thumbnail;
-  const hasConflict =
-    syncActive && item.source === "local" && item.sync?.status === "conflict";
-  const isSynced = syncActive && (isRemote || Boolean(item.sync));
+  const badge = syncActive ? getTaleSyncBadge(item) : "local";
+  const hasConflict = badge === "conflict";
   const syncStatusUnknown =
     syncActive && item.source === "local" && !item.sync && syncStatusLoading;
   const statusLabel = hasConflict
     ? t`Needs review`
-    : isSynced
-      ? t`Cloud`
-      : t`Local`;
+    : badge === "cloud-full"
+      ? t`Cloud full`
+      : badge === "not-synced"
+        ? t`Not synced`
+        : badge === "cloud"
+          ? t`Cloud`
+          : t`Local`;
 
   return (
     <ScenarioPreviewCard
@@ -173,7 +176,7 @@ function TaleCard({
         !loading && syncActive && !syncStatusUnknown ? (
           <Badge
             className={`${imageBadgeClass} ${
-              hasConflict ? "text-destructive" : ""
+              badge === "local" || badge === "cloud" ? "" : "text-destructive"
             }`}
           >
             {statusLabel}
@@ -294,6 +297,9 @@ export default function Home() {
   );
   const hostedRefreshFailed = useSyncSettingsStore(
     (state) => state.hostedRefreshFailed,
+  );
+  const cloudUpdateRequired = useSyncSettingsStore(
+    (state) => state.cloudUpdateRequired,
   );
   const deviceId = useSyncSettingsStore((state) => state.deviceId);
   const accountId = useSyncSettingsStore((state) => state.accountId);
@@ -613,7 +619,10 @@ export default function Home() {
           </span>
           {showAccountStatus && (
             <span className="truncate text-[11px] font-normal text-muted-foreground">
-              {syncUiKind === "signed-in" ? (
+              {cloudUpdateRequired &&
+              (syncUiKind === "signed-in" || syncUiKind === "personal") ? (
+                <Trans>Update Hakawati to sync</Trans>
+              ) : syncUiKind === "signed-in" ? (
                 <Trans>Cloud sync on</Trans>
               ) : syncUiKind === "sync-off" ? (
                 <Trans>Sync off</Trans>

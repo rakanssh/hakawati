@@ -410,6 +410,145 @@ describe("usePlaySession", () => {
     harness.cleanup();
   });
 
+  it("keeps why a reply failed as text, without placeholder narration", async () => {
+    persistenceMocks.saveTurn.mockResolvedValueOnce(undefined);
+    llmMocks.send.mockImplementationOnce(async (_message, callbacks) => {
+      const error = new Error("No auth credentials found");
+      callbacks.onError(error);
+      return { status: "error", error };
+    });
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const harness = renderSessionHarness();
+
+    const entry = await act(async () =>
+      harness.controls.executeLlmSend("Open the door", LogEntryMode.DO),
+    );
+    consoleError.mockRestore();
+
+    expect(entry).toMatchObject({
+      text: "",
+      error: "No auth credentials found",
+    });
+    // Saving keeps the reason, where an Error would have become `{}`.
+    const [saved] = persistenceMocks.saveTurn.mock.calls[0][1];
+    expect(JSON.parse(JSON.stringify(saved)).error).toBe(
+      "No auth credentials found",
+    );
+    harness.cleanup();
+  });
+
+  it("keeps a Story passage when Retry runs after its reply was undone", async () => {
+    const opening: LogEntry = {
+      id: "gm-1",
+      role: LogEntryRole.GM,
+      text: "The hall waits.",
+      chainId: "gm-1",
+    };
+    useTaleStore.setState({ log: [opening], totalLogCount: 1 });
+    persistenceMocks.saveTurn.mockResolvedValue(undefined);
+    persistenceMocks.completePendingTurn.mockResolvedValue(undefined);
+    persistenceMocks.undoToEntryCount.mockResolvedValue(undefined);
+    llmMocks.send
+      .mockImplementationOnce(async (_message, callbacks) => {
+        callbacks.onStoryStream("Shadows lengthen.");
+        return { status: "completed" };
+      })
+      .mockImplementationOnce(async (_message, callbacks) => {
+        callbacks.onStoryStream("Wind howls.");
+        return { status: "completed" };
+      });
+    const harness = renderSessionHarness();
+
+    act(() => {
+      harness.controls.setAction({
+        type: LogEntryMode.STORY,
+        isRolling: false,
+      });
+      harness.controls.setInput("The lantern gutters.");
+    });
+    await act(async () => {
+      await harness.controls.handleSubmit();
+    });
+    await flushAsyncWork();
+    act(() => harness.controls.handleUndo());
+    act(() => harness.controls.handleRetry());
+    await flushAsyncWork();
+
+    const passage = useTaleStore.getState().log[1];
+    expect(passage).toMatchObject({
+      text: "\n\nThe lantern gutters. ",
+      isStoryInput: true,
+    });
+    expect(useTaleStore.getState().log.map((entry) => entry.text)).toEqual([
+      "The hall waits.",
+      "\n\nThe lantern gutters. ",
+      "Wind howls.",
+    ]);
+    expect(persistenceMocks.retryEntry).not.toHaveBeenCalled();
+    expect(persistenceMocks.retryTurn).not.toHaveBeenCalled();
+    expect(persistenceMocks.saveTurn).toHaveBeenLastCalledWith("tale-1", [
+      expect.objectContaining({ text: "Wind howls.", chainId: "gm-1" }),
+    ]);
+    harness.cleanup();
+  });
+
+  it.each([
+    [
+      "an unmarked passage from an earlier version",
+      { id: "gm-1", role: LogEntryRole.GM, text: "The hall waits." },
+      "gm-1",
+    ],
+    [
+      "a passage that follows a player turn",
+      {
+        id: "player-1",
+        role: LogEntryRole.PLAYER,
+        mode: LogEntryMode.DO,
+        text: "Listen",
+      },
+      undefined,
+    ],
+  ] as const)(
+    "continues after %s instead of replacing it",
+    async (_case, previous, chainId) => {
+      const passage: LogEntry = {
+        id: "passage",
+        role: LogEntryRole.GM,
+        mode: LogEntryMode.STORY,
+        text: "\n\nThe lantern gutters. ",
+        chainId,
+      };
+      useTaleStore.setState({
+        log: [{ ...previous }, passage],
+        totalLogCount: 2,
+      });
+      persistenceMocks.saveTurn.mockResolvedValueOnce(undefined);
+      llmMocks.send.mockImplementationOnce(async (_message, callbacks) => {
+        callbacks.onStoryStream("Wind howls.");
+        return { status: "completed" };
+      });
+      const harness = renderSessionHarness();
+
+      act(() => harness.controls.handleRetry());
+      await flushAsyncWork();
+
+      expect(llmMocks.send).toHaveBeenCalledWith(
+        { text: passage.text, mode: LogEntryMode.CONTINUE },
+        expect.any(Object),
+      );
+      expect(useTaleStore.getState().log.map((entry) => entry.text)).toEqual([
+        previous.text,
+        passage.text,
+        "Wind howls.",
+      ]);
+      expect(persistenceMocks.retryEntry).not.toHaveBeenCalled();
+      expect(persistenceMocks.retryTurn).not.toHaveBeenCalled();
+      harness.cleanup();
+    },
+  );
+
   it("restores the retried entry when retry aborts before text", async () => {
     const playerEntry: LogEntry = {
       id: "player-1",

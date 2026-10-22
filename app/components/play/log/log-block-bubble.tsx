@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import { LLMAction } from "@/services/llm/schema";
-import { ErrorTooltip } from "./error-tooltip";
+import { LogEntryError } from "./log-entry-error";
 import { ActionBadge } from "./action-badge";
 import { LogBlock } from "@/lib/play-utils";
 import {
@@ -63,8 +63,8 @@ export function LogBlockBubble({
   const prevStreamingTextLengthRef = useRef(0);
 
   const actions: LLMAction[] = block.entries.flatMap((e) => e.actions || []);
-  const hasError = block.entries.some((e) => e.error !== undefined);
-  const errorEntry = block.entries.find((e) => e.error !== undefined);
+  // Once the story continues past a failed reply, its reason is no longer shown.
+  const latestError = block.entries.at(-1)?.error;
   const thinkingEntries = block.entries
     .map((entry, entryIndex) => ({
       id: entry.id,
@@ -185,7 +185,6 @@ export function LogBlockBubble({
           onCommitEdit={onEditCommit}
           onCancelEdit={onEditCancel}
         />
-        {hasError && errorEntry && <ErrorTooltip error={errorEntry.error} />}
         {isStreaming && (
           <span
             data-log-caret=""
@@ -193,6 +192,7 @@ export function LogBlockBubble({
           />
         )}
       </div>
+      {latestError !== undefined && <LogEntryError error={latestError} />}
       {showThinkingSection ? (
         <Collapsible
           open={thinkingOpen}

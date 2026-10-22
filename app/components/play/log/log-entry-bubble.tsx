@@ -6,7 +6,7 @@ import {
   Volume2Icon,
 } from "lucide-react";
 import { LogEntry, LogEntryMode } from "@/types/log.type";
-import { ErrorTooltip } from "./error-tooltip";
+import { LogEntryError } from "./log-entry-error";
 import { ActionBadge } from "./action-badge";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -95,7 +95,7 @@ export function LogEntryBubble({
   narration,
 }: LogEntryBubbleProps) {
   const { text, mode, actions, error } = entry;
-  const hasError = error !== undefined;
+  const errorReason = error !== undefined && <LogEntryError error={error} />;
   const body = content ?? <StoryText text={text} />;
   const actionIconClass = "me-2 mt-[0.3125em] inline h-[1em] w-[1em] shrink-0";
   const actionTextClass =
@@ -135,8 +135,8 @@ export function LogEntryBubble({
           <div data-log-entry-text="" className={actionTextClass}>
             {body}
           </div>
-          {hasError && <ErrorTooltip error={error} />}
         </div>
+        {errorReason}
         {footer}
       </div>
     );
@@ -152,8 +152,8 @@ export function LogEntryBubble({
         >
           {body}
         </div>
-        {hasError && <ErrorTooltip error={error} />}
       </div>
+      {errorReason}
       {footer}
     </div>
   );

@@ -22,7 +22,7 @@ import {
   type LogActionState,
 } from "@/types/log.type";
 import { LLMAction } from "@/services/llm/schema";
-import { Action } from "@/lib/play-utils";
+import { Action, getLogErrorReason } from "@/lib/play-utils";
 
 interface UsePlaySessionOptions {
   onSaveComplete?: () => void;
@@ -177,6 +177,20 @@ function isRestorableActionMode(
 
 function hasVisibleGeneratedText(entry: LogEntry | null | undefined): boolean {
   return Boolean(entry?.text.trim());
+}
+
+/** A passage the player wrote with Story; it sits in the GM's chain so the model continues it. */
+function isStoryInput(entry: LogEntry): boolean {
+  if (entry.isStoryInput) return true;
+  // Earlier versions saved passages unmarked, in this shape.
+  return (
+    entry.role === LogEntryRole.GM &&
+    entry.text.startsWith("\n\n") &&
+    entry.text.endsWith(" ") &&
+    !entry.thinking &&
+    !entry.actions?.length &&
+    entry.error === undefined
+  );
 }
 
 type GenerationPersistenceActions = {
@@ -436,6 +450,15 @@ export function usePlaySession(
           flushResponse();
         }
       };
+      // Any text that streamed stays. The reason is kept as text, which
+      // survives saving where an Error would not.
+      const recordError = (error: unknown) => {
+        console.error("LLM Error:", error);
+        updateLogEntry(gmResponseId, {
+          error: getLogErrorReason(error) ?? true,
+          ...(thinkingContent ? { thinking: thinkingContent } : {}),
+        });
+      };
 
       try {
         const sendResult = await send(
@@ -478,16 +501,8 @@ export function usePlaySession(
             },
             onError: (error) => {
               if (!isCurrentSession()) return;
-              // Keep any partial text that streamed already.
               if (isAbortError(error)) return;
-              console.error("LLM Error:", error);
-              updateLogEntry(gmResponseId, {
-                error: error,
-                ...(thinkingContent ? { thinking: thinkingContent } : {}),
-                ...(storyContent.length === 0
-                  ? { text: "An error occurred while processing your request." }
-                  : {}),
-              });
+              recordError(error);
             },
           },
         );
@@ -503,14 +518,7 @@ export function usePlaySession(
           sendAborted = true;
         }
         if (isCurrentSession() && !isAbortError(error)) {
-          console.error("LLM Error:", error);
-          updateLogEntry(gmResponseId, {
-            error,
-            ...(thinkingContent ? { thinking: thinkingContent } : {}),
-            ...(storyContent.length === 0
-              ? { text: "An error occurred while processing your request." }
-              : {}),
-          });
+          recordError(error);
         }
       } finally {
         if (rafId !== null) {
@@ -645,6 +653,7 @@ export function usePlaySession(
         text: "\n\n" + finalMessage + " ",
         mode: LogEntryMode.STORY,
         chainId: lastChainId,
+        isStoryInput: true,
       };
       addLog(storyEntry);
       setInput("");
@@ -715,6 +724,14 @@ export function usePlaySession(
     const lastEntry = stateLog.at(-1);
     if (lastEntry?.role !== LogEntryRole.GM) {
       console.warn("Cannot retry, last entry is not GM.");
+      return;
+    }
+    // The player's own passage stays; what is missing is the reply after it.
+    if (isStoryInput(lastEntry)) {
+      void executeLlmSend("", LogEntryMode.CONTINUE, {
+        continueChain: true,
+        persistence: { type: "continuation" },
+      });
       return;
     }
     const prevEntry = stateLog.at(-2);

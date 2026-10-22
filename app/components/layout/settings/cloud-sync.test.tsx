@@ -39,6 +39,7 @@ const syncStoreState = vi.hoisted(() => ({
   accessTokenExpiresAt: null as number | null,
   hasRefreshToken: true,
   hostedRefreshFailed: false,
+  cloudUpdateRequired: false,
   deviceId: "device-1",
   accountId: "account-1",
   hostedDeviceIdsByAccountId: { "account-1": "device-1" },
@@ -231,6 +232,7 @@ describe("SettingsCloudSync storage usage", () => {
       accountDisplayName: "Player",
       accountEmail: "player@example.com",
       hasRefreshToken: true,
+      cloudUpdateRequired: false,
     });
     syncStoreState.getOrCreateHostedDeviceId.mockImplementation(
       (accountId: string) =>
@@ -314,6 +316,18 @@ describe("SettingsCloudSync storage usage", () => {
     expect(document.body.textContent).not.toContain("Personal sync server");
     expect(document.body.textContent).not.toContain("Connect Personal Sync");
     expect(document.body.textContent).toContain("On for this device");
+
+    view.cleanup();
+  });
+
+  it("asks for an app update when the cloud refuses this version", async () => {
+    syncStoreState.cloudUpdateRequired = true;
+
+    const view = render();
+    await flush();
+
+    expect(document.body.textContent).toContain("Update Hakawati to sync");
+    expect(document.body.textContent).not.toContain("On for this device");
 
     view.cleanup();
   });

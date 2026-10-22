@@ -13,6 +13,9 @@ use std::{
 
 const OAUTH_LOOPBACK_PORT: u16 = 47131;
 const OAUTH_CANCELLED: &str = "Sign-in cancelled";
+/// Each caller's `wait` sets the real sign-in window and cancels the listener
+/// when it ends. This only frees the port if no wait ever comes.
+const LISTENER_LIFETIME: Duration = Duration::from_secs(30 * 60);
 static NEXT_LISTENER_ID: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Clone)]
@@ -207,7 +210,7 @@ fn read_callback(
     listener
         .set_nonblocking(true)
         .map_err(|error| error.to_string())?;
-    let deadline = Instant::now() + Duration::from_secs(120);
+    let deadline = Instant::now() + LISTENER_LIFETIME;
     loop {
         if cancel_rx.try_recv().is_ok() {
             return Err(OAUTH_CANCELLED.to_string());
@@ -351,6 +354,24 @@ mod tests {
         assert_eq!(waiter.join().unwrap().unwrap_err(), OAUTH_CANCELLED);
         TcpListener::bind(("127.0.0.1", port))
             .expect("cancelling login should release the callback port");
+    }
+
+    #[test]
+    fn a_wait_that_times_out_releases_the_port_before_the_listener_would() {
+        let state = OAuthLoopbackState::default();
+        let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let started = state.start(listener).unwrap();
+
+        assert_eq!(
+            state
+                .wait(&started.id, Duration::from_millis(100))
+                .unwrap_err(),
+            "Timed out waiting for sign-in callback"
+        );
+        thread::sleep(Duration::from_millis(200));
+        TcpListener::bind(("127.0.0.1", port))
+            .expect("the caller's sign-in window, not the listener's, should end the login");
     }
 
     #[test]

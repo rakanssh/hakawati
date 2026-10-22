@@ -45,6 +45,8 @@ export class RecordingInterruptedError extends Error {
 }
 
 const RECORDING_STATS_POLL_INTERVAL_MS = 50;
+/** A transcription still running after this long is given up on. */
+export const TRANSCRIPTION_TIMEOUT_MS = 2 * 60_000;
 
 function isNativeSpeechRecorderError(
   error: unknown,
@@ -185,6 +187,15 @@ export function useSpeechRecorder({
     }
   }, [onError, startRecordingStats, stopRecordingStats]);
 
+  /** Frees the composer at once; whatever the request returns later is ignored. */
+  const abandonTranscription = useCallback((controller: AbortController) => {
+    if (abortRef.current !== controller) return false;
+    controller.abort();
+    abortRef.current = null;
+    setStatus("idle");
+    return true;
+  }, []);
+
   const stop = useCallback(() => {
     const controller = abortRef.current;
     if (!isRecordingRef.current || !controller) return;
@@ -192,6 +203,11 @@ export function useSpeechRecorder({
     isRecordingRef.current = false;
     stopRecordingStats();
     setStatus("transcribing");
+    const timeout = window.setTimeout(() => {
+      if (abandonTranscription(controller)) {
+        onError(new Error("Transcription timed out."));
+      }
+    }, TRANSCRIPTION_TIMEOUT_MS);
     void invoke<NativeSpeechRecording>("stop_speech_recording")
       .then(async (recording) => {
         if (controller.signal.aborted) return;
@@ -204,15 +220,21 @@ export function useSpeechRecorder({
         onError(normalizeMicrophoneError(error));
       })
       .finally(() => {
+        window.clearTimeout(timeout);
         if (abortRef.current !== controller) return;
         abortRef.current = null;
         setStatus("idle");
       });
-  }, [onError, onTranscript, stopRecordingStats]);
+  }, [abandonTranscription, onError, onTranscript, stopRecordingStats]);
 
   const cancel = useCallback(() => {
     const controller = abortRef.current;
-    if (!isRecordingRef.current || !controller) return;
+    if (!controller) return;
+    if (status === "transcribing") {
+      abandonTranscription(controller);
+      return;
+    }
+    if (!isRecordingRef.current) return;
 
     controller.abort();
     stopRecordingStats();
@@ -230,7 +252,7 @@ export function useSpeechRecorder({
         abortRef.current = null;
         setStatus("idle");
       });
-  }, [onError, stopRecordingStats]);
+  }, [abandonTranscription, onError, status, stopRecordingStats]);
 
   const toggle = useCallback(() => {
     if (status === "recording") {
