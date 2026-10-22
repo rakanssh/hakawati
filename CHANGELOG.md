@@ -33,6 +33,7 @@ All notable changes to this project are documented in this file.
 - Switching between Act, Speak, Story, and Direct, or turning Roll on, no longer closes the phone keyboard.
 - Swiping across a menu button, such as Create on the home screen, scrolls the page instead of opening the menu.
 - The input box now resizes to fit its text when you resize the window.
+- Leaving the play screen while the narrator is still writing keeps what was written so far, like Stop. Before, the tale could fall out of step with its save, and Retry or Continue then failed to save.
 
 ## [v1.2.0] - 2026-10-06
 

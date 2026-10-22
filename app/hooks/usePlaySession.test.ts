@@ -1,6 +1,6 @@
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiPreset, ApiType } from "@/types/api.type";
 import { LogEntryMode, LogEntryRole, type LogEntry } from "@/types/log.type";
 import { useTaleStore } from "@/store/useTaleStore";
@@ -210,6 +210,8 @@ describe("usePlaySession", () => {
     });
     expect(persistenceMocks.saveTurn).not.toHaveBeenCalled();
     expect(await pending).toBeNull();
+    // Nothing unsaved is left in the loaded tale.
+    expect(useTaleStore.getState().log).toEqual([]);
   });
 
   it("removes the placeholder GM entry and skips persistence when generation aborts", async () => {
@@ -443,5 +445,84 @@ describe("usePlaySession", () => {
     expect(useTaleStore.getState().totalLogCount).toBe(2);
 
     harness.cleanup();
+  });
+
+  describe("leaving the play screen during a retry", () => {
+    const playerEntry: LogEntry = {
+      id: "player-1",
+      role: LogEntryRole.PLAYER,
+      mode: LogEntryMode.DO,
+      text: "Open the door",
+    };
+    const oldGmEntry: LogEntry = {
+      id: "gm-old",
+      role: LogEntryRole.GM,
+      text: "It stays shut.",
+    };
+
+    beforeEach(() => {
+      useTaleStore.setState({
+        ...useTaleStore.getInitialState(),
+        id: "tale-1",
+        log: [playerEntry, oldGmEntry],
+        totalLogCount: 2,
+      });
+      // Stream chunks reach the log straight away, so the test sees what was on screen.
+      vi.stubGlobal("requestAnimationFrame", undefined);
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    /** A reply that streams `text`, then ends as cancelled once the screen closes. */
+    function replyCancelledOnLeave(text?: string) {
+      let leave!: () => void;
+      llmMocks.send.mockImplementationOnce(async (_message, callbacks) => {
+        if (text) callbacks.onStoryStream(text);
+        await new Promise<void>((resolve) => {
+          leave = resolve;
+        });
+        return {
+          status: "aborted",
+          error: new DOMException("Aborted", "AbortError"),
+        };
+      });
+      return () => leave();
+    }
+
+    it("restores the retried reply when nothing came back yet", async () => {
+      const finishCancel = replyCancelledOnLeave();
+      const harness = renderSessionHarness();
+      act(() => harness.controls.handleRetry());
+      harness.cleanup();
+      await act(async () => finishCancel());
+      await flushAsyncWork();
+
+      expect(persistenceMocks.retryTurn).not.toHaveBeenCalled();
+      expect(useTaleStore.getState().log).toEqual([playerEntry, oldGmEntry]);
+    });
+
+    it("saves the part of the reply that was shown", async () => {
+      persistenceMocks.retryTurn.mockResolvedValueOnce(undefined);
+      const finishCancel = replyCancelledOnLeave("It opens halfway.");
+      const harness = renderSessionHarness();
+      act(() => harness.controls.handleRetry());
+      harness.cleanup();
+      await act(async () => finishCancel());
+      await flushAsyncWork();
+
+      expect(persistenceMocks.retryTurn).toHaveBeenCalledWith(
+        "tale-1",
+        [playerEntry, oldGmEntry],
+        expect.any(Array),
+      );
+      const saved = persistenceMocks.retryTurn.mock.calls[0][2];
+      expect(useTaleStore.getState().log).toEqual(saved);
+      expect(saved.map((entry: LogEntry) => entry.text)).toEqual([
+        "Open the door",
+        "It opens halfway.",
+      ]);
+    });
   });
 });
