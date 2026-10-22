@@ -4,6 +4,12 @@
 <dict>
   <key>NSMicrophoneUsageDescription</key>
   <string>Hakawati uses the microphone to record speech and transcribe it into the story input box.</string>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>Hakawati connects to AI servers you run on your local network.</string>
+  <!-- Encryption is limited to HTTPS and the on-device vault for the ChatGPT
+       sign-in, so App Store Connect doesn't ask about export compliance. -->
+  <key>ITSAppUsesNonExemptEncryption</key>
+  <false/>
   <!-- Apps built with the iOS 27 SDK must run on the scene life cycle. Tao supplies
        the scene delegate once the app declares a manifest. -->
   <key>UIApplicationSceneManifest</key>

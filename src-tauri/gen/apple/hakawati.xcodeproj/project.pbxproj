@@ -18,6 +18,7 @@
 		A6B206430C89D6CC86EDB654 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 89AB3F70598FC544EE4933CA /* main.mm */; };
 		D1353546C35BA54E2B96C4E9 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 885779B56CF6C826CB05EE6B /* WebKit.framework */; };
 		D143DA815145DC1171020B20 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD83A8014AD22B34935ABFDC /* Security.framework */; };
+		DDC29AF87CD22FE5BE0F80B3 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 2D58D9139CA6460CACDB34A5 /* PrivacyInfo.xcprivacy */; };
 		EE637021B74347324F83E62B /* libapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3B5576FCA6703ACE4A1CDC18 /* libapp.a */; };
 /* End PBXBuildFile section */
 
@@ -30,6 +31,7 @@
 		19CF70DEEAE996488CD0E19C /* main.rs */ = {isa = PBXFileReference; path = main.rs; sourceTree = "<group>"; };
 		23A49A574D64CBD8F32F64B6 /* migration_backup.rs */ = {isa = PBXFileReference; path = migration_backup.rs; sourceTree = "<group>"; };
 		2BA33239E1AE5C4EF891403B /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = SOURCE_ROOT; };
+		2D58D9139CA6460CACDB34A5 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		3B5576FCA6703ACE4A1CDC18 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
 		5DC2F6408527C8BC214C5587 /* secret_store.rs */ = {isa = PBXFileReference; path = secret_store.rs; sourceTree = "<group>"; };
 		60534D4FB6BE3B7A14F723B3 /* hakawati_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = hakawati_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -146,6 +148,7 @@
 			children = (
 				03AF8CF374376B484CC7A37B /* hakawati_iOS.entitlements */,
 				BFD2D257261D5EC3B9480FEF /* Info.plist */,
+				2D58D9139CA6460CACDB34A5 /* PrivacyInfo.xcprivacy */,
 			);
 			path = hakawati_iOS;
 			sourceTree = "<group>";
@@ -233,6 +236,7 @@
 				8C0DDA5382E5D2AE28B105BC /* Assets.xcassets in Resources */,
 				0485318900F4A6E6BC9A35E1 /* LaunchScreen.storyboard in Resources */,
 				033B89D219E0BDDF53203633 /* assets in Resources */,
+				DDC29AF87CD22FE5BE0F80B3 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
