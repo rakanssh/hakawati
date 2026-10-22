@@ -7,10 +7,7 @@ import {
   ChatGptUsageLink,
 } from "./chatgpt-connection";
 import { useChatGptStore } from "@/store/useChatGptStore";
-import {
-  createDefaultModelRoles,
-  useSettingsStore,
-} from "@/store/useSettingsStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 const auth = vi.hoisted(() => ({
   getChatGptSession: vi.fn(),
@@ -47,7 +44,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   useSettingsStore.setState({
-    modelRoles: createDefaultModelRoles(),
+    ...useSettingsStore.getInitialState(),
     chatGptProfileId: null,
     chatGptPlanNoticeAcknowledged: false,
   });

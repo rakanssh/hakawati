@@ -77,7 +77,6 @@
 
 /* The reading surface: a clearer, frosted pane in the misted window. */
 .theme-rain-on-glass [data-play-backdrop] {
-  border-radius: 12px;
   background: color-mix(in oklch, var(--background) 52%, transparent);
   backdrop-filter: blur(8px);
   border: 1px solid oklch(1 0 0 / 0.55);

@@ -65,10 +65,11 @@ export function useLLMProviders(role: ModelRole = "narrator") {
         const refreshedCurrentModel = fetchedModels.find(
           (m) => m.id === currentModel?.id,
         );
-        if (!currentModel || !refreshedCurrentModel) {
-          setRoleModel(role, fetchedModels[0]);
-        } else {
+        if (refreshedCurrentModel) {
           setRoleModel(role, refreshedCurrentModel);
+        } else if (!currentModel || !currentModel.manual) {
+          // A model typed in by id stays even though the list doesn't have it.
+          setRoleModel(role, fetchedModels[0]);
         }
       } else if (isChatGpt) {
         setRoleModel(role, undefined);

@@ -11,7 +11,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     const textAreaRef = React.useRef<HTMLTextAreaElement>(null);
     React.useImperativeHandle(ref, () => textAreaRef.current!);
 
-    React.useLayoutEffect(() => {
+    const fitHeight = React.useCallback(() => {
       if (textAreaRef.current) {
         textAreaRef.current.style.height = "auto";
         const scrollHeight = textAreaRef.current.scrollHeight;
@@ -23,7 +23,17 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           textAreaRef.current.style.overflowY = "hidden";
         }
       }
-    }, [props.value]);
+    }, []);
+
+    React.useLayoutEffect(() => {
+      fitHeight();
+    }, [fitHeight, props.value]);
+
+    // Turning a phone or resizing the window rewraps the text and can change the padding.
+    React.useEffect(() => {
+      window.addEventListener("resize", fitHeight);
+      return () => window.removeEventListener("resize", fitHeight);
+    }, [fitHeight]);
 
     return (
       <textarea

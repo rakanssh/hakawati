@@ -1,4 +1,7 @@
 import {
+  Fragment,
+  createContext,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -33,6 +36,47 @@ export interface SettingsSectionDefinition<TId extends string = string> {
   group: ReactElement;
   icon: LucideIcon;
   component: ComponentType;
+  /** Titles the section's subpages in the header, when it has any. */
+  subpageTitle?: ComponentType<{ page: string }>;
+  /** Lets the section use more width on large screens, for side-by-side columns. */
+  wide?: boolean;
+}
+
+export interface SettingsNavigation {
+  /** The open subpage, or null on the section's own page. */
+  page: string | null;
+  push: (page: string) => void;
+  /** Swaps the open subpage for another, so going back skips it. */
+  replace: (page: string) => void;
+  back: () => void;
+  /** Closes the page only if it is still the open one, for work that finishes after the player may have moved on. */
+  leave: (page: string) => void;
+  /** Returns to the section's own page. */
+  reset: () => void;
+}
+
+const SettingsNavigationContext = createContext<SettingsNavigation>({
+  page: null,
+  push: () => {},
+  replace: () => {},
+  back: () => {},
+  leave: () => {},
+  reset: () => {},
+});
+
+/** Lets a section open pages of its own under the settings header. */
+export function useSettingsNavigation() {
+  return useContext(SettingsNavigationContext);
+}
+
+const SettingsWindowContext = createContext(false);
+
+/**
+ * True in the desktop settings window, where a row has room for its control
+ * beside its label, and short pick-one lists open as dropdowns instead of pages.
+ */
+export function useSettingsWindow() {
+  return useContext(SettingsWindowContext);
 }
 
 interface SettingsShellProps<TId extends string> {
@@ -78,6 +122,8 @@ export function SettingsShell<TId extends string>({
 }: SettingsShellProps<TId>) {
   const { isCompactViewport, isMobilePlatform } = useIsMobile();
   const useCompactLayout = isCompactViewport || isMobilePlatform;
+  // Phones and narrow windows get the whole screen; a desktop window gets a settings window.
+  const windowed = !useCompactLayout;
   const availableSections = useMemo(() => {
     if (!visibleSections) return sections;
     const allowed = new Set(visibleSections);
@@ -96,7 +142,32 @@ export function SettingsShell<TId extends string>({
     );
   });
   const [showingDetail, setShowingDetail] = useState(!useCompactLayout);
+  const [subpages, setSubpages] = useState<string[]>([]);
   const prevOpenRef = useRef(open);
+  const detailViewportRef = useRef<HTMLDivElement>(null);
+  const subpage = subpages[subpages.length - 1] ?? null;
+  // The actions keep their identity, so sections can depend on them in effects.
+  const navigationActions = useMemo<Omit<SettingsNavigation, "page">>(
+    () => ({
+      push: (page) => setSubpages((pages) => [...pages, page]),
+      replace: (page) => setSubpages((pages) => [...pages.slice(0, -1), page]),
+      back: () => setSubpages((pages) => pages.slice(0, -1)),
+      leave: (page) =>
+        setSubpages((pages) =>
+          pages[pages.length - 1] === page ? pages.slice(0, -1) : pages,
+        ),
+      reset: () => setSubpages([]),
+    }),
+    [],
+  );
+  const navigation = useMemo<SettingsNavigation>(
+    () => ({ page: subpage, ...navigationActions }),
+    [navigationActions, subpage],
+  );
+
+  useEffect(() => {
+    if (detailViewportRef.current) detailViewportRef.current.scrollTop = 0;
+  }, [subpage]);
 
   useEffect(() => {
     const wasOpen = prevOpenRef.current;
@@ -108,6 +179,7 @@ export function SettingsShell<TId extends string>({
         effectiveDefaultSection) as TId;
 
       setActiveSection(nextActive);
+      setSubpages([]);
       setShowingDetail(
         !useCompactLayout ||
           availableSections.length <= 1 ||
@@ -143,78 +215,114 @@ export function SettingsShell<TId extends string>({
 
   function selectSection(sectionId: TId) {
     setActiveSection(sectionId);
+    setSubpages([]);
     if (useCompactLayout) {
       setShowingDetail(true);
     }
   }
 
   const showSettingsList = useCompactLayout && !showingDetail;
+  const SubpageTitle = activeDefinition?.subpageTitle;
+  const showingSubpage = subpage !== null && !showSettingsList;
+  // The window's header shows the way back instead of a back arrow: the
+  // section, then each page above the open one.
+  const crumbs =
+    windowed && showingSubpage
+      ? [
+          { depth: 0, label: activeDefinition?.label ?? title },
+          ...subpages.slice(0, -1).map((page, index) => ({
+            depth: index + 1,
+            label: SubpageTitle ? <SubpageTitle page={page} /> : page,
+          })),
+        ]
+      : [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="top-0 left-0 flex h-dvh !w-screen !max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] ps-[env(safe-area-inset-left)] pe-[env(safe-area-inset-right)]"
+        onEscapeKeyDown={(event) => {
+          if (!showingSubpage) return;
+          event.preventDefault();
+          navigation.back();
+        }}
+        className={cn(
+          "flex flex-col gap-0 overflow-hidden p-0",
+          windowed
+            ? "h-[min(42.5rem,calc(100dvh-2rem))] w-[min(60rem,calc(100vw-2rem))] max-w-none sm:max-w-none"
+            : "top-0 left-0 h-dvh !w-screen !max-w-none translate-x-0 translate-y-0 rounded-none border-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] ps-[env(safe-area-inset-left)] pe-[env(safe-area-inset-right)]",
+        )}
       >
-        <div className="flex min-h-0 flex-1 flex-col bg-background">
-          <header className="flex shrink-0 items-center gap-2 border-b bg-background px-3 py-3 md:px-6">
-            {useCompactLayout &&
-            showingDetail &&
-            availableSections.length > 1 ? (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label="Back to settings"
-                onClick={() => setShowingDetail(false)}
-              >
-                <ChevronLeftIcon className="size-4 rtl:rotate-180" />
-              </Button>
-            ) : null}
-
-            <div className="min-w-0 flex-1">
-              <DialogTitle className="truncate text-lg leading-tight md:text-xl">
-                {showSettingsList ? title : (activeDefinition?.label ?? title)}
-              </DialogTitle>
-              <DialogDescription className="sr-only">
-                {!showSettingsList
-                  ? (activeDefinition?.description ?? description)
-                  : description}
-              </DialogDescription>
-            </div>
-
-            <DialogClose asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label="Close settings"
-                className="shrink-0"
-              >
-                <XIcon className="size-4" />
-              </Button>
-            </DialogClose>
-          </header>
-
-          <div className="min-h-0 flex-1 sm:grid sm:grid-cols-[300px_minmax(0,1fr)] lg:grid-cols-[340px_minmax(0,1fr)]">
-            <ScrollArea
+        <div
+          className={cn(
+            "flex min-h-0 flex-1 flex-col bg-background sm:grid",
+            windowed
+              ? "sm:grid-cols-[13.5rem_minmax(0,1fr)]"
+              : "sm:grid-cols-[260px_minmax(0,1fr)] lg:grid-cols-[280px_minmax(0,1fr)]",
+          )}
+        >
+          {/* Phones show the list and a section one at a time; wider screens keep the list beside it. */}
+          <aside
+            className={cn(
+              "min-h-0 flex-col bg-background sm:flex sm:border-e",
+              showSettingsList ? "flex flex-1" : "hidden",
+            )}
+          >
+            <div
               className={cn(
-                "min-h-0 bg-background sm:block sm:border-e",
-                showSettingsList ? "block h-full" : "hidden",
+                "flex shrink-0 items-center gap-2 border-b px-3 py-3 sm:border-b-0",
+                windowed
+                  ? "sm:px-4 sm:pt-4 sm:pb-2"
+                  : "sm:px-5 sm:pt-5 sm:pb-2",
               )}
             >
+              {showSettingsList ? (
+                <>
+                  <DialogTitle className="min-w-0 flex-1 truncate text-lg leading-tight">
+                    {title}
+                  </DialogTitle>
+                  <DialogDescription className="sr-only">
+                    {description}
+                  </DialogDescription>
+                </>
+              ) : (
+                <span className="min-w-0 flex-1 truncate text-lg font-semibold leading-tight">
+                  {title}
+                </span>
+              )}
+              <DialogClose asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Close settings"
+                  className="shrink-0 sm:hidden"
+                >
+                  <XIcon className="size-4" />
+                </Button>
+              </DialogClose>
+            </div>
+
+            <ScrollArea className="min-h-0 flex-1">
               <nav
-                className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 sm:max-w-none sm:p-5 lg:p-6"
+                className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-4 sm:max-w-none sm:gap-5 sm:px-3 sm:pt-2 sm:pb-5"
                 aria-label="Settings"
               >
                 {groupedSections.map((group, groupIndex) => (
-                  <div key={groupIndex} className="flex flex-col gap-2">
-                    <div className="px-1 text-xs font-medium uppercase tracking-normal text-muted-foreground">
+                  <div
+                    key={groupIndex}
+                    className="flex flex-col gap-2 sm:gap-1"
+                  >
+                    <div
+                      data-sidebar-heading=""
+                      className="px-1 text-xs font-semibold text-muted-foreground sm:px-2.5"
+                    >
                       {group.label}
                     </div>
-                    <div className="overflow-hidden rounded-xs border bg-card">
+                    <div className="overflow-hidden rounded-xs border bg-card sm:flex sm:flex-col sm:gap-0.5 sm:overflow-visible sm:border-0 sm:bg-transparent">
                       {group.sections.map((section) => {
                         const Icon = section.icon;
+                        const active = section.id === activeSection;
 
                         return (
                           <button
@@ -222,23 +330,25 @@ export function SettingsShell<TId extends string>({
                             type="button"
                             className={cn(
                               "relative flex min-h-12 w-full items-center gap-3 border-b px-3 py-3 text-start text-sm transition-colors last:border-b-0 hover:bg-accent hover:text-accent-foreground",
-                              !useCompactLayout &&
-                                section.id === activeSection &&
-                                "bg-accent text-accent-foreground",
+                              "sm:gap-2.5 sm:rounded-xs sm:border-b-0 sm:px-2.5 sm:py-1.5 sm:text-foreground/85 sm:hover:bg-accent/60",
+                              windowed ? "sm:min-h-8" : "sm:min-h-9",
+                              active &&
+                                "sm:bg-primary/15 sm:text-primary sm:hover:bg-primary/20 sm:hover:text-primary",
                             )}
                             onClick={() => selectSection(section.id)}
-                            aria-current={
-                              section.id === activeSection ? "page" : undefined
-                            }
+                            aria-current={active ? "page" : undefined}
                           >
-                            <Icon className="size-4 shrink-0 text-muted-foreground" />
-                            <span className="min-w-0 flex-1 truncate font-medium">
+                            <Icon className="size-4 shrink-0 text-muted-foreground sm:text-current" />
+                            <span
+                              className={cn(
+                                "min-w-0 flex-1 truncate font-medium",
+                                active ? "sm:font-semibold" : "sm:font-normal",
+                              )}
+                            >
                               {section.label}
                             </span>
                             {renderSectionExtra?.(section.id)}
-                            {useCompactLayout ? (
-                              <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground rtl:rotate-180" />
-                            ) : null}
+                            <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground sm:hidden rtl:rotate-180" />
                           </button>
                         );
                       })}
@@ -247,21 +357,118 @@ export function SettingsShell<TId extends string>({
                 ))}
               </nav>
             </ScrollArea>
+          </aside>
 
-            <section
+          <section
+            className={cn(
+              "min-h-0 flex-col bg-card sm:flex",
+              showSettingsList ? "hidden" : "flex flex-1",
+            )}
+          >
+            <header
               className={cn(
-                "min-h-0 bg-card sm:flex sm:flex-col",
-                // Phones stack the panes, so the detail needs a height to scroll in.
-                showSettingsList ? "hidden" : "flex h-full flex-col",
+                "flex shrink-0 items-center gap-2 border-b",
+                windowed ? "py-2 ps-6 pe-3" : "px-3 py-3 md:px-6",
               )}
             >
-              <ScrollArea className="h-full">
-                <div className="w-full px-4 py-4 sm:max-w-none sm:px-6 sm:py-6 lg:px-8 xl:px-10">
-                  {ActiveComponent && <ActiveComponent />}
-                </div>
-              </ScrollArea>
-            </section>
-          </div>
+              {showingSubpage && !windowed ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Back"
+                  onClick={navigation.back}
+                >
+                  <ChevronLeftIcon className="size-4 rtl:rotate-180" />
+                </Button>
+              ) : useCompactLayout &&
+                showingDetail &&
+                availableSections.length > 1 ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Back to settings"
+                  onClick={() => setShowingDetail(false)}
+                >
+                  <ChevronLeftIcon className="size-4 rtl:rotate-180" />
+                </Button>
+              ) : null}
+
+              <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                {showSettingsList ? (
+                  <span className="block truncate text-lg font-semibold leading-tight md:text-xl">
+                    {activeDefinition?.label ?? title}
+                  </span>
+                ) : (
+                  <>
+                    {crumbs.map(({ depth, label }) => (
+                      <Fragment key={depth}>
+                        <button
+                          type="button"
+                          className="min-w-0 truncate text-lg leading-tight text-muted-foreground transition-colors hover:text-foreground"
+                          onClick={() =>
+                            setSubpages((pages) => pages.slice(0, depth))
+                          }
+                        >
+                          {label}
+                        </button>
+                        <ChevronRightIcon
+                          aria-hidden="true"
+                          className="size-4 shrink-0 text-muted-foreground rtl:rotate-180"
+                        />
+                      </Fragment>
+                    ))}
+                    <DialogTitle className="min-w-0 truncate text-lg leading-tight md:text-xl">
+                      {showingSubpage && SubpageTitle ? (
+                        <SubpageTitle page={subpage} />
+                      ) : (
+                        (activeDefinition?.label ?? title)
+                      )}
+                    </DialogTitle>
+                    <DialogDescription className="sr-only">
+                      {activeDefinition?.description ?? description}
+                    </DialogDescription>
+                  </>
+                )}
+              </div>
+
+              <DialogClose asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Close settings"
+                  className="shrink-0"
+                >
+                  <XIcon className="size-4" />
+                </Button>
+              </DialogClose>
+            </header>
+
+            <ScrollArea
+              className="min-h-0 flex-1"
+              viewportRef={detailViewportRef}
+            >
+              <div
+                className={cn(
+                  "w-full",
+                  windowed
+                    ? "px-6 py-5"
+                    : "px-4 py-4 sm:px-6 sm:py-6 lg:px-8 xl:px-10",
+                  // Rows stay readable on large screens instead of spreading across the pane.
+                  !windowed &&
+                    (activeDefinition?.wide ? "max-w-5xl" : "max-w-3xl"),
+                )}
+              >
+                <SettingsWindowContext.Provider value={windowed}>
+                  <SettingsNavigationContext.Provider value={navigation}>
+                    {ActiveComponent && <ActiveComponent />}
+                  </SettingsNavigationContext.Provider>
+                </SettingsWindowContext.Provider>
+              </div>
+            </ScrollArea>
+          </section>
         </div>
       </DialogContent>
     </Dialog>

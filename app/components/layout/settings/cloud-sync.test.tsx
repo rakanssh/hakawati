@@ -3,11 +3,22 @@ import { I18nProvider } from "@lingui/react";
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import SettingsCloudSync from "./cloud-sync";
+import { Cloud } from "lucide-react";
+import SettingsCloudSync, { CloudSyncTitle } from "./cloud-sync";
+import { SettingsShell } from "./settings-shell";
 import { deleteHostedRefreshToken } from "@/services/secret-store";
+import {
+  decideAllTaleSyncPreferences,
+  listUndecidedTales,
+} from "@/services/new-tale-sync";
 
 i18n.load("en", {});
 i18n.activate("en");
+
+vi.mock("@lingui/core/macro", () => ({
+  plural: (count: number, forms: { one: string; other: string }) =>
+    (count === 1 ? forms.one : forms.other).replace("#", String(count)),
+}));
 
 vi.mock("@lingui/react/macro", () => ({
   Trans: ({ children }: { children: unknown }) => children,
@@ -62,6 +73,8 @@ const syncServiceMocks = vi.hoisted(() => ({
   prepareHostedSync: vi.fn(),
   registerSyncDevice: vi.fn(),
   signInHostedSync: vi.fn(),
+  isHostedSignInCancelledError: vi.fn(() => false),
+  HostedSignInCancelledError: class extends Error {},
   updateHostedAccountProfile: vi.fn(),
   unregisterHostedDevice: vi.fn(),
 }));
@@ -126,6 +139,7 @@ vi.mock("@/hooks/useTaleLibrary", () => ({
         },
       },
     ],
+    total: 12,
     remoteLoading: false,
     remoteError: null,
     removeLibraryTaleFromCloud: taleLibraryMocks.removeLibraryTaleFromCloud,
@@ -141,7 +155,28 @@ function render() {
   const root = createRoot(container);
   act(() => {
     root.render(
-      createElement(I18nProvider, { i18n }, createElement(SettingsCloudSync)),
+      createElement(
+        I18nProvider,
+        { i18n },
+        createElement(SettingsShell<"cloud-sync">, {
+          open: true,
+          onOpenChange: () => {},
+          title: createElement("span", null, "Settings"),
+          description: createElement("span", null, "Settings"),
+          sections: [
+            {
+              id: "cloud-sync",
+              label: createElement("span", null, "Account & Sync"),
+              description: createElement("span", null, "Account"),
+              groupId: "account",
+              group: createElement("span", null, "Account"),
+              icon: Cloud,
+              component: SettingsCloudSync,
+              subpageTitle: CloudSyncTitle,
+            },
+          ],
+        }),
+      ),
     );
   });
   return {
@@ -216,11 +251,11 @@ describe("SettingsCloudSync storage usage", () => {
   it("resets the cloud URL to the build default and clears the previous server session", async () => {
     const view = render();
     await flush();
-    const cloudSection = [...view.container.querySelectorAll("button")].find(
-      (button) => button.textContent === "Cloud service",
+    const cloudSection = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent === "Cloud service settings",
     )!;
     act(() => cloudSection.click());
-    const reset = [...view.container.querySelectorAll("button")].find(
+    const reset = [...document.body.querySelectorAll("button")].find(
       (button) => button.textContent === "Reset to Default",
     )!;
     expect(reset.disabled).toBe(false);
@@ -235,7 +270,7 @@ describe("SettingsCloudSync storage usage", () => {
       "hosted",
       "signed_out",
     );
-    expect(view.container.textContent).toContain(
+    expect(document.body.textContent).toContain(
       "Cloud URL changed. Sign in again to continue.",
     );
     view.cleanup();
@@ -245,11 +280,11 @@ describe("SettingsCloudSync storage usage", () => {
     syncStoreState.cloudBaseUrl = "https://default.example";
     const view = render();
     await flush();
-    const cloudSection = [...view.container.querySelectorAll("button")].find(
-      (button) => button.textContent === "Cloud service",
+    const cloudSection = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent === "Cloud service settings",
     )!;
     act(() => cloudSection.click());
-    const reset = [...view.container.querySelectorAll("button")].find(
+    const reset = [...document.body.querySelectorAll("button")].find(
       (button) => button.textContent === "Reset to Default",
     )!;
     expect(reset.disabled).toBe(true);
@@ -269,9 +304,9 @@ describe("SettingsCloudSync storage usage", () => {
     const view = render();
     await flush();
 
-    expect(view.container.textContent).not.toContain("Personal sync server");
-    expect(view.container.textContent).not.toContain("Connect Personal Sync");
-    expect(view.container.textContent).toContain("Cloud sync on");
+    expect(document.body.textContent).not.toContain("Personal sync server");
+    expect(document.body.textContent).not.toContain("Connect Personal Sync");
+    expect(document.body.textContent).toContain("On for this device");
 
     view.cleanup();
   });
@@ -280,20 +315,25 @@ describe("SettingsCloudSync storage usage", () => {
     const view = render();
     await flush();
 
-    expect(view.container.textContent).toContain("3/50 tales");
-    expect(view.container.textContent).toContain("1.5 MB / 10 MB storage");
+    expect(document.body.textContent).toContain(
+      "3 of 50 tales · 1.5 MB of 10 MB",
+    );
+    // The bars stay on the cloud tales page.
+    expect(
+      document.body.querySelectorAll('[data-slot="progress"]'),
+    ).toHaveLength(0);
 
     view.cleanup();
   });
 
-  it("removes a cloud tale from the manage storage dialog and refreshes usage", async () => {
+  it("removes a cloud tale from the cloud tales page and refreshes usage", async () => {
     const view = render();
     await flush();
 
-    const manage = [...view.container.querySelectorAll("button")].find(
-      (button) => button.textContent?.includes("Manage storage"),
+    const manage = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent?.includes("Tales in the cloud"),
     );
-    if (!manage) throw new Error("Manage storage button did not render");
+    if (!manage) throw new Error("Tales in the cloud did not render");
     act(() => {
       manage.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
@@ -326,23 +366,24 @@ describe("SettingsCloudSync storage usage", () => {
     const view = render();
     await flush();
 
-    const manage = [...view.container.querySelectorAll("button")].find(
-      (button) => button.textContent?.includes("Manage devices"),
+    const manage = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent?.startsWith("Devices"),
     );
-    if (!manage) throw new Error("Manage devices button did not render");
+    if (!manage) throw new Error("Devices did not render");
     act(() => {
       manage.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
     await flush();
 
-    expect(document.body.textContent).toContain("2/3");
+    expect(document.body.textContent).toContain("2 of 3");
     expect(document.body.textContent).toContain("Laptop");
     expect(document.body.textContent).toContain("Tablet");
-    expect(document.body.textContent).toContain("Current");
-    const current = [...document.body.querySelectorAll("button")].find(
-      (button) => button.textContent?.includes("Current device"),
+    expect(document.body.textContent).toContain("This device");
+    // Only the other device can be unregistered.
+    const unregister = [...document.body.querySelectorAll("button")].filter(
+      (button) => button.textContent === "Unregister",
     );
-    expect(current).toHaveProperty("disabled", true);
+    expect(unregister).toHaveLength(1);
 
     view.cleanup();
   });
@@ -357,10 +398,10 @@ describe("SettingsCloudSync storage usage", () => {
     const view = render();
     await flush();
 
-    const manage = [...view.container.querySelectorAll("button")].find(
-      (button) => button.textContent?.includes("Manage devices"),
+    const manage = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent?.startsWith("Devices"),
     );
-    if (!manage) throw new Error("Manage devices button did not render");
+    if (!manage) throw new Error("Devices did not render");
     act(() => {
       manage.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
@@ -403,10 +444,10 @@ describe("SettingsCloudSync storage usage", () => {
     const view = render();
     await flush();
 
-    const manage = [...view.container.querySelectorAll("button")].find(
-      (button) => button.textContent?.includes("Manage devices"),
+    const manage = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent?.startsWith("Devices"),
     );
-    if (!manage) throw new Error("Manage devices button did not render");
+    if (!manage) throw new Error("Devices did not render");
     act(() => {
       manage.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
@@ -445,7 +486,7 @@ describe("SettingsCloudSync storage usage", () => {
     view.cleanup();
   });
 
-  it("keeps the device dialog open when current device registration fails", async () => {
+  it("stays on the devices page when current device registration fails", async () => {
     syncRepoMocks.getSyncProfile.mockResolvedValue({
       enabled: false,
       disabledReason: "device_limit",
@@ -462,10 +503,10 @@ describe("SettingsCloudSync storage usage", () => {
     const view = render();
     await flush();
 
-    const manage = [...view.container.querySelectorAll("button")].find(
-      (button) => button.textContent?.includes("Manage devices"),
+    const manage = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent?.startsWith("Devices"),
     );
-    if (!manage) throw new Error("Manage devices button did not render");
+    if (!manage) throw new Error("Devices did not render");
     act(() => {
       manage.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
@@ -481,10 +522,148 @@ describe("SettingsCloudSync storage usage", () => {
       await Promise.resolve();
     });
 
-    expect(document.body.textContent).toContain("Manage devices");
+    expect(
+      document.querySelector('[data-slot="dialog-title"]')?.textContent,
+    ).toBe("Devices");
     expect(document.body.textContent).toContain("Devices are unavailable.");
     expect(toastMocks.error).toHaveBeenCalledWith("Device limit reached");
 
+    view.cleanup();
+  });
+  it("shows a signed-out player the same page with a sign-in button", async () => {
+    Object.assign(syncStoreState, {
+      accessToken: "",
+      hasRefreshToken: false,
+      accountId: "",
+      accountDisplayName: "",
+      accountEmail: "",
+    });
+    const view = render();
+    await flush();
+
+    expect(document.body.textContent).toContain("Not signed in");
+    expect(document.body.textContent).toContain("Sign in to sync");
+    expect(document.body.textContent).toContain(
+      "Your 12 tales are only on this device.",
+    );
+    const signIn = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent === "Sign in",
+    );
+    expect(signIn?.disabled).toBe(false);
+    const toggle = document.querySelector<HTMLButtonElement>('[role="switch"]');
+    expect(toggle?.disabled).toBe(true);
+    expect(toggle?.getAttribute("aria-checked")).toBe("false");
+    expect(document.body.textContent).not.toContain("Sign out");
+
+    syncServiceMocks.signInHostedSync.mockRejectedValue(
+      new Error("Sign-in failed"),
+    );
+    await act(async () => signIn!.click());
+    expect(syncServiceMocks.signInHostedSync).toHaveBeenCalled();
+    expect(toastMocks.error).toHaveBeenCalledWith("Sign-in failed");
+
+    view.cleanup();
+  });
+
+  it("turns sync off from the switch", async () => {
+    const view = render();
+    await flush();
+
+    const toggle = document.querySelector<HTMLButtonElement>('[role="switch"]');
+    expect(toggle?.getAttribute("aria-checked")).toBe("true");
+    await act(async () => toggle!.click());
+
+    expect(syncRepoMocks.setSyncProfileDisabled).toHaveBeenCalledWith(
+      "hosted",
+      "user_disabled",
+    );
+    expect(toggle?.getAttribute("aria-checked")).toBe("false");
+    expect(document.body.textContent).toContain("Off for this device");
+
+    view.cleanup();
+  });
+
+  it("renames the account from Edit", async () => {
+    syncServiceMocks.updateHostedAccountProfile.mockResolvedValue({
+      id: "account-1",
+      displayName: "Hero",
+      emailNormalized: "player@example.com",
+    });
+    const view = render();
+    await flush();
+
+    const edit = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent === "Edit",
+    )!;
+    act(() => edit.click());
+    const input =
+      document.querySelector<HTMLInputElement>("#sync-display-name")!;
+    expect(input.value).toBe("Player");
+    act(() => {
+      Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )!.set!.call(input, "Hero");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    const save = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent === "Save",
+    )!;
+    await act(async () => save.click());
+
+    expect(syncServiceMocks.updateHostedAccountProfile).toHaveBeenCalledWith(
+      {},
+      { displayName: "Hero" },
+    );
+    expect(syncStoreState.setAccount).toHaveBeenCalledWith({
+      id: "account-1",
+      displayName: "Hero",
+      email: "player@example.com",
+    });
+    expect(document.querySelector("#sync-display-name")).toBeNull();
+
+    view.cleanup();
+  });
+  it("stays on the page you moved to when saving tale choices finishes", async () => {
+    vi.mocked(listUndecidedTales).mockResolvedValue([
+      { id: "tale-1", name: "Lost Tale", description: "", updatedAt: 0 },
+    ]);
+    let finish!: () => void;
+    vi.mocked(decideAllTaleSyncPreferences).mockReturnValue(
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const view = render();
+    await flush();
+    const button = (start: string) =>
+      [...document.body.querySelectorAll<HTMLButtonElement>("button")].find(
+        (element) => element.textContent?.startsWith(start),
+      )!;
+    const title = () =>
+      document.querySelector('[data-slot="dialog-title"]')?.textContent;
+
+    act(() => button("Tales waiting for a choice").click());
+    await flush();
+    expect(title()).toBe("Tales waiting for a choice");
+    act(() => button("Sync all").click());
+    act(() =>
+      [...document.querySelectorAll<HTMLButtonElement>("header button")]
+        .find((element) => element.textContent === "Account & Sync")!
+        .click(),
+    );
+    act(() => button("Devices").click());
+    await flush();
+    expect(title()).toBe("Devices");
+
+    await act(async () => {
+      finish();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(title()).toBe("Devices");
+
+    vi.mocked(listUndecidedTales).mockResolvedValue([]);
     view.cleanup();
   });
 });

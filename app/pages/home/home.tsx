@@ -265,12 +265,6 @@ export default function Home() {
     null,
   );
   const [resolvingConflict, setResolvingConflict] = useState(false);
-  const nonPlayTabs: readonly GlobalSettingsSectionId[] = [
-    "appearance",
-    "ai-setup",
-    "generation",
-    "cloud-sync",
-  ];
   const { lastPlayedTaleId } = useLastPlayedStore();
   const { load } = useLoadTale();
   const tales = useTaleLibrary(1, 6);
@@ -936,7 +930,6 @@ export default function Home() {
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         defaultTab={settingsTab}
-        visibleTabs={nonPlayTabs}
       />
       <GenerateScenarioDialog
         open={generateOpen}

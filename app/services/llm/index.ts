@@ -2,7 +2,14 @@ import { DEFAULT_TTS_VOICE, useSettingsStore } from "@/store/useSettingsStore";
 import { OpenAiClient } from "./adapters/openai";
 import { ChatGptClient } from "./adapters/chatgpt";
 import { ChatRequest, LLMModel } from "./schema";
-import { ApiPreset, ApiType, ModelRole, ModelRoleSettings } from "@/types";
+import {
+  ApiConnection,
+  ApiPreset,
+  ApiType,
+  ModelRole,
+  ModelRoleSettings,
+} from "@/types";
+import { connectionBaseUrl } from "@/data/api-presets";
 import {
   getModelReasoning,
   normalizeReasoningEffort,
@@ -104,6 +111,21 @@ export async function sendRoleChat(
 
 export async function getRoleModels(role: ModelRole, signal?: AbortSignal) {
   return getClient(role).models(signal);
+}
+
+/** The chat models a connection offers, whichever roles use it. */
+export async function getConnectionModels(
+  connection: ApiConnection,
+  signal?: AbortSignal,
+) {
+  const client =
+    connection.preset === ApiPreset.CHATGPT
+      ? ChatGptClient()
+      : OpenAiClient({
+          baseUrl: connectionBaseUrl(connection),
+          apiKey: connection.apiKey || undefined,
+        });
+  return client.models(signal);
 }
 
 export async function transcribeSpeech(audio: Blob, signal?: AbortSignal) {

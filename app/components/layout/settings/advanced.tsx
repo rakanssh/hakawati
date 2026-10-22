@@ -1,15 +1,18 @@
+import { useState } from "react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useSettingsStore } from "@/store";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
+import { useSettingsStore } from "@/store";
 import {
   AI_INSTRUCTIONS_PROMPT,
   GM_SYSTEM_PROMPT,
@@ -17,389 +20,351 @@ import {
   CONTINUE_AUTHOR_NOTE,
   STORY_CARD_GENERATOR_PROMPT,
 } from "@/prompts";
-import { AlertTriangleIcon } from "lucide-react";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { useSettingsNavigation, useSettingsWindow } from "./settings-shell";
+import {
+  LinkRow,
+  RowText,
+  Segmented,
+  SetupList,
+  useRowClass,
+} from "./settings-rows";
 
-export default function SettingsAdvanced() {
-  const { t } = useLingui();
-  const {
-    customGmPrompt,
-    customStorytellerPrompt,
-    customContinuePrompt,
-    customContinueAuthorNote,
-    customStoryCardGeneratorPrompt,
-    useCustomGmPrompt,
-    useCustomStorytellerPrompt,
-    useCustomContinuePrompt,
-    useCustomContinueAuthorNote,
-    useCustomStoryCardGeneratorPrompt,
-    setCustomGmPrompt,
-    setCustomStorytellerPrompt,
-    setCustomContinuePrompt,
-    setCustomContinueAuthorNote,
-    setCustomStoryCardGeneratorPrompt,
-    setUseCustomGmPrompt,
-    setUseCustomStorytellerPrompt,
-    setUseCustomContinuePrompt,
-    setUseCustomContinueAuthorNote,
-    setUseCustomStoryCardGeneratorPrompt,
-    resetGmPrompt,
-    resetStorytellerPrompt,
-    resetContinuePrompt,
-    resetContinueAuthorNote,
-    resetStoryCardGeneratorPrompt,
-    resetAllPromptsToDefault,
-  } = useSettingsStore();
+type PromptId =
+  | "instructions"
+  | "continue"
+  | "author-note"
+  | "gm"
+  | "story-cards";
 
-  const handleGmCheckChange = (checked: boolean) => {
-    setUseCustomGmPrompt(checked);
-    if (checked) {
-      setCustomGmPrompt(GM_SYSTEM_PROMPT);
-    }
-  };
+const PROMPT_IDS: PromptId[] = [
+  "instructions",
+  "continue",
+  "author-note",
+  "gm",
+  "story-cards",
+];
 
-  const handleStorytellerCheckChange = (checked: boolean) => {
-    setUseCustomStorytellerPrompt(checked);
-    if (checked) {
-      setCustomStorytellerPrompt(AI_INSTRUCTIONS_PROMPT);
-    }
-  };
+const pageOf = (id: PromptId) => `prompt:${id}`;
 
-  const handleContinueCheckChange = (checked: boolean) => {
-    setUseCustomContinuePrompt(checked);
-    if (checked) {
-      setCustomContinuePrompt(CONTINUE_SYSTEM_PROMPT);
-    }
-  };
+function PromptName({ id }: { id: PromptId }) {
+  switch (id) {
+    case "instructions":
+      return <Trans>AI instructions</Trans>;
+    case "continue":
+      return <Trans>Continue</Trans>;
+    case "author-note":
+      return <Trans>Continue author note</Trans>;
+    case "gm":
+      return <Trans>Game Master mechanics</Trans>;
+    case "story-cards":
+      return <Trans>Story card generator</Trans>;
+  }
+}
 
-  const handleContinueAuthorNoteCheckChange = (checked: boolean) => {
-    setUseCustomContinueAuthorNote(checked);
-    if (checked) {
-      setCustomContinueAuthorNote(CONTINUE_AUTHOR_NOTE);
-    }
-  };
+function PromptUsage({ id }: { id: PromptId }) {
+  switch (id) {
+    case "instructions":
+      return (
+        <Trans>Used by tales and scenarios that don’t set their own.</Trans>
+      );
+    case "continue":
+      return <Trans>Sent as your turn when you continue the story.</Trans>;
+    case "author-note":
+      return (
+        <Trans>
+          Added near the end of the prompt when you continue the story.
+        </Trans>
+      );
+    case "gm":
+      return (
+        <Trans>Added in Game Master mode to explain the game’s tools.</Trans>
+      );
+    case "story-cards":
+      return <Trans>Used when generating story cards.</Trans>;
+  }
+}
 
-  const handleStoryCardGeneratorCheckChange = (checked: boolean) => {
-    setUseCustomStoryCardGeneratorPrompt(checked);
-    if (checked) {
-      setCustomStoryCardGeneratorPrompt(STORY_CARD_GENERATOR_PROMPT);
-    }
-  };
+function PromptWarning({ id }: { id: PromptId }) {
+  switch (id) {
+    case "gm":
+      return (
+        <Trans>
+          Game Master mode is still in development and sensitive to this prompt.
+        </Trans>
+      );
+    case "story-cards":
+      return (
+        <Trans>
+          The reply is read as JSON with content, triggers, and category. Keep
+          that format if you change it.
+        </Trans>
+      );
+    default:
+      return null;
+  }
+}
+
+/** One prompt's saved text, whether it's in use, and its built-in default. */
+function usePrompt(id: PromptId) {
+  const state = useSettingsStore();
+  switch (id) {
+    case "instructions":
+      return {
+        text: state.customStorytellerPrompt,
+        custom: state.useCustomStorytellerPrompt,
+        setText: state.setCustomStorytellerPrompt,
+        setCustom: state.setUseCustomStorytellerPrompt,
+        reset: state.resetStorytellerPrompt,
+        defaultText: AI_INSTRUCTIONS_PROMPT,
+      };
+    case "continue":
+      return {
+        text: state.customContinuePrompt,
+        custom: state.useCustomContinuePrompt,
+        setText: state.setCustomContinuePrompt,
+        setCustom: state.setUseCustomContinuePrompt,
+        reset: state.resetContinuePrompt,
+        defaultText: CONTINUE_SYSTEM_PROMPT,
+      };
+    case "author-note":
+      return {
+        text: state.customContinueAuthorNote,
+        custom: state.useCustomContinueAuthorNote,
+        setText: state.setCustomContinueAuthorNote,
+        setCustom: state.setUseCustomContinueAuthorNote,
+        reset: state.resetContinueAuthorNote,
+        defaultText: CONTINUE_AUTHOR_NOTE,
+      };
+    case "gm":
+      return {
+        text: state.customGmPrompt,
+        custom: state.useCustomGmPrompt,
+        setText: state.setCustomGmPrompt,
+        setCustom: state.setUseCustomGmPrompt,
+        reset: state.resetGmPrompt,
+        defaultText: GM_SYSTEM_PROMPT,
+      };
+    case "story-cards":
+      return {
+        text: state.customStoryCardGeneratorPrompt,
+        custom: state.useCustomStoryCardGeneratorPrompt,
+        setText: state.setCustomStoryCardGeneratorPrompt,
+        setCustom: state.setUseCustomStoryCardGeneratorPrompt,
+        reset: state.resetStoryCardGeneratorPrompt,
+        defaultText: STORY_CARD_GENERATOR_PROMPT,
+      };
+  }
+}
+
+interface PromptSelection {
+  selected: PromptId;
+  onSelect: (id: PromptId) => void;
+}
+
+/** Opens a prompt's page, or beside the editor, picks the prompt it shows. */
+function PromptRow({
+  id,
+  selection,
+}: {
+  id: PromptId;
+  selection?: PromptSelection;
+}) {
+  const navigation = useSettingsNavigation();
+  const rowClass = useRowClass({ interactive: true });
+  const { custom } = usePrompt(id);
+  const status = custom ? (
+    <span className="sidebar-chip shrink-0 rounded-xs border border-primary/55 bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+      <Trans>Custom</Trans>
+    </span>
+  ) : (
+    <span className="shrink-0 text-sm text-muted-foreground">
+      <Trans>Default</Trans>
+    </span>
+  );
+
+  if (selection) {
+    const selected = selection.selected === id;
+    return (
+      <button
+        type="button"
+        aria-current={selected || undefined}
+        className={cn(rowClass, selected && "bg-primary/10")}
+        onClick={() => selection.onSelect(id)}
+      >
+        <RowText title={<PromptName id={id} />} />
+        {status}
+      </button>
+    );
+  }
+  return (
+    <LinkRow
+      title={<PromptName id={id} />}
+      trailing={status}
+      onClick={() => navigation.push(pageOf(id))}
+    />
+  );
+}
+
+function PromptList({ selection }: { selection?: PromptSelection }) {
+  const anyCustom = useSettingsStore(
+    (state) =>
+      state.useCustomGmPrompt ||
+      state.useCustomStorytellerPrompt ||
+      state.useCustomContinuePrompt ||
+      state.useCustomContinueAuthorNote ||
+      state.useCustomStoryCardGeneratorPrompt,
+  );
+  const resetAll = useSettingsStore((state) => state.resetAllPromptsToDefault);
+  const [confirming, setConfirming] = useState(false);
 
   return (
-    <div className="flex flex-col gap-4 max-w-full">
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <Label>
-            <Trans>System Prompts</Trans>
-          </Label>
-          <Button
-            variant="destructive"
-            onClick={resetAllPromptsToDefault}
-            disabled={
-              !useCustomGmPrompt &&
-              !useCustomStorytellerPrompt &&
-              !useCustomContinuePrompt &&
-              !useCustomContinueAuthorNote &&
-              !useCustomStoryCardGeneratorPrompt
-            }
-          >
-            <Trans>Reset to Default</Trans>
-          </Button>
+    <div className="flex flex-col gap-4">
+      <SetupList>
+        {PROMPT_IDS.map((id) => (
+          <PromptRow key={id} id={id} selection={selection} />
+        ))}
+      </SetupList>
+      {anyCustom ? (
+        <Button
+          variant="ghost"
+          className="self-start px-1 text-destructive hover:text-destructive"
+          onClick={() => setConfirming(true)}
+        >
+          <Trans>Reset all to default</Trans>
+        </Button>
+      ) : null}
+      <AlertDialog open={confirming} onOpenChange={setConfirming}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              <Trans>Reset all prompts to default?</Trans>
+            </AlertDialogTitle>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              <Trans>Cancel</Trans>
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-white hover:bg-destructive/90"
+              onClick={resetAll}
+            >
+              <Trans>Reset</Trans>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+
+function PromptPage({ id }: { id: PromptId }) {
+  const { t } = useLingui();
+  // Beside the list, the editor names its prompt; on its own page, the header does.
+  const windowed = useSettingsWindow();
+  const prompt = usePrompt(id);
+  const text = prompt.custom
+    ? (prompt.text ?? prompt.defaultText)
+    : prompt.defaultText;
+  const edited =
+    prompt.custom &&
+    prompt.text !== undefined &&
+    prompt.text !== prompt.defaultText;
+  const hasWarning = id === "gm" || id === "story-cards";
+  const choice = (
+    <Segmented<"default" | "custom">
+      fill
+      label={t`Prompt`}
+      value={prompt.custom ? "custom" : "default"}
+      options={[
+        { value: "default", label: <Trans>Default</Trans> },
+        { value: "custom", label: <Trans>Custom</Trans> },
+      ]}
+      onChange={(value) => {
+        if (value === "custom" && prompt.text === undefined) {
+          prompt.setText(prompt.defaultText);
+        }
+        prompt.setCustom(value === "custom");
+      }}
+    />
+  );
+
+  return (
+    <div className="flex flex-col gap-4">
+      {windowed ? (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <h4 className="text-base font-semibold">
+              <PromptName id={id} />
+            </h4>
+            <p className="text-sm text-muted-foreground">
+              <PromptUsage id={id} />
+            </p>
+          </div>
+          {choice}
         </div>
-        <Separator />
-        <p className="text-sm text-muted-foreground mt-2">
-          <Trans>
-            Customize system prompts that control how the AI responds. Users
-            with default prompts will automatically receive updates when the app
-            is updated. Custom prompts will be preserved until you reset them.
-          </Trans>
+      ) : (
+        <p className="px-0.5 text-sm text-muted-foreground">
+          <PromptUsage id={id} />
         </p>
-        <Accordion type="multiple" className="w-full">
-          <AccordionItem value="gm-prompt">
-            <AccordionTrigger>
-              <Trans>GM Mechanics Prompt</Trans>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex flex-col gap-3">
-                {" "}
-                <div className="flex items-center gap-2">
-                  <p className="text-sm text-muted-foreground">
-                    <Trans>
-                      This prompt is added in &quot;Game Master&quot; mode to
-                      explain game state tools and GM-specific behavior.
-                    </Trans>
-                    <br />
-                    <b className="flex items-center gap-2">
-                      <AlertTriangleIcon className="w-4 h-4 inline-block" />
-                      <Trans>
-                        GM mode is still in development and is very sensitive to
-                        the system prompt.
-                      </Trans>
-                    </b>
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="use-custom-gm"
-                    checked={useCustomGmPrompt}
-                    onCheckedChange={handleGmCheckChange}
-                  />
-                  <Label htmlFor="use-custom-gm" className="cursor-pointer">
-                    <Trans>Use Custom Prompt</Trans>
-                  </Label>
-                </div>
-                <Textarea
-                  value={useCustomGmPrompt ? customGmPrompt : GM_SYSTEM_PROMPT}
-                  onChange={(e) => setCustomGmPrompt(e.target.value)}
-                  disabled={!useCustomGmPrompt}
-                  rows={12}
-                  className="font-mono text-xs"
-                  placeholder={t`System prompt for Game Master mode...`}
-                />
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={resetGmPrompt}
-                    disabled={!useCustomGmPrompt}
-                  >
-                    <Trans>Reset to Default</Trans>
-                  </Button>
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="storyteller-prompt">
-            <AccordionTrigger>
-              <Trans>Default AI Instructions</Trans>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm text-muted-foreground">
-                    <Trans>
-                      These are the default AI instructions used by tales and
-                      scenarios that do not define their own AI Instructions
-                      component.
-                    </Trans>
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="use-custom-storyteller"
-                    checked={useCustomStorytellerPrompt}
-                    onCheckedChange={handleStorytellerCheckChange}
-                  />
-                  <Label
-                    htmlFor="use-custom-storyteller"
-                    className="cursor-pointer"
-                  >
-                    <Trans>Use Custom Prompt</Trans>
-                  </Label>
-                </div>
-                <Textarea
-                  value={
-                    useCustomStorytellerPrompt
-                      ? customStorytellerPrompt
-                      : AI_INSTRUCTIONS_PROMPT
-                  }
-                  onChange={(e) => setCustomStorytellerPrompt(e.target.value)}
-                  disabled={!useCustomStorytellerPrompt}
-                  rows={12}
-                  className="font-mono text-xs"
-                  placeholder={t`Default AI instructions...`}
-                />
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={resetStorytellerPrompt}
-                    disabled={!useCustomStorytellerPrompt}
-                  >
-                    <Trans>Reset to Default</Trans>
-                  </Button>
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="continue-prompt">
-            <AccordionTrigger>
-              <Trans>Continue System Prompt</Trans>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm text-muted-foreground">
-                    <Trans>
-                      This is the user message that is sent to the AI when the
-                      continue button is clicked.
-                    </Trans>
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="use-custom-continue"
-                    checked={useCustomContinuePrompt}
-                    onCheckedChange={handleContinueCheckChange}
-                  />
-                  <Label
-                    htmlFor="use-custom-continue"
-                    className="cursor-pointer"
-                  >
-                    <Trans>Use Custom Prompt</Trans>
-                  </Label>
-                </div>
-                <Textarea
-                  value={
-                    useCustomContinuePrompt
-                      ? customContinuePrompt
-                      : CONTINUE_SYSTEM_PROMPT
-                  }
-                  onChange={(e) => setCustomContinuePrompt(e.target.value)}
-                  disabled={!useCustomContinuePrompt}
-                  rows={6}
-                  className="font-mono text-xs"
-                  placeholder={t`Prompt used when continuing the story...`}
-                />
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={resetContinuePrompt}
-                    disabled={!useCustomContinuePrompt}
-                  >
-                    <Trans>Reset to Default</Trans>
-                  </Button>
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="continue-author-note">
-            <AccordionTrigger>
-              <Trans>Continue Author Note</Trans>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm text-muted-foreground">
-                    <Trans>
-                      This is an extra author note that is injected near the end
-                      of the prompt only during a <b>Continue</b> action.
-                    </Trans>
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="use-custom-continue-author"
-                    checked={useCustomContinueAuthorNote}
-                    onCheckedChange={handleContinueAuthorNoteCheckChange}
-                  />
-                  <Label
-                    htmlFor="use-custom-continue-author"
-                    className="cursor-pointer"
-                  >
-                    <Trans>Use Custom Prompt</Trans>
-                  </Label>
-                </div>
-                <Textarea
-                  value={
-                    useCustomContinueAuthorNote
-                      ? customContinueAuthorNote
-                      : CONTINUE_AUTHOR_NOTE
-                  }
-                  onChange={(e) => setCustomContinueAuthorNote(e.target.value)}
-                  disabled={!useCustomContinueAuthorNote}
-                  rows={8}
-                  className="font-mono text-xs"
-                  placeholder={t`Author's note injected during continue...`}
-                />
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={resetContinueAuthorNote}
-                    disabled={!useCustomContinueAuthorNote}
-                  >
-                    <Trans>Reset to Default</Trans>
-                  </Button>
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="story-card-generator">
-            <AccordionTrigger>
-              <Trans>Story Card Generator Prompt</Trans>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col gap-2">
-                  <p className="text-sm text-muted-foreground">
-                    <Trans>
-                      This is the system prompt used when auto-generating story
-                      cards. The AI is asked to output JSON with content,
-                      triggers, and category. The JSON is parsed and used to
-                      populate the new story card.
-                    </Trans>
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    <b className="flex items-center gap-2">
-                      <AlertTriangleIcon className="w-4 h-4 inline-block" />
-                      <Trans>
-                        The output of this prompt are parsed as JSON. Make sure
-                        to preserve the JSON format if you customize this
-                        prompt.
-                      </Trans>
-                    </b>{" "}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="use-custom-story-card-generator"
-                    checked={useCustomStoryCardGeneratorPrompt}
-                    onCheckedChange={handleStoryCardGeneratorCheckChange}
-                  />
-                  <Label
-                    htmlFor="use-custom-story-card-generator"
-                    className="cursor-pointer"
-                  >
-                    <Trans>Use Custom Prompt</Trans>
-                  </Label>
-                </div>
-                <Textarea
-                  value={
-                    useCustomStoryCardGeneratorPrompt
-                      ? customStoryCardGeneratorPrompt
-                      : STORY_CARD_GENERATOR_PROMPT
-                  }
-                  onChange={(e) =>
-                    setCustomStoryCardGeneratorPrompt(e.target.value)
-                  }
-                  disabled={!useCustomStoryCardGeneratorPrompt}
-                  rows={12}
-                  className="font-mono text-xs"
-                  placeholder={t`Prompt for story card generation...`}
-                />
-                <div className="flex justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={resetStoryCardGeneratorPrompt}
-                    disabled={!useCustomStoryCardGeneratorPrompt}
-                  >
-                    <Trans>Reset to Default</Trans>
-                  </Button>
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-        <Separator />
+      )}
+      {hasWarning ? (
+        <p className="px-0.5 text-sm text-destructive">
+          <PromptWarning id={id} />
+        </p>
+      ) : null}
+      {!windowed && choice}
+      <Textarea
+        value={text}
+        readOnly={!prompt.custom}
+        onChange={(event) => prompt.setText(event.target.value)}
+        aria-label={t`Prompt`}
+        className={cn(
+          "min-h-[50dvh] font-mono text-[0.8rem] leading-relaxed",
+          !prompt.custom && "text-muted-foreground",
+        )}
+      />
+      <div className="flex min-h-8 items-center justify-between gap-3 px-0.5 text-sm text-muted-foreground">
+        <span>{edited ? <Trans>Edited</Trans> : null}</span>
+        {prompt.custom ? (
+          <button
+            type="button"
+            className="text-primary underline-offset-4 hover:underline"
+            onClick={prompt.reset}
+          >
+            <Trans>Reset to default</Trans>
+          </button>
+        ) : null}
       </div>
     </div>
   );
+}
+
+function promptFromPage(page: string | null) {
+  return PROMPT_IDS.find((id) => page === pageOf(id));
+}
+
+/** Heads a prompt's page in the settings header. */
+export function PromptingTitle({ page }: { page: string }) {
+  const id = promptFromPage(page);
+  return id ? <PromptName id={id} /> : <Trans>Prompting</Trans>;
+}
+
+export default function SettingsAdvanced() {
+  const navigation = useSettingsNavigation();
+  const windowed = useSettingsWindow();
+  const [selected, setSelected] = useState<PromptId>("instructions");
+
+  // The desktop window shows the list and the editor together, side by side when there's room.
+  if (windowed) {
+    return (
+      <div className="@container">
+        <div className="grid gap-6 @2xl:grid-cols-[17rem_minmax(0,1fr)] @2xl:items-start">
+          <PromptList selection={{ selected, onSelect: setSelected }} />
+          <PromptPage id={selected} />
+        </div>
+      </div>
+    );
+  }
+  const id = promptFromPage(navigation.page);
+  return id ? <PromptPage id={id} /> : <PromptList />;
 }

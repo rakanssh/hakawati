@@ -100,10 +100,8 @@
   box-shadow:
     0 0 0 1px oklch(0.45 0.04 60 / 0.14),
     0 22px 44px -18px oklch(0.25 0.05 55 / 0.45);
-}
 
-@media (max-width: 640px) {
-  .theme-typewriter [data-play-column] {
+  @variant phone {
     padding-inline: 1.25rem;
   }
 }
@@ -192,7 +190,6 @@
 
 .theme-typewriter [data-composer-tab] {
   border: 0;
-  border-radius: 6px;
 }
 
 .theme-typewriter [data-composer-tab][data-active] {
@@ -200,10 +197,9 @@
   box-shadow: 0 0 0 2px oklch(0.24 0.006 250);
 }
 
-/* The send button is a round typewriter key. */
+/* The send button is a typewriter key. */
 .theme-typewriter [data-composer-send] {
   margin-inline-start: 0.375rem;
-  border-radius: 50%;
   background: radial-gradient(
     circle at 50% 38%,
     oklch(0.34 0.01 60),
@@ -213,10 +209,6 @@
   box-shadow:
     0 0 0 2.5px oklch(0.84 0.01 250),
     0 3px 0 2px oklch(0.55 0.01 250);
-}
-
-.theme-typewriter [data-composer-mic] {
-  border-radius: calc(var(--radius) - 4px);
 }
 
 .theme-typewriter :is(.sidebar-chip, [data-sidebar-heading]) {

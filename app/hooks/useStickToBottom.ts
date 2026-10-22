@@ -16,7 +16,6 @@ interface UseStickToBottomReturn {
   stickToBottom: boolean;
   setStickToBottom: (value: boolean) => void;
   viewportRef: React.RefObject<HTMLDivElement | null>;
-  bottomRef: React.RefObject<HTMLDivElement | null>;
   scrollToBottom: (behavior?: ScrollBehavior) => void;
   handleScroll: () => void;
   loadingOlder: boolean;
@@ -30,13 +29,15 @@ export function useStickToBottom(
   const [stickToBottom, setStickToBottom] = useState(true);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const viewportRef = useRef<HTMLDivElement | null>(null);
-  const bottomRef = useRef<HTMLDivElement | null>(null);
   const loadDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const scrollToBottom = useCallback(
     (behavior: ScrollBehavior = scrollBehavior) => {
       setStickToBottom(true);
-      bottomRef.current?.scrollIntoView({ behavior, block: "end" });
+      // The very end, past any space a theme leaves under the last line, so
+      // following new text never pulls the reader back up from the bottom.
+      const el = viewportRef.current;
+      el?.scrollTo({ top: el.scrollHeight, behavior });
     },
     [scrollBehavior],
   );
@@ -82,7 +83,6 @@ export function useStickToBottom(
     stickToBottom,
     setStickToBottom,
     viewportRef,
-    bottomRef,
     scrollToBottom,
     handleScroll,
     loadingOlder,

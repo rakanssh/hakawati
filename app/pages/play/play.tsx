@@ -1,4 +1,5 @@
 import { useTaleStore } from "@/store/useTaleStore";
+import { cn } from "@/lib/utils";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout";
 import { MobilePlayHeader } from "@/components/layout/mobile-play-header";
@@ -32,6 +33,7 @@ import { Outlet } from "@tanstack/react-router";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 import { useStickToBottom } from "@/hooks/useStickToBottom";
+import { useHideOnScroll } from "@/hooks/useHideOnScroll";
 import { useZoom } from "@/hooks/useZoom";
 import { FONT_SIZE_MAX, FONT_SIZE_MIN } from "@/lib/appearance-limits";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -109,7 +111,6 @@ export default function Play() {
     stickToBottom,
     setStickToBottom,
     viewportRef,
-    bottomRef,
     scrollToBottom,
     handleScroll,
     loadingOlder,
@@ -123,6 +124,14 @@ export default function Play() {
       onLoadMore: () => loadOlderLogEntries(50),
     },
   });
+
+  // The phone's top bar tucks away while the reader scrolls on.
+  const { hidden: headerHidden, onScroll: trackHeaderScroll } =
+    useHideOnScroll(viewportRef);
+  const handleViewportScroll = useCallback(() => {
+    handleScroll();
+    if (isMobilePlatform) trackHeaderScroll();
+  }, [handleScroll, isMobilePlatform, trackHeaderScroll]);
 
   const { showIndicator: showZoomIndicator, isIndicatorVisible } = useZoom({
     zoom: fontSize,
@@ -207,11 +216,8 @@ export default function Play() {
 
   useEffect(() => {
     if (!stickToBottom) return;
-    bottomRef.current?.scrollIntoView({
-      behavior: loading ? "auto" : "smooth",
-      block: "end",
-    });
-  }, [log, loading, stickToBottom, bottomRef]);
+    scrollToBottom(loading ? "auto" : "smooth");
+  }, [log, loading, stickToBottom, scrollToBottom]);
 
   useEffect(() => {
     if (
@@ -303,8 +309,7 @@ export default function Play() {
           setCurrentlyEditingLogId={setCurrentlyEditingLogId}
           updateLogEntry={commitLogEntryEdit}
           viewportRef={viewportRef}
-          bottomRef={bottomRef}
-          onViewportScroll={handleScroll}
+          onViewportScroll={handleViewportScroll}
           narration={{
             activeItemId: ttsPlayback.activeItemId,
             loadingItemId: ttsPlayback.loadingItemId,
@@ -353,7 +358,7 @@ export default function Play() {
             <Button
               variant="secondary"
               size="icon"
-              className="h-10 w-10 rounded-full shadow-lg border border-border"
+              className="h-10 w-10 rounded-xs shadow-lg border border-border"
               onClick={() => scrollToBottom()}
               aria-label={t`Scroll to bottom`}
             >
@@ -371,7 +376,7 @@ export default function Play() {
   return (
     <>
       <ThemeScene withSidebar={gameMode === GameMode.GM} />
-      <MobilePlayHeader />
+      <MobilePlayHeader hidden={headerHidden} />
       {gameMode === GameMode.GM ? (
         <SidebarProvider
           data-play-shell=""
@@ -392,7 +397,11 @@ export default function Play() {
             }
           />
           <SidebarInset
-            className="relative flex h-full flex-col overflow-hidden !rounded-none border-x bg-transparent"
+            className={cn(
+              "relative flex h-full flex-col overflow-hidden !rounded-none border-x bg-transparent",
+              // On phones the story starts right under the status bar.
+              isMobilePlatform && "pt-0",
+            )}
             style={
               isMobilePlatform
                 ? { paddingInlineEnd: "env(safe-area-inset-right)" }

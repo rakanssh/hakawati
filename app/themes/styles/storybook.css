@@ -106,25 +106,13 @@
   border-color: var(--primary);
 }
 
-.theme-storybook [data-composer-send] {
-  border-radius: 46% 54% 52% 48% / 55% 45% 55% 45%;
-}
-
 /* The wobbly frame can't join a tab, so the mode tabs sit just above it. */
 .theme-storybook :is([data-composer-tab], [data-composer-tabs] > :last-child) {
   margin-bottom: 6px;
 }
 
-.theme-storybook [data-composer-tab] {
-  border-radius: 12px;
-}
-
 .theme-storybook [data-composer-tab][data-active] {
   border: 2px solid color-mix(in oklch, var(--foreground) 70%, transparent);
-}
-
-.theme-storybook .sidebar-chip {
-  border-radius: 12px;
 }
 
 .storybook-smoke {
@@ -155,7 +143,6 @@
 .theme-storybook [data-story-panel-handle] {
   border-width: 2px;
   border-color: color-mix(in oklch, var(--foreground) 70%, transparent);
-  border-radius: 16px 0 0 12px / 22px 0 0 18px;
 }
 
 /* The reading surface: a cream page with a hand-inked edge. */

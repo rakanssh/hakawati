@@ -10,14 +10,19 @@ All notable changes to this project are documented in this file.
 
 ### Changed
 
-- Brass Night is now the default theme if you haven't picked one.
-- With nothing typed, the send button continues the story, replacing the separate Continue button.
-- Redesigned the input box: action modes are tabs along its top (Say is now Speak), dice rolls switch on beside them, and its buttons are labelled on desktop and larger on phones.
+- Redesigned Settings. On desktop it opens in its own window.
+- AI Setup saves each provider once as a connection that any role can use. Your providers and keys carry over.
+- Utility is now called Helper and follows the Narrator unless you give it its own model. Maintenance is now called Updates.
+- Account & Sync has a cloud sync switch, and you can change your display name.
+- Redesigned the input box: action modes are tabs along its top (Say is now Speak), with Roll beside them. With nothing typed, send continues the story.
+- Brass Night is now the default theme.
 
 ### Fixed
 
-- Settings pages now scroll in narrow windows.
-- Reporting a public scenario and blocking its publisher now work on macOS.
+- Leaving the play screen while the narrator is writing no longer stops the next turn from saving.
+- The story stays inside its frame as it scrolls, and Typewriter no longer bounces back up at the bottom.
+- Settings scroll in narrow windows and show every section when opened from the library.
+- Reporting a public scenario and blocking its publisher work on macOS.
 
 ## [v1.2.0] - 2026-10-06
 

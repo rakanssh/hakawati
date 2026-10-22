@@ -25,7 +25,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { SettingsLayoutProvider } from "@/components/layout/settings/settings-layout";
 import SettingsTale from "@/components/layout/settings/tale";
 import SettingsStoryCards from "@/components/layout/settings/story-cards";
 import SettingsInventoryStats from "@/components/layout/settings/inventory-stats";
@@ -148,13 +147,11 @@ function StoryPanelContent({ onClose }: { onClose: () => void }) {
         ))}
       </TabsList>
       <ScrollArea className="min-h-0 flex-1">
-        <SettingsLayoutProvider variant="plain">
-          {tabs.map(({ id, render }) => (
-            <TabsContent key={id} value={id} className="px-4 pt-4 pb-6">
-              {render()}
-            </TabsContent>
-          ))}
-        </SettingsLayoutProvider>
+        {tabs.map(({ id, render }) => (
+          <TabsContent key={id} value={id} className="px-4 pt-4 pb-6">
+            {render()}
+          </TabsContent>
+        ))}
       </ScrollArea>
     </Tabs>
   );
@@ -333,7 +330,7 @@ function StoryPanelHandle({
             aria-expanded={open}
             aria-controls={STORY_PANEL_ID}
             aria-label={open ? t`Close story panel` : t`Open story panel`}
-            className="absolute end-0 top-[38%] flex w-6 -translate-y-1/2 flex-col items-center gap-2 rounded-s-md border border-e-0 border-sidebar-border bg-sidebar/95 py-3 text-sidebar-foreground/70 shadow-sm backdrop-blur-sm transition-colors hover:bg-sidebar hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="absolute end-0 top-[38%] flex w-6 -translate-y-1/2 flex-col items-center gap-2 rounded-s-xs border border-e-0 border-sidebar-border bg-sidebar/95 py-3 text-sidebar-foreground/70 shadow-sm backdrop-blur-sm transition-colors hover:bg-sidebar hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {open ? (
               <ChevronRightIcon className="size-4 rtl:-scale-x-100" />

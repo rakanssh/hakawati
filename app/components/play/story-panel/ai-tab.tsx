@@ -1,32 +1,41 @@
 import { useState } from "react";
-import { useLingui as useLinguiCore } from "@lingui/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { SlidersHorizontalIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { NumberInput } from "@/components/ui";
 import { ModelSelect } from "@/components/layout/model-select";
 import { ThinkingLevel } from "@/components/layout/settings/thinking-level";
 import {
-  SettingsField,
-  SettingsPanel,
-  SettingsStack,
-} from "@/components/layout/settings/settings-layout";
+  BlockRow,
+  LinkRow,
+  PlainRow,
+  RowText,
+  SetupList,
+  SetupSection,
+} from "@/components/layout/settings/settings-rows";
 import {
   SettingsModal,
   type GlobalSettingsSectionId,
 } from "@/components/layout/settings/settings-modal";
-import { apiPresetMap } from "@/data/api-presets";
+import {
+  ProviderBadge,
+  useConnectionNames,
+} from "@/components/layout/settings/ai-setup/parts";
+import { findConnection } from "@/store/model-connections";
 import {
   isModelRoleConfigured,
   useSettingsStore,
 } from "@/store/useSettingsStore";
 import { ApiPreset } from "@/types";
 
+const fieldClass = "h-9 w-24 shrink-0";
+
 /** The few model settings worth reaching mid-story; everything else stays in Settings. */
 export function AiTab() {
   const { t } = useLingui();
-  const { _ } = useLinguiCore();
   const narrator = useSettingsStore((state) => state.modelRoles.narrator);
+  const connection = useSettingsStore((state) =>
+    findConnection(state.connections, narrator.connectionId),
+  );
+  const connectionName = useConnectionNames();
   const maxTokens = useSettingsStore((state) => state.maxTokens);
   const temperature = useSettingsStore((state) => state.temperature);
   const modelContextLength = useSettingsStore(
@@ -38,101 +47,94 @@ export function AiTab() {
     useState<GlobalSettingsSectionId | null>(null);
 
   const isChatGpt = narrator.activePreset === ApiPreset.CHATGPT;
-  const providerLabel = apiPresetMap[narrator.activePreset]?.label;
-  const hasProvider = isChatGpt || narrator.baseUrl.trim().length > 0;
   const maxOutput =
     modelContextLength > 0 ? modelContextLength : Number.MAX_SAFE_INTEGER;
 
   return (
-    <SettingsStack>
-      <SettingsPanel title={<Trans>Narrator</Trans>}>
-        {hasProvider ? (
-          <>
-            {providerLabel && (
-              <p className="-mt-2 text-xs text-muted-foreground">
-                <Trans>Using {_(providerLabel)}</Trans>
-              </p>
-            )}
-            <SettingsField label={<Trans>Model</Trans>}>
-              <ModelSelect role="narrator" />
-            </SettingsField>
-            <ThinkingLevel role="narrator" />
-          </>
-        ) : (
-          <div className="flex flex-col items-start gap-3">
-            <p className="text-sm text-muted-foreground">
-              <Trans>
-                Connect a provider to choose the model that tells your story.
-              </Trans>
-            </p>
-            <Button
-              variant="outline"
-              onClick={() => setSettingsSection("ai-setup")}
-            >
-              <Trans>Set up AI</Trans>
-            </Button>
-          </div>
-        )}
-      </SettingsPanel>
-
-      {hasProvider && (
-        <SettingsPanel title={<Trans>Responses</Trans>}>
-          {isChatGpt && (
-            <p className="text-sm text-muted-foreground">
-              <Trans>ChatGPT manages response length and sampling.</Trans>
-            </p>
-          )}
-          {!isChatGpt && (
-            <SettingsField
-              label={<Trans>Max Output Tokens</Trans>}
-              description={
-                <Trans>Thinking tokens and the answer share this limit.</Trans>
-              }
-            >
-              <NumberInput
-                min={1}
-                max={maxOutput}
-                step={1}
-                value={maxTokens}
-                aria-label={t`Max output tokens`}
-                onValueCommit={(value) => setMaxTokens(value)}
+    <div className="flex flex-col gap-6">
+      <SetupSection title={<Trans>Narrator</Trans>}>
+        <SetupList>
+          {connection ? (
+            <>
+              <LinkRow
+                leading={<ProviderBadge preset={connection.preset} />}
+                title={connectionName(connection)}
+                onClick={() => setSettingsSection("ai-setup")}
               />
-            </SettingsField>
-          )}
-          <SettingsField
-            label={<Trans>Temperature</Trans>}
-            description={
-              <Trans>Higher values make responses less predictable.</Trans>
-            }
-          >
-            <NumberInput
-              min={0}
-              max={2}
-              step={0.1}
-              value={temperature ?? null}
-              allowNull
-              placeholder={t`Provider default`}
-              aria-label={t`Temperature`}
-              disabled={isChatGpt}
-              onValueCommit={(value) => setTemperature(value)}
+              <BlockRow title={<Trans>Model</Trans>}>
+                <ModelSelect role="narrator" />
+              </BlockRow>
+            </>
+          ) : (
+            <LinkRow
+              title={<Trans>Set up the Narrator to play</Trans>}
+              detailClassName="text-destructive"
+              onClick={() => setSettingsSection("ai-setup")}
             />
-          </SettingsField>
-          {!isModelRoleConfigured(narrator) && !isChatGpt && (
-            <p className="text-sm text-muted-foreground">
+          )}
+        </SetupList>
+      </SetupSection>
+
+      {connection ? <ThinkingLevel role="narrator" /> : null}
+
+      {connection ? (
+        <SetupSection title={<Trans>Replies</Trans>}>
+          {isChatGpt ? (
+            <p className="px-0.5 text-sm text-muted-foreground">
+              <Trans>ChatGPT manages reply length and sampling.</Trans>
+            </p>
+          ) : (
+            <SetupList>
+              <PlainRow className="flex-wrap">
+                <RowText
+                  title={<Trans>Max output tokens</Trans>}
+                  detail={<Trans>Thinking and the answer share this</Trans>}
+                />
+                <NumberInput
+                  min={1}
+                  max={maxOutput}
+                  step={1}
+                  value={maxTokens}
+                  align="right"
+                  aria-label={t`Max output tokens`}
+                  className={fieldClass}
+                  onValueCommit={setMaxTokens}
+                />
+              </PlainRow>
+              <PlainRow className="flex-wrap">
+                <RowText
+                  title={<Trans>Temperature</Trans>}
+                  detail={<Trans>Higher is less predictable</Trans>}
+                />
+                <NumberInput
+                  min={0}
+                  max={2}
+                  step={0.1}
+                  value={temperature ?? null}
+                  allowNull
+                  align="right"
+                  placeholder={t`Default`}
+                  aria-label={t`Temperature`}
+                  className={fieldClass}
+                  onValueCommit={setTemperature}
+                />
+              </PlainRow>
+            </SetupList>
+          )}
+          {!isModelRoleConfigured(narrator) && !isChatGpt ? (
+            <p className="px-0.5 text-sm text-muted-foreground">
               <Trans>Choose a model above before you continue the story.</Trans>
             </p>
-          )}
-        </SettingsPanel>
-      )}
+          ) : null}
+        </SetupSection>
+      ) : null}
 
-      <Button
-        variant="outline"
-        className="self-start"
-        onClick={() => setSettingsSection("generation")}
-      >
-        <SlidersHorizontalIcon />
-        <Trans>All AI settings</Trans>
-      </Button>
+      <SetupList>
+        <LinkRow
+          title={<Trans>All AI settings</Trans>}
+          onClick={() => setSettingsSection("generation")}
+        />
+      </SetupList>
 
       <SettingsModal
         key={settingsSection ?? "closed"}
@@ -142,6 +144,6 @@ export function AiTab() {
         }}
         defaultTab={settingsSection ?? undefined}
       />
-    </SettingsStack>
+    </div>
   );
 }

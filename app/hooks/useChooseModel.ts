@@ -1,0 +1,49 @@
+import { useCallback } from "react";
+import { toast } from "sonner";
+import { useLingui } from "@lingui/react/macro";
+import type { LLMModel } from "@/services/llm/schema";
+import { DEFAULT_TTS_VOICE, useSettingsStore } from "@/store/useSettingsStore";
+import { useTaleStore } from "@/store/useTaleStore";
+import { GameMode, type ModelRole } from "@/types";
+
+/** A model typed in by id. Refreshing the provider's list keeps it even when the list doesn't include it. */
+export function manualModel(id: string): LLMModel {
+  return { id, name: id, manual: true };
+}
+
+/** Sets a role's model the same way wherever it is chosen. */
+export function useChooseModel(role: ModelRole) {
+  const { t } = useLingui();
+  const gameMode = useTaleStore((state) => state.gameMode);
+  const setRoleModel = useSettingsStore((state) => state.setRoleModel);
+  const setRoleVoice = useSettingsStore((state) => state.setRoleVoice);
+
+  return useCallback(
+    (model: LLMModel) => {
+      if (
+        role === "narrator" &&
+        !model.supportsToolCalls &&
+        gameMode === GameMode.GM
+      ) {
+        toast.warning(
+          t`Model cannot be confirmed to support tool calling. GM mode may not work properly.`,
+        );
+      }
+      setRoleModel(role, model);
+      // Keep a voice the new model offers.
+      if (role === "textToSpeech" && model.supportedVoices?.length) {
+        const voice = useSettingsStore
+          .getState()
+          .modelRoles.textToSpeech.voice?.trim();
+        if (
+          !voice ||
+          voice === DEFAULT_TTS_VOICE ||
+          !model.supportedVoices.includes(voice)
+        ) {
+          setRoleVoice(role, model.supportedVoices[0]);
+        }
+      }
+    },
+    [gameMode, role, setRoleModel, setRoleVoice, t],
+  );
+}

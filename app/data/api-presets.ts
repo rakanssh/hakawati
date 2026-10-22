@@ -1,4 +1,9 @@
-import { ApiPreset, ApiProfileSettings, ModelRole } from "@/types";
+import {
+  ApiConnection,
+  ApiPreset,
+  ApiProfileSettings,
+  ModelRole,
+} from "@/types";
 import { msg } from "@lingui/core/macro";
 import { MessageDescriptor } from "@lingui/core";
 
@@ -21,7 +26,7 @@ export interface ApiPresetConfig {
 export const apiPresets: ApiPresetConfig[] = [
   {
     id: ApiPreset.OPENROUTER,
-    label: msg`OpenRouter (API)`,
+    label: msg`OpenRouter`,
     baseUrl: "https://openrouter.ai/api/v1",
     editableUrl: false,
     help: {
@@ -38,13 +43,13 @@ export const apiPresets: ApiPresetConfig[] = [
   },
   {
     id: ApiPreset.CHATGPT,
-    label: msg`ChatGPT (Subscription)`,
+    label: msg`ChatGPT plan`,
     baseUrl: "https://api.openai.com/v1",
     editableUrl: false,
   },
   {
     id: ApiPreset.OPENAI,
-    label: msg`Official OpenAI (API)`,
+    label: msg`OpenAI`,
     baseUrl: "https://api.openai.com/v1",
     editableUrl: false,
     help: {
@@ -78,7 +83,7 @@ export const apiPresets: ApiPresetConfig[] = [
   },
   {
     id: ApiPreset.GENERIC,
-    label: msg`Generic OpenAI`,
+    label: msg`Another provider`,
     baseUrl: "",
     editableUrl: true,
     help: {
@@ -92,7 +97,7 @@ export const apiPresets: ApiPresetConfig[] = [
   },
   {
     id: ApiPreset.LOCAL,
-    label: msg`Local`,
+    label: msg`Local server`,
     baseUrl: "",
     editableUrl: true,
     help: {
@@ -115,12 +120,18 @@ const audioModelPresets = new Set<ApiPreset>([
   ApiPreset.LOCAL,
 ]);
 
-export function getApiPresetsForRole(role: ModelRole): ApiPresetConfig[] {
-  if (role !== "speechToText" && role !== "textToSpeech") {
-    return apiPresets;
-  }
+export function isPresetAllowedForRole(
+  preset: ApiPreset,
+  role: ModelRole,
+): boolean {
+  return (
+    (role !== "speechToText" && role !== "textToSpeech") ||
+    audioModelPresets.has(preset)
+  );
+}
 
-  return apiPresets.filter((preset) => audioModelPresets.has(preset.id));
+export function getApiPresetsForRole(role: ModelRole): ApiPresetConfig[] {
+  return apiPresets.filter((preset) => isPresetAllowedForRole(preset.id, role));
 }
 
 /** Map of preset ID to config for quick lookup */
@@ -139,4 +150,14 @@ export function createDefaultProfiles(): Record<ApiPreset, ApiProfileSettings> {
       },
     ]),
   ) as Record<ApiPreset, ApiProfileSettings>;
+}
+
+/** The address requests go to. Presets with a fixed address always use their own. */
+export function connectionBaseUrl(
+  connection: Pick<ApiConnection, "preset" | "baseUrl">,
+): string {
+  const preset = apiPresetMap[connection.preset];
+  return preset?.editableUrl === false
+    ? preset.baseUrl
+    : connection.baseUrl.trim();
 }

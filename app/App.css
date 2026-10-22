@@ -6,6 +6,18 @@
 @custom-variant dark (&:is(.dark *));
 @custom-variant rtl (&:is([dir="rtl"] *));
 @custom-variant ltr (&:is([dir="ltr"] *));
+/* Phone layout: windows as narrow as a phone, and the Android and iOS apps up to
+   the story's widest (64rem), so a phone keeps it sideways and a large tablet doesn't. */
+@custom-variant phone {
+  @media (max-width: 640px) {
+    @slot;
+  }
+  @media (max-width: 64rem) {
+    &:is([data-platform="android"] *, [data-platform="ios"] *) {
+      @slot;
+    }
+  }
+}
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);

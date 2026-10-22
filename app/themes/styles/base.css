@@ -80,22 +80,27 @@
   box-decoration-break: clone;
 }
 
-/* The reading surface behind the story column. Themes give it a material; it stays clear by default. */
+/* The reading surface the story scrolls in, with the app's corners. Themes give it a material; it stays clear by default. */
 [data-play-backdrop] {
   top: 0.75rem;
   bottom: 0.25rem;
-  border-radius: calc(var(--radius) + 2px);
-}
+  border-radius: var(--radius-xs);
 
-/* Edge to edge on narrow screens, where the column fills the width. */
-@media (max-width: 640px) {
-  [data-play-backdrop] {
-    top: 0;
+  /* Edge to edge on phones, where the column fills the width, from just below the status bar. */
+  @variant phone {
+    top: env(safe-area-inset-top);
     bottom: 0;
     border-radius: 0 !important;
     border-inline-width: 0 !important;
     outline: none !important;
   }
+}
+
+/* Keep the scrollbar clear of the surface's rounded corners. */
+[data-play-backdrop] [data-slot="scroll-area-scrollbar"] {
+  height: auto;
+  margin-block: 0.75rem;
+  margin-inline-end: 0.25rem;
 }
 
 /* While the story panel is being resized, keep the resize cursor and stop text being selected. */

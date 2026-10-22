@@ -73,6 +73,11 @@ const ACTION_MODES = [
 
 type InputActionMode = (typeof ACTION_MODES)[number];
 
+/** Switching mode or rolling leaves focus in the input, so a phone's keyboard stays open. */
+function keepTypingFocus(event: React.MouseEvent) {
+  event.preventDefault();
+}
+
 const ACTION_MODE_ICONS = {
   [LogEntryMode.DO]: HandIcon,
   [LogEntryMode.SAY]: SpeechIcon,
@@ -285,7 +290,7 @@ export function PlayInputControls({
   const composerControlsLocked = speechRecorder.status !== "idle";
   const canStopGeneration = loading && !!onStop;
   const composerSurfaceClass = cn(
-    "flex min-w-0 overflow-hidden rounded-lg rounded-ss-none border border-border/75 bg-[var(--composer-background)] shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18",
+    "flex min-w-0 overflow-hidden rounded-xs rounded-ss-none border border-border/75 bg-[var(--composer-background)] shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18",
     // On phones the box is a single row, so the story keeps the screen.
     isMobilePlatform ? "p-1" : "min-h-[6.25rem] p-1.5 md:min-h-[6rem]",
   );
@@ -325,6 +330,7 @@ export function PlayInputControls({
             aria-pressed={active}
             aria-label={label}
             title={label}
+            onMouseDown={keepTypingFocus}
             onClick={() =>
               setAction({
                 type: mode,
@@ -332,7 +338,7 @@ export function PlayInputControls({
               })
             }
             className={cn(
-              "flex shrink-0 items-center justify-center gap-1.5 rounded-t-lg border border-b-0 font-medium transition-colors",
+              "flex shrink-0 items-center justify-center gap-1.5 rounded-t-xs border border-b-0 font-medium transition-colors",
               active
                 ? cn(
                     "relative z-10 -mb-px border-border/75 bg-[var(--composer-background)] font-semibold",
@@ -341,8 +347,8 @@ export function PlayInputControls({
                 : "border-transparent bg-background/60 text-muted-foreground hover:bg-muted/50 hover:text-foreground",
               isMobilePlatform
                 ? active
-                  ? "h-10 px-3"
-                  : "h-9 w-10"
+                  ? "h-10 px-3 landscape:h-8"
+                  : "h-9 w-10 landscape:h-7"
                 : active
                   ? "h-10 px-4"
                   : "h-9 px-3.5",
@@ -376,6 +382,7 @@ export function PlayInputControls({
           data-composer-roll=""
           aria-pressed={action.isRolling}
           aria-label={t`Roll a dice`}
+          onMouseDown={keepTypingFocus}
           onClick={() =>
             setAction({
               type: action.type,
@@ -385,11 +392,10 @@ export function PlayInputControls({
           disabled={loading}
           className={cn(
             "flex shrink-0 items-center justify-center gap-1.5 border text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50",
-            isMobilePlatform
-              ? "size-10 rounded-md"
-              : "mb-1 h-9 rounded-full px-3.5",
+            "rounded-xs",
+            isMobilePlatform ? "size-10 landscape:size-9" : "mb-1 h-9 px-3.5",
             action.isRolling
-              ? "border-success/50 bg-success/12 text-success"
+              ? "border-primary/55 bg-primary/15 text-primary"
               : isMobilePlatform
                 ? "border-transparent text-muted-foreground hover:bg-muted/45 hover:text-foreground"
                 : "border-border/75 bg-[var(--composer-background)] text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -426,8 +432,8 @@ export function PlayInputControls({
             size="icon"
             data-composer-mic=""
             className={cn(
-              "shrink-0 rounded-full border shadow-none",
-              "size-10",
+              "size-10 shrink-0 rounded-xs border shadow-none",
+              isMobilePlatform && "landscape:size-9",
               isRecording
                 ? "border-destructive/45 bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive"
                 : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -454,7 +460,7 @@ export function PlayInputControls({
   const renderTextArea = () => (
     <Textarea
       data-composer-input=""
-      placeholder={t(getPlaceholderMessage(action))}
+      placeholder={t(getPlaceholderMessage(action.type))}
       value={input}
       onChange={(e) => setInput(e.target.value)}
       onKeyDown={(e) => {
@@ -465,7 +471,13 @@ export function PlayInputControls({
         }
       }}
       rows={1}
-      className="max-h-[240px] min-h-10 resize-none border-0 !bg-transparent px-2.5 py-2.5 text-base shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:!bg-transparent md:py-2 md:text-lg"
+      className={cn(
+        "max-h-[240px] min-h-10 resize-none border-0 !bg-transparent px-2.5 py-2.5 text-base shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:!bg-transparent",
+        // A sideways phone is as wide as a desktop window, but keeps phone-sized text.
+        isMobilePlatform
+          ? "md:text-base landscape:min-h-9 landscape:py-1.5"
+          : "md:py-2 md:text-lg",
+      )}
       aria-label={t`Enter your action`}
     />
   );
@@ -534,8 +546,8 @@ export function PlayInputControls({
       size="icon"
       data-composer-send=""
       className={cn(
-        "shrink-0 rounded-full",
-        isMobilePlatform ? "size-11" : "size-12",
+        "shrink-0 rounded-xs",
+        isMobilePlatform ? "size-11 landscape:size-9" : "size-12",
       )}
       aria-label={
         canStopGeneration
@@ -560,7 +572,9 @@ export function PlayInputControls({
 
   const renderHistoryControls = () => {
     // Desktop has room to name each action; phones show icons beside the tabs.
-    const buttonClass = isMobilePlatform ? "size-10" : "h-10 px-3";
+    const buttonClass = isMobilePlatform
+      ? "size-10 landscape:size-8"
+      : "h-10 px-3";
     return (
       <div
         className={cn(
@@ -659,12 +673,14 @@ export function PlayInputControls({
     </div>
   );
 
+  // A phone held sideways has little height to spare, so its controls slim
+  // down (the landscape: sizes) to leave the story more room.
   return (
     <div
       data-composer=""
       className={cn(
         "pointer-events-auto z-20 w-full",
-        isMobilePlatform ? "px-2 pt-2" : "p-3",
+        isMobilePlatform ? "px-2 pt-2 landscape:pt-1" : "p-3",
       )}
       style={
         isMobilePlatform

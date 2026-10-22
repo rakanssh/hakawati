@@ -150,7 +150,6 @@
 
 /* The reading surface: frosted glass, so stars and the planet blur away behind the text. */
 .theme-orbit [data-play-backdrop] {
-  border-radius: 16px;
   background: color-mix(in oklch, var(--card) 42%, transparent);
   backdrop-filter: blur(18px) saturate(1.15);
   border: 1px solid oklch(0.9 0.03 265 / 0.12);

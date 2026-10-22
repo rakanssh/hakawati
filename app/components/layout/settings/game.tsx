@@ -1,7 +1,19 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Button } from "@/components/ui/button";
-import { NumberInput } from "@/components/ui";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  useSettingsStore,
+  type TextDirection,
+  type ThinkingVisibility,
+} from "@/store/useSettingsStore";
+import { type Locale, LOCALES, loadLocale } from "@/i18n";
+import { useTheme } from "@/components/theme-provider";
+import { fontPresets } from "@/data/font-presets";
+import { THEME_FONT, themes, type ThemePreference } from "@/themes/registry";
+import {
+  FONT_SIZE_MAX,
+  FONT_SIZE_MIN,
+  UI_SCALE_MAX,
+  UI_SCALE_MIN,
+} from "@/lib/appearance-limits";
 import {
   Select,
   SelectContent,
@@ -9,169 +21,297 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  useSettingsStore,
-  type TextDirection,
-  type ThinkingVisibility,
-} from "@/store/useSettingsStore";
-import { type Locale, LOCALES, loadLocale } from "@/i18n";
 import { ThemePicker } from "./theme-picker";
-import { UI_SCALE_MAX, UI_SCALE_MIN } from "@/lib/appearance-limits";
+import { ThemePreview } from "./theme-preview";
+import { SceneryOptions, SizeStepper } from "./appearance-fields";
+import { FontSelector } from "./font-selector";
+import { useSettingsNavigation, useSettingsWindow } from "./settings-shell";
 import {
-  FontFamilyField,
-  HighlightLatestField,
-  SceneryField,
-  StoryTextSizeField,
-} from "./appearance-fields";
-import {
-  SettingsField,
-  SettingsPanel,
-  SettingsStack,
-} from "@/components/layout/settings/settings-layout";
+  BlockRow,
+  LinkRow,
+  PlainRow,
+  RadioRow,
+  RowText,
+  Segmented,
+  SetupList,
+  SetupSection,
+  ToggleSwitch,
+} from "./settings-rows";
 
-export default function SettingsGame() {
+function ThemeSwatch({ preference }: { preference: ThemePreference }) {
+  if (preference === "system") {
+    return (
+      <div className="relative w-14 shrink-0 overflow-hidden rounded-xs border">
+        <ThemePreview id="light" />
+        <ThemePreview
+          id="dark"
+          className="absolute inset-0 [clip-path:polygon(100%_0,100%_100%,0_100%)]"
+        />
+      </div>
+    );
+  }
+  return (
+    <ThemePreview id={preference} className="w-14 shrink-0 rounded-xs border" />
+  );
+}
+
+function useFontName() {
   const { t } = useLingui();
+  const fontFamily = useSettingsStore((state) => state.fontFamily);
+  const font =
+    fontPresets.find((preset) => preset.value === fontFamily) ?? fontPresets[0];
+  return font.value === THEME_FONT ? t`Theme font` : font.name;
+}
+
+function pickLanguage(code: Locale) {
+  useSettingsStore.getState().setLanguage(code);
+  void loadLocale(code);
+}
+
+function LanguageSelect() {
+  const { t } = useLingui();
+  const language = useSettingsStore((state) => state.language);
+  return (
+    <Select
+      value={language}
+      onValueChange={(code) => pickLanguage(code as Locale)}
+    >
+      <SelectTrigger className="w-56" aria-label={t`Language`}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {(Object.entries(LOCALES) as [Locale, string][]).map(([code, name]) => (
+          <SelectItem key={code} value={code} lang={code}>
+            {name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function Overview() {
+  const { t } = useLingui();
+  const navigation = useSettingsNavigation();
+  // The desktop window picks a font or language from a dropdown; phones open a page.
+  const windowed = useSettingsWindow();
+  const { preference } = useTheme();
+  const theme = themes.find((item) => item.id === preference);
+  const themeName = theme ? t(theme.name) : t`System`;
+  const fontName = useFontName();
   const {
     uiScale,
     setUiScale,
-    textDirection,
-    setTextDirection,
-    language,
-    setLanguage,
+    fontSize,
+    setFontSize,
+    highlightLatestSection,
+    setHighlightLatestSection,
     thinkingVisibility,
     setThinkingVisibility,
-    autoNarrate,
-    setAutoNarrate,
+    language,
+    textDirection,
+    setTextDirection,
   } = useSettingsStore();
 
-  const handleLanguageChange = (value: string) => {
-    const locale = value as Locale;
-    setLanguage(locale);
-    void loadLocale(locale);
-  };
-
   return (
-    <SettingsStack>
-      <SettingsPanel title={<Trans>Theme</Trans>}>
-        <ThemePicker />
-        <SceneryField />
-      </SettingsPanel>
-
-      <SettingsPanel title={<Trans>Language</Trans>}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <SettingsField label={<Trans>Language</Trans>}>
-            <Select value={language} onValueChange={handleLanguageChange}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={t`Select language`} />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(LOCALES).map(([code, name]) => (
-                  <SelectItem key={code} value={code}>
-                    {name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </SettingsField>
-          <SettingsField label={<Trans>UI Direction</Trans>}>
-            <Select
-              value={textDirection}
-              onValueChange={(value) =>
-                setTextDirection(value as TextDirection)
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={t`Select direction`} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="system">
-                  <Trans>Language Default</Trans>
-                </SelectItem>
-                <SelectItem value="ltr">
-                  <Trans>Left to Right</Trans>
-                </SelectItem>
-                <SelectItem value="rtl">
-                  <Trans>Right to Left</Trans>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </SettingsField>
-        </div>
-      </SettingsPanel>
-
-      <SettingsPanel title={<Trans>Reading comfort</Trans>}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <SettingsField label={<Trans>UI Scale (0.5 - 2.0)</Trans>}>
-            <div className="flex flex-row items-center gap-2">
-              <NumberInput
-                min={UI_SCALE_MIN}
-                max={UI_SCALE_MAX}
-                step={0.05}
-                value={uiScale}
-                onValueCommit={(value) => setUiScale(value)}
-                aria-label={t`User interface scale`}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setUiScale(1)}
-                disabled={Math.abs(uiScale - 1) < 0.01}
-              >
-                <Trans>Reset</Trans>
-              </Button>
-            </div>
-          </SettingsField>
-
-          <StoryTextSizeField />
-
-          <FontFamilyField className="sm:col-span-2" />
-
-          <HighlightLatestField />
-        </div>
-      </SettingsPanel>
-
-      <SettingsPanel title={<Trans>AI thinking</Trans>}>
-        <SettingsField label={<Trans>Thinking Visibility</Trans>}>
-          <Select
-            value={thinkingVisibility}
-            onValueChange={(value) =>
-              setThinkingVisibility(value as ThinkingVisibility)
+    <div className="flex flex-col gap-6">
+      <SetupSection title={<Trans>Theme</Trans>}>
+        <SetupList>
+          <LinkRow
+            title={windowed ? <Trans>Theme</Trans> : themeName}
+            trailing={
+              <>
+                {windowed && (
+                  <span className="shrink-0 text-sm text-muted-foreground">
+                    {themeName}
+                  </span>
+                )}
+                <ThemeSwatch preference={preference} />
+              </>
             }
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder={t`Select thinking visibility`} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">
-                <Trans>All</Trans>
-              </SelectItem>
-              <SelectItem value="latest">
-                <Trans>Latest</Trans>
-              </SelectItem>
-              <SelectItem value="none">
-                <Trans>None</Trans>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </SettingsField>
-        <SettingsField
-          label={<Trans>Auto-narrate</Trans>}
-          description={
-            <Trans>
-              Automatically play new story narration after it finishes
-              generating.
-            </Trans>
-          }
-        >
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox
-              checked={autoNarrate}
-              onCheckedChange={(checked) => setAutoNarrate(checked === true)}
+            onClick={() => navigation.push("theme")}
+          />
+          <BlockRow title={<Trans>Scenery</Trans>}>
+            <SceneryOptions />
+          </BlockRow>
+        </SetupList>
+      </SetupSection>
+
+      <SetupSection title={<Trans>Reading</Trans>}>
+        <SetupList>
+          <PlainRow>
+            <RowText title={<Trans>Text size</Trans>} />
+            <SizeStepper
+              value={fontSize}
+              min={FONT_SIZE_MIN}
+              max={FONT_SIZE_MAX}
+              label={t`Text size`}
+              onChange={setFontSize}
             />
-            <Trans>Read new narration aloud</Trans>
-          </label>
-        </SettingsField>
-      </SettingsPanel>
-    </SettingsStack>
+          </PlainRow>
+          <PlainRow>
+            <RowText title={<Trans>Interface size</Trans>} />
+            <SizeStepper
+              value={uiScale}
+              min={UI_SCALE_MIN}
+              max={UI_SCALE_MAX}
+              label={t`Interface size`}
+              onChange={setUiScale}
+            />
+          </PlainRow>
+          {windowed ? (
+            <PlainRow>
+              <RowText title={<Trans>Font</Trans>} />
+              <div className="w-56 shrink-0">
+                <FontSelector />
+              </div>
+            </PlainRow>
+          ) : (
+            <LinkRow
+              title={<Trans>Font</Trans>}
+              trailing={
+                <span className="shrink-0 text-sm text-muted-foreground">
+                  {fontName}
+                </span>
+              }
+              onClick={() => navigation.push("font")}
+            />
+          )}
+          <PlainRow>
+            <RowText title={<Trans>Highlight the latest passage</Trans>} />
+            <ToggleSwitch
+              checked={highlightLatestSection}
+              onCheckedChange={setHighlightLatestSection}
+              label={t`Highlight the latest passage`}
+            />
+          </PlainRow>
+          <BlockRow title={<Trans>Show AI thinking</Trans>}>
+            <Segmented<ThinkingVisibility>
+              fill
+              label={t`Show AI thinking`}
+              value={thinkingVisibility}
+              options={[
+                { value: "all", label: <Trans>All</Trans> },
+                { value: "latest", label: <Trans>Latest</Trans> },
+                { value: "none", label: <Trans>None</Trans> },
+              ]}
+              onChange={setThinkingVisibility}
+            />
+          </BlockRow>
+        </SetupList>
+      </SetupSection>
+
+      <SetupSection title={<Trans>Language</Trans>}>
+        <SetupList>
+          {windowed ? (
+            <PlainRow>
+              <RowText title={<Trans>Language</Trans>} />
+              <LanguageSelect />
+            </PlainRow>
+          ) : (
+            <LinkRow
+              title={<Trans>Language</Trans>}
+              trailing={
+                <span className="shrink-0 text-sm text-muted-foreground">
+                  {LOCALES[language]}
+                </span>
+              }
+              onClick={() => navigation.push("language")}
+            />
+          )}
+          <BlockRow title={<Trans>Direction</Trans>}>
+            <Segmented<TextDirection>
+              fill
+              label={t`Direction`}
+              value={textDirection}
+              options={[
+                { value: "system", label: <Trans>Auto</Trans> },
+                { value: "ltr", label: <Trans>Left to right</Trans> },
+                { value: "rtl", label: <Trans>Right to left</Trans> },
+              ]}
+              onChange={setTextDirection}
+            />
+          </BlockRow>
+        </SetupList>
+      </SetupSection>
+    </div>
   );
+}
+
+function FontPage() {
+  const { t } = useLingui();
+  const fontFamily = useSettingsStore((state) => state.fontFamily);
+  const setFontFamily = useSettingsStore((state) => state.setFontFamily);
+  return (
+    <SetupList role="radiogroup" aria-label={t`Font`}>
+      {fontPresets.map((font) => {
+        const themeFont = font.value === THEME_FONT;
+        return (
+          <RadioRow
+            key={font.id}
+            checked={fontFamily === font.value}
+            onClick={() => setFontFamily(font.value)}
+            title={
+              <span style={themeFont ? undefined : { fontFamily: font.value }}>
+                {themeFont ? t`Theme font` : font.name}
+              </span>
+            }
+            detail={
+              themeFont ? (
+                <Trans>The type each theme was designed with</Trans>
+              ) : font.preview ? (
+                <span style={{ fontFamily: font.value }}>{font.preview}</span>
+              ) : undefined
+            }
+          />
+        );
+      })}
+    </SetupList>
+  );
+}
+
+function LanguagePage() {
+  const { t } = useLingui();
+  const language = useSettingsStore((state) => state.language);
+  return (
+    <SetupList role="radiogroup" aria-label={t`Language`}>
+      {(Object.entries(LOCALES) as [Locale, string][]).map(([code, name]) => (
+        <RadioRow
+          key={code}
+          checked={language === code}
+          lang={code}
+          onClick={() => pickLanguage(code)}
+          title={name}
+        />
+      ))}
+    </SetupList>
+  );
+}
+
+/** Heads Appearance's pages in the settings header. */
+export function AppearanceTitle({ page }: { page: string }) {
+  switch (page) {
+    case "theme":
+      return <Trans>Theme</Trans>;
+    case "font":
+      return <Trans>Font</Trans>;
+    case "language":
+      return <Trans>Language</Trans>;
+    default:
+      return <Trans>Appearance</Trans>;
+  }
+}
+
+export default function SettingsGame() {
+  const navigation = useSettingsNavigation();
+  switch (navigation.page) {
+    case "theme":
+      return <ThemePicker />;
+    case "font":
+      return <FontPage />;
+    case "language":
+      return <LanguagePage />;
+    default:
+      return <Overview />;
+  }
 }

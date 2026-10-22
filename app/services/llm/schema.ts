@@ -138,6 +138,8 @@ export interface LLMModel {
   /** Missing metadata means unknown; an empty list explicitly has no selector. */
   reasoning?: ReasoningCapabilities;
   maxOutputTokens?: number;
+  /** Typed in by the player rather than picked from the provider's list. */
+  manual?: boolean;
 }
 
 /**

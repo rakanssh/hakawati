@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -22,9 +22,14 @@ import { useLingui as useLinguiCore } from "@lingui/react";
 
 interface ProviderHelpModalProps {
   preset: ApiPresetConfig;
+  /** Replaces the default Instructions button. */
+  renderTrigger?: (open: () => void) => ReactNode;
 }
 
-export function ProviderHelpModal({ preset }: ProviderHelpModalProps) {
+export function ProviderHelpModal({
+  preset,
+  renderTrigger,
+}: ProviderHelpModalProps) {
   const { t } = useLingui();
   const { _: resolveMessage } = useLinguiCore();
   const [open, setOpen] = useState(false);
@@ -37,6 +42,20 @@ export function ProviderHelpModal({ preset }: ProviderHelpModalProps) {
 
   const label = resolveMessage(preset.label);
   const description = resolveMessage(help.description);
+
+  const trigger = renderTrigger ? (
+    renderTrigger(() => setOpen(true))
+  ) : (
+    <Button
+      variant="outline"
+      size="default"
+      onClick={() => setOpen(true)}
+      className="shrink-0"
+      aria-label={t`Help for ${label}`}
+    >
+      <Trans>Instructions</Trans>
+    </Button>
+  );
 
   const content = (
     <div className="flex flex-col gap-4">
@@ -82,15 +101,7 @@ export function ProviderHelpModal({ preset }: ProviderHelpModalProps) {
   if (useDrawer) {
     return (
       <>
-        <Button
-          variant="outline"
-          size="default"
-          onClick={() => setOpen(true)}
-          className="shrink-0"
-          aria-label={t`Help for ${label}`}
-        >
-          <Trans>Instructions</Trans>
-        </Button>
+        {trigger}
         <Drawer open={open} onOpenChange={setOpen}>
           <DrawerContent className="min-h-[60dvh]">
             <DrawerHeader>
@@ -106,15 +117,7 @@ export function ProviderHelpModal({ preset }: ProviderHelpModalProps) {
 
   return (
     <>
-      <Button
-        variant="outline"
-        size="default"
-        onClick={() => setOpen(true)}
-        className="shrink-0"
-        aria-label={t`Help for ${label}`}
-      >
-        <Trans>Instructions</Trans>
-      </Button>
+      {trigger}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

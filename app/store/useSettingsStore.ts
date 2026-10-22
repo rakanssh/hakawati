@@ -1,21 +1,15 @@
-import { apiPresetMap, createDefaultProfiles } from "@/data/api-presets";
 import {
   FONT_SIZE_MAX,
   FONT_SIZE_MIN,
   UI_SCALE_MAX,
   UI_SCALE_MIN,
 } from "@/lib/appearance-limits";
+import { apiPresetMap, isPresetAllowedForRole } from "@/data/api-presets";
 import { LLMModel, ReasoningEffort } from "@/services/llm/schema";
 import {
-  getModelReasoning,
-  normalizeReasoningEffort,
-  reasoningProvider,
-} from "@/services/llm/reasoning";
-import {
+  ApiConnection,
   ApiPreset,
-  ApiProfileSettings,
   ApiType,
-  MODEL_ROLES,
   ModelRole,
   ModelRoleSettings,
 } from "@/types";
@@ -27,13 +21,34 @@ import {
 } from "@/themes/registry";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import {
+  DEFAULT_TTS_VOICE,
+  connectionsFromLegacyRoles,
+  createConnection,
+  createDefaultRoleAssignments,
+  findConnection,
+  findMatchingConnection,
+  normalizeChoice,
+  normalizeConnections,
+  normalizeRoleAssignments,
+  resolveModelRoles,
+  switchConnection,
+  updateChoicesOn,
+  usesReasoning,
+  type NewConnection,
+  type RoleAssignments,
+} from "./model-connections";
+import {
+  legacyModelRoles,
+  type LegacyProviderState,
+} from "./legacy-model-roles";
 
 export type TextDirection = "system" | "ltr" | "rtl";
 
-const SETTINGS_VERSION = 7;
+const SETTINGS_VERSION = 8;
 export type ThinkingVisibility = "all" | "latest" | "none";
 
-export const DEFAULT_TTS_VOICE = "alloy";
+export { DEFAULT_TTS_VOICE };
 
 // Languages that require a RTL UI. Expand later.
 const RTL_LANGUAGES = new Set([
@@ -55,285 +70,69 @@ export function resolveTextDirection(
   return RTL_LANGUAGES.has(primaryLang) ? "rtl" : "ltr";
 }
 
-function cloneProfiles(
-  profiles: Record<ApiPreset, ApiProfileSettings>,
-): Record<ApiPreset, ApiProfileSettings> {
-  return Object.fromEntries(
-    Object.entries(profiles).map(([preset, profile]) => [
-      preset,
-      { ...profile },
-    ]),
-  ) as Record<ApiPreset, ApiProfileSettings>;
-}
+type PersistedSettingsState = Partial<SettingsStoreType> &
+  LegacyProviderState & {
+    showThinkingInLog?: boolean;
+    thinkingVisibility?: ThinkingVisibility;
+    autoNarrate?: boolean;
+    highlightLatestSection?: boolean;
+    themeScenery?: ThemeScenery;
+  };
 
-function mergeProfiles(
-  profiles?: Partial<Record<ApiPreset, ApiProfileSettings>>,
-): Record<ApiPreset, ApiProfileSettings> {
-  const defaults = createDefaultProfiles();
-  const merged = { ...defaults };
+type RoleState = Pick<
+  SettingsStoreType,
+  "connections" | "roleAssignments" | "modelRoles" | "modelContextLength"
+>;
 
-  for (const key of Object.keys(defaults) as ApiPreset[]) {
-    const profile = profiles?.[key];
-    if (profile) {
-      merged[key] = normalizeProfileReasoning(
-        {
-          ...defaults[key],
-          ...profile,
-        },
-        key === ApiPreset.CHATGPT,
-      );
-    }
-  }
-
-  return merged;
-}
-
-function currentPreset(preset: ApiPreset): ApiPreset {
-  return Object.hasOwn(apiPresetMap, preset) ? preset : ApiPreset.GENERIC;
-}
-
-function preserveDisplacedProfile(
-  savedPreset: ApiPreset,
-  profiles?: Partial<Record<ApiPreset, ApiProfileSettings>>,
-  retiredProfiles?: ModelRoleSettings["retiredProfiles"],
-): ModelRoleSettings["retiredProfiles"] {
-  const activePreset = currentPreset(savedPreset);
-  if (savedPreset === activePreset || !profiles?.[activePreset])
-    return retiredProfiles;
+/** Recomputes what each role resolves to after its connections or assignments change. */
+function roleState(
+  connections: ApiConnection[],
+  roleAssignments: RoleAssignments,
+  previous?: Partial<Record<ModelRole, ModelRoleSettings>>,
+): RoleState {
+  const modelRoles = resolveModelRoles(connections, roleAssignments, previous);
   return {
-    ...retiredProfiles,
-    [activePreset]: { ...profiles[activePreset] },
+    connections,
+    roleAssignments,
+    modelRoles,
+    modelContextLength: modelRoles.narrator.model?.contextLength ?? 0,
   };
 }
 
-export function createDefaultModelRoleSettings(
-  activePreset: ApiPreset = ApiPreset.GENERIC,
-  role?: ModelRole,
-): ModelRoleSettings {
-  const profiles = createDefaultProfiles();
-  const profile = profiles[activePreset];
-  return {
-    apiType: ApiType.OPENAI,
-    activePreset,
-    profiles,
-    baseUrl: profile.baseUrl,
-    apiKey: profile.apiKey,
-    model: profile.model,
-    ...(role === "textToSpeech" ? { voice: DEFAULT_TTS_VOICE } : {}),
-  };
-}
-
-export function createDefaultModelRoles(): Record<
-  ModelRole,
-  ModelRoleSettings
-> {
-  return Object.fromEntries(
-    MODEL_ROLES.map((role) => [
-      role,
-      createDefaultModelRoleSettings(undefined, role),
-    ]),
-  ) as Record<ModelRole, ModelRoleSettings>;
-}
-
-function normalizeProfileReasoning<T extends ApiProfileSettings>(
-  profile: T,
-  isChatGpt: boolean,
-): T {
-  return {
-    ...profile,
-    reasoningEffort: normalizeReasoningEffort(
-      profile.reasoningEffort,
-      getModelReasoning(
-        profile.model,
-        reasoningProvider(profile.baseUrl, isChatGpt),
-      ),
-    ),
-  };
-}
-
-function syncActiveProfile(config: ModelRoleSettings): ModelRoleSettings {
-  config = normalizeProfileReasoning(
-    config,
-    config.activePreset === ApiPreset.CHATGPT,
-  );
-  return {
-    ...config,
-    profiles: {
-      ...config.profiles,
-      [config.activePreset]: {
-        ...config.profiles[config.activePreset],
-        baseUrl: config.baseUrl,
-        apiKey: config.apiKey,
-        model: config.model,
-        reasoningEffort: config.reasoningEffort,
-      },
-    },
-  };
-}
-
-function narratorAliases(config: ModelRoleSettings) {
-  return {
-    activePreset: config.activePreset,
-    profiles: config.profiles,
-    apiKey: config.apiKey,
-    apiType: config.apiType,
-    model: config.model,
-    openAiBaseUrl: config.baseUrl,
-    modelContextLength: config.model?.contextLength ?? 0,
-  };
-}
-
-function roleStatePatch(
-  state: SettingsStoreType,
-  role: ModelRole,
-  config: ModelRoleSettings,
-  extra?: Partial<SettingsStoreType>,
-): Partial<SettingsStoreType> {
-  return {
-    modelRoles: {
-      ...state.modelRoles,
-      [role]: config,
-    },
-    ...(role === "narrator" ? narratorAliases(config) : {}),
-    ...extra,
-  };
-}
-
-type PersistedSettingsState = Partial<SettingsStoreType> & {
-  profiles?: Partial<Record<ApiPreset, ApiProfileSettings>>;
-  retiredProfiles?: ModelRoleSettings["retiredProfiles"];
-  modelRoles?: Partial<Record<ModelRole, Partial<ModelRoleSettings>>>;
-  showThinkingInLog?: boolean;
-  thinkingVisibility?: ThinkingVisibility;
-  autoNarrate?: boolean;
-  highlightLatestSection?: boolean;
-  themeScenery?: ThemeScenery;
-};
-
-function normalizeRoleSettings(
-  input?: Partial<ModelRoleSettings>,
-  fallback?: ModelRoleSettings,
-  role?: ModelRole,
-): ModelRoleSettings {
-  const savedPreset =
-    input?.activePreset ?? fallback?.activePreset ?? ApiPreset.GENERIC;
-  const activePreset = currentPreset(savedPreset);
-  const savedProfiles = input?.profiles ?? fallback?.profiles;
-  const profiles = mergeProfiles(savedProfiles);
-  const activeProfile = {
-    ...(savedPreset === activePreset
-      ? profiles[activePreset]
-      : createDefaultProfiles()[ApiPreset.GENERIC]),
-    ...savedProfiles?.[savedPreset],
-  };
-  // Removed presets continue as a generic endpoint with the existing credentials.
-  const inherited = savedPreset === activePreset ? fallback : activeProfile;
-  const config: ModelRoleSettings = {
-    apiType: input?.apiType ?? fallback?.apiType ?? ApiType.OPENAI,
-    activePreset,
-    profiles,
-    retiredProfiles: preserveDisplacedProfile(
-      savedPreset,
-      savedProfiles,
-      input?.retiredProfiles ?? fallback?.retiredProfiles,
-    ),
-    baseUrl: input?.baseUrl ?? inherited?.baseUrl ?? activeProfile.baseUrl,
-    apiKey: input?.apiKey ?? inherited?.apiKey ?? activeProfile.apiKey,
-    model: input?.model ?? inherited?.model ?? activeProfile.model,
-    reasoningEffort:
-      role === "narrator" || role === "utility"
-        ? (input?.reasoningEffort ??
-          inherited?.reasoningEffort ??
-          activeProfile.reasoningEffort)
-        : undefined,
-    ...(role === "textToSpeech"
-      ? { voice: input?.voice ?? fallback?.voice ?? DEFAULT_TTS_VOICE }
-      : {}),
-  };
-
-  return syncActiveProfile(config);
-}
-
-function createLegacyRoleSettings(
-  state: PersistedSettingsState,
-): ModelRoleSettings {
-  const savedPreset = state.activePreset ?? ApiPreset.GENERIC;
-  const activePreset = currentPreset(savedPreset);
-  const profiles = mergeProfiles(state.profiles);
-
-  if (!state.profiles && (state.apiKey || state.openAiBaseUrl || state.model)) {
-    profiles[ApiPreset.GENERIC] = {
-      ...profiles[ApiPreset.GENERIC],
-      baseUrl: state.openAiBaseUrl || "",
-      apiKey: state.apiKey || "",
-      model: state.model,
-    };
-  }
-
-  const activeProfile = {
-    ...(savedPreset === activePreset
-      ? profiles[activePreset]
-      : createDefaultProfiles()[ApiPreset.GENERIC]),
-    ...state.profiles?.[savedPreset],
-  };
-  return syncActiveProfile({
-    apiType: state.apiType ?? ApiType.OPENAI,
-    activePreset,
-    profiles,
-    retiredProfiles: preserveDisplacedProfile(
-      savedPreset,
-      state.profiles,
-      state.retiredProfiles,
-    ),
-    baseUrl: state.openAiBaseUrl ?? activeProfile.baseUrl,
-    apiKey: state.apiKey ?? activeProfile.apiKey,
-    model: state.model ?? activeProfile.model,
-    reasoningEffort: activeProfile.reasoningEffort,
-  });
-}
+// Fields the store derives on load; earlier versions also saved provider settings at the top level.
+const DERIVED_KEYS = [
+  "modelRoles",
+  "modelContextLength",
+  "activePreset",
+  "profiles",
+  "retiredProfiles",
+  "apiKey",
+  "apiType",
+  "model",
+  "openAiBaseUrl",
+] as const;
 
 export function migrateSettingsState(
   persistedState: unknown,
   version = SETTINGS_VERSION,
 ): SettingsStoreType {
   const state = (persistedState ?? {}) as PersistedSettingsState;
-  const defaultRoles = createDefaultModelRoles();
-  const legacyRole = createLegacyRoleSettings(state);
+  const { connections, roleAssignments } = Array.isArray(state.connections)
+    ? {
+        connections: normalizeConnections(state.connections),
+        roleAssignments: normalizeRoleAssignments(state.roleAssignments),
+      }
+    : connectionsFromLegacyRoles(legacyModelRoles(state));
 
-  const modelRoles = state.modelRoles
-    ? (Object.fromEntries(
-        MODEL_ROLES.map((role) => [
-          role,
-          normalizeRoleSettings(
-            state.modelRoles?.[role],
-            role === "narrator" ? legacyRole : defaultRoles[role],
-            role,
-          ),
-        ]),
-      ) as Record<ModelRole, ModelRoleSettings>)
-    : ({
-        narrator: normalizeRoleSettings(legacyRole, undefined, "narrator"),
-        utility: normalizeRoleSettings(
-          {
-            ...legacyRole,
-            profiles: cloneProfiles(legacyRole.profiles),
-          },
-          undefined,
-          "utility",
-        ),
-        speechToText: defaultRoles.speechToText,
-        textToSpeech: defaultRoles.textToSpeech,
-      } satisfies Record<ModelRole, ModelRoleSettings>);
-
-  const narrator = modelRoles.narrator;
+  const rest: Record<string, unknown> = { ...state };
+  for (const key of DERIVED_KEYS) delete rest[key];
   const thinkingVisibility: ThinkingVisibility =
     state.thinkingVisibility ??
     (state.showThinkingInLog === false ? "none" : "all");
 
   return {
-    ...state,
-    ...narratorAliases(narrator),
-    modelRoles,
+    ...rest,
+    ...roleState(connections, roleAssignments),
     textDirection: state.textDirection ?? "system",
     language: state.language ?? "en",
     thinkingVisibility,
@@ -357,18 +156,15 @@ export function isModelRoleConfigured(config: ModelRoleSettings): boolean {
 }
 
 export interface SettingsStoreType {
-  // Narrator aliases retained for backward compatibility.
-  activePreset: ApiPreset;
-  profiles: Record<ApiPreset, ApiProfileSettings>;
-  apiKey: string;
-  apiType: ApiType;
-  model: LLMModel | undefined;
-  openAiBaseUrl: string;
-
+  /** Saved provider accounts that the roles share. */
+  connections: ApiConnection[];
+  roleAssignments: RoleAssignments;
+  /** Each role resolved against its connection. Derived on load, never saved. */
   modelRoles: Record<ModelRole, ModelRoleSettings>;
 
   // Global settings
   contextWindow: number;
+  /** The narrator model's context length. Derived on load, never saved. */
   modelContextLength: number;
   maxTokens: number; //range [1, contextWindow]
   temperature?: number; //range [0,2]
@@ -403,18 +199,18 @@ export interface SettingsStoreType {
   chatGptPlanNoticeAcknowledged: boolean;
   acknowledgeChatGptPlanNotice: () => void;
 
-  setActivePreset: (preset: ApiPreset) => void;
-  setApiKey: (apiKey: string) => void;
-  setApiType: (apiType: ApiType) => void;
-  setModel: (model: LLMModel | undefined) => void;
   setContextWindow: (contextWindow: number) => void;
-  setOpenAiBaseUrl: (openAiBaseUrl: string) => void;
-  setRoleActivePreset: (role: ModelRole, preset: ApiPreset) => void;
-  setRoleApiKey: (role: ModelRole, apiKey: string) => void;
-  setRoleApiType: (role: ModelRole, apiType: ApiType) => void;
+  /** Saves a connection, or returns the existing one to the same account. */
+  addConnection: (connection: NewConnection) => string;
+  updateConnection: (
+    id: string,
+    patch: Partial<Pick<ApiConnection, "baseUrl" | "apiKey">>,
+  ) => void;
+  removeConnection: (id: string) => void;
+  setRoleConnection: (role: ModelRole, connectionId: string | null) => void;
+  setUtilitySameAsNarrator: (same: boolean) => void;
   setRoleModel: (role: ModelRole, model: LLMModel | undefined) => void;
   setRoleReasoningEffort: (role: ModelRole, effort?: ReasoningEffort) => void;
-  setRoleBaseUrl: (role: ModelRole, baseUrl: string) => void;
   setRoleVoice: (role: ModelRole, voice: string) => void;
   chatGptProfileId: string | null;
   clearChatGptModels: (profileId?: string | null) => void;
@@ -457,20 +253,15 @@ export interface SettingsStoreType {
   resetAllPromptsToDefault: () => void;
 }
 
-const defaultProfiles = createDefaultProfiles();
-const defaultModelRoles = createDefaultModelRoles();
+type SavedSettings = Omit<
+  SettingsStoreType,
+  "modelRoles" | "modelContextLength"
+>;
 
 export const useSettingsStore = create<SettingsStoreType>()(
-  persist<SettingsStoreType>(
+  persist<SettingsStoreType, [], [], SavedSettings>(
     (set, get) => ({
-      // Narrator aliases retained for backward compatibility.
-      activePreset: ApiPreset.GENERIC,
-      profiles: defaultProfiles,
-      apiKey: "",
-      apiType: ApiType.OPENAI,
-      model: undefined,
-      openAiBaseUrl: "",
-      modelRoles: defaultModelRoles,
+      ...roleState([], createDefaultRoleAssignments()),
       chatGptProfileId: null,
 
       // Global settings
@@ -501,17 +292,6 @@ export const useSettingsStore = create<SettingsStoreType>()(
       acknowledgeChatGptPlanNotice: () =>
         set({ chatGptPlanNoticeAcknowledged: true }),
 
-      setActivePreset: (preset: ApiPreset) =>
-        get().setRoleActivePreset("narrator", preset),
-
-      setApiKey: (apiKey: string) => get().setRoleApiKey("narrator", apiKey),
-
-      setApiType: (apiType: ApiType) =>
-        get().setRoleApiType("narrator", apiType),
-
-      setModel: (model: LLMModel | undefined) =>
-        get().setRoleModel("narrator", model),
-
       setContextWindow: (contextWindow: number) =>
         set({
           contextWindow:
@@ -520,52 +300,109 @@ export const useSettingsStore = create<SettingsStoreType>()(
               : contextWindow,
         }),
 
-      setOpenAiBaseUrl: (openAiBaseUrl: string) =>
-        get().setRoleBaseUrl("narrator", openAiBaseUrl),
+      addConnection: (input: NewConnection) => {
+        const state = get();
+        const connection = createConnection(input);
+        const existing = findMatchingConnection(state.connections, connection);
+        if (existing) return existing.id;
+        set(
+          roleState(
+            [...state.connections, connection],
+            state.roleAssignments,
+            state.modelRoles,
+          ),
+        );
+        return connection.id;
+      },
 
-      setRoleActivePreset: (role: ModelRole, preset: ApiPreset) => {
+      updateConnection: (id, patch) =>
         set((state) => {
-          const current =
-            state.modelRoles[role] ?? createDefaultModelRoleSettings();
-          const defaults = createDefaultProfiles();
-          const profile = current.profiles[preset] ?? defaults[preset];
-          const nextRole = syncActiveProfile({
+          const current = findConnection(state.connections, id);
+          if (!current) return {};
+          const next = {
             ...current,
-            activePreset: preset,
-            profiles: current.profiles[preset]
-              ? current.profiles
-              : { ...current.profiles, [preset]: profile },
-            baseUrl: profile.baseUrl,
-            apiKey: profile.apiKey,
-            model: profile.model,
-            reasoningEffort: profile.reasoningEffort,
-          });
-          return roleStatePatch(state, role, nextRole);
-        });
-      },
+            baseUrl: apiPresetMap[current.preset].editableUrl
+              ? (patch.baseUrl ?? current.baseUrl).trim()
+              : current.baseUrl,
+            apiKey: (patch.apiKey ?? current.apiKey).trim(),
+          };
+          let roleAssignments = state.roleAssignments;
+          if (next.baseUrl !== current.baseUrl) {
+            // Another server offers other models.
+            roleAssignments = updateChoicesOn(roleAssignments, id, () => ({
+              model: undefined,
+            }));
+          } else if (next.apiKey !== current.apiKey) {
+            // Another account may offer other thinking levels.
+            roleAssignments = updateChoicesOn(
+              roleAssignments,
+              id,
+              (choice) => ({ ...choice, reasoningEffort: undefined }),
+            );
+          }
+          return roleState(
+            state.connections.map((c) => (c.id === id ? next : c)),
+            roleAssignments,
+            state.modelRoles,
+          );
+        }),
 
-      setRoleApiKey: (role: ModelRole, apiKey: string) => {
-        set((state) => {
-          const current =
-            state.modelRoles[role] ?? createDefaultModelRoleSettings();
-          const nextRole = syncActiveProfile({
-            ...current,
-            apiKey,
-            reasoningEffort:
-              apiKey === current.apiKey ? current.reasoningEffort : undefined,
-          });
-          return roleStatePatch(state, role, nextRole);
-        });
-      },
+      removeConnection: (id) =>
+        set((state) =>
+          roleState(
+            state.connections.filter((c) => c.id !== id),
+            updateChoicesOn(state.roleAssignments, id, () => undefined),
+            state.modelRoles,
+          ),
+        ),
 
-      setRoleApiType: (role: ModelRole, apiType: ApiType) => {
+      setRoleConnection: (role, connectionId) =>
         set((state) => {
-          const current =
-            state.modelRoles[role] ?? createDefaultModelRoleSettings();
-          const nextRole = syncActiveProfile({ ...current, apiType });
-          return roleStatePatch(state, role, nextRole);
-        });
-      },
+          const connection = findConnection(state.connections, connectionId);
+          if (
+            connectionId &&
+            (!connection || !isPresetAllowedForRole(connection.preset, role))
+          ) {
+            return {};
+          }
+          const next = switchConnection(
+            state.roleAssignments[role],
+            connectionId,
+          );
+          return roleState(
+            state.connections,
+            {
+              ...state.roleAssignments,
+              [role]:
+                role === "utility" ? { ...next, sameAsNarrator: false } : next,
+            },
+            state.modelRoles,
+          );
+        }),
+
+      setUtilitySameAsNarrator: (same) =>
+        set((state) => {
+          const { narrator, utility } = state.roleAssignments;
+          if (Boolean(utility.sameAsNarrator) === same) return {};
+          // A utility that never had its own connection starts from the narrator's.
+          const own =
+            same || utility.connectionId
+              ? utility
+              : {
+                  ...utility,
+                  connectionId: narrator.connectionId,
+                  model: narrator.model,
+                  reasoningEffort: narrator.reasoningEffort,
+                };
+          return roleState(
+            state.connections,
+            {
+              ...state.roleAssignments,
+              utility: { ...own, sameAsNarrator: same },
+            },
+            state.modelRoles,
+          );
+        }),
 
       setRoleModel: (role: ModelRole, model: LLMModel | undefined) => {
         if (model) {
@@ -579,82 +416,69 @@ export const useSettingsStore = create<SettingsStoreType>()(
         }
 
         set((state) => {
-          const current =
-            state.modelRoles[role] ?? createDefaultModelRoleSettings();
-          const nextRole = syncActiveProfile({ ...current, model });
-          const length = model?.contextLength ?? Number.MAX_SAFE_INTEGER;
-          return roleStatePatch(
-            state,
-            role,
-            nextRole,
-            role === "narrator" && model
-              ? { contextWindow: Math.min(state.contextWindow ?? 2048, length) }
-              : undefined,
+          const current = state.roleAssignments[role];
+          const next = normalizeChoice(
+            { ...current, model },
+            findConnection(state.connections, current.connectionId),
           );
+          const length = model?.contextLength ?? Number.MAX_SAFE_INTEGER;
+          return {
+            ...roleState(
+              state.connections,
+              { ...state.roleAssignments, [role]: next },
+              state.modelRoles,
+            ),
+            ...(role === "narrator" && model
+              ? { contextWindow: Math.min(state.contextWindow ?? 2048, length) }
+              : {}),
+          };
         });
       },
 
       setRoleReasoningEffort: (role: ModelRole, effort?: ReasoningEffort) => {
-        if (role !== "narrator" && role !== "utility") return;
+        if (!usesReasoning(role)) return;
         set((state) => {
-          const current = state.modelRoles[role];
-          const nextRole = syncActiveProfile({
-            ...current,
-            reasoningEffort: effort,
-          });
-          return roleStatePatch(state, role, nextRole);
+          const current = state.roleAssignments[role];
+          const next = normalizeChoice(
+            { ...current, reasoningEffort: effort },
+            findConnection(state.connections, current.connectionId),
+          );
+          return roleState(
+            state.connections,
+            { ...state.roleAssignments, [role]: next },
+            state.modelRoles,
+          );
         });
       },
 
-      setRoleBaseUrl: (role: ModelRole, baseUrl: string) => {
-        set((state) => {
-          const current =
-            state.modelRoles[role] ?? createDefaultModelRoleSettings();
-          const nextRole = syncActiveProfile({
-            ...current,
-            baseUrl,
-            model: undefined,
-            reasoningEffort: undefined,
-          });
-          return roleStatePatch(state, role, nextRole);
-        });
-      },
+      setRoleVoice: (role: ModelRole, voice: string) =>
+        set((state) =>
+          roleState(
+            state.connections,
+            {
+              ...state.roleAssignments,
+              [role]: { ...state.roleAssignments[role], voice },
+            },
+            state.modelRoles,
+          ),
+        ),
 
-      setRoleVoice: (role: ModelRole, voice: string) => {
+      clearChatGptModels: (profileId = null) =>
         set((state) => {
-          const current =
-            state.modelRoles[role] ?? createDefaultModelRoleSettings();
-          const nextRole = syncActiveProfile({ ...current, voice });
-          return roleStatePatch(state, role, nextRole);
-        });
-      },
-
-      clearChatGptModels: (profileId = null) => {
-        set((state) => {
-          const modelRoles = { ...state.modelRoles };
-          for (const role of MODEL_ROLES) {
-            const current = modelRoles[role];
-            modelRoles[role] = {
-              ...current,
-              profiles: {
-                ...current.profiles,
-                [ApiPreset.CHATGPT]: {
-                  ...createDefaultProfiles()[ApiPreset.CHATGPT],
-                  model: undefined,
-                },
-              },
-              ...(current.activePreset === ApiPreset.CHATGPT
-                ? { model: undefined, reasoningEffort: undefined }
-                : {}),
-            };
+          let roleAssignments = state.roleAssignments;
+          for (const connection of state.connections) {
+            if (connection.preset !== ApiPreset.CHATGPT) continue;
+            roleAssignments = updateChoicesOn(
+              roleAssignments,
+              connection.id,
+              () => ({ model: undefined }),
+            );
           }
           return {
-            modelRoles,
+            ...roleState(state.connections, roleAssignments, state.modelRoles),
             chatGptProfileId: profileId,
-            ...narratorAliases(modelRoles.narrator),
           };
-        });
-      },
+        }),
 
       setMaxTokens: (maxTokens: number) =>
         set({
@@ -808,6 +632,23 @@ export const useSettingsStore = create<SettingsStoreType>()(
       name: "settings",
       migrate: migrateSettingsState,
       version: SETTINGS_VERSION,
+      partialize: (state) =>
+        Object.fromEntries(
+          Object.entries(state).filter(
+            ([key]) => key !== "modelRoles" && key !== "modelContextLength",
+          ),
+        ) as SavedSettings,
+      // What each role resolves to is rebuilt from the saved connections and assignments.
+      merge: (persisted, current) => {
+        const merged = { ...current, ...(persisted as Partial<SavedSettings>) };
+        return {
+          ...merged,
+          ...roleState(
+            normalizeConnections(merged.connections),
+            normalizeRoleAssignments(merged.roleAssignments),
+          ),
+        };
+      },
     },
   ),
 );

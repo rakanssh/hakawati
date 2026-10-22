@@ -165,7 +165,6 @@ const PREVIEWS: Record<ThemeId, PreviewStyle> = {
   storybook: {
     entry: "rounded-[5px] border-foreground/60 border-s border-s-foreground/60",
     composer: "rounded-[6px] border-foreground/60",
-    send: "rounded-full",
     back: (
       <>
         <circle cx={6} cy={8} r={26} fill="oklch(0.86 0.09 25 / 0.5)" />
@@ -200,7 +199,7 @@ const PREVIEWS: Record<ThemeId, PreviewStyle> = {
     entry: "h-[3px] w-[60%] rounded-none border-0 bg-primary/80",
     composer:
       "rounded-[2px] border-0 shadow-[0_0_0_1.5px_oklch(0.24_0.006_250)]",
-    send: "rounded-full bg-[oklch(0.2_0.01_60)]",
+    send: "bg-[oklch(0.2_0.01_60)]",
     back: (
       <rect
         x={18}
