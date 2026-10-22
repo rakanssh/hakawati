@@ -547,6 +547,7 @@ describe("role-aware LLM service", () => {
 
     const result = await synthesizeNarration("The door opens.");
 
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock).toHaveBeenCalledWith(
       "https://tts.example/v1/audio/speech",
       expect.objectContaining({
@@ -563,8 +564,28 @@ describe("role-aware LLM service", () => {
       voice: "narrator-voice",
       response_format: "mp3",
     });
-    expect(result.audio).toBeInstanceOf(Blob);
-    expect(result.audio.type).toBe("audio/mpeg");
+    expect(result).toHaveLength(1);
+    expect(result[0]).toBeInstanceOf(Blob);
+    expect(result[0].type).toBe("audio/mpeg");
+  });
+
+  it("sends narration over the speech input limit as ordered parts", async () => {
+    const paragraphs = ["first", "middle", "last"].map((word) =>
+      `The ${word} paragraph goes on. `.repeat(100).trim(),
+    );
+    fetchMock.mockImplementation(async (_url: string, init: RequestInit) =>
+      responseAudio(JSON.parse(String(init.body)).input),
+    );
+
+    const result = await synthesizeNarration(paragraphs.join("\n\n"));
+
+    const inputs = fetchMock.mock.calls.map(
+      ([, init]) => JSON.parse(init.body).input,
+    );
+    expect(inputs).toEqual(paragraphs);
+    expect(result.map((audio) => audio.size)).toEqual(
+      paragraphs.map((paragraph) => paragraph.length),
+    );
   });
 
   it("rejects speech synthesis when the text-to-speech role is missing", async () => {

@@ -35,6 +35,7 @@ All notable changes to this project are documented in this file.
 - Hakawati says "Update Hakawati to sync" when the cloud needs a newer version.
 - Pulling a tale from the cloud keeps its cover, and a device removed from your account no longer adds itself back.
 - Sign-in waits 10 minutes instead of 2.
+- Text to Speech reads long passages with OpenAI, and long narrated sessions no longer use more and more memory.
 
 ## [v1.2.0] - 2026-10-06
 

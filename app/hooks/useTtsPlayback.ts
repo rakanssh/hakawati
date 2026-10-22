@@ -23,7 +23,36 @@ type AudioContextFactory =
   | (new (contextOptions?: AudioContextOptions) => AudioContext)
   | ((contextOptions?: AudioContextOptions) => AudioContext);
 
+/**
+ * Narration kept for replay. As WAV that's about 5.8 MB a minute, so this
+ * holds about five minutes. The newest narration stays even when it's longer.
+ */
+export const MAX_TTS_SESSION_CACHE_BYTES = 32 * 1024 * 1024;
+
+// Maps iterate in insertion order, so the least recently played comes first.
 const sessionAudioCache = new Map<string, CachedNarrationAudio>();
+
+function getCachedNarration(cacheKey: string) {
+  const cached = sessionAudioCache.get(cacheKey);
+  if (cached) {
+    sessionAudioCache.delete(cacheKey);
+    sessionAudioCache.set(cacheKey, cached);
+  }
+  return cached;
+}
+
+function cacheNarration(cacheKey: string, cached: CachedNarrationAudio) {
+  sessionAudioCache.delete(cacheKey);
+  let bytes = cached.audio.size;
+  for (const entry of sessionAudioCache.values()) bytes += entry.audio.size;
+  // Evicting before the new narration goes in means it always stays.
+  for (const [key, entry] of sessionAudioCache) {
+    if (bytes <= MAX_TTS_SESSION_CACHE_BYTES) break;
+    sessionAudioCache.delete(key);
+    bytes -= entry.audio.size;
+  }
+  sessionAudioCache.set(cacheKey, cached);
+}
 
 interface PlaybackState {
   status: TtsPlaybackStatus;
@@ -74,7 +103,7 @@ function isAbortError(error: unknown): boolean {
   return typeof error === "string" && /abort|cancel/i.test(error);
 }
 
-async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
+export async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
   if (typeof blob.arrayBuffer === "function") {
     return blob.arrayBuffer();
   }
@@ -95,7 +124,16 @@ async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
   });
 }
 
-async function createSeekableAudio(audio: Blob): Promise<CachedNarrationAudio> {
+/** The parts as they came, for when they can't be decoded. */
+function joinAudioParts(parts: Blob[]): Blob {
+  return parts.length === 1
+    ? parts[0]
+    : new Blob(parts, { type: parts[0]?.type });
+}
+
+async function createSeekableAudio(
+  parts: Blob[],
+): Promise<CachedNarrationAudio> {
   const globalAudioContext: AudioContextFactory | undefined =
     "AudioContext" in globalThis
       ? (globalThis.AudioContext as AudioContextFactory | undefined)
@@ -120,7 +158,7 @@ async function createSeekableAudio(audio: Blob): Promise<CachedNarrationAudio> {
     : (windowAudioContext ?? webkitAudioContext);
 
   if (!AudioContextConstructor) {
-    return { audio, duration: 0 };
+    return { audio: joinAudioParts(parts), duration: 0 };
   }
 
   let context: AudioContext | null = null;
@@ -136,36 +174,70 @@ async function createSeekableAudio(audio: Blob): Promise<CachedNarrationAudio> {
         ) => AudioContext
       )();
     }
-    const buffer = await context.decodeAudioData(
-      await blobToArrayBuffer(audio),
-    );
-    const duration =
-      Number.isFinite(buffer.duration) && buffer.duration > 0
-        ? buffer.duration
-        : 0;
-    if (duration <= 0) {
-      return { audio, duration: 0 };
+    // Each part is encoded as soon as it's decoded, so only one decoded part
+    // is held at a time.
+    const pcmParts: Blob[] = [];
+    let duration = 0;
+    let sampleRate = 0;
+    let channelCount = 0;
+    for (const part of parts) {
+      const buffer = await context.decodeAudioData(
+        await blobToArrayBuffer(part),
+      );
+      if (!Number.isFinite(buffer.duration) || buffer.duration <= 0) {
+        return { audio: joinAudioParts(parts), duration: 0 };
+      }
+      if (pcmParts.length === 0) {
+        sampleRate = buffer.sampleRate;
+        channelCount = buffer.numberOfChannels;
+      }
+      pcmParts.push(encodePcm16(buffer, channelCount));
+      duration += buffer.duration;
     }
     return {
-      audio: encodeAudioBufferAsWav(buffer),
+      audio: createWavBlob(pcmParts, sampleRate, channelCount),
       duration,
     };
   } catch {
-    return { audio, duration: 0 };
+    return { audio: joinAudioParts(parts), duration: 0 };
   } finally {
     await context?.close().catch(() => undefined);
   }
 }
 
-function encodeAudioBufferAsWav(buffer: AudioBuffer): Blob {
-  const channelCount = buffer.numberOfChannels;
-  const sampleRate = buffer.sampleRate;
-  const sampleCount = buffer.length;
-  const bytesPerSample = 2;
-  const blockAlign = channelCount * bytesPerSample;
-  const dataSize = sampleCount * blockAlign;
-  const wav = new ArrayBuffer(44 + dataSize);
-  const view = new DataView(wav);
+const WAV_BYTES_PER_SAMPLE = 2;
+
+/**
+ * Interleaved 16-bit samples, as a Blob so the array can be freed before the
+ * next part. A part short of channels repeats its last one.
+ */
+function encodePcm16(buffer: AudioBuffer, channelCount: number): Blob {
+  // Typed arrays use the platform's byte order, little-endian everywhere
+  // Hakawati runs, which is what WAV needs.
+  const pcm = new Int16Array(buffer.length * channelCount);
+  const channels = Array.from({ length: channelCount }, (_, channel) =>
+    buffer.getChannelData(Math.min(channel, buffer.numberOfChannels - 1)),
+  );
+  let offset = 0;
+  for (let sample = 0; sample < buffer.length; sample += 1) {
+    for (let channel = 0; channel < channelCount; channel += 1) {
+      const value = Math.max(-1, Math.min(1, channels[channel][sample] ?? 0));
+      pcm[offset] = value < 0 ? value * 0x8000 : value * 0x7fff;
+      offset += 1;
+    }
+  }
+  return new Blob([pcm]);
+}
+
+function createWavBlob(
+  pcmParts: Blob[],
+  sampleRate: number,
+  channelCount: number,
+): Blob {
+  const blockAlign = channelCount * WAV_BYTES_PER_SAMPLE;
+  const dataSize = pcmParts.reduce((size, part) => size + part.size, 0);
+  const header = new ArrayBuffer(44);
+  const view = new DataView(header);
 
   writeAscii(view, 0, "RIFF");
   view.setUint32(4, 36 + dataSize, true);
@@ -177,23 +249,11 @@ function encodeAudioBufferAsWav(buffer: AudioBuffer): Blob {
   view.setUint32(24, sampleRate, true);
   view.setUint32(28, sampleRate * blockAlign, true);
   view.setUint16(32, blockAlign, true);
-  view.setUint16(34, bytesPerSample * 8, true);
+  view.setUint16(34, WAV_BYTES_PER_SAMPLE * 8, true);
   writeAscii(view, 36, "data");
   view.setUint32(40, dataSize, true);
 
-  const channels = Array.from({ length: channelCount }, (_, channel) =>
-    buffer.getChannelData(channel),
-  );
-  let offset = 44;
-  for (let sample = 0; sample < sampleCount; sample += 1) {
-    for (let channel = 0; channel < channelCount; channel += 1) {
-      const value = Math.max(-1, Math.min(1, channels[channel][sample] ?? 0));
-      view.setInt16(offset, value < 0 ? value * 0x8000 : value * 0x7fff, true);
-      offset += bytesPerSample;
-    }
-  }
-
-  return new Blob([wav], { type: "audio/wav" });
+  return new Blob([header, ...pcmParts], { type: "audio/wav" });
 }
 
 function writeAscii(view: DataView, offset: number, value: string) {
@@ -461,14 +521,14 @@ export function useTtsPlayback({ taleId, onError }: UseTtsPlaybackParams) {
       void (async () => {
         try {
           const cacheKey = getNarrationCacheKey(cleanText);
-          let cached = sessionAudioCache.get(cacheKey);
+          let cached = getCachedNarration(cacheKey);
           if (!cached) {
-            const synthesized = await synthesizeNarration(
+            const audioParts = await synthesizeNarration(
               cleanText,
               abort.signal,
             );
-            cached = await createSeekableAudio(synthesized.audio);
-            sessionAudioCache.set(cacheKey, cached);
+            cached = await createSeekableAudio(audioParts);
+            cacheNarration(cacheKey, cached);
           }
           if (abort.signal.aborted || !mountedRef.current) return;
 

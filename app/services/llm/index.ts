@@ -15,6 +15,7 @@ import {
   normalizeReasoningEffort,
   reasoningProvider,
 } from "./reasoning";
+import { splitSpeechInput } from "./speechInput";
 
 export class ModelRoleConfigurationError extends Error {
   constructor(
@@ -163,20 +164,29 @@ export function getNarrationCacheKey(text: string) {
   });
 }
 
-export async function synthesizeNarration(text: string, signal?: AbortSignal) {
-  const cleanText = text.trim();
-  if (!cleanText) {
+/**
+ * Speaks the text and returns its audio in order. Text longer than the speech
+ * endpoint accepts is sent in parts, one request each.
+ */
+export async function synthesizeNarration(
+  text: string,
+  signal?: AbortSignal,
+): Promise<Blob[]> {
+  const parts = splitSpeechInput(text);
+  if (parts.length === 0) {
     throw new Error("No narration text provided.");
   }
 
   const { config, model } = resolveModelRole("textToSpeech");
-  return getClient("textToSpeech").synthesizeSpeech(
-    {
-      model: model.id,
-      input: cleanText,
-      voice: resolveTextToSpeechVoice(config),
-      response_format: "mp3",
-    },
-    signal,
-  );
+  const voice = resolveTextToSpeechVoice(config);
+  const client = getClient("textToSpeech");
+  const audio: Blob[] = [];
+  for (const input of parts) {
+    const speech = await client.synthesizeSpeech(
+      { model: model.id, input, voice, response_format: "mp3" },
+      signal,
+    );
+    audio.push(speech.audio);
+  }
+  return audio;
 }
