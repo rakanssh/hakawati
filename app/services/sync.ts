@@ -656,6 +656,13 @@ export async function updateHostedAccountProfile(
   ) as HostedAccount;
 }
 
+/** Deletes the signed-in Hakawati Cloud account and everything it stores there. */
+export async function deleteHostedAccount(
+  transport: SyncTransport,
+): Promise<void> {
+  await transport.delete("/v1/accounts/me");
+}
+
 export async function registerSyncDevice(
   transport: SyncTransport,
   device: RegisterSyncDeviceInput,
