@@ -93,11 +93,8 @@ export function PlayLogDisplay({
           <div
             data-play-column=""
             className="mx-auto flex min-h-full w-full max-w-(--play-column-max) flex-col px-3 pt-8 pb-2.5 sm:px-5 sm:pt-7 lg:px-7"
-            style={
-              isMobilePlatform
-                ? { paddingTop: "calc(3.5rem + env(safe-area-inset-top))" }
-                : undefined
-            }
+            // Room for the phone's top bar.
+            style={isMobilePlatform ? { paddingTop: "3rem" } : undefined}
           >
             {loadingOlder && (
               <div className="flex items-center justify-center py-2 text-muted-foreground">

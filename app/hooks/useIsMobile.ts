@@ -31,7 +31,7 @@ export interface MobileDetection {
 /**
  * Detects the current platform based on Tauri environment and user agent
  */
-function detectPlatform(): Platform {
+export function detectPlatform(): Platform {
   if (typeof window === "undefined") return Platform.WEB;
 
   if ("__TAURI_INTERNALS__" in window) {

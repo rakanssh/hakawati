@@ -100,10 +100,8 @@
   box-shadow:
     0 0 0 1px oklch(0.45 0.04 60 / 0.14),
     0 22px 44px -18px oklch(0.25 0.05 55 / 0.45);
-}
 
-@media (max-width: 640px) {
-  .theme-typewriter [data-play-column] {
+  @variant phone {
     padding-inline: 1.25rem;
   }
 }

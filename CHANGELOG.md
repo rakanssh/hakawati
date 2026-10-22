@@ -31,6 +31,7 @@ All notable changes to this project are documented in this file.
 - In the Typewriter theme, the story no longer bounces back up when you scroll to the bottom, and new text stays above the roller.
 - Switching between Act, Speak, Story, and Direct, or turning Roll on, no longer closes the phone keyboard.
 - Swiping across a menu button, such as Create on the home screen, scrolls the page instead of opening the menu.
+- The input box now resizes to fit its text when you resize the window.
 
 ## [v1.2.0] - 2026-10-06
 

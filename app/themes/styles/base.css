@@ -85,6 +85,15 @@
   top: 0.75rem;
   bottom: 0.25rem;
   border-radius: calc(var(--radius) + 2px);
+
+  /* Edge to edge on phones, where the column fills the width, from just below the status bar. */
+  @variant phone {
+    top: env(safe-area-inset-top);
+    bottom: 0;
+    border-radius: 0 !important;
+    border-inline-width: 0 !important;
+    outline: none !important;
+  }
 }
 
 /* Keep the scrollbar clear of the surface's rounded corners. */
@@ -92,17 +101,6 @@
   height: auto;
   margin-block: 0.75rem;
   margin-inline-end: 0.25rem;
-}
-
-/* Edge to edge on narrow screens, where the column fills the width. */
-@media (max-width: 640px) {
-  [data-play-backdrop] {
-    top: 0;
-    bottom: 0;
-    border-radius: 0 !important;
-    border-inline-width: 0 !important;
-    outline: none !important;
-  }
 }
 
 /* While the story panel is being resized, keep the resize cursor and stop text being selected. */

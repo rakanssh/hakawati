@@ -347,8 +347,8 @@ export function PlayInputControls({
                 : "border-transparent bg-background/60 text-muted-foreground hover:bg-muted/50 hover:text-foreground",
               isMobilePlatform
                 ? active
-                  ? "h-10 px-3"
-                  : "h-9 w-10"
+                  ? "h-10 px-3 landscape:h-8"
+                  : "h-9 w-10 landscape:h-7"
                 : active
                   ? "h-10 px-4"
                   : "h-9 px-3.5",
@@ -393,7 +393,7 @@ export function PlayInputControls({
           className={cn(
             "flex shrink-0 items-center justify-center gap-1.5 border text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50",
             "rounded-xs",
-            isMobilePlatform ? "size-10" : "mb-1 h-9 px-3.5",
+            isMobilePlatform ? "size-10 landscape:size-9" : "mb-1 h-9 px-3.5",
             action.isRolling
               ? "border-success/50 bg-success/12 text-success"
               : isMobilePlatform
@@ -432,8 +432,8 @@ export function PlayInputControls({
             size="icon"
             data-composer-mic=""
             className={cn(
-              "shrink-0 rounded-xs border shadow-none",
-              "size-10",
+              "size-10 shrink-0 rounded-xs border shadow-none",
+              isMobilePlatform && "landscape:size-9",
               isRecording
                 ? "border-destructive/45 bg-destructive/10 text-destructive hover:bg-destructive/15 hover:text-destructive"
                 : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -471,7 +471,13 @@ export function PlayInputControls({
         }
       }}
       rows={1}
-      className="max-h-[240px] min-h-10 resize-none border-0 !bg-transparent px-2.5 py-2.5 text-base shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:!bg-transparent md:py-2 md:text-lg"
+      className={cn(
+        "max-h-[240px] min-h-10 resize-none border-0 !bg-transparent px-2.5 py-2.5 text-base shadow-none focus-visible:border-transparent focus-visible:ring-0 dark:!bg-transparent",
+        // A sideways phone is as wide as a desktop window, but keeps phone-sized text.
+        isMobilePlatform
+          ? "md:text-base landscape:min-h-9 landscape:py-1.5"
+          : "md:py-2 md:text-lg",
+      )}
       aria-label={t`Enter your action`}
     />
   );
@@ -541,7 +547,7 @@ export function PlayInputControls({
       data-composer-send=""
       className={cn(
         "shrink-0 rounded-xs",
-        isMobilePlatform ? "size-11" : "size-12",
+        isMobilePlatform ? "size-11 landscape:size-9" : "size-12",
       )}
       aria-label={
         canStopGeneration
@@ -566,7 +572,9 @@ export function PlayInputControls({
 
   const renderHistoryControls = () => {
     // Desktop has room to name each action; phones show icons beside the tabs.
-    const buttonClass = isMobilePlatform ? "size-10" : "h-10 px-3";
+    const buttonClass = isMobilePlatform
+      ? "size-10 landscape:size-8"
+      : "h-10 px-3";
     return (
       <div
         className={cn(
@@ -665,12 +673,14 @@ export function PlayInputControls({
     </div>
   );
 
+  // A phone held sideways has little height to spare, so its controls slim
+  // down (the landscape: sizes) to leave the story more room.
   return (
     <div
       data-composer=""
       className={cn(
         "pointer-events-auto z-20 w-full",
-        isMobilePlatform ? "px-2 pt-2" : "p-3",
+        isMobilePlatform ? "px-2 pt-2 landscape:pt-1" : "p-3",
       )}
       style={
         isMobilePlatform

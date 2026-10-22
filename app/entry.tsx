@@ -8,6 +8,10 @@ import {
   MigrationRecoveryScreen,
   type MigrationRecoveryStatus,
 } from "./components/migration-recovery-screen";
+import { detectPlatform } from "./hooks/useIsMobile";
+
+// Lets styles tell the phone app from a desktop window of the same width.
+document.documentElement.dataset.platform = detectPlatform();
 
 // Load persisted language preference on startup
 const storedSettings = localStorage.getItem("settings");
