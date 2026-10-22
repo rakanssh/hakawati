@@ -6,10 +6,38 @@ import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
+// Opens or closes the menu from a finger tap; see DropdownMenuTrigger.
+const DropdownMenuToggleContext = React.createContext<(() => void) | null>(
+  null,
+);
+
 function DropdownMenu({
+  open: openProp,
+  defaultOpen = false,
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
-  return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen);
+  const open = openProp ?? uncontrolledOpen;
+  const setOpen = React.useCallback(
+    (next: boolean) => {
+      if (openProp === undefined) setUncontrolledOpen(next);
+      onOpenChange?.(next);
+    },
+    [onOpenChange, openProp],
+  );
+  const toggle = React.useCallback(() => setOpen(!open), [open, setOpen]);
+
+  return (
+    <DropdownMenuToggleContext.Provider value={toggle}>
+      <DropdownMenuPrimitive.Root
+        data-slot="dropdown-menu"
+        open={open}
+        onOpenChange={setOpen}
+        {...props}
+      />
+    </DropdownMenuToggleContext.Provider>
+  );
 }
 
 function DropdownMenuPortal({
@@ -20,12 +48,33 @@ function DropdownMenuPortal({
   );
 }
 
+/**
+ * Radix opens a menu as soon as a pointer goes down. A finger landing on the trigger may be starting a
+ * swipe, so touch opens the menu on a tap instead, and a swipe that starts here still scrolls.
+ */
 function DropdownMenuTrigger({
+  onPointerDown,
+  onClick,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Trigger>) {
+  const toggle = React.useContext(DropdownMenuToggleContext);
+  const touchRef = React.useRef(false);
   return (
     <DropdownMenuPrimitive.Trigger
       data-slot="dropdown-menu-trigger"
+      onPointerDown={(event) => {
+        onPointerDown?.(event);
+        touchRef.current = event.pointerType === "touch";
+        // Stops Radix opening on press; the tap's click still arrives.
+        if (touchRef.current && toggle) event.preventDefault();
+      }}
+      onClick={(event) => {
+        onClick?.(event);
+        if (touchRef.current && toggle && !event.defaultPrevented) {
+          touchRef.current = false;
+          toggle();
+        }
+      }}
       {...props}
     />
   );

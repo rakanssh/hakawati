@@ -73,6 +73,11 @@ const ACTION_MODES = [
 
 type InputActionMode = (typeof ACTION_MODES)[number];
 
+/** Switching mode or rolling leaves focus in the input, so a phone's keyboard stays open. */
+function keepTypingFocus(event: React.MouseEvent) {
+  event.preventDefault();
+}
+
 const ACTION_MODE_ICONS = {
   [LogEntryMode.DO]: HandIcon,
   [LogEntryMode.SAY]: SpeechIcon,
@@ -325,6 +330,7 @@ export function PlayInputControls({
             aria-pressed={active}
             aria-label={label}
             title={label}
+            onMouseDown={keepTypingFocus}
             onClick={() =>
               setAction({
                 type: mode,
@@ -376,6 +382,7 @@ export function PlayInputControls({
           data-composer-roll=""
           aria-pressed={action.isRolling}
           aria-label={t`Roll a dice`}
+          onMouseDown={keepTypingFocus}
           onClick={() =>
             setAction({
               type: action.type,

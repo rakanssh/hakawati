@@ -20,7 +20,7 @@ All notable changes to this project are documented in this file.
 - Redesigned Appearance and Prompting. Each prompt opens on its own page, sizes change with − and + buttons, and "Read new narration aloud" moved to the Text to Speech page in AI Setup.
 - Settings on desktop has a simpler sidebar, and Maintenance is now called Updates.
 - Generation, Updates, About, and the story panel's Story, AI, and Display tabs share the new settings layout, and settings no longer stretch across wide windows.
-- The input box and its buttons use the same square corners as the rest of the app; themes with their own style, such as Storybook and Typewriter, keep their shapes.
+- The input box and its buttons use the same square corners as the rest of the app, Storybook and Typewriter included.
 
 ### Fixed
 
@@ -29,6 +29,8 @@ All notable changes to this project are documented in this file.
 - Settings opened from the library now show every section.
 - On the play screen, the story stays inside its frame as it scrolls, and the scrollbar sits inside the frame instead of at the window's edge.
 - In the Typewriter theme, the story no longer bounces back up when you scroll to the bottom, and new text stays above the roller.
+- Switching between Act, Speak, Story, and Direct, or turning Roll on, no longer closes the phone keyboard.
+- Swiping across a menu button, such as Create on the home screen, scrolls the page instead of opening the menu.
 
 ## [v1.2.0] - 2026-10-06
 

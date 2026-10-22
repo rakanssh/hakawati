@@ -330,7 +330,7 @@ function StoryPanelHandle({
             aria-expanded={open}
             aria-controls={STORY_PANEL_ID}
             aria-label={open ? t`Close story panel` : t`Open story panel`}
-            className="absolute end-0 top-[38%] flex w-6 -translate-y-1/2 flex-col items-center gap-2 rounded-s-md border border-e-0 border-sidebar-border bg-sidebar/95 py-3 text-sidebar-foreground/70 shadow-sm backdrop-blur-sm transition-colors hover:bg-sidebar hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="absolute end-0 top-[38%] flex w-6 -translate-y-1/2 flex-col items-center gap-2 rounded-s-xs border border-e-0 border-sidebar-border bg-sidebar/95 py-3 text-sidebar-foreground/70 shadow-sm backdrop-blur-sm transition-colors hover:bg-sidebar hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {open ? (
               <ChevronRightIcon className="size-4 rtl:-scale-x-100" />
