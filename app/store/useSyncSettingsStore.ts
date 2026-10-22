@@ -14,6 +14,7 @@ type SyncSettingsPersistedState = Pick<
   | "accountDisplayName"
   | "accountEmail"
   | "hostedDeviceIdsByAccountId"
+  | "deletedAccountIds"
 >;
 
 export interface SyncSettingsStore {
@@ -30,6 +31,8 @@ export interface SyncSettingsStore {
   accountDisplayName: string;
   accountEmail: string;
   hostedDeviceIdsByAccountId: Record<string, string>;
+  /** Cloud accounts deleted from this device whose tales still need unlinking. */
+  deletedAccountIds: string[];
   hostedRefreshFailed: boolean;
   setCloudBaseUrl: (baseUrl: string) => void;
   setPersonalBaseUrl: (baseUrl: string) => void;
@@ -51,6 +54,8 @@ export interface SyncSettingsStore {
   getOrCreateHostedDeviceId: (accountId: string) => string;
   setDeviceName: (deviceName: string) => void;
   setDevicePlatform: (devicePlatform: string) => void;
+  addDeletedAccount: (accountId: string) => void;
+  removeDeletedAccount: (accountId: string) => void;
 }
 
 function createDeviceId() {
@@ -93,6 +98,7 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
       accountDisplayName: "",
       accountEmail: "",
       hostedDeviceIdsByAccountId: {},
+      deletedAccountIds: [],
       hostedRefreshFailed: false,
       setCloudBaseUrl: (cloudBaseUrl) =>
         set((state) =>
@@ -167,6 +173,18 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
       },
       setDeviceName: (deviceName) => set({ deviceName }),
       setDevicePlatform: (devicePlatform) => set({ devicePlatform }),
+      addDeletedAccount: (accountId) =>
+        set((state) =>
+          state.deletedAccountIds.includes(accountId)
+            ? {}
+            : { deletedAccountIds: [...state.deletedAccountIds, accountId] },
+        ),
+      removeDeletedAccount: (accountId) =>
+        set((state) => ({
+          deletedAccountIds: state.deletedAccountIds.filter(
+            (id) => id !== accountId,
+          ),
+        })),
     }),
     {
       name: "sync-settings",
@@ -185,6 +203,7 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
         accountDisplayName: state.accountDisplayName,
         accountEmail: state.accountEmail,
         hostedDeviceIdsByAccountId: state.hostedDeviceIdsByAccountId,
+        deletedAccountIds: state.deletedAccountIds,
       }),
       merge: (persistedState, currentState) => {
         const persisted = persistedState as

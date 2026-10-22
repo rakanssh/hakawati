@@ -30,6 +30,7 @@ import { useDbReady } from "./hooks/useDbReady";
 import { useHostedTokenRefresh } from "./hooks/useHostedTokenRefresh";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useSyncBackground } from "./hooks/useSyncBackground";
+import { unlinkDeletedAccounts } from "./services/deleted-accounts";
 import { useZoom } from "./hooks/useZoom";
 import { useSettingsStore } from "./store/useSettingsStore";
 import { UI_SCALE_MAX, UI_SCALE_MIN } from "./lib/appearance-limits";
@@ -53,6 +54,10 @@ export default function AppShell() {
   const routerState = useRouterState();
   useHostedTokenRefresh(dbReady);
   useSyncBackground(dbReady);
+  // Finishes unlinking tales from an account deleted while that step failed.
+  useEffect(() => {
+    if (dbReady) void unlinkDeletedAccounts();
+  }, [dbReady]);
   useAndroidBackButton();
   const uiScale = useSettingsStore((state) => state.uiScale);
   const setUiScale = useSettingsStore((state) => state.setUiScale);
