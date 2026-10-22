@@ -5,7 +5,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Palette, Sparkles } from "lucide-react";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { AI_INSTRUCTIONS_PROMPT } from "@/prompts";
+import { AI_INSTRUCTIONS_PROMPT, CONTINUE_SYSTEM_PROMPT } from "@/prompts";
 import { SettingsShell } from "./settings-shell";
 import SettingsGame, { AppearanceTitle } from "./game";
 import SettingsAdvanced, { PromptingTitle } from "./advanced";
@@ -68,6 +68,15 @@ function buttonStartingWith(label: string) {
   return match!;
 }
 
+/** Settings fill a phone's screen; a desktop window (jsdom's 1024px) gets the settings window. */
+function setWindowWidth(width: number) {
+  Object.defineProperty(window, "innerWidth", {
+    configurable: true,
+    writable: true,
+    value: width,
+  });
+}
+
 async function click(element: HTMLElement) {
   await act(async () => element.click());
 }
@@ -115,6 +124,7 @@ async function render(section: "appearance" | "prompting") {
 beforeEach(() => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   vi.clearAllMocks();
+  setWindowWidth(1024);
   useSettingsStore.setState(useSettingsStore.getInitialState());
   container = document.createElement("div");
   document.body.appendChild(container);
@@ -129,7 +139,9 @@ afterEach(() => {
 
 describe("Prompting", () => {
   it("customises a prompt from the default and resets it", async () => {
+    setWindowWidth(400);
     await render("prompting");
+    await click(buttonStartingWith("Prompting"));
     expect(buttonStartingWith("AI instructions").textContent).toContain(
       "Default",
     );
@@ -170,6 +182,17 @@ describe("Prompting", () => {
       customStorytellerPrompt: undefined,
     });
     expect(editor.value).toBe(AI_INSTRUCTIONS_PROMPT);
+  });
+
+  it("shows the list beside the editor in the desktop window", async () => {
+    await render("prompting");
+    const editor = () =>
+      document.querySelector<HTMLTextAreaElement>("textarea")!;
+    expect(editor().value).toBe(AI_INSTRUCTIONS_PROMPT);
+
+    await click(buttonStartingWith("Continue"));
+    expect(title()).toBe("Prompting");
+    expect(editor().value).toBe(CONTINUE_SYSTEM_PROMPT);
   });
 
   it("asks before resetting every prompt", async () => {
@@ -232,8 +255,10 @@ describe("Appearance", () => {
     expect(useSettingsStore.getState().textDirection).toBe("rtl");
   });
 
-  it("picks a font and a language on their own pages", async () => {
+  it("picks a font and a language on their own pages on a phone", async () => {
+    setWindowWidth(400);
     await render("appearance");
+    await click(buttonStartingWith("Appearance"));
 
     await click(buttonStartingWith("Font"));
     expect(title()).toBe("Font");
@@ -256,9 +281,23 @@ describe("Appearance", () => {
     expect(locale.loadLocale).toHaveBeenCalledWith("ar");
   });
 
+  it("offers the font and language as dropdowns in the desktop window", async () => {
+    await render("appearance");
+    expect(
+      [...document.querySelectorAll('[role="combobox"]')].map((element) =>
+        element.textContent?.trim(),
+      ),
+    ).toEqual(["Theme font", "English"]);
+    expect(
+      [...document.querySelectorAll("button")].some((element) =>
+        element.textContent?.trim().startsWith("Font"),
+      ),
+    ).toBe(false);
+  });
+
   it("opens the theme gallery", async () => {
     await render("appearance");
-    await click(buttonStartingWith("Brass Night"));
+    await click(buttonStartingWith("ThemeBrass Night"));
     expect(title()).toBe("Theme");
     expect(
       document.querySelector('[role="radiogroup"][aria-label="Theme"]'),

@@ -151,10 +151,42 @@ describe("AI Setup", () => {
     );
     expect(text()).toContain("Story Model");
 
-    await click("", 'button[aria-label="Back"]');
+    // The settings window's header leads back to the section.
+    await click("AI Setup", "header button");
     expect(title()).toBe("AI Setup");
     expect(text()).toContain("Ready to play");
     expect(text()).toContain("Same as Narrator");
+  });
+
+  it("picks the narrator's model from a dropdown in the settings window", async () => {
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    const otherModel = { id: "other-model", name: "Other Model" };
+    llm.getRoleModels.mockResolvedValue([storyModel, otherModel]);
+    llm.getConnectionModels.mockResolvedValue([storyModel, otherModel]);
+    const settings = useSettingsStore.getState();
+    const id = settings.addConnection({
+      preset: ApiPreset.OPENROUTER,
+      apiKey: "key",
+    });
+    settings.setRoleConnection("narrator", id);
+    await render();
+
+    await click("Narrator");
+    await click("", '[role="combobox"]');
+    await click("Other Model", '[role="option"]');
+    expect(useSettingsStore.getState().modelRoles.narrator.model).toEqual(
+      otherModel,
+    );
+    expect(title()).toBe("Narrator");
+    expect(document.querySelector('[role="listbox"]')).toBeNull();
+    vi.unstubAllGlobals();
   });
 
   it("lets the helper leave the narrator for its own connection", async () => {

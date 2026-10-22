@@ -1,6 +1,13 @@
+import { useState } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { PlusIcon } from "lucide-react";
+import { ChevronsUpDownIcon, PlusIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -14,7 +21,7 @@ import { useLLMProviders } from "@/hooks/useLLMProviders";
 import { usesReasoning } from "@/store/model-connections";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { ApiPreset, type ModelRole } from "@/types";
-import { useSettingsNavigation } from "../settings-shell";
+import { useSettingsNavigation, useSettingsWindow } from "../settings-shell";
 import { ChatGptUsageLink } from "../chatgpt-connection";
 import { ThinkingLevel } from "../thinking-level";
 import { ModelPicker, useDescribeModel } from "./model-picker";
@@ -104,6 +111,52 @@ function ConnectionChooser({ role }: { role: ModelRole }) {
   );
 }
 
+/** The model list in a dropdown, for the desktop settings window. */
+function ModelDropdown({
+  role,
+  providers,
+}: {
+  role: ModelRole;
+  providers: Providers;
+}) {
+  const { t } = useLingui();
+  const [open, setOpen] = useState(false);
+  const model = useSettingsStore((state) => state.modelRoles[role].model);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          disabled={!providers.enabled}
+          className="w-64 shrink-0 justify-between gap-2"
+        >
+          <span className="truncate">
+            {model?.name ??
+              (providers.loading ? t`Loading models…` : t`Choose a model`)}
+          </span>
+          <ChevronsUpDownIcon
+            aria-hidden="true"
+            className="size-4 shrink-0 opacity-50"
+          />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        className="w-[26rem] max-w-[calc(100vw-2rem)] p-3"
+      >
+        <ModelPicker
+          role={role}
+          providers={providers}
+          onPicked={() => setOpen(false)}
+          listClassName="max-h-[min(20rem,45dvh)] overflow-y-auto"
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function ModelSection({
   role,
   providers,
@@ -113,10 +166,14 @@ function ModelSection({
 }) {
   const { t } = useLingui();
   const navigation = useSettingsNavigation();
+  const windowed = useSettingsWindow();
   const config = useSettingsStore((state) => state.modelRoles[role]);
   const describe = useDescribeModel(role);
   const { loading, error, enabled } = providers;
   const isChatGpt = config.activePreset === ApiPreset.CHATGPT;
+  const abilities = config.model
+    ? describe(config.model, "abilities")
+    : undefined;
 
   if (isChatGpt && !enabled && config.connectionId) {
     const id = config.connectionId;
@@ -136,24 +193,29 @@ function ModelSection({
   return (
     <SetupSection title={<Trans>Model</Trans>}>
       <SetupList>
-        <LinkRow
-          title={
-            config.model?.name ??
-            (loading ? t`Loading models…` : t`Choose a model`)
-          }
-          detail={
-            config.model ? describe(config.model, "abilities") : undefined
-          }
-          trailing={
-            config.model ? (
-              <span className="shrink-0 text-sm text-primary">
-                <Trans>Change</Trans>
-              </span>
-            ) : undefined
-          }
-          disabled={!enabled}
-          onClick={() => navigation.push(pageKey({ kind: "models", role }))}
-        />
+        {windowed ? (
+          <PlainRow>
+            <RowText title={<Trans>Model</Trans>} detail={abilities} />
+            <ModelDropdown role={role} providers={providers} />
+          </PlainRow>
+        ) : (
+          <LinkRow
+            title={
+              config.model?.name ??
+              (loading ? t`Loading models…` : t`Choose a model`)
+            }
+            detail={abilities}
+            trailing={
+              config.model ? (
+                <span className="shrink-0 text-sm text-primary">
+                  <Trans>Change</Trans>
+                </span>
+              ) : undefined
+            }
+            disabled={!enabled}
+            onClick={() => navigation.push(pageKey({ kind: "models", role }))}
+          />
+        )}
       </SetupList>
       {error && (
         <p role="alert" className="px-0.5 text-sm text-destructive">

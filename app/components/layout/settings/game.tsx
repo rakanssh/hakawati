@@ -14,10 +14,18 @@ import {
   UI_SCALE_MAX,
   UI_SCALE_MIN,
 } from "@/lib/appearance-limits";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ThemePicker } from "./theme-picker";
 import { ThemePreview } from "./theme-preview";
 import { SceneryOptions, SizeStepper } from "./appearance-fields";
-import { useSettingsNavigation } from "./settings-shell";
+import { FontSelector } from "./font-selector";
+import { useSettingsNavigation, useSettingsWindow } from "./settings-shell";
 import {
   BlockRow,
   LinkRow,
@@ -55,11 +63,41 @@ function useFontName() {
   return font.value === THEME_FONT ? t`Theme font` : font.name;
 }
 
+function pickLanguage(code: Locale) {
+  useSettingsStore.getState().setLanguage(code);
+  void loadLocale(code);
+}
+
+function LanguageSelect() {
+  const { t } = useLingui();
+  const language = useSettingsStore((state) => state.language);
+  return (
+    <Select
+      value={language}
+      onValueChange={(code) => pickLanguage(code as Locale)}
+    >
+      <SelectTrigger className="w-56" aria-label={t`Language`}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {(Object.entries(LOCALES) as [Locale, string][]).map(([code, name]) => (
+          <SelectItem key={code} value={code} lang={code}>
+            {name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 function Overview() {
   const { t } = useLingui();
   const navigation = useSettingsNavigation();
+  // The desktop window picks a font or language from a dropdown; phones open a page.
+  const windowed = useSettingsWindow();
   const { preference } = useTheme();
   const theme = themes.find((item) => item.id === preference);
+  const themeName = theme ? t(theme.name) : t`System`;
   const fontName = useFontName();
   const {
     uiScale,
@@ -80,8 +118,17 @@ function Overview() {
       <SetupSection title={<Trans>Theme</Trans>}>
         <SetupList>
           <LinkRow
-            title={theme ? t(theme.name) : t`System`}
-            trailing={<ThemeSwatch preference={preference} />}
+            title={windowed ? <Trans>Theme</Trans> : themeName}
+            trailing={
+              <>
+                {windowed && (
+                  <span className="shrink-0 text-sm text-muted-foreground">
+                    {themeName}
+                  </span>
+                )}
+                <ThemeSwatch preference={preference} />
+              </>
+            }
             onClick={() => navigation.push("theme")}
           />
           <BlockRow title={<Trans>Scenery</Trans>}>
@@ -112,15 +159,24 @@ function Overview() {
               onChange={setUiScale}
             />
           </PlainRow>
-          <LinkRow
-            title={<Trans>Font</Trans>}
-            trailing={
-              <span className="shrink-0 text-sm text-muted-foreground">
-                {fontName}
-              </span>
-            }
-            onClick={() => navigation.push("font")}
-          />
+          {windowed ? (
+            <PlainRow>
+              <RowText title={<Trans>Font</Trans>} />
+              <div className="w-56 shrink-0">
+                <FontSelector />
+              </div>
+            </PlainRow>
+          ) : (
+            <LinkRow
+              title={<Trans>Font</Trans>}
+              trailing={
+                <span className="shrink-0 text-sm text-muted-foreground">
+                  {fontName}
+                </span>
+              }
+              onClick={() => navigation.push("font")}
+            />
+          )}
           <PlainRow>
             <RowText title={<Trans>Highlight the latest passage</Trans>} />
             <ToggleSwitch
@@ -147,15 +203,22 @@ function Overview() {
 
       <SetupSection title={<Trans>Language</Trans>}>
         <SetupList>
-          <LinkRow
-            title={<Trans>Language</Trans>}
-            trailing={
-              <span className="shrink-0 text-sm text-muted-foreground">
-                {LOCALES[language]}
-              </span>
-            }
-            onClick={() => navigation.push("language")}
-          />
+          {windowed ? (
+            <PlainRow>
+              <RowText title={<Trans>Language</Trans>} />
+              <LanguageSelect />
+            </PlainRow>
+          ) : (
+            <LinkRow
+              title={<Trans>Language</Trans>}
+              trailing={
+                <span className="shrink-0 text-sm text-muted-foreground">
+                  {LOCALES[language]}
+                </span>
+              }
+              onClick={() => navigation.push("language")}
+            />
+          )}
           <BlockRow title={<Trans>Direction</Trans>}>
             <Segmented<TextDirection>
               fill
@@ -210,7 +273,6 @@ function FontPage() {
 function LanguagePage() {
   const { t } = useLingui();
   const language = useSettingsStore((state) => state.language);
-  const setLanguage = useSettingsStore((state) => state.setLanguage);
   return (
     <SetupList role="radiogroup" aria-label={t`Language`}>
       {(Object.entries(LOCALES) as [Locale, string][]).map(([code, name]) => (
@@ -218,10 +280,7 @@ function LanguagePage() {
           key={code}
           checked={language === code}
           lang={code}
-          onClick={() => {
-            setLanguage(code);
-            void loadLocale(code);
-          }}
+          onClick={() => pickLanguage(code)}
           title={name}
         />
       ))}

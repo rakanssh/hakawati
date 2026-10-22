@@ -10,7 +10,12 @@ import { manualModel, useChooseModel } from "@/hooks/useChooseModel";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { ApiPreset, type ModelRole } from "@/types";
 import { getModelMetaLabels } from "../../model-select-meta";
-import { PlainRow, SetupList, StatusBanner } from "../settings-rows";
+import {
+  PlainRow,
+  SetupList,
+  StatusBanner,
+  useRowClass,
+} from "../settings-rows";
 
 type Providers = ReturnType<typeof useLLMProviders>;
 type Filter = "all" | "tools" | "free" | "long";
@@ -75,16 +80,20 @@ export function ModelPicker({
   role,
   providers,
   onPicked,
+  listClassName,
 }: {
   role: ModelRole;
   providers: Providers;
   onPicked: () => void;
+  /** Bounds the list, so it scrolls inside a dropdown. */
+  listClassName?: string;
 }) {
   const { t } = useLingui();
   const { models, loading, error, refresh } = providers;
   const config = useSettingsStore((state) => state.modelRoles[role]);
   const chooseModel = useChooseModel(role);
   const describe = useDescribeModel(role);
+  const rowClass = useRowClass({ interactive: true });
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
   const [manualId, setManualId] = useState<string | null>(null);
@@ -191,7 +200,11 @@ export function ModelPicker({
         />
       )}
 
-      <SetupList role="listbox" aria-label={t`Models`}>
+      <SetupList
+        role="listbox"
+        aria-label={t`Models`}
+        className={listClassName}
+      >
         {visible.map((model) => {
           const selected = config.model?.id === model.id;
           const detail = describe(model, "prices");
@@ -202,10 +215,7 @@ export function ModelPicker({
               role="option"
               aria-selected={selected}
               onClick={() => pick(model)}
-              className={cn(
-                "flex min-h-14 w-full items-center gap-3 border-b border-border/60 px-3.5 py-2.5 text-start transition-colors last:border-b-0 hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none",
-                selected && "bg-primary/10",
-              )}
+              className={cn(rowClass, selected && "bg-primary/10")}
             >
               <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <span className="truncate text-sm font-semibold">

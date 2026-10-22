@@ -648,8 +648,8 @@ describe("SettingsCloudSync storage usage", () => {
     expect(title()).toBe("Tales waiting for a choice");
     act(() => button("Sync all").click());
     act(() =>
-      document
-        .querySelector<HTMLButtonElement>('button[aria-label="Back"]')!
+      [...document.querySelectorAll<HTMLButtonElement>("header button")]
+        .find((element) => element.textContent === "Account & Sync")!
         .click(),
     );
     act(() => button("Devices").click());

@@ -37,7 +37,7 @@ export function SceneryOptions() {
         onChange={setThemeScenery}
       />
       {!chosen && reducedMotion ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="w-full text-sm text-muted-foreground">
           <Trans>
             Your system asks for reduced motion, so scenery starts still.
           </Trans>

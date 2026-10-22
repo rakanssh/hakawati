@@ -1,6 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { CheckIcon, ChevronRightIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSettingsWindow } from "./settings-shell";
 
 /** Grouped rows for settings pages: a heading over a framed list. */
 export function SetupSection({
@@ -37,10 +38,16 @@ export function SetupList({ className, ...props }: ComponentProps<"div">) {
   );
 }
 
-const rowClass =
-  "flex min-h-14 w-full items-center gap-3 border-b border-border/60 px-3.5 py-2.5 text-start last:border-b-0";
-const interactiveRowClass =
-  "transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-60";
+/** A settings row's frame: sized for a finger, or denser in the desktop settings window. */
+export function useRowClass({ interactive = false } = {}) {
+  const windowed = useSettingsWindow();
+  return cn(
+    "flex w-full items-center gap-3 border-b border-border/60 px-3.5 text-start last:border-b-0",
+    windowed ? "min-h-11 py-1.5" : "min-h-14 py-2.5",
+    interactive &&
+      "transition-colors hover:bg-accent/60 focus-visible:bg-accent/60 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-60",
+  );
+}
 
 export function RowText({
   title,
@@ -84,12 +91,9 @@ export function LinkRow({
   detailClassName?: string;
   trailing?: ReactNode;
 }) {
+  const rowClass = useRowClass({ interactive: true });
   return (
-    <button
-      type="button"
-      className={cn(rowClass, interactiveRowClass, className)}
-      {...props}
-    >
+    <button type="button" className={cn(rowClass, className)} {...props}>
       {leading}
       <RowText
         title={title}
@@ -118,17 +122,13 @@ export function RadioRow({
   detail?: ReactNode;
   checked: boolean;
 }) {
+  const rowClass = useRowClass({ interactive: true });
   return (
     <button
       type="button"
       role="radio"
       aria-checked={checked}
-      className={cn(
-        rowClass,
-        interactiveRowClass,
-        checked && "bg-primary/10",
-        className,
-      )}
+      className={cn(rowClass, checked && "bg-primary/10", className)}
       {...props}
     >
       {leading}
@@ -150,10 +150,14 @@ export function PlainRow({
   className?: string;
   children: ReactNode;
 }) {
+  const rowClass = useRowClass();
   return <div className={cn(rowClass, className)}>{children}</div>;
 }
 
-/** A row with its label above a control that needs the full width. */
+/**
+ * A row with its label above a control that needs the full width. The desktop
+ * settings window has room for both on one line.
+ */
 export function BlockRow({
   title,
   children,
@@ -161,9 +165,19 @@ export function BlockRow({
   title: ReactNode;
   children: ReactNode;
 }) {
+  const windowed = useSettingsWindow();
   return (
-    <div className="flex flex-col gap-2 border-b border-border/60 px-3.5 py-3 last:border-b-0">
-      <span className="text-sm font-semibold">{title}</span>
+    <div
+      className={cn(
+        "flex border-b border-border/60 px-3.5 last:border-b-0",
+        windowed
+          ? "min-h-11 flex-wrap items-center gap-x-4 gap-y-2 py-1.5"
+          : "flex-col gap-2 py-3",
+      )}
+    >
+      <span className={cn("text-sm font-semibold", windowed && "flex-1")}>
+        {title}
+      </span>
       {children}
     </div>
   );
@@ -224,16 +238,17 @@ export function Segmented<T extends string>({
   value: T;
   options: { value: T; label: ReactNode }[];
   onChange: (value: T) => void;
-  /** Spreads the options evenly across the full width. */
+  /** Spreads the options evenly across the full width, except in the desktop settings window. */
   fill?: boolean;
 }) {
+  const windowed = useSettingsWindow();
   return (
     <div
       role="radiogroup"
       aria-label={label}
       className={cn(
         "rounded-xs border bg-muted/40 p-0.5",
-        fill
+        fill && !windowed
           ? "grid w-full auto-cols-fr grid-flow-col"
           : "inline-flex w-fit max-w-full flex-wrap",
       )}

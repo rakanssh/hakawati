@@ -34,11 +34,9 @@ export function FontSelector() {
   const { t } = useLingui();
   const isThemeFont = (font: FontOption) => font.value === THEME_FONT;
   const fontLabel = (font: FontOption) =>
-    isThemeFont(font) ? t`Theme default` : font.name;
+    isThemeFont(font) ? t`Theme font` : font.name;
   const fontPreview = (font: FontOption) =>
-    isThemeFont(font)
-      ? t`Uses the type the theme was designed with`
-      : font.preview;
+    isThemeFont(font) ? t`The type each theme was designed with` : font.preview;
   const fontStyle = (font: FontOption) =>
     isThemeFont(font) ? undefined : { fontFamily: font.value };
 
@@ -126,7 +124,7 @@ export function FontSelector() {
           <ChevronsUpDownIcon className="ms-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0 rounded-xs">
+      <PopoverContent align="end" className="w-full p-0 rounded-xs">
         <Command>
           <CommandInput
             placeholder={t`Search fonts...`}

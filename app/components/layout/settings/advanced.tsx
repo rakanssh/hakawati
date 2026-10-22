@@ -20,8 +20,14 @@ import {
   CONTINUE_AUTHOR_NOTE,
   STORY_CARD_GENERATOR_PROMPT,
 } from "@/prompts";
-import { useSettingsNavigation } from "./settings-shell";
-import { LinkRow, Segmented, SetupList } from "./settings-rows";
+import { useSettingsNavigation, useSettingsWindow } from "./settings-shell";
+import {
+  LinkRow,
+  RowText,
+  Segmented,
+  SetupList,
+  useRowClass,
+} from "./settings-rows";
 
 type PromptId =
   | "instructions"
@@ -150,29 +156,56 @@ function usePrompt(id: PromptId) {
   }
 }
 
-function PromptRow({ id }: { id: PromptId }) {
+interface PromptSelection {
+  selected: PromptId;
+  onSelect: (id: PromptId) => void;
+}
+
+/** Opens a prompt's page, or beside the editor, picks the prompt it shows. */
+function PromptRow({
+  id,
+  selection,
+}: {
+  id: PromptId;
+  selection?: PromptSelection;
+}) {
   const navigation = useSettingsNavigation();
+  const rowClass = useRowClass({ interactive: true });
   const { custom } = usePrompt(id);
+  const status = custom ? (
+    <span className="sidebar-chip shrink-0 rounded-xs border border-primary/55 bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+      <Trans>Custom</Trans>
+    </span>
+  ) : (
+    <span className="shrink-0 text-sm text-muted-foreground">
+      <Trans>Default</Trans>
+    </span>
+  );
+
+  if (selection) {
+    const selected = selection.selected === id;
+    return (
+      <button
+        type="button"
+        aria-current={selected || undefined}
+        className={cn(rowClass, selected && "bg-primary/10")}
+        onClick={() => selection.onSelect(id)}
+      >
+        <RowText title={<PromptName id={id} />} />
+        {status}
+      </button>
+    );
+  }
   return (
     <LinkRow
       title={<PromptName id={id} />}
-      trailing={
-        custom ? (
-          <span className="sidebar-chip shrink-0 rounded-xs border border-primary/55 bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
-            <Trans>Custom</Trans>
-          </span>
-        ) : (
-          <span className="shrink-0 text-sm text-muted-foreground">
-            <Trans>Default</Trans>
-          </span>
-        )
-      }
+      trailing={status}
       onClick={() => navigation.push(pageOf(id))}
     />
   );
 }
 
-function PromptList() {
+function PromptList({ selection }: { selection?: PromptSelection }) {
   const anyCustom = useSettingsStore(
     (state) =>
       state.useCustomGmPrompt ||
@@ -188,15 +221,9 @@ function PromptList() {
     <div className="flex flex-col gap-4">
       <SetupList>
         {PROMPT_IDS.map((id) => (
-          <PromptRow key={id} id={id} />
+          <PromptRow key={id} id={id} selection={selection} />
         ))}
       </SetupList>
-      <p className="px-0.5 text-sm text-muted-foreground">
-        <Trans>
-          Default prompts update with the app. Custom ones stay until you reset
-          them.
-        </Trans>
-      </p>
       {anyCustom ? (
         <Button
           variant="ghost"
@@ -232,6 +259,8 @@ function PromptList() {
 
 function PromptPage({ id }: { id: PromptId }) {
   const { t } = useLingui();
+  // Beside the list, the editor names its prompt; on its own page, the header does.
+  const windowed = useSettingsWindow();
   const prompt = usePrompt(id);
   const text = prompt.custom
     ? (prompt.text ?? prompt.defaultText)
@@ -241,32 +270,49 @@ function PromptPage({ id }: { id: PromptId }) {
     prompt.text !== undefined &&
     prompt.text !== prompt.defaultText;
   const hasWarning = id === "gm" || id === "story-cards";
+  const choice = (
+    <Segmented<"default" | "custom">
+      fill
+      label={t`Prompt`}
+      value={prompt.custom ? "custom" : "default"}
+      options={[
+        { value: "default", label: <Trans>Default</Trans> },
+        { value: "custom", label: <Trans>Custom</Trans> },
+      ]}
+      onChange={(value) => {
+        if (value === "custom" && prompt.text === undefined) {
+          prompt.setText(prompt.defaultText);
+        }
+        prompt.setCustom(value === "custom");
+      }}
+    />
+  );
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="px-0.5 text-sm text-muted-foreground">
-        <PromptUsage id={id} />
-      </p>
+      {windowed ? (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <h4 className="text-base font-semibold">
+              <PromptName id={id} />
+            </h4>
+            <p className="text-sm text-muted-foreground">
+              <PromptUsage id={id} />
+            </p>
+          </div>
+          {choice}
+        </div>
+      ) : (
+        <p className="px-0.5 text-sm text-muted-foreground">
+          <PromptUsage id={id} />
+        </p>
+      )}
       {hasWarning ? (
         <p className="px-0.5 text-sm text-destructive">
           <PromptWarning id={id} />
         </p>
       ) : null}
-      <Segmented<"default" | "custom">
-        fill
-        label={t`Prompt`}
-        value={prompt.custom ? "custom" : "default"}
-        options={[
-          { value: "default", label: <Trans>Default</Trans> },
-          { value: "custom", label: <Trans>Custom</Trans> },
-        ]}
-        onChange={(value) => {
-          if (value === "custom" && prompt.text === undefined) {
-            prompt.setText(prompt.defaultText);
-          }
-          prompt.setCustom(value === "custom");
-        }}
-      />
+      {!windowed && choice}
       <Textarea
         value={text}
         readOnly={!prompt.custom}
@@ -305,6 +351,20 @@ export function PromptingTitle({ page }: { page: string }) {
 
 export default function SettingsAdvanced() {
   const navigation = useSettingsNavigation();
+  const windowed = useSettingsWindow();
+  const [selected, setSelected] = useState<PromptId>("instructions");
+
+  // The desktop window shows the list and the editor together, side by side when there's room.
+  if (windowed) {
+    return (
+      <div className="@container">
+        <div className="grid gap-6 @2xl:grid-cols-[17rem_minmax(0,1fr)] @2xl:items-start">
+          <PromptList selection={{ selected, onSelect: setSelected }} />
+          <PromptPage id={selected} />
+        </div>
+      </div>
+    );
+  }
   const id = promptFromPage(navigation.page);
   return id ? <PromptPage id={id} /> : <PromptList />;
 }

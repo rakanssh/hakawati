@@ -1,4 +1,5 @@
 import {
+  Fragment,
   createContext,
   useContext,
   useEffect,
@@ -68,6 +69,16 @@ export function useSettingsNavigation() {
   return useContext(SettingsNavigationContext);
 }
 
+const SettingsWindowContext = createContext(false);
+
+/**
+ * True in the desktop settings window, where a row has room for its control
+ * beside its label, and short pick-one lists open as dropdowns instead of pages.
+ */
+export function useSettingsWindow() {
+  return useContext(SettingsWindowContext);
+}
+
 interface SettingsShellProps<TId extends string> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -111,6 +122,8 @@ export function SettingsShell<TId extends string>({
 }: SettingsShellProps<TId>) {
   const { isCompactViewport, isMobilePlatform } = useIsMobile();
   const useCompactLayout = isCompactViewport || isMobilePlatform;
+  // Phones and narrow windows get the whole screen; a desktop window gets a settings window.
+  const windowed = !useCompactLayout;
   const availableSections = useMemo(() => {
     if (!visibleSections) return sections;
     const allowed = new Set(visibleSections);
@@ -211,6 +224,18 @@ export function SettingsShell<TId extends string>({
   const showSettingsList = useCompactLayout && !showingDetail;
   const SubpageTitle = activeDefinition?.subpageTitle;
   const showingSubpage = subpage !== null && !showSettingsList;
+  // The window's header shows the way back instead of a back arrow: the
+  // section, then each page above the open one.
+  const crumbs =
+    windowed && showingSubpage
+      ? [
+          { depth: 0, label: activeDefinition?.label ?? title },
+          ...subpages.slice(0, -1).map((page, index) => ({
+            depth: index + 1,
+            label: SubpageTitle ? <SubpageTitle page={page} /> : page,
+          })),
+        ]
+      : [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -221,9 +246,21 @@ export function SettingsShell<TId extends string>({
           event.preventDefault();
           navigation.back();
         }}
-        className="top-0 left-0 flex h-dvh !w-screen !max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none border-0 p-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] ps-[env(safe-area-inset-left)] pe-[env(safe-area-inset-right)]"
+        className={cn(
+          "flex flex-col gap-0 overflow-hidden p-0",
+          windowed
+            ? "h-[min(42.5rem,calc(100dvh-2rem))] w-[min(60rem,calc(100vw-2rem))] max-w-none sm:max-w-none"
+            : "top-0 left-0 h-dvh !w-screen !max-w-none translate-x-0 translate-y-0 rounded-none border-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] ps-[env(safe-area-inset-left)] pe-[env(safe-area-inset-right)]",
+        )}
       >
-        <div className="flex min-h-0 flex-1 flex-col bg-background sm:grid sm:grid-cols-[260px_minmax(0,1fr)] lg:grid-cols-[280px_minmax(0,1fr)]">
+        <div
+          className={cn(
+            "flex min-h-0 flex-1 flex-col bg-background sm:grid",
+            windowed
+              ? "sm:grid-cols-[13.5rem_minmax(0,1fr)]"
+              : "sm:grid-cols-[260px_minmax(0,1fr)] lg:grid-cols-[280px_minmax(0,1fr)]",
+          )}
+        >
           {/* Phones show the list and a section one at a time; wider screens keep the list beside it. */}
           <aside
             className={cn(
@@ -231,7 +268,14 @@ export function SettingsShell<TId extends string>({
               showSettingsList ? "flex flex-1" : "hidden",
             )}
           >
-            <div className="flex shrink-0 items-center gap-2 border-b px-3 py-3 sm:border-b-0 sm:px-5 sm:pt-5 sm:pb-2">
+            <div
+              className={cn(
+                "flex shrink-0 items-center gap-2 border-b px-3 py-3 sm:border-b-0",
+                windowed
+                  ? "sm:px-4 sm:pt-4 sm:pb-2"
+                  : "sm:px-5 sm:pt-5 sm:pb-2",
+              )}
+            >
               {showSettingsList ? (
                 <>
                   <DialogTitle className="min-w-0 flex-1 truncate text-lg leading-tight">
@@ -286,7 +330,8 @@ export function SettingsShell<TId extends string>({
                             type="button"
                             className={cn(
                               "relative flex min-h-12 w-full items-center gap-3 border-b px-3 py-3 text-start text-sm transition-colors last:border-b-0 hover:bg-accent hover:text-accent-foreground",
-                              "sm:min-h-9 sm:gap-2.5 sm:rounded-xs sm:border-b-0 sm:px-2.5 sm:py-1.5 sm:text-foreground/85 sm:hover:bg-accent/60",
+                              "sm:gap-2.5 sm:rounded-xs sm:border-b-0 sm:px-2.5 sm:py-1.5 sm:text-foreground/85 sm:hover:bg-accent/60",
+                              windowed ? "sm:min-h-8" : "sm:min-h-9",
                               active &&
                                 "sm:bg-primary/15 sm:text-primary sm:hover:bg-primary/20 sm:hover:text-primary",
                             )}
@@ -320,8 +365,13 @@ export function SettingsShell<TId extends string>({
               showSettingsList ? "hidden" : "flex flex-1",
             )}
           >
-            <header className="flex shrink-0 items-center gap-2 border-b px-3 py-3 md:px-6">
-              {showingSubpage ? (
+            <header
+              className={cn(
+                "flex shrink-0 items-center gap-2 border-b",
+                windowed ? "py-2 ps-6 pe-3" : "px-3 py-3 md:px-6",
+              )}
+            >
+              {showingSubpage && !windowed ? (
                 <Button
                   type="button"
                   variant="ghost"
@@ -345,14 +395,31 @@ export function SettingsShell<TId extends string>({
                 </Button>
               ) : null}
 
-              <div className="min-w-0 flex-1">
+              <div className="flex min-w-0 flex-1 items-center gap-1.5">
                 {showSettingsList ? (
                   <span className="block truncate text-lg font-semibold leading-tight md:text-xl">
                     {activeDefinition?.label ?? title}
                   </span>
                 ) : (
                   <>
-                    <DialogTitle className="truncate text-lg leading-tight md:text-xl">
+                    {crumbs.map(({ depth, label }) => (
+                      <Fragment key={depth}>
+                        <button
+                          type="button"
+                          className="min-w-0 truncate text-lg leading-tight text-muted-foreground transition-colors hover:text-foreground"
+                          onClick={() =>
+                            setSubpages((pages) => pages.slice(0, depth))
+                          }
+                        >
+                          {label}
+                        </button>
+                        <ChevronRightIcon
+                          aria-hidden="true"
+                          className="size-4 shrink-0 text-muted-foreground rtl:rotate-180"
+                        />
+                      </Fragment>
+                    ))}
+                    <DialogTitle className="min-w-0 truncate text-lg leading-tight md:text-xl">
                       {showingSubpage && SubpageTitle ? (
                         <SubpageTitle page={subpage} />
                       ) : (
@@ -385,14 +452,20 @@ export function SettingsShell<TId extends string>({
             >
               <div
                 className={cn(
-                  // Rows stay readable on wide screens instead of spreading across the pane.
-                  "w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 xl:px-10",
-                  activeDefinition?.wide ? "max-w-5xl" : "max-w-3xl",
+                  "w-full",
+                  windowed
+                    ? "px-6 py-5"
+                    : "px-4 py-4 sm:px-6 sm:py-6 lg:px-8 xl:px-10",
+                  // Rows stay readable on large screens instead of spreading across the pane.
+                  !windowed &&
+                    (activeDefinition?.wide ? "max-w-5xl" : "max-w-3xl"),
                 )}
               >
-                <SettingsNavigationContext.Provider value={navigation}>
-                  {ActiveComponent && <ActiveComponent />}
-                </SettingsNavigationContext.Provider>
+                <SettingsWindowContext.Provider value={windowed}>
+                  <SettingsNavigationContext.Provider value={navigation}>
+                    {ActiveComponent && <ActiveComponent />}
+                  </SettingsNavigationContext.Provider>
+                </SettingsWindowContext.Provider>
               </div>
             </ScrollArea>
           </section>
