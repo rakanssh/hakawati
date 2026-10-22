@@ -7,21 +7,19 @@ export interface Action {
   isRolling: boolean;
 }
 
-export function getPlaceholderMessage(action: Action): MessageDescriptor {
-  switch (action.type) {
+export function getPlaceholderMessage(mode: Action["type"]): MessageDescriptor {
+  switch (mode) {
     case LogEntryMode.DO:
-      return action.isRolling ? msg`🎲 You...` : msg`You...`;
+      return msg`You...`;
     case LogEntryMode.SAY:
-      return action.isRolling ? msg`🎲 You say...` : msg`You say...`;
+      return msg`You say...`;
     case LogEntryMode.STORY:
     case LogEntryMode.CONTINUE:
-      return action.isRolling ? msg`🎲 ...` : msg`...`;
+      return msg`...`;
     case LogEntryMode.DIRECT:
-      return action.isRolling
-        ? msg`🎲 Director's Note...`
-        : msg`Director's Note...`;
+      return msg`Director's Note...`;
     default: {
-      const _exhaustive: never = action.type;
+      const _exhaustive: never = mode;
       return _exhaustive;
     }
   }

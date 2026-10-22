@@ -18,7 +18,7 @@ msgstr ""
 msgid "Failed to upload tale to cloud"
 msgstr "Failed to upload tale to cloud"
 
-#: app/lib/play-utils.ts:18
+#: app/lib/play-utils.ts:20
 msgid "..."
 msgstr "..."
 
@@ -133,22 +133,6 @@ msgstr "{used} of {limit}"
 #: app/components/layout/settings/about.tsx:124
 msgid "© 2025 Rakan AlShammari"
 msgstr "© 2025 Rakan AlShammari"
-
-#: app/lib/play-utils.ts:18
-msgid "🎲 ..."
-msgstr "🎲 ..."
-
-#: app/lib/play-utils.ts:21
-msgid "🎲 Director's Note..."
-msgstr "🎲 Director's Note..."
-
-#: app/lib/play-utils.ts:15
-msgid "🎲 You say..."
-msgstr "🎲 You say..."
-
-#: app/lib/play-utils.ts:13
-msgid "🎲 You..."
-msgstr "🎲 You..."
 
 #: app/components/sidebar/stats-card.tsx:169
 msgid "0"
@@ -3514,11 +3498,11 @@ msgstr "World"
 msgid "Writes the story"
 msgstr "Writes the story"
 
-#: app/lib/play-utils.ts:15
+#: app/lib/play-utils.ts:17
 msgid "You say..."
 msgstr "You say..."
 
-#: app/lib/play-utils.ts:13
+#: app/lib/play-utils.ts:15
 msgid "You..."
 msgstr "You..."
 

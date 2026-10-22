@@ -395,7 +395,7 @@ export function PlayInputControls({
             "rounded-xs",
             isMobilePlatform ? "size-10 landscape:size-9" : "mb-1 h-9 px-3.5",
             action.isRolling
-              ? "border-success/50 bg-success/12 text-success"
+              ? "border-primary/55 bg-primary/15 text-primary"
               : isMobilePlatform
                 ? "border-transparent text-muted-foreground hover:bg-muted/45 hover:text-foreground"
                 : "border-border/75 bg-[var(--composer-background)] text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -460,7 +460,7 @@ export function PlayInputControls({
   const renderTextArea = () => (
     <Textarea
       data-composer-input=""
-      placeholder={t(getPlaceholderMessage(action))}
+      placeholder={t(getPlaceholderMessage(action.type))}
       value={input}
       onChange={(e) => setInput(e.target.value)}
       onKeyDown={(e) => {
