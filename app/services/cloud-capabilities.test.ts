@@ -12,25 +12,30 @@ describe("cloud capabilities", () => {
     const parsed = parseCloudCapabilities(fixture());
     expect(parsed).not.toBeNull();
     expect(cloudFeatureAvailable(parsed, "sync")).toBe(true);
-    expect(parsed?.announcement).toBeNull();
+    expect(parsed?.announcements).toEqual([]);
   });
 
-  it("ignores an invalid optional announcement without disabling cloud features", () => {
+  it("ignores invalid optional announcements without disabling cloud features", () => {
     const parsed = parseCloudCapabilities(
-      fixture({ announcement: { id: "bad", en: "bad" } }),
+      fixture({ announcements: [{ id: "bad", en: "bad" }], announcement: 3 }),
     );
-    expect(parsed?.announcement).toBeNull();
+    expect(parsed?.announcements).toEqual([]);
     expect(cloudFeatureAvailable(parsed, "sync")).toBe(true);
+    expect(
+      parseCloudCapabilities(fixture({ announcements: "bad" }))?.announcements,
+    ).toEqual([]);
     const announcement = {
       id: "491c7ee0-a094-408a-84c9-7f3ee24b519a",
-      en: { title: "Update", body: "Hello" },
+      kind: "warning",
+      en: { title: "Update", body: "Hello", linkLabel: "Read the news" },
       url: "https://hakawati.dev/news",
-      linkLabel: "Read the news",
+      dismissible: false,
       expiresAt: "2030-01-01T00:00:00Z",
     };
     expect(
-      parseCloudCapabilities(fixture({ announcement }))?.announcement,
-    ).toEqual(announcement);
+      parseCloudCapabilities(fixture({ announcements: [announcement] }))
+        ?.announcements,
+    ).toEqual([announcement]);
   });
 
   it("fails closed for missing fields, incompatible clients, and unavailable features", () => {
