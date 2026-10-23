@@ -105,7 +105,7 @@ msgstr "{inPrice} in · {outPrice} out per million"
 msgid "{localEntryCount} {0}"
 msgstr "{localEntryCount} {0}"
 
-#: app/components/layout/settings/cloud-sync.tsx:1024
+#: app/components/layout/settings/cloud-sync.tsx:1105
 msgid "{localTales, plural, one {Your tale is only on this device.} other {Your # tales are only on this device.}}"
 msgstr "{localTales, plural, one {Your tale is only on this device.} other {Your # tales are only on this device.}}"
 
@@ -123,7 +123,7 @@ msgstr "{remoteEntryCount} {0}"
 msgid "{size} context"
 msgstr "{size} context"
 
-#: app/components/layout/settings/cloud-sync.tsx:905
+#: app/components/layout/settings/cloud-sync.tsx:986
 msgid "{talesUsed} of {talesLimit} tales · {storageUsed} of {storageLimit}"
 msgstr "{talesUsed} of {talesLimit} tales · {storageUsed} of {storageLimit}"
 
@@ -131,7 +131,7 @@ msgstr "{talesUsed} of {talesLimit} tales · {storageUsed} of {storageLimit}"
 msgid "{title} tale"
 msgstr "{title} tale"
 
-#: app/components/layout/settings/cloud-sync.tsx:1217
+#: app/components/layout/settings/cloud-sync.tsx:1351
 msgid "{used} of {limit}"
 msgstr "{used} of {limit}"
 
@@ -180,10 +180,15 @@ msgstr "About"
 msgid "Account"
 msgstr "Account"
 
-#: app/components/layout/settings/cloud-sync.tsx:1197
+#: app/components/layout/settings/cloud-sync.tsx:1331
 #: app/components/layout/settings/settings-modal.tsx:86
 msgid "Account & Sync"
 msgstr "Account & Sync"
+
+#: app/components/layout/settings/cloud-sync.tsx:540
+#: app/components/layout/settings/cloud-sync.tsx:541
+msgid "Account deleted"
+msgstr "Account deleted"
 
 #: app/components/play/play-input-controls.tsx:284
 msgid "Act"
@@ -454,8 +459,9 @@ msgstr "Can’t find it? <0>Type a model id</0>"
 #: app/components/layout/settings/ai-setup/connection-page.tsx:376
 #: app/components/layout/settings/ai-setup/connection-page.tsx:516
 #: app/components/layout/settings/chatgpt-connection.tsx:106
-#: app/components/layout/settings/cloud-sync.tsx:1117
-#: app/components/layout/settings/cloud-sync.tsx:1165
+#: app/components/layout/settings/cloud-sync.tsx:1208
+#: app/components/layout/settings/cloud-sync.tsx:1256
+#: app/components/layout/settings/cloud-sync.tsx:1297
 #: app/components/prompt-components/PromptComponentsEditor.tsx:210
 #: app/components/quickstart/quickstart-wizard.tsx:178
 #: app/components/scenario/GenerateScenarioDialog.tsx:104
@@ -586,7 +592,7 @@ msgstr "Choose one of these options."
 msgid "Choose the mode that fits the kind of tale you want to generate."
 msgstr "Choose the mode that fits the kind of tale you want to generate."
 
-#: app/components/layout/settings/cloud-sync.tsx:1139
+#: app/components/layout/settings/cloud-sync.tsx:1230
 msgid "Choose the name shown on this device and in sync settings."
 msgstr "Choose the name shown on this device and in sync settings."
 
@@ -625,25 +631,25 @@ msgstr "Cloud"
 msgid "Cloud full"
 msgstr "Cloud full"
 
-#: app/components/layout/settings/cloud-sync.tsx:1195
+#: app/components/layout/settings/cloud-sync.tsx:1329
 msgid "Cloud service"
 msgstr "Cloud service"
 
-#: app/components/layout/settings/cloud-sync.tsx:993
+#: app/components/layout/settings/cloud-sync.tsx:1074
 msgid "Cloud service is not configured"
 msgstr "Cloud service is not configured"
 
-#: app/components/layout/settings/cloud-sync.tsx:1093
+#: app/components/layout/settings/cloud-sync.tsx:1184
 msgid "Cloud service settings"
 msgstr "Cloud service settings"
 
-#: app/components/layout/settings/cloud-sync.tsx:1001
-#: app/components/layout/settings/cloud-sync.tsx:1017
+#: app/components/layout/settings/cloud-sync.tsx:1082
+#: app/components/layout/settings/cloud-sync.tsx:1098
 msgid "Cloud sync"
 msgstr "Cloud sync"
 
-#: app/components/layout/settings/cloud-sync.tsx:593
-#: app/components/layout/settings/cloud-sync.tsx:742
+#: app/components/layout/settings/cloud-sync.tsx:674
+#: app/components/layout/settings/cloud-sync.tsx:823
 msgid "Cloud sync connected"
 msgstr "Cloud sync connected"
 
@@ -651,18 +657,18 @@ msgstr "Cloud sync connected"
 msgid "Cloud sync on"
 msgstr "Cloud sync on"
 
-#: app/components/layout/settings/cloud-sync.tsx:1393
+#: app/components/layout/settings/cloud-sync.tsx:1527
 #: app/pages/home/home.tsx:792
 #: app/pages/tales/home.tsx:232
 msgid "Cloud tales are unavailable."
 msgstr "Cloud tales are unavailable."
 
-#: app/components/layout/settings/cloud-sync.tsx:837
-#: app/components/layout/settings/cloud-sync.tsx:844
+#: app/components/layout/settings/cloud-sync.tsx:918
+#: app/components/layout/settings/cloud-sync.tsx:925
 msgid "Cloud URL"
 msgstr "Cloud URL"
 
-#: app/components/layout/settings/cloud-sync.tsx:473
+#: app/components/layout/settings/cloud-sync.tsx:554
 msgid "Cloud URL changed. Sign in again to continue."
 msgstr "Cloud URL changed. Sign in again to continue."
 
@@ -679,7 +685,7 @@ msgstr "Community Guidelines"
 msgid "Complete profile"
 msgstr "Complete profile"
 
-#: app/components/layout/settings/cloud-sync.tsx:1133
+#: app/components/layout/settings/cloud-sync.tsx:1224
 msgid "Complete your profile"
 msgstr "Complete your profile"
 
@@ -702,7 +708,7 @@ msgstr "Conflict resolved"
 msgid "Connect a provider, choose an endpoint, and pick a model."
 msgstr "Connect a provider, choose an endpoint, and pick a model."
 
-#: app/components/layout/settings/cloud-sync.tsx:889
+#: app/components/layout/settings/cloud-sync.tsx:970
 msgid "Connect Personal Sync"
 msgstr "Connect Personal Sync"
 
@@ -714,11 +720,11 @@ msgstr "Connect to any other OpenAI-compatible API. Enter the base URL and API k
 msgid "Connected"
 msgstr "Connected"
 
-#: app/components/layout/settings/cloud-sync.tsx:586
+#: app/components/layout/settings/cloud-sync.tsx:667
 msgid "Connected as {label}"
 msgstr "Connected as {label}"
 
-#: app/components/layout/settings/cloud-sync.tsx:1106
+#: app/components/layout/settings/cloud-sync.tsx:1197
 msgid "Connecting..."
 msgstr "Connecting..."
 
@@ -746,7 +752,7 @@ msgid "Continuation {0}"
 msgstr "Continuation {0}"
 
 #: app/components/layout/settings/advanced.tsx:54
-#: app/components/layout/settings/cloud-sync.tsx:1173
+#: app/components/layout/settings/cloud-sync.tsx:1264
 #: app/components/play/play-input-controls.tsx:559
 #: app/pages/home/home.tsx:748
 #: app/pages/tales/home.tsx:276
@@ -793,6 +799,11 @@ msgstr "Couldn’t check for updates"
 #: app/components/layout/settings/ai-setup/connection-page.tsx:316
 msgid "Couldn’t connect"
 msgstr "Couldn’t connect"
+
+#: app/components/layout/settings/cloud-sync.tsx:514
+#: app/components/layout/settings/cloud-sync.tsx:529
+msgid "Couldn't delete your account"
+msgstr "Couldn't delete your account"
 
 #: app/components/layout/settings/ai-setup/model-picker.tsx:193
 msgid "Couldn’t load models"
@@ -890,6 +901,11 @@ msgstr "Default"
 msgid "Delete"
 msgstr "Delete"
 
+#: app/components/layout/settings/cloud-sync.tsx:1167
+#: app/components/layout/settings/cloud-sync.tsx:1309
+msgid "Delete account"
+msgstr "Delete account"
+
 #: app/pages/tales/home.tsx:100
 msgid "Delete failed"
 msgstr "Delete failed"
@@ -905,6 +921,14 @@ msgstr "Delete this scenario?"
 #: app/pages/tales/home.tsx:408
 msgid "Delete this tale?"
 msgstr "Delete this tale?"
+
+#: app/components/layout/settings/cloud-sync.tsx:1282
+msgid "Delete your Hakawati Cloud account?"
+msgstr "Delete your Hakawati Cloud account?"
+
+#: app/components/layout/settings/cloud-sync.tsx:1307
+msgid "Deleting…"
+msgstr "Deleting…"
 
 #: app/components/scenario/GenerateScenarioDialog.tsx:86
 msgid "Describe the scenario you want and your utility model will be prompted to generate a starter for you."
@@ -945,31 +969,31 @@ msgstr "Details (Optional)"
 msgid "Detective"
 msgstr "Detective"
 
-#: app/components/layout/settings/cloud-sync.tsx:784
+#: app/components/layout/settings/cloud-sync.tsx:865
 #: app/pages/home/home.tsx:634
 msgid "Device limit reached"
 msgstr "Device limit reached"
 
-#: app/components/layout/settings/cloud-sync.tsx:857
-#: app/components/layout/settings/cloud-sync.tsx:862
+#: app/components/layout/settings/cloud-sync.tsx:938
+#: app/components/layout/settings/cloud-sync.tsx:943
 msgid "Device name"
 msgstr "Device name"
 
-#: app/components/layout/settings/cloud-sync.tsx:764
+#: app/components/layout/settings/cloud-sync.tsx:845
 msgid "Device unregistered"
 msgstr "Device unregistered"
 
-#: app/components/layout/settings/cloud-sync.tsx:1433
+#: app/components/layout/settings/cloud-sync.tsx:1567
 msgid "Device usage"
 msgstr "Device usage"
 
-#: app/components/layout/settings/cloud-sync.tsx:1053
-#: app/components/layout/settings/cloud-sync.tsx:1193
-#: app/components/layout/settings/cloud-sync.tsx:1429
+#: app/components/layout/settings/cloud-sync.tsx:1134
+#: app/components/layout/settings/cloud-sync.tsx:1327
+#: app/components/layout/settings/cloud-sync.tsx:1563
 msgid "Devices"
 msgstr "Devices"
 
-#: app/components/layout/settings/cloud-sync.tsx:1486
+#: app/components/layout/settings/cloud-sync.tsx:1620
 msgid "Devices are unavailable."
 msgstr "Devices are unavailable."
 
@@ -1008,7 +1032,7 @@ msgstr "Dismiss announcement"
 msgid "Display"
 msgstr "Display"
 
-#: app/components/layout/settings/cloud-sync.tsx:1146
+#: app/components/layout/settings/cloud-sync.tsx:1237
 msgid "Display name"
 msgstr "Display name"
 
@@ -1025,7 +1049,7 @@ msgstr "Downloading the update…"
 msgid "Downloading update... ({0})"
 msgstr "Downloading update... ({0})"
 
-#: app/components/layout/settings/cloud-sync.tsx:970
+#: app/components/layout/settings/cloud-sync.tsx:1051
 #: app/components/storybook/StoryCard.tsx:110
 #: app/components/storybook/StoryCard.tsx:111
 #: app/pages/scenarios/details.tsx:258
@@ -1043,7 +1067,7 @@ msgstr "Edit entry"
 msgid "Edit Entry"
 msgstr "Edit Entry"
 
-#: app/components/layout/settings/cloud-sync.tsx:1135
+#: app/components/layout/settings/cloud-sync.tsx:1226
 msgid "Edit profile"
 msgstr "Edit profile"
 
@@ -1195,7 +1219,7 @@ msgstr "Failed to publish scenario"
 msgid "Failed to queue sync"
 msgstr "Failed to queue sync"
 
-#: app/components/layout/settings/cloud-sync.tsx:713
+#: app/components/layout/settings/cloud-sync.tsx:794
 #: app/pages/tales/home.tsx:112
 msgid "Failed to remove from cloud"
 msgstr "Failed to remove from cloud"
@@ -1228,7 +1252,7 @@ msgstr "Failed to transcribe speech."
 msgid "Failed to unpublish scenario"
 msgstr "Failed to unpublish scenario"
 
-#: app/components/layout/settings/cloud-sync.tsx:768
+#: app/components/layout/settings/cloud-sync.tsx:849
 msgid "Failed to update devices"
 msgstr "Failed to update devices"
 
@@ -1245,7 +1269,7 @@ msgstr "Filter by tags"
 msgid "Finish signing in in your browser..."
 msgstr "Finish signing in in your browser..."
 
-#: app/components/layout/settings/cloud-sync.tsx:1109
+#: app/components/layout/settings/cloud-sync.tsx:1200
 msgid "Finish signing in through your browser. You can cancel and keep using Hakawati at any time."
 msgstr "Finish signing in through your browser. You can cancel and keep using Hakawati at any time."
 
@@ -1432,11 +1456,11 @@ msgstr "How to add questions"
 msgid "How to get a key"
 msgstr "How to get a key"
 
-#: app/components/layout/settings/cloud-sync.tsx:880
+#: app/components/layout/settings/cloud-sync.tsx:961
 msgid "http://192.168.1.20:8787"
 msgstr "http://192.168.1.20:8787"
 
-#: app/components/layout/settings/cloud-sync.tsx:843
+#: app/components/layout/settings/cloud-sync.tsx:924
 msgid "https://sync.example.com"
 msgstr "https://sync.example.com"
 
@@ -1496,7 +1520,7 @@ msgstr "Installed version"
 msgid "Installing the update…"
 msgstr "Installing the update…"
 
-#: app/root.tsx:152
+#: app/root.tsx:157
 msgid "Installing update…"
 msgstr "Installing update…"
 
@@ -1535,7 +1559,7 @@ msgstr "Items collected will appear here"
 msgid "Journalist"
 msgstr "Journalist"
 
-#: app/components/layout/settings/cloud-sync.tsx:1330
+#: app/components/layout/settings/cloud-sync.tsx:1464
 msgid "Keep all private"
 msgstr "Keep all private"
 
@@ -1580,7 +1604,7 @@ msgstr "Larger"
 msgid "Last checked"
 msgstr "Last checked"
 
-#: app/components/layout/settings/cloud-sync.tsx:1459
+#: app/components/layout/settings/cloud-sync.tsx:1593
 msgid "Last seen {lastSeen}"
 msgstr "Last seen {lastSeen}"
 
@@ -1670,8 +1694,8 @@ msgid "Loading scenarios"
 msgstr "Loading scenarios"
 
 #: app/components/layout/model-select.tsx:71
-#: app/components/layout/settings/cloud-sync.tsx:1383
-#: app/components/layout/settings/cloud-sync.tsx:1476
+#: app/components/layout/settings/cloud-sync.tsx:1517
+#: app/components/layout/settings/cloud-sync.tsx:1610
 #: app/pages/home/home.tsx:840
 #: app/pages/scenarios/catalog-details.tsx:331
 #: app/pages/scenarios/details.tsx:214
@@ -1907,7 +1931,7 @@ msgstr "No AI components added."
 msgid "No cards match your search."
 msgstr "No cards match your search."
 
-#: app/components/layout/settings/cloud-sync.tsx:1387
+#: app/components/layout/settings/cloud-sync.tsx:1521
 msgid "No cloud tales."
 msgstr "No cloud tales."
 
@@ -1970,7 +1994,7 @@ msgstr "No public scenarios yet."
 msgid "No published scenarios yet."
 msgstr "No published scenarios yet."
 
-#: app/components/layout/settings/cloud-sync.tsx:1480
+#: app/components/layout/settings/cloud-sync.tsx:1614
 msgid "No registered devices."
 msgstr "No registered devices."
 
@@ -1998,7 +2022,7 @@ msgstr "No stats or inventory tracking"
 msgid "No stats yet"
 msgstr "No stats yet"
 
-#: app/components/layout/settings/cloud-sync.tsx:1319
+#: app/components/layout/settings/cloud-sync.tsx:1453
 msgid "No tales waiting."
 msgstr "No tales waiting."
 
@@ -2021,7 +2045,7 @@ msgid "Not set up"
 msgstr "Not set up"
 
 #: app/components/layout/settings/ai-setup/index.tsx:74
-#: app/components/layout/settings/cloud-sync.tsx:941
+#: app/components/layout/settings/cloud-sync.tsx:1022
 msgid "Not signed in"
 msgstr "Not signed in"
 
@@ -2045,7 +2069,7 @@ msgstr "Occultist"
 msgid "Off"
 msgstr "Off"
 
-#: app/components/layout/settings/cloud-sync.tsx:796
+#: app/components/layout/settings/cloud-sync.tsx:877
 msgid "Off for this device"
 msgstr "Off for this device"
 
@@ -2057,7 +2081,7 @@ msgstr "Off-white with a teal accent."
 msgid "Ollama, LM Studio, KoboldCpp…"
 msgstr "Ollama, LM Studio, KoboldCpp…"
 
-#: app/components/layout/settings/cloud-sync.tsx:780
+#: app/components/layout/settings/cloud-sync.tsx:861
 msgid "On for this device"
 msgstr "On for this device"
 
@@ -2140,7 +2164,7 @@ msgstr "Pause narration"
 msgid "Pay per use, many open models"
 msgstr "Pay per use, many open models"
 
-#: app/components/layout/settings/cloud-sync.tsx:793
+#: app/components/layout/settings/cloud-sync.tsx:874
 msgid "Personal"
 msgstr "Personal"
 
@@ -2148,20 +2172,20 @@ msgstr "Personal"
 msgid "Personal server"
 msgstr "Personal server"
 
-#: app/components/layout/settings/cloud-sync.tsx:945
+#: app/components/layout/settings/cloud-sync.tsx:1026
 #: app/pages/home/home.tsx:615
 msgid "Personal Sync"
 msgstr "Personal Sync"
 
-#: app/components/layout/settings/cloud-sync.tsx:666
+#: app/components/layout/settings/cloud-sync.tsx:747
 msgid "Personal sync connected"
 msgstr "Personal sync connected"
 
-#: app/components/layout/settings/cloud-sync.tsx:874
+#: app/components/layout/settings/cloud-sync.tsx:955
 msgid "Personal sync server"
 msgstr "Personal sync server"
 
-#: app/components/layout/settings/cloud-sync.tsx:881
+#: app/components/layout/settings/cloud-sync.tsx:962
 msgid "Personal Sync URL"
 msgstr "Personal Sync URL"
 
@@ -2184,8 +2208,8 @@ msgstr "Pin"
 msgid "Place"
 msgstr "Place"
 
-#: app/components/layout/settings/cloud-sync.tsx:865
-#: app/components/layout/settings/cloud-sync.tsx:870
+#: app/components/layout/settings/cloud-sync.tsx:946
+#: app/components/layout/settings/cloud-sync.tsx:951
 msgid "Platform"
 msgstr "Platform"
 
@@ -2219,16 +2243,16 @@ msgstr "Privacy Policy"
 msgid "Privacy-focused provider with multiple models on offer. Account optional. Offers subscription plan with unlimited usage on some models."
 msgstr "Privacy-focused provider with multiple models on offer. Account optional. Offers subscription plan with unlimited usage on some models."
 
-#: app/components/layout/settings/cloud-sync.tsx:1305
+#: app/components/layout/settings/cloud-sync.tsx:1439
 msgid "Private"
 msgstr "Private"
 
-#: app/components/layout/settings/cloud-sync.tsx:500
-#: app/components/layout/settings/cloud-sync.tsx:501
+#: app/components/layout/settings/cloud-sync.tsx:581
+#: app/components/layout/settings/cloud-sync.tsx:582
 msgid "Profile completed"
 msgstr "Profile completed"
 
-#: app/components/layout/settings/cloud-sync.tsx:791
+#: app/components/layout/settings/cloud-sync.tsx:872
 msgid "Profile incomplete"
 msgstr "Profile incomplete"
 
@@ -2377,7 +2401,7 @@ msgstr "Recent tales"
 msgid "Reconnecting..."
 msgstr "Reconnecting..."
 
-#: app/components/layout/settings/cloud-sync.tsx:782
+#: app/components/layout/settings/cloud-sync.tsx:863
 msgid "Reconnecting…"
 msgstr "Reconnecting…"
 
@@ -2431,7 +2455,7 @@ msgstr "Remove connection"
 msgid "Remove cover"
 msgstr "Remove cover"
 
-#: app/components/layout/settings/cloud-sync.tsx:1377
+#: app/components/layout/settings/cloud-sync.tsx:1511
 #: app/pages/tales/home.tsx:334
 #: app/pages/tales/home.tsx:453
 msgid "Remove from cloud"
@@ -2441,7 +2465,7 @@ msgstr "Remove from cloud"
 msgid "Remove from cloud?"
 msgstr "Remove from cloud?"
 
-#: app/components/layout/settings/cloud-sync.tsx:710
+#: app/components/layout/settings/cloud-sync.tsx:791
 #: app/pages/tales/home.tsx:108
 msgid "Removed from cloud"
 msgstr "Removed from cloud"
@@ -2505,7 +2529,7 @@ msgstr "Reset generation settings"
 msgid "Reset to default"
 msgstr "Reset to default"
 
-#: app/components/layout/settings/cloud-sync.tsx:853
+#: app/components/layout/settings/cloud-sync.tsx:934
 msgid "Reset to Default"
 msgstr "Reset to Default"
 
@@ -2588,7 +2612,7 @@ msgstr "Sampling"
 #: app/components/layout/settings/ai-setup/connection-page.tsx:286
 #: app/components/layout/settings/ai-setup/connection-page.tsx:369
 #: app/components/layout/settings/ai-setup/connection-page.tsx:437
-#: app/components/layout/settings/cloud-sync.tsx:1175
+#: app/components/layout/settings/cloud-sync.tsx:1266
 #: app/components/ui/inventory-item.tsx:77
 #: app/components/ui/stat-item.tsx:104
 msgid "Save"
@@ -2606,11 +2630,11 @@ msgstr "Save Changes"
 msgid "Save draft"
 msgstr "Save draft"
 
-#: app/components/layout/settings/cloud-sync.tsx:483
+#: app/components/layout/settings/cloud-sync.tsx:564
 msgid "Saving profile"
 msgstr "Saving profile"
 
-#: app/root.tsx:155
+#: app/root.tsx:160
 msgid "Saving your progress. Hakawati will restart when the update is ready."
 msgstr "Saving your progress. Hakawati will restart when the update is ready."
 
@@ -2838,16 +2862,16 @@ msgstr "Shown in your library and the public catalog. It is not sent to the AI."
 msgid "Shown in your library, not sent to the AI."
 msgstr "Shown in your library, not sent to the AI."
 
-#: app/components/layout/settings/cloud-sync.tsx:959
-#: app/components/layout/settings/cloud-sync.tsx:985
+#: app/components/layout/settings/cloud-sync.tsx:1040
+#: app/components/layout/settings/cloud-sync.tsx:1066
 msgid "Sign in"
 msgstr "Sign in"
 
-#: app/components/layout/settings/cloud-sync.tsx:978
+#: app/components/layout/settings/cloud-sync.tsx:1059
 msgid "Sign in again to keep syncing"
 msgstr "Sign in again to keep syncing"
 
-#: app/components/layout/settings/cloud-sync.tsx:787
+#: app/components/layout/settings/cloud-sync.tsx:868
 msgid "Sign in again to sync"
 msgstr "Sign in again to sync"
 
@@ -2855,7 +2879,7 @@ msgstr "Sign in again to sync"
 msgid "Sign in to ChatGPT"
 msgstr "Sign in to ChatGPT"
 
-#: app/components/layout/settings/cloud-sync.tsx:795
+#: app/components/layout/settings/cloud-sync.tsx:876
 msgid "Sign in to sync"
 msgstr "Sign in to sync"
 
@@ -2863,7 +2887,7 @@ msgstr "Sign in to sync"
 msgid "Sign in with your ChatGPT account. No key, no extra bill."
 msgstr "Sign in with your ChatGPT account. No key, no extra bill."
 
-#: app/components/layout/settings/cloud-sync.tsx:1076
+#: app/components/layout/settings/cloud-sync.tsx:1157
 msgid "Sign out"
 msgstr "Sign out"
 
@@ -2879,7 +2903,7 @@ msgstr "Sign up for an account at OpenRouter"
 msgid "Signed in"
 msgstr "Signed in"
 
-#: app/components/layout/settings/cloud-sync.tsx:460
+#: app/components/layout/settings/cloud-sync.tsx:485
 msgid "Signed out"
 msgstr "Signed out"
 
@@ -2970,15 +2994,15 @@ msgstr "Stop generating"
 msgid "Stop recording"
 msgstr "Stop recording"
 
-#: app/components/layout/settings/cloud-sync.tsx:1262
+#: app/components/layout/settings/cloud-sync.tsx:1396
 msgid "Storage"
 msgstr "Storage"
 
-#: app/components/layout/settings/cloud-sync.tsx:1269
+#: app/components/layout/settings/cloud-sync.tsx:1403
 msgid "Storage usage"
 msgstr "Storage usage"
 
-#: app/components/layout/settings/cloud-sync.tsx:907
+#: app/components/layout/settings/cloud-sync.tsx:988
 msgid "Storage usage is unavailable."
 msgstr "Storage usage is unavailable."
 
@@ -3041,16 +3065,16 @@ msgstr "Surprise Me"
 msgid "Survivor"
 msgstr "Survivor"
 
-#: app/components/layout/settings/cloud-sync.tsx:1312
+#: app/components/layout/settings/cloud-sync.tsx:1446
 msgid "Sync"
 msgstr "Sync"
 
-#: app/components/layout/settings/cloud-sync.tsx:1333
+#: app/components/layout/settings/cloud-sync.tsx:1467
 msgid "Sync all"
 msgstr "Sync all"
 
-#: app/components/layout/settings/cloud-sync.tsx:504
-#: app/components/layout/settings/cloud-sync.tsx:521
+#: app/components/layout/settings/cloud-sync.tsx:585
+#: app/components/layout/settings/cloud-sync.tsx:602
 msgid "Sync failed"
 msgstr "Sync failed"
 
@@ -3102,27 +3126,27 @@ msgstr "Tale actions"
 msgid "Tale deleted"
 msgstr "Tale deleted"
 
-#: app/components/layout/settings/cloud-sync.tsx:1259
+#: app/components/layout/settings/cloud-sync.tsx:1393
 msgid "Tale usage"
 msgstr "Tale usage"
 
-#: app/components/layout/settings/cloud-sync.tsx:1255
+#: app/components/layout/settings/cloud-sync.tsx:1389
 #: app/pages/tales/home.tsx:191
 #: app/pages/tales/home.tsx:202
 msgid "Tales"
 msgstr "Tales"
 
-#: app/components/layout/settings/cloud-sync.tsx:1047
-#: app/components/layout/settings/cloud-sync.tsx:1191
+#: app/components/layout/settings/cloud-sync.tsx:1128
+#: app/components/layout/settings/cloud-sync.tsx:1325
 msgid "Tales in the cloud"
 msgstr "Tales in the cloud"
 
-#: app/components/layout/settings/cloud-sync.tsx:1397
+#: app/components/layout/settings/cloud-sync.tsx:1531
 msgid "Tales on this device stay here when you remove their cloud copy."
 msgstr "Tales on this device stay here when you remove their cloud copy."
 
-#: app/components/layout/settings/cloud-sync.tsx:1035
-#: app/components/layout/settings/cloud-sync.tsx:1189
+#: app/components/layout/settings/cloud-sync.tsx:1116
+#: app/components/layout/settings/cloud-sync.tsx:1323
 msgid "Tales waiting for a choice"
 msgstr "Tales waiting for a choice"
 
@@ -3238,16 +3262,16 @@ msgstr "Thinking and the answer share your output limit. Raise Max output tokens
 msgid "Third-party licenses"
 msgstr "Third-party licenses"
 
-#: app/components/layout/settings/cloud-sync.tsx:1454
+#: app/components/layout/settings/cloud-sync.tsx:1588
 msgid "This device"
 msgstr "This device"
 
-#: app/components/layout/settings/cloud-sync.tsx:1437
+#: app/components/layout/settings/cloud-sync.tsx:1571
 msgid "This device is not registered."
 msgstr "This device is not registered."
 
-#: app/components/layout/settings/cloud-sync.tsx:581
-#: app/components/layout/settings/cloud-sync.tsx:636
+#: app/components/layout/settings/cloud-sync.tsx:662
+#: app/components/layout/settings/cloud-sync.tsx:717
 msgid "This device is not syncing because the device limit was reached"
 msgstr "This device is not syncing because the device limit was reached"
 
@@ -3386,7 +3410,7 @@ msgstr "Unpin"
 msgid "Unpublish"
 msgstr "Unpublish"
 
-#: app/components/layout/settings/cloud-sync.tsx:1468
+#: app/components/layout/settings/cloud-sync.tsx:1602
 msgid "Unregister"
 msgstr "Unregister"
 
@@ -3407,7 +3431,7 @@ msgstr "Update {0} is available."
 msgid "Update downloaded. Restarting..."
 msgstr "Update downloaded. Restarting..."
 
-#: app/components/layout/settings/cloud-sync.tsx:778
+#: app/components/layout/settings/cloud-sync.tsx:859
 #: app/pages/home/home.tsx:624
 msgid "Update Hakawati to sync"
 msgstr "Update Hakawati to sync"
@@ -3450,7 +3474,7 @@ msgstr "Used by tales and scenarios that don’t set their own."
 msgid "Used when generating story cards."
 msgstr "Used when generating story cards."
 
-#: app/root.tsx:134
+#: app/root.tsx:139
 msgid "User interface scale"
 msgstr "User interface scale"
 
@@ -3537,13 +3561,17 @@ msgstr "You..."
 msgid "You’re now using your ChatGPT plan!"
 msgstr "You’re now using your ChatGPT plan!"
 
-#: app/components/layout/settings/cloud-sync.tsx:947
+#: app/components/layout/settings/cloud-sync.tsx:1028
 msgid "Your account"
 msgstr "Your account"
 
 #: app/components/scenario/ScenarioStartWizard.tsx:105
 msgid "Your answer"
 msgstr "Your answer"
+
+#: app/components/layout/settings/cloud-sync.tsx:1288
+msgid "Your cloud saves, published scenarios, and devices are deleted from Hakawati Cloud. Tales on this device stay. This can’t be undone."
+msgstr "Your cloud saves, published scenarios, and devices are deleted from Hakawati Cloud. Tales on this device stay. This can’t be undone."
 
 #: app/pages/home/home.tsx:656
 msgid "Your library"

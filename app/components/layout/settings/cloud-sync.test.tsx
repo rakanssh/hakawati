@@ -56,6 +56,7 @@ const syncStoreState = vi.hoisted(() => ({
     accountId === "account-1" ? "device-1" : `device-${accountId}`,
   ),
   clearSession: vi.fn(),
+  addDeletedAccount: vi.fn(),
   setDeviceName: vi.fn(),
   setDevicePlatform: vi.fn(),
 }));
@@ -68,6 +69,8 @@ const syncRepoMocks = vi.hoisted(() => ({
 
 const syncServiceMocks = vi.hoisted(() => ({
   createSyncTransport: vi.fn(() => ({})),
+  deleteHostedAccount: vi.fn(),
+  getHostedAccount: vi.fn(),
   fetchHostedAccountUsage: vi.fn(),
   fetchSyncCapabilities: vi.fn(),
   listHostedDevices: vi.fn(),
@@ -108,6 +111,10 @@ vi.mock("@/store", () => ({
 vi.mock("@/repositories/sync.repository", () => syncRepoMocks);
 vi.mock("@/services/sync", () => syncServiceMocks);
 vi.mock("@/services/sync-wakeup", () => syncWakeMocks);
+const deletedAccountMocks = vi.hoisted(() => ({
+  unlinkDeletedAccounts: vi.fn(),
+}));
+vi.mock("@/services/deleted-accounts", () => deletedAccountMocks);
 vi.mock("@/services/secret-store", () => ({
   deleteHostedRefreshToken: vi.fn(),
   setHostedRefreshToken: vi.fn(),
@@ -637,6 +644,146 @@ describe("SettingsCloudSync storage usage", () => {
     expect(document.querySelector("#sync-display-name")).toBeNull();
 
     view.cleanup();
+  });
+
+  describe("deleting the account", () => {
+    function button(label: string, within: ParentNode = document.body) {
+      return [...within.querySelectorAll("button")].find(
+        (element) => element.textContent === label,
+      );
+    }
+
+    const signedInAccount = {
+      id: "account-1",
+      displayName: "Player",
+      emailNormalized: "player@example.com",
+    };
+
+    /** Opens the confirmation and returns it, once the server has said whose sign-in this is. */
+    async function openConfirmation() {
+      await act(async () => button("Delete account")!.click());
+      await flush();
+      return document.querySelector('[role="alertdialog"]');
+    }
+
+    async function confirmDelete() {
+      const dialog = (await openConfirmation())!;
+      expect(dialog.textContent).toContain("Tales on this device stay.");
+      await act(async () => button("Delete account", dialog)!.click());
+      await flush();
+    }
+
+    beforeEach(() => {
+      syncServiceMocks.getHostedAccount.mockResolvedValue(signedInAccount);
+      deletedAccountMocks.unlinkDeletedAccounts.mockResolvedValue(undefined);
+    });
+
+    it("deletes it after confirming, then signs out and unlinks local tales", async () => {
+      syncServiceMocks.deleteHostedAccount.mockResolvedValue(undefined);
+      const view = render();
+      await flush();
+
+      await confirmDelete();
+
+      expect(syncServiceMocks.deleteHostedAccount).toHaveBeenCalledWith({});
+      expect(syncStoreState.addDeletedAccount).toHaveBeenCalledWith(
+        "account-1",
+      );
+      expect(deletedAccountMocks.unlinkDeletedAccounts).toHaveBeenCalled();
+      expect(syncStoreState.clearSession).toHaveBeenCalled();
+      expect(syncRepoMocks.setSyncProfileDisabled).toHaveBeenCalledWith(
+        "hosted",
+        "signed_out",
+      );
+      expect(toastMocks.success).toHaveBeenCalledWith("Account deleted");
+      expect(document.querySelector('[role="alertdialog"]')).toBeNull();
+
+      view.cleanup();
+    });
+
+    it("names and cleans up the account the sign-in belongs to, not the one shown", async () => {
+      // A sign-in as someone else that failed partway leaves their token behind this page.
+      syncServiceMocks.getHostedAccount.mockResolvedValue({
+        id: "account-2",
+        displayName: "Other",
+        emailNormalized: "other@example.com",
+      });
+      syncServiceMocks.deleteHostedAccount.mockResolvedValue(undefined);
+      const view = render();
+      await flush();
+
+      const dialog = (await openConfirmation())!;
+      expect(dialog.textContent).toContain("other@example.com");
+      await act(async () => button("Delete account", dialog)!.click());
+      await flush();
+
+      expect(syncStoreState.addDeletedAccount).toHaveBeenCalledWith(
+        "account-2",
+      );
+      expect(syncStoreState.addDeletedAccount).not.toHaveBeenCalledWith(
+        "account-1",
+      );
+
+      view.cleanup();
+    });
+
+    it("signs out once the server accepts, without waiting on unlinking tales", async () => {
+      syncServiceMocks.deleteHostedAccount.mockResolvedValue(undefined);
+      deletedAccountMocks.unlinkDeletedAccounts.mockReturnValue(
+        new Promise<void>(() => {}),
+      );
+      const view = render();
+      await flush();
+
+      await confirmDelete();
+
+      expect(syncStoreState.clearSession).toHaveBeenCalled();
+      expect(toastMocks.success).toHaveBeenCalledWith("Account deleted");
+      expect(document.querySelector('[role="alertdialog"]')).toBeNull();
+
+      view.cleanup();
+    });
+
+    it("stays signed in and keeps the dialog open when deletion fails", async () => {
+      syncServiceMocks.deleteHostedAccount.mockRejectedValue(
+        new Error("Network down"),
+      );
+      const view = render();
+      await flush();
+
+      await confirmDelete();
+
+      expect(toastMocks.error).toHaveBeenCalledWith("Network down");
+      expect(syncStoreState.addDeletedAccount).not.toHaveBeenCalled();
+      expect(syncStoreState.clearSession).not.toHaveBeenCalled();
+      expect(document.querySelector('[role="alertdialog"]')).not.toBeNull();
+
+      view.cleanup();
+    });
+
+    it("doesn't ask when the server can't say whose sign-in this is", async () => {
+      syncServiceMocks.getHostedAccount.mockRejectedValue(
+        new Error("Invalid access token"),
+      );
+      const view = render();
+      await flush();
+
+      expect(await openConfirmation()).toBeNull();
+      expect(toastMocks.error).toHaveBeenCalledWith("Invalid access token");
+      expect(syncServiceMocks.deleteHostedAccount).not.toHaveBeenCalled();
+
+      view.cleanup();
+    });
+
+    it("isn't offered until the sign-in is current", async () => {
+      syncStoreState.accessToken = "";
+      const view = render();
+      await flush();
+
+      expect(button("Delete account")).toBeUndefined();
+
+      view.cleanup();
+    });
   });
   it("stays on the page you moved to when saving tale choices finishes", async () => {
     vi.mocked(listUndecidedTales).mockResolvedValue([

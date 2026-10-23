@@ -11,6 +11,15 @@ import { Cloud, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,9 +51,12 @@ import {
   setSyncProfileDisabled,
   upsertSyncProfile,
 } from "@/repositories/sync.repository";
+import { unlinkDeletedAccounts } from "@/services/deleted-accounts";
 import {
   createSyncTransport,
+  deleteHostedAccount,
   fetchHostedAccountUsage,
+  getHostedAccount,
   listHostedDevices,
   prepareHostedSync,
   fetchSyncCapabilities,
@@ -78,6 +90,13 @@ import type { LibraryTaleItem } from "@/lib/tale-library";
 import { cn, formatBytes, formatExactDateTime } from "@/lib/utils";
 
 const HOSTED_PROFILE_ID = "hosted";
+
+/** The account a deletion is confirmed for, as the server identified the token. */
+interface DeleteTarget {
+  accountId: string;
+  label: string;
+  accessToken: string;
+}
 const PERSONAL_PROFILE_ID = "personal";
 const PERSONAL_SYNC_ENABLED = false;
 const PROFILE_UPDATE_TIMEOUT_MS = 15_000;
@@ -181,6 +200,9 @@ export default function SettingsCloudSync() {
     (state) => state.getOrCreateHostedDeviceId,
   );
   const clearSession = useSyncSettingsStore((state) => state.clearSession);
+  const addDeletedAccount = useSyncSettingsStore(
+    (state) => state.addDeletedAccount,
+  );
   const setDeviceName = useSyncSettingsStore((state) => state.setDeviceName);
   const setDevicePlatform = useSyncSettingsStore(
     (state) => state.setDevicePlatform,
@@ -212,6 +234,9 @@ export default function SettingsCloudSync() {
   const [unregisteringDevice, setUnregisteringDevice] = useState<string | null>(
     null,
   );
+  const [checkingDelete, setCheckingDelete] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const taleLibrary = useTaleLibrary(1, 100);
 
   const hostedProfile = useMemo<SyncProfile>(
@@ -459,6 +484,62 @@ export default function SettingsCloudSync() {
     }
     setStatus(t`Signed out`);
     notifySyncChanged();
+  }
+
+  // Deleting an account isn't tied to a device, and this page's device id may
+  // belong to a different account than the token's.
+  const accountTransport = (token: string) =>
+    createSyncTransport({
+      profile: { ...hostedProfile, deviceId: null },
+      accessToken: token,
+    });
+
+  // The token decides which account the server deletes. A sign-in that failed
+  // partway can leave it for a different account than this page shows, so the
+  // dialog names, deletes, and cleans up the account the server reports.
+  async function askToDeleteAccount() {
+    const token = accessToken.trim();
+    setCheckingDelete(true);
+    try {
+      const account = await getHostedAccount(accountTransport(token));
+      setDeleteTarget({
+        accountId: account.id,
+        label: account.emailNormalized || account.displayName || account.id,
+        accessToken: token,
+      });
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t`Couldn't delete your account`,
+      );
+    } finally {
+      setCheckingDelete(false);
+    }
+  }
+
+  async function deleteAccount(target: DeleteTarget) {
+    setDeletingAccount(true);
+    try {
+      await deleteHostedAccount(accountTransport(target.accessToken));
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t`Couldn't delete your account`,
+      );
+      return;
+    } finally {
+      setDeletingAccount(false);
+    }
+    // The server has accepted the deletion, so sign out whatever happens next.
+    // Unlinking this device's tales is retried until it works.
+    addDeletedAccount(target.accountId);
+    setDeleteTarget(null);
+    signOut();
+    setStatus(t`Account deleted`);
+    toast.success(t`Account deleted`);
+    void unlinkDeletedAccounts();
   }
 
   function changeHostedCloudUrl(nextUrl: string) {
@@ -1076,6 +1157,16 @@ export default function SettingsCloudSync() {
             <Trans>Sign out</Trans>
           </button>
         ) : null}
+        {profile.mode === "hosted" && hasUsableToken ? (
+          <button
+            type="button"
+            onClick={() => void askToDeleteAccount()}
+            disabled={checkingDelete}
+            className="self-start px-0.5 text-sm text-destructive underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none disabled:opacity-60"
+          >
+            <Trans>Delete account</Trans>
+          </button>
+        ) : null}
         {statusLine}
       </div>
     );
@@ -1178,6 +1269,49 @@ export default function SettingsCloudSync() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !deletingAccount) setDeleteTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              <Trans>Delete your Hakawati Cloud account?</Trans>
+            </AlertDialogTitle>
+            <p className="text-sm font-semibold break-all">
+              {deleteTarget?.label}
+            </p>
+            <AlertDialogDescription>
+              <Trans>
+                Your cloud saves, published scenarios, and devices are deleted
+                from Hakawati Cloud. Tales on this device stay. This can’t be
+                undone.
+              </Trans>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingAccount}>
+              <Trans>Cancel</Trans>
+            </AlertDialogCancel>
+            <Button
+              variant="destructive"
+              disabled={deletingAccount}
+              onClick={() => {
+                if (deleteTarget) void deleteAccount(deleteTarget);
+              }}
+            >
+              {deletingAccount ? (
+                <Trans>Deleting…</Trans>
+              ) : (
+                <Trans>Delete account</Trans>
+              )}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
