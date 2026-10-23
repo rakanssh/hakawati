@@ -174,6 +174,9 @@ describe("announcement body links", () => {
     expect(announcementBodyParts("No links here.")).toEqual([
       { text: "No links here." },
     ]);
+    expect(announcementBodyParts("[ news ](https://hakawati.dev)")).toEqual([
+      { text: "news", url: "https://hakawati.dev" },
+    ]);
   });
 
   it.each([
@@ -183,6 +186,7 @@ describe("announcement body links", () => {
     "[spaced](https://hakawati.dev/a b)",
     "[nested [label]](https://hakawati.dev)",
     `[${"x".repeat(81)}](https://hakawati.dev)`,
+    "[ ](https://hakawati.dev)",
   ])("keeps anything that isn't a safe link as text: %s", (body) => {
     const parts = announcementBodyParts(body);
     expect(parts.some((part) => part.url)).toBe(false);

@@ -22,7 +22,8 @@ export type AnnouncementBodyPart = { text: string; url?: string };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ISO_DATE_TIME =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
-const BODY_LINK = /\[([^[\]\n]{1,80})\]\((https:\/\/[^\s()]+)\)/g;
+// The server's grammar: labels are trimmed and at most 80 characters.
+const BODY_LINK = /\[([^[\]\n]+)\]\(([^()\s]+)\)/g;
 const KINDS: readonly AnnouncementKind[] = ["info", "warning", "outage"];
 const MAX_ANNOUNCEMENTS = 10;
 const DISMISSALS_KEY = "hakawati.announcement-dismissals";
@@ -57,13 +58,14 @@ export function announcementBodyParts(body: string): AnnouncementBodyPart[] {
   for (const match of body.matchAll(BODY_LINK)) {
     text += body.slice(last, match.index);
     last = match.index + match[0].length;
-    if (!isSafeLink(match[2])) {
+    const label = match[1].trim();
+    if (!label || label.length > 80 || !isSafeLink(match[2])) {
       text += match[0];
       continue;
     }
     if (text) parts.push({ text });
     text = "";
-    parts.push({ text: match[1], url: match[2] });
+    parts.push({ text: label, url: match[2] });
   }
   text += body.slice(last);
   if (text) parts.push({ text });
