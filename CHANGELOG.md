@@ -17,6 +17,7 @@ All notable changes to this project are documented in this file.
 - Account & Sync has a cloud sync switch, and you can change your display name.
 - Redesigned the input box: action modes are tabs along its top (Say is now Speak), with Roll beside them. With nothing typed, send continues the story.
 - Brass Night is now the default theme.
+- Notices from Hakawati sit in a band across the top of Home and can warn of maintenance or outages.
 
 ### Fixed
 
