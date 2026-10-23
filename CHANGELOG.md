@@ -2,11 +2,18 @@
 
 All notable changes to this project are documented in this file.
 
+<!--
+Each release is "## [vX.Y.Z] - YYYY-MM-DD" (work not yet released goes under "## [Unreleased]"),
+with "### Added", "### Changed", "### Fixed" and "### Removed" in that order, leaving out empty ones.
+One short line per change, written for players. A release's section becomes its GitHub release notes,
+and the app shows it in What's New and Updates.
+-->
+
 ## [Unreleased]
 
 ### Added
 
-- Hakawati for Android and iOS, with dictation, sign-in, and cloud sync.
+- Hakawati for Android and iOS, with Speech to Text, sign-in, and cloud sync.
 - Delete your Hakawati Cloud account from Account & Sync.
 
 ### Changed
@@ -28,496 +35,478 @@ All notable changes to this project are documented in this file.
 - When a turn fails, the log shows why, and the narrator no longer reads the error as part of the story. Replies cut off by a content filter are marked as failed.
 - Retry after a Story passage writes what follows it instead of replacing it.
 - Using an item removes one copy instead of every item with that name.
-- Transcribing speech can be cancelled, and gives up if it takes too long.
+- Speech to Text can be cancelled, and gives up if it takes too long.
 - Importing a scenario you already have adds a copy instead of replacing yours.
-- Long tales no longer slow down taking turns, and the narrator starts replying without a pause.
+- Long tales no longer slow down each turn, and the narrator starts replying without a pause.
 - The tale you played last no longer needs review each time you switch devices. It picks up what you played on the other device.
 - Dropped connections and a full cloud no longer show as conflicts. Tales the cloud can't take show Cloud full or Not synced instead of uploading over and over.
 - Hakawati says "Update Hakawati to sync" when the cloud needs a newer version.
 - Pulling a tale from the cloud keeps its cover, and a device removed from your account no longer adds itself back.
 - Sign-in waits 10 minutes instead of 2.
+- Text to Speech reads long passages with OpenAI, and long narrated sessions no longer use more and more memory.
 
 ## [v1.2.0] - 2026-10-06
 
 ### Added
 
-- Seven new themes! Brass Night, Orbit, Phosphor, Cartridge, Rain on Glass, Storybook, and Typewriter. Most draw scenery around the story on the play screen, and several bring their own type.
-- Themes are chosen from a gallery of live previews in Settings, and scenery can be animated!
+- Seven new themes: Brass Night, Orbit, Phosphor, Cartridge, Rain on Glass, Storybook, and Typewriter. Most draw scenery around the story on the play screen, and several bring their own type.
+- A theme gallery in Settings, with live previews and animated or still scenery.
 - A story panel on the right of the play screen.
 
 ### Changed
 
 - Bamboo and Cosmos are retired. Bamboo switches to Light and Cosmos to Orbit.
-- Tale Settings now open in the story panel instead of a full-screen dialog.
+- Tale Settings open in the story panel instead of a full-screen dialog.
 
 ### Fixed
 
-- Reset generation settings no longer resets your appearance and language settings.
-- Top P, Top K, Min P, Top A, and the penalty settings now reach OpenAI-compatible providers and local servers.
+- Resetting generation settings no longer resets your appearance and language settings.
+- Top P, Top K, Min P, Top A, and the penalty settings reach OpenAI-compatible providers and local servers.
 - Repeating an earlier action word for word no longer removes the earlier one from the narrator's context.
-- Pressing Escape in a number field now discards what you typed.
+- Pressing Escape in a number field discards what you typed.
 - Deleting the last tale or scenario on a page no longer leaves an empty page.
-- Fixed dictation getting stuck on occasion.
+- Speech to Text no longer gets stuck.
 
 ## [v1.1.0] - 2026-09-30
 
 ### Added
 
-- "Login with ChatGPT" Support! You can use your ChatGPT plan resources to play Hakawati.
-- Thinking levels for Narrator and Utility, saved per provider with model-specific choices for OpenRouter, OpenAI API, and ChatGPT subscriptions.
+- Sign in with ChatGPT to play on your ChatGPT plan.
+- Thinking levels for the Narrator and Utility, saved per provider, with the choices each model offers on OpenRouter, the OpenAI API, and ChatGPT.
 
 ### Fixed
 
-- Reasoning models on the OpenAI API use Responses for story text and game actions. Truncated API responses now report an output-limit error instead of appearing complete.
+- Reasoning models on the OpenAI API work for story text and game actions.
+- A reply cut off at the output limit shows an error instead of looking complete.
 
 ## [v1.0.0] - 2026-09-17
 
 ### Added
 
-- Scenario questions for character names and other choices, with free text, suggested answers, or fixed options before starting a tale.
-- Optional accounts for syncing tales across devices, with controls to keep individual tales local and resolve conflicting saves.
-- A public scenario catalog with title and summary search, tag filters (including Arabic tags), publishing and updates, reporting, and publisher blocking.
-- Automatic backups before upgrading your saves, with recovery instructions if an upgrade cannot complete.
+- Scenarios can ask questions before a tale starts, such as your character's name, with free text, suggested answers, or fixed options.
+- Optional accounts to sync tales across devices. Keep any tale local, and resolve conflicting saves.
+- A public scenario catalog: search it, filter by tag, publish and update your own scenarios, and report scenarios or block publishers.
+- Hakawati backs up your saves before upgrading them, with recovery steps if an upgrade can't finish.
 
 ### Changed
 
 - More compact Home, Tales, and Scenarios screens.
-- Refined Play controls.
-- Quickstart now shows a timer while creating your tale and lets you cancel without losing your setup.
-- Ctrl/Cmd + Plus/Minus now scales the interface. Ctrl/Cmd + mouse wheel adjusts story text size.
-- Improved loading and saving of long tales.
-- Cover images are optimized before cloud upload.
+- Tidier play controls, with a clearer Continue button.
+- Quickstart shows a timer while it creates your tale, and you can cancel without losing your setup.
+- Ctrl/Cmd + Plus/Minus scales the interface. Ctrl/Cmd + mouse wheel adjusts the story text size.
+- Long tales load and save faster.
+- Cover images are compressed before they upload to the cloud.
 
 ### Fixed
 
-- Fixed story card auto-generation failing when responses were cut short.
-- Fixed recent edits being lost when leaving a page, closing the app, or installing an update.
-- Cancelling a retry before it produces text now keeps the original passage.
-- Fixed delayed loading or generation results overwriting another tale after switching.
-- Fixed saving of story edits, undo, and redo. New turns also restore stats and inventory correctly when undone or redone.
-- Deleted tales no longer remain available through Continue.
-- Fixed upgrade errors affecting some earlier Windows installations.
+- Story card generation no longer fails when a reply is cut short.
+- Recent edits are no longer lost when you leave a page, close the app, or install an update.
+- Cancelling a retry before it writes anything keeps the original passage.
+- Switching tales while one is loading or generating no longer writes into the other tale.
+- Story edits, Undo, and Redo save correctly, and undoing or redoing a turn restores stats and inventory.
+- Continue no longer opens a deleted tale.
+- Upgrading no longer fails on some older Windows installs.
 
 ## [v0.15.2] - 2026-06-11
 
 ### Fixed
 
-- Added missing English/Arabic strings for the delete confirmation dialog.
+- The delete confirmation shows all its text in English and Arabic.
 
 ## [v0.15.1] - 2026-06-11
 
 ### Fixed
 
-- Confirmation dialogs before deleting tales or scenarios from their library pages.
-- A confirmation dialog before deleting AI components that contain text.
+- Deleting a tale or scenario from its library page asks first.
+- Deleting an AI component that has text asks first.
 
 ## [v0.15.0] - 2026-06-11
 
 ### Added
 
-- Scenario and tale AI Components for per-story Plot, Author's Note, AI Instructions, and scenario opening text.
-- Scenario and tale descriptions are now library-facing summaries, while AI-facing context lives in dedicated components.
+- AI Components for scenarios and tales: Plot, Author's Note, AI Instructions, and opening text for each story.
 
 ### Changed
 
-- Refined the default AI Instructions for interactive fiction narration without story-only or JSON-specific output restrictions. (Reset your customized prompts to get the new defaults)
-- Quickstart generation can now create optional Author's Note components when needed.
+- Scenario and tale descriptions are summaries for your library. What the AI reads lives in AI Components.
+- Better default AI Instructions for narration. If you customized your prompts, reset them to get the new defaults.
+- Quickstart can add an Author's Note when the story needs one.
 
 ### Fixed
 
-- Fixed tale and scenario library cards stretching awkwardly when long titles appear in the same grid row.
+- Library cards no longer stretch when another card in the row has a long title.
 
 ## [v0.14.0] - 2026-06-09
 
 ### Added
 
-- Themes! Added two new themes, Bamboo and Cosmos, built on light and dark backgrounds, respectively.
-- Speech-To-Text and Text-To-Speech with initial support for open-ai-style endpoints and providers.
-- AI-Powered Quickstart! Quickstart now asks you a few questions and then uses the utility model to generate your tale.
-- UI rework including home, play page, and settings.
-- Support for Utility models separate from narrator models (for generating scenarios and story cards).
+- Two themes: Bamboo (light) and Cosmos (dark).
+- Speech to Text and Text to Speech, for OpenAI-compatible providers.
+- AI Quickstart: answer a few questions, and the Utility model writes your tale.
+- A Utility model, separate from the narrator, for generating scenarios and story cards.
 
 ### Changed
 
-- Adjusted theme colors.
+- Redesigned Home, the play screen, and Settings, with adjusted theme colors.
 
 ### Fixed
 
-- Cleaned up prompt metadata formatting and empty GM state context.
+- The narrator's prompt no longer includes empty game state or stray formatting.
 
 ## [v0.13.0] - 2026-03-24
 
 ### Added
 
-- Added AI scenario generation to the scenario management page.
+- Generate a scenario with AI from the Scenarios page.
 
 ### Fixed
 
-- Fixed a race condition where stopping generation and immediately sending a new message could leave the input controls unlocked while the new request was still in progress.
-- Log blocks no longer recompute on every render.
+- Stopping a reply and sending right away no longer unlocks the input while the new reply is coming in.
 
 ## [v0.12.5] - 2026-03-04
 
 ### Fixed
 
-- Fixed error on custom archetype GM quickstart.
+- Quickstart no longer fails with a custom archetype in Game Master mode.
 
-## [v0.12.4]
+## [v0.12.4] - 2026-02-10
 
 ### Fixed
 
-- Made font size and type apply to thinking sections.
+- Font size and font settings apply to thinking sections.
 
-### Changed
-
-- Various code cleaning/optimization
-
-## [v0.12.3]
+## [v0.12.3] - 2026-02-09
 
 ### Added
 
-- Enabled dev tools in production builds.
+- Developer tools are available in release builds.
 
 ### Fixed
 
-- Model selector not working (Again).
-- Inconsistent builds.
-- Missing Arabic translations for thinking sections.
+- The model list no longer fails to load.
+- Thinking sections are translated into Arabic.
 
 ## [v0.12.2] - 2026-02-07
 
 ### Fixed
 
-- Model selector not working.
+- The model list loads again.
 
 ## [v0.12.1] - 2026-02-07
 
 ### Removed
 
-- Debug console (Causing freezes in production builds).
+- The debug console, which froze release builds.
 
 ## [v0.12.0] - 2026-02-06
 
 ### Added
 
-- Debug console to view logs/errors. Enable in advanced settings.
-- Thinking section to log entries, showing the LLM's thought process if thinking is enabled.
+- A debug console for logs and errors. Turn it on in Advanced settings.
+- Thinking sections in the story log show the model's reasoning when thinking is on.
 
 ### Fixed
 
-- Added missing DialogTitle and DialogDescription to modals.
-- Zoom indicator not fading.
+- Dialogs are labeled for screen readers.
+- The zoom indicator fades out.
 
 ## [v0.11.0] - 2025-12-20
 
 ### Added
 
-- Internationalization system with current support for English and Arabic.
-- UI Direction (RTL and LTR) to support different languages.
-- AI Autofill button to the story card creation dialog.
+- Hakawati in Arabic, alongside English.
+- Right-to-left layout for Arabic, with a setting for the layout direction.
+- AI Autofill when creating a story card.
 
 ### Changed
 
-- Aligned corner rounding styles across the app.
+- Consistent corner rounding across the app.
 
 ## [v0.10.0] - 2025-12-11
 
 ### Added
 
-- "Stop generating" button and Esc keybind while streaming.
-- Keyboard-accessible log entry editing (Tab + Enter/Space).
+- Stop a reply while it's being written, with the Stop button or Esc.
+- Edit log entries from the keyboard with Tab and Enter or Space.
 
 ### Changed
 
-- Streamed responses are now batched to reduce re-renders.
-- Enter-to-submit is now guarded during loading/saving.
+- Replies stream more smoothly.
+- Enter doesn't send while a tale is loading or saving.
 
 ## [v0.9.0] - 2025-12-08
 
 ### Added
 
-- GM Sidebar now supports scrollable inventory and stats.
-- Connection presets! This allows for simpler setup of API connections and switching back and forth between different profiles.
-- Instructions on how to setup each provider.
-- API key visibility toggle in settings.
+- Connection presets, for setting up providers and switching between them.
+- Setup steps for each provider.
+- Show or hide your API key in Settings.
+
+### Changed
+
+- The Game Master sidebar scrolls long inventories and stat lists.
 
 ### Fixed
 
-- Settings modal not scrolling.
-- Quickstart wizard scrolling weird.
-- text area scrollbar not matching other scrollbars.
+- The Settings window scrolls.
+- Quickstart scrolls properly.
+- The input box's scrollbar matches the others.
 
 ## [v0.8.0] - 2025-12-03
 
 ### Added
 
-- "Save as scenario" button to tale context menu, allows for creating a scenario from a tale.
+- Save as scenario, in a tale's menu, turns a tale into a scenario.
 
 ### Changed
 
-- Quickstart tales now include deeper and more detailed descriptions, author notes, and opening prompts.
+- Quickstart writes fuller descriptions, author's notes, and opening prompts.
 
 ## [v0.7.0] - 2025-11-29
 
 ### Added
 
-- Tale settings, containing tale and story card settings.
-- A dedicated character settings tab to manage stats and inventory.
-- Description field to stats and inventory items, that can be used to pass item or stat specific context to the LLM.
+- Tale Settings, for a tale and its story cards.
+- A Character tab for stats and inventory.
+- Descriptions for stats and items, which the narrator reads.
 
 ### Changed
 
-- Game mode selection is moved to the tale settings tab.
-- Changing game mode from GM to Story teller will no longer wipe stats and inventory, they wont be sent to the LLM, but will be there if the game mode is changed back later.
-- Updated quickstart wizard to use the new editors for stats and inventory.
+- Game mode moved to Tale Settings.
+- Switching from Game Master to Story Teller keeps your stats and inventory for when you switch back. The narrator doesn't see them in Story Teller.
+- Quickstart uses the new stats and inventory editors.
 
 ## [v0.6.3] - 2025-11-29
 
 ### Added
 
-- Scroll to bottom button to the play page when not at the bottom of the log.
-- Minor UI improvements to the play page.
-- Confirmation dialog for removing stats and items.
+- A scroll-to-bottom button on the play screen.
+- Removing a stat or item asks first.
 
 ### Fixed
 
-- Mouse wheel scroll in model and font selectors.
+- The mouse wheel scrolls the model and font lists.
 
 ## [v0.6.2] - 2025-11-19
 
 ### Added
 
-- Update download progress toast.
+- Update downloads show their progress.
 
 ### Fixed
 
-- MacOS restart post update.
+- macOS restarts properly after an update.
 
 ## [v0.6.1] - 2025-11-18
 
 ### Changed
 
-- Quickstart wizard "Open the scene" is now more reliable.
+- Quickstart's Open the scene is more reliable.
 
 ### Fixed
 
-- Refreshing the page now loads the last played tale instead of a blank page.
+- Reloading opens your last tale instead of a blank page.
 
 ## [v0.6.0] - 2025-11-18
 
 ### Changed
 
-- GM mode now uses tool calling to modify game state.
-- Reworded GM system prompt to support new changes (Make sure to update or reset your custom prompts if you use them.)
-- Error message is no longer cringe.
+- Game Master mode changes stats and inventory with tool calls.
+- A new Game Master prompt to match. If you customized it, reset it.
+- A failed reply shows a plain error message instead of an in-story one.
 
 ## [v0.5.1] - 2025-11-10
 
 ### Fixed
 
-- Fixed the way story description is given to the LLM. Should no longer make the LLM think that it's the character.
+- The narrator no longer mistakes itself for your character.
 
 ## [v0.5.0] - 2025-11-09
 
 ### Added
 
-- Token counting in the quickstart wizard/tale settings.
-- Ctrl+Z, Ctrl+Y, and Ctrl+R keybinds to the log control.
-- "What's New" modal to show release notes for newly installed versions.
+- Token counts in Quickstart and Tale Settings.
+- Ctrl+Z, Ctrl+Y, and Ctrl+R for Undo, Redo, and Retry.
+- What's New shows the release notes after an update.
 
 ### Fixed
 
-- It's now possible to set model settings to null by deleting the value, instead of it resetting to min.
+- Clearing a model setting leaves it unset instead of resetting it to the minimum.
 
 ### Removed
 
-- Char limits for description and style in the quickstart wizard.
+- Character limits on Quickstart's description and style.
 
 ## [v0.4.2] - 2025-10-31
 
 ### Changed
 
-- Simplified continue system prompt. Should work better.
+- A simpler Continue prompt.
 
 ## [v0.4.1] - 2025-10-30
 
 ### Fixed
 
-- Input field height issue on desktop.
-- Prevent duplicate error messages when navigating away from the model select.
+- The input box has the right height on desktop.
+- Leaving the model list no longer shows the same error twice.
 
 ## [v0.4.0] - 2025-10-29
 
 ### Added
 
 - Font size controls.
-- Mobile-friendly bottom navigation. (App can technically build for android, not tested yet.)
+- Bottom navigation for narrow screens.
 
 ### Changed
 
-- Toasts now show up on the top right of the screen.
-- Support for mobile-width screens.
-
-### Fixed
-
-- Disabled update plugin on mobile builds.
-- Mismatched plugin versions between js and rust.
+- Notifications appear at the top right.
+- Layouts fit phone-width screens.
 
 ## [v0.3.2] - 2025-10-24
 
 ### Added
 
-- Escape key to open settings modal.
+- Esc opens Settings.
 
 ### Changed
 
-- Made dice button distinct from other buttons when active.
-- Made tooltip more theme-friendly.
+- The dice button stands out when it's on.
+- Tooltips match the theme.
 
 ### Fixed
 
-- Grammar errors in API settings.
-- Odd button behavior when pressed.
+- Grammar fixes in the API settings.
+- Buttons no longer shake when clicked.
 
 ### Removed
 
-- Unnecessary extra continue instructions in system prompts, continue author note suffices.
+- Extra Continue instructions from the system prompts. The Continue author's note covers them.
 
 ## [v0.3.1] - 2025-10-18
 
 ### Added
 
-- Advanced settings tab for customizing system prompts (GM, Storyteller, Continue, and Author Note).
-- Users with default prompts automatically receive updates, while custom prompts persist across app updates in local storage.
+- An Advanced tab for editing the system prompts: Game Master, Story Teller, Continue, and Author's Note.
+- Prompts you haven't edited update with the app, and edited ones are kept.
 
 ### Changed
 
-- Reworded update toast to be more descriptive.
-- Updated npm and rust dependencies.
+- Clearer update notification.
 
 ## [v0.3.0] - 2025-10-09
 
 ### Added
 
-- Storybook editor with category filters, pinning, and modal editing reused across settings and scenario flows.
-- Story cards now have categories, and can be pinned.
-- Error messages when failing to fetch models.
+- A Storybook editor for story cards, with categories, filters, and pinning, in both tale and scenario settings.
+- An error message when models can't be loaded.
 
 ### Changed
 
-- Tale autosave now listens for story card updates so in-session edits and pin toggles persist automatically.
+- Story card edits and pins save automatically.
 
 ### Fixed
 
-- Normalization layer ensures legacy scenario and tale story cards receive default metadata during load, export, and import.
-- Eliminated duplicate storybook cards from overlapping triggers and filtered out empty assistant turns during prompt assembly.
-- Local servers, again, seriously this time.
-- DB error on launch.
+- Older story cards load, import, and export correctly.
+- Story cards matched more than once are sent to the narrator once, and empty replies are left out.
+- Local servers connect again.
+- Hakawati no longer shows a database error on launch.
 
 ## [v0.2.4] - 2025-10-08
 
 ### Added
 
-- Windowed log loading system to handle tales with many entries.
-- Lazy loading of older log entries when scrolling to the top of the tale log.
-- Token count caching for log entries to improve prompt building performance.
-- Visual loading indicator when fetching older log entries.
+- Older entries in long tales load as you scroll up, with a loading indicator.
 
 ### Changed
 
-- Tale log is now windowed in memory (200 entries by default, 300 max) instead of loading entire history.
-- Improved save strategy: immediate save after LLM responses, debounced saves for manual edits.
-- Capped Undo stack limit of 50 entries.
-- Removed now redundant references to CORS.
+- Hakawati keeps only recent entries of a tale in memory, so long tales stay fast.
+- Replies save as soon as they finish, and your edits save shortly after you stop typing.
+- Undo goes back up to 50 steps.
 
 ### Fixed
 
-- Storage quota errors during extended play sessions with large tale logs.
-- Performance degradation when processing very long tale histories.
-- Memory leaks from unbounded undo stacks.
-- Made scroll start at the bottom when loading a new tale.
+- Long play sessions no longer run out of storage.
+- Very long tales no longer slow down, and Undo no longer uses more and more memory.
+- Opening a tale scrolls to the latest entry.
 
 ## [v0.2.3] - 2025-10-07
 
-## Fixed
+### Changed
 
-- Use fetch from Tauri to bypass CORS issues.
-- Clear selected model when changing the API URL.
+- API settings look for local servers automatically.
+- Clearer API type label and tooltip.
 
-## Changed
+### Fixed
 
-- Automatically scan for compatible local servers on entering API settings.
-- Clarified API type tooltip and label.
+- Providers no longer fail to connect because of CORS.
+- Changing the API URL clears the selected model.
 
 ## [v0.2.2] - 2025-10-06
 
 ### Changed
 
-- Changed the default game mode to Story Teller.
+- Story Teller is the default game mode.
 
 ### Fixed
 
-- Disabled the un/re-do buttons if the log is loading.
-- Prevent double model fetching when opening the model select.
+- Undo and Redo are disabled while the log loads.
+- The model list no longer loads twice.
 
 ## [v0.2.1] - 2025-10-06
 
 ### Added
 
-- UI scale slider to the settings game tab.
-- UI font dropdown to the settings game tab.
-- Error tooltip to the log entries, showing error details.
+- An interface scale slider in Settings.
+- An interface font setting.
+- Hover over a failed entry to see the error.
 
 ## [v0.2.0] - 2025-10-05
 
 ### Added
 
-- Quickstart wizard for creating a new tale without a scenario.
-- Markdown support for release notes in the update tab.
-- Added Openrouter ranking headers to API requests.
+- Quickstart, for starting a tale without a scenario.
+- Formatted release notes in the Updates tab.
+- Hakawati identifies itself to OpenRouter, so it shows up in OpenRouter's app rankings.
 
 ### Changed
 
-- Hide the home screen card if there is no current tale.
-- Hide the continue button if there is no current tale.
-- Update home screen how to play and supported providers.
-- If the first log entry is a player message, auto-send it to the LLM. (Used for the quickstart wizard. May be expanded later.)
-- Removed default value for API url.
+- Home hides the current tale card and Continue when there's no current tale.
+- Updated How to Play and the supported providers on Home.
+- A tale that starts with your action sends it to the narrator right away.
+- The API URL starts empty.
 
 ### Fixed
 
-- Clear undo stack when clearing inventory or stats.
-- Clear undo stack when adding a log entry.
-- Prevent lack of history from being reported as an error.
-- Prevent massive max output tokens from being reported when no data is available.
+- Undo history clears when you clear inventory or stats, or add an entry.
+- An empty history is no longer reported as an error.
+- Max output tokens no longer shows a huge number when the model doesn't report one.
 
 ### Removed
 
-- Stop button from log control. Currently buggy. (Temporary)
+- The Stop button, until it works reliably.
 
 ## [v0.1.2] - 2025-10-02
 
 ### Added
 
-- Settings tab for manual update checking and installation using Tauri updater.
-- Automatic update check on application startup.
-- Finalized product name as "Hakawati" with proper capitalization.
-- Added licenses to the application and build process.
-- Published the project under the GPLv3 license.
+- An Updates tab to check for and install updates.
+- Hakawati checks for updates when it starts.
+- License notices in the app.
+- Hakawati is open source under the GPLv3.
 
 ### Changed
 
-- Added release notes to the release process.
-- Finalized application identifier as "dev.hakawati.app" (breaking: will store DB in a new location).
+- The app is named Hakawati.
+- Hakawati keeps its data in a new location, so tales from earlier versions don't carry over.
 
 ## [v0.1.1] - 2025-10-02
 
 ### Changed
 
-- Bump application version to test the auto-updater.
+- A test release for the updater.
 
 ## [v0.1.0] - 2025-10-02
 
 ### Added
 
-- First semi-stable release.
+- The first release.
