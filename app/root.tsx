@@ -54,7 +54,6 @@ export default function AppShell() {
   const routerState = useRouterState();
   useHostedTokenRefresh(dbReady);
   useSyncBackground(dbReady);
-  // Finishes unlinking tales from an account deleted while that step failed.
   useEffect(() => {
     if (dbReady) void unlinkDeletedAccounts();
   }, [dbReady]);

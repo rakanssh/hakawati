@@ -370,7 +370,6 @@ export async function deleteTaleSyncState(input: {
   });
 }
 
-/** Unlinks every tale from a deleted cloud account, so they stay on this device as local tales. */
 export async function forgetSyncAccount(
   profileId: string,
   accountId?: string | null,

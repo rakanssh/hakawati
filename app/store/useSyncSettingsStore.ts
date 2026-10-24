@@ -31,7 +31,6 @@ export interface SyncSettingsStore {
   accountDisplayName: string;
   accountEmail: string;
   hostedDeviceIdsByAccountId: Record<string, string>;
-  /** Cloud accounts deleted from this device whose tales still need unlinking. */
   deletedAccountIds: string[];
   hostedRefreshFailed: boolean;
   // The cloud refuses this app version. Checked again on every sync pass.
