@@ -1,4 +1,5 @@
 import { getActiveContinuePrompt } from "@/prompts";
+import { ensureLogEntriesLoaded } from "@/services/tale-log";
 import { StoryCard } from "@/types";
 import { LogEntry, LogEntryMode, LogEntryRole } from "@/types/log.type";
 import { ChatMessage } from "./schema";
@@ -10,7 +11,6 @@ interface ContextWindowStore {
   log: LogEntry[];
   oldestLoadedIndex: number;
   totalLogCount: number;
-  ensureLogEntriesLoaded: (minCount: number) => Promise<void>;
 }
 
 type MergedMessage = {
@@ -48,7 +48,7 @@ export async function ensureDesiredLogEntriesLoaded(
     store.oldestLoadedIndex > 0 &&
     store.totalLogCount > store.log.length
   ) {
-    await store.ensureLogEntriesLoaded(desiredEntries);
+    await ensureLogEntriesLoaded(desiredEntries);
   }
   return getStore().log;
 }

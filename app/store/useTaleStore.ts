@@ -8,8 +8,6 @@ import {
 import { Stat } from "@/types/stats.type";
 import { nanoid } from "nanoid";
 import { v4 as uuidv4 } from "uuid";
-import { toast } from "sonner";
-import { getLogEntries } from "@/repositories/tale.repository";
 import { getActiveStorytellerPrompt } from "@/prompts";
 
 import { create } from "zustand";
@@ -18,7 +16,6 @@ import { create } from "zustand";
 export const DEFAULT_WINDOW_SIZE = 200;
 export const MAX_WINDOW_SIZE = 300;
 export const MAX_UNDO_STACK = 50;
-let olderEntriesRequest = 0;
 
 export interface TaleStoreType {
   id: string;
@@ -67,8 +64,6 @@ export interface TaleStoreType {
   redo: () => void;
   setGameMode: (gameMode: GameMode) => void;
   setId: (id: string) => void;
-  loadOlderLogEntries: (count: number) => Promise<void>;
-  ensureLogEntriesLoaded: (minCount: number) => Promise<void>;
   trimLogWindow: () => void;
   resetLogWindow: () => void;
 }
@@ -480,67 +475,6 @@ export const useTaleStore = create<TaleStoreType>()((set) => ({
         undoStack: state.undoStack.slice(0, -1),
       };
     });
-  },
-  loadOlderLogEntries: async (count: number) => {
-    const state = useTaleStore.getState();
-
-    if (state.isLoadingOlderEntries || state.oldestLoadedIndex === 0) {
-      return;
-    }
-
-    const request = ++olderEntriesRequest;
-    set({ isLoadingOlderEntries: true });
-
-    try {
-      const startIndex = Math.max(0, state.oldestLoadedIndex - count);
-      const entriesToLoad = state.oldestLoadedIndex - startIndex;
-
-      if (entriesToLoad === 0) {
-        return;
-      }
-
-      const entries = await getLogEntries(state.id, startIndex, entriesToLoad);
-
-      // Check if state changed during async operation
-      const currentState = useTaleStore.getState();
-      if (
-        request !== olderEntriesRequest ||
-        currentState.id !== state.id ||
-        !currentState.isLoadingOlderEntries ||
-        currentState.oldestLoadedIndex !== state.oldestLoadedIndex
-      ) {
-        return;
-      }
-
-      set({
-        log: [...entries, ...currentState.log],
-        oldestLoadedIndex: startIndex,
-      });
-    } catch (error) {
-      if (
-        request !== olderEntriesRequest ||
-        useTaleStore.getState().id !== state.id
-      )
-        return;
-      console.error("Failed to load older entries:", error);
-      toast.error("Failed to load older entries. Please try again.");
-    } finally {
-      if (
-        request === olderEntriesRequest &&
-        useTaleStore.getState().id === state.id
-      ) {
-        set({ isLoadingOlderEntries: false });
-      }
-    }
-  },
-  ensureLogEntriesLoaded: async (minCount: number) => {
-    const state = useTaleStore.getState();
-
-    const needed = minCount - state.log.length;
-
-    if (needed > 0 && state.oldestLoadedIndex > 0) {
-      await state.loadOlderLogEntries(needed);
-    }
   },
   trimLogWindow: () => {
     set((state) => {

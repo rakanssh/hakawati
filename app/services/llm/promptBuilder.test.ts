@@ -39,10 +39,11 @@ vi.mock("@/store/useTaleStore", () => ({
       log: [],
       oldestLoadedIndex: 0,
       totalLogCount: 0,
-      ensureLogEntriesLoaded: vi.fn(),
     })),
   },
 }));
+
+vi.mock("@/services/tale-log", () => ({ ensureLogEntriesLoaded: vi.fn() }));
 
 vi.mock("sonner", () => ({
   toast: {
@@ -314,7 +315,6 @@ describe("promptBuilder", () => {
         ],
         oldestLoadedIndex: 0,
         totalLogCount: 1,
-        ensureLogEntriesLoaded: vi.fn(),
       } as unknown as TaleStoreType);
 
       const dragonCard = createMockStoryCard({
@@ -356,7 +356,6 @@ describe("promptBuilder", () => {
         ],
         oldestLoadedIndex: 0,
         totalLogCount: 1,
-        ensureLogEntriesLoaded: vi.fn(),
       } as unknown as TaleStoreType);
 
       const dragonCard = createMockStoryCard({
@@ -396,7 +395,6 @@ describe("promptBuilder", () => {
         ],
         oldestLoadedIndex: 0,
         totalLogCount: 1,
-        ensureLogEntriesLoaded: vi.fn(),
       } as unknown as TaleStoreType);
 
       const pinnedCard = createMockStoryCard({
@@ -446,7 +444,6 @@ describe("promptBuilder", () => {
         ],
         oldestLoadedIndex: 0,
         totalLogCount: 1,
-        ensureLogEntriesLoaded: vi.fn(),
       } as unknown as TaleStoreType);
 
       const dragonCard = createMockStoryCard({
@@ -502,7 +499,6 @@ describe("promptBuilder", () => {
         ],
         oldestLoadedIndex: 0,
         totalLogCount: 2,
-        ensureLogEntriesLoaded: vi.fn(),
       } as unknown as TaleStoreType);
 
       const result = await buildMessage({
@@ -527,7 +523,7 @@ describe("promptBuilder", () => {
 
     it("should request additional history when the loaded window is incomplete", async () => {
       const { useTaleStore } = await import("@/store/useTaleStore");
-      const ensureLogEntriesLoaded = vi.fn().mockResolvedValue(undefined);
+      const { ensureLogEntriesLoaded } = await import("@/services/tale-log");
       const shortLog = Array.from({ length: 20 }, (_, i) =>
         createMockLogEntry({
           id: `log-${i}`,
@@ -539,7 +535,6 @@ describe("promptBuilder", () => {
         log: shortLog,
         oldestLoadedIndex: 5,
         totalLogCount: 150,
-        ensureLogEntriesLoaded,
       } as unknown as TaleStoreType);
 
       await buildMessage({
@@ -576,7 +571,6 @@ describe("promptBuilder", () => {
         ],
         oldestLoadedIndex: 0,
         totalLogCount: 2,
-        ensureLogEntriesLoaded: vi.fn(),
       } as unknown as TaleStoreType);
 
       const result = await buildMessage({
@@ -621,7 +615,6 @@ describe("promptBuilder", () => {
         ],
         oldestLoadedIndex: 0,
         totalLogCount: 3,
-        ensureLogEntriesLoaded: vi.fn(),
       } as unknown as TaleStoreType);
 
       const result = await buildMessage({
@@ -672,7 +665,6 @@ describe("promptBuilder", () => {
         ],
         oldestLoadedIndex: 0,
         totalLogCount: 6,
-        ensureLogEntriesLoaded: vi.fn(),
       } as unknown as TaleStoreType);
 
       const result = await buildMessage({
@@ -709,7 +701,6 @@ describe("promptBuilder", () => {
         ],
         oldestLoadedIndex: 0,
         totalLogCount: 2,
-        ensureLogEntriesLoaded: vi.fn(),
       } as unknown as TaleStoreType);
 
       const result = await buildMessage({
@@ -752,7 +743,6 @@ describe("promptBuilder", () => {
         log: longHistory,
         oldestLoadedIndex: 0,
         totalLogCount: 50,
-        ensureLogEntriesLoaded: vi.fn(),
       } as unknown as TaleStoreType);
 
       const result = await buildMessage({
@@ -886,7 +876,6 @@ describe("promptBuilder", () => {
         ],
         oldestLoadedIndex: 0,
         totalLogCount: 1,
-        ensureLogEntriesLoaded: vi.fn(),
       } as unknown as TaleStoreType);
 
       const dragonCard = createMockStoryCard({
@@ -920,7 +909,6 @@ describe("promptBuilder", () => {
         ],
         oldestLoadedIndex: 0,
         totalLogCount: 1,
-        ensureLogEntriesLoaded: vi.fn(),
       } as unknown as TaleStoreType);
 
       const dragonCard = createMockStoryCard({
@@ -967,7 +955,6 @@ describe("promptBuilder", () => {
         ],
         oldestLoadedIndex: 0,
         totalLogCount: 2,
-        ensureLogEntriesLoaded: vi.fn(),
       } as unknown as TaleStoreType);
 
       const pinnedCard = createMockStoryCard({
