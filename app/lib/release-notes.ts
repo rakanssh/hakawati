@@ -7,9 +7,7 @@ export type ReleaseNotesKind =
 
 export type ReleaseNotesSection = {
   kind: ReleaseNotesKind;
-  /** The heading as written, shown for kinds without a label of their own. */
   title: string;
-  /** Each change as Markdown. */
   items: string[];
 };
 
@@ -25,11 +23,6 @@ const HEADING = /^#{1,6}[ \t]+(.+?)[ \t]*#*[ \t]*$/;
 const ITEM = /^[-*+][ \t]+(.*)$/;
 const INDENT = /^(?: {1,4}|\t)/;
 
-/**
- * Splits release notes (a CHANGELOG.md section, see scripts/release-utils.mjs)
- * into their headings and list items. Returns null for anything else, such as
- * notes rewritten on GitHub, so callers can show it as plain Markdown.
- */
 export function parseReleaseNotes(notes: string): ReleaseNotesSection[] | null {
   const sections: ReleaseNotesSection[] = [];
   let item: string[] | null = null;
@@ -61,7 +54,6 @@ export function parseReleaseNotes(notes: string): ReleaseNotesSection[] | null {
         sections.push({ kind: "other", title: "", items: [] });
       item = [entry[1]];
     } else if (item && (INDENT.test(line) || !afterBlank)) {
-      // Continuation lines, including nested lists, stay with their change.
       item.push((afterBlank ? "\n" : "") + line.replace(INDENT, ""));
     } else {
       return null;

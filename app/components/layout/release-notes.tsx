@@ -42,7 +42,6 @@ const SECTIONS: Record<
   },
 };
 
-/** Release notes from the updater: a CHANGELOG.md section, written in English. */
 export function ReleaseNotes({
   notes,
   className,
