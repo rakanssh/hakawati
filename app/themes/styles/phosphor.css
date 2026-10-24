@@ -47,6 +47,8 @@
   --log-thinking-foreground: oklch(0.78 0.051 200);
   --success: oklch(0.8 0.15 145);
   --success-foreground: oklch(0.1 0.018 150);
+  --warning: oklch(0.82 0.15 80);
+  --warning-foreground: oklch(0.1 0.018 80);
   --story-character: oklch(0.68 0.09 232);
   --story-character-foreground: oklch(0.8 0.07 232);
   --story-thing: oklch(0.68 0.09 150);
