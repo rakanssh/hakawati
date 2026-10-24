@@ -21,7 +21,6 @@ import {
 } from "@/lib/server-announcement";
 import { cn } from "@/lib/utils";
 
-// Links take the kind's colour on dark themes; light themes keep text contrast.
 const KIND_STYLES: Record<
   AnnouncementKind,
   {
@@ -55,7 +54,6 @@ const KIND_STYLES: Record<
   },
 };
 
-/** The server's notices as a band across the top of Home, one at a time. */
 export function ServerAnnouncementBanner({
   announcements,
   baseUrl,

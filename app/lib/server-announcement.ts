@@ -2,7 +2,6 @@ export type AnnouncementKind = "info" | "warning" | "outage";
 
 export type AnnouncementText = {
   title: string;
-  /** Plain text; `[label](https://…)` marks a link. */
   body: string;
   linkLabel?: string;
 };
@@ -22,7 +21,6 @@ export type AnnouncementBodyPart = { text: string; url?: string };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ISO_DATE_TIME =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
-// The server's grammar: labels are trimmed and at most 80 characters.
 const BODY_LINK = /\[([^[\]\n]+)\]\(([^()\s]+)\)/g;
 const KINDS: readonly AnnouncementKind[] = ["info", "warning", "outage"];
 const MAX_ANNOUNCEMENTS = 10;
@@ -50,7 +48,6 @@ function parseLinkLabel(value: unknown): string | null | undefined {
   return label && label.length <= 80 ? label : null;
 }
 
-/** Splits a body into text and the links it marks with `[label](https://…)`. */
 export function announcementBodyParts(body: string): AnnouncementBodyPart[] {
   const parts: AnnouncementBodyPart[] = [];
   let text = "";
@@ -118,7 +115,6 @@ function parseAnnouncement(
   ) {
     return null;
   }
-  // Notices from servers before kinds and per-language labels share one label.
   const sharedLabel = legacy ? parseLinkLabel(value.linkLabel) : undefined;
   if (sharedLabel === null) return null;
   const withLabel = (text: unknown) =>
@@ -129,7 +125,6 @@ function parseAnnouncement(
   if (!en || ar === null) return null;
   return {
     id: value.id.toLowerCase(),
-    // Kinds this app doesn't know yet show as info.
     kind: KINDS.includes(value.kind as AnnouncementKind)
       ? (value.kind as AnnouncementKind)
       : "info",
