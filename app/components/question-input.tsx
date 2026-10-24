@@ -2,7 +2,7 @@ import type { ComponentProps } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { isMobilePlatform } from "@/hooks/useIsMobile";
+import { isMobilePlatform } from "@/lib/platform";
 import { cn } from "@/lib/utils";
 
 export type Suggestion = { id: string; label: string };

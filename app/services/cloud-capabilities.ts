@@ -1,5 +1,5 @@
 import packageMetadata from "../../package.json";
-import { detectPlatform } from "@/hooks/useIsMobile";
+import { detectPlatform } from "@/lib/platform";
 import {
   parseServerAnnouncements,
   type ServerAnnouncement,
@@ -11,7 +11,6 @@ export const HAKAWATI_CLIENT_VERSION = packageMetadata.version;
 export const HAKAWATI_CLIENT_HEADERS = {
   "X-Hakawati-Api-Version": HAKAWATI_API_VERSION,
   "X-Hakawati-Client-Version": HAKAWATI_CLIENT_VERSION,
-  // Lets the server aim announcements at one platform.
   "X-Hakawati-Platform": detectPlatform(),
 } as const;
 

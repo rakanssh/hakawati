@@ -6,7 +6,7 @@ import { persist } from "zustand/middleware";
 import { formatBytes } from "@/lib/utils";
 import { t } from "@lingui/core/macro";
 import { flushPendingAutoSaves } from "@/hooks/useAutoSave";
-import { isMobilePlatform } from "@/hooks/useIsMobile";
+import { isMobilePlatform } from "@/lib/platform";
 
 export type UpdatePhase =
   | "idle"

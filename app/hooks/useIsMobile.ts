@@ -1,19 +1,11 @@
 import { useState, useEffect } from "react";
+import { detectPlatform, type Platform } from "@/lib/platform";
 
 /**
  * Breakpoint for mobile viewport detection (matches Tailwind's `md:` breakpoint)
  */
 const MOBILE_BREAKPOINT = 768;
 const COMPACT_BREAKPOINT = 640;
-
-export enum Platform {
-  ANDROID = "android",
-  IOS = "ios",
-  MACOS = "macos",
-  WINDOWS = "windows",
-  LINUX = "linux",
-  WEB = "web",
-}
 
 export interface MobileDetection {
   /** True if viewport width is less than 768px */
@@ -26,41 +18,6 @@ export interface MobileDetection {
   isMobile: boolean;
   /** The detected platform */
   platform: Platform;
-}
-
-/**
- * Detects the current platform based on Tauri environment and user agent
- */
-export function detectPlatform(): Platform {
-  if (typeof window === "undefined") return Platform.WEB;
-
-  if ("__TAURI_INTERNALS__" in window) {
-    const ua = navigator.userAgent.toLowerCase();
-    if (ua.includes("android")) return Platform.ANDROID;
-    if (ua.includes("iphone") || ua.includes("ipad") || ua.includes("ipod"))
-      return Platform.IOS;
-    // An iPad's web view reports a desktop Mac; a Mac has no touch points.
-    if (ua.includes("macintosh") && navigator.maxTouchPoints > 1)
-      return Platform.IOS;
-
-    if (navigator.platform) {
-      const platform = navigator.platform.toLowerCase();
-      if (platform.includes("mac")) return Platform.MACOS;
-      if (platform.includes("win")) return Platform.WINDOWS;
-      if (platform.includes("linux")) return Platform.LINUX;
-    }
-  }
-
-  return Platform.WEB;
-}
-
-/**
- * True on the Android and iOS builds. Usable outside components because the
- * platform never changes while the app runs.
- */
-export function isMobilePlatform(): boolean {
-  const platform = detectPlatform();
-  return platform === Platform.ANDROID || platform === Platform.IOS;
 }
 
 /**
