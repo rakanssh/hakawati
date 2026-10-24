@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getConnectionModels } from "@/services/llm";
-import type { LLMModel } from "@/services/llm/schema";
-import { ApiConnection, ApiPreset } from "@/types";
+import { ApiConnection, ApiPreset, type LLMModel } from "@/types";
 import { useChatGpt } from "./useChatGpt";
 
 /** Checks a connection by listing its models. */

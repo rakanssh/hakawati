@@ -16,12 +16,12 @@ import {
 import { useLLM } from "@/hooks/useLLM";
 import { usePersistTale } from "@/hooks/useGameSaves";
 import {
+  LLMAction,
   LogEntry,
   LogEntryMode,
   LogEntryRole,
   type LogActionState,
 } from "@/types/log.type";
-import { LLMAction } from "@/services/llm/schema";
 import { Action, getLogErrorReason } from "@/lib/play-utils";
 
 interface UsePlaySessionOptions {

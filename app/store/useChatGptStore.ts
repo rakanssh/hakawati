@@ -4,8 +4,8 @@ import {
   signInWithChatGpt,
   signOutOfChatGpt,
   subscribeChatGptSession,
-  type ChatGptSession,
 } from "@/services/chatgpt";
+import type { ChatGptSession } from "@/types/chatgpt.type";
 import { useSettingsStore } from "./useSettingsStore";
 
 interface ChatGptState {

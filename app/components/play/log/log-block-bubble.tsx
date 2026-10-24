@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from "react";
-import { LLMAction } from "@/services/llm/schema";
+import { LLMAction } from "@/types";
 import { LogEntryError } from "./log-entry-error";
 import { ActionBadge } from "./action-badge";
 import { LogBlock } from "@/lib/play-utils";

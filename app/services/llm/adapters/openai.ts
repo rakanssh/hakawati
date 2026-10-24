@@ -7,14 +7,13 @@ import {
   LLMClient,
   ChatRequest,
   ChatResponse,
-  LLMModel,
 } from "../schema";
 import { parseOpenAIStream } from "../streaming";
 import {
   knownOpenAiReasoning,
   readReasoningCapabilities,
   reasoningProvider,
-} from "../reasoning";
+} from "@/lib/reasoning";
 import {
   assertNotAborted,
   readResponseJson,
@@ -23,7 +22,7 @@ import {
 } from "./responses";
 import { fetch } from "@tauri-apps/plugin-http";
 import { GM_TOOLS, ToolCall } from "../tools";
-import { ModelRole } from "@/types";
+import { LLMModel, ModelRole } from "@/types";
 import { repairCommonMojibake } from "@/lib/utils";
 
 const samplingParameterNames: Record<string, string> = {

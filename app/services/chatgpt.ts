@@ -1,11 +1,5 @@
 import { Channel, invoke, isTauri } from "@tauri-apps/api/core";
-
-export type ChatGptSession = {
-  available: boolean;
-  connected: boolean;
-  planUsageEnabled: boolean;
-  account: { id: string; email: string | null } | null;
-};
+import type { ChatGptSession } from "@/types/chatgpt.type";
 
 const sessionListeners = new Set<() => void>();
 

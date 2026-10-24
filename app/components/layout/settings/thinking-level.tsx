@@ -3,8 +3,8 @@ import {
   getModelReasoning,
   normalizeReasoningEffort,
   reasoningProvider,
-} from "@/services/llm/reasoning";
-import type { ReasoningEffort } from "@/services/llm/schema";
+} from "@/lib/reasoning";
+import type { ReasoningEffort } from "@/types";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { ApiPreset } from "@/types/api.type";
 import { Segmented, SetupSection } from "./settings-rows";

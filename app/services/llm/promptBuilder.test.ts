@@ -7,9 +7,9 @@ import {
   StorybookCategory,
 } from "@/types/context.type";
 import { ResponseMode } from "@/types";
-import type { ChatMessage, LLMModel } from "./schema";
+import type { ChatMessage } from "./schema";
 import type { LogEntry } from "@/types/log.type";
-import type { StoryCard } from "@/types";
+import type { LLMModel, StoryCard } from "@/types";
 import { TaleStoreType } from "@/store";
 import { SettingsStoreType } from "@/store/useSettingsStore";
 

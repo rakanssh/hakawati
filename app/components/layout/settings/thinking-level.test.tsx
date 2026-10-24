@@ -2,7 +2,7 @@ import { act, createElement, Fragment, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import type { LLMModel } from "@/services/llm/schema";
+import type { LLMModel } from "@/types";
 import { ApiPreset } from "@/types/api.type";
 import { ThinkingLevel } from "./thinking-level";
 

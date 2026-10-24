@@ -1,11 +1,10 @@
 import { resolveModelRole, sendRoleChat } from "@/services/llm";
-import { LLMAction } from "@/services/llm/schema";
 import { useTaleStore } from "@/store/useTaleStore";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createDecoder } from "@/services/llm/decoders";
 import { buildMessage } from "@/services/llm/promptBuilder";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { LogEntryMode } from "@/types";
+import { LLMAction, LogEntryMode } from "@/types";
 
 export type LlmSendResult =
   | { status: "completed" }

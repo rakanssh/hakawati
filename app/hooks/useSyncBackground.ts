@@ -25,8 +25,8 @@ import {
   SyncHttpError,
   syncLinkedTale,
   uploadTalePackage,
-  type SyncProfile,
 } from "@/services/sync";
+import type { SyncProfile } from "@/types/sync.type";
 import { addSyncWakeListener, notifySyncChanged } from "@/services/sync-wakeup";
 import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
 

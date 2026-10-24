@@ -1,20 +1,6 @@
 import { ResponseMode } from "@/types/api.type";
+import type { LLMModel, ReasoningEffort } from "@/types/model.type";
 import { ToolCall } from "./tools";
-
-export type ReasoningEffort =
-  | "none"
-  | "minimal"
-  | "low"
-  | "medium"
-  | "high"
-  | "xhigh"
-  | "max";
-
-export interface ReasoningCapabilities {
-  supportedEfforts: ReasoningEffort[];
-  defaultEffort?: ReasoningEffort;
-  mandatory?: boolean;
-}
 
 /**
  * Core chat message types
@@ -113,48 +99,4 @@ export interface AudioSpeechRequest {
 export interface AudioSpeechResponse {
   audio: Blob;
   raw: Response;
-}
-
-/**
- * Model types
- */
-export interface ModelPricing {
-  prompt: number;
-  completion: number;
-  request: number;
-  image: number;
-  audio: number;
-}
-
-export interface LLMModel {
-  id: string;
-  name: string;
-  contextLength?: number;
-  pricing?: ModelPricing;
-  supportsResponseFormat?: boolean;
-  supportsToolCalls?: boolean;
-  supportedParameters?: string[];
-  supportedVoices?: string[];
-  /** Missing metadata means unknown; an empty list explicitly has no selector. */
-  reasoning?: ReasoningCapabilities;
-  maxOutputTokens?: number;
-  /** Typed in by the player rather than picked from the provider's list. */
-  manual?: boolean;
-}
-
-/**
- * Action types for game state modifications
- */
-export interface LLMAction {
-  type:
-    | "MODIFY_STAT"
-    | "ADD_TO_INVENTORY"
-    | "REMOVE_FROM_INVENTORY"
-    | "ADD_TO_STATS";
-  payload: {
-    name?: string;
-    value?: number;
-    item?: string;
-    description?: string;
-  };
 }

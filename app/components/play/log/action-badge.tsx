@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { ChartBarIcon, ShoppingBagIcon, Trash2Icon } from "lucide-react";
-import { LLMAction } from "@/services/llm/schema";
+import { LLMAction } from "@/types";
 
 export function ActionBadge({ action }: { action: LLMAction }) {
   if (action.type === "MODIFY_STAT" && action.payload.value! > 0) {

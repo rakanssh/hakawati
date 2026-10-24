@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GameMode } from "@/types/context.type";
 import type { TaleHead } from "@/types/tale.type";
-import type { RemoteTale } from "@/services/sync";
-import type { TaleSyncState } from "@/repositories/sync.repository";
+import type { RemoteTale, TaleSyncState } from "@/types/sync.type";
 import { mergeTaleLibrary } from "./tale-library";
 
 describe("mergeTaleLibrary", () => {

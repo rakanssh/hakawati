@@ -66,9 +66,9 @@ import {
   updateHostedAccountProfile,
   type HostedAccountUsage,
   type SyncDevice,
-  type SyncProfile,
   unregisterHostedDevice,
 } from "@/services/sync";
+import type { SyncProfile } from "@/types/sync.type";
 import {
   addSyncChangedListener,
   notifySyncChanged,

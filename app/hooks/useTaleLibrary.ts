@@ -6,7 +6,6 @@ import {
   getSyncProfile,
   listTaleSyncStates,
   setTaleSyncPreference,
-  type TaleSyncState,
 } from "@/repositories/sync.repository";
 import {
   applyRemoteTalePackage,
@@ -19,9 +18,8 @@ import {
   listAllRemoteTales,
   replaceRemoteTalePackage,
   SyncHttpError,
-  type RemoteTale,
-  type SyncProfile,
 } from "@/services/sync";
+import type { RemoteTale, SyncProfile, TaleSyncState } from "@/types/sync.type";
 import {
   addSyncChangedListener,
   wakeSyncBackground,

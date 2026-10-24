@@ -1,5 +1,5 @@
-import { LLMAction, StreamChunk } from "./schema";
-import { GameMode } from "@/types";
+import { StreamChunk } from "./schema";
+import { GameMode, LLMAction } from "@/types";
 import { convertToolCallsToActions, ToolCall } from "./tools";
 
 export interface DecodedResponse {

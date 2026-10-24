@@ -5,11 +5,8 @@ import {
   migrateStoredHostedRefreshToken,
   setHostedRefreshToken,
 } from "@/services/secret-store";
-import {
-  refreshHostedSync,
-  SyncHttpError,
-  type SyncProfile,
-} from "@/services/sync";
+import { refreshHostedSync, SyncHttpError } from "@/services/sync";
+import type { SyncProfile } from "@/types/sync.type";
 import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
 
 const HOSTED_PROFILE_ID = "hosted";

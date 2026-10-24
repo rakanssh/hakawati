@@ -11,7 +11,8 @@ import {
 import { GameMode } from "@/types/context.type";
 import { LogEntryMode, LogEntryRole, type LogEntry } from "@/types/log.type";
 import type { TaleMutableSnapshot } from "@/services/tale.service";
-import type { SyncCapabilities, SyncProfile } from "@/services/sync";
+import type { SyncCapabilities } from "@/services/sync";
+import type { SyncProfile } from "@/types/sync.type";
 
 type SqlParam = string | number | bigint | Uint8Array | null;
 

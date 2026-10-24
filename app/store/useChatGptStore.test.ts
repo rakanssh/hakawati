@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useChatGptStore } from "./useChatGptStore";
 import { useSettingsStore } from "./useSettingsStore";
 import { ApiPreset } from "@/types";
-import type { ChatGptSession } from "@/services/chatgpt";
+import type { ChatGptSession } from "@/types/chatgpt.type";
 
 const { auth, notifySessionChanged } = vi.hoisted(() => {
   let listener = () => {};

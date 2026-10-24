@@ -1,5 +1,4 @@
-import type { LLMModel } from "@/services/llm/schema";
-import type { ModelRole } from "@/types";
+import type { LLMModel, ModelRole } from "@/types";
 
 function toNumber(value: unknown): number | undefined {
   if (value === null || value === undefined) return undefined;

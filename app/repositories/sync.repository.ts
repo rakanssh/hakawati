@@ -4,22 +4,11 @@ import type {
   SyncDisabledReason,
   SyncMode,
   SyncProfile,
-} from "@/services/sync";
+  TaleSyncState,
+  TaleSyncStatus,
+} from "@/types/sync.type";
 
-export type TaleSyncStatus = "idle" | "push" | "pull" | "conflict" | "error";
 export type TaleSyncPolicy = "sync" | "private";
-
-export type TaleSyncState = {
-  profileId: string;
-  accountId?: string | null;
-  localTaleId: string;
-  remoteTaleId: string;
-  contentRev: string | null;
-  metadataRev: string | null;
-  lastSyncedAt: number | null;
-  pendingStatus: TaleSyncStatus;
-  lastErrorCode: string | null;
-};
 
 type SyncProfileRow = {
   id: string;

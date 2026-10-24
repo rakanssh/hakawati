@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiPreset, MODEL_ROLES } from "@/types";
-import type { LLMModel } from "@/services/llm/schema";
+import { ApiPreset, type LLMModel, MODEL_ROLES } from "@/types";
 import {
   DEFAULT_TTS_VOICE,
   isModelRoleConfigured,

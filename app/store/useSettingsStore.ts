@@ -5,13 +5,14 @@ import {
   UI_SCALE_MIN,
 } from "@/lib/appearance-limits";
 import { apiPresetMap, isPresetAllowedForRole } from "@/data/api-presets";
-import { LLMModel, ReasoningEffort } from "@/services/llm/schema";
 import {
   ApiConnection,
   ApiPreset,
   ApiType,
+  LLMModel,
   ModelRole,
   ModelRoleSettings,
+  ReasoningEffort,
 } from "@/types";
 import type { Locale } from "@/i18n";
 import {

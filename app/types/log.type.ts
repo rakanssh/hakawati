@@ -1,6 +1,19 @@
-import { LLMAction } from "@/services/llm/schema";
 import type { Item } from "./item.type";
 import type { Stat } from "./stats.type";
+
+export interface LLMAction {
+  type:
+    | "MODIFY_STAT"
+    | "ADD_TO_INVENTORY"
+    | "REMOVE_FROM_INVENTORY"
+    | "ADD_TO_STATS";
+  payload: {
+    name?: string;
+    value?: number;
+    item?: string;
+    description?: string;
+  };
+}
 
 export type LogActionState = { stats: Stat[]; inventory: Item[] };
 

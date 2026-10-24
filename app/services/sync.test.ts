@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GameMode } from "@/types/context.type";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 import type { TalePackageV1 } from "@/types/export.type";
-import type { TaleSyncState } from "@/repositories/sync.repository";
+import type { RemoteTale, TaleSyncState } from "@/types/sync.type";
 import { HAKAWATI_CLIENT_VERSION } from "./cloud-capabilities";
 import {
   assertSyncAvailable,
@@ -23,7 +23,6 @@ import {
   unregisterHostedDevice,
   uploadTalePackage,
   applyRemoteTalePackage,
-  type RemoteTale,
   type SyncCapabilities,
 } from "./sync";
 

@@ -1,11 +1,12 @@
 import { DEFAULT_TTS_VOICE, useSettingsStore } from "@/store/useSettingsStore";
 import { OpenAiClient } from "./adapters/openai";
 import { ChatGptClient } from "./adapters/chatgpt";
-import { ChatRequest, LLMModel } from "./schema";
+import { ChatRequest } from "./schema";
 import {
   ApiConnection,
   ApiPreset,
   ApiType,
+  LLMModel,
   ModelRole,
   ModelRoleSettings,
 } from "@/types";
@@ -14,7 +15,7 @@ import {
   getModelReasoning,
   normalizeReasoningEffort,
   reasoningProvider,
-} from "./reasoning";
+} from "@/lib/reasoning";
 import { splitSpeechInput } from "./speechInput";
 
 export class ModelRoleConfigurationError extends Error {

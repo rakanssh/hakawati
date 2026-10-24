@@ -1,11 +1,16 @@
 import { apiPresetMap, createDefaultProfiles } from "@/data/api-presets";
-import type { LLMModel } from "@/services/llm/schema";
 import {
   getModelReasoning,
   normalizeReasoningEffort,
   reasoningProvider,
-} from "@/services/llm/reasoning";
-import { ApiPreset, ApiProfileSettings, MODEL_ROLES, ModelRole } from "@/types";
+} from "@/lib/reasoning";
+import {
+  ApiPreset,
+  ApiProfileSettings,
+  type LLMModel,
+  MODEL_ROLES,
+  ModelRole,
+} from "@/types";
 import {
   DEFAULT_TTS_VOICE,
   type LegacyRoleSettings,

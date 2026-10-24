@@ -36,11 +36,8 @@ import {
   getSyncProfile,
   upsertSyncProfile,
 } from "@/repositories/sync.repository";
-import {
-  createSyncTransport,
-  registerSyncDevice,
-  type SyncProfile,
-} from "@/services/sync";
+import { createSyncTransport, registerSyncDevice } from "@/services/sync";
+import type { SyncProfile } from "@/types/sync.type";
 import {
   addSyncChangedListener,
   notifySyncChanged,

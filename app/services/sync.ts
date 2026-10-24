@@ -20,10 +20,15 @@ import {
   upsertSyncProfile,
   upsertTaleSyncState,
   upsertTaleSyncStateIfTaleVersion,
-  type TaleSyncState,
 } from "@/repositories/sync.repository";
 import type { TalePackageV1 } from "@/types/export.type";
 import type { CoverAssetReference } from "@/types/catalog.type";
+import type {
+  RemoteTale,
+  SyncMode,
+  SyncProfile,
+  TaleSyncState,
+} from "@/types/sync.type";
 import {
   optimizeCoverImage,
   sha256Hex,
@@ -38,23 +43,6 @@ import {
   parseCloudCapabilities,
   type CloudCapabilities,
 } from "@/services/cloud-capabilities";
-
-export type SyncMode = "hosted" | "personal";
-
-export type SyncProfile = {
-  id: string;
-  baseUrl: string;
-  mode: SyncMode;
-  accountId?: string | null;
-  deviceId?: string | null;
-  enabled?: boolean;
-  disabledReason?: SyncDisabledReason | null;
-};
-
-export type SyncDisabledReason =
-  | "device_limit"
-  | "signed_out"
-  | "user_disabled";
 
 export type SyncWriteOptions = {
   idempotencyKey?: string;
@@ -201,24 +189,6 @@ export type RegisterSyncDeviceInput = {
   name: string;
   platform: string;
   appVersion: string;
-};
-
-export type RemoteTale = {
-  id: string;
-  sourceTaleId: string;
-  title: string;
-  description: string | null;
-  gameMode: string;
-  coverAssetId: string | null;
-  thumbnailAssetId: string | null;
-  cover?: CoverAssetReference | null;
-  contentRev: number;
-  metadataRev: number;
-  turnCount: number;
-  entryCount?: number;
-  storageBytes?: number;
-  updatedAt: string;
-  lastEntryPreview: string | null;
 };
 
 export type RemoteTalePage = {
