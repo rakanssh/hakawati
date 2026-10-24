@@ -4,6 +4,102 @@ import tseslint from "typescript-eslint";
 import reactPlugin from "eslint-plugin-react";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
 
+const importsFrom = (layers, message) => ({
+  regex: `^(?:@/|(?:\\.\\./)+)(?:${layers.join("|")})(?:/|$)`,
+  message,
+});
+
+const layerBoundaries = [
+  {
+    files: ["app/lib/**"],
+    patterns: [
+      importsFrom(
+        [
+          "components",
+          "data",
+          "hooks",
+          "pages",
+          "prompts",
+          "repositories",
+          "services",
+          "store",
+          "themes",
+        ],
+        "lib imports only lib and types.",
+      ),
+    ],
+  },
+  {
+    files: ["app/types/**"],
+    patterns: [
+      importsFrom(
+        [
+          "components",
+          "data",
+          "hooks",
+          "lib",
+          "pages",
+          "prompts",
+          "repositories",
+          "services",
+          "store",
+          "themes",
+        ],
+        "types import only other types.",
+      ),
+    ],
+  },
+  {
+    files: ["app/repositories/**"],
+    patterns: [
+      importsFrom(
+        ["components", "hooks", "pages", "store"],
+        "Repositories don't import hooks, components, pages or stores.",
+      ),
+      {
+        regex: "^(?:@/|(?:\\.\\./)+)services(?:/(?!db(?:/|$))|$)",
+        message: "Repositories import only the db module from services.",
+      },
+    ],
+  },
+  {
+    files: ["app/services/**"],
+    patterns: [
+      importsFrom(
+        ["components", "hooks", "pages"],
+        "Services don't import hooks, components or pages.",
+      ),
+    ],
+  },
+  {
+    files: ["app/store/**"],
+    patterns: [
+      importsFrom(
+        ["components", "hooks", "pages", "repositories", "services"],
+        "Stores don't import services, repositories, hooks, components or pages.",
+      ),
+    ],
+  },
+  {
+    files: ["app/hooks/**"],
+    patterns: [
+      importsFrom(
+        ["components", "pages"],
+        "Hooks don't import components or pages.",
+      ),
+    ],
+  },
+  {
+    files: ["app/components/**"],
+    patterns: [
+      importsFrom(
+        ["repositories"],
+        "Components reach repositories through a service.",
+      ),
+    ],
+  },
+];
+
 export default tseslint.config(
   {
     ignores: [
@@ -56,5 +152,10 @@ export default tseslint.config(
       },
     },
   },
+  ...layerBoundaries.map(({ files, patterns }) => ({
+    files,
+    ignores: ["**/*.test.ts", "**/*.test.tsx"],
+    rules: { "no-restricted-imports": ["error", { patterns }] },
+  })),
   // Add more configurations for specific file types or overrides if necessary
 );
