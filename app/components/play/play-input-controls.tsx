@@ -31,12 +31,12 @@ import { getPlaceholderMessage, Action } from "@/lib/play-utils";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { isMobilePlatform as isMobilePlatformDevice } from "@/lib/platform";
+import { useSpeechRecorder } from "@/hooks/useSpeechRecorder";
 import {
   appendTranscriptToInput,
   MicrophonePermissionError,
   RecordingInterruptedError,
-  useSpeechRecorder,
-} from "@/hooks/useSpeechRecorder";
+} from "@/lib/speech-recording";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { toast } from "sonner";
 import {

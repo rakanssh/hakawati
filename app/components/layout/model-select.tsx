@@ -20,7 +20,8 @@ import { ApiPreset, LLMModel, ModelRole } from "@/types";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { getModelMetaLabels } from "./model-select-meta";
-import { manualModel, useChooseModel } from "@/hooks/useChooseModel";
+import { useChooseModel } from "@/hooks/useChooseModel";
+import { manualModel } from "@/lib/model-utils";
 import { ChatGptUsageLink } from "./settings/chatgpt-connection";
 
 interface ModelSelectProps {

@@ -5,7 +5,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { formatBytes } from "@/lib/utils";
 import { t } from "@lingui/core/macro";
-import { flushPendingAutoSaves } from "@/hooks/useAutoSave";
+import { flushPendingAutoSaves } from "@/lib/pending-auto-saves";
 import { isMobilePlatform } from "@/lib/platform";
 
 export type UpdatePhase =

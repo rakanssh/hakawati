@@ -5,11 +5,6 @@ import { DEFAULT_TTS_VOICE, useSettingsStore } from "@/store/useSettingsStore";
 import { useTaleStore } from "@/store/useTaleStore";
 import { GameMode, type LLMModel, type ModelRole } from "@/types";
 
-/** A model typed in by id. Refreshing the provider's list keeps it even when the list doesn't include it. */
-export function manualModel(id: string): LLMModel {
-  return { id, name: id, manual: true };
-}
-
 /** Sets a role's model the same way wherever it is chosen. */
 export function useChooseModel(role: ModelRole) {
   const { t } = useLingui();

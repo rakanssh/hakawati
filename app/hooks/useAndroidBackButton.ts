@@ -4,7 +4,7 @@ import { onBackButtonPress } from "@tauri-apps/api/app";
 import { exit } from "@tauri-apps/plugin-process";
 import { t } from "@lingui/core/macro";
 import { toast } from "sonner";
-import { flushPendingAutoSaves } from "./useAutoSave";
+import { flushPendingAutoSaves } from "@/lib/pending-auto-saves";
 import { Platform } from "@/lib/platform";
 import { useIsMobile } from "./useIsMobile";
 
