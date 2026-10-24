@@ -263,7 +263,6 @@ function isUnregisteredDeviceError(error: unknown): boolean {
   );
 }
 
-// The server refuses writes from app versions it no longer supports.
 export function isUpdateRequiredError(error: unknown): boolean {
   return error instanceof SyncHttpError && error.status === 426;
 }
@@ -900,8 +899,7 @@ async function findMatchingCover(
   return undefined;
 }
 
-// A write that fails after its cover uploaded leaves that cover unused in the
-// cloud, where it still counts against the account. Its retries reuse it.
+// Retries reuse uploaded covers; an unused one counts against the account.
 const uploadedCovers = new Map<string, UploadedCover>();
 
 function uploadedCoverKey(profile: SyncProfile, localTaleId: string) {
@@ -917,7 +915,6 @@ function forgetUploadedCover(profile: SyncProfile, localTaleId: string) {
   uploadedCovers.delete(uploadedCoverKey(profile, localTaleId));
 }
 
-// The server may have refused the cover itself, so upload a new one next time.
 function forgetCoverRejectedWith(
   error: unknown,
   profile: SyncProfile,
@@ -968,8 +965,6 @@ async function toUploadSyncPackage(input: {
   const coverAsset = hosted
     ? localThumbnailAsset(input.localPackage)
     : undefined;
-  // The server refuses an oversized tale whatever its cover, so measure it
-  // before uploading one.
   assertWithinSyncLimits(
     toSyncTalePackage(input.localPackage, {
       mode: input.profile.mode,
@@ -1087,8 +1082,6 @@ async function reconcileAmbiguousSuccessfulSync(input: {
   });
 }
 
-// Only a revision conflict asks the player to choose a copy. Other refusals,
-// such as a full cloud, are errors that a retry or the player can fix.
 const REVISION_CONFLICT_CODES = new Set([
   "content_conflict",
   "metadata_conflict",
@@ -1147,8 +1140,6 @@ export async function syncLinkedTale(input: {
   transport: SyncTransport;
   localTaleId: string;
   remoteTale: RemoteTale;
-  // This device's ID. Write keys carry it so that the server tells this
-  // device's retries apart from another device's write at the same revision.
   writerId: string;
   capabilities?: SyncCapabilities;
   canPull?: () => boolean;
@@ -1188,13 +1179,11 @@ export async function syncLinkedTale(input: {
     });
     return "pushed" as const;
   };
-  // The cloud refused this tale as it is; it gets another try once it changes.
   const refused =
     state.pendingStatus === "error" && isRefusedSyncError(state.lastErrorCode);
   const remoteChanged = remoteTaleChanged(state, input.remoteTale);
 
   if (remoteChanged && hasLocalPendingWork(state)) {
-    // A refused write never reached the cloud, so the change came from elsewhere.
     if (!refused) {
       if (
         state.pendingStatus === "error" &&
@@ -1237,9 +1226,7 @@ export async function syncLinkedTale(input: {
   return push(state);
 }
 
-// When a write lands but its response is lost, the next pass sees the cloud
-// copy move. If that move was this device's own write, the link catches up to
-// it and the local changes made since are pushed, instead of a conflict.
+// For a write that landed but whose response was lost.
 async function resumeAfterOwnWrite(
   input: { profile: SyncProfile; localTaleId: string; remoteTale: RemoteTale },
   state: TaleSyncState,
@@ -1247,8 +1234,7 @@ async function resumeAfterOwnWrite(
 ): Promise<"pushed" | "conflict" | null> {
   const remote = input.remoteTale;
   if (state.contentRev === null && state.metadataRev === null) {
-    // A lost create, linked again by its source ID. Nothing else has written
-    // to the cloud copy while it is still at its first revision.
+    // A lost create; a cloud copy still at revision 1 has had no other writes.
     if (remote.contentRev !== 1 || remote.metadataRev !== 1) return null;
   } else {
     // A replace bumps both revisions, so exactly one write followed the link.
@@ -1258,8 +1244,7 @@ async function resumeAfterOwnWrite(
     ) {
       return null;
     }
-    // Resending at the linked revision reuses the lost write's key. The server
-    // refuses a reused key only when the write that first used it landed.
+    // The lost write's key; the server refuses a reused key only if it landed.
     try {
       return await push(state);
     } catch (error) {
@@ -1436,8 +1421,6 @@ export async function uploadTalePackage(input: {
     if (input.profile.mode === "hosted" && isDeviceLimitError(error)) {
       await setSyncProfileDisabled(input.profile.id, "device_limit");
     }
-    // Removed from the account elsewhere. It stays off until turned back on
-    // here, rather than registering itself again.
     if (input.profile.mode === "hosted" && isUnregisteredDeviceError(error)) {
       await setSyncProfileDisabled(input.profile.id, "user_disabled");
     }
@@ -1640,8 +1623,6 @@ async function pullRemoteTalePackage(input: {
   ) {
     return markLocalChanged();
   }
-  // A tale being played can't be replaced yet. Its saved copy has no unsynced
-  // changes, so it takes the pull on a later pass instead of a conflict.
   let deferred = false;
   const canReplace =
     input.canReplace &&
@@ -1679,8 +1660,7 @@ async function pullRemoteTalePackage(input: {
     toLocalTalePackage(remote.package),
     {
       expectedSaveVersion,
-      // A tale being played owns an in-memory snapshot, even before its next
-      // save. Recheck inside the write queue in case play began meanwhile.
+      // Rechecked inside the write queue in case play began meanwhile.
       ...(canReplace ? { canReplace } : {}),
     },
   );

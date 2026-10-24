@@ -77,7 +77,6 @@ describe("useLLM", () => {
   });
 
   it("stops a reply whose connection went quiet, so the next turn can start", async () => {
-    // The provider sends one line, then nothing, as on a dropped phone connection.
     sendRoleChat.mockImplementation(
       async (_role: string, _req: unknown, signal: AbortSignal) => ({
         content: "",

@@ -45,7 +45,6 @@ export class RecordingInterruptedError extends Error {
 }
 
 const RECORDING_STATS_POLL_INTERVAL_MS = 50;
-/** A transcription still running after this long is given up on. */
 export const TRANSCRIPTION_TIMEOUT_MS = 2 * 60_000;
 
 function isNativeSpeechRecorderError(
@@ -187,7 +186,6 @@ export function useSpeechRecorder({
     }
   }, [onError, startRecordingStats, stopRecordingStats]);
 
-  /** Frees the composer at once; whatever the request returns later is ignored. */
   const abandonTranscription = useCallback((controller: AbortController) => {
     if (abortRef.current !== controller) return false;
     controller.abort();

@@ -164,10 +164,6 @@ export function getNarrationCacheKey(text: string) {
   });
 }
 
-/**
- * Speaks the text and returns its audio in order. Text longer than the speech
- * endpoint accepts is sent in parts, one request each.
- */
 export async function synthesizeNarration(
   text: string,
   signal?: AbortSignal,

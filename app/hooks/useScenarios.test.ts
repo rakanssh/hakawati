@@ -153,7 +153,6 @@ describe("scenario import", () => {
       name: "Iron Gate copy",
     });
 
-    // Later saves from the same editor keep updating the copy.
     act(() =>
       editor.current.setScenario((current) => ({
         ...current,

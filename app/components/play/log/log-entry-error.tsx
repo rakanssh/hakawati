@@ -6,7 +6,7 @@ interface LogEntryErrorProps {
   error: unknown;
 }
 
-/** Why a reply failed, in the log itself: touch screens have no hover to reveal it. */
+// Not a tooltip: touch screens have no hover.
 export function LogEntryError({ error }: LogEntryErrorProps) {
   const { t } = useLingui();
 

@@ -646,7 +646,6 @@ describe("promptBuilder", () => {
       vi.mocked(useTaleStore.getState).mockReturnValue({
         log: [
           createMockLogEntry({ id: "1", text: "Open the door" }),
-          // Earlier versions saved this text, and `{}` for the error.
           createMockLogEntry({
             id: "2",
             role: LogEntryRole.GM,

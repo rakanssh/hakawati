@@ -450,7 +450,6 @@ describe("useSyncBackground", () => {
       }),
     );
 
-    // Open is not enough to hold a pull back; being played is.
     const { canPull } = syncServiceMocks.syncLinkedTale.mock.calls[0][0];
     expect(canPull()).toBe(true);
     openTaleMocks.isTaleInPlay.mockReturnValue(true);
@@ -595,7 +594,6 @@ describe("useSyncBackground", () => {
   });
 
   it("unlinks a tale opened from the cloud once its cloud copy is removed", async () => {
-    // Tales opened from the cloud and kept copies have no sync preference.
     syncRepoMocks.listTaleSyncStates.mockResolvedValue([
       {
         profileId: "hosted",
@@ -727,7 +725,6 @@ describe("useSyncBackground", () => {
       expect(syncServiceMocks.uploadTalePackage).toHaveBeenCalledOnce();
       expect(toastMocks.error).toHaveBeenCalledOnce();
 
-      // A tale left the cloud, so there may be room again.
       syncServiceMocks.listAllRemoteTales.mockResolvedValue(others.slice(1));
       act(() => {
         wakeSyncBackground();
@@ -772,7 +769,6 @@ describe("useSyncBackground", () => {
       await waitForAssertion(() =>
         expect(syncServiceMocks.syncLinkedTale).toHaveBeenCalledTimes(2),
       );
-      // Its next change is held as refused rather than uploaded into a full cloud.
       expect(syncRepoMocks.setTaleSyncStatus).toHaveBeenCalledWith({
         profileId: "hosted",
         accountId: "account-1",
@@ -793,7 +789,6 @@ describe("useSyncBackground", () => {
 
   it("tries tales refused for a full cloud once per session, one at a time", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    // Both were refused in an earlier session.
     syncRepoMocks.listTaleSyncStates.mockResolvedValue(
       ["local-1", "local-2"].map((localTaleId, index) => ({
         profileId: "hosted",
@@ -817,7 +812,6 @@ describe("useSyncBackground", () => {
         expect(syncServiceMocks.syncLinkedTale).toHaveBeenCalledTimes(2),
       );
       expect(syncRepoMocks.retryCloudFullTaleSyncs).toHaveBeenCalledOnce();
-      // The first refusal holds the second tale instead of uploading it too.
       expect(syncRepoMocks.setTaleSyncStatus).toHaveBeenCalledOnce();
       expect(syncRepoMocks.setTaleSyncStatus).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -842,7 +836,6 @@ describe("useSyncBackground", () => {
 
   it.each([
     [413, "package_too_large"],
-    // The create's key went to a tale that was removed since.
     [409, "idempotency_conflict"],
   ])(
     "does not upload a tale the cloud refused with %s %s again",

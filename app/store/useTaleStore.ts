@@ -405,7 +405,6 @@ export const useTaleStore = create<TaleStoreType>()((set) => ({
         },
       ],
     })),
-  // Using or losing an item takes one copy, the latest one gained.
   removeFromInventoryByName: (itemName: string) =>
     set((state) => {
       const index = state.inventory.map((i) => i.name).lastIndexOf(itemName);

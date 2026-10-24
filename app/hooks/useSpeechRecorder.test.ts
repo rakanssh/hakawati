@@ -349,7 +349,6 @@ describe("useSpeechRecorder", () => {
   });
 
   describe("when transcription stalls", () => {
-    /** Records, then stops on a transcription request that never answers. */
     async function stopIntoStalledTranscription(
       onTranscript = vi.fn(),
       onError = vi.fn(),

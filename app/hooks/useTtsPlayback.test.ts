@@ -143,7 +143,6 @@ function stubAudioContext(decode: (data: ArrayBuffer) => DecodedAudio) {
   return { decodeAudioData, close };
 }
 
-// Only the size matters to the cache, so the data stays small.
 function audioOfSize(bytes: number) {
   const audio = new Blob(["audio"], { type: "audio/mpeg" });
   Object.defineProperty(audio, "size", { value: bytes });
@@ -221,7 +220,6 @@ describe("useTtsPlayback", () => {
   });
 
   it("drops the least recently played narration once the cache is full", async () => {
-    // Two of these fit in the cache, three don't.
     const size = Math.floor(MAX_TTS_SESSION_CACHE_BYTES / 3) + 1;
     synthesizeNarrationMock.mockImplementation(async () => [audioOfSize(size)]);
     const harness = renderPlaybackHarness();

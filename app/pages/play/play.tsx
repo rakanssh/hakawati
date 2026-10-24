@@ -182,7 +182,6 @@ export default function Play() {
     warnOnLeave: true,
   });
 
-  // Cloud pulls wait while this screen has the tale open.
   useEffect(() => holdOpenTaleForPlay(), []);
 
   // Load last played tale on mount

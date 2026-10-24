@@ -29,14 +29,10 @@ import {
   injectMode,
 } from "./contextAssembly";
 
-/** Earlier versions saved this as the text of a reply that failed. */
+// Older saves hold this as a failed reply's text.
 const FAILED_REPLY_PLACEHOLDER =
   "An error occurred while processing your request.";
 
-/**
- * A failed reply belongs in the prompt only for the text that arrived before
- * it failed: the player reads that, and Continue picks up from it.
- */
 function isFailedReplyPlaceholder(entry: LogEntry): boolean {
   return entry.error !== undefined && entry.text === FAILED_REPLY_PLACEHOLDER;
 }

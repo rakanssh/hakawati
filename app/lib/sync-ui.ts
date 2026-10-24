@@ -56,8 +56,6 @@ export function getSyncUiKind(input: {
     : "local";
 }
 
-// The cloud keeps refusing these writes until the tale changes or space is
-// freed, so sending the same tale again only repeats a full upload.
 const REFUSED_SYNC_ERROR_CODES = new Set([
   "quota_exceeded",
   "package_too_large",

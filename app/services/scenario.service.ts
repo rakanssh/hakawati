@@ -140,8 +140,6 @@ export function serializeScenarioExport(scenario: Scenario): string {
   return JSON.stringify(payload, null, 2);
 }
 
-// Imports drop the exported id, so saving one creates a new scenario instead of
-// overwriting the scenario it was exported from.
 export function deserializeScenarioExport(json: string): Scenario {
   const raw = JSON.parse(json);
   if (raw?.version === 3) {

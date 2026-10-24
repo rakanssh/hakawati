@@ -304,8 +304,6 @@ export async function acknowledgeTaleSyncWrite(input: {
   });
 }
 
-// Moves the link onto revisions this device wrote but never saw acknowledged.
-// The local tale has changed since, so it stays queued for a push.
 export async function adoptTaleSyncRevisions(input: {
   expectedState: TaleSyncState;
   contentRev: string;
@@ -337,8 +335,6 @@ export async function adoptTaleSyncRevisions(input: {
   });
 }
 
-// Tales refused for lack of cloud space get another attempt once space may
-// have been freed.
 export async function retryCloudFullTaleSyncs(
   profileId: string,
   accountId?: string | null,
