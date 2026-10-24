@@ -1,13 +1,18 @@
 import { forgetSyncAccount } from "@/repositories/sync.repository";
+import { deleteHostedAccount, type SyncTransport } from "@/services/sync";
 import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
 
 const HOSTED_PROFILE_ID = "hosted";
 
-/**
- * Unlinks this device's tales from cloud accounts deleted here, so they stay as
- * local tales. An account stays listed until that works, and the app tries
- * again the next time it starts.
- */
+export async function deleteCloudAccount(
+  transport: SyncTransport,
+  accountId: string,
+): Promise<void> {
+  await deleteHostedAccount(transport);
+  useSyncSettingsStore.getState().addDeletedAccount(accountId);
+  void unlinkDeletedAccounts();
+}
+
 export async function unlinkDeletedAccounts(): Promise<void> {
   for (const accountId of useSyncSettingsStore.getState().deletedAccountIds) {
     try {

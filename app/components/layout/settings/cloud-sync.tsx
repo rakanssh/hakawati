@@ -51,10 +51,9 @@ import {
   setSyncProfileDisabled,
   upsertSyncProfile,
 } from "@/repositories/sync.repository";
-import { unlinkDeletedAccounts } from "@/services/deleted-accounts";
+import { deleteCloudAccount } from "@/services/deleted-accounts";
 import {
   createSyncTransport,
-  deleteHostedAccount,
   fetchHostedAccountUsage,
   getHostedAccount,
   listHostedDevices,
@@ -91,7 +90,6 @@ import { cn, formatBytes, formatExactDateTime } from "@/lib/utils";
 
 const HOSTED_PROFILE_ID = "hosted";
 
-/** The account a deletion is confirmed for, as the server identified the token. */
 interface DeleteTarget {
   accountId: string;
   label: string;
@@ -200,9 +198,6 @@ export default function SettingsCloudSync() {
     (state) => state.getOrCreateHostedDeviceId,
   );
   const clearSession = useSyncSettingsStore((state) => state.clearSession);
-  const addDeletedAccount = useSyncSettingsStore(
-    (state) => state.addDeletedAccount,
-  );
   const setDeviceName = useSyncSettingsStore((state) => state.setDeviceName);
   const setDevicePlatform = useSyncSettingsStore(
     (state) => state.setDevicePlatform,
@@ -486,17 +481,13 @@ export default function SettingsCloudSync() {
     notifySyncChanged();
   }
 
-  // Deleting an account isn't tied to a device, and this page's device id may
-  // belong to a different account than the token's.
   const accountTransport = (token: string) =>
     createSyncTransport({
       profile: { ...hostedProfile, deviceId: null },
       accessToken: token,
     });
 
-  // The token decides which account the server deletes. A sign-in that failed
-  // partway can leave it for a different account than this page shows, so the
-  // dialog names, deletes, and cleans up the account the server reports.
+  // The token may belong to a different account than this page shows.
   async function askToDeleteAccount() {
     const token = accessToken.trim();
     setCheckingDelete(true);
@@ -521,7 +512,10 @@ export default function SettingsCloudSync() {
   async function deleteAccount(target: DeleteTarget) {
     setDeletingAccount(true);
     try {
-      await deleteHostedAccount(accountTransport(target.accessToken));
+      await deleteCloudAccount(
+        accountTransport(target.accessToken),
+        target.accountId,
+      );
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -532,14 +526,10 @@ export default function SettingsCloudSync() {
     } finally {
       setDeletingAccount(false);
     }
-    // The server has accepted the deletion, so sign out whatever happens next.
-    // Unlinking this device's tales is retried until it works.
-    addDeletedAccount(target.accountId);
     setDeleteTarget(null);
     signOut();
     setStatus(t`Account deleted`);
     toast.success(t`Account deleted`);
-    void unlinkDeletedAccounts();
   }
 
   function changeHostedCloudUrl(nextUrl: string) {
