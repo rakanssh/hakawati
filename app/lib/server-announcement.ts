@@ -129,7 +129,7 @@ function parseAnnouncement(
   if (!en || ar === null) return null;
   return {
     id: value.id.toLowerCase(),
-    // Kinds this app doesn't know yet read as news.
+    // Kinds this app doesn't know yet show as info.
     kind: KINDS.includes(value.kind as AnnouncementKind)
       ? (value.kind as AnnouncementKind)
       : "info",
