@@ -27,6 +27,7 @@ export function MobilePlayHeader({ hidden = false }: MobilePlayHeaderProps) {
   // scrolled story text out from under the buttons.
   return (
     <div
+      data-play-header=""
       inert={hidden}
       className={cn(
         "pointer-events-none fixed inset-x-0 z-50 flex items-center gap-2 bg-linear-to-b from-background from-70% to-transparent pt-1.5 pb-3 transition-[translate,opacity] duration-200",
@@ -50,6 +51,7 @@ export function MobilePlayHeader({ hidden = false }: MobilePlayHeaderProps) {
       <div className="min-w-0 flex-1">
         {taleName.trim() && (
           <span
+            data-play-header-title=""
             dir="auto"
             className="block w-fit max-w-full truncate rounded-xs bg-input/75 px-3 py-1 text-sm font-medium text-foreground"
             title={taleName}

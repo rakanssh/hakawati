@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef } from "react";
+import { isMobilePlatform } from "@/lib/platform";
 import {
   beginFrame,
   useSceneAnimated,
@@ -69,6 +70,11 @@ function makeSky({ width, height, column, stage }: StageGeometry) {
 
 /** Orbit: a flat night sky with a stylised red planet turning slowly in the bottom corner. */
 export default function OrbitScene() {
+  // On a phone the tablet fills the screen and hides the sky.
+  return isMobilePlatform() ? null : <OrbitSky />;
+}
+
+function OrbitSky() {
   const geometry = useStageGeometry();
   const animated = useSceneAnimated();
   const canvasRef = useRef<HTMLCanvasElement>(null);
