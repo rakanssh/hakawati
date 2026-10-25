@@ -195,11 +195,8 @@ jobs:
           args: "${{ matrix.args }} -- --locked"
 
   android:
-    # Runs after the desktop builds so their draft release exists to attach to.
-    needs: [verify, release]
+    needs: verify
     environment: production
-    permissions:
-      contents: write
     runs-on: ubuntu-22.04
     env:
       NDK_VERSION: "30.0.16248370"
@@ -278,35 +275,32 @@ jobs:
           HAKAWATI_KEYSTORE_PASSWORD: ${{ secrets.HAKAWATI_KEYSTORE_PASSWORD }}
           HAKAWATI_KEY_ALIAS: ${{ secrets.HAKAWATI_KEY_ALIAS }}
           HAKAWATI_KEY_PASSWORD: ${{ secrets.HAKAWATI_KEY_PASSWORD }}
-        run: |
-          # One bundle for Google Play, which serves each device its own ABI,
-          # and one APK per ABI for installing directly.
-          npx tauri android build --ci --aab $ANDROID_TARGETS
-          npx tauri android build --ci --apk --split-per-abi $ANDROID_TARGETS
+        run: npx tauri android build --ci --aab $ANDROID_TARGETS
 
-      - name: Attach the Android builds to the draft release
+      - name: Check the Play bundle is signed
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ needs.verify.outputs.tag }}
         run: |
           set -eo pipefail
+          aab=$(find src-tauri/gen/android/app/build/outputs/bundle -name '*.aab' | head -n 1)
+          if [ -z "$aab" ]; then
+            echo "::error::The Android build produced no .aab."
+            exit 1
+          fi
+          if ! keytool -printcert -jarfile "$aab" | grep -q "Owner:"; then
+            echo "::error::$aab is unsigned; check the keystore secrets."
+            exit 1
+          fi
           mkdir -p android-release
-          version="${RELEASE_TAG#v}"
-          find src-tauri/gen/android/app/build/outputs \( -name '*.apk' -o -name '*.aab' \) -print0 |
-            while IFS= read -r -d '' file; do
-              name=$(basename "$file")
-              case "$name" in
-                *unsigned*)
-                  echo "::error::$name is unsigned; check the keystore secrets."
-                  exit 1
-                  ;;
-              esac
-              abi=${name#app-}
-              abi=${abi%-release.*}
-              cp "$file" "android-release/Hakawati_${version}_android_${abi}.${name##*.}"
-            done
-          ls -l android-release
-          gh release upload "$RELEASE_TAG" android-release/* --clobber
+          cp "$aab" "android-release/Hakawati_${RELEASE_TAG#v}_android.aab"
+
+      - name: Keep the Play bundle as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hakawati-android-${{ needs.verify.outputs.tag }}
+          path: android-release/*.aab
+          if-no-files-found: error
+          retention-days: 90
 
   ios:
     # Uploads to TestFlight, where testers and App Review pick the build up. An
