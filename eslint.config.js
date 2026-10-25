@@ -90,11 +90,11 @@ const layerBoundaries = [
     ],
   },
   {
-    files: ["app/components/**"],
+    files: ["app/components/**", "app/pages/**"],
     patterns: [
       importsFrom(
         ["repositories"],
-        "Components reach repositories through a service.",
+        "Components and pages reach repositories through a service.",
       ),
     ],
   },

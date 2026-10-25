@@ -47,6 +47,7 @@ import {
   getScenarioPublishLink,
   getScenarioDraftCoverState,
   initializeScenarioDraftCover,
+  markScenarioDraftCoverInitialized,
   upsertScenarioPublishLink,
 } from "@/repositories/scenario-publish-link.repository";
 import {
@@ -579,6 +580,12 @@ export async function publishScenarioDraft(input: {
     draftCoverInitialized: true,
   });
   return detail;
+}
+
+export function markScenarioDraftCoverEdited(
+  localScenarioId: string,
+): Promise<void> {
+  return markScenarioDraftCoverInitialized(localScenarioId);
 }
 
 export async function prepareScenarioPublishDraft(
