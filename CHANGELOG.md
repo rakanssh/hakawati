@@ -26,6 +26,9 @@ and the app shows it in What's New and Updates.
 - Account & Sync has a cloud sync switch, and you can change your display name.
 - Redesigned the input box: action modes are tabs along its top (Say is now Speak), with Roll beside them. With nothing typed, send continues the story.
 - Brass Night is now the default theme.
+- Orbit frames the story in a starship tablet.
+- Phosphor looks like an old terminal, and its text is easier to read.
+- The latest passage is marked by a line beside it and an underline under its first words, drawn in each theme's style.
 - Notices from Hakawati sit in a band across the top of Home and can warn of maintenance or outages.
 
 ### Fixed
