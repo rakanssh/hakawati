@@ -41,17 +41,20 @@ const PREVIEWS: Record<ThemeId, PreviewStyle> = {
     ),
   },
   orbit: {
-    entry: "bg-card/50",
+    entry: "h-[4px] w-[50%] rounded-none border-0 bg-log-do",
+    composer:
+      "inset-x-[20%] rounded-none border-x-0 border-b-0 border-t-2 border-t-primary bg-[oklch(0.105_0.02_268)]",
+    send: "rounded-[1px]",
     back: (
       <>
         {[
           [12, 14],
-          [26, 40],
-          [8, 62],
-          [140, 10],
-          [150, 34],
-          [133, 52],
-          [20, 84],
+          [8, 40],
+          [16, 62],
+          [148, 10],
+          [152, 34],
+          [143, 52],
+          [10, 84],
         ].map(([x, y]) => (
           <circle key={`${x}-${y}`} cx={x} cy={y} r={0.7} fill="#eceeff" />
         ))}
@@ -67,26 +70,66 @@ const PREVIEWS: Record<ThemeId, PreviewStyle> = {
           stroke="oklch(0.96 0.05 72 / 0.7)"
           strokeWidth={0.8}
         />
+        <rect
+          x={26}
+          y={4}
+          width={108}
+          height={94}
+          rx={1.5}
+          fill="oklch(0.22 0.011 265)"
+        />
+        <rect
+          x={29}
+          y={7}
+          width={102}
+          height={88}
+          rx={0.6}
+          fill="oklch(0.145 0.023 268)"
+        />
+        <rect x={34} y={10} width={9} height={1.4} fill="var(--primary)" />
+        <rect x={44} y={10} width={3} height={1.4} fill="oklch(0.86 0.07 78)" />
+        <rect
+          x={49}
+          y={10.5}
+          width={68}
+          height={0.4}
+          fill="oklch(0.76 0.09 282 / 0.35)"
+        />
+        <rect
+          x={120}
+          y={10}
+          width={6}
+          height={1.4}
+          fill="oklch(0.8 0.07 192)"
+        />
       </>
     ),
   },
   phosphor: {
+    column: "border-[3px] border-double border-primary/45 px-[5%] pb-[4%]",
     line: "bg-foreground/70 shadow-[0_0_4px_var(--foreground)]",
     entry:
       "h-[3px] w-[55%] rounded-none border-0 bg-primary shadow-[0_0_4px_var(--primary)]",
-    composer: "rounded-none border-dashed",
+    composer: "rounded-none",
     send: "rounded-none",
     front: (
-      <rect
-        x={2}
-        y={2}
-        width={156}
-        height={96}
-        rx={10}
-        fill="none"
-        stroke="#030503"
-        strokeWidth={4}
-      />
+      <>
+        {Array.from({ length: 40 }, (_, i) => (
+          <path
+            key={i}
+            d={`M0 ${i * 2.5 + 1}h160`}
+            stroke="black"
+            strokeOpacity={0.18}
+            strokeWidth={0.5}
+          />
+        ))}
+        <path
+          d="M0 0h160v100h-160zM4 10a5 5 0 0 1 5-5h142a5 5 0 0 1 5 5v80a5 5 0 0 1-5 5h-142a5 5 0 0 1-5-5z"
+          fillRule="evenodd"
+          fill="oklch(0.2 0.007 85)"
+        />
+        <rect x={142} y={96.6} width={6} height={1.4} fill="var(--primary)" />
+      </>
     ),
   },
   cartridge: {
