@@ -1,4 +1,4 @@
-/* Orbit: a still night sky, frosted panels, and a slowly turning planet in the corner. */
+/* Orbit: a starship tablet against a still night sky, with a slowly turning planet in the corner. */
 
 .theme-orbit {
   color-scheme: dark;
@@ -9,40 +9,40 @@
   --app-texture-opacity: 0;
   --app-texture-blend-mode: normal;
   --background: oklch(0.11 0.022 265);
-  --foreground: oklch(0.91 0.019 265);
+  --foreground: oklch(0.93 0.012 85);
   --card: oklch(0.155 0.025 265);
-  --card-foreground: oklch(0.91 0.019 265);
+  --card-foreground: oklch(0.93 0.012 85);
   --popover: oklch(0.166 0.026 265);
-  --popover-foreground: oklch(0.91 0.019 265);
-  --primary: oklch(0.84 0.075 265);
-  --primary-foreground: oklch(0.1 0.022 265);
+  --popover-foreground: oklch(0.93 0.012 85);
+  --primary: oklch(0.76 0.13 45);
+  --primary-foreground: oklch(0.17 0.02 268);
   --secondary: oklch(0.205 0.025 265);
-  --secondary-foreground: oklch(0.87 0.019 265);
+  --secondary-foreground: oklch(0.89 0.012 85);
   --muted: oklch(0.205 0.024 265);
-  --muted-foreground: oklch(0.67 0.028 265);
+  --muted-foreground: oklch(0.74 0.03 268);
   --accent: oklch(0.23 0.024 265);
-  --accent-foreground: oklch(0.9 0.012 265);
+  --accent-foreground: oklch(0.93 0.012 85);
   --destructive: oklch(0.65 0.17 25);
   --destructive-foreground: oklch(0.98 0.004 265);
   --border: oklch(0.9 0.052 265 / 13%);
   --input: oklch(0.9 0.052 265 / 16%);
-  --ring: oklch(0.84 0.075 265);
-  --chart-1: oklch(0.84 0.075 265);
+  --ring: oklch(0.76 0.13 45);
+  --chart-1: oklch(0.76 0.13 45);
   --chart-2: oklch(0.67 0.09 150);
   --chart-3: oklch(0.67 0.09 232);
   --chart-4: oklch(0.73 0.09 75);
   --chart-5: oklch(0.67 0.1 25);
   --sidebar: oklch(0.096 0.021 265);
-  --sidebar-foreground: oklch(0.88 0.019 265);
-  --sidebar-primary: oklch(0.84 0.075 265);
-  --sidebar-primary-foreground: oklch(0.1 0.022 265);
+  --sidebar-foreground: oklch(0.9 0.012 85);
+  --sidebar-primary: oklch(0.76 0.13 45);
+  --sidebar-primary-foreground: oklch(0.17 0.02 268);
   --sidebar-accent: oklch(0.21 0.024 265);
-  --sidebar-accent-foreground: oklch(0.9 0.015 265);
+  --sidebar-accent-foreground: oklch(0.93 0.012 85);
   --sidebar-border: oklch(0.9 0.052 265 / 11%);
-  --sidebar-ring: oklch(0.84 0.075 265);
-  --log-say: oklch(0.68 0.085 211);
-  --log-do: oklch(0.7 0.08 75);
-  --log-direct: oklch(0.8 0.075 265);
+  --sidebar-ring: oklch(0.76 0.13 45);
+  --log-say: oklch(0.8 0.07 192);
+  --log-do: oklch(0.86 0.07 78);
+  --log-direct: oklch(0.76 0.09 282);
   --log-thinking: oklch(0.66 0.08 319);
   --log-thinking-foreground: oklch(0.77 0.06 319);
   --success: oklch(0.68 0.1 152);
@@ -62,20 +62,234 @@
 }
 
 .theme-orbit {
+  --theme-font-story: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --theme-font-display: "Rajdhani", "Arial Narrow", sans-serif;
+  --theme-story-scale: 1.06;
+  --theme-story-leading: 1.7;
+  --play-column-max: 52rem;
+  --play-composer-max: 52rem;
   --titlebar-background: color-mix(
     in oklch,
     var(--background) 55%,
     transparent
   );
+  --orbit-sand: oklch(0.86 0.07 78);
+  --orbit-periwinkle: oklch(0.76 0.09 282);
+  --orbit-sea: oklch(0.8 0.07 192);
+  --orbit-line: oklch(0.38 0.03 268 / 70%);
 }
 
 .theme-orbit [data-titlebar] {
   border-bottom-color: color-mix(in oklch, var(--border) 50%, transparent);
 }
 
-.theme-orbit :is([data-log-entry], [data-composer-surface]) {
-  background: color-mix(in oklch, var(--card) 52%, transparent);
-  backdrop-filter: blur(10px);
+.theme-orbit
+  :is(
+    [data-titlebar-title],
+    [data-composer-mode],
+    [data-sidebar-heading],
+    [data-story-panel-tabs] [role="tab"],
+    .composer-command-label,
+    .composer-tab-active-label
+  ) {
+  font-family: var(--theme-font-display);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.theme-orbit [data-titlebar-title] {
+  font-size: 0.8125rem;
+  letter-spacing: 0.18em;
+  color: var(--orbit-sand);
+}
+
+/* The story and the composer share one tablet; on a phone, the phone is the tablet. */
+.theme-orbit [data-play-device] {
+  position: relative;
+  display: grid;
+  grid-row: 1 / -1;
+  grid-template-rows: minmax(0, 1fr) auto;
+  width: min(100% - 1.5rem, var(--play-column-max) + 1.75rem);
+  margin: 0.75rem auto;
+  border: 0.875rem solid transparent;
+  border-radius: 4px;
+  background:
+    linear-gradient(115deg, oklch(1 0 0 / 0.045), transparent 30%) padding-box,
+    linear-gradient(oklch(0.155 0.024 268), oklch(0.13 0.022 268)) padding-box,
+    linear-gradient(oklch(1 0 0 / 0.14) 0 0) top / 100% 1px no-repeat border-box,
+    linear-gradient(oklch(0.11 0.01 265) 0 0) center top 5px / 44px 4px
+      no-repeat border-box,
+    linear-gradient(var(--primary) 0 0) center bottom 5px / 24px 4px no-repeat
+      border-box,
+    linear-gradient(
+        160deg,
+        oklch(0.31 0.012 265),
+        oklch(0.2 0.01 265) 38%,
+        oklch(0.15 0.01 265)
+      )
+      border-box;
+  box-shadow:
+    inset 0 0 0 1px oklch(0 0 0 / 0.6),
+    inset 0 0 40px oklch(0 0 0 / 0.35),
+    0 0 0 1px oklch(1 0 0 / 0.07),
+    0 50px 90px -40px oklch(0 0 0 / 0.85);
+
+  @variant phone {
+    width: 100%;
+    margin: 0;
+    border-width: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+.theme-orbit [data-play-device]::before {
+  content: "";
+  position: absolute;
+  top: 1.125rem;
+  inset-inline: 1.75rem;
+  height: 6px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--primary) 0 0) left top / 48px 100% no-repeat,
+    linear-gradient(var(--orbit-sand) 0 0) left 52px top / 16px 100% no-repeat,
+    linear-gradient(
+        color-mix(in oklch, var(--orbit-periwinkle) 30%, transparent) 0 0
+      )
+      left 84px center / calc(100% - 136px) 1px no-repeat,
+    linear-gradient(var(--orbit-periwinkle) 0 0) right 34px top / 8px 100%
+      no-repeat,
+    linear-gradient(var(--orbit-sea) 0 0) right top / 30px 100% no-repeat;
+
+  @variant phone {
+    display: none;
+  }
+}
+
+.theme-orbit [data-play-backdrop] {
+  top: 1.75rem;
+  bottom: 0;
+  border-radius: 0;
+
+  @variant phone {
+    top: env(safe-area-inset-top);
+  }
+}
+
+/* Your turns: the voice as a coloured tag before your words. */
+.theme-orbit [data-log-entry] {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  padding: 0.125rem 0;
+}
+
+.theme-orbit [data-log-entry-icon] {
+  box-sizing: content-box;
+  margin-top: 0.15em;
+  margin-inline-end: 0.75rem;
+  padding: 0.2em 0.55em;
+  border-radius: 2px;
+  color: var(--primary-foreground);
+  background: var(--log-do);
+}
+
+.theme-orbit [data-log-entry="say"] [data-log-entry-icon] {
+  background: var(--log-say);
+}
+
+.theme-orbit [data-log-entry="direct"] [data-log-entry-icon] {
+  background: var(--log-direct);
+}
+
+.theme-orbit [data-log-entry="do"] [data-log-entry-text] {
+  color: color-mix(in oklch, var(--log-do) 70%, var(--foreground));
+}
+
+.theme-orbit [data-log-entry="say"] [data-log-entry-text] {
+  color: color-mix(in oklch, var(--log-say) 70%, var(--foreground));
+}
+
+.theme-orbit [data-log-entry="direct"] [data-log-entry-text] {
+  color: color-mix(in oklch, var(--log-direct) 70%, var(--foreground));
+}
+
+.theme-orbit [data-log-meta] > button:has(> svg:only-child) {
+  border: 1px solid var(--orbit-line);
+  border-radius: 2px;
+}
+
+.theme-orbit [data-composer-tab] {
+  border: 0;
+  border-radius: 2px 2px 0 0;
+  background: oklch(0.175 0.022 268);
+  color: var(--muted-foreground);
+}
+
+.theme-orbit [data-composer-tab][data-active] {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 700;
+}
+
+.theme-orbit [data-composer-surface] {
+  border-color: var(--orbit-line);
+  border-top: 2px solid var(--primary);
+  background: oklch(0.105 0.02 268);
+  box-shadow: none;
+}
+
+.theme-orbit [data-composer-send] {
+  box-shadow: 0 0 18px color-mix(in oklch, var(--primary) 40%, transparent);
+}
+
+.theme-orbit [data-composer-mic] {
+  border-color: var(--orbit-line);
+  background: transparent;
+}
+
+.theme-orbit [data-composer-roll]:not([aria-pressed="true"]) {
+  border-color: color-mix(in oklch, var(--orbit-sand) 55%, transparent);
+  background: transparent;
+  color: var(--orbit-sand);
+}
+
+.theme-orbit [data-play-header] {
+  background-image: linear-gradient(oklch(0.155 0.024 268) 70%, transparent);
+}
+
+.theme-orbit [data-play-header-title] {
+  border-inline-start: 3px solid var(--primary);
+  font-family: var(--theme-font-display);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--orbit-sand);
+}
+
+.theme-orbit [data-latest-rail] {
+  box-shadow: 0 0 10px color-mix(in oklch, var(--primary) 45%, transparent);
+}
+
+.theme-orbit [data-latest-rail]::before {
+  content: "";
+  position: absolute;
+  top: -0.25rem;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  translate: -50% 0;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  background: oklch(0.15 0.024 268);
+
+  @variant phone {
+    width: 5px;
+    height: 5px;
+  }
 }
 
 /* Two soft, flat glows: violet at the top-left, warm near the planet. */
@@ -148,14 +362,4 @@
     opacity: 1;
     transform: scale(1.015);
   }
-}
-
-/* The reading surface: frosted glass, so stars and the planet blur away behind the text. */
-.theme-orbit [data-play-backdrop] {
-  background: color-mix(in oklch, var(--card) 42%, transparent);
-  backdrop-filter: blur(18px) saturate(1.15);
-  border: 1px solid oklch(0.9 0.03 265 / 0.12);
-  box-shadow:
-    inset 0 1px 0 oklch(1 0 0 / 0.06),
-    0 30px 60px -30px oklch(0 0 0 / 0.6);
 }

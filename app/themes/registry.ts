@@ -63,7 +63,12 @@ export const themes: readonly ThemeDefinition[] = [
     id: "orbit",
     mode: "dark",
     name: msg`Orbit`,
-    description: msg`A still night sky with a slowly turning red planet.`,
+    description: msg`A starship tablet against a night sky and a slowly turning red planet.`,
+    fonts: [
+      "Barlow:ital,wght@0,400;0,500;0,600;1,400",
+      "Rajdhani:wght@500;600;700",
+    ],
+    nameFont: '"Rajdhani", "Arial Narrow", sans-serif',
   },
   {
     id: "phosphor",

@@ -146,7 +146,19 @@
 
 /* The latest passage is marked as if with a yellow highlighter. */
 .theme-typewriter [data-story-highlight] {
+  border-radius: 0.15rem;
   background-color: oklch(0.93 0.11 98 / 0.55);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.theme-typewriter [data-latest-rail] {
+  display: none;
+}
+
+.theme-typewriter [data-story-latest-lead] {
+  padding-bottom: 0;
+  background: none;
 }
 
 .theme-typewriter [data-log-meta] {

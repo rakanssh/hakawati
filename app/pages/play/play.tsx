@@ -304,35 +304,37 @@ export default function Play() {
         data-play-stage=""
         className="relative grid h-full grid-rows-[1fr_auto]"
       >
-        <PlayLogDisplay
-          blocks={blocks}
-          loadingOlder={loadingOlder}
-          isStreaming={loading}
-          currentlyEditingLogId={currentlyEditingLogId}
-          setCurrentlyEditingLogId={setCurrentlyEditingLogId}
-          updateLogEntry={commitLogEntryEdit}
-          viewportRef={viewportRef}
-          onViewportScroll={handleViewportScroll}
-          narration={{
-            activeItemId: ttsPlayback.activeItemId,
-            loadingItemId: ttsPlayback.loadingItemId,
-            onNarrate: ttsPlayback.playNow,
-          }}
-        />
-        <PlayInputControls
-          action={action}
-          setAction={setAction}
-          input={input}
-          setInput={setInput}
-          onSubmit={handleSubmit}
-          onStop={handleStop}
-          loading={loading}
-          saving={saving}
-          onContinue={handleContinue}
-          onRetry={handleRetry}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-        />
+        <div data-play-device="" className="contents">
+          <PlayLogDisplay
+            blocks={blocks}
+            loadingOlder={loadingOlder}
+            isStreaming={loading}
+            currentlyEditingLogId={currentlyEditingLogId}
+            setCurrentlyEditingLogId={setCurrentlyEditingLogId}
+            updateLogEntry={commitLogEntryEdit}
+            viewportRef={viewportRef}
+            onViewportScroll={handleViewportScroll}
+            narration={{
+              activeItemId: ttsPlayback.activeItemId,
+              loadingItemId: ttsPlayback.loadingItemId,
+              onNarrate: ttsPlayback.playNow,
+            }}
+          />
+          <PlayInputControls
+            action={action}
+            setAction={setAction}
+            input={input}
+            setInput={setInput}
+            onSubmit={handleSubmit}
+            onStop={handleStop}
+            loading={loading}
+            saving={saving}
+            onContinue={handleContinue}
+            onRetry={handleRetry}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+          />
+        </div>
         <TtsPlayer
           visible={ttsPlayback.isVisible}
           status={ttsPlayback.status}

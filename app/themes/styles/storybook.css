@@ -155,3 +155,23 @@
   box-shadow: 2px 3px 0 -1px
     color-mix(in oklch, var(--foreground) 25%, transparent);
 }
+
+.theme-storybook {
+  --latest-rail-width: 10px;
+}
+
+.theme-storybook [data-latest-rail] {
+  border-radius: 0;
+  background: var(--primary);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 24'%3E%3Cpath d='M5 0q7 6 0 12t0 12' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E")
+    0 0 / 10px 24px repeat-y;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 24'%3E%3Cpath d='M5 0q7 6 0 12t0 12' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E")
+    0 0 / 10px 24px repeat-y;
+}
+
+.theme-storybook [data-story-latest-lead] {
+  padding-bottom: 0;
+  background: none;
+  text-decoration: underline wavy var(--primary) 1.5px;
+  text-underline-offset: 5px;
+}

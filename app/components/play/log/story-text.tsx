@@ -161,6 +161,27 @@ function rehypeStorySegments({
   };
 }
 
+const LEAD_WORDS = /^(\s*)(\S+(?:\s+\S+){0,2})/;
+const LEAD_MAX = 28;
+
+function markLead(text: string) {
+  const match = LEAD_WORDS.exec(text);
+  if (!match) return text;
+  const [, space, words] = match;
+  const lead =
+    words.length > LEAD_MAX
+      ? words.slice(0, LEAD_MAX).replace(/\s+\S*$/, "") ||
+        words.slice(0, LEAD_MAX)
+      : words;
+  return (
+    <>
+      {space}
+      <span data-story-latest-lead="">{lead}</span>
+      {text.slice(space.length + lead.length)}
+    </>
+  );
+}
+
 function getOnlySegmentId(node?: Element) {
   const ids = new Set<string>();
   function visit(element: Element) {
@@ -231,16 +252,15 @@ export function StoryText({
           span: ({ children, node }) => {
             const id = node?.properties["data-story-segment-id"];
             if (typeof id !== "string") return <span>{children}</span>;
-            const isFocusable =
-              onEditSegment &&
+            const isStart =
               node?.properties["data-story-segment-start"] === true;
+            const isFocusable = onEditSegment && isStart;
+            const isLatest = id === highlightedSegmentId;
             return (
               <span
                 data-story-segment-id={id}
-                data-story-highlight={id === highlightedSegmentId || undefined}
+                data-story-highlight={isLatest || undefined}
                 className={[
-                  id === highlightedSegmentId &&
-                    "box-decoration-clone rounded-[0.15rem] bg-primary/10",
                   onEditSegment && "cursor-pointer",
                   isFocusable &&
                     "focus-visible:rounded-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -262,7 +282,12 @@ export function StoryText({
                     : undefined
                 }
               >
-                {children}
+                {isLatest &&
+                isStart &&
+                !editingSegmentId &&
+                typeof children === "string"
+                  ? markLead(children)
+                  : children}
               </span>
             );
           },

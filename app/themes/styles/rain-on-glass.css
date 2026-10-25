@@ -86,3 +86,10 @@
     inset 0 1px 0 oklch(1 0 0 / 0.7),
     0 20px 40px -26px oklch(0.4 0.03 250 / 0.35);
 }
+
+.theme-rain-on-glass [data-latest-rail] {
+  background: linear-gradient(
+    color-mix(in oklch, var(--primary) 85%, transparent),
+    transparent
+  );
+}
