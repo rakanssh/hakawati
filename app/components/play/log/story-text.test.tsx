@@ -87,10 +87,41 @@ describe("StoryText", () => {
       "[data-story-segment-id]",
     );
     for (const span of spans) {
-      expect(span.classList.contains("bg-primary/10")).toBe(
+      expect(span.hasAttribute("data-story-highlight")).toBe(
         span.dataset.storySegmentId === "new",
       );
     }
+    expect(
+      container.querySelector("[data-story-latest-lead]")?.textContent,
+    ).toBe("opens");
+  });
+
+  it("marks the first three words of the latest passage, mid-paragraph", () => {
+    const container = renderStory({
+      segments: [
+        { id: "old", text: "A ship takes shape." },
+        { id: "new", text: " The lights hold still, as if waiting." },
+      ],
+      highlightedSegmentId: "new",
+    });
+
+    const lead = container.querySelector("[data-story-latest-lead]");
+    expect(lead?.textContent).toBe("The lights hold");
+    expect(lead?.closest("[data-story-segment-id]")?.textContent).toBe(
+      " The lights hold still, as if waiting.",
+    );
+  });
+
+  it("leaves the latest passage unmarked while it is being edited", () => {
+    const container = renderStory({
+      segments: [{ id: "new", text: "The lights hold still." }],
+      highlightedSegmentId: "new",
+      editingSegmentId: "new",
+      onCommitEdit: () => {},
+      onCancelEdit: () => {},
+    });
+
+    expect(container.querySelector("[data-story-latest-lead]")).toBeNull();
   });
 
   it("maps adjacent mid-word entries and split Markdown delimiters", () => {

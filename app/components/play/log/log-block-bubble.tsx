@@ -23,6 +23,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useLatestPassageRail } from "@/hooks/useLatestPassageRail";
 import { StoryText } from "./story-text";
 
 interface LogBlockBubbleProps {
@@ -61,6 +62,14 @@ export function LogBlockBubble({
     (state) => state.thinkingVisibility,
   );
   const prevStreamingTextLengthRef = useRef(0);
+
+  const storyRef = useRef<HTMLDivElement>(null);
+  const railRef = useRef<HTMLSpanElement>(null);
+  const marksLatest =
+    !!highlightedEntryId &&
+    block.entries.some((entry) => entry.id === highlightedEntryId) &&
+    !block.entries.some((entry) => entry.id === editingEntryId);
+  useLatestPassageRail(storyRef, railRef, marksLatest);
 
   const actions: LLMAction[] = block.entries.flatMap((e) => e.actions || []);
   const latestError = block.entries.at(-1)?.error;
@@ -167,10 +176,14 @@ export function LogBlockBubble({
   return (
     <div data-log-block="" className="flex w-full flex-col items-start">
       <div
+        ref={storyRef}
         data-log-story=""
         className="relative w-full whitespace-pre-wrap break-words font-normal leading-[1.72] tracking-normal text-foreground/95"
         style={{ fontSize: "var(--game-log-font-size, 1rem)" }}
       >
+        {marksLatest && (
+          <span ref={railRef} data-latest-rail="" aria-hidden="true" hidden />
+        )}
         <StoryText
           segments={block.entries}
           onEditSegment={editDisabled || isStreaming ? undefined : onEditStart}

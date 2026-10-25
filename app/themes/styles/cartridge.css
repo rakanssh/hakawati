@@ -218,3 +218,24 @@
     0 4px 0 0 var(--foreground),
     -4px 0 0 0 var(--foreground);
 }
+
+.theme-cartridge {
+  --latest-rail-width: 4px;
+  --latest-underline: 3px;
+}
+
+.theme-cartridge [data-latest-rail] {
+  border-radius: 0;
+  background: repeating-linear-gradient(
+    var(--primary) 0 8px,
+    transparent 8px 12px
+  );
+}
+
+.theme-cartridge [data-story-latest-lead] {
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--primary) 0 4px,
+    transparent 4px 8px
+  );
+}

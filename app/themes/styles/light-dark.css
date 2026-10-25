@@ -165,3 +165,7 @@
   border: 1px solid var(--border);
   box-shadow: 0 24px 48px -30px oklch(0 0 0 / 0.6);
 }
+
+.theme-dark {
+  --latest-color: color-mix(in oklch, var(--primary) 85%, transparent);
+}

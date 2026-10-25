@@ -4,9 +4,12 @@
  * Each theme is a class on <html> (`.theme-<id>`) that sets the colour tokens below, plus optional
  * restyles keyed to the data-* hooks on the play screen:
  *   [data-play-stage]   the story area and composer        [data-play-column]  the reading column
+ *   [data-play-device]  the story and composer together, display: contents until a theme frames them
  *   [data-log-story]    narration text                     [data-log-meta]     the row under narration
  *   [data-log-entry]    a player turn (="do|say|direct")   [data-log-caret]    the streaming caret
+ *   [data-latest-rail]  the line beside the latest passage [data-story-latest-lead] its first words
  *   [data-composer-*]   the input box and its controls     [data-titlebar]     the desktop title bar
+ *   [data-play-header]  the phone's bar over the story     [data-play-header-title] the tale's name in it
  * Restyles are unlayered so they win over Tailwind utilities without !important.
  */
 
@@ -114,6 +117,51 @@
   50% {
     opacity: 0;
   }
+}
+
+/* ---------- Latest passage ---------- */
+
+:root {
+  --latest-color: var(--primary);
+  --latest-rail-width: 3px;
+  /* From the text to the middle of the rail, inside the reading column's padding. */
+  --latest-rail-gap: 0.4375rem;
+  --latest-underline: 2px;
+  --latest-fade: 90deg;
+
+  @media (width >= 40rem) {
+    --latest-rail-gap: 0.75rem;
+  }
+
+  @media (width >= 64rem) {
+    --latest-rail-gap: 1.1875rem;
+  }
+}
+
+[data-story-latest-lead]:dir(rtl) {
+  --latest-fade: 270deg;
+}
+
+[data-latest-rail] {
+  position: absolute;
+  inset-inline-start: calc(
+    -1 * var(--latest-rail-gap) - var(--latest-rail-width) / 2
+  );
+  width: var(--latest-rail-width);
+  border-radius: 1px;
+  background: var(--latest-color);
+  pointer-events: none;
+}
+
+[data-story-latest-lead] {
+  padding-bottom: var(--latest-underline);
+  background: linear-gradient(
+      var(--latest-fade),
+      var(--latest-color),
+      var(--latest-color) 55%,
+      transparent
+    )
+    no-repeat 0 100% / 100% var(--latest-underline);
 }
 
 /* ---------- Scenery ---------- */
