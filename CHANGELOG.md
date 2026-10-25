@@ -11,6 +11,8 @@ and the app shows it in What's New and Updates.
 
 ## [Unreleased]
 
+## [v1.3.0] - 2026-10-25
+
 ### Added
 
 - Hakawati for Android and iOS, with Speech to Text, sign-in, and cloud sync.
