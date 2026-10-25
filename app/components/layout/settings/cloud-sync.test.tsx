@@ -68,6 +68,7 @@ const syncRepoMocks = vi.hoisted(() => ({
 
 const syncServiceMocks = vi.hoisted(() => ({
   createSyncTransport: vi.fn(() => ({})),
+  getHostedAccount: vi.fn(),
   fetchHostedAccountUsage: vi.fn(),
   fetchSyncCapabilities: vi.fn(),
   listHostedDevices: vi.fn(),
@@ -108,6 +109,10 @@ vi.mock("@/store", () => ({
 vi.mock("@/repositories/sync.repository", () => syncRepoMocks);
 vi.mock("@/services/sync", () => syncServiceMocks);
 vi.mock("@/services/sync-wakeup", () => syncWakeMocks);
+const deletedAccountMocks = vi.hoisted(() => ({
+  deleteCloudAccount: vi.fn(),
+}));
+vi.mock("@/services/deleted-accounts", () => deletedAccountMocks);
 vi.mock("@/services/secret-store", () => ({
   deleteHostedRefreshToken: vi.fn(),
   setHostedRefreshToken: vi.fn(),
@@ -637,6 +642,122 @@ describe("SettingsCloudSync storage usage", () => {
     expect(document.querySelector("#sync-display-name")).toBeNull();
 
     view.cleanup();
+  });
+
+  describe("deleting the account", () => {
+    function button(label: string, within: ParentNode = document.body) {
+      return [...within.querySelectorAll("button")].find(
+        (element) => element.textContent === label,
+      );
+    }
+
+    const signedInAccount = {
+      id: "account-1",
+      displayName: "Player",
+      emailNormalized: "player@example.com",
+    };
+
+    async function openConfirmation() {
+      await act(async () => button("Delete account")!.click());
+      await flush();
+      return document.querySelector('[role="alertdialog"]');
+    }
+
+    async function confirmDelete() {
+      const dialog = (await openConfirmation())!;
+      expect(dialog.textContent).toContain("Tales on this device stay.");
+      await act(async () => button("Delete account", dialog)!.click());
+      await flush();
+    }
+
+    beforeEach(() => {
+      syncServiceMocks.getHostedAccount.mockResolvedValue(signedInAccount);
+    });
+
+    it("deletes it after confirming, then signs out", async () => {
+      deletedAccountMocks.deleteCloudAccount.mockResolvedValue(undefined);
+      const view = render();
+      await flush();
+
+      await confirmDelete();
+
+      expect(deletedAccountMocks.deleteCloudAccount).toHaveBeenCalledWith(
+        {},
+        "account-1",
+      );
+      expect(syncStoreState.clearSession).toHaveBeenCalled();
+      expect(syncRepoMocks.setSyncProfileDisabled).toHaveBeenCalledWith(
+        "hosted",
+        "signed_out",
+      );
+      expect(toastMocks.success).toHaveBeenCalledWith("Account deleted");
+      expect(document.querySelector('[role="alertdialog"]')).toBeNull();
+
+      view.cleanup();
+    });
+
+    it("names and cleans up the account the sign-in belongs to, not the one shown", async () => {
+      syncServiceMocks.getHostedAccount.mockResolvedValue({
+        id: "account-2",
+        displayName: "Other",
+        emailNormalized: "other@example.com",
+      });
+      deletedAccountMocks.deleteCloudAccount.mockResolvedValue(undefined);
+      const view = render();
+      await flush();
+
+      const dialog = (await openConfirmation())!;
+      expect(dialog.textContent).toContain("other@example.com");
+      await act(async () => button("Delete account", dialog)!.click());
+      await flush();
+
+      expect(deletedAccountMocks.deleteCloudAccount).toHaveBeenCalledWith(
+        {},
+        "account-2",
+      );
+
+      view.cleanup();
+    });
+
+    it("stays signed in and keeps the dialog open when deletion fails", async () => {
+      deletedAccountMocks.deleteCloudAccount.mockRejectedValue(
+        new Error("Network down"),
+      );
+      const view = render();
+      await flush();
+
+      await confirmDelete();
+
+      expect(toastMocks.error).toHaveBeenCalledWith("Network down");
+      expect(syncStoreState.clearSession).not.toHaveBeenCalled();
+      expect(document.querySelector('[role="alertdialog"]')).not.toBeNull();
+
+      view.cleanup();
+    });
+
+    it("doesn't ask when the server can't say whose sign-in this is", async () => {
+      syncServiceMocks.getHostedAccount.mockRejectedValue(
+        new Error("Invalid access token"),
+      );
+      const view = render();
+      await flush();
+
+      expect(await openConfirmation()).toBeNull();
+      expect(toastMocks.error).toHaveBeenCalledWith("Invalid access token");
+      expect(deletedAccountMocks.deleteCloudAccount).not.toHaveBeenCalled();
+
+      view.cleanup();
+    });
+
+    it("isn't offered until the sign-in is current", async () => {
+      syncStoreState.accessToken = "";
+      const view = render();
+      await flush();
+
+      expect(button("Delete account")).toBeUndefined();
+
+      view.cleanup();
+    });
   });
   it("stays on the page you moved to when saving tale choices finishes", async () => {
     vi.mocked(listUndecidedTales).mockResolvedValue([

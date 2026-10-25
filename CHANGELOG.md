@@ -7,6 +7,7 @@ All notable changes to this project are documented in this file.
 ### Added
 
 - Hakawati for Android and iOS, with dictation, sign-in, and cloud sync.
+- Delete your Hakawati Cloud account from Account & Sync.
 
 ### Changed
 

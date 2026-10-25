@@ -370,6 +370,24 @@ export async function deleteTaleSyncState(input: {
   });
 }
 
+export async function forgetSyncAccount(
+  profileId: string,
+  accountId?: string | null,
+): Promise<void> {
+  await enqueueLocalOperation(async () => {
+    const db = await getDb();
+    await db.execute(
+      `DELETE FROM tale_sync_state WHERE profile_id = ? AND account_id = ?`,
+      [profileId, accountScope(accountId)],
+    );
+    await db.execute(
+      `DELETE FROM tale_sync_preferences
+       WHERE profile_id IS ? AND account_id = ?`,
+      [profileId, accountScope(accountId)],
+    );
+  });
+}
+
 export async function setTaleSyncStatus(input: {
   profileId: string;
   accountId?: string | null;
