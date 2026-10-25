@@ -63,6 +63,8 @@
   --color-log-thinking-foreground: var(--log-thinking-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-story-character: var(--story-character);
   --color-story-character-foreground: var(--story-character-foreground);
   --color-story-thing: var(--story-thing);

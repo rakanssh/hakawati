@@ -29,10 +29,8 @@ import {
 } from "@/components/play/log";
 import { getPlaceholderMessage, Action } from "@/lib/play-utils";
 import { cn } from "@/lib/utils";
-import {
-  isMobilePlatform as isMobilePlatformDevice,
-  useIsMobile,
-} from "@/hooks/useIsMobile";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { isMobilePlatform as isMobilePlatformDevice } from "@/lib/platform";
 import {
   appendTranscriptToInput,
   MicrophonePermissionError,

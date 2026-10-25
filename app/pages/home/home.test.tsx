@@ -171,7 +171,7 @@ vi.mock("@/components/scenario", async () => ({
 vi.mock("@/components/layout/settings", () => ({ SettingsModal: () => null }));
 vi.mock("@/components/layout", () => ({ WhatsNewModal: () => null }));
 vi.mock("@/components/layout/server-announcement", () => ({
-  ServerAnnouncementCard: () => null,
+  ServerAnnouncementBanner: () => null,
 }));
 vi.mock("@/components/tales/tale-conflict-dialog", () => ({
   TaleConflictDialog: () => null,

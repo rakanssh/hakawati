@@ -5,7 +5,8 @@ import { exit } from "@tauri-apps/plugin-process";
 import { t } from "@lingui/core/macro";
 import { toast } from "sonner";
 import { flushPendingAutoSaves } from "./useAutoSave";
-import { Platform, useIsMobile } from "./useIsMobile";
+import { Platform } from "@/lib/platform";
+import { useIsMobile } from "./useIsMobile";
 
 // Radix layers (dialogs, drawers, sheets, menus, popovers, selects) close on Escape.
 const OPEN_LAYER_SELECTOR = [
