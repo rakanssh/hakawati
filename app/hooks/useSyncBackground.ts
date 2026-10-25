@@ -25,8 +25,8 @@ import {
   SyncHttpError,
   syncLinkedTale,
   uploadTalePackage,
-  type SyncProfile,
 } from "@/services/sync";
+import type { SyncProfile } from "@/types/sync.type";
 import { addSyncWakeListener, notifySyncChanged } from "@/services/sync-wakeup";
 import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
 
@@ -34,9 +34,6 @@ const HOSTED_PROFILE_ID = "hosted";
 const PERSONAL_PROFILE_ID = "personal";
 const SYNC_INTERVAL_MS = 60_000;
 
-// The cloud refused a write for lack of space. New tales, and changes too once
-// a change was refused, wait until the cloud holds fewer tales instead of
-// uploading whole tales into a full cloud.
 type CloudFull = {
   scope: string;
   remoteTaleCount: number;
@@ -150,8 +147,6 @@ export function useSyncBackground(dbReady: boolean) {
           const devices = await listHostedDevices(transport);
           if (signal.aborted) return;
           if (!devices.some((device) => device.id === activeProfile.deviceId)) {
-            // Removed from the account elsewhere. It stays off until turned
-            // back on here, rather than registering itself again.
             await setSyncProfileDisabled(activeProfile.id, "user_disabled");
             return;
           }
@@ -173,7 +168,6 @@ export function useSyncBackground(dbReady: boolean) {
         const cloudFull =
           cloudFullRef.current?.scope === scope ? cloudFullRef.current : null;
         if (!cloudFull || remoteTales.length < cloudFull.remoteTaleCount) {
-          // Space may have been freed since the cloud refused these tales.
           if (cloudFull || !retriedCloudFullScopesRef.current.has(scope)) {
             await retryCloudFullTaleSyncs(
               activeProfile.id,
@@ -274,8 +268,6 @@ export function useSyncBackground(dbReady: boolean) {
               noteCloudFull(false);
               continue;
             }
-            // Sending the same tale again would be refused the same way, as
-            // would a create whose key was spent on a tale since removed.
             if (
               error instanceof SyncHttpError &&
               (isRefusedSyncError(error.code) ||
@@ -294,15 +286,11 @@ export function useSyncBackground(dbReady: boolean) {
           if (signal.aborted) return;
           const remoteTale = remoteById.get(state.remoteTaleId);
           if (!remoteTale) {
-            // Keep-both copies and tales opened from the cloud have no sync
-            // preference, so the loop above never unlinks them.
             if (!forgottenLocalIds.has(state.localTaleId)) {
               await forgetRemovedCloudTale(state.localTaleId);
             }
             continue;
           }
-          // Tales refused earlier were queued again above, but this list
-          // still shows their refusal.
           const hasChanges =
             state.pendingStatus === "push" ||
             (state.pendingStatus === "error" &&

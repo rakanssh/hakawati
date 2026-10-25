@@ -26,7 +26,6 @@ async function collect<T>(iterator: AsyncIterable<T>): Promise<T[]> {
   return out;
 }
 
-/** A body that sends `lines` and then nothing, like a connection that went quiet. */
 function makeStalledStream(lines: string[] = []) {
   const cancel = vi.fn();
   let send!: (line: string) => void;

@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiPreset, ResponseMode } from "@/types";
-import type { LLMModel } from "./schema";
+import { ApiPreset, type LLMModel, ResponseMode } from "@/types";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { generateScenario } from "./scenarioGenerator";
 import {

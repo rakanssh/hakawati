@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useChatGpt } from "@/hooks/useChatGpt";
+import { dismissChatGptPlanNotice } from "@/services/chatgpt-connection";
 import { useChatGptStore } from "@/store/useChatGptStore";
 import chatGptLogo from "@/assets/chatgpt-logo-white.svg";
 
@@ -175,12 +176,11 @@ export function ChatGptConnection() {
 
 export function ChatGptPlanNotice() {
   const open = useChatGptStore((state) => state.showPlanNotice);
-  const dismiss = useChatGptStore((state) => state.dismissPlanNotice);
   return (
     <Dialog
       open={open}
       onOpenChange={(value) => {
-        if (!value) dismiss();
+        if (!value) dismissChatGptPlanNotice();
       }}
     >
       <DialogContent>
@@ -196,7 +196,7 @@ export function ChatGptPlanNotice() {
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button onClick={dismiss}>
+          <Button onClick={dismissChatGptPlanNotice}>
             <Trans>Got it</Trans>
           </Button>
         </DialogFooter>

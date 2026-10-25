@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { useLLMProviders } from "@/hooks/useLLMProviders";
-import type { LLMModel } from "@/services/llm/schema";
-import { manualModel, useChooseModel } from "@/hooks/useChooseModel";
+import { useChooseModel } from "@/hooks/useChooseModel";
+import { manualModel } from "@/lib/model-utils";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { ApiPreset, type ModelRole } from "@/types";
+import { ApiPreset, type LLMModel, type ModelRole } from "@/types";
 import { getModelMetaLabels } from "../../model-select-meta";
 import {
   PlainRow,

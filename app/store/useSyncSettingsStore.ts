@@ -33,7 +33,6 @@ export interface SyncSettingsStore {
   hostedDeviceIdsByAccountId: Record<string, string>;
   deletedAccountIds: string[];
   hostedRefreshFailed: boolean;
-  // The cloud refuses this app version. Checked again on every sync pass.
   cloudUpdateRequired: boolean;
   setCloudBaseUrl: (baseUrl: string) => void;
   setPersonalBaseUrl: (baseUrl: string) => void;

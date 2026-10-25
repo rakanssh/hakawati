@@ -431,7 +431,6 @@ describe("usePlaySession", () => {
       text: "",
       error: "No auth credentials found",
     });
-    // Saving keeps the reason, where an Error would have become `{}`.
     const [saved] = persistenceMocks.saveTurn.mock.calls[0][1];
     expect(JSON.parse(JSON.stringify(saved)).error).toBe(
       "No auth credentials found",

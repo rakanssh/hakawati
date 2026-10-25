@@ -1,8 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useChatGptStore } from "./useChatGptStore";
-import { useSettingsStore } from "./useSettingsStore";
+import { useChatGptStore } from "@/store/useChatGptStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import { ApiPreset } from "@/types";
-import type { ChatGptSession } from "@/services/chatgpt";
+import type { ChatGptSession } from "@/types/chatgpt.type";
+import {
+  cancelChatGptConnect,
+  connectChatGpt,
+  disconnectChatGpt,
+  dismissChatGptPlanNotice,
+  loadChatGptSession,
+} from "./chatgpt-connection";
 
 const { auth, notifySessionChanged } = vi.hoisted(() => {
   let listener = () => {};
@@ -76,18 +83,18 @@ beforeEach(() => {
 
 describe("ChatGPT connection state", () => {
   it("preserves the selected model after reopening the app with the same account", async () => {
-    await useChatGptStore.getState().load();
+    await loadChatGptSession();
     expect(useSettingsStore.getState().modelRoles.narrator.model).toEqual(
       selectedModel,
     );
   });
 
   it("clears account-scoped models when disconnecting and reconnecting with another account", async () => {
-    await useChatGptStore.getState().load();
-    await useChatGptStore.getState().signOut();
+    await loadChatGptSession();
+    await disconnectChatGpt();
     expect(useChatGptStore.getState().session?.account).toBeNull();
     auth.signInWithChatGpt.mockResolvedValueOnce(secondAccount);
-    await useChatGptStore.getState().signIn();
+    await connectChatGpt();
     expect(auth.signInWithChatGpt).toHaveBeenCalledWith({
       signal: expect.any(AbortSignal),
     });
@@ -98,10 +105,10 @@ describe("ChatGPT connection state", () => {
   });
 
   it("explains plan use once and preserves the acknowledgement", async () => {
-    await useChatGptStore.getState().signIn();
+    await connectChatGpt();
     expect(useChatGptStore.getState().showPlanNotice).toBe(true);
-    useChatGptStore.getState().dismissPlanNotice();
-    await useChatGptStore.getState().signIn();
+    dismissChatGptPlanNotice();
+    await connectChatGpt();
     expect(useChatGptStore.getState().showPlanNotice).toBe(false);
     expect(useSettingsStore.getState().chatGptPlanNoticeAcknowledged).toBe(
       true,
@@ -109,7 +116,7 @@ describe("ChatGPT connection state", () => {
   });
 
   it("cancels sign-in without replacing the active account or showing an error", async () => {
-    await useChatGptStore.getState().load();
+    await loadChatGptSession();
     auth.signInWithChatGpt.mockImplementationOnce(
       ({ signal }: { signal: AbortSignal }) =>
         new Promise((_, reject) => {
@@ -118,8 +125,8 @@ describe("ChatGPT connection state", () => {
           );
         }),
     );
-    const pending = useChatGptStore.getState().signIn();
-    useChatGptStore.getState().cancelSignIn();
+    const pending = connectChatGpt();
+    cancelChatGptConnect();
     await pending;
     expect(useChatGptStore.getState()).toMatchObject({
       busy: null,
@@ -132,14 +139,14 @@ describe("ChatGPT connection state", () => {
   });
 
   it("clears model readiness on sign-out and reports unconfirmed remote revocation", async () => {
-    await useChatGptStore.getState().load();
+    await loadChatGptSession();
     auth.signOutOfChatGpt.mockResolvedValue({
       remoteRevocationConfirmed: false,
     });
     auth.getChatGptSession.mockRejectedValue(
       new Error("Keyring temporarily unavailable"),
     );
-    await useChatGptStore.getState().signOut();
+    await disconnectChatGpt();
     expect(
       useSettingsStore.getState().modelRoles.narrator.model,
     ).toBeUndefined();
@@ -153,15 +160,15 @@ describe("ChatGPT connection state", () => {
   });
 
   it("uses the committed account from sign-in even when its background metadata read fails", async () => {
-    await useChatGptStore.getState().load();
-    await useChatGptStore.getState().signOut();
+    await loadChatGptSession();
+    await disconnectChatGpt();
     const metadata = pendingSession();
     auth.getChatGptSession.mockReturnValueOnce(metadata.promise);
     auth.signInWithChatGpt.mockImplementationOnce(async () => {
       notifySessionChanged();
       return secondAccount;
     });
-    await useChatGptStore.getState().signIn();
+    await connectChatGpt();
     expect(useChatGptStore.getState()).toMatchObject({
       session: secondAccount,
       busy: null,
@@ -182,14 +189,14 @@ describe("ChatGPT connection state", () => {
   });
 
   it("ignores an old connected snapshot after sign-out succeeds", async () => {
-    await useChatGptStore.getState().load();
+    await loadChatGptSession();
     const metadata = pendingSession();
     auth.getChatGptSession.mockReturnValueOnce(metadata.promise);
     auth.signOutOfChatGpt.mockImplementationOnce(async () => {
       notifySessionChanged();
       return { remoteRevocationConfirmed: true };
     });
-    await useChatGptStore.getState().signOut();
+    await disconnectChatGpt();
     metadata.resolve(connected);
     await Promise.resolve();
     expect(useChatGptStore.getState()).toMatchObject({
@@ -205,7 +212,7 @@ describe("ChatGPT connection state", () => {
   it.each(["signIn", "signOut"] as const)(
     "keeps a failed %s error when its session notification finishes afterward",
     async (action) => {
-      await useChatGptStore.getState().load();
+      await loadChatGptSession();
       const metadata = pendingSession();
       auth.getChatGptSession.mockReturnValueOnce(metadata.promise);
       const mutation =
@@ -214,7 +221,7 @@ describe("ChatGPT connection state", () => {
         notifySessionChanged();
         throw new Error("Account operation failed");
       });
-      await useChatGptStore.getState()[action]();
+      await (action === "signIn" ? connectChatGpt() : disconnectChatGpt());
       expect(useChatGptStore.getState().error).toBe("Account operation failed");
       metadata.resolve(connected);
       await Promise.resolve();
@@ -223,19 +230,19 @@ describe("ChatGPT connection state", () => {
         loading: false,
         error: "Account operation failed",
       });
-      await useChatGptStore.getState().load();
+      await loadChatGptSession();
       expect(useChatGptStore.getState().error).toBeNull();
     },
   );
 
   it("invalidates metadata reads when an account mutation begins", async () => {
-    await useChatGptStore.getState().load();
+    await loadChatGptSession();
     const metadata = pendingSession();
     const signIn = pendingSession();
     auth.getChatGptSession.mockReturnValueOnce(metadata.promise);
     auth.signInWithChatGpt.mockReturnValueOnce(signIn.promise);
-    const staleRead = useChatGptStore.getState().load();
-    const operation = useChatGptStore.getState().signIn();
+    const staleRead = loadChatGptSession();
+    const operation = connectChatGpt();
     metadata.resolve({
       ...connected,
       connected: false,

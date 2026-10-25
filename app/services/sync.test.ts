@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GameMode } from "@/types/context.type";
 import { LogEntryMode, LogEntryRole } from "@/types/log.type";
 import type { TalePackageV1 } from "@/types/export.type";
-import type { TaleSyncState } from "@/repositories/sync.repository";
+import type { RemoteTale, TaleSyncState } from "@/types/sync.type";
 import { HAKAWATI_CLIENT_VERSION } from "./cloud-capabilities";
 import {
   assertSyncAvailable,
@@ -23,7 +23,6 @@ import {
   unregisterHostedDevice,
   uploadTalePackage,
   applyRemoteTalePackage,
-  type RemoteTale,
   type SyncCapabilities,
 } from "./sync";
 
@@ -1411,8 +1410,7 @@ describe("sync transport", () => {
   it.each(["closed", "in play", "played during download"])(
     "pulls automatic remote changes into a tale that is %s, or waits",
     async (playState) => {
-      // Being open is not enough to block a pull: Home reopens the last
-      // played tale on launch. Only a tale being played waits.
+      // Home reopens the last played tale on launch, so only a tale in play waits.
       let playing = playState === "in play";
       const state: TaleSyncState = {
         profileId: "cloud",
@@ -1467,8 +1465,6 @@ describe("sync transport", () => {
       });
 
       if (playState !== "closed") {
-        // The pull waits for a later pass. Nothing changed locally, so this
-        // is not a conflict.
         expect(result).toBe("skipped");
         expect(syncRepo.setTaleSyncStatus).not.toHaveBeenCalled();
         expect(
@@ -1911,7 +1907,6 @@ describe("sync transport", () => {
         contentRev: "2",
         metadataRev: "3",
         lastSyncedAt: 1,
-        // A save after the lost write puts the link back to "push".
         pendingStatus,
         lastErrorCode: pendingStatus === "error" ? "sync_failed" : null,
       };
@@ -1970,7 +1965,6 @@ describe("sync transport", () => {
       });
       expect(transport.put).toHaveBeenCalledTimes(2);
       const [first, second] = transport.put.mock.calls;
-      // The first try resends at the lost write's revision, under its key.
       expect(first[1]).toMatchObject({ baseContentRev: 2, baseMetadataRev: 3 });
       expect(second[1]).toMatchObject({
         baseContentRev: 3,
@@ -2045,7 +2039,6 @@ describe("sync transport", () => {
     });
     pkg.turns[0].entries[0].text = "A newer local edit";
     taleRepo.exportTalePackage.mockResolvedValue(pkg);
-    // Linked again by its source ID after the create's response was lost.
     const recoveredState: TaleSyncState = {
       profileId: "cloud",
       localTaleId: "local-tale",
@@ -2746,7 +2739,6 @@ function capabilitiesFixture(
   };
 }
 
-// The cloud copy one replace past a link at content 2, metadata 3.
 function lostWriteRemoteTale(pkg: TalePackageV1): RemoteTale {
   return {
     id: "remote-tale",

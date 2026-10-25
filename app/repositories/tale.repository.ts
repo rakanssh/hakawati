@@ -221,8 +221,7 @@ async function selectTaleRow(
   return rows?.[0] ?? null;
 }
 
-// Writes only need the save version; the full row would also bring the cover
-// image across IPC.
+// Not SELECT *: the cover image would cross IPC on every write.
 async function requireTaleRow(
   db: Database,
   taleId: string,
@@ -354,8 +353,7 @@ async function selectTurnCount(db: Database, taleId: string): Promise<number> {
   return rows?.[0]?.count ?? 0;
 }
 
-// Play writes almost always change the newest turns, so entries are looked up
-// there before searching the whole tale.
+// Play writes nearly always touch the newest turns.
 const RECENT_TURN_LOOKUP_COUNT = 4;
 
 async function selectTurnRowsForEntryIds(
@@ -393,9 +391,7 @@ async function selectTurnRowsForEntryIds(
   );
 }
 
-// Keeps seqs contiguous and entry indexes in order after the turns up to
-// afterSeq were replaced. Seqs are negated first because SQLite checks
-// UNIQUE(tale_id, seq) row by row.
+// Seqs are negated first because SQLite checks UNIQUE(tale_id, seq) per row.
 async function shiftTurnsAfter(
   db: Database,
   taleId: string,

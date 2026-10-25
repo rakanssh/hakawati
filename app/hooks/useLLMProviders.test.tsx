@@ -2,8 +2,7 @@ import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { ApiPreset } from "@/types";
-import type { LLMModel } from "@/services/llm/schema";
+import { ApiPreset, type LLMModel } from "@/types";
 import { useLLMProviders } from "./useLLMProviders";
 
 const { getRoleModels, useChatGpt } = vi.hoisted(() => ({

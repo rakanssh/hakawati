@@ -39,6 +39,7 @@ import { FONT_SIZE_MAX, FONT_SIZE_MIN } from "@/lib/appearance-limits";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { usePlaySession } from "@/hooks/usePlaySession";
 import { holdOpenTaleForPlay } from "@/services/open-tale-sync";
+import { loadOlderLogEntries } from "@/services/tale-log";
 import { useTtsPlayback } from "@/hooks/useTtsPlayback";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ThemeScene } from "@/themes/scenes/theme-scene";
@@ -51,7 +52,6 @@ export default function Play() {
     updateLogEntry,
     oldestLoadedIndex,
     isLoadingOlderEntries,
-    loadOlderLogEntries,
     name,
     description,
     components,
@@ -182,7 +182,6 @@ export default function Play() {
     warnOnLeave: true,
   });
 
-  // Cloud pulls wait while this screen has the tale open.
   useEffect(() => holdOpenTaleForPlay(), []);
 
   // Load last played tale on mount

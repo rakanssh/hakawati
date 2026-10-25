@@ -1,4 +1,4 @@
-import type { LLMModel, ReasoningEffort } from "@/services/llm/schema";
+import type { LLMModel, ReasoningEffort } from "./model.type";
 
 export enum ApiType {
   OPENAI = "openai",

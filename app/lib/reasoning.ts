@@ -2,7 +2,7 @@ import type {
   LLMModel,
   ReasoningCapabilities,
   ReasoningEffort,
-} from "./schema";
+} from "@/types/model.type";
 
 export type ReasoningProvider = "openrouter" | "openai" | "chatgpt" | "generic";
 

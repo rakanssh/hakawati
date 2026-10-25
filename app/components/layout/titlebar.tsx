@@ -7,7 +7,7 @@ import fez from "@/assets/fez-offwh-bg-sqc.svg";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { flushPendingAutoSaves } from "@/hooks/useAutoSave";
+import { flushPendingAutoSaves } from "@/lib/pending-auto-saves";
 import { useUpdateStore } from "@/store/useUpdateStore";
 import { useTaleStore } from "@/store/useTaleStore";
 import { Trans, useLingui } from "@lingui/react/macro";

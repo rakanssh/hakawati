@@ -1,4 +1,4 @@
-import { LLMAction } from "./schema";
+import { LLMAction } from "@/types/log.type";
 
 /**
  * OpenAI tool definitions for Game Master mode

@@ -21,9 +21,11 @@ import {
   useCatalogClient,
   useScenarioPublishLinks,
 } from "@/hooks/useCatalogScenarios";
-import { prepareScenarioPublishDraft } from "@/services/catalog.service";
+import {
+  markScenarioDraftCoverEdited,
+  prepareScenarioPublishDraft,
+} from "@/services/catalog.service";
 import { getScenarioById } from "@/services/scenario.service";
-import { markScenarioDraftCoverInitialized } from "@/repositories/scenario-publish-link.repository";
 import type { Scenario } from "@/types/context.type";
 import {
   ScenarioQuestionErrors,
@@ -104,7 +106,7 @@ export default function ScenarioEdit() {
   const persistDraft = async () => {
     const savedId = await save();
     if (coverEdited) {
-      await markScenarioDraftCoverInitialized(savedId);
+      await markScenarioDraftCoverEdited(savedId);
       if (currentId.current === id) setCoverEdited(false);
     }
     return { ...scenario, id: savedId };

@@ -32,15 +32,9 @@ import { useTaleLibrary } from "@/hooks/useTaleLibrary";
 import { imageBadgeClass } from "@/lib/card-badges";
 import { getSyncUiKind, getTaleSyncBadge } from "@/lib/sync-ui";
 import { HAKAWATI_CLIENT_VERSION } from "@/services/cloud-capabilities";
-import {
-  getSyncProfile,
-  upsertSyncProfile,
-} from "@/repositories/sync.repository";
-import {
-  createSyncTransport,
-  registerSyncDevice,
-  type SyncProfile,
-} from "@/services/sync";
+import { createSyncTransport, registerSyncDevice } from "@/services/sync";
+import { enableSyncProfile, loadSyncProfile } from "@/services/sync-profile";
+import type { SyncProfile } from "@/types/sync.type";
 import {
   addSyncChangedListener,
   notifySyncChanged,
@@ -409,7 +403,7 @@ export default function Home() {
     let disposed = false;
 
     const refreshSyncProfile = () => {
-      getSyncProfile(hostedProfile.id)
+      loadSyncProfile(hostedProfile.id)
         .then((profile) => {
           if (disposed) return;
           setHomeSyncProfile(
@@ -467,11 +461,7 @@ export default function Home() {
           appVersion,
         },
       );
-      await upsertSyncProfile({
-        ...hostedProfile,
-        enabled: true,
-        disabledReason: null,
-      });
+      await enableSyncProfile(hostedProfile);
       setHomeSyncProfile({ enabled: true, disabledReason: null });
       wakeSyncBackground();
       notifySyncChanged();

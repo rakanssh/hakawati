@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getRoleModels } from "@/services/llm";
-import { LLMModel } from "@/services/llm/schema";
 import { useSettingsStore } from "@/store";
-import { ApiPreset, ModelRole } from "@/types";
+import { ApiPreset, LLMModel, ModelRole } from "@/types";
 import { toast } from "sonner";
 import { useChatGpt } from "./useChatGpt";
 import { useChatGptStore } from "@/store/useChatGptStore";

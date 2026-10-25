@@ -5,8 +5,7 @@ import { DEFAULT_WINDOW_SIZE, useTaleStore } from "@/store/useTaleStore";
 
 let openPlayScreens = 0;
 
-// The play screen edits its tale in memory and saves it later, so a pull into
-// that tale would be overwritten. Pulls wait until the screen closes.
+// Play edits its tale in memory and saves later, which would overwrite a pull.
 export function holdOpenTaleForPlay(): () => void {
   openPlayScreens += 1;
   let released = false;
@@ -26,8 +25,6 @@ export function isTaleInPlay(taleId: string): boolean {
   return id === taleId || loadingTaleId === taleId;
 }
 
-// The open copy had no unsaved changes when a pull replaced it, so it shows
-// the pulled version from here on.
 export async function showPulledTale(taleId: string): Promise<void> {
   if (useTaleStore.getState().id !== taleId) return;
   const tale = await getTaleById(taleId);

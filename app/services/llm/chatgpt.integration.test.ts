@@ -4,9 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { usePlaySession } from "@/hooks/usePlaySession";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useTaleStore } from "@/store/useTaleStore";
-import { ApiPreset, GameMode, LogEntryMode, LogEntryRole } from "@/types";
+import {
+  ApiPreset,
+  GameMode,
+  LogEntryMode,
+  LogEntryRole,
+  type ReasoningEffort,
+} from "@/types";
 import { generateQuickstartTale } from "./quickstartTaleGenerator";
-import type { ReasoningEffort } from "./schema";
 
 const { fetchChatGpt, persistence } = vi.hoisted(() => ({
   fetchChatGpt: vi.fn(),

@@ -1,4 +1,5 @@
 import { getActiveContinuePrompt } from "@/prompts";
+import { ensureLogEntriesLoaded } from "@/services/tale-log";
 import { StoryCard } from "@/types";
 import { LogEntry, LogEntryMode, LogEntryRole } from "@/types/log.type";
 import { ChatMessage } from "./schema";
@@ -10,7 +11,6 @@ interface ContextWindowStore {
   log: LogEntry[];
   oldestLoadedIndex: number;
   totalLogCount: number;
-  ensureLogEntriesLoaded: (minCount: number) => Promise<void>;
 }
 
 type MergedMessage = {
@@ -48,7 +48,7 @@ export async function ensureDesiredLogEntriesLoaded(
     store.oldestLoadedIndex > 0 &&
     store.totalLogCount > store.log.length
   ) {
-    await store.ensureLogEntriesLoaded(desiredEntries);
+    await ensureLogEntriesLoaded(desiredEntries);
   }
   return getStore().log;
 }
@@ -62,9 +62,7 @@ export function injectMode(text: string, mode?: LogEntryMode): string {
   return text;
 }
 
-// Token counts of history messages, kept across requests and redone when a
-// message's content changes. Counts are per message rather than per entry
-// because a GM chain's joined text can tokenize differently from its parts.
+// Per message, not per entry: a GM chain's joined text tokenizes differently.
 const historyTokenCache = new WeakMap<
   LogEntry,
   Pick<MergedMessage, "role" | "content"> & { tokens: number }
@@ -176,8 +174,6 @@ export function assembleContextMessages(
     onNoHistoryIncluded,
   } = params;
 
-  // A prompt's token count is the sum of its messages' counts, so the totals
-  // below are kept as running sums instead of recounting the whole prompt.
   const requiredTokens = countMessageTokens([
     ...requiredMeta,
     ...lateMeta,

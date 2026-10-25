@@ -2,12 +2,10 @@ import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  appendTranscriptToInput,
-  base64ToBlob,
   MicrophonePermissionError,
-  nativeRecordingToBlob,
-  normalizeMicrophoneError,
   RecordingInterruptedError,
+} from "@/lib/speech-recording";
+import {
   TRANSCRIPTION_TIMEOUT_MS,
   useSpeechRecorder,
 } from "./useSpeechRecorder";
@@ -101,73 +99,6 @@ beforeEach(() => {
   ).IS_REACT_ACT_ENVIRONMENT = true;
   invokeMock.mockReset();
   transcribeSpeechMock.mockReset();
-});
-
-describe("appendTranscriptToInput", () => {
-  it("uses transcript as input when the current input is empty", () => {
-    expect(appendTranscriptToInput("", " open the door ")).toBe(
-      "open the door",
-    );
-  });
-
-  it("appends transcript to existing input with one space", () => {
-    expect(appendTranscriptToInput("say hello  ", " then bow ")).toBe(
-      "say hello then bow",
-    );
-  });
-
-  it("leaves input unchanged when transcript is empty", () => {
-    expect(appendTranscriptToInput("wait here", "   ")).toBe("wait here");
-  });
-});
-
-describe("native recording helpers", () => {
-  it("converts base64 audio into a typed blob", () => {
-    const blob = base64ToBlob("YXVkaW8=", "audio/wav");
-
-    expect(blob.type).toBe("audio/wav");
-    expect(blob.size).toBe(5);
-  });
-
-  it("rejects empty native recording payloads", () => {
-    expect(() =>
-      nativeRecordingToBlob({ mimeType: "audio/wav", dataBase64: "" }),
-    ).toThrow(/did not capture/);
-  });
-});
-
-describe("normalizeMicrophoneError", () => {
-  it("keeps desktop string errors as their message", () => {
-    expect(
-      normalizeMicrophoneError("No microphone input device was found."),
-    ).toEqual(new Error("No microphone input device was found."));
-  });
-
-  it("marks a refused mobile microphone permission", () => {
-    const denied = normalizeMicrophoneError({
-      code: "microphonePermissionDenied",
-      message: "Hakawati needs microphone access to record speech.",
-    });
-    const blocked = normalizeMicrophoneError({
-      code: "microphonePermissionBlocked",
-      message: "Microphone access is turned off for Hakawati.",
-    });
-
-    expect(denied).toBeInstanceOf(MicrophonePermissionError);
-    expect((denied as MicrophonePermissionError).blocked).toBe(false);
-    expect(blocked).toBeInstanceOf(MicrophonePermissionError);
-    expect((blocked as MicrophonePermissionError).blocked).toBe(true);
-  });
-
-  it("keeps the message of other mobile recorder failures", () => {
-    const error = normalizeMicrophoneError({
-      code: null,
-      message: "Recording did not capture any audio.",
-    });
-
-    expect(error).not.toBeInstanceOf(MicrophonePermissionError);
-    expect(error.message).toBe("Recording did not capture any audio.");
-  });
 });
 
 describe("useSpeechRecorder", () => {
@@ -349,7 +280,6 @@ describe("useSpeechRecorder", () => {
   });
 
   describe("when transcription stalls", () => {
-    /** Records, then stops on a transcription request that never answers. */
     async function stopIntoStalledTranscription(
       onTranscript = vi.fn(),
       onError = vi.fn(),

@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from "react";
-import { LLMAction } from "@/services/llm/schema";
+import { LLMAction } from "@/types";
 import { LogEntryError } from "./log-entry-error";
 import { ActionBadge } from "./action-badge";
 import { LogBlock } from "@/lib/play-utils";
@@ -63,7 +63,6 @@ export function LogBlockBubble({
   const prevStreamingTextLengthRef = useRef(0);
 
   const actions: LLMAction[] = block.entries.flatMap((e) => e.actions || []);
-  // Once the story continues past a failed reply, its reason is no longer shown.
   const latestError = block.entries.at(-1)?.error;
   const thinkingEntries = block.entries
     .map((entry, entryIndex) => ({

@@ -36,7 +36,7 @@ vi.mock("@tanstack/react-router", () => ({
 
 vi.mock("sonner", () => ({ toast: { error: mocks.toastError } }));
 
-vi.mock("./useAutoSave", () => ({
+vi.mock("@/lib/pending-auto-saves", () => ({
   flushPendingAutoSaves: mocks.flushPendingAutoSaves,
 }));
 

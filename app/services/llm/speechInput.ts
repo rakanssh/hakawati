@@ -1,24 +1,14 @@
 /** OpenAI's /audio/speech rejects input longer than this. */
 export const MAX_SPEECH_INPUT_LENGTH = 4096;
 
-// Where a part may end, strongest first. Each match ends where a part can.
 const SPEECH_BREAKS = [
-  // Paragraphs: a blank line follows.
   /\S(?=\s*\n\s*\n)/g,
-  // Lines.
   /\S(?=\s*\n)/g,
-  // Sentences. Stops in scripts that use spaces need one after them, so "3.5"
-  // stays whole.
+  // Stops in scripts with spaces need one after them, so "3.5" stays whole.
   /[.!?…؟۔।]["'”’»)\]*_]*(?=\s)|[。！？][」』”’）*_]*/g,
-  // Words.
   /\S(?=\s)/g,
 ];
 
-/**
- * Splits narration into parts the speech endpoint accepts, at paragraph breaks
- * where it can, then at line, sentence and word breaks. Text that fits stays
- * one part.
- */
 export function splitSpeechInput(
   text: string,
   maxLength = MAX_SPEECH_INPUT_LENGTH,
@@ -45,7 +35,7 @@ function findPartEnd(text: string, maxLength: number): number {
     if (end > 0) return end;
   }
 
-  // No break at all: cut at the limit, keeping surrogate pairs whole.
+  // Cut at the limit without splitting a surrogate pair.
   const cut = Math.max(1, maxLength);
   const code = text.charCodeAt(cut - 1);
   return cut > 1 && code >= 0xd800 && code <= 0xdbff ? cut - 1 : cut;

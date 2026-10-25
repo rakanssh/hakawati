@@ -16,12 +16,12 @@ import {
 import { useLLM } from "@/hooks/useLLM";
 import { usePersistTale } from "@/hooks/useGameSaves";
 import {
+  LLMAction,
   LogEntry,
   LogEntryMode,
   LogEntryRole,
   type LogActionState,
 } from "@/types/log.type";
-import { LLMAction } from "@/services/llm/schema";
 import { Action, getLogErrorReason } from "@/lib/play-utils";
 
 interface UsePlaySessionOptions {
@@ -179,7 +179,6 @@ function hasVisibleGeneratedText(entry: LogEntry | null | undefined): boolean {
   return Boolean(entry?.text.trim());
 }
 
-/** A passage the player wrote with Story; it sits in the GM's chain so the model continues it. */
 function isStoryInput(entry: LogEntry): boolean {
   if (entry.isStoryInput) return true;
   // Earlier versions saved passages unmarked, in this shape.
@@ -450,8 +449,6 @@ export function usePlaySession(
           flushResponse();
         }
       };
-      // Any text that streamed stays. The reason is kept as text, which
-      // survives saving where an Error would not.
       const recordError = (error: unknown) => {
         console.error("LLM Error:", error);
         updateLogEntry(gmResponseId, {
@@ -726,7 +723,6 @@ export function usePlaySession(
       console.warn("Cannot retry, last entry is not GM.");
       return;
     }
-    // The player's own passage stays; what is missing is the reply after it.
     if (isStoryInput(lastEntry)) {
       void executeLlmSend("", LogEntryMode.CONTINUE, {
         continueChain: true,

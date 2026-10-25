@@ -1,10 +1,11 @@
 import { fetchChatGpt } from "@/services/chatgpt";
 import { ResponseMode } from "@/types/api.type";
-import type { ChatRequest, ChatResponse, LLMClient, LLMModel } from "../schema";
+import type { LLMModel } from "@/types/model.type";
+import type { ChatRequest, ChatResponse, LLMClient } from "../schema";
 import { GM_TOOLS } from "../tools";
 
 import { assertNotAborted, responseChunks } from "./responses";
-import { readReasoningCapabilities } from "../reasoning";
+import { readReasoningCapabilities } from "@/lib/reasoning";
 
 type JsonObject = Record<string, unknown>;
 

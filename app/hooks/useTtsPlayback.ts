@@ -23,13 +23,9 @@ type AudioContextFactory =
   | (new (contextOptions?: AudioContextOptions) => AudioContext)
   | ((contextOptions?: AudioContextOptions) => AudioContext);
 
-/**
- * Narration kept for replay. As WAV that's about 5.8 MB a minute, so this
- * holds about five minutes. The newest narration stays even when it's longer.
- */
+// About five minutes of narration as WAV.
 export const MAX_TTS_SESSION_CACHE_BYTES = 32 * 1024 * 1024;
 
-// Maps iterate in insertion order, so the least recently played comes first.
 const sessionAudioCache = new Map<string, CachedNarrationAudio>();
 
 function getCachedNarration(cacheKey: string) {
@@ -45,7 +41,6 @@ function cacheNarration(cacheKey: string, cached: CachedNarrationAudio) {
   sessionAudioCache.delete(cacheKey);
   let bytes = cached.audio.size;
   for (const entry of sessionAudioCache.values()) bytes += entry.audio.size;
-  // Evicting before the new narration goes in means it always stays.
   for (const [key, entry] of sessionAudioCache) {
     if (bytes <= MAX_TTS_SESSION_CACHE_BYTES) break;
     sessionAudioCache.delete(key);
@@ -124,7 +119,6 @@ export async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
   });
 }
 
-/** The parts as they came, for when they can't be decoded. */
 function joinAudioParts(parts: Blob[]): Blob {
   return parts.length === 1
     ? parts[0]
@@ -174,8 +168,6 @@ async function createSeekableAudio(
         ) => AudioContext
       )();
     }
-    // Each part is encoded as soon as it's decoded, so only one decoded part
-    // is held at a time.
     const pcmParts: Blob[] = [];
     let duration = 0;
     let sampleRate = 0;
@@ -207,13 +199,8 @@ async function createSeekableAudio(
 
 const WAV_BYTES_PER_SAMPLE = 2;
 
-/**
- * Interleaved 16-bit samples, as a Blob so the array can be freed before the
- * next part. A part short of channels repeats its last one.
- */
 function encodePcm16(buffer: AudioBuffer, channelCount: number): Blob {
-  // Typed arrays use the platform's byte order, little-endian everywhere
-  // Hakawati runs, which is what WAV needs.
+  // Platform byte order, which is little-endian (as WAV needs) on every target.
   const pcm = new Int16Array(buffer.length * channelCount);
   const channels = Array.from({ length: channelCount }, (_, channel) =>
     buffer.getChannelData(Math.min(channel, buffer.numberOfChannels - 1)),

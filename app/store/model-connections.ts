@@ -5,21 +5,22 @@ import {
   connectionBaseUrl,
   isPresetAllowedForRole,
 } from "@/data/api-presets";
-import type { LLMModel, ReasoningEffort } from "@/services/llm/schema";
 import {
   getModelReasoning,
   normalizeReasoningEffort,
   reasoningProvider,
-} from "@/services/llm/reasoning";
+} from "@/lib/reasoning";
 import {
   ApiConnection,
   ApiPreset,
   ApiProfileSettings,
   ApiType,
+  type LLMModel,
   MODEL_ROLES,
   ModelRole,
   ModelRoleAssignment,
   ModelRoleSettings,
+  type ReasoningEffort,
   RoleModelChoice,
 } from "@/types";
 

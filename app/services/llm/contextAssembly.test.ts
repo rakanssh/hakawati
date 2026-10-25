@@ -13,7 +13,6 @@ vi.mock("@/prompts", () => ({
   getActiveContinuePrompt: () => "Continue the story.",
 }));
 
-// Records the strings the tokenizer is asked to encode while recording is on.
 const tokenizer = vi.hoisted(() => ({
   recording: false,
   inputs: [] as string[],
@@ -36,8 +35,7 @@ vi.mock("tiktoken", async (importOriginal) => {
 
 type Callback = [string, number?];
 
-// The previous implementation, which counted the whole candidate prompt again
-// for every history message. Selection must not change.
+// The old algorithm, kept as a reference: selection must not change.
 function assembleByRecounting(
   params: AssembleContextMessagesParams,
   onCandidateTotal: (tokens: number) => void = () => {},
@@ -253,7 +251,6 @@ describe("assembleContextMessages", () => {
   it("selects the same history as recounting the whole prompt for every message", () => {
     for (let seed = 1; seed <= 40; seed += 1) {
       const { params, log } = randomCase(seed);
-      // Budgets where one more message would or would not fit.
       const totals: number[] = [];
       assembleByRecounting(params, (total) => totals.push(total));
       const step = Math.ceil(totals.length / 6);
@@ -278,7 +275,6 @@ describe("assembleContextMessages", () => {
         ).toEqual(assembleByRecounting({ ...params, promptBudget }));
       }
 
-      // An entry edited in place is counted again.
       const edited = log.find((entry) => entry.text.trim());
       if (!edited) continue;
       edited.text += " The drums answer.";
@@ -295,7 +291,6 @@ describe("assembleContextMessages", () => {
     const parts = ["Mira whisp", "ers."];
     const count = (content: string) =>
       countMessageTokens([{ role: "assistant", content }]);
-    // The parts cost more apart than joined, so the boundary below is exact.
     expect(count(parts[0]) + count(parts[1])).toBeGreaterThan(
       count(parts.join("")) + 1,
     );

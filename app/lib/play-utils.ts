@@ -61,10 +61,6 @@ export function groupLogEntriesIntoBlocks(log: LogEntry[]): LogBlock[] {
   return result;
 }
 
-/**
- * Why a reply failed, if the entry kept a reason. Entries keep it as text;
- * older saves kept an Error, which saving turned into `{}`.
- */
 export function getLogErrorReason(error: unknown): string | null {
   const message =
     typeof error === "string"

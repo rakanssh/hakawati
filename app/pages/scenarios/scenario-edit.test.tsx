@@ -62,9 +62,7 @@ vi.mock("@/services/scenario.service", () => ({
 }));
 vi.mock("@/services/catalog.service", () => ({
   prepareScenarioPublishDraft: mocks.prepare,
-}));
-vi.mock("@/repositories/scenario-publish-link.repository", () => ({
-  markScenarioDraftCoverInitialized: mocks.markCover,
+  markScenarioDraftCoverEdited: mocks.markCover,
 }));
 vi.mock("sonner", () => ({
   toast: { error: mocks.toastError, success: mocks.toastSuccess },

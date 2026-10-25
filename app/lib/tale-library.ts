@@ -1,5 +1,4 @@
-import type { TaleSyncState } from "@/repositories/sync.repository";
-import type { RemoteTale } from "@/services/sync";
+import type { RemoteTale, TaleSyncState } from "@/types/sync.type";
 import type { TaleHead } from "@/types/tale.type";
 
 export type LibraryTaleItem =

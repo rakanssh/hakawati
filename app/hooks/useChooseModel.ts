@@ -1,15 +1,9 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
 import { useLingui } from "@lingui/react/macro";
-import type { LLMModel } from "@/services/llm/schema";
 import { DEFAULT_TTS_VOICE, useSettingsStore } from "@/store/useSettingsStore";
 import { useTaleStore } from "@/store/useTaleStore";
-import { GameMode, type ModelRole } from "@/types";
-
-/** A model typed in by id. Refreshing the provider's list keeps it even when the list doesn't include it. */
-export function manualModel(id: string): LLMModel {
-  return { id, name: id, manual: true };
-}
+import { GameMode, type LLMModel, type ModelRole } from "@/types";
 
 /** Sets a role's model the same way wherever it is chosen. */
 export function useChooseModel(role: ModelRole) {

@@ -46,11 +46,6 @@ import {
 import { getSyncUiKind } from "@/lib/sync-ui";
 import { HAKAWATI_CLIENT_VERSION } from "@/services/cloud-capabilities";
 import { defaultCloudBaseUrl, useSyncSettingsStore } from "@/store";
-import {
-  getSyncProfile,
-  setSyncProfileDisabled,
-  upsertSyncProfile,
-} from "@/repositories/sync.repository";
 import { deleteCloudAccount } from "@/services/deleted-accounts";
 import {
   createSyncTransport,
@@ -66,9 +61,14 @@ import {
   updateHostedAccountProfile,
   type HostedAccountUsage,
   type SyncDevice,
-  type SyncProfile,
   unregisterHostedDevice,
 } from "@/services/sync";
+import type { SyncProfile } from "@/types/sync.type";
+import {
+  disableSyncProfile,
+  enableSyncProfile,
+  loadSyncProfile,
+} from "@/services/sync-profile";
 import {
   addSyncChangedListener,
   notifySyncChanged,
@@ -319,7 +319,7 @@ export default function SettingsCloudSync() {
   );
 
   const refreshProfileState = useCallback(() => {
-    void getSyncProfile(profile.id)
+    void loadSyncProfile(profile.id)
       .then((stored) => {
         setSyncEnabled(stored?.enabled === true);
         setDisabledReason(stored?.disabledReason ?? null);
@@ -470,7 +470,7 @@ export default function SettingsCloudSync() {
     signInControllerRef.current?.abort();
     void deleteHostedRefreshToken(HOSTED_PROFILE_ID).catch(() => undefined);
     clearSession();
-    void setSyncProfileDisabled(HOSTED_PROFILE_ID, "signed_out").catch(
+    void disableSyncProfile(HOSTED_PROFILE_ID, "signed_out").catch(
       () => undefined,
     );
     if (profile.mode === "hosted") {
@@ -538,7 +538,7 @@ export default function SettingsCloudSync() {
     void deleteHostedRefreshToken(HOSTED_PROFILE_ID).catch(() => undefined);
     if (hasAnySession) {
       clearSession();
-      void setSyncProfileDisabled(HOSTED_PROFILE_ID, "signed_out").catch(
+      void disableSyncProfile(HOSTED_PROFILE_ID, "signed_out").catch(
         () => undefined,
       );
       setStatus(t`Cloud URL changed. Sign in again to continue.`);
@@ -668,7 +668,7 @@ export default function SettingsCloudSync() {
   async function toggleSync() {
     if (syncEnabled) {
       await run("disable", async () => {
-        await setSyncProfileDisabled(profile.id, "user_disabled");
+        await disableSyncProfile(profile.id, "user_disabled");
         setSyncEnabled(false);
         setDisabledReason("user_disabled");
         setUndecidedTales([]);
@@ -681,11 +681,7 @@ export default function SettingsCloudSync() {
     await run("enable", async () => {
       if (profile.mode === "personal") {
         await fetchSyncCapabilities(createSyncTransport({ profile }));
-        await upsertSyncProfile({
-          ...profile,
-          enabled: true,
-          disabledReason: null,
-        });
+        await enableSyncProfile(profile);
         setSyncEnabled(true);
         setDisabledReason(null);
         setStatus("");
@@ -726,11 +722,7 @@ export default function SettingsCloudSync() {
       await fetchSyncCapabilities(
         createSyncTransport({ profile: personalProfile }),
       );
-      await upsertSyncProfile({
-        ...personalProfile,
-        enabled: true,
-        disabledReason: null,
-      });
+      await enableSyncProfile(personalProfile);
       setActiveSyncMode("personal");
       setSyncEnabled(true);
       setDisabledReason(null);
@@ -803,11 +795,7 @@ export default function SettingsCloudSync() {
       platform: devicePlatform.trim(),
       appVersion,
     });
-    await upsertSyncProfile({
-      ...hostedProfile,
-      enabled: true,
-      disabledReason: null,
-    });
+    await enableSyncProfile(hostedProfile);
     setSyncEnabled(true);
     setDisabledReason(null);
     setStatus(t`Cloud sync connected`);

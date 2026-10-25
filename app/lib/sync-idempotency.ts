@@ -18,9 +18,7 @@ export async function createUploadIdempotencyKey(
   return hashedKey("upload", [profileId, accountScope, localTaleId, updatedAt]);
 }
 
-// Tales opened from the cloud keep their id on every device, so the writer is
-// part of the key: only this device can reuse it, and the server refusing a
-// reused key then means this device's earlier write already landed.
+// The writer is in the key because a cloud tale keeps its id on every device.
 export async function createLinkedWriteIdempotencyKey(
   profileId: string,
   writerId: string,

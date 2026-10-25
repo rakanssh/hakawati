@@ -4,22 +4,11 @@ import type {
   SyncDisabledReason,
   SyncMode,
   SyncProfile,
-} from "@/services/sync";
+  TaleSyncState,
+  TaleSyncStatus,
+} from "@/types/sync.type";
 
-export type TaleSyncStatus = "idle" | "push" | "pull" | "conflict" | "error";
 export type TaleSyncPolicy = "sync" | "private";
-
-export type TaleSyncState = {
-  profileId: string;
-  accountId?: string | null;
-  localTaleId: string;
-  remoteTaleId: string;
-  contentRev: string | null;
-  metadataRev: string | null;
-  lastSyncedAt: number | null;
-  pendingStatus: TaleSyncStatus;
-  lastErrorCode: string | null;
-};
 
 type SyncProfileRow = {
   id: string;
@@ -304,8 +293,6 @@ export async function acknowledgeTaleSyncWrite(input: {
   });
 }
 
-// Moves the link onto revisions this device wrote but never saw acknowledged.
-// The local tale has changed since, so it stays queued for a push.
 export async function adoptTaleSyncRevisions(input: {
   expectedState: TaleSyncState;
   contentRev: string;
@@ -337,8 +324,6 @@ export async function adoptTaleSyncRevisions(input: {
   });
 }
 
-// Tales refused for lack of cloud space get another attempt once space may
-// have been freed.
 export async function retryCloudFullTaleSyncs(
   profileId: string,
   accountId?: string | null,

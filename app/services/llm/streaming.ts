@@ -3,12 +3,8 @@ import { assertNotAborted } from "./adapters/responses";
 
 const TEXT_VALUE_KEYS = ["text", "content", "output_text", "delta"] as const;
 
-/**
- * How long a reply may take to start. A local server reading a long prompt, or
- * a model thinking without streaming its thoughts, sends nothing meanwhile.
- */
+// Long, since local servers read long prompts and some models think silently.
 export const STREAM_START_TIMEOUT_MS = 5 * 60_000;
-/** Once a reply is arriving, a pause this long means the connection was lost. */
 export const STREAM_IDLE_TIMEOUT_MS = 60_000;
 
 function collectTextFragments(value: unknown, out: string[]): void {
@@ -89,7 +85,6 @@ function toStreamChunk(json: unknown): StreamChunk | null {
   return null;
 }
 
-/** One SSE data line: its delta, and why the provider ended the reply, if it did. */
 function parseDataLine(
   line: string,
 ): { chunk: StreamChunk | null; finishReason?: string } | "done" | null {
@@ -121,7 +116,6 @@ function parseDataLine(
   };
 }
 
-/** Rejects a reply the provider ended before it was complete. */
 function assertFinishedNormally(
   finishReason: string,
   outputLimitAdjustable: boolean,
@@ -143,7 +137,6 @@ function assertFinishedNormally(
   }
 }
 
-/** The next bytes of the body, or an error once it has sent nothing for `timeoutMs`. */
 async function readWithin(
   reader: ReadableStreamDefaultReader<Uint8Array>,
   timeoutMs: number,
@@ -170,7 +163,6 @@ async function readWithin(
   }
 }
 
-/** Parse an OpenAI-compatible SSE stream into chunks of text, thinking and tool calls. */
 export async function* parseOpenAIStream(
   body: ReadableStream<Uint8Array>,
   options: { outputLimitAdjustable?: boolean; signal?: AbortSignal } = {},
@@ -216,14 +208,12 @@ export async function* parseOpenAIStream(
       }
       if (done) break;
     }
-    // Without [DONE] or a finish reason, the connection dropped mid-reply.
     if (!finished) {
       throw new Error(
         "The connection ended before the response finished. Retry the request.",
       );
     }
   } catch (error) {
-    // Whatever the body reports after Stop, the reply was stopped.
     assertNotAborted(signal);
     throw error;
   } finally {

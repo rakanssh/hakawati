@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getModelMetaLabels } from "./model-select-meta";
-import type { LLMModel } from "@/services/llm/schema";
+import type { LLMModel } from "@/types";
 
 describe("getModelMetaLabels", () => {
   it("does not render duration-priced speech models as per-million token prices", () => {

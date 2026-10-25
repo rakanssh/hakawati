@@ -11,7 +11,8 @@ import {
 import { GameMode } from "@/types/context.type";
 import { LogEntryMode, LogEntryRole, type LogEntry } from "@/types/log.type";
 import type { TaleMutableSnapshot } from "@/services/tale.service";
-import type { SyncCapabilities, SyncProfile } from "@/services/sync";
+import type { SyncCapabilities } from "@/services/sync";
+import type { SyncProfile } from "@/types/sync.type";
 
 type SqlParam = string | number | bigint | Uint8Array | null;
 
@@ -1135,11 +1136,9 @@ describe("tale repository SQLite storage", () => {
     await expect(getTaleSyncState(lostWrite)).resolves.toMatchObject({
       contentRev: "3",
       metadataRev: "4",
-      // The local edits made since the lost write still need a push.
       pendingStatus: "push",
       lastErrorCode: null,
     });
-    // A stale link can't adopt again, and a conflict waits for the player.
     await expect(adoptTaleSyncRevisions(adoption)).resolves.toBe(false);
     await upsertTaleSyncState(lostWrite);
     await setTaleSyncStatus({ ...lostWrite, pendingStatus: "conflict" });
@@ -1603,7 +1602,6 @@ describe("tale repository SQLite storage", () => {
       gameMode: GameMode.STORY_TELLER,
       undoStack: [],
     });
-    // Cloud packages never carry cover bytes.
     const pulled = await exportTalePackage(remoteSourceId);
     expect(pulled.assets).toEqual([]);
 
@@ -1841,7 +1839,6 @@ describe("tale repository SQLite storage", () => {
     const newIds = (count: number) =>
       Array.from({ length: count }, () => `entry-${nextId++}`);
 
-    // Seqs count up from 1 and every turn starts where the previous one ended.
     const expectStoredTurns = async () => {
       const rows = db.raw
         .prepare(
@@ -1939,7 +1936,6 @@ describe("tale repository SQLite storage", () => {
       undoStack: [],
     };
 
-    // Statements that would cross IPC, and the rows they read.
     let work = { statements: 0, rowsRead: 0, coverReads: 0 };
     const { execute, select } = db;
     db.execute = async (sql, params) => {
