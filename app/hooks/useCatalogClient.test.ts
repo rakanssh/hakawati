@@ -28,11 +28,15 @@ const capabilities: CloudCapabilities = {
   },
   limits: { maxPackageBytes: 1024, maxStateBytes: 1024 },
   scenarioCatalog: { packageFormatVersion: 1, thumbnailUploads: "enabled" },
-  announcement: {
-    id: "491c7ee0-a094-408a-84c9-7f3ee24b519a",
-    en: { title: "From server A", body: "Hello" },
-    expiresAt: "2030-01-01T00:00:00Z",
-  },
+  announcements: [
+    {
+      id: "491c7ee0-a094-408a-84c9-7f3ee24b519a",
+      kind: "info",
+      en: { title: "From server A", body: "Hello" },
+      dismissible: true,
+      expiresAt: "2030-01-01T00:00:00Z",
+    },
+  ],
 };
 
 function deferred() {
@@ -76,7 +80,9 @@ describe("catalog capability server scope", () => {
       .mockReturnValueOnce(new Promise(() => {}));
     render();
     await act(async () => {});
-    expect(current.capabilities?.announcement?.en.title).toBe("From server A");
+    expect(current.capabilities?.announcements?.[0]?.en.title).toBe(
+      "From server A",
+    );
     const refreshOldServer = current.refreshCapabilities;
     act(() =>
       useSyncSettingsStore.getState().setCloudBaseUrl("https://b.example"),
@@ -101,9 +107,9 @@ describe("catalog capability server scope", () => {
     expect(current.error).toBeNull();
     expect(current.loading).toBe(true);
     await act(async () =>
-      newer.resolve({ ...capabilities, announcement: null }),
+      newer.resolve({ ...capabilities, announcements: [] }),
     );
-    expect(current.capabilities?.announcement).toBeNull();
+    expect(current.capabilities?.announcements).toEqual([]);
     expect(current.enabled).toBe(true);
     expect(current.loading).toBe(false);
   });
@@ -119,10 +125,10 @@ describe("catalog capability server scope", () => {
       void current.refreshCapabilities();
     });
     await act(async () =>
-      second.resolve({ ...capabilities, announcement: null }),
+      second.resolve({ ...capabilities, announcements: [] }),
     );
     await act(async () => first.resolve(capabilities));
-    expect(current.capabilities?.announcement).toBeNull();
+    expect(current.capabilities?.announcements).toEqual([]);
     act(() => useSyncSettingsStore.getState().setCloudBaseUrl(""));
     expect(current.capabilities).toBeNull();
     expect(current.enabled).toBe(false);

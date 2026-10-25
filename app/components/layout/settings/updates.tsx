@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
 import { Loader2 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Button } from "@/components/ui/button";
 import { useUpdateStore } from "@/store/useUpdateStore";
 import { formatBytes } from "@/lib/utils";
+import { ReleaseNotes } from "../release-notes";
 import { PlainRow, RowText, SetupList, StatusBanner } from "./settings-rows";
 
 export default function SettingsUpdates() {
@@ -131,11 +130,10 @@ export default function SettingsUpdates() {
             </Button>
           </div>
           {updateInfo.notes ? (
-            <div className="prose prose-sm prose-neutral dark:prose-invert max-w-none border-t border-primary/20 pt-3">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {updateInfo.notes}
-              </ReactMarkdown>
-            </div>
+            <ReleaseNotes
+              notes={updateInfo.notes}
+              className="border-t border-primary/20 pt-4"
+            />
           ) : null}
         </div>
       ) : (

@@ -1,6 +1,7 @@
 import packageMetadata from "../../package.json";
+import { detectPlatform } from "@/lib/platform";
 import {
-  parseServerAnnouncement,
+  parseServerAnnouncements,
   type ServerAnnouncement,
 } from "@/lib/server-announcement";
 
@@ -10,6 +11,7 @@ export const HAKAWATI_CLIENT_VERSION = packageMetadata.version;
 export const HAKAWATI_CLIENT_HEADERS = {
   "X-Hakawati-Api-Version": HAKAWATI_API_VERSION,
   "X-Hakawati-Client-Version": HAKAWATI_CLIENT_VERSION,
+  "X-Hakawati-Platform": detectPlatform(),
 } as const;
 
 export type CloudFeatureState = {
@@ -39,7 +41,7 @@ export type CloudCapabilities = {
     packageFormatVersion: number;
     thumbnailUploads: string;
   };
-  announcement?: ServerAnnouncement | null;
+  announcements?: ServerAnnouncement[];
 };
 
 export function parseCloudCapabilities(
@@ -91,7 +93,7 @@ export function parseCloudCapabilities(
       packageFormatVersion: value.scenarioCatalog.packageFormatVersion,
       thumbnailUploads: value.scenarioCatalog.thumbnailUploads,
     },
-    announcement: parseServerAnnouncement(value.announcement),
+    announcements: parseServerAnnouncements(value),
   };
 }
 

@@ -3,7 +3,7 @@
 import * as React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 
-import { isMobilePlatform } from "@/hooks/useIsMobile";
+import { isMobilePlatform } from "@/lib/platform";
 import { cn } from "@/lib/utils";
 
 // Touch has no hover, so a tooltip opened by focus would stay up until dismissed.
