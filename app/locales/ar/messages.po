@@ -14,12 +14,12 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
-#: app/hooks/useSyncBackground.ts:197
+#: app/hooks/useSyncBackground.ts:191
 msgid "Cloud storage is full"
 msgstr "مساحة التخزين السحابية ممتلئة"
 
 #. js-lingui-explicit-id
-#: app/hooks/useSyncBackground.ts:288
+#: app/hooks/useSyncBackground.ts:280
 msgid "Failed to upload tale to cloud"
 msgstr "تعذّر رفع الحكاية إلى السحابة"
 
@@ -53,12 +53,12 @@ msgid "{0} prompt sections"
 msgstr "أقسام الموجّه: {0}"
 
 #. placeholder {0}: scenario.title
-#: app/pages/home/home.tsx:216
+#: app/pages/home/home.tsx:210
 msgid "{0} public scenario"
 msgstr "السيناريو العام: {0}"
 
 #. placeholder {0}: scenario.name
-#: app/pages/home/home.tsx:246
+#: app/pages/home/home.tsx:240
 msgid "{0} scenario"
 msgstr "سيناريو {0}"
 
@@ -105,7 +105,7 @@ msgstr "{inPrice} للإدخال · {outPrice} للإخراج لكل مليون"
 msgid "{localEntryCount} {0}"
 msgstr "{localEntryCount} {0}"
 
-#: app/components/layout/settings/cloud-sync.tsx:1105
+#: app/components/layout/settings/cloud-sync.tsx:1083
 msgid "{localTales, plural, one {Your tale is only on this device.} other {Your # tales are only on this device.}}"
 msgstr "{localTales, plural, zero {لا توجد حكايات على هذا الجهاز.} one {حكايتك موجودة على هذا الجهاز فقط.} two {حكايتاك موجودتان على هذا الجهاز فقط.} few {حكاياتك الـ# موجودة على هذا الجهاز فقط.} many {حكاياتك الـ# موجودة على هذا الجهاز فقط.} other {حكاياتك الـ# موجودة على هذا الجهاز فقط.}}"
 
@@ -123,15 +123,15 @@ msgstr "{remoteEntryCount} {0}"
 msgid "{size} context"
 msgstr "سياق {size}"
 
-#: app/components/layout/settings/cloud-sync.tsx:986
+#: app/components/layout/settings/cloud-sync.tsx:964
 msgid "{talesUsed} of {talesLimit} tales · {storageUsed} of {storageLimit}"
 msgstr "{talesUsed} من {talesLimit} حكاية · {storageUsed} من {storageLimit}"
 
-#: app/pages/home/home.tsx:172
+#: app/pages/home/home.tsx:166
 msgid "{title} tale"
 msgstr "حكاية {title}"
 
-#: app/components/layout/settings/cloud-sync.tsx:1351
+#: app/components/layout/settings/cloud-sync.tsx:1329
 msgid "{used} of {limit}"
 msgstr "{used} من {limit}"
 
@@ -151,11 +151,11 @@ msgstr "بدء واحد"
 msgid "100"
 msgstr "100"
 
-#: app/themes/registry.ts:72
+#: app/themes/registry.ts:77
 msgid "A green-screen terminal with glowing type."
 msgstr "شاشة طرفية خضراء بحروف متوهجة."
 
-#: app/themes/registry.ts:89
+#: app/themes/registry.ts:94
 msgid "A grey afternoon through a misted city window."
 msgstr "عصرٌ رمادي من خلف نافذة مدينة يكسوها البخار."
 
@@ -163,13 +163,13 @@ msgstr "عصرٌ رمادي من خلف نافذة مدينة يكسوها ال�
 msgid "A server on your network"
 msgstr "خادم على شبكتك"
 
-#: app/themes/registry.ts:103
+#: app/themes/registry.ts:108
 msgid "A sheet feeding out of a typewriter on an oak desk."
 msgstr "ورقة تخرج من آلة كاتبة على مكتب من خشب البلوط."
 
 #: app/themes/registry.ts:66
-msgid "A still night sky with a slowly turning red planet."
-msgstr "سماء ليل ساكنة وكوكب أحمر يدور ببطء."
+msgid "A starship tablet against a night sky and a slowly turning red planet."
+msgstr "جهاز لوحي لمركبة فضائية أمام سماء ليل وكوكب أحمر يدور ببطء."
 
 #: app/components/layout/settings/settings-modal.tsx:105
 msgid "About"
@@ -180,17 +180,17 @@ msgstr "عن التطبيق"
 msgid "Account"
 msgstr "الحساب"
 
-#: app/components/layout/settings/cloud-sync.tsx:1331
+#: app/components/layout/settings/cloud-sync.tsx:1309
 #: app/components/layout/settings/settings-modal.tsx:86
 msgid "Account & Sync"
 msgstr "الحساب والمزامنة"
 
-#: app/components/layout/settings/cloud-sync.tsx:540
-#: app/components/layout/settings/cloud-sync.tsx:541
+#: app/components/layout/settings/cloud-sync.tsx:531
+#: app/components/layout/settings/cloud-sync.tsx:532
 msgid "Account deleted"
 msgstr "تم حذف الحساب"
 
-#: app/components/play/play-input-controls.tsx:284
+#: app/components/play/play-input-controls.tsx:282
 msgid "Act"
 msgstr "افعل"
 
@@ -348,7 +348,7 @@ msgstr "الكل"
 msgid "All AI settings"
 msgstr "كل إعدادات الذكاء الاصطناعي"
 
-#: app/themes/registry.ts:81
+#: app/themes/registry.ts:86
 msgid "An 8-bit sunset over a castle, with pixel type."
 msgstr "غروب بأسلوب الألعاب القديمة فوق قلعة، بخط بكسلي."
 
@@ -400,7 +400,7 @@ msgstr "تعبئة آلية"
 msgid "Awaiting moderation"
 msgstr "بانتظار المراجعة"
 
-#: app/components/layout/mobile-play-header.tsx:46
+#: app/components/layout/mobile-play-header.tsx:47
 #: app/components/quickstart/quickstart-wizard.tsx:686
 #: app/components/scenario/ScenarioStartWizard.tsx:185
 msgid "Back"
@@ -431,7 +431,7 @@ msgstr "حظر الناشر"
 msgid "Brass Night"
 msgstr "ليلة نحاسية"
 
-#: app/pages/home/home.tsx:759
+#: app/pages/home/home.tsx:748
 msgid "Browse scenarios"
 msgstr "تصفح السيناريوهات"
 
@@ -458,10 +458,10 @@ msgstr "لم تجده؟ <0>اكتب معرّف النموذج</0>"
 #: app/components/layout/settings/advanced.tsx:245
 #: app/components/layout/settings/ai-setup/connection-page.tsx:376
 #: app/components/layout/settings/ai-setup/connection-page.tsx:516
-#: app/components/layout/settings/chatgpt-connection.tsx:106
-#: app/components/layout/settings/cloud-sync.tsx:1208
-#: app/components/layout/settings/cloud-sync.tsx:1256
-#: app/components/layout/settings/cloud-sync.tsx:1297
+#: app/components/layout/settings/chatgpt-connection.tsx:107
+#: app/components/layout/settings/cloud-sync.tsx:1186
+#: app/components/layout/settings/cloud-sync.tsx:1234
+#: app/components/layout/settings/cloud-sync.tsx:1275
 #: app/components/prompt-components/PromptComponentsEditor.tsx:210
 #: app/components/quickstart/quickstart-wizard.tsx:178
 #: app/components/scenario/GenerateScenarioDialog.tsx:104
@@ -481,11 +481,11 @@ msgstr "لم تجده؟ <0>اكتب معرّف النموذج</0>"
 msgid "Cancel"
 msgstr "إلغاء"
 
-#: app/components/play/play-input-controls.tsx:505
+#: app/components/play/play-input-controls.tsx:503
 msgid "Cancel recording"
 msgstr "إلغاء التسجيل"
 
-#: app/components/play/play-input-controls.tsx:531
+#: app/components/play/play-input-controls.tsx:529
 msgid "Cancel transcription"
 msgstr "إلغاء تحويل الكلام إلى نص"
 
@@ -493,7 +493,7 @@ msgstr "إلغاء تحويل الكلام إلى نص"
 msgid "Cards"
 msgstr "البطاقات"
 
-#: app/themes/registry.ts:80
+#: app/themes/registry.ts:85
 msgid "Cartridge"
 msgstr "خرطوشة"
 
@@ -510,7 +510,7 @@ msgctxt "Release notes section"
 msgid "Changed"
 msgstr "التغييرات"
 
-#: app/pages/scenarios/edit.tsx:212
+#: app/pages/scenarios/edit.tsx:214
 msgid "Changes stay in your draft until you publish an update."
 msgstr "تبقى التغييرات في مسودتك حتى تنشر تحديثاً."
 
@@ -526,7 +526,7 @@ msgstr "شخصية"
 msgid "Character Name"
 msgstr "اسم الشخصية"
 
-#: app/components/layout/settings/chatgpt-connection.tsx:87
+#: app/components/layout/settings/chatgpt-connection.tsx:88
 msgid "ChatGPT account connected"
 msgstr "حساب ChatGPT متصل"
 
@@ -543,11 +543,11 @@ msgstr "يتولّى ChatGPT طول الرد وأسلوب التوليد. تبق
 msgid "ChatGPT plan"
 msgstr "اشتراك ChatGPT"
 
-#: app/components/layout/settings/chatgpt-connection.tsx:142
+#: app/components/layout/settings/chatgpt-connection.tsx:143
 msgid "ChatGPT plan usage is not enabled. Continue with ChatGPT to enable it."
 msgstr "استخدام خطة ChatGPT غير مفعّل. اختر «المتابعة باستخدام ChatGPT» لتفعيله."
 
-#: app/components/layout/settings/chatgpt-connection.tsx:70
+#: app/components/layout/settings/chatgpt-connection.tsx:71
 msgid "ChatGPT sign-in is available in the desktop app on Windows, macOS, and Linux."
 msgstr "تسجيل الدخول عبر ChatGPT متاح في نسخة الأجهزة المكتبية على Windows وmacOS وLinux."
 
@@ -559,7 +559,7 @@ msgstr "التحقق من وجود تحديثات للتطبيق وتثبيت ا
 msgid "Check for updates"
 msgstr "التحقق من وجود تحديثات"
 
-#: app/components/layout/settings/chatgpt-connection.tsx:65
+#: app/components/layout/settings/chatgpt-connection.tsx:66
 msgid "Checking ChatGPT connection..."
 msgstr "جارٍ التحقق من الاتصال بـ ChatGPT..."
 
@@ -585,7 +585,7 @@ msgstr "اختر نموذجًا"
 msgid "Choose a model above before you continue the story."
 msgstr "اختر نموذجًا أعلاه قبل أن تكمل القصة."
 
-#: app/pages/home/home.tsx:717
+#: app/pages/home/home.tsx:706
 msgid "Choose a scenario or click Quickstart to start a new tale."
 msgstr "اختر سيناريو أو اضغط على \"بداية سريعة\" لبدء حكاية جديدة."
 
@@ -597,7 +597,7 @@ msgstr "اختر أحد هذه الخيارات."
 msgid "Choose the mode that fits the kind of tale you want to generate."
 msgstr "اختر الوضع الذي يناسب نوع الحكاية التي تريد توليدها."
 
-#: app/components/layout/settings/cloud-sync.tsx:1230
+#: app/components/layout/settings/cloud-sync.tsx:1208
 msgid "Choose the name shown on this device and in sync settings."
 msgstr "اختر الاسم الذي يظهر على هذا الجهاز وفي إعدادات المزامنة."
 
@@ -626,54 +626,54 @@ msgstr "إغلاق مشغل السرد"
 msgid "Close story panel"
 msgstr "إغلاق لوحة القصة"
 
-#: app/pages/home/home.tsx:160
+#: app/pages/home/home.tsx:154
 #: app/pages/tales/home.tsx:265
 msgid "Cloud"
 msgstr "سحابي"
 
-#: app/pages/home/home.tsx:156
+#: app/pages/home/home.tsx:150
 #: app/pages/tales/home.tsx:261
 msgid "Cloud full"
 msgstr "السحابة ممتلئة"
 
-#: app/components/layout/settings/cloud-sync.tsx:1329
+#: app/components/layout/settings/cloud-sync.tsx:1307
 msgid "Cloud service"
 msgstr "الخدمة السحابية"
 
-#: app/components/layout/settings/cloud-sync.tsx:1074
+#: app/components/layout/settings/cloud-sync.tsx:1052
 msgid "Cloud service is not configured"
 msgstr "الخدمة السحابية غير مُعدّة"
 
-#: app/components/layout/settings/cloud-sync.tsx:1184
+#: app/components/layout/settings/cloud-sync.tsx:1162
 msgid "Cloud service settings"
 msgstr "إعدادات الخدمة السحابية"
 
-#: app/components/layout/settings/cloud-sync.tsx:1082
-#: app/components/layout/settings/cloud-sync.tsx:1098
+#: app/components/layout/settings/cloud-sync.tsx:1060
+#: app/components/layout/settings/cloud-sync.tsx:1076
 msgid "Cloud sync"
 msgstr "المزامنة السحابية"
 
-#: app/components/layout/settings/cloud-sync.tsx:674
-#: app/components/layout/settings/cloud-sync.tsx:823
+#: app/components/layout/settings/cloud-sync.tsx:664
+#: app/components/layout/settings/cloud-sync.tsx:801
 msgid "Cloud sync connected"
 msgstr "المزامنة السحابية متصلة"
 
-#: app/pages/home/home.tsx:626
+#: app/pages/home/home.tsx:616
 msgid "Cloud sync on"
 msgstr "المزامنة السحابية مفعّلة"
 
-#: app/components/layout/settings/cloud-sync.tsx:1527
-#: app/pages/home/home.tsx:792
+#: app/components/layout/settings/cloud-sync.tsx:1505
+#: app/pages/home/home.tsx:781
 #: app/pages/tales/home.tsx:232
 msgid "Cloud tales are unavailable."
 msgstr "الحكايات السحابية غير متاحة."
 
-#: app/components/layout/settings/cloud-sync.tsx:918
-#: app/components/layout/settings/cloud-sync.tsx:925
+#: app/components/layout/settings/cloud-sync.tsx:896
+#: app/components/layout/settings/cloud-sync.tsx:903
 msgid "Cloud URL"
 msgstr "رابط الخدمة السحابية"
 
-#: app/components/layout/settings/cloud-sync.tsx:554
+#: app/components/layout/settings/cloud-sync.tsx:544
 msgid "Cloud URL changed. Sign in again to continue."
 msgstr "تغيّر رابط الخدمة السحابية. سجّل الدخول مجدداً للمتابعة."
 
@@ -686,11 +686,11 @@ msgstr "كوميدي"
 msgid "Community Guidelines"
 msgstr "إرشادات المجتمع"
 
-#: app/pages/home/home.tsx:611
+#: app/pages/home/home.tsx:601
 msgid "Complete profile"
 msgstr "إكمال الملف الشخصي"
 
-#: app/components/layout/settings/cloud-sync.tsx:1224
+#: app/components/layout/settings/cloud-sync.tsx:1202
 msgid "Complete your profile"
 msgstr "أكمل ملفك الشخصي"
 
@@ -704,7 +704,7 @@ msgstr "مفهوم"
 msgid "Configure Hakawati, AI providers, generation behavior, and maintenance."
 msgstr "تهيئة حكواتي، ومزودي الذكاء الاصطناعي، وسلوك التوليد، والصيانة."
 
-#: app/pages/home/home.tsx:520
+#: app/pages/home/home.tsx:510
 #: app/pages/tales/home.tsx:148
 msgid "Conflict resolved"
 msgstr "تم حل التعارض"
@@ -713,7 +713,7 @@ msgstr "تم حل التعارض"
 msgid "Connect a provider, choose an endpoint, and pick a model."
 msgstr "قم بتوصيل مزود، واختيار نقطة اتصال، وتحديد نموذج."
 
-#: app/components/layout/settings/cloud-sync.tsx:970
+#: app/components/layout/settings/cloud-sync.tsx:948
 msgid "Connect Personal Sync"
 msgstr "الاتصال بالمزامنة الشخصية"
 
@@ -725,11 +725,11 @@ msgstr "اتصل بأي API آخر متوافق مع OpenAI. أدخل العنو
 msgid "Connected"
 msgstr "متصل"
 
-#: app/components/layout/settings/cloud-sync.tsx:667
+#: app/components/layout/settings/cloud-sync.tsx:657
 msgid "Connected as {label}"
 msgstr "متصل باسم {label}"
 
-#: app/components/layout/settings/cloud-sync.tsx:1197
+#: app/components/layout/settings/cloud-sync.tsx:1175
 msgid "Connecting..."
 msgstr "جارٍ الاتصال..."
 
@@ -752,14 +752,14 @@ msgid "Context window"
 msgstr "نافذة السياق"
 
 #. placeholder {0}: entry.chainIndex
-#: app/components/play/log/log-block-bubble.tsx:213
+#: app/components/play/log/log-block-bubble.tsx:225
 msgid "Continuation {0}"
 msgstr "تكملة {0}"
 
 #: app/components/layout/settings/advanced.tsx:54
-#: app/components/layout/settings/cloud-sync.tsx:1264
-#: app/components/play/play-input-controls.tsx:559
-#: app/pages/home/home.tsx:748
+#: app/components/layout/settings/cloud-sync.tsx:1242
+#: app/components/play/play-input-controls.tsx:557
+#: app/pages/home/home.tsx:737
 #: app/pages/tales/home.tsx:276
 msgid "Continue"
 msgstr "استمرار"
@@ -768,7 +768,7 @@ msgstr "استمرار"
 msgid "Continue author note"
 msgstr "ملاحظة المؤلف عند المتابعة"
 
-#: app/components/layout/settings/chatgpt-connection.tsx:118
+#: app/components/layout/settings/chatgpt-connection.tsx:119
 msgid "Continue with ChatGPT"
 msgstr "المتابعة باستخدام ChatGPT"
 
@@ -788,13 +788,13 @@ msgstr "انسخ مفتاح API الخاص بك والصقه هنا"
 msgid "Could not copy the email address"
 msgstr "تعذّر نسخ عنوان البريد الإلكتروني"
 
-#: app/components/layout/release-notes.tsx:63
-#: app/components/layout/server-announcement.tsx:64
+#: app/components/layout/release-notes.tsx:62
+#: app/components/layout/server-announcement.tsx:105
 #: app/components/layout/settings/about.tsx:46
 msgid "Could not open the link"
 msgstr "تعذّر فتح الرابط"
 
-#: app/components/layout/settings/chatgpt-connection.tsx:37
+#: app/components/layout/settings/chatgpt-connection.tsx:38
 msgid "Could not open your browser. Visit ChatGPT Settings → Usage."
 msgstr "تعذّر فتح المتصفح. اذهب إلى Settings ← Usage في ChatGPT."
 
@@ -806,8 +806,8 @@ msgstr "تعذّر البحث عن تحديثات"
 msgid "Couldn’t connect"
 msgstr "تعذّر الاتصال"
 
-#: app/components/layout/settings/cloud-sync.tsx:514
-#: app/components/layout/settings/cloud-sync.tsx:529
+#: app/components/layout/settings/cloud-sync.tsx:505
+#: app/components/layout/settings/cloud-sync.tsx:523
 msgid "Couldn't delete your account"
 msgstr "تعذّر حذف حسابك"
 
@@ -815,7 +815,7 @@ msgstr "تعذّر حذف حسابك"
 msgid "Couldn’t load models"
 msgstr "تعذّر تحميل النماذج"
 
-#: app/hooks/useAndroidBackButton.ts:43
+#: app/hooks/useAndroidBackButton.ts:44
 msgid "Couldn't save your progress, so Hakawati stayed open. Go back again to retry."
 msgstr "تعذّر حفظ تقدّمك، لذا بقي حكواتي مفتوحًا. ارجع مرة أخرى لإعادة المحاولة."
 
@@ -827,7 +827,7 @@ msgstr "صورة الغلاف"
 msgid "Cover uploads are currently unavailable. Your draft is saved; try publishing again later."
 msgstr "رفع صور الغلاف غير متاح حالياً. تم حفظ مسودتك، فحاول النشر مرة أخرى لاحقاً."
 
-#: app/pages/home/home.tsx:880
+#: app/pages/home/home.tsx:869
 #: app/pages/scenarios/create.tsx:85
 #: app/pages/scenarios/create.tsx:111
 #: app/pages/scenarios/home.tsx:444
@@ -854,7 +854,7 @@ msgstr "أنشئ حكاية بإعداد موجّه"
 msgid "Create an OpenAI account"
 msgstr "أنشئ حساب OpenAI"
 
-#: app/pages/home/home.tsx:877
+#: app/pages/home/home.tsx:866
 msgid "Create Scenario"
 msgstr "إنشاء سيناريو"
 
@@ -907,8 +907,8 @@ msgstr "افتراضي"
 msgid "Delete"
 msgstr "حذف"
 
-#: app/components/layout/settings/cloud-sync.tsx:1167
-#: app/components/layout/settings/cloud-sync.tsx:1309
+#: app/components/layout/settings/cloud-sync.tsx:1145
+#: app/components/layout/settings/cloud-sync.tsx:1287
 msgid "Delete account"
 msgstr "حذف الحساب"
 
@@ -928,11 +928,11 @@ msgstr "حذف هذا السيناريو؟"
 msgid "Delete this tale?"
 msgstr "حذف هذه الحكاية؟"
 
-#: app/components/layout/settings/cloud-sync.tsx:1282
+#: app/components/layout/settings/cloud-sync.tsx:1260
 msgid "Delete your Hakawati Cloud account?"
 msgstr "حذف حسابك في سحابة حكواتي؟"
 
-#: app/components/layout/settings/cloud-sync.tsx:1307
+#: app/components/layout/settings/cloud-sync.tsx:1285
 msgid "Deleting…"
 msgstr "جارٍ الحذف…"
 
@@ -975,35 +975,35 @@ msgstr "تفاصيل (اختياري)"
 msgid "Detective"
 msgstr "محقّق"
 
-#: app/components/layout/settings/cloud-sync.tsx:865
-#: app/pages/home/home.tsx:634
+#: app/components/layout/settings/cloud-sync.tsx:843
+#: app/pages/home/home.tsx:624
 msgid "Device limit reached"
 msgstr "تم بلوغ الحد الأقصى للأجهزة"
 
-#: app/components/layout/settings/cloud-sync.tsx:938
-#: app/components/layout/settings/cloud-sync.tsx:943
+#: app/components/layout/settings/cloud-sync.tsx:916
+#: app/components/layout/settings/cloud-sync.tsx:921
 msgid "Device name"
 msgstr "اسم الجهاز"
 
-#: app/components/layout/settings/cloud-sync.tsx:845
+#: app/components/layout/settings/cloud-sync.tsx:823
 msgid "Device unregistered"
 msgstr "تم إلغاء تسجيل الجهاز"
 
-#: app/components/layout/settings/cloud-sync.tsx:1567
+#: app/components/layout/settings/cloud-sync.tsx:1545
 msgid "Device usage"
 msgstr "عدد الأجهزة المستخدمة"
 
-#: app/components/layout/settings/cloud-sync.tsx:1134
-#: app/components/layout/settings/cloud-sync.tsx:1327
-#: app/components/layout/settings/cloud-sync.tsx:1563
+#: app/components/layout/settings/cloud-sync.tsx:1112
+#: app/components/layout/settings/cloud-sync.tsx:1305
+#: app/components/layout/settings/cloud-sync.tsx:1541
 msgid "Devices"
 msgstr "الأجهزة"
 
-#: app/components/layout/settings/cloud-sync.tsx:1620
+#: app/components/layout/settings/cloud-sync.tsx:1598
 msgid "Devices are unavailable."
 msgstr "الأجهزة غير متاحة."
 
-#: app/components/play/play-input-controls.tsx:287
+#: app/components/play/play-input-controls.tsx:285
 msgid "Direct"
 msgstr "اخراج"
 
@@ -1016,21 +1016,21 @@ msgstr "الاتجاه"
 msgid "Director's Note..."
 msgstr "ملاحظة المخرج..."
 
-#: app/components/layout/settings/chatgpt-connection.tsx:132
+#: app/components/layout/settings/chatgpt-connection.tsx:133
 msgid "Disconnect"
 msgstr "قطع الاتصال"
 
-#: app/components/layout/settings/chatgpt-connection.tsx:130
+#: app/components/layout/settings/chatgpt-connection.tsx:131
 msgid "Disconnecting..."
 msgstr "جارٍ قطع الاتصال..."
 
-#: app/pages/home/home.tsx:833
+#: app/pages/home/home.tsx:822
 #: app/pages/scenarios/catalog-details.tsx:145
 #: app/pages/scenarios/home.tsx:468
 msgid "Discover"
 msgstr "استكشف"
 
-#: app/components/layout/server-announcement.tsx:99
+#: app/components/layout/server-announcement.tsx:169
 msgid "Dismiss announcement"
 msgstr "إخفاء الإعلان"
 
@@ -1038,7 +1038,7 @@ msgstr "إخفاء الإعلان"
 msgid "Display"
 msgstr "العرض"
 
-#: app/components/layout/settings/cloud-sync.tsx:1237
+#: app/components/layout/settings/cloud-sync.tsx:1215
 msgid "Display name"
 msgstr "الاسم المعروض"
 
@@ -1055,11 +1055,11 @@ msgstr "جارٍ تنزيل التحديث…"
 msgid "Downloading update... ({0})"
 msgstr "جاري تحميل التحديث... ({0})"
 
-#: app/components/layout/settings/cloud-sync.tsx:1051
+#: app/components/layout/settings/cloud-sync.tsx:1029
 #: app/components/storybook/StoryCard.tsx:110
 #: app/components/storybook/StoryCard.tsx:111
 #: app/pages/scenarios/details.tsx:258
-#: app/pages/scenarios/edit.tsx:140
+#: app/pages/scenarios/edit.tsx:142
 #: app/pages/scenarios/home.tsx:637
 msgid "Edit"
 msgstr "تعديل"
@@ -1073,7 +1073,7 @@ msgstr "تعديل المدخل"
 msgid "Edit Entry"
 msgstr "تعديل المدخل"
 
-#: app/components/layout/settings/cloud-sync.tsx:1226
+#: app/components/layout/settings/cloud-sync.tsx:1204
 msgid "Edit profile"
 msgstr "تعديل الملف الشخصي"
 
@@ -1083,7 +1083,7 @@ msgstr "تعديل الملف الشخصي"
 msgid "Edit scenario"
 msgstr "تعديل السيناريو"
 
-#: app/pages/scenarios/edit.tsx:207
+#: app/pages/scenarios/edit.tsx:209
 msgid "Edit Scenario"
 msgstr "تعديل السيناريو"
 
@@ -1116,7 +1116,7 @@ msgstr "أدخل العنوان الأساسي (Base URL) في حقل الراب
 msgid "Enter the full address, starting with http:// or https://"
 msgstr "أدخل العنوان كاملًا، بدءًا بـ http:// أو https://"
 
-#: app/components/play/play-input-controls.tsx:481
+#: app/components/play/play-input-controls.tsx:479
 msgid "Enter your action"
 msgstr "أدخل إجراءك"
 
@@ -1202,13 +1202,13 @@ msgstr "تعذّر تحميل السيناريوهات المنشورة."
 msgid "Failed to load scenario."
 msgstr "تعذّر تحميل السيناريو."
 
-#: app/pages/home/home.tsx:917
+#: app/pages/home/home.tsx:906
 #: app/pages/scenarios/home.tsx:589
 msgid "Failed to load scenarios."
 msgstr "فشل تحميل السيناريوهات."
 
-#: app/pages/home/home.tsx:507
-#: app/pages/home/home.tsx:787
+#: app/pages/home/home.tsx:497
+#: app/pages/home/home.tsx:776
 #: app/pages/tales/home.tsx:227
 msgid "Failed to load tales."
 msgstr "فشل تحميل الحكايات."
@@ -1225,18 +1225,18 @@ msgstr "تعذّر نشر السيناريو"
 msgid "Failed to queue sync"
 msgstr "تعذّرت إضافة المزامنة إلى قائمة الانتظار"
 
-#: app/components/layout/settings/cloud-sync.tsx:794
+#: app/components/layout/settings/cloud-sync.tsx:776
 #: app/pages/tales/home.tsx:112
 msgid "Failed to remove from cloud"
 msgstr "تعذّرت الإزالة من السحابة"
 
-#: app/pages/home/home.tsx:524
+#: app/pages/home/home.tsx:514
 #: app/pages/tales/home.tsx:152
 msgid "Failed to resolve conflict"
 msgstr "تعذّر حل التعارض"
 
-#: app/pages/scenarios/edit.tsx:120
-#: app/pages/scenarios/edit.tsx:171
+#: app/pages/scenarios/edit.tsx:122
+#: app/pages/scenarios/edit.tsx:173
 msgid "Failed to save scenario"
 msgstr "تعذّر حفظ السيناريو"
 
@@ -1250,7 +1250,7 @@ msgstr "تعذّر بدء السيناريو"
 msgid "Failed to submit report"
 msgstr "تعذّر إرسال البلاغ"
 
-#: app/components/play/play-input-controls.tsx:253
+#: app/components/play/play-input-controls.tsx:251
 msgid "Failed to transcribe speech."
 msgstr "فشل تحويل الكلام إلى نص."
 
@@ -1258,7 +1258,7 @@ msgstr "فشل تحويل الكلام إلى نص."
 msgid "Failed to unpublish scenario"
 msgstr "تعذّر إلغاء نشر السيناريو"
 
-#: app/components/layout/settings/cloud-sync.tsx:849
+#: app/components/layout/settings/cloud-sync.tsx:827
 msgid "Failed to update devices"
 msgstr "تعذّر تحديث الأجهزة"
 
@@ -1271,11 +1271,11 @@ msgstr "خيال"
 msgid "Filter by tags"
 msgstr "تصفية حسب الوسوم"
 
-#: app/components/layout/settings/chatgpt-connection.tsx:103
+#: app/components/layout/settings/chatgpt-connection.tsx:104
 msgid "Finish signing in in your browser..."
 msgstr "أكمل تسجيل الدخول في متصفحك..."
 
-#: app/components/layout/settings/cloud-sync.tsx:1200
+#: app/components/layout/settings/cloud-sync.tsx:1178
 msgid "Finish signing in through your browser. You can cancel and keep using Hakawati at any time."
 msgstr "أكمل تسجيل الدخول عبر متصفحك. يمكنك الإلغاء ومواصلة استخدام حكواتي في أي وقت."
 
@@ -1310,13 +1310,13 @@ msgstr "مجاني"
 msgid "Frequency penalty"
 msgstr "عقوبة التواتر"
 
-#: app/components/layout/server-announcement.tsx:70
+#: app/components/layout/server-announcement.tsx:111
 msgid "From Hakawati"
 msgstr "من حكواتي"
 
 #: app/components/layout/settings/tale.tsx:64
 #: app/components/scenario/GameModeField.tsx:22
-#: app/pages/home/home.tsx:237
+#: app/pages/home/home.tsx:231
 #: app/pages/scenarios/details.tsx:236
 msgid "Game Master"
 msgstr "مدير اللعبة"
@@ -1343,7 +1343,7 @@ msgid "Generate"
 msgstr "توليد"
 
 #: app/components/scenario/GenerateScenarioDialog.tsx:83
-#: app/pages/home/home.tsx:895
+#: app/pages/home/home.tsx:884
 msgid "Generate Scenario"
 msgstr "توليد سيناريو"
 
@@ -1402,7 +1402,7 @@ msgstr "حكواتي محدّث"
 msgid "Hakawati is up to date."
 msgstr "تطبيق حكواتي محدّث."
 
-#: app/components/play/play-input-controls.tsx:242
+#: app/components/play/play-input-controls.tsx:240
 msgid "Hakawati needs microphone access to record speech."
 msgstr "يحتاج حكواتي إلى إذن الوصول إلى الميكروفون لتسجيل الكلام."
 
@@ -1472,11 +1472,11 @@ msgstr "كيفية إضافة الأسئلة"
 msgid "How to get a key"
 msgstr "كيف تحصل على مفتاح"
 
-#: app/components/layout/settings/cloud-sync.tsx:961
+#: app/components/layout/settings/cloud-sync.tsx:939
 msgid "http://192.168.1.20:8787"
 msgstr "http://192.168.1.20:8787"
 
-#: app/components/layout/settings/cloud-sync.tsx:924
+#: app/components/layout/settings/cloud-sync.tsx:902
 msgid "https://sync.example.com"
 msgstr "https://sync.example.com"
 
@@ -1500,7 +1500,7 @@ msgstr "قيد المراجعة"
 msgid "In the LICENSES folder that comes with the app"
 msgstr "في مجلد LICENSES المرفق بالتطبيق"
 
-#: app/components/play/log/log-block-bubble.tsx:211
+#: app/components/play/log/log-block-bubble.tsx:223
 msgid "Initial"
 msgstr "أولى"
 
@@ -1536,7 +1536,7 @@ msgstr "الإصدار المثبت"
 msgid "Installing the update…"
 msgstr "جارٍ تثبيت التحديث…"
 
-#: app/root.tsx:157
+#: app/root.tsx:156
 msgid "Installing update…"
 msgstr "جارٍ تثبيت التحديث…"
 
@@ -1575,7 +1575,7 @@ msgstr "العناصر التي تم جمعها ستظهر هنا"
 msgid "Journalist"
 msgstr "صحفي"
 
-#: app/components/layout/settings/cloud-sync.tsx:1464
+#: app/components/layout/settings/cloud-sync.tsx:1442
 msgid "Keep all private"
 msgstr "إبقاء الكل خاصاً"
 
@@ -1620,7 +1620,7 @@ msgstr "أكبر"
 msgid "Last checked"
 msgstr "آخر بحث"
 
-#: app/components/layout/settings/cloud-sync.tsx:1593
+#: app/components/layout/settings/cloud-sync.tsx:1571
 msgid "Last seen {lastSeen}"
 msgstr "آخر ظهور {lastSeen}"
 
@@ -1628,7 +1628,7 @@ msgstr "آخر ظهور {lastSeen}"
 msgid "Latest"
 msgstr "الأحدث"
 
-#: app/components/layout/server-announcement.tsx:87
+#: app/components/layout/server-announcement.tsx:158
 msgid "Learn more"
 msgstr "معرفة المزيد"
 
@@ -1669,7 +1669,7 @@ msgstr "مرح"
 msgid "Load {name}"
 msgstr "تحميل {name}"
 
-#: app/pages/home/home.tsx:173
+#: app/pages/home/home.tsx:167
 msgid "Load {title}"
 msgstr "تحميل {title}"
 
@@ -1678,7 +1678,7 @@ msgstr "تحميل {title}"
 msgid "Load more"
 msgstr "تحميل المزيد"
 
-#: app/pages/play/play.tsx:297
+#: app/pages/play/play.tsx:296
 msgid "Loading adventure..."
 msgstr "جاري تحميل المغامرة..."
 
@@ -1700,7 +1700,7 @@ msgstr "جارٍ تحميل تفاصيل السيناريو المنشور..."
 msgid "Loading publishing policies..."
 msgstr "جارٍ تحميل سياسات النشر..."
 
-#: app/pages/scenarios/edit.tsx:188
+#: app/pages/scenarios/edit.tsx:190
 msgid "Loading scenario..."
 msgstr "جارٍ تحميل السيناريو..."
 
@@ -1710,9 +1710,9 @@ msgid "Loading scenarios"
 msgstr "جارٍ تحميل السيناريوهات"
 
 #: app/components/layout/model-select.tsx:71
-#: app/components/layout/settings/cloud-sync.tsx:1517
-#: app/components/layout/settings/cloud-sync.tsx:1610
-#: app/pages/home/home.tsx:840
+#: app/components/layout/settings/cloud-sync.tsx:1495
+#: app/components/layout/settings/cloud-sync.tsx:1588
+#: app/pages/home/home.tsx:829
 #: app/pages/scenarios/catalog-details.tsx:331
 #: app/pages/scenarios/details.tsx:214
 #: app/pages/scenarios/home.tsx:584
@@ -1720,21 +1720,21 @@ msgstr "جارٍ تحميل السيناريوهات"
 msgid "Loading..."
 msgstr "جاري التحميل..."
 
-#: app/pages/home/home.tsx:190
-#: app/pages/home/home.tsx:744
-#: app/pages/home/home.tsx:782
-#: app/pages/home/home.tsx:912
+#: app/pages/home/home.tsx:184
+#: app/pages/home/home.tsx:733
+#: app/pages/home/home.tsx:771
+#: app/pages/home/home.tsx:901
 msgid "Loading…"
 msgstr "جاري تحميل..."
 
-#: app/pages/home/home.tsx:161
+#: app/pages/home/home.tsx:155
 #: app/pages/scenarios/home.tsx:461
 #: app/pages/tales/home.tsx:266
 msgid "Local"
 msgstr "محلي"
 
-#: app/pages/home/home.tsx:617
-#: app/pages/home/home.tsx:636
+#: app/pages/home/home.tsx:607
+#: app/pages/home/home.tsx:626
 msgid "Local profile"
 msgstr "الملف الشخصي المحلي"
 
@@ -1766,7 +1766,7 @@ msgstr "ساحر"
 msgid "magic, city"
 msgstr "سحر, مدينة"
 
-#: app/components/layout/settings/chatgpt-connection.tsx:32
+#: app/components/layout/settings/chatgpt-connection.tsx:33
 msgid "Manage usage"
 msgstr "إدارة الاستخدام"
 
@@ -1812,7 +1812,7 @@ msgstr "مسعف"
 msgid "Medium"
 msgstr "متوسط"
 
-#: app/components/play/play-input-controls.tsx:241
+#: app/components/play/play-input-controls.tsx:239
 msgid "Microphone access is turned off for Hakawati. Allow it in your device settings to record speech."
 msgstr "الوصول إلى الميكروفون متوقف لحكواتي. اسمح به من إعدادات جهازك لتسجيل الكلام."
 
@@ -1830,7 +1830,7 @@ msgid "Minimize"
 msgstr "تصغير"
 
 #. placeholder {0}: issues.join(", ")
-#: app/pages/home/home.tsx:684
+#: app/pages/home/home.tsx:673
 msgid "Missing settings: {0}. Configure your API in Settings."
 msgstr "الإعدادات المفقودة: {0}. قم بتعيين API في الإعدادات."
 
@@ -1846,7 +1846,7 @@ msgstr "الوضع"
 msgid "Model"
 msgstr "النموذج"
 
-#: app/hooks/useChooseModel.ts:29
+#: app/hooks/useChooseModel.ts:23
 msgid "Model cannot be confirmed to support tool calling. GM mode may not work properly."
 msgstr "لا يمكن التأكد من أن النموذج يدعم استخدام الأدوات. قد لا يعمل وضع مدير اللعبة بشكل صحيح."
 
@@ -1895,8 +1895,8 @@ msgstr "الاسم"
 msgid "NanoGPT"
 msgstr "NanoGPT"
 
-#: app/components/play/log/log-block-bubble.tsx:106
-#: app/components/play/log/log-block-bubble.tsx:116
+#: app/components/play/log/log-block-bubble.tsx:114
+#: app/components/play/log/log-block-bubble.tsx:124
 #: app/components/play/log/log-entry-bubble.tsx:76
 #: app/components/play/log/log-entry-bubble.tsx:86
 msgid "Narrate section"
@@ -1911,7 +1911,7 @@ msgstr "السرد الصوتي"
 msgid "Narrator"
 msgstr "الراوي"
 
-#: app/pages/home/home.tsx:154
+#: app/pages/home/home.tsx:148
 #: app/pages/tales/home.tsx:259
 msgid "Needs review"
 msgstr "يحتاج إلى مراجعة"
@@ -1933,7 +1933,7 @@ msgctxt "Release notes section"
 msgid "New"
 msgstr "الجديد"
 
-#: app/pages/home/home.tsx:888
+#: app/pages/home/home.tsx:877
 msgid "New scenario"
 msgstr "سيناريو جديد"
 
@@ -1952,7 +1952,7 @@ msgstr "لم يتم إضافة أي مكونات للذكاء الاصطناعي
 msgid "No cards match your search."
 msgstr "لا توجد بطاقات تطابق بحثك."
 
-#: app/components/layout/settings/cloud-sync.tsx:1521
+#: app/components/layout/settings/cloud-sync.tsx:1499
 msgid "No cloud tales."
 msgstr "لا توجد حكايات سحابية."
 
@@ -1964,9 +1964,9 @@ msgstr "بلا غلاف"
 msgid "No cover image"
 msgstr "لا توجد صورة غلاف"
 
-#: app/pages/home/home.tsx:144
-#: app/pages/home/home.tsx:147
-#: app/pages/home/home.tsx:243
+#: app/pages/home/home.tsx:138
+#: app/pages/home/home.tsx:141
+#: app/pages/home/home.tsx:237
 #: app/pages/scenarios/details.tsx:321
 #: app/pages/scenarios/home.tsx:599
 #: app/pages/tales/home.tsx:271
@@ -2006,7 +2006,7 @@ msgstr "لا توجد نماذج متاحة"
 msgid "No models match"
 msgstr "لا توجد نماذج مطابقة"
 
-#: app/pages/home/home.tsx:852
+#: app/pages/home/home.tsx:841
 #: app/pages/scenarios/home.tsx:577
 msgid "No public scenarios yet."
 msgstr "لا توجد سيناريوهات عامة بعد."
@@ -2015,7 +2015,7 @@ msgstr "لا توجد سيناريوهات عامة بعد."
 msgid "No published scenarios yet."
 msgstr "لا توجد سيناريوهات منشورة بعد."
 
-#: app/components/layout/settings/cloud-sync.tsx:1614
+#: app/components/layout/settings/cloud-sync.tsx:1592
 msgid "No registered devices."
 msgstr "لا توجد أجهزة مسجّلة."
 
@@ -2027,7 +2027,7 @@ msgstr "لا توجد أدوار بعد"
 msgid "No scenarios match your search or tags."
 msgstr "لا توجد سيناريوهات تطابق بحثك أو الوسوم المحددة."
 
-#: app/pages/home/home.tsx:924
+#: app/pages/home/home.tsx:913
 msgid "No scenarios yet."
 msgstr "لا توجد سيناريوهات بعد."
 
@@ -2043,11 +2043,11 @@ msgstr "بدون تتبع الخصائص أو المخزون"
 msgid "No stats yet"
 msgstr "لا توجد خصائص بعد"
 
-#: app/components/layout/settings/cloud-sync.tsx:1453
+#: app/components/layout/settings/cloud-sync.tsx:1431
 msgid "No tales waiting."
 msgstr "لا توجد حكايات بانتظار قرارك."
 
-#: app/pages/home/home.tsx:797
+#: app/pages/home/home.tsx:786
 msgid "No tales yet."
 msgstr "لا توجد حكايات بعد."
 
@@ -2066,11 +2066,11 @@ msgid "Not set up"
 msgstr "غير مُعدّ"
 
 #: app/components/layout/settings/ai-setup/index.tsx:74
-#: app/components/layout/settings/cloud-sync.tsx:1022
+#: app/components/layout/settings/cloud-sync.tsx:1000
 msgid "Not signed in"
 msgstr "لم يُسجّل الدخول"
 
-#: app/pages/home/home.tsx:158
+#: app/pages/home/home.tsx:152
 #: app/pages/tales/home.tsx:263
 msgid "Not synced"
 msgstr "غير متزامن"
@@ -2090,7 +2090,7 @@ msgstr "عالم غيبيات"
 msgid "Off"
 msgstr "إيقاف"
 
-#: app/components/layout/settings/cloud-sync.tsx:877
+#: app/components/layout/settings/cloud-sync.tsx:855
 msgid "Off for this device"
 msgstr "متوقفة على هذا الجهاز"
 
@@ -2102,7 +2102,7 @@ msgstr "أبيض عاجي بلمسة زرقاء مخضرّة."
 msgid "Ollama, LM Studio, KoboldCpp…"
 msgstr "Ollama وLM Studio وKoboldCpp…"
 
-#: app/components/layout/settings/cloud-sync.tsx:861
+#: app/components/layout/settings/cloud-sync.tsx:839
 msgid "On for this device"
 msgstr "مفعّلة على هذا الجهاز"
 
@@ -2115,11 +2115,11 @@ msgid "Only the desktop app updates itself"
 msgstr "تطبيق سطح المكتب وحده يحدّث نفسه"
 
 #. placeholder {0}: scenario.name
-#: app/pages/home/home.tsx:247
+#: app/pages/home/home.tsx:241
 msgid "Open {0}"
 msgstr "فتح {0}"
 
-#: app/pages/home/home.tsx:694
+#: app/pages/home/home.tsx:683
 msgid "Open Settings"
 msgstr "فتح الإعدادات"
 
@@ -2185,32 +2185,32 @@ msgstr "إيقاف السرد مؤقتاً"
 msgid "Pay per use, many open models"
 msgstr "الدفع حسب الاستخدام، ونماذج مفتوحة كثيرة"
 
-#: app/components/layout/settings/cloud-sync.tsx:874
+#: app/components/layout/settings/cloud-sync.tsx:852
 msgid "Personal"
 msgstr "شخصي"
 
-#: app/pages/home/home.tsx:632
+#: app/pages/home/home.tsx:622
 msgid "Personal server"
 msgstr "خادم شخصي"
 
-#: app/components/layout/settings/cloud-sync.tsx:1026
-#: app/pages/home/home.tsx:615
+#: app/components/layout/settings/cloud-sync.tsx:1004
+#: app/pages/home/home.tsx:605
 msgid "Personal Sync"
 msgstr "المزامنة الشخصية"
 
-#: app/components/layout/settings/cloud-sync.tsx:747
+#: app/components/layout/settings/cloud-sync.tsx:729
 msgid "Personal sync connected"
 msgstr "المزامنة الشخصية متصلة"
 
-#: app/components/layout/settings/cloud-sync.tsx:955
+#: app/components/layout/settings/cloud-sync.tsx:933
 msgid "Personal sync server"
 msgstr "خادم المزامنة الشخصية"
 
-#: app/components/layout/settings/cloud-sync.tsx:962
+#: app/components/layout/settings/cloud-sync.tsx:940
 msgid "Personal Sync URL"
 msgstr "رابط المزامنة الشخصية"
 
-#: app/themes/registry.ts:71
+#: app/themes/registry.ts:76
 msgid "Phosphor"
 msgstr "فوسفور"
 
@@ -2229,8 +2229,8 @@ msgstr "تثبيت"
 msgid "Place"
 msgstr "مكان"
 
-#: app/components/layout/settings/cloud-sync.tsx:946
-#: app/components/layout/settings/cloud-sync.tsx:951
+#: app/components/layout/settings/cloud-sync.tsx:924
+#: app/components/layout/settings/cloud-sync.tsx:929
 msgid "Platform"
 msgstr "المنصة"
 
@@ -2264,16 +2264,16 @@ msgstr "سياسة الخصوصية"
 msgid "Privacy-focused provider with multiple models on offer. Account optional. Offers subscription plan with unlimited usage on some models."
 msgstr "مزود يركز على الخصوصية مع توفر نماذج متعددة. الحساب اختياري. يقدم خطة اشتراك مع استخدام غير محدود لبعض النماذج."
 
-#: app/components/layout/settings/cloud-sync.tsx:1439
+#: app/components/layout/settings/cloud-sync.tsx:1417
 msgid "Private"
 msgstr "خاص"
 
-#: app/components/layout/settings/cloud-sync.tsx:581
-#: app/components/layout/settings/cloud-sync.tsx:582
+#: app/components/layout/settings/cloud-sync.tsx:571
+#: app/components/layout/settings/cloud-sync.tsx:572
 msgid "Profile completed"
 msgstr "تم إكمال الملف الشخصي"
 
-#: app/components/layout/settings/cloud-sync.tsx:872
+#: app/components/layout/settings/cloud-sync.tsx:850
 msgid "Profile incomplete"
 msgstr "الملف الشخصي غير مكتمل"
 
@@ -2291,22 +2291,22 @@ msgstr "الموجّهات"
 msgid "Psychic"
 msgstr "وسيط روحي"
 
-#: app/pages/home/home.tsx:212
+#: app/pages/home/home.tsx:206
 msgid "Public scenario"
 msgstr "سيناريو عام"
 
-#: app/pages/home/home.tsx:824
+#: app/pages/home/home.tsx:813
 msgid "Public Scenarios"
 msgstr "السيناريوهات العامة"
 
-#: app/pages/home/home.tsx:845
+#: app/pages/home/home.tsx:834
 msgid "Public scenarios are unavailable."
 msgstr "السيناريوهات العامة غير متاحة."
 
 #: app/components/scenario/PublishScenarioDialog.tsx:360
 #: app/pages/scenarios/create.tsx:97
 #: app/pages/scenarios/details.tsx:271
-#: app/pages/scenarios/edit.tsx:179
+#: app/pages/scenarios/edit.tsx:181
 #: app/pages/scenarios/home.tsx:649
 msgid "Publish"
 msgstr "نشر"
@@ -2323,7 +2323,7 @@ msgstr "انشر الاسم والوصف والغلاف ومحتوى القصة 
 #: app/components/scenario/PublishScenarioDialog.tsx:358
 #: app/pages/scenarios/catalog-details.tsx:375
 #: app/pages/scenarios/details.tsx:269
-#: app/pages/scenarios/edit.tsx:177
+#: app/pages/scenarios/edit.tsx:179
 #: app/pages/scenarios/home.tsx:647
 msgid "Publish update"
 msgstr "نشر تحديث"
@@ -2335,7 +2335,7 @@ msgstr "نشر تحديث"
 msgid "Published"
 msgstr "منشور"
 
-#: app/pages/scenarios/edit.tsx:220
+#: app/pages/scenarios/edit.tsx:222
 msgid "Published details could not be loaded. You can edit your draft; publishing will retry."
 msgstr "تعذّر تحميل التفاصيل المنشورة. يمكنك تعديل مسودتك، وسيُعاد تحميلها عند النشر."
 
@@ -2372,11 +2372,11 @@ msgid "Question progress"
 msgstr "التقدّم في الأسئلة"
 
 #: app/components/quickstart/quickstart-wizard.tsx:625
-#: app/pages/home/home.tsx:584
+#: app/pages/home/home.tsx:574
 msgid "Quickstart"
 msgstr "بداية سريعة"
 
-#: app/themes/registry.ts:88
+#: app/themes/registry.ts:93
 msgid "Rain on Glass"
 msgstr "مطر على الزجاج"
 
@@ -2414,23 +2414,23 @@ msgstr "جاهز للعب"
 msgid "Ready to start your tale?"
 msgstr "هل أنت مستعد لبدء حكايتك؟"
 
-#: app/pages/home/home.tsx:768
+#: app/pages/home/home.tsx:757
 msgid "Recent tales"
 msgstr "أحدث الحكايات"
 
-#: app/pages/home/home.tsx:613
+#: app/pages/home/home.tsx:603
 msgid "Reconnecting..."
 msgstr "جارٍ إعادة الاتصال..."
 
-#: app/components/layout/settings/cloud-sync.tsx:863
+#: app/components/layout/settings/cloud-sync.tsx:841
 msgid "Reconnecting…"
 msgstr "جارٍ إعادة الاتصال…"
 
-#: app/components/play/play-input-controls.tsx:424
+#: app/components/play/play-input-controls.tsx:422
 msgid "Record speech"
 msgstr "تسجيل الكلام"
 
-#: app/components/play/play-input-controls.tsx:247
+#: app/components/play/play-input-controls.tsx:245
 msgid "Recording stopped because you left Hakawati."
 msgstr "توقّف التسجيل لأنك غادرت حكواتي."
 
@@ -2476,7 +2476,7 @@ msgstr "إزالة الاتصال"
 msgid "Remove cover"
 msgstr "إزالة الغلاف"
 
-#: app/components/layout/settings/cloud-sync.tsx:1511
+#: app/components/layout/settings/cloud-sync.tsx:1489
 #: app/pages/tales/home.tsx:334
 #: app/pages/tales/home.tsx:453
 msgid "Remove from cloud"
@@ -2491,7 +2491,7 @@ msgctxt "Release notes section"
 msgid "Removed"
 msgstr "المحذوفات"
 
-#: app/components/layout/settings/cloud-sync.tsx:791
+#: app/components/layout/settings/cloud-sync.tsx:773
 #: app/pages/tales/home.tsx:108
 msgid "Removed from cloud"
 msgstr "تمت الإزالة من السحابة"
@@ -2555,7 +2555,7 @@ msgstr "إعادة تعيين إعدادات التوليد"
 msgid "Reset to default"
 msgstr "إعادة إلى الافتراضي"
 
-#: app/components/layout/settings/cloud-sync.tsx:934
+#: app/components/layout/settings/cloud-sync.tsx:912
 msgid "Reset to Default"
 msgstr "استعادة الافتراضيات"
 
@@ -2567,7 +2567,7 @@ msgstr "تغيير حجم لوحة القصة"
 msgid "Resolve sync conflict"
 msgstr "حل تعارض المزامنة"
 
-#: app/pages/home/home.tsx:630
+#: app/pages/home/home.tsx:620
 msgid "Restoring session"
 msgstr "جارٍ استعادة الجلسة"
 
@@ -2576,7 +2576,7 @@ msgstr "جارٍ استعادة الجلسة"
 #: app/components/play/log/log-control.tsx:122
 #: app/components/play/log/log-control.tsx:126
 #: app/components/scenario/PublishScenarioDialog.tsx:231
-#: app/pages/scenarios/edit.tsx:197
+#: app/pages/scenarios/edit.tsx:199
 #: app/pages/scenarios/home.tsx:708
 #: app/pages/scenarios/home.tsx:747
 msgid "Retry"
@@ -2586,8 +2586,8 @@ msgstr "إعادة المحاولة"
 msgid "Retry (Ctrl+R)"
 msgstr "إعادة المحاولة (Ctrl+R)"
 
-#: app/pages/home/home.tsx:167
-#: app/pages/home/home.tsx:746
+#: app/pages/home/home.tsx:161
+#: app/pages/home/home.tsx:735
 #: app/pages/tales/home.tsx:276
 msgid "Review conflict"
 msgstr "مراجعة التعارض"
@@ -2612,12 +2612,12 @@ msgstr "الأدوار"
 msgid "Roles using it will need another connection."
 msgstr "ستحتاج الأدوار التي تستخدمه إلى اتصال آخر."
 
-#: app/components/play/play-input-controls.tsx:407
+#: app/components/play/play-input-controls.tsx:405
 msgid "Roll"
 msgstr "النرد"
 
-#: app/components/play/play-input-controls.tsx:384
-#: app/components/play/play-input-controls.tsx:412
+#: app/components/play/play-input-controls.tsx:382
+#: app/components/play/play-input-controls.tsx:410
 msgid "Roll a dice"
 msgstr "رمي النرد"
 
@@ -2638,7 +2638,7 @@ msgstr "التوليد"
 #: app/components/layout/settings/ai-setup/connection-page.tsx:286
 #: app/components/layout/settings/ai-setup/connection-page.tsx:369
 #: app/components/layout/settings/ai-setup/connection-page.tsx:437
-#: app/components/layout/settings/cloud-sync.tsx:1266
+#: app/components/layout/settings/cloud-sync.tsx:1244
 #: app/components/ui/inventory-item.tsx:77
 #: app/components/ui/stat-item.tsx:104
 msgid "Save"
@@ -2652,15 +2652,15 @@ msgstr "حفظ كسيناريو"
 msgid "Save Changes"
 msgstr "حفظ التغييرات"
 
-#: app/pages/scenarios/edit.tsx:152
+#: app/pages/scenarios/edit.tsx:154
 msgid "Save draft"
 msgstr "حفظ المسودة"
 
-#: app/components/layout/settings/cloud-sync.tsx:564
+#: app/components/layout/settings/cloud-sync.tsx:554
 msgid "Saving profile"
 msgstr "جارٍ حفظ الملف الشخصي"
 
-#: app/root.tsx:160
+#: app/root.tsx:159
 msgid "Saving your progress. Hakawati will restart when the update is ready."
 msgstr "جارٍ حفظ تقدّمك. سيُعاد تشغيل حكواتي عندما يصبح التحديث جاهزاً."
 
@@ -2677,7 +2677,7 @@ msgstr "سيناريو"
 msgid "Scenario actions"
 msgstr "إجراءات السيناريو"
 
-#: app/pages/scenarios/edit.tsx:192
+#: app/pages/scenarios/edit.tsx:194
 msgid "Scenario could not be loaded."
 msgstr "تعذّر تحميل السيناريو."
 
@@ -2700,7 +2700,7 @@ msgstr "لم يُعثر على السيناريو"
 
 #: app/pages/scenarios/create.tsx:199
 #: app/pages/scenarios/details.tsx:376
-#: app/pages/scenarios/edit.tsx:306
+#: app/pages/scenarios/edit.tsx:308
 #: app/pages/scenarios/home.tsx:910
 msgid "Scenario published"
 msgstr "تم نشر السيناريو"
@@ -2708,7 +2708,7 @@ msgstr "تم نشر السيناريو"
 #: app/pages/scenarios/catalog-details.tsx:473
 #: app/pages/scenarios/create.tsx:198
 #: app/pages/scenarios/details.tsx:373
-#: app/pages/scenarios/edit.tsx:305
+#: app/pages/scenarios/edit.tsx:307
 #: app/pages/scenarios/home.tsx:907
 msgid "Scenario submitted for moderation"
 msgstr "تم إرسال السيناريو للمراجعة"
@@ -2747,7 +2747,7 @@ msgstr "خيال علمي"
 msgid "Scientist"
 msgstr "عالم"
 
-#: app/pages/play/play.tsx:367
+#: app/pages/play/play.tsx:368
 msgid "Scroll to bottom"
 msgstr "التمرير إلى الأسفل"
 
@@ -2806,7 +2806,7 @@ msgstr "اختر نوع اللعبة"
 msgid "Select a model"
 msgstr "اختر نموذج"
 
-#: app/components/play/play-input-controls.tsx:310
+#: app/components/play/play-input-controls.tsx:308
 msgid "Select action mode"
 msgstr "اختر نوع الإجراء"
 
@@ -2839,11 +2839,11 @@ msgstr "أعدّ الراوي لتبدأ اللعب"
 #: app/components/layout/settings/settings-button.tsx:63
 #: app/components/layout/settings/settings-button.tsx:76
 #: app/components/layout/settings/settings-modal.tsx:163
-#: app/pages/home/home.tsx:668
+#: app/pages/home/home.tsx:657
 msgid "Settings"
 msgstr "الإعدادات"
 
-#: app/pages/home/home.tsx:681
+#: app/pages/home/home.tsx:670
 msgid "Setup required"
 msgstr "يجب إعداد التطبيق"
 
@@ -2888,16 +2888,16 @@ msgstr "يظهر في مكتبتك وفي فهرس السيناريوهات ال
 msgid "Shown in your library, not sent to the AI."
 msgstr "يظهر في مكتبتك ولا يُرسَل إلى الذكاء الاصطناعي."
 
-#: app/components/layout/settings/cloud-sync.tsx:1040
-#: app/components/layout/settings/cloud-sync.tsx:1066
+#: app/components/layout/settings/cloud-sync.tsx:1018
+#: app/components/layout/settings/cloud-sync.tsx:1044
 msgid "Sign in"
 msgstr "تسجيل الدخول"
 
-#: app/components/layout/settings/cloud-sync.tsx:1059
+#: app/components/layout/settings/cloud-sync.tsx:1037
 msgid "Sign in again to keep syncing"
 msgstr "سجّل الدخول مجددًا لمواصلة المزامنة"
 
-#: app/components/layout/settings/cloud-sync.tsx:868
+#: app/components/layout/settings/cloud-sync.tsx:846
 msgid "Sign in again to sync"
 msgstr "سجّل الدخول مجددًا للمزامنة"
 
@@ -2905,7 +2905,7 @@ msgstr "سجّل الدخول مجددًا للمزامنة"
 msgid "Sign in to ChatGPT"
 msgstr "سجّل الدخول إلى ChatGPT"
 
-#: app/components/layout/settings/cloud-sync.tsx:876
+#: app/components/layout/settings/cloud-sync.tsx:854
 msgid "Sign in to sync"
 msgstr "سجّل الدخول للمزامنة"
 
@@ -2913,7 +2913,7 @@ msgstr "سجّل الدخول للمزامنة"
 msgid "Sign in with your ChatGPT account. No key, no extra bill."
 msgstr "سجّل الدخول بحساب ChatGPT. بلا مفتاح ولا فاتورة إضافية."
 
-#: app/components/layout/settings/cloud-sync.tsx:1157
+#: app/components/layout/settings/cloud-sync.tsx:1135
 msgid "Sign out"
 msgstr "تسجيل الخروج"
 
@@ -2929,11 +2929,11 @@ msgstr "سجل للحصول على حساب في OpenRouter"
 msgid "Signed in"
 msgstr "تم تسجيل الدخول"
 
-#: app/components/layout/settings/cloud-sync.tsx:485
+#: app/components/layout/settings/cloud-sync.tsx:480
 msgid "Signed out"
 msgstr "تم تسجيل الخروج"
 
-#: app/components/layout/settings/chatgpt-connection.tsx:166
+#: app/components/layout/settings/chatgpt-connection.tsx:167
 msgid "Signed out on this device. To confirm remote access has ended, disconnect Hakawati in ChatGPT Settings → Security and login."
 msgstr "تم تسجيل الخروج على هذا الجهاز. للتأكد من إنهاء الوصول عن بُعد، افصل حكواتي من Settings ← Security and login في ChatGPT."
 
@@ -2957,7 +2957,7 @@ msgstr "ترتيب السيناريوهات"
 msgid "Space Marine"
 msgstr "جندي فضاء"
 
-#: app/components/play/play-input-controls.tsx:285
+#: app/components/play/play-input-controls.tsx:283
 msgid "Speak"
 msgstr "تكلّم"
 
@@ -3007,32 +3007,32 @@ msgstr "تتبع الخصائص والمخزون"
 msgid "Still"
 msgstr "ثابت"
 
-#: app/components/play/play-input-controls.tsx:517
-#: app/components/play/play-input-controls.tsx:523
+#: app/components/play/play-input-controls.tsx:515
+#: app/components/play/play-input-controls.tsx:521
 msgid "Stop and transcribe"
 msgstr "إيقاف وتحويل الكلام لنص"
 
-#: app/components/play/play-input-controls.tsx:557
+#: app/components/play/play-input-controls.tsx:555
 msgid "Stop generating"
 msgstr "إيقاف التوليد"
 
-#: app/components/play/play-input-controls.tsx:421
+#: app/components/play/play-input-controls.tsx:419
 msgid "Stop recording"
 msgstr "إيقاف التسجيل"
 
-#: app/components/layout/settings/cloud-sync.tsx:1396
+#: app/components/layout/settings/cloud-sync.tsx:1374
 msgid "Storage"
 msgstr "التخزين"
 
-#: app/components/layout/settings/cloud-sync.tsx:1403
+#: app/components/layout/settings/cloud-sync.tsx:1381
 msgid "Storage usage"
 msgstr "مساحة التخزين المستخدمة"
 
-#: app/components/layout/settings/cloud-sync.tsx:988
+#: app/components/layout/settings/cloud-sync.tsx:966
 msgid "Storage usage is unavailable."
 msgstr "معلومات استخدام التخزين غير متاحة."
 
-#: app/components/play/play-input-controls.tsx:286
+#: app/components/play/play-input-controls.tsx:284
 #: app/components/play/story-panel/story-panel.tsx:63
 #: app/components/play/story-panel/story-panel.tsx:111
 #: app/components/play/story-panel/story-panel.tsx:344
@@ -3051,7 +3051,7 @@ msgstr "لوحة القصة"
 #: app/components/layout/settings/tale.tsx:62
 #: app/components/quickstart/steps/game-mode-step.tsx:15
 #: app/components/scenario/GameModeField.tsx:22
-#: app/pages/home/home.tsx:239
+#: app/pages/home/home.tsx:233
 #: app/pages/scenarios/details.tsx:236
 msgid "Story Teller"
 msgstr "قصّاص"
@@ -3061,7 +3061,7 @@ msgstr "قصّاص"
 msgid "Story, cards and display"
 msgstr "القصة والبطاقات والعرض"
 
-#: app/themes/registry.ts:94
+#: app/themes/registry.ts:99
 msgid "Storybook"
 msgstr "كتاب حكايات"
 
@@ -3069,7 +3069,7 @@ msgstr "كتاب حكايات"
 msgid "Structured gameplay"
 msgstr "لعبة منظمة"
 
-#: app/components/play/play-input-controls.tsx:560
+#: app/components/play/play-input-controls.tsx:558
 msgid "Submit action"
 msgstr "إرسال الإجراء"
 
@@ -3091,20 +3091,20 @@ msgstr "فاجئني"
 msgid "Survivor"
 msgstr "ناجي"
 
-#: app/components/layout/settings/cloud-sync.tsx:1446
+#: app/components/layout/settings/cloud-sync.tsx:1424
 msgid "Sync"
 msgstr "مزامنة"
 
-#: app/components/layout/settings/cloud-sync.tsx:1467
+#: app/components/layout/settings/cloud-sync.tsx:1445
 msgid "Sync all"
 msgstr "مزامنة الكل"
 
-#: app/components/layout/settings/cloud-sync.tsx:585
-#: app/components/layout/settings/cloud-sync.tsx:602
+#: app/components/layout/settings/cloud-sync.tsx:575
+#: app/components/layout/settings/cloud-sync.tsx:592
 msgid "Sync failed"
 msgstr "تعذّرت المزامنة"
 
-#: app/pages/home/home.tsx:628
+#: app/pages/home/home.tsx:618
 msgid "Sync off"
 msgstr "المزامنة معطّلة"
 
@@ -3140,7 +3140,7 @@ msgstr "يجب ألا يتجاوز طول الوسم 32 حرفًا."
 msgid "Take an action or send a director's note to start the adventure."
 msgstr "قم بفعل أو أرسل ملاحظة المخرج لتبدأ المغامرة."
 
-#: app/pages/home/home.tsx:166
+#: app/pages/home/home.tsx:160
 msgid "Tale"
 msgstr "حكاية"
 
@@ -3152,27 +3152,27 @@ msgstr "إجراءات الحكاية"
 msgid "Tale deleted"
 msgstr "تم حذف الحكاية"
 
-#: app/components/layout/settings/cloud-sync.tsx:1393
+#: app/components/layout/settings/cloud-sync.tsx:1371
 msgid "Tale usage"
 msgstr "عدد الحكايات المستخدمة"
 
-#: app/components/layout/settings/cloud-sync.tsx:1389
+#: app/components/layout/settings/cloud-sync.tsx:1367
 #: app/pages/tales/home.tsx:191
 #: app/pages/tales/home.tsx:202
 msgid "Tales"
 msgstr "حكايات"
 
-#: app/components/layout/settings/cloud-sync.tsx:1128
-#: app/components/layout/settings/cloud-sync.tsx:1325
+#: app/components/layout/settings/cloud-sync.tsx:1106
+#: app/components/layout/settings/cloud-sync.tsx:1303
 msgid "Tales in the cloud"
 msgstr "الحكايات في السحابة"
 
-#: app/components/layout/settings/cloud-sync.tsx:1531
+#: app/components/layout/settings/cloud-sync.tsx:1509
 msgid "Tales on this device stay here when you remove their cloud copy."
 msgstr "تبقى الحكايات المحفوظة على هذا الجهاز عند إزالة نسختها السحابية."
 
-#: app/components/layout/settings/cloud-sync.tsx:1116
-#: app/components/layout/settings/cloud-sync.tsx:1323
+#: app/components/layout/settings/cloud-sync.tsx:1094
+#: app/components/layout/settings/cloud-sync.tsx:1301
 msgid "Tales waiting for a choice"
 msgstr "حكايات بانتظار قرارك"
 
@@ -3271,7 +3271,7 @@ msgstr "شيء"
 
 #: app/components/layout/settings/thinking-level.tsx:55
 #: app/components/layout/settings/thinking-level.tsx:57
-#: app/components/play/log/log-block-bubble.tsx:129
+#: app/components/play/log/log-block-bubble.tsx:137
 msgid "Thinking"
 msgstr "تفكير"
 
@@ -3288,16 +3288,16 @@ msgstr "يتشارك التفكير والإجابة حد الإخراج. ارف
 msgid "Third-party licenses"
 msgstr "تراخيص الأطراف الثالثة"
 
-#: app/components/layout/settings/cloud-sync.tsx:1588
+#: app/components/layout/settings/cloud-sync.tsx:1566
 msgid "This device"
 msgstr "هذا الجهاز"
 
-#: app/components/layout/settings/cloud-sync.tsx:1571
+#: app/components/layout/settings/cloud-sync.tsx:1549
 msgid "This device is not registered."
 msgstr "هذا الجهاز غير مسجّل."
 
-#: app/components/layout/settings/cloud-sync.tsx:662
-#: app/components/layout/settings/cloud-sync.tsx:717
+#: app/components/layout/settings/cloud-sync.tsx:652
+#: app/components/layout/settings/cloud-sync.tsx:703
 msgid "This device is not syncing because the device limit was reached"
 msgstr "لا تجري مزامنة هذا الجهاز لبلوغ الحد الأقصى للأجهزة"
 
@@ -3344,7 +3344,7 @@ msgstr "سيؤدي هذا إلى حذف محتوى المكون نهائياً. 
 msgid "Title"
 msgstr "العنوان"
 
-#: app/components/play/log/log-block-bubble.tsx:125
+#: app/components/play/log/log-block-bubble.tsx:133
 msgid "Toggle thinking output"
 msgstr "إظهار التفكير أو إخفاؤه"
 
@@ -3371,8 +3371,8 @@ msgstr "Top P"
 msgid "Top P, Top K, penalties"
 msgstr "Top P وTop K والعقوبات"
 
-#: app/components/play/play-input-controls.tsx:423
-#: app/components/play/play-input-controls.tsx:534
+#: app/components/play/play-input-controls.tsx:421
+#: app/components/play/play-input-controls.tsx:532
 msgid "Transcribing..."
 msgstr "جاري تحويل الكلام إلى نص..."
 
@@ -3384,7 +3384,7 @@ msgstr "محفز1، محفز2، محفز3"
 msgid "Triggers (comma-separated)"
 msgstr "المحفزات (مفصولة بفواصل)"
 
-#: app/components/layout/settings/chatgpt-connection.tsx:159
+#: app/components/layout/settings/chatgpt-connection.tsx:160
 msgid "Try again"
 msgstr "حاول مرة أخرى"
 
@@ -3400,7 +3400,7 @@ msgstr "اكتب دوراً أو اختر نمطاً مقترحاً من الع�
 msgid "Type your own world, or start from one of the suggestions below."
 msgstr "اكتب عالمك الخاص، أو ابدأ بأحد الاقتراحات أدناه."
 
-#: app/themes/registry.ts:102
+#: app/themes/registry.ts:107
 msgid "Typewriter"
 msgstr "آلة كاتبة"
 
@@ -3436,11 +3436,11 @@ msgstr "إلغاء التثبيت"
 msgid "Unpublish"
 msgstr "إلغاء النشر"
 
-#: app/components/layout/settings/cloud-sync.tsx:1602
+#: app/components/layout/settings/cloud-sync.tsx:1580
 msgid "Unregister"
 msgstr "إلغاء التسجيل"
 
-#: app/pages/home/home.tsx:707
+#: app/pages/home/home.tsx:696
 msgid "Untitled"
 msgstr "بدون عنوان"
 
@@ -3457,8 +3457,8 @@ msgstr "التحديث {0} متاح."
 msgid "Update downloaded. Restarting..."
 msgstr "تم تحميل التحديث. جاري إعادة التشغيل..."
 
-#: app/components/layout/settings/cloud-sync.tsx:859
-#: app/pages/home/home.tsx:624
+#: app/components/layout/settings/cloud-sync.tsx:837
+#: app/pages/home/home.tsx:614
 msgid "Update Hakawati to sync"
 msgstr "حدّث حكواتي للمزامنة"
 
@@ -3500,7 +3500,7 @@ msgstr "تستخدمه الحكايات والسيناريوهات التي لا
 msgid "Used when generating story cards."
 msgstr "يُستخدم عند توليد بطاقات القصة."
 
-#: app/root.tsx:139
+#: app/root.tsx:138
 msgid "User interface scale"
 msgstr "مقياس الواجهة"
 
@@ -3513,7 +3513,7 @@ msgid "View"
 msgstr "عرض"
 
 #. placeholder {0}: scenario.title
-#: app/pages/home/home.tsx:217
+#: app/pages/home/home.tsx:211
 msgid "View {0}"
 msgstr "عرض {0}"
 
@@ -3521,8 +3521,8 @@ msgstr "عرض {0}"
 msgid "View {name}"
 msgstr "عرض {name}"
 
-#: app/pages/home/home.tsx:775
-#: app/pages/home/home.tsx:904
+#: app/pages/home/home.tsx:764
+#: app/pages/home/home.tsx:893
 msgid "View all"
 msgstr "عرض الكل"
 
@@ -3543,7 +3543,7 @@ msgstr "معرّف الصوت"
 msgid "Warrior"
 msgstr "محارب"
 
-#: app/themes/registry.ts:95
+#: app/themes/registry.ts:100
 msgid "Watercolour corners and crayon doodles."
 msgstr "ألوان مائية في الزوايا ورسوم بأقلام التلوين."
 
@@ -3591,7 +3591,7 @@ msgstr "افعل..."
 msgid "You’re now using your ChatGPT plan!"
 msgstr "أنت الآن تستخدم خطة ChatGPT الخاصة بك!"
 
-#: app/components/layout/settings/cloud-sync.tsx:1028
+#: app/components/layout/settings/cloud-sync.tsx:1006
 msgid "Your account"
 msgstr "حسابك"
 
@@ -3599,24 +3599,24 @@ msgstr "حسابك"
 msgid "Your answer"
 msgstr "إجابتك"
 
-#: app/components/layout/settings/cloud-sync.tsx:1288
+#: app/components/layout/settings/cloud-sync.tsx:1266
 msgid "Your cloud saves, published scenarios, and devices are deleted from Hakawati Cloud. Tales on this device stay. This can’t be undone."
 msgstr "ستُحذف حكاياتك السحابية وسيناريوهاتك المنشورة وأجهزتك من سحابة حكواتي. تبقى الحكايات المحفوظة على هذا الجهاز. لا يمكن التراجع عن هذا الإجراء."
 
-#: app/pages/home/home.tsx:656
+#: app/pages/home/home.tsx:645
 msgid "Your library"
 msgstr "مكتبتك"
 
-#: app/pages/home/home.tsx:700
+#: app/pages/home/home.tsx:689
 msgid "Your next tale"
 msgstr "حكايتك التالية"
 
 #: app/pages/scenarios/details.tsx:243
-#: app/pages/scenarios/edit.tsx:139
+#: app/pages/scenarios/edit.tsx:141
 msgid "Your scenarios"
 msgstr "سيناريوهاتك"
 
-#: app/pages/home/home.tsx:869
+#: app/pages/home/home.tsx:858
 msgid "Your Scenarios"
 msgstr "سيناريوهاتك"
 
