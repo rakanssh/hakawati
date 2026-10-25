@@ -15,41 +15,30 @@ and the app shows it in What's New and Updates.
 
 ### Added
 
-- Hakawati for Android and iOS, with Speech to Text, sign-in, and cloud sync.
+- Hakawati for Android and iOS, with Speech to Text, sign-in and cloud sync.
 - Delete your Hakawati Cloud account from Account & Sync.
+- Notices from Hakawati on Home, such as planned maintenance.
 
 ### Changed
 
-- Redesigned Settings. On desktop it opens in its own window.
-- AI Setup saves each provider once as a connection that any role can use. Your providers and keys carry over.
-- Utility is now called Helper and follows the Narrator unless you give it its own model. Maintenance is now called Updates.
+- Redesigned Settings, which opens in its own window on desktop.
+- AI Setup saves each provider once for every role to use. Your keys carry over.
+- Utility is now Helper and uses the Narrator's model unless you pick one. Maintenance is now Updates.
+- Redesigned the input box: modes are tabs (Say is now Speak), and send continues the story when nothing is typed.
 - Account & Sync has a cloud sync switch, and you can change your display name.
-- Redesigned the input box: action modes are tabs along its top (Say is now Speak), with Roll beside them. With nothing typed, send continues the story.
-- Brass Night is now the default theme.
-- Orbit frames the story in a starship tablet.
-- Phosphor looks like an old terminal, and its text is easier to read.
-- The latest passage is marked by a line beside it and an underline under its first words, drawn in each theme's style.
-- Notices from Hakawati sit in a band across the top of Home and can warn of maintenance or outages.
+- Brass Night is the default theme, Orbit and Phosphor are redesigned, and every theme marks where the latest passage begins.
 
 ### Fixed
 
-- Leaving the play screen while the narrator is writing no longer stops the next turn from saving.
-- The story stays inside its frame as it scrolls, and Typewriter no longer bounces back up at the bottom.
-- Settings scroll in narrow windows and show every section when opened from the library.
-- Reporting a public scenario and blocking its publisher work on macOS.
-- Stop ends a stalled reply, and a reply that stops arriving ends with an error instead of waiting forever.
-- When a turn fails, the log shows why, and the narrator no longer reads the error as part of the story. Replies cut off by a content filter are marked as failed.
-- Retry after a Story passage writes what follows it instead of replacing it.
-- Using an item removes one copy instead of every item with that name.
-- Speech to Text can be cancelled, and gives up if it takes too long.
-- Importing a scenario you already have adds a copy instead of replacing yours.
-- Long tales no longer slow down each turn, and the narrator starts replying without a pause.
-- The tale you played last no longer needs review each time you switch devices. It picks up what you played on the other device.
-- Dropped connections and a full cloud no longer show as conflicts. Tales the cloud can't take show Cloud full or Not synced instead of uploading over and over.
-- Hakawati says "Update Hakawati to sync" when the cloud needs a newer version.
-- Pulling a tale from the cloud keeps its cover, and a device removed from your account no longer adds itself back.
-- Sign-in waits 10 minutes instead of 2.
-- Text to Speech reads long passages with OpenAI, and long narrated sessions no longer use more and more memory.
+- Leaving the play screen mid-reply no longer stops the next turn from saving, and a stalled reply ends instead of waiting forever.
+- A failed turn shows why, and the narrator no longer reads the error as part of the story.
+- Retry after a Story passage continues it instead of replacing it.
+- Long tales no longer slow down each turn.
+- Cloud sync picks up where you left off on another device, no longer mistakes dropped connections or a full cloud for conflicts, and keeps covers. Removed devices stay removed.
+- Sign-in waits 10 minutes instead of 2, and Hakawati asks you to update when the cloud needs a newer version.
+- Speech to Text can be cancelled, and Text to Speech handles long passages and long sessions.
+- Using an item removes one copy, and importing a scenario you already have adds a copy instead of replacing it.
+- The story and Settings scroll properly, and reporting a scenario or blocking its publisher works on macOS.
 
 ## [v1.2.0] - 2026-10-06
 
