@@ -66,8 +66,6 @@
   --theme-font-display: "Rajdhani", "Arial Narrow", sans-serif;
   --theme-story-scale: 1.06;
   --theme-story-leading: 1.7;
-  --play-column-max: 52rem;
-  --play-composer-max: 52rem;
   --titlebar-background: color-mix(
     in oklch,
     var(--background) 55%,
