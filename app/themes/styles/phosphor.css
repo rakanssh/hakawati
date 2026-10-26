@@ -70,7 +70,7 @@
   --theme-font-display: "VT323", ui-monospace, monospace;
   --theme-story-scale: 1.45;
   --theme-story-leading: 1.42;
-  --play-column-max: 62rem;
+  --play-column-max: calc(64rem + 6px);
   --titlebar-background: transparent;
   --latest-rail-width: 2px;
   --phosphor-bright: oklch(0.97 0.08 145);

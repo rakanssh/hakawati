@@ -64,8 +64,8 @@
   --theme-font-story: "Courier Prime", "Courier New", monospace;
   --theme-font-display: "Courier Prime", "Courier New", monospace;
   --theme-story-leading: 1.75;
-  --play-column-max: 46rem;
-  --play-composer-max: 50rem;
+  --play-column-max: 67.3rem;
+  --play-composer-max: 67.3rem;
   --titlebar-background: color-mix(
     in oklch,
     var(--background) 55%,
