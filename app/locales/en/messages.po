@@ -879,7 +879,7 @@ msgstr "Deep teal, cream and brass, set in classic book type."
 #: app/components/layout/settings/advanced.tsx:181
 #: app/components/layout/settings/advanced.tsx:279
 #: app/components/layout/settings/model.tsx:58
-#: app/components/layout/settings/model.tsx:272
+#: app/components/layout/settings/model.tsx:262
 #: app/components/layout/settings/thinking-level.tsx:60
 #: app/components/play/story-panel/ai-tab.tsx:108
 msgid "Default"
@@ -1760,8 +1760,8 @@ msgstr "Manual updates are only available in the desktop app."
 msgid "Max"
 msgstr "Max"
 
-#: app/components/layout/settings/model.tsx:237
-#: app/components/layout/settings/model.tsx:253
+#: app/components/layout/settings/model.tsx:234
+#: app/components/layout/settings/model.tsx:243
 #: app/components/play/story-panel/ai-tab.tsx:85
 #: app/components/play/story-panel/ai-tab.tsx:94
 msgid "Max output tokens"
@@ -2346,7 +2346,7 @@ msgstr "Quickstart"
 msgid "Rain on Glass"
 msgstr "Rain on Glass"
 
-#: app/components/layout/settings/model.tsx:296
+#: app/components/layout/settings/model.tsx:286
 msgid "Random seed"
 msgstr "Random seed"
 
@@ -2513,7 +2513,7 @@ msgstr "Reset all prompts to default?"
 msgid "Reset all to default"
 msgstr "Reset all to default"
 
-#: app/components/layout/settings/model.tsx:313
+#: app/components/layout/settings/model.tsx:303
 msgid "Reset generation settings"
 msgstr "Reset generation settings"
 
@@ -2587,17 +2587,12 @@ msgstr "Roll"
 msgid "Roll a dice"
 msgstr "Roll a dice"
 
-#: app/components/layout/settings/model.tsx:235
-#: app/components/layout/settings/model.tsx:253
-msgid "Room for the reply"
-msgstr "Room for the reply"
-
 #: app/components/layout/settings/ai-setup/index.tsx:62
 #: app/components/layout/settings/ai-setup/role-page.tsx:73
 msgid "Same as Narrator"
 msgstr "Same as Narrator"
 
-#: app/components/layout/settings/model.tsx:262
+#: app/components/layout/settings/model.tsx:252
 msgid "Sampling"
 msgstr "Sampling"
 
@@ -2755,8 +2750,8 @@ msgstr "Search tales"
 msgid "Searching…"
 msgstr "Searching…"
 
-#: app/components/layout/settings/model.tsx:279
-#: app/components/layout/settings/model.tsx:286
+#: app/components/layout/settings/model.tsx:269
+#: app/components/layout/settings/model.tsx:276
 msgid "Seed"
 msgstr "Seed"
 
@@ -3146,8 +3141,8 @@ msgstr "Tales waiting for a choice"
 msgid "Tell the moderators what is wrong with it."
 msgstr "Tell the moderators what is wrong with it."
 
-#: app/components/layout/settings/model.tsx:264
-#: app/components/layout/settings/model.tsx:273
+#: app/components/layout/settings/model.tsx:254
+#: app/components/layout/settings/model.tsx:263
 #: app/components/play/story-panel/ai-tab.tsx:100
 #: app/components/play/story-panel/ai-tab.tsx:109
 msgid "Temperature"
@@ -3233,7 +3228,7 @@ msgstr "Thing"
 msgid "Thinking"
 msgstr "Thinking"
 
-#: app/components/layout/settings/model.tsx:242
+#: app/components/layout/settings/model.tsx:235
 #: app/components/play/story-panel/ai-tab.tsx:86
 msgid "Thinking and the answer share this"
 msgstr "Thinking and the answer share this"

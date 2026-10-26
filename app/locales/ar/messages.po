@@ -879,7 +879,7 @@ msgstr "أزرق مخضرّ عميق وكريمي ونحاسي، بخط الكت
 #: app/components/layout/settings/advanced.tsx:181
 #: app/components/layout/settings/advanced.tsx:279
 #: app/components/layout/settings/model.tsx:58
-#: app/components/layout/settings/model.tsx:272
+#: app/components/layout/settings/model.tsx:262
 #: app/components/layout/settings/thinking-level.tsx:60
 #: app/components/play/story-panel/ai-tab.tsx:108
 msgid "Default"
@@ -1760,8 +1760,8 @@ msgstr "التحديثات اليدوية متاحة فقط في نسخة الأ
 msgid "Max"
 msgstr "الحد الأقصى"
 
-#: app/components/layout/settings/model.tsx:237
-#: app/components/layout/settings/model.tsx:253
+#: app/components/layout/settings/model.tsx:234
+#: app/components/layout/settings/model.tsx:243
 #: app/components/play/story-panel/ai-tab.tsx:85
 #: app/components/play/story-panel/ai-tab.tsx:94
 msgid "Max output tokens"
@@ -2346,7 +2346,7 @@ msgstr "بداية سريعة"
 msgid "Rain on Glass"
 msgstr "مطر على الزجاج"
 
-#: app/components/layout/settings/model.tsx:296
+#: app/components/layout/settings/model.tsx:286
 msgid "Random seed"
 msgstr "بذرة عشوائية"
 
@@ -2513,7 +2513,7 @@ msgstr "إعادة كل الموجّهات إلى الافتراضي؟"
 msgid "Reset all to default"
 msgstr "إعادة الكل إلى الافتراضي"
 
-#: app/components/layout/settings/model.tsx:313
+#: app/components/layout/settings/model.tsx:303
 msgid "Reset generation settings"
 msgstr "إعادة تعيين إعدادات التوليد"
 
@@ -2587,17 +2587,12 @@ msgstr "النرد"
 msgid "Roll a dice"
 msgstr "رمي النرد"
 
-#: app/components/layout/settings/model.tsx:235
-#: app/components/layout/settings/model.tsx:253
-msgid "Room for the reply"
-msgstr "مساحة الرد"
-
 #: app/components/layout/settings/ai-setup/index.tsx:62
 #: app/components/layout/settings/ai-setup/role-page.tsx:73
 msgid "Same as Narrator"
 msgstr "مثل الراوي"
 
-#: app/components/layout/settings/model.tsx:262
+#: app/components/layout/settings/model.tsx:252
 msgid "Sampling"
 msgstr "التوليد"
 
@@ -2755,8 +2750,8 @@ msgstr "البحث في الحكايات"
 msgid "Searching…"
 msgstr "جارٍ البحث…"
 
-#: app/components/layout/settings/model.tsx:279
-#: app/components/layout/settings/model.tsx:286
+#: app/components/layout/settings/model.tsx:269
+#: app/components/layout/settings/model.tsx:276
 msgid "Seed"
 msgstr "البذرة"
 
@@ -3146,8 +3141,8 @@ msgstr "حكايات بانتظار قرارك"
 msgid "Tell the moderators what is wrong with it."
 msgstr "أخبر المشرفين بما فيه من مخالفة."
 
-#: app/components/layout/settings/model.tsx:264
-#: app/components/layout/settings/model.tsx:273
+#: app/components/layout/settings/model.tsx:254
+#: app/components/layout/settings/model.tsx:263
 #: app/components/play/story-panel/ai-tab.tsx:100
 #: app/components/play/story-panel/ai-tab.tsx:109
 msgid "Temperature"
@@ -3233,7 +3228,7 @@ msgstr "شيء"
 msgid "Thinking"
 msgstr "تفكير"
 
-#: app/components/layout/settings/model.tsx:242
+#: app/components/layout/settings/model.tsx:235
 #: app/components/play/story-panel/ai-tab.tsx:86
 msgid "Thinking and the answer share this"
 msgstr "يتشارك التفكير والإجابة هذا الحد"

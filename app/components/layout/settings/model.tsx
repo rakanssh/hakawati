@@ -229,33 +229,23 @@ export default function SettingsModel() {
               onValueCommit={setContextWindow}
             />
           </NumberRow>
-          <NumberRow
-            title={
-              isChatGpt ? (
-                <Trans>Room for the reply</Trans>
-              ) : (
-                <Trans>Max output tokens</Trans>
-              )
-            }
-            detail={
-              isChatGpt ? undefined : (
-                <Trans>Thinking and the answer share this</Trans>
-              )
-            }
-          >
-            <NumberInput
-              min={1}
-              max={maxValue}
-              step={1}
-              value={maxTokens}
-              align="right"
-              aria-label={
-                isChatGpt ? t`Room for the reply` : t`Max output tokens`
-              }
-              className={fieldClass}
-              onValueCommit={setMaxTokens}
-            />
-          </NumberRow>
+          {isChatGpt ? null : (
+            <NumberRow
+              title={<Trans>Max output tokens</Trans>}
+              detail={<Trans>Thinking and the answer share this</Trans>}
+            >
+              <NumberInput
+                min={1}
+                max={maxValue}
+                step={1}
+                value={maxTokens}
+                align="right"
+                aria-label={t`Max output tokens`}
+                className={fieldClass}
+                onValueCommit={setMaxTokens}
+              />
+            </NumberRow>
+          )}
         </SetupList>
       </SetupSection>
 
