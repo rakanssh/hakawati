@@ -15,30 +15,28 @@ and the app shows it in What's New and Updates.
 
 ### Added
 
-- Hakawati for Android and iOS, with Speech to Text, sign-in and cloud sync.
-- Delete your Hakawati Cloud account from Account & Sync.
-- Notices from Hakawati on Home, such as planned maintenance.
+- Hakawati mobile builds! (Coming soon to app stores)
+- Delete your account option from Account & Sync.
 
 ### Changed
 
-- Redesigned Settings, which opens in its own window on desktop.
-- AI Setup saves each provider once for every role to use. Your keys carry over.
-- Utility is now Helper and uses the Narrator's model unless you pick one. Maintenance is now Updates.
-- Redesigned the input box: modes are tabs (Say is now Speak), and send continues the story when nothing is typed.
-- Account & Sync has a cloud sync switch, and you can change your display name.
-- Brass Night is the default theme, Orbit and Phosphor are redesigned, and every theme marks where the latest passage begins.
+- Redesigned Settings.
+- AI Setup saves each provider once for every role to use.
+- Utility is now Helper and uses the Narrator's model unless you pick one.
+- Redesigned the input box to be a little more compact.
+- Brass Night is the default theme, Orbit and Phosphor are redesigned, and added clearer new passage markers.
 
 ### Fixed
 
-- Leaving the play screen mid-reply no longer stops the next turn from saving, and a stalled reply ends instead of waiting forever.
+- Leaving the play screen mid-reply no longer stops the next turn from saving, and a stalled reply ends instead of waiting.
 - A failed turn shows why, and the narrator no longer reads the error as part of the story.
 - Retry after a Story passage continues it instead of replacing it.
 - Long tales no longer slow down each turn.
-- Cloud sync picks up where you left off on another device, no longer mistakes dropped connections or a full cloud for conflicts, and keeps covers. Removed devices stay removed.
+- Cloud sync picks up where you left off on another device, no longer mistakes dropped connections or a full cloud for conflicts, and keeps covers.
 - Sign-in waits 10 minutes instead of 2, and Hakawati asks you to update when the cloud needs a newer version.
 - Speech to Text can be cancelled, and Text to Speech handles long passages and long sessions.
 - Using an item removes one copy, and importing a scenario you already have adds a copy instead of replacing it.
-- The story and Settings scroll properly, and reporting a scenario or blocking its publisher works on macOS.
+- The story and Settings scroll properly, and reporting a scenario or blocking its publisher now work on macOS.
 
 ## [v1.2.0] - 2026-10-06
 
