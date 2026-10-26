@@ -113,7 +113,7 @@ export default function SettingsUpdates() {
   return (
     <div className="flex flex-col gap-6">
       {phase === "available" && updateInfo ? (
-        <div className="flex flex-col gap-3 rounded-xs border border-primary/40 bg-primary/10 p-3.5">
+        <div className="flex flex-col gap-3 rounded-xs border border-border/70 bg-background/60 p-3.5">
           <div className="flex flex-wrap items-center gap-3">
             <RowText
               title={<Trans>Hakawati {updateInfo.version} is available</Trans>}
@@ -132,7 +132,7 @@ export default function SettingsUpdates() {
           {updateInfo.notes ? (
             <ReleaseNotes
               notes={updateInfo.notes}
-              className="border-t border-primary/20 pt-4"
+              className="border-t border-border/60 pt-4"
             />
           ) : null}
         </div>
