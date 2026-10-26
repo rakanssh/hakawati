@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from "react";
-import { CheckIcon, ChevronRightIcon } from "lucide-react";
+import { CheckIcon, ChevronRightIcon, CircleAlertIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSettingsWindow } from "./settings-shell";
 
@@ -194,30 +194,37 @@ export function StatusBanner({
   detail?: ReactNode;
   action?: ReactNode;
 }) {
+  const Icon =
+    tone === "success"
+      ? CheckIcon
+      : tone === "destructive"
+        ? CircleAlertIcon
+        : null;
   return (
     <div
       role="status"
-      className={cn(
-        "flex items-center gap-3 border px-3.5 py-3",
-        tone === "success" && "border-success/40 bg-success/10",
-        tone === "destructive" &&
-          "border-destructive/40 bg-destructive/10 text-destructive",
-        tone === "muted" && "border-border/70 bg-muted/40",
-      )}
+      className="flex items-center gap-3 rounded-xs border border-border/70 bg-background/60 px-3.5 py-3"
     >
-      <span
-        aria-hidden="true"
-        className={cn(
-          "size-2.5 shrink-0 rounded-full",
-          tone === "success" && "bg-success",
-          tone === "destructive" && "bg-destructive",
-          tone === "muted" && "bg-muted-foreground/60",
-        )}
-      />
+      {Icon ? (
+        <Icon
+          aria-hidden="true"
+          className={cn(
+            "size-4 shrink-0",
+            tone === "success" ? "text-success" : "text-destructive",
+          )}
+        />
+      ) : null}
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-sm font-semibold">{title}</span>
+        <span
+          className={cn(
+            "text-sm font-semibold",
+            tone === "destructive" && "text-destructive",
+          )}
+        >
+          {title}
+        </span>
         {detail ? (
-          <span className="line-clamp-3 break-words text-[0.8rem] opacity-90">
+          <span className="line-clamp-3 break-words text-[0.8rem] text-muted-foreground">
             {detail}
           </span>
         ) : null}
