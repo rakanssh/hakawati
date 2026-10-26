@@ -167,17 +167,17 @@ msgstr "A sheet feeding out of a typewriter on an oak desk."
 msgid "A starship tablet against a night sky and a slowly turning red planet."
 msgstr "A starship tablet against a night sky and a slowly turning red planet."
 
-#: app/components/layout/settings/settings-modal.tsx:105
+#: app/components/layout/settings/settings-modal.tsx:102
 msgid "About"
 msgstr "About"
 
 #: app/components/layout/settings/ai-setup/connection-page.tsx:544
-#: app/components/layout/settings/settings-modal.tsx:89
+#: app/components/layout/settings/settings-modal.tsx:86
 msgid "Account"
 msgstr "Account"
 
 #: app/components/layout/settings/cloud-sync.tsx:1309
-#: app/components/layout/settings/settings-modal.tsx:86
+#: app/components/layout/settings/settings-modal.tsx:83
 msgid "Account & Sync"
 msgstr "Account & Sync"
 
@@ -306,9 +306,9 @@ msgstr "Added near the end of the prompt when you continue the story."
 msgid "Address"
 msgstr "Address"
 
-#: app/components/layout/settings/settings-modal.tsx:56
-#: app/components/layout/settings/settings-modal.tsx:69
-#: app/components/layout/settings/settings-modal.tsx:79
+#: app/components/layout/settings/settings-modal.tsx:54
+#: app/components/layout/settings/settings-modal.tsx:67
+#: app/components/layout/settings/settings-modal.tsx:76
 #: app/components/play/story-panel/story-panel.tsx:85
 msgid "AI"
 msgstr "AI"
@@ -330,7 +330,7 @@ msgid "AI Instructions still apply in Game Master mode; GM mechanics and tool be
 msgstr "AI Instructions still apply in Game Master mode; GM mechanics and tool behavior are added separately."
 
 #: app/components/layout/settings/ai-setup/index.tsx:214
-#: app/components/layout/settings/settings-modal.tsx:51
+#: app/components/layout/settings/settings-modal.tsx:49
 msgid "AI Setup"
 msgstr "AI Setup"
 
@@ -340,7 +340,7 @@ msgstr "AI Setup"
 msgid "All"
 msgstr "All"
 
-#: app/components/play/story-panel/ai-tab.tsx:134
+#: app/components/play/story-panel/ai-tab.tsx:125
 msgid "All AI settings"
 msgstr "All AI settings"
 
@@ -375,12 +375,12 @@ msgstr "Anything the tale should know before it begins..."
 msgid "API key"
 msgstr "API key"
 
-#: app/components/layout/settings/settings-modal.tsx:44
+#: app/components/layout/settings/settings-modal.tsx:42
 msgid "App"
 msgstr "App"
 
 #: app/components/layout/settings/game.tsx:301
-#: app/components/layout/settings/settings-modal.tsx:39
+#: app/components/layout/settings/settings-modal.tsx:37
 msgid "Appearance"
 msgstr "Appearance"
 
@@ -526,14 +526,6 @@ msgstr "Character Name"
 msgid "ChatGPT account connected"
 msgstr "ChatGPT account connected"
 
-#: app/components/play/story-panel/ai-tab.tsx:84
-msgid "ChatGPT manages reply length and sampling."
-msgstr "ChatGPT manages reply length and sampling."
-
-#: app/components/layout/settings/model.tsx:195
-msgid "ChatGPT manages reply length and sampling. These settings are kept for your other connections."
-msgstr "ChatGPT manages reply length and sampling. These settings are kept for your other connections."
-
 #: app/components/layout/settings/ai-setup/add-connection.tsx:20
 #: app/data/api-presets.ts:46
 msgid "ChatGPT plan"
@@ -547,7 +539,7 @@ msgstr "ChatGPT plan usage is not enabled. Continue with ChatGPT to enable it."
 msgid "ChatGPT sign-in is available in the desktop app on Windows, macOS, and Linux."
 msgstr "ChatGPT sign-in is available in the desktop app on Windows, macOS, and Linux."
 
-#: app/components/layout/settings/settings-modal.tsx:97
+#: app/components/layout/settings/settings-modal.tsx:94
 msgid "Check for app updates and install new versions."
 msgstr "Check for app updates and install new versions."
 
@@ -577,7 +569,7 @@ msgstr "Choose a JPEG, PNG, or WebP image."
 msgid "Choose a model"
 msgstr "Choose a model"
 
-#: app/components/play/story-panel/ai-tab.tsx:126
+#: app/components/play/story-panel/ai-tab.tsx:117
 msgid "Choose a model above before you continue the story."
 msgstr "Choose a model above before you continue the story."
 
@@ -696,7 +688,7 @@ msgstr "Complete your profile"
 msgid "Concept"
 msgstr "Concept"
 
-#: app/components/layout/settings/settings-modal.tsx:165
+#: app/components/layout/settings/settings-modal.tsx:162
 msgid "Configure Hakawati, AI providers, generation behavior, and maintenance."
 msgstr "Configure Hakawati, AI providers, generation behavior, and maintenance."
 
@@ -705,7 +697,7 @@ msgstr "Configure Hakawati, AI providers, generation behavior, and maintenance."
 msgid "Conflict resolved"
 msgstr "Conflict resolved"
 
-#: app/components/layout/settings/settings-modal.tsx:53
+#: app/components/layout/settings/settings-modal.tsx:51
 msgid "Connect a provider, choose an endpoint, and pick a model."
 msgstr "Connect a provider, choose an endpoint, and pick a model."
 
@@ -742,8 +734,8 @@ msgstr "Connections"
 msgid "Content"
 msgstr "Content"
 
-#: app/components/layout/settings/model.tsx:205
-#: app/components/layout/settings/model.tsx:214
+#: app/components/layout/settings/model.tsx:218
+#: app/components/layout/settings/model.tsx:227
 msgid "Context window"
 msgstr "Context window"
 
@@ -768,7 +760,7 @@ msgstr "Continue author note"
 msgid "Continue with ChatGPT"
 msgstr "Continue with ChatGPT"
 
-#: app/components/layout/settings/settings-modal.tsx:41
+#: app/components/layout/settings/settings-modal.tsx:39
 msgid "Control the app theme, reading comfort, and language."
 msgstr "Control the app theme, reading comfort, and language."
 
@@ -872,7 +864,7 @@ msgstr "Current Value"
 msgid "Custom"
 msgstr "Custom"
 
-#: app/components/layout/settings/settings-modal.tsx:77
+#: app/components/layout/settings/settings-modal.tsx:74
 msgid "Customize the system prompts used by Hakawati."
 msgstr "Customize the system prompts used by Hakawati."
 
@@ -886,10 +878,10 @@ msgstr "Deep teal, cream and brass, set in classic book type."
 
 #: app/components/layout/settings/advanced.tsx:181
 #: app/components/layout/settings/advanced.tsx:279
-#: app/components/layout/settings/model.tsx:54
-#: app/components/layout/settings/model.tsx:264
+#: app/components/layout/settings/model.tsx:58
+#: app/components/layout/settings/model.tsx:272
 #: app/components/layout/settings/thinking-level.tsx:60
-#: app/components/play/story-panel/ai-tab.tsx:116
+#: app/components/play/story-panel/ai-tab.tsx:108
 msgid "Default"
 msgstr "Default"
 
@@ -1301,8 +1293,8 @@ msgstr "Found on your network"
 msgid "Free"
 msgstr "Free"
 
-#: app/components/layout/settings/model.tsx:114
-#: app/components/layout/settings/model.tsx:123
+#: app/components/layout/settings/model.tsx:139
+#: app/components/layout/settings/model.tsx:148
 msgid "Frequency penalty"
 msgstr "Frequency penalty"
 
@@ -1347,8 +1339,7 @@ msgstr "Generate Scenario"
 msgid "Generate Tale"
 msgstr "Generate Tale"
 
-#: app/components/layout/settings/model.tsx:324
-#: app/components/layout/settings/settings-modal.tsx:64
+#: app/components/layout/settings/settings-modal.tsx:62
 msgid "Generation"
 msgstr "Generation"
 
@@ -1429,11 +1420,6 @@ msgstr "Hide API key"
 #: app/components/layout/settings/thinking-level.tsx:23
 msgid "High"
 msgstr "High"
-
-#: app/components/layout/settings/model.tsx:255
-#: app/components/play/story-panel/ai-tab.tsx:107
-msgid "Higher is less predictable"
-msgstr "Higher is less predictable"
 
 #: app/components/layout/settings/game.tsx:181
 #: app/components/layout/settings/game.tsx:185
@@ -1591,10 +1577,6 @@ msgstr "Keep This Device"
 msgid "Keep this tale local only"
 msgstr "Keep this tale local only"
 
-#: app/components/layout/settings/model.tsx:229
-msgid "Kept free when choosing story history"
-msgstr "Kept free when choosing story history"
-
 #: app/components/layout/settings/ai-setup/index.tsx:78
 msgid "Key saved · ends {tail}"
 msgstr "Key saved · ends {tail}"
@@ -1628,15 +1610,11 @@ msgstr "Latest"
 msgid "Learn more"
 msgstr "Learn more"
 
-#: app/components/layout/settings/model.tsx:158
-msgid "Leave a field empty to use the provider’s default."
-msgstr "Leave a field empty to use the provider’s default."
-
 #: app/components/layout/settings/game.tsx:229
 msgid "Left to right"
 msgstr "Left to right"
 
-#: app/components/layout/settings/model.tsx:202
+#: app/components/layout/settings/model.tsx:215
 msgid "Length"
 msgstr "Length"
 
@@ -1767,7 +1745,7 @@ msgstr "magic, city"
 msgid "Manage usage"
 msgstr "Manage usage"
 
-#: app/components/layout/settings/settings-modal.tsx:87
+#: app/components/layout/settings/settings-modal.tsx:84
 msgid "Manage your account and cloud sync."
 msgstr "Manage your account and cloud sync."
 
@@ -1782,10 +1760,10 @@ msgstr "Manual updates are only available in the desktop app."
 msgid "Max"
 msgstr "Max"
 
-#: app/components/layout/settings/model.tsx:224
-#: app/components/layout/settings/model.tsx:242
-#: app/components/play/story-panel/ai-tab.tsx:90
-#: app/components/play/story-panel/ai-tab.tsx:99
+#: app/components/layout/settings/model.tsx:237
+#: app/components/layout/settings/model.tsx:253
+#: app/components/play/story-panel/ai-tab.tsx:85
+#: app/components/play/story-panel/ai-tab.tsx:94
 msgid "Max output tokens"
 msgstr "Max output tokens"
 
@@ -1813,8 +1791,8 @@ msgstr "Medium"
 msgid "Microphone access is turned off for Hakawati. Allow it in your device settings to record speech."
 msgstr "Microphone access is turned off for Hakawati. Allow it in your device settings to record speech."
 
-#: app/components/layout/settings/model.tsx:86
-#: app/components/layout/settings/model.tsx:95
+#: app/components/layout/settings/model.tsx:111
+#: app/components/layout/settings/model.tsx:120
 msgid "Min P"
 msgstr "Min P"
 
@@ -1860,8 +1838,7 @@ msgstr "Models"
 msgid "Models appear once you’re signed in"
 msgstr "Models appear once you’re signed in"
 
-#: app/components/layout/settings/model.tsx:300
-#: app/components/layout/settings/model.tsx:322
+#: app/components/layout/settings/model.tsx:71
 msgid "More sampling"
 msgstr "More sampling"
 
@@ -2235,8 +2212,8 @@ msgstr "Policies"
 msgid "Popular"
 msgstr "Popular"
 
-#: app/components/layout/settings/model.tsx:128
-#: app/components/layout/settings/model.tsx:137
+#: app/components/layout/settings/model.tsx:153
+#: app/components/layout/settings/model.tsx:162
 msgid "Presence penalty"
 msgstr "Presence penalty"
 
@@ -2272,7 +2249,7 @@ msgid "Prompt"
 msgstr "Prompt"
 
 #: app/components/layout/settings/advanced.tsx:349
-#: app/components/layout/settings/settings-modal.tsx:76
+#: app/components/layout/settings/settings-modal.tsx:73
 msgid "Prompting"
 msgstr "Prompting"
 
@@ -2369,7 +2346,7 @@ msgstr "Quickstart"
 msgid "Rain on Glass"
 msgstr "Rain on Glass"
 
-#: app/components/layout/settings/model.tsx:291
+#: app/components/layout/settings/model.tsx:296
 msgid "Random seed"
 msgstr "Random seed"
 
@@ -2485,8 +2462,8 @@ msgstr "Removed"
 msgid "Removed from cloud"
 msgstr "Removed from cloud"
 
-#: app/components/layout/settings/model.tsx:142
-#: app/components/layout/settings/model.tsx:151
+#: app/components/layout/settings/model.tsx:167
+#: app/components/layout/settings/model.tsx:176
 msgid "Repetition penalty"
 msgstr "Repetition penalty"
 
@@ -2581,7 +2558,7 @@ msgstr "Retry (Ctrl+R)"
 msgid "Review conflict"
 msgstr "Review conflict"
 
-#: app/components/layout/settings/settings-modal.tsx:107
+#: app/components/layout/settings/settings-modal.tsx:104
 msgid "Review license, dependency, and credit information."
 msgstr "Review license, dependency, and credit information."
 
@@ -2610,8 +2587,8 @@ msgstr "Roll"
 msgid "Roll a dice"
 msgstr "Roll a dice"
 
-#: app/components/layout/settings/model.tsx:222
-#: app/components/layout/settings/model.tsx:242
+#: app/components/layout/settings/model.tsx:235
+#: app/components/layout/settings/model.tsx:253
 msgid "Room for the reply"
 msgstr "Room for the reply"
 
@@ -2620,7 +2597,7 @@ msgstr "Room for the reply"
 msgid "Same as Narrator"
 msgstr "Same as Narrator"
 
-#: app/components/layout/settings/model.tsx:251
+#: app/components/layout/settings/model.tsx:262
 msgid "Sampling"
 msgstr "Sampling"
 
@@ -2778,8 +2755,8 @@ msgstr "Search tales"
 msgid "Searching…"
 msgstr "Searching…"
 
-#: app/components/layout/settings/model.tsx:272
-#: app/components/layout/settings/model.tsx:281
+#: app/components/layout/settings/model.tsx:279
+#: app/components/layout/settings/model.tsx:286
 msgid "Seed"
 msgstr "Seed"
 
@@ -2827,7 +2804,7 @@ msgstr "Set up the Narrator to play"
 
 #: app/components/layout/settings/settings-button.tsx:63
 #: app/components/layout/settings/settings-button.tsx:76
-#: app/components/layout/settings/settings-modal.tsx:163
+#: app/components/layout/settings/settings-modal.tsx:160
 #: app/pages/home/home.tsx:657
 msgid "Settings"
 msgstr "Settings"
@@ -3067,8 +3044,8 @@ msgid "Suggested tags"
 msgstr "Suggested tags"
 
 #: app/components/layout/settings/about.tsx:61
-#: app/components/layout/settings/settings-modal.tsx:99
-#: app/components/layout/settings/settings-modal.tsx:110
+#: app/components/layout/settings/settings-modal.tsx:96
+#: app/components/layout/settings/settings-modal.tsx:107
 msgid "Support"
 msgstr "Support"
 
@@ -3169,10 +3146,10 @@ msgstr "Tales waiting for a choice"
 msgid "Tell the moderators what is wrong with it."
 msgstr "Tell the moderators what is wrong with it."
 
-#: app/components/layout/settings/model.tsx:254
-#: app/components/layout/settings/model.tsx:265
-#: app/components/play/story-panel/ai-tab.tsx:106
-#: app/components/play/story-panel/ai-tab.tsx:117
+#: app/components/layout/settings/model.tsx:264
+#: app/components/layout/settings/model.tsx:273
+#: app/components/play/story-panel/ai-tab.tsx:100
+#: app/components/play/story-panel/ai-tab.tsx:109
 msgid "Temperature"
 msgstr "Temperature"
 
@@ -3216,10 +3193,6 @@ msgstr "The Official OpenAI API. Requires an OpenAI account with charged credits
 msgid "The reply is read as JSON with content, triggers, and category. Keep that format if you change it."
 msgstr "The reply is read as JSON with content, triggers, and category. Keep that format if you change it."
 
-#: app/components/layout/settings/model.tsx:273
-msgid "The same seed repeats a generation"
-msgstr "The same seed repeats a generation"
-
 #: app/components/tales/tale-conflict-dialog.tsx:55
 msgid "The tale changed here and in the cloud, pick one to keep or save both."
 msgstr "The tale changed here and in the cloud, pick one to keep or save both."
@@ -3260,8 +3233,8 @@ msgstr "Thing"
 msgid "Thinking"
 msgstr "Thinking"
 
-#: app/components/layout/settings/model.tsx:231
-#: app/components/play/story-panel/ai-tab.tsx:91
+#: app/components/layout/settings/model.tsx:242
+#: app/components/play/story-panel/ai-tab.tsx:86
 msgid "Thinking and the answer share this"
 msgstr "Thinking and the answer share this"
 
@@ -3337,22 +3310,22 @@ msgstr "Toggle thinking output"
 msgid "Tone (Optional)"
 msgstr "Tone (Optional)"
 
-#: app/components/layout/settings/model.tsx:100
-#: app/components/layout/settings/model.tsx:109
+#: app/components/layout/settings/model.tsx:125
+#: app/components/layout/settings/model.tsx:134
 msgid "Top A"
 msgstr "Top A"
 
-#: app/components/layout/settings/model.tsx:73
-#: app/components/layout/settings/model.tsx:81
+#: app/components/layout/settings/model.tsx:98
+#: app/components/layout/settings/model.tsx:106
 msgid "Top K"
 msgstr "Top K"
 
-#: app/components/layout/settings/model.tsx:59
-#: app/components/layout/settings/model.tsx:68
+#: app/components/layout/settings/model.tsx:84
+#: app/components/layout/settings/model.tsx:93
 msgid "Top P"
 msgstr "Top P"
 
-#: app/components/layout/settings/model.tsx:301
+#: app/components/layout/settings/model.tsx:72
 msgid "Top P, Top K, penalties"
 msgstr "Top P, Top K, penalties"
 
@@ -3373,7 +3346,7 @@ msgstr "Triggers (comma-separated)"
 msgid "Try again"
 msgstr "Try again"
 
-#: app/components/layout/settings/settings-modal.tsx:66
+#: app/components/layout/settings/settings-modal.tsx:64
 msgid "Tune token budgets, sampling, and repeatable seeds."
 msgstr "Tune token budgets, sampling, and repeatable seeds."
 
@@ -3429,7 +3402,7 @@ msgstr "Unregister"
 msgid "Untitled"
 msgstr "Untitled"
 
-#: app/components/layout/settings/model.tsx:206
+#: app/components/layout/settings/model.tsx:219
 msgid "Up to {limit} tokens"
 msgstr "Up to {limit} tokens"
 
@@ -3453,7 +3426,7 @@ msgstr "Update Hakawati to sync"
 msgid "Updated"
 msgstr "Updated"
 
-#: app/components/layout/settings/settings-modal.tsx:96
+#: app/components/layout/settings/settings-modal.tsx:93
 msgid "Updates"
 msgstr "Updates"
 

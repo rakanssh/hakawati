@@ -167,17 +167,17 @@ msgstr "ورقة تخرج من آلة كاتبة على مكتب من خشب ا�
 msgid "A starship tablet against a night sky and a slowly turning red planet."
 msgstr "جهاز لوحي لمركبة فضائية أمام سماء ليل وكوكب أحمر يدور ببطء."
 
-#: app/components/layout/settings/settings-modal.tsx:105
+#: app/components/layout/settings/settings-modal.tsx:102
 msgid "About"
 msgstr "عن التطبيق"
 
 #: app/components/layout/settings/ai-setup/connection-page.tsx:544
-#: app/components/layout/settings/settings-modal.tsx:89
+#: app/components/layout/settings/settings-modal.tsx:86
 msgid "Account"
 msgstr "الحساب"
 
 #: app/components/layout/settings/cloud-sync.tsx:1309
-#: app/components/layout/settings/settings-modal.tsx:86
+#: app/components/layout/settings/settings-modal.tsx:83
 msgid "Account & Sync"
 msgstr "الحساب والمزامنة"
 
@@ -306,9 +306,9 @@ msgstr "يُضاف قرب نهاية الموجّه عند متابعة القص
 msgid "Address"
 msgstr "العنوان"
 
-#: app/components/layout/settings/settings-modal.tsx:56
-#: app/components/layout/settings/settings-modal.tsx:69
-#: app/components/layout/settings/settings-modal.tsx:79
+#: app/components/layout/settings/settings-modal.tsx:54
+#: app/components/layout/settings/settings-modal.tsx:67
+#: app/components/layout/settings/settings-modal.tsx:76
 #: app/components/play/story-panel/story-panel.tsx:85
 msgid "AI"
 msgstr "الذكاء الاصطناعي"
@@ -330,7 +330,7 @@ msgid "AI Instructions still apply in Game Master mode; GM mechanics and tool be
 msgstr "لا تزال تعليمات الذكاء الاصطناعي سارية في وضع مدير اللعبة (GM)؛ وتُضاف آليات مدير اللعبة وسلوك الأدوات بشكل منفصل."
 
 #: app/components/layout/settings/ai-setup/index.tsx:214
-#: app/components/layout/settings/settings-modal.tsx:51
+#: app/components/layout/settings/settings-modal.tsx:49
 msgid "AI Setup"
 msgstr "إعداد الذكاء الاصطناعي"
 
@@ -340,7 +340,7 @@ msgstr "إعداد الذكاء الاصطناعي"
 msgid "All"
 msgstr "الكل"
 
-#: app/components/play/story-panel/ai-tab.tsx:134
+#: app/components/play/story-panel/ai-tab.tsx:125
 msgid "All AI settings"
 msgstr "كل إعدادات الذكاء الاصطناعي"
 
@@ -375,12 +375,12 @@ msgstr "أي شيء يجب أن تعرفه الحكاية قبل أن تبدأ..
 msgid "API key"
 msgstr "مفتاح API"
 
-#: app/components/layout/settings/settings-modal.tsx:44
+#: app/components/layout/settings/settings-modal.tsx:42
 msgid "App"
 msgstr "التطبيق"
 
 #: app/components/layout/settings/game.tsx:301
-#: app/components/layout/settings/settings-modal.tsx:39
+#: app/components/layout/settings/settings-modal.tsx:37
 msgid "Appearance"
 msgstr "المظهر"
 
@@ -526,14 +526,6 @@ msgstr "اسم الشخصية"
 msgid "ChatGPT account connected"
 msgstr "حساب ChatGPT متصل"
 
-#: app/components/play/story-panel/ai-tab.tsx:84
-msgid "ChatGPT manages reply length and sampling."
-msgstr "يتولّى ChatGPT طول الرد وأسلوب التوليد."
-
-#: app/components/layout/settings/model.tsx:195
-msgid "ChatGPT manages reply length and sampling. These settings are kept for your other connections."
-msgstr "يتولّى ChatGPT طول الرد وأسلوب التوليد. تبقى هذه الإعدادات محفوظة لاتصالاتك الأخرى."
-
 #: app/components/layout/settings/ai-setup/add-connection.tsx:20
 #: app/data/api-presets.ts:46
 msgid "ChatGPT plan"
@@ -547,7 +539,7 @@ msgstr "استخدام خطة ChatGPT غير مفعّل. اختر «المتاب
 msgid "ChatGPT sign-in is available in the desktop app on Windows, macOS, and Linux."
 msgstr "تسجيل الدخول عبر ChatGPT متاح في نسخة الأجهزة المكتبية على Windows وmacOS وLinux."
 
-#: app/components/layout/settings/settings-modal.tsx:97
+#: app/components/layout/settings/settings-modal.tsx:94
 msgid "Check for app updates and install new versions."
 msgstr "التحقق من وجود تحديثات للتطبيق وتثبيت الإصدارات الجديدة."
 
@@ -577,7 +569,7 @@ msgstr "اختر صورة بصيغة JPEG أو PNG أو WebP."
 msgid "Choose a model"
 msgstr "اختر نموذجًا"
 
-#: app/components/play/story-panel/ai-tab.tsx:126
+#: app/components/play/story-panel/ai-tab.tsx:117
 msgid "Choose a model above before you continue the story."
 msgstr "اختر نموذجًا أعلاه قبل أن تكمل القصة."
 
@@ -696,7 +688,7 @@ msgstr "أكمل ملفك الشخصي"
 msgid "Concept"
 msgstr "مفهوم"
 
-#: app/components/layout/settings/settings-modal.tsx:165
+#: app/components/layout/settings/settings-modal.tsx:162
 msgid "Configure Hakawati, AI providers, generation behavior, and maintenance."
 msgstr "تهيئة حكواتي، ومزودي الذكاء الاصطناعي، وسلوك التوليد، والصيانة."
 
@@ -705,7 +697,7 @@ msgstr "تهيئة حكواتي، ومزودي الذكاء الاصطناعي،
 msgid "Conflict resolved"
 msgstr "تم حل التعارض"
 
-#: app/components/layout/settings/settings-modal.tsx:53
+#: app/components/layout/settings/settings-modal.tsx:51
 msgid "Connect a provider, choose an endpoint, and pick a model."
 msgstr "قم بتوصيل مزود، واختيار نقطة اتصال، وتحديد نموذج."
 
@@ -742,8 +734,8 @@ msgstr "الاتصالات"
 msgid "Content"
 msgstr "المحتوى"
 
-#: app/components/layout/settings/model.tsx:205
-#: app/components/layout/settings/model.tsx:214
+#: app/components/layout/settings/model.tsx:218
+#: app/components/layout/settings/model.tsx:227
 msgid "Context window"
 msgstr "نافذة السياق"
 
@@ -768,7 +760,7 @@ msgstr "ملاحظة المؤلف عند المتابعة"
 msgid "Continue with ChatGPT"
 msgstr "المتابعة باستخدام ChatGPT"
 
-#: app/components/layout/settings/settings-modal.tsx:41
+#: app/components/layout/settings/settings-modal.tsx:39
 msgid "Control the app theme, reading comfort, and language."
 msgstr "التحكم في مظهر التطبيق، وراحة القراءة، واللغة."
 
@@ -872,7 +864,7 @@ msgstr "القيمة الحالية"
 msgid "Custom"
 msgstr "مخصّص"
 
-#: app/components/layout/settings/settings-modal.tsx:77
+#: app/components/layout/settings/settings-modal.tsx:74
 msgid "Customize the system prompts used by Hakawati."
 msgstr "تخصيص موجهات النظام المستخدمة في حكواتي."
 
@@ -886,10 +878,10 @@ msgstr "أزرق مخضرّ عميق وكريمي ونحاسي، بخط الكت
 
 #: app/components/layout/settings/advanced.tsx:181
 #: app/components/layout/settings/advanced.tsx:279
-#: app/components/layout/settings/model.tsx:54
-#: app/components/layout/settings/model.tsx:264
+#: app/components/layout/settings/model.tsx:58
+#: app/components/layout/settings/model.tsx:272
 #: app/components/layout/settings/thinking-level.tsx:60
-#: app/components/play/story-panel/ai-tab.tsx:116
+#: app/components/play/story-panel/ai-tab.tsx:108
 msgid "Default"
 msgstr "افتراضي"
 
@@ -1301,8 +1293,8 @@ msgstr "على شبكتك"
 msgid "Free"
 msgstr "مجاني"
 
-#: app/components/layout/settings/model.tsx:114
-#: app/components/layout/settings/model.tsx:123
+#: app/components/layout/settings/model.tsx:139
+#: app/components/layout/settings/model.tsx:148
 msgid "Frequency penalty"
 msgstr "عقوبة التواتر"
 
@@ -1347,8 +1339,7 @@ msgstr "توليد سيناريو"
 msgid "Generate Tale"
 msgstr "توليد الحكاية"
 
-#: app/components/layout/settings/model.tsx:324
-#: app/components/layout/settings/settings-modal.tsx:64
+#: app/components/layout/settings/settings-modal.tsx:62
 msgid "Generation"
 msgstr "التوليد"
 
@@ -1429,11 +1420,6 @@ msgstr "إخفاء مفتاح API"
 #: app/components/layout/settings/thinking-level.tsx:23
 msgid "High"
 msgstr "مرتفع"
-
-#: app/components/layout/settings/model.tsx:255
-#: app/components/play/story-panel/ai-tab.tsx:107
-msgid "Higher is less predictable"
-msgstr "القيمة الأعلى أقل قابلية للتوقع"
 
 #: app/components/layout/settings/game.tsx:181
 #: app/components/layout/settings/game.tsx:185
@@ -1591,10 +1577,6 @@ msgstr "الاحتفاظ بنسخة هذا الجهاز"
 msgid "Keep this tale local only"
 msgstr "إبقاء هذه الحكاية محلية فقط"
 
-#: app/components/layout/settings/model.tsx:229
-msgid "Kept free when choosing story history"
-msgstr "مساحة تُترك فارغة عند اختيار سجل القصة"
-
 #: app/components/layout/settings/ai-setup/index.tsx:78
 msgid "Key saved · ends {tail}"
 msgstr "المفتاح محفوظ · ينتهي بـ {tail}"
@@ -1628,15 +1610,11 @@ msgstr "الأحدث"
 msgid "Learn more"
 msgstr "معرفة المزيد"
 
-#: app/components/layout/settings/model.tsx:158
-msgid "Leave a field empty to use the provider’s default."
-msgstr "اترك الحقل فارغًا لاستخدام القيمة الافتراضية للمزوّد."
-
 #: app/components/layout/settings/game.tsx:229
 msgid "Left to right"
 msgstr "من اليسار إلى اليمين"
 
-#: app/components/layout/settings/model.tsx:202
+#: app/components/layout/settings/model.tsx:215
 msgid "Length"
 msgstr "الطول"
 
@@ -1767,7 +1745,7 @@ msgstr "سحر, مدينة"
 msgid "Manage usage"
 msgstr "إدارة الاستخدام"
 
-#: app/components/layout/settings/settings-modal.tsx:87
+#: app/components/layout/settings/settings-modal.tsx:84
 msgid "Manage your account and cloud sync."
 msgstr "إدارة حسابك والمزامنة السحابية."
 
@@ -1782,10 +1760,10 @@ msgstr "التحديثات اليدوية متاحة فقط في نسخة الأ
 msgid "Max"
 msgstr "الحد الأقصى"
 
-#: app/components/layout/settings/model.tsx:224
-#: app/components/layout/settings/model.tsx:242
-#: app/components/play/story-panel/ai-tab.tsx:90
-#: app/components/play/story-panel/ai-tab.tsx:99
+#: app/components/layout/settings/model.tsx:237
+#: app/components/layout/settings/model.tsx:253
+#: app/components/play/story-panel/ai-tab.tsx:85
+#: app/components/play/story-panel/ai-tab.tsx:94
 msgid "Max output tokens"
 msgstr "الحد الأقصى لرموز المخرجات"
 
@@ -1813,8 +1791,8 @@ msgstr "متوسط"
 msgid "Microphone access is turned off for Hakawati. Allow it in your device settings to record speech."
 msgstr "الوصول إلى الميكروفون متوقف لحكواتي. اسمح به من إعدادات جهازك لتسجيل الكلام."
 
-#: app/components/layout/settings/model.tsx:86
-#: app/components/layout/settings/model.tsx:95
+#: app/components/layout/settings/model.tsx:111
+#: app/components/layout/settings/model.tsx:120
 msgid "Min P"
 msgstr "Min P"
 
@@ -1860,8 +1838,7 @@ msgstr "النماذج"
 msgid "Models appear once you’re signed in"
 msgstr "تظهر النماذج بعد تسجيل الدخول"
 
-#: app/components/layout/settings/model.tsx:300
-#: app/components/layout/settings/model.tsx:322
+#: app/components/layout/settings/model.tsx:71
 msgid "More sampling"
 msgstr "خيارات توليد إضافية"
 
@@ -2235,8 +2212,8 @@ msgstr "السياسات"
 msgid "Popular"
 msgstr "الأكثر شعبية"
 
-#: app/components/layout/settings/model.tsx:128
-#: app/components/layout/settings/model.tsx:137
+#: app/components/layout/settings/model.tsx:153
+#: app/components/layout/settings/model.tsx:162
 msgid "Presence penalty"
 msgstr "عقوبة التواجد"
 
@@ -2272,7 +2249,7 @@ msgid "Prompt"
 msgstr "الموجّه"
 
 #: app/components/layout/settings/advanced.tsx:349
-#: app/components/layout/settings/settings-modal.tsx:76
+#: app/components/layout/settings/settings-modal.tsx:73
 msgid "Prompting"
 msgstr "الموجّهات"
 
@@ -2369,7 +2346,7 @@ msgstr "بداية سريعة"
 msgid "Rain on Glass"
 msgstr "مطر على الزجاج"
 
-#: app/components/layout/settings/model.tsx:291
+#: app/components/layout/settings/model.tsx:296
 msgid "Random seed"
 msgstr "بذرة عشوائية"
 
@@ -2485,8 +2462,8 @@ msgstr "المحذوفات"
 msgid "Removed from cloud"
 msgstr "تمت الإزالة من السحابة"
 
-#: app/components/layout/settings/model.tsx:142
-#: app/components/layout/settings/model.tsx:151
+#: app/components/layout/settings/model.tsx:167
+#: app/components/layout/settings/model.tsx:176
 msgid "Repetition penalty"
 msgstr "عقوبة التكرار"
 
@@ -2581,7 +2558,7 @@ msgstr "إعادة المحاولة (Ctrl+R)"
 msgid "Review conflict"
 msgstr "مراجعة التعارض"
 
-#: app/components/layout/settings/settings-modal.tsx:107
+#: app/components/layout/settings/settings-modal.tsx:104
 msgid "Review license, dependency, and credit information."
 msgstr "مراجعة معلومات الترخيص والتبعيات والمساهمين."
 
@@ -2610,8 +2587,8 @@ msgstr "النرد"
 msgid "Roll a dice"
 msgstr "رمي النرد"
 
-#: app/components/layout/settings/model.tsx:222
-#: app/components/layout/settings/model.tsx:242
+#: app/components/layout/settings/model.tsx:235
+#: app/components/layout/settings/model.tsx:253
 msgid "Room for the reply"
 msgstr "مساحة الرد"
 
@@ -2620,7 +2597,7 @@ msgstr "مساحة الرد"
 msgid "Same as Narrator"
 msgstr "مثل الراوي"
 
-#: app/components/layout/settings/model.tsx:251
+#: app/components/layout/settings/model.tsx:262
 msgid "Sampling"
 msgstr "التوليد"
 
@@ -2778,8 +2755,8 @@ msgstr "البحث في الحكايات"
 msgid "Searching…"
 msgstr "جارٍ البحث…"
 
-#: app/components/layout/settings/model.tsx:272
-#: app/components/layout/settings/model.tsx:281
+#: app/components/layout/settings/model.tsx:279
+#: app/components/layout/settings/model.tsx:286
 msgid "Seed"
 msgstr "البذرة"
 
@@ -2827,7 +2804,7 @@ msgstr "أعدّ الراوي لتبدأ اللعب"
 
 #: app/components/layout/settings/settings-button.tsx:63
 #: app/components/layout/settings/settings-button.tsx:76
-#: app/components/layout/settings/settings-modal.tsx:163
+#: app/components/layout/settings/settings-modal.tsx:160
 #: app/pages/home/home.tsx:657
 msgid "Settings"
 msgstr "الإعدادات"
@@ -3067,8 +3044,8 @@ msgid "Suggested tags"
 msgstr "وسوم مقترحة"
 
 #: app/components/layout/settings/about.tsx:61
-#: app/components/layout/settings/settings-modal.tsx:99
-#: app/components/layout/settings/settings-modal.tsx:110
+#: app/components/layout/settings/settings-modal.tsx:96
+#: app/components/layout/settings/settings-modal.tsx:107
 msgid "Support"
 msgstr "الدعم"
 
@@ -3169,10 +3146,10 @@ msgstr "حكايات بانتظار قرارك"
 msgid "Tell the moderators what is wrong with it."
 msgstr "أخبر المشرفين بما فيه من مخالفة."
 
-#: app/components/layout/settings/model.tsx:254
-#: app/components/layout/settings/model.tsx:265
-#: app/components/play/story-panel/ai-tab.tsx:106
-#: app/components/play/story-panel/ai-tab.tsx:117
+#: app/components/layout/settings/model.tsx:264
+#: app/components/layout/settings/model.tsx:273
+#: app/components/play/story-panel/ai-tab.tsx:100
+#: app/components/play/story-panel/ai-tab.tsx:109
 msgid "Temperature"
 msgstr "درجة الحرارة"
 
@@ -3216,10 +3193,6 @@ msgstr "الـ API الرسمي لـ OpenAI. يتطلب حساب OpenAI مشحو
 msgid "The reply is read as JSON with content, triggers, and category. Keep that format if you change it."
 msgstr "يُقرأ الرد بصيغة JSON تحتوي المحتوى والمحفّزات والفئة. حافظ على هذه الصيغة إن غيّرته."
 
-#: app/components/layout/settings/model.tsx:273
-msgid "The same seed repeats a generation"
-msgstr "البذرة نفسها تكرّر التوليد"
-
 #: app/components/tales/tale-conflict-dialog.tsx:55
 msgid "The tale changed here and in the cloud, pick one to keep or save both."
 msgstr "تغيّرت الحكاية هنا وفي السحابة، اختر نسخة للاحتفاظ بها أو احفظ كلتيهما."
@@ -3260,8 +3233,8 @@ msgstr "شيء"
 msgid "Thinking"
 msgstr "تفكير"
 
-#: app/components/layout/settings/model.tsx:231
-#: app/components/play/story-panel/ai-tab.tsx:91
+#: app/components/layout/settings/model.tsx:242
+#: app/components/play/story-panel/ai-tab.tsx:86
 msgid "Thinking and the answer share this"
 msgstr "يتشارك التفكير والإجابة هذا الحد"
 
@@ -3337,22 +3310,22 @@ msgstr "إظهار التفكير أو إخفاؤه"
 msgid "Tone (Optional)"
 msgstr "النبرة (اختياري)"
 
-#: app/components/layout/settings/model.tsx:100
-#: app/components/layout/settings/model.tsx:109
+#: app/components/layout/settings/model.tsx:125
+#: app/components/layout/settings/model.tsx:134
 msgid "Top A"
 msgstr "Top A"
 
-#: app/components/layout/settings/model.tsx:73
-#: app/components/layout/settings/model.tsx:81
+#: app/components/layout/settings/model.tsx:98
+#: app/components/layout/settings/model.tsx:106
 msgid "Top K"
 msgstr "Top K"
 
-#: app/components/layout/settings/model.tsx:59
-#: app/components/layout/settings/model.tsx:68
+#: app/components/layout/settings/model.tsx:84
+#: app/components/layout/settings/model.tsx:93
 msgid "Top P"
 msgstr "Top P"
 
-#: app/components/layout/settings/model.tsx:301
+#: app/components/layout/settings/model.tsx:72
 msgid "Top P, Top K, penalties"
 msgstr "Top P وTop K والعقوبات"
 
@@ -3373,7 +3346,7 @@ msgstr "المحفزات (مفصولة بفواصل)"
 msgid "Try again"
 msgstr "حاول مرة أخرى"
 
-#: app/components/layout/settings/settings-modal.tsx:66
+#: app/components/layout/settings/settings-modal.tsx:64
 msgid "Tune token budgets, sampling, and repeatable seeds."
 msgstr "ضبط ميزانيات الرموز، وأخذ العينات، والبذور القابلة للتكرار."
 
@@ -3429,7 +3402,7 @@ msgstr "إلغاء التسجيل"
 msgid "Untitled"
 msgstr "بدون عنوان"
 
-#: app/components/layout/settings/model.tsx:206
+#: app/components/layout/settings/model.tsx:219
 msgid "Up to {limit} tokens"
 msgstr "حتى {limit} رمز"
 
@@ -3453,7 +3426,7 @@ msgstr "حدّث حكواتي للمزامنة"
 msgid "Updated"
 msgstr "آخر تحديث"
 
-#: app/components/layout/settings/settings-modal.tsx:96
+#: app/components/layout/settings/settings-modal.tsx:93
 msgid "Updates"
 msgstr "التحديثات"
 

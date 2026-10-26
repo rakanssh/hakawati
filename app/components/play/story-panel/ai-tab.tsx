@@ -77,51 +77,42 @@ export function AiTab() {
 
       {connection ? <ThinkingLevel role="narrator" /> : null}
 
-      {connection ? (
+      {connection && !isChatGpt ? (
         <SetupSection title={<Trans>Replies</Trans>}>
-          {isChatGpt ? (
-            <p className="px-0.5 text-sm text-muted-foreground">
-              <Trans>ChatGPT manages reply length and sampling.</Trans>
-            </p>
-          ) : (
-            <SetupList>
-              <PlainRow className="flex-wrap">
-                <RowText
-                  title={<Trans>Max output tokens</Trans>}
-                  detail={<Trans>Thinking and the answer share this</Trans>}
-                />
-                <NumberInput
-                  min={1}
-                  max={maxOutput}
-                  step={1}
-                  value={maxTokens}
-                  align="right"
-                  aria-label={t`Max output tokens`}
-                  className={fieldClass}
-                  onValueCommit={setMaxTokens}
-                />
-              </PlainRow>
-              <PlainRow className="flex-wrap">
-                <RowText
-                  title={<Trans>Temperature</Trans>}
-                  detail={<Trans>Higher is less predictable</Trans>}
-                />
-                <NumberInput
-                  min={0}
-                  max={2}
-                  step={0.1}
-                  value={temperature ?? null}
-                  allowNull
-                  align="right"
-                  placeholder={t`Default`}
-                  aria-label={t`Temperature`}
-                  className={fieldClass}
-                  onValueCommit={setTemperature}
-                />
-              </PlainRow>
-            </SetupList>
-          )}
-          {!isModelRoleConfigured(narrator) && !isChatGpt ? (
+          <SetupList>
+            <PlainRow className="flex-wrap">
+              <RowText
+                title={<Trans>Max output tokens</Trans>}
+                detail={<Trans>Thinking and the answer share this</Trans>}
+              />
+              <NumberInput
+                min={1}
+                max={maxOutput}
+                step={1}
+                value={maxTokens}
+                align="right"
+                aria-label={t`Max output tokens`}
+                className={fieldClass}
+                onValueCommit={setMaxTokens}
+              />
+            </PlainRow>
+            <PlainRow className="flex-wrap">
+              <RowText title={<Trans>Temperature</Trans>} />
+              <NumberInput
+                min={0}
+                max={2}
+                step={0.1}
+                value={temperature ?? null}
+                allowNull
+                align="right"
+                placeholder={t`Default`}
+                aria-label={t`Temperature`}
+                className={fieldClass}
+                onValueCommit={setTemperature}
+              />
+            </PlainRow>
+          </SetupList>
+          {!isModelRoleConfigured(narrator) ? (
             <p className="px-0.5 text-sm text-muted-foreground">
               <Trans>Choose a model above before you continue the story.</Trans>
             </p>

@@ -1,17 +1,17 @@
-import type { ReactNode } from "react";
-import { DicesIcon } from "lucide-react";
+import { useId, useState, type ReactNode } from "react";
+import { ChevronDownIcon, DicesIcon } from "lucide-react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Button } from "@/components/ui/button";
 import { NumberInput } from "@/components/ui";
+import { cn } from "@/lib/utils";
 import { useSettingsStore } from "@/store";
 import { ApiPreset } from "@/types";
-import { useSettingsNavigation } from "./settings-shell";
 import {
-  LinkRow,
   PlainRow,
   RowText,
   SetupList,
   SetupSection,
+  useRowClass,
 } from "./settings-rows";
 
 const fieldClass = "h-9 w-28 shrink-0";
@@ -33,8 +33,11 @@ function NumberRow({
   );
 }
 
-function SamplingPage() {
+function MoreSampling({ disabled }: { disabled: boolean }) {
   const { t } = useLingui();
+  const rowClass = useRowClass({ interactive: true });
+  const panelId = useId();
+  const [open, setOpen] = useState(false);
   const {
     topP,
     topK,
@@ -51,119 +54,138 @@ function SamplingPage() {
     setMinP,
     setTopA,
   } = useSettingsStore();
+  const expanded = open && !disabled;
   const defaultLabel = t`Default`;
 
   return (
-    <div className="flex flex-col gap-4">
-      <SetupList>
-        <NumberRow title={<Trans>Top P</Trans>}>
-          <NumberInput
-            min={0}
-            max={1}
-            step={0.01}
-            value={topP ?? null}
-            allowNull
-            align="right"
-            placeholder={defaultLabel}
-            aria-label={t`Top P`}
-            className={fieldClass}
-            onValueCommit={setTopP}
-          />
-        </NumberRow>
-        <NumberRow title={<Trans>Top K</Trans>}>
-          <NumberInput
-            min={1}
-            step={1}
-            value={topK ?? null}
-            allowNull
-            align="right"
-            placeholder={defaultLabel}
-            aria-label={t`Top K`}
-            className={fieldClass}
-            onValueCommit={setTopK}
-          />
-        </NumberRow>
-        <NumberRow title={<Trans>Min P</Trans>}>
-          <NumberInput
-            min={0}
-            max={1}
-            step={0.01}
-            value={minP ?? null}
-            allowNull
-            align="right"
-            placeholder={defaultLabel}
-            aria-label={t`Min P`}
-            className={fieldClass}
-            onValueCommit={setMinP}
-          />
-        </NumberRow>
-        <NumberRow title={<Trans>Top A</Trans>}>
-          <NumberInput
-            min={0}
-            max={1}
-            step={0.01}
-            value={topA ?? null}
-            allowNull
-            align="right"
-            placeholder={defaultLabel}
-            aria-label={t`Top A`}
-            className={fieldClass}
-            onValueCommit={setTopA}
-          />
-        </NumberRow>
-        <NumberRow title={<Trans>Frequency penalty</Trans>}>
-          <NumberInput
-            min={-2}
-            max={2}
-            step={0.1}
-            value={frequencyPenalty ?? null}
-            allowNull
-            align="right"
-            placeholder={defaultLabel}
-            aria-label={t`Frequency penalty`}
-            className={fieldClass}
-            onValueCommit={setFrequencyPenalty}
-          />
-        </NumberRow>
-        <NumberRow title={<Trans>Presence penalty</Trans>}>
-          <NumberInput
-            min={-2}
-            max={2}
-            step={0.1}
-            value={presencePenalty ?? null}
-            allowNull
-            align="right"
-            placeholder={defaultLabel}
-            aria-label={t`Presence penalty`}
-            className={fieldClass}
-            onValueCommit={setPresencePenalty}
-          />
-        </NumberRow>
-        <NumberRow title={<Trans>Repetition penalty</Trans>}>
-          <NumberInput
-            min={0}
-            max={10}
-            step={0.1}
-            value={repetitionPenalty ?? null}
-            allowNull
-            align="right"
-            placeholder={defaultLabel}
-            aria-label={t`Repetition penalty`}
-            className={fieldClass}
-            onValueCommit={setRepetitionPenalty}
-          />
-        </NumberRow>
-      </SetupList>
-      <p className="px-0.5 text-sm text-muted-foreground">
-        <Trans>Leave a field empty to use the provider’s default.</Trans>
-      </p>
-    </div>
+    <>
+      <button
+        type="button"
+        className={rowClass}
+        aria-expanded={expanded}
+        aria-controls={panelId}
+        disabled={disabled}
+        onClick={() => setOpen(!open)}
+      >
+        <RowText
+          title={<Trans>More sampling</Trans>}
+          detail={<Trans>Top P, Top K, penalties</Trans>}
+        />
+        <ChevronDownIcon
+          aria-hidden="true"
+          className={cn(
+            "size-4 shrink-0 text-muted-foreground transition-transform",
+            expanded && "rotate-180",
+          )}
+        />
+      </button>
+      {expanded ? (
+        <div id={panelId} className="contents">
+          <NumberRow title={<Trans>Top P</Trans>}>
+            <NumberInput
+              min={0}
+              max={1}
+              step={0.01}
+              value={topP ?? null}
+              allowNull
+              align="right"
+              placeholder={defaultLabel}
+              aria-label={t`Top P`}
+              className={fieldClass}
+              onValueCommit={setTopP}
+            />
+          </NumberRow>
+          <NumberRow title={<Trans>Top K</Trans>}>
+            <NumberInput
+              min={1}
+              step={1}
+              value={topK ?? null}
+              allowNull
+              align="right"
+              placeholder={defaultLabel}
+              aria-label={t`Top K`}
+              className={fieldClass}
+              onValueCommit={setTopK}
+            />
+          </NumberRow>
+          <NumberRow title={<Trans>Min P</Trans>}>
+            <NumberInput
+              min={0}
+              max={1}
+              step={0.01}
+              value={minP ?? null}
+              allowNull
+              align="right"
+              placeholder={defaultLabel}
+              aria-label={t`Min P`}
+              className={fieldClass}
+              onValueCommit={setMinP}
+            />
+          </NumberRow>
+          <NumberRow title={<Trans>Top A</Trans>}>
+            <NumberInput
+              min={0}
+              max={1}
+              step={0.01}
+              value={topA ?? null}
+              allowNull
+              align="right"
+              placeholder={defaultLabel}
+              aria-label={t`Top A`}
+              className={fieldClass}
+              onValueCommit={setTopA}
+            />
+          </NumberRow>
+          <NumberRow title={<Trans>Frequency penalty</Trans>}>
+            <NumberInput
+              min={-2}
+              max={2}
+              step={0.1}
+              value={frequencyPenalty ?? null}
+              allowNull
+              align="right"
+              placeholder={defaultLabel}
+              aria-label={t`Frequency penalty`}
+              className={fieldClass}
+              onValueCommit={setFrequencyPenalty}
+            />
+          </NumberRow>
+          <NumberRow title={<Trans>Presence penalty</Trans>}>
+            <NumberInput
+              min={-2}
+              max={2}
+              step={0.1}
+              value={presencePenalty ?? null}
+              allowNull
+              align="right"
+              placeholder={defaultLabel}
+              aria-label={t`Presence penalty`}
+              className={fieldClass}
+              onValueCommit={setPresencePenalty}
+            />
+          </NumberRow>
+          <NumberRow title={<Trans>Repetition penalty</Trans>}>
+            <NumberInput
+              min={0}
+              max={10}
+              step={0.1}
+              value={repetitionPenalty ?? null}
+              allowNull
+              align="right"
+              placeholder={defaultLabel}
+              aria-label={t`Repetition penalty`}
+              className={fieldClass}
+              onValueCommit={setRepetitionPenalty}
+            />
+          </NumberRow>
+        </div>
+      ) : null}
+    </>
   );
 }
 
-function Overview() {
+export default function SettingsModel() {
   const { t, i18n } = useLingui();
-  const navigation = useSettingsNavigation();
   const activePreset = useSettingsStore(
     (state) => state.modelRoles.narrator.activePreset,
   );
@@ -190,15 +212,6 @@ function Overview() {
 
   return (
     <div className="flex flex-col gap-6">
-      {isChatGpt ? (
-        <p className="px-0.5 text-sm text-muted-foreground">
-          <Trans>
-            ChatGPT manages reply length and sampling. These settings are kept
-            for your other connections.
-          </Trans>
-        </p>
-      ) : null}
-
       <SetupSection title={<Trans>Length</Trans>}>
         <SetupList>
           <NumberRow
@@ -225,9 +238,7 @@ function Overview() {
               )
             }
             detail={
-              isChatGpt ? (
-                <Trans>Kept free when choosing story history</Trans>
-              ) : (
+              isChatGpt ? undefined : (
                 <Trans>Thinking and the answer share this</Trans>
               )
             }
@@ -250,10 +261,7 @@ function Overview() {
 
       <SetupSection title={<Trans>Sampling</Trans>}>
         <SetupList>
-          <NumberRow
-            title={<Trans>Temperature</Trans>}
-            detail={<Trans>Higher is less predictable</Trans>}
-          >
+          <NumberRow title={<Trans>Temperature</Trans>}>
             <NumberInput
               min={0}
               max={2}
@@ -268,10 +276,7 @@ function Overview() {
               onValueCommit={setTemperature}
             />
           </NumberRow>
-          <NumberRow
-            title={<Trans>Seed</Trans>}
-            detail={<Trans>The same seed repeats a generation</Trans>}
-          >
+          <NumberRow title={<Trans>Seed</Trans>}>
             <div className="flex shrink-0 gap-1.5">
               <NumberInput
                 min={0}
@@ -296,12 +301,7 @@ function Overview() {
               </Button>
             </div>
           </NumberRow>
-          <LinkRow
-            title={<Trans>More sampling</Trans>}
-            detail={<Trans>Top P, Top K, penalties</Trans>}
-            disabled={isChatGpt}
-            onClick={() => navigation.push("sampling")}
-          />
+          <MoreSampling disabled={isChatGpt} />
         </SetupList>
       </SetupSection>
 
@@ -314,18 +314,4 @@ function Overview() {
       </Button>
     </div>
   );
-}
-
-/** Heads Generation's pages in the settings header. */
-export function GenerationTitle({ page }: { page: string }) {
-  return page === "sampling" ? (
-    <Trans>More sampling</Trans>
-  ) : (
-    <Trans>Generation</Trans>
-  );
-}
-
-export default function SettingsModel() {
-  const navigation = useSettingsNavigation();
-  return navigation.page === "sampling" ? <SamplingPage /> : <Overview />;
 }
