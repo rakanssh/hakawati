@@ -230,6 +230,9 @@ jobs:
 
       - name: Android SDK setup
         uses: android-actions/setup-android@v3
+        with:
+          # The default list includes "tools", which the SDK no longer has.
+          packages: platform-tools
 
       - name: Install the Android NDK
         run: |
@@ -261,6 +264,10 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-about
+
+      # Mobile builds check the bundled license files before running the frontend build that writes them.
+      - name: Generate license notices for Tauri resources
+        run: npm run licenses:generate
 
       - name: Write the upload keystore
         env:
@@ -362,6 +369,9 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-about
+
+      - name: Generate license notices for Tauri resources
+        run: npm run licenses:generate
 
       # One App Store Connect API key both signs (Xcode creates the distribution
       # certificate and profile) and uploads.
