@@ -159,10 +159,6 @@ msgstr "شاشة طرفية خضراء بحروف متوهجة."
 msgid "A grey afternoon through a misted city window."
 msgstr "عصرٌ رمادي من خلف نافذة مدينة يكسوها البخار."
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:44
-msgid "A server on your network"
-msgstr "خادم على شبكتك"
-
 #: app/themes/registry.ts:108
 msgid "A sheet feeding out of a typewriter on an oak desk."
 msgstr "ورقة تخرج من آلة كاتبة على مكتب من خشب البلوط."
@@ -356,12 +352,12 @@ msgstr "غروب بأسلوب الألعاب القديمة فوق قلعة، ب
 msgid "Animated"
 msgstr "متحرك"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:49
+#: app/components/layout/settings/ai-setup/add-connection.tsx:42
 #: app/data/api-presets.ts:86
 msgid "Another provider"
 msgstr "مزوّد آخر"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:50
+#: app/components/layout/settings/ai-setup/add-connection.tsx:43
 msgid "Any OpenAI-compatible address"
 msgstr "أي عنوان متوافق مع OpenAI"
 
@@ -1727,6 +1723,7 @@ msgstr "جاري التحميل..."
 msgid "Loading…"
 msgstr "جاري تحميل..."
 
+#: app/components/layout/settings/ai-setup/add-connection.tsx:37
 #: app/pages/home/home.tsx:155
 #: app/pages/scenarios/home.tsx:461
 #: app/pages/tales/home.tsx:266
@@ -1890,7 +1887,7 @@ msgstr "غموض"
 msgid "Name"
 msgstr "الاسم"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:39
+#: app/components/layout/settings/ai-setup/add-connection.tsx:33
 #: app/data/api-presets.ts:69
 msgid "NanoGPT"
 msgstr "NanoGPT"
@@ -2098,17 +2095,13 @@ msgstr "متوقفة على هذا الجهاز"
 msgid "Off-white with a teal accent."
 msgstr "أبيض عاجي بلمسة زرقاء مخضرّة."
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:45
+#: app/components/layout/settings/ai-setup/add-connection.tsx:38
 msgid "Ollama, LM Studio, KoboldCpp…"
 msgstr "Ollama وLM Studio وKoboldCpp…"
 
 #: app/components/layout/settings/cloud-sync.tsx:839
 msgid "On for this device"
 msgstr "مفعّلة على هذا الجهاز"
-
-#: app/components/layout/settings/ai-setup/add-connection.tsx:29
-msgid "One key for hundreds of models, some free. Pay per use."
-msgstr "مفتاح واحد لمئات النماذج، بعضها مجاني. الدفع حسب الاستخدام."
 
 #: app/components/layout/settings/updates.tsx:107
 msgid "Only the desktop app updates itself"
@@ -2128,7 +2121,7 @@ msgstr "فتح الإعدادات"
 msgid "Open story panel"
 msgstr "فتح لوحة القصة"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:34
+#: app/components/layout/settings/ai-setup/add-connection.tsx:29
 #: app/data/api-presets.ts:52
 msgid "OpenAI"
 msgstr "OpenAI"
@@ -2137,7 +2130,7 @@ msgstr "OpenAI"
 msgid "Opening passage"
 msgstr "المقطع الافتتاحي"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:27
+#: app/components/layout/settings/ai-setup/add-connection.tsx:25
 #: app/data/api-presets.ts:29
 msgid "OpenRouter"
 msgstr "OpenRouter"
@@ -2180,10 +2173,6 @@ msgstr "الصفحة {page} من {0}"
 #: app/components/play/tts-player.tsx:52
 msgid "Pause narration"
 msgstr "إيقاف السرد مؤقتاً"
-
-#: app/components/layout/settings/ai-setup/add-connection.tsx:40
-msgid "Pay per use, many open models"
-msgstr "الدفع حسب الاستخدام، ونماذج مفتوحة كثيرة"
 
 #: app/components/layout/settings/cloud-sync.tsx:852
 msgid "Personal"
@@ -2909,9 +2898,9 @@ msgstr "سجّل الدخول إلى ChatGPT"
 msgid "Sign in to sync"
 msgstr "سجّل الدخول للمزامنة"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:22
-msgid "Sign in with your ChatGPT account. No key, no extra bill."
-msgstr "سجّل الدخول بحساب ChatGPT. بلا مفتاح ولا فاتورة إضافية."
+#: app/components/layout/settings/ai-setup/add-connection.tsx:21
+msgid "Sign in with your ChatGPT account."
+msgstr "سجّل الدخول بحساب ChatGPT."
 
 #: app/components/layout/settings/cloud-sync.tsx:1135
 msgid "Sign out"
@@ -3218,10 +3207,6 @@ msgstr "يروي الذكاء الاصطناعي القصة. يعمل مع أي 
 #: app/components/scenario/ScenarioBasicsFields.tsx:79
 msgid "The cover image could not be read. Please choose it again."
 msgstr "تعذّرت قراءة صورة الغلاف. يرجى اختيارها مرة أخرى."
-
-#: app/components/layout/settings/ai-setup/add-connection.tsx:35
-msgid "The official API, with your OpenAI key"
-msgstr "الواجهة الرسمية، بمفتاح OpenAI الخاص بك"
 
 #: app/data/api-presets.ts:56
 msgid "The Official OpenAI API. Requires an OpenAI account with charged credits."

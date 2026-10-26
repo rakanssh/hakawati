@@ -11,37 +11,30 @@ import { LinkRow, SetupList } from "../settings-rows";
 interface ProviderOption {
   preset: ApiPreset;
   title: ReactNode;
-  detail: ReactNode;
+  detail?: ReactNode;
 }
 
 const PROVIDERS: ProviderOption[] = [
   {
     preset: ApiPreset.CHATGPT,
     title: <Trans>ChatGPT plan</Trans>,
-    detail: (
-      <Trans>Sign in with your ChatGPT account. No key, no extra bill.</Trans>
-    ),
+    detail: <Trans>Sign in with your ChatGPT account.</Trans>,
   },
   {
     preset: ApiPreset.OPENROUTER,
     title: <Trans>OpenRouter</Trans>,
-    detail: (
-      <Trans>One key for hundreds of models, some free. Pay per use.</Trans>
-    ),
   },
   {
     preset: ApiPreset.OPENAI,
     title: <Trans>OpenAI</Trans>,
-    detail: <Trans>The official API, with your OpenAI key</Trans>,
   },
   {
     preset: ApiPreset.NANOGPT,
     title: <Trans>NanoGPT</Trans>,
-    detail: <Trans>Pay per use, many open models</Trans>,
   },
   {
     preset: ApiPreset.LOCAL,
-    title: <Trans>A server on your network</Trans>,
+    title: <Trans>Local</Trans>,
     detail: <Trans>Ollama, LM Studio, KoboldCpp…</Trans>,
   },
   {

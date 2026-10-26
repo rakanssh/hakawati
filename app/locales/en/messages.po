@@ -159,10 +159,6 @@ msgstr "A green-screen terminal with glowing type."
 msgid "A grey afternoon through a misted city window."
 msgstr "A grey afternoon through a misted city window."
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:44
-msgid "A server on your network"
-msgstr "A server on your network"
-
 #: app/themes/registry.ts:108
 msgid "A sheet feeding out of a typewriter on an oak desk."
 msgstr "A sheet feeding out of a typewriter on an oak desk."
@@ -356,12 +352,12 @@ msgstr "An 8-bit sunset over a castle, with pixel type."
 msgid "Animated"
 msgstr "Animated"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:49
+#: app/components/layout/settings/ai-setup/add-connection.tsx:42
 #: app/data/api-presets.ts:86
 msgid "Another provider"
 msgstr "Another provider"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:50
+#: app/components/layout/settings/ai-setup/add-connection.tsx:43
 msgid "Any OpenAI-compatible address"
 msgstr "Any OpenAI-compatible address"
 
@@ -1727,6 +1723,7 @@ msgstr "Loading..."
 msgid "Loading…"
 msgstr "Loading…"
 
+#: app/components/layout/settings/ai-setup/add-connection.tsx:37
 #: app/pages/home/home.tsx:155
 #: app/pages/scenarios/home.tsx:461
 #: app/pages/tales/home.tsx:266
@@ -1890,7 +1887,7 @@ msgstr "Mystery"
 msgid "Name"
 msgstr "Name"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:39
+#: app/components/layout/settings/ai-setup/add-connection.tsx:33
 #: app/data/api-presets.ts:69
 msgid "NanoGPT"
 msgstr "NanoGPT"
@@ -2098,17 +2095,13 @@ msgstr "Off for this device"
 msgid "Off-white with a teal accent."
 msgstr "Off-white with a teal accent."
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:45
+#: app/components/layout/settings/ai-setup/add-connection.tsx:38
 msgid "Ollama, LM Studio, KoboldCpp…"
 msgstr "Ollama, LM Studio, KoboldCpp…"
 
 #: app/components/layout/settings/cloud-sync.tsx:839
 msgid "On for this device"
 msgstr "On for this device"
-
-#: app/components/layout/settings/ai-setup/add-connection.tsx:29
-msgid "One key for hundreds of models, some free. Pay per use."
-msgstr "One key for hundreds of models, some free. Pay per use."
 
 #: app/components/layout/settings/updates.tsx:107
 msgid "Only the desktop app updates itself"
@@ -2128,7 +2121,7 @@ msgstr "Open Settings"
 msgid "Open story panel"
 msgstr "Open story panel"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:34
+#: app/components/layout/settings/ai-setup/add-connection.tsx:29
 #: app/data/api-presets.ts:52
 msgid "OpenAI"
 msgstr "OpenAI"
@@ -2137,7 +2130,7 @@ msgstr "OpenAI"
 msgid "Opening passage"
 msgstr "Opening passage"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:27
+#: app/components/layout/settings/ai-setup/add-connection.tsx:25
 #: app/data/api-presets.ts:29
 msgid "OpenRouter"
 msgstr "OpenRouter"
@@ -2180,10 +2173,6 @@ msgstr "Page {page} of {0}"
 #: app/components/play/tts-player.tsx:52
 msgid "Pause narration"
 msgstr "Pause narration"
-
-#: app/components/layout/settings/ai-setup/add-connection.tsx:40
-msgid "Pay per use, many open models"
-msgstr "Pay per use, many open models"
 
 #: app/components/layout/settings/cloud-sync.tsx:852
 msgid "Personal"
@@ -2909,9 +2898,9 @@ msgstr "Sign in to ChatGPT"
 msgid "Sign in to sync"
 msgstr "Sign in to sync"
 
-#: app/components/layout/settings/ai-setup/add-connection.tsx:22
-msgid "Sign in with your ChatGPT account. No key, no extra bill."
-msgstr "Sign in with your ChatGPT account. No key, no extra bill."
+#: app/components/layout/settings/ai-setup/add-connection.tsx:21
+msgid "Sign in with your ChatGPT account."
+msgstr "Sign in with your ChatGPT account."
 
 #: app/components/layout/settings/cloud-sync.tsx:1135
 msgid "Sign out"
@@ -3218,10 +3207,6 @@ msgstr "The AI tells the story. Works with any model."
 #: app/components/scenario/ScenarioBasicsFields.tsx:79
 msgid "The cover image could not be read. Please choose it again."
 msgstr "The cover image could not be read. Please choose it again."
-
-#: app/components/layout/settings/ai-setup/add-connection.tsx:35
-msgid "The official API, with your OpenAI key"
-msgstr "The official API, with your OpenAI key"
 
 #: app/data/api-presets.ts:56
 msgid "The Official OpenAI API. Requires an OpenAI account with charged credits."
