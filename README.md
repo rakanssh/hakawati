@@ -31,7 +31,7 @@ scenario publishing.
 Freeform storytelling without inventory or stat tracking. The AI narrates the
 story in response to your actions, dialogue, and directions.
 
-![Story Teller mode showing a tale and the player input](./public/st.png)
+![Story Teller mode showing a tale and the player input](./.github/assets/story-teller.webp)
 
 ### Game Master
 
@@ -39,7 +39,7 @@ The AI narrates and updates your character's inventory and stats. This mode is
 experimental and requires a model that supports tool calling. Results depend on
 how well the model handles those instructions.
 
-![Game Master mode showing inventory and stats beside the story](./public/gm.png)
+![Game Master mode showing inventory and stats beside the story](./.github/assets/game-master.webp)
 
 ## Getting started
 
