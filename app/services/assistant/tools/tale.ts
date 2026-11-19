@@ -1,11 +1,6 @@
-import {
-  GameMode,
-  LogEntryMode,
-  PromptComponentType,
-  StorybookCategory,
-} from "@/types";
+import { GameMode, LogEntryMode, PromptComponentType } from "@/types";
 import type { AssistantChange } from "@/types/assistant.type";
-import { TaleEditError, type TaleChanges } from "../tale-changes";
+import type { TaleChanges } from "../tale-changes";
 import {
   deletePassages,
   editTaleSetup,
@@ -17,39 +12,31 @@ import {
 } from "../tale-edits";
 import {
   defineTool,
+  MODE_PROPERTY,
+  modeFrom,
   objectSchema,
-  text,
+  opList,
+  optionalString,
+  required,
+  strings,
   type AssistantTool,
   type AssistantToolContext,
 } from "./define";
+import {
+  addItemFrom,
+  applyCardOps,
+  CARD_OP_SCHEMA,
+  setStatFrom,
+  updateItemFrom,
+} from "./ops";
 import { taleIdFor, taleIdProperty } from "./read";
 
-const optionalString = (value: unknown) =>
-  typeof value === "string" ? value : undefined;
-const optionalNumber = (value: unknown) =>
-  typeof value === "number" && Number.isFinite(value) ? value : undefined;
-
-function ops(args: Record<string, unknown>): Array<Record<string, unknown>> {
-  if (!Array.isArray(args.ops) || args.ops.length === 0)
-    throw new TaleEditError("ops must list at least one change.");
-  return args.ops.map((op) => {
-    if (!op || typeof op !== "object" || Array.isArray(op))
-      throw new TaleEditError("Each op must be an object.");
-    return op as Record<string, unknown>;
-  });
-}
-
-function required(op: Record<string, unknown>, key: string): string {
-  const value = text(op[key]);
-  if (!value) throw new TaleEditError(`${String(op.op)} needs ${key}.`);
-  return value;
-}
+const ops = (args: Record<string, unknown>) =>
+  opList(args.ops, "ops", { required: true });
 
 const describeChanges = (changes: AssistantChange[]) => ({
   changed: changes.length,
 });
-
-const CATEGORIES = Object.values(StorybookCategory);
 
 export function createTaleTools(
   context: AssistantToolContext,
@@ -79,12 +66,12 @@ export function createTaleTools(
         plot: { type: "string" },
         authorNote: { type: "string" },
         aiInstructions: { type: "string" },
-        mode: { type: "string", enum: ["story_teller", "game_master"] },
+        mode: MODE_PROPERTY,
       }),
       run: async (args, signal) => {
         const name = optionalString(args.name);
         if (name !== undefined && !name.trim())
-          throw new TaleEditError("name cannot be empty.");
+          throw new Error("name cannot be empty.");
         const changes = await setup(args, signal, (tale) => {
           if (name !== undefined) tale.setField("name", name.trim());
           const description = optionalString(args.description);
@@ -99,10 +86,7 @@ export function createTaleTools(
             if (value !== undefined) tale.setComponent(type, value);
           }
           if (args.mode !== undefined)
-            tale.setField(
-              "gameMode",
-              args.mode === "game_master" ? GameMode.GM : GameMode.STORY_TELLER,
-            );
+            tale.setField("gameMode", modeFrom(args.mode));
         });
         return describeChanges(changes);
       },
@@ -114,63 +98,15 @@ export function createTaleTools(
       parameters: objectSchema(
         {
           ...taleIdProperty,
-          ops: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                op: { type: "string", enum: ["add", "update", "remove"] },
-                id: {
-                  type: "string",
-                  description: "The card's id, for update and remove.",
-                },
-                title: { type: "string" },
-                content: { type: "string" },
-                category: { type: "string", enum: CATEGORIES },
-                triggers: { type: "array", items: { type: "string" } },
-                pinned: { type: "boolean" },
-              },
-              required: ["op"],
-            },
-          },
+          ops: { type: "array", items: CARD_OP_SCHEMA },
         },
         ["ops"],
       ),
       run: async (args, signal) => {
         const list = ops(args);
-        const added: Array<{ id: string; title: string }> = [];
+        let added: Array<{ id: string; title: string }> = [];
         const changes = await setup(args, signal, (tale) => {
-          for (const op of list) {
-            const triggers = Array.isArray(op.triggers)
-              ? op.triggers.filter((t): t is string => typeof t === "string")
-              : undefined;
-            if (op.op === "add") {
-              const card = tale.addCard({
-                title: required(op, "title"),
-                content: optionalString(op.content) ?? "",
-                category: optionalString(op.category),
-                triggers,
-                pinned: op.pinned === true,
-              });
-              added.push({ id: card.id, title: card.title });
-            } else if (op.op === "update") {
-              tale.updateCard(required(op, "id"), {
-                ...(text(op.title) ? { title: text(op.title) } : {}),
-                ...(optionalString(op.content) !== undefined
-                  ? { content: optionalString(op.content) }
-                  : {}),
-                ...(optionalString(op.category)
-                  ? { category: op.category as StorybookCategory }
-                  : {}),
-                ...(triggers ? { triggers } : {}),
-                ...(typeof op.pinned === "boolean"
-                  ? { isPinned: op.pinned }
-                  : {}),
-              });
-            } else if (op.op === "remove") {
-              tale.removeCard(required(op, "id"));
-            } else throw new TaleEditError("op must be add, update or remove.");
-          }
+          added = applyCardOps(tale, list);
         });
         return { ...describeChanges(changes), added };
       },
@@ -226,36 +162,21 @@ export function createTaleTools(
         const added: Array<{ id: string; name: string }> = [];
         const changes = await setup(args, signal, (tale) => {
           if (tale.tale.gameMode !== GameMode.GM)
-            throw new TaleEditError(
+            throw new Error(
               "Stats and inventory are only used in Game Master mode. Switch the mode with update_tale first if the player wants that.",
             );
           for (const op of list) {
-            if (op.op === "set_stat") {
-              tale.setStat({
-                name: required(op, "name"),
-                newName: text(op.newName),
-                value: optionalNumber(op.value),
-                min: optionalNumber(op.min),
-                max: optionalNumber(op.max),
-                description: optionalString(op.description),
-              });
-            } else if (op.op === "remove_stat") {
+            if (op.op === "set_stat") setStatFrom(tale, op);
+            else if (op.op === "remove_stat")
               tale.removeStat(required(op, "name"));
-            } else if (op.op === "add_item") {
-              const item = tale.addItem(
-                required(op, "name"),
-                text(op.description),
-              );
+            else if (op.op === "add_item") {
+              const item = addItemFrom(tale, op);
               added.push({ id: item.id, name: item.name });
-            } else if (op.op === "update_item") {
-              tale.updateItem(required(op, "id"), {
-                name: text(op.name),
-                description: optionalString(op.description),
-              });
-            } else if (op.op === "remove_item") {
+            } else if (op.op === "update_item") updateItemFrom(tale, op);
+            else if (op.op === "remove_item")
               tale.removeItem(required(op, "id"));
-            } else
-              throw new TaleEditError(
+            else
+              throw new Error(
                 "op must be set_stat, remove_stat, add_item, update_item or remove_item.",
               );
           }
@@ -315,8 +236,6 @@ export function createTaleTools(
         },
         ["ops"],
       ),
-      detail: (args) =>
-        Array.isArray(args.ops) ? String(args.ops.length) : undefined,
       run: async (args, signal) => {
         const list = ops(args);
         const taleId = taleIdFor(args, context);
@@ -326,8 +245,7 @@ export function createTaleTools(
           for (const op of list) {
             if (op.op === "edit") {
               const textValue = optionalString(op.text);
-              if (!textValue?.trim())
-                throw new TaleEditError("edit needs text.");
+              if (!textValue?.trim()) throw new Error("edit needs text.");
               changed += record([
                 await rewritePassage(taleId, required(op, "id"), textValue),
               ]).length;
@@ -351,7 +269,7 @@ export function createTaleTools(
                   })
                 : [];
               if (!passages.length)
-                throw new TaleEditError("insert needs passages with text.");
+                throw new Error("insert needs passages with text.");
               const entries = passages.map(toLogEntry);
               changed += record([
                 await insertPassages(
@@ -362,13 +280,10 @@ export function createTaleTools(
               ]).length;
               inserted.push(...entries.map((entry) => entry.id));
             } else if (op.op === "delete") {
-              const ids = Array.isArray(op.ids)
-                ? op.ids.filter((id): id is string => typeof id === "string")
-                : [];
-              if (!ids.length) throw new TaleEditError("delete needs ids.");
+              const ids = strings(op.ids) ?? [];
+              if (!ids.length) throw new Error("delete needs ids.");
               changed += record(await deletePassages(taleId, ids)).length;
-            } else
-              throw new TaleEditError("op must be edit, insert or delete.");
+            } else throw new Error("op must be edit, insert or delete.");
           }
         });
         return { changed, ...(inserted.length ? { inserted } : {}) };

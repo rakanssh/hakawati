@@ -8,11 +8,12 @@ import {
   getTales,
   searchLogEntries,
 } from "@/repositories/tale.repository";
+import { errorMessage } from "@/lib/errors";
 import { listScenarioPublishLinks } from "@/repositories/scenario-publish-link.repository";
 import { currentSyncSession, loadTaleLibrary } from "@/services/tale-library";
 import { useScenarioDraftStore } from "@/store/useScenarioDraftStore";
 import { useTaleStore } from "@/store/useTaleStore";
-import { GameMode, PromptComponentType } from "@/types";
+import { PromptComponentType } from "@/types";
 import {
   clip,
   describePassage,
@@ -23,6 +24,7 @@ import {
 import {
   defineTool,
   integer,
+  modeName,
   objectSchema,
   text,
   type AssistantTool,
@@ -30,9 +32,6 @@ import {
 } from "./define";
 
 const LIBRARY_SCAN = 100;
-
-export const errorMessage = (error: unknown) =>
-  error instanceof Error ? error.message : String(error);
 
 export function taleIdFor(
   args: Record<string, unknown>,
@@ -111,10 +110,7 @@ export function createReadTools(
                 id: s.id,
                 name: s.name,
                 description: clip(s.description, 240),
-                mode:
-                  s.initialGameMode === GameMode.GM
-                    ? "game_master"
-                    : "story_teller",
+                mode: modeName(s.initialGameMode),
                 ...(published.has(s.id) ? { published: true } : {}),
               })),
           };
@@ -313,10 +309,7 @@ export function createReadTools(
           ...(inEditor ? { inEditor: true } : {}),
           name: scenario.name,
           description: scenario.description,
-          mode:
-            scenario.initialGameMode === GameMode.GM
-              ? "game_master"
-              : "story_teller",
+          mode: modeName(scenario.initialGameMode),
           opening: component(PromptComponentType.OPENING),
           plot: component(PromptComponentType.PLOT),
           authorNote: component(PromptComponentType.AUTHOR_NOTE),

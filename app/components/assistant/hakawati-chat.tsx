@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import {
+  memo,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -86,6 +93,12 @@ function ErrorLine({ children }: { children: React.ReactNode }) {
   );
 }
 
+const REMARK_PLUGINS = [remarkGfm];
+
+function Heading({ children }: { children?: React.ReactNode }) {
+  return <p className="mt-3 mb-1 font-semibold">{children}</p>;
+}
+
 function useMarkdownComponents(): Components {
   const { t } = useLingui();
   return useMemo<Components>(
@@ -99,18 +112,10 @@ function useMarkdownComponents(): Components {
       ol: ({ children }) => (
         <ol className="my-2 list-decimal space-y-1 ps-5">{children}</ol>
       ),
-      h1: ({ children }) => (
-        <p className="mt-3 mb-1 font-semibold">{children}</p>
-      ),
-      h2: ({ children }) => (
-        <p className="mt-3 mb-1 font-semibold">{children}</p>
-      ),
-      h3: ({ children }) => (
-        <p className="mt-3 mb-1 font-semibold">{children}</p>
-      ),
-      h4: ({ children }) => (
-        <p className="mt-3 mb-1 font-semibold">{children}</p>
-      ),
+      h1: Heading,
+      h2: Heading,
+      h3: Heading,
+      h4: Heading,
       strong: ({ children }) => (
         <strong className="font-semibold text-sidebar-foreground">
           {children}
@@ -187,7 +192,7 @@ function PlayerMessage({ content }: { content: string }) {
   );
 }
 
-function Reply({
+const Reply = memo(function Reply({
   content,
   thinking,
   activity,
@@ -254,7 +259,10 @@ function Reply({
             dir="auto"
             className="w-full text-sm leading-relaxed break-words [overflow-wrap:anywhere] text-sidebar-foreground/95"
           >
-            <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+            <ReactMarkdown
+              remarkPlugins={REMARK_PLUGINS}
+              components={components}
+            >
               {part.text}
             </ReactMarkdown>
             {live && part === lastPart ? caret : null}
@@ -324,7 +332,7 @@ function Reply({
       ) : null}
     </div>
   );
-}
+});
 
 function Suggestions({
   isPlay,
@@ -430,7 +438,6 @@ function ChatMenu({ pathname }: { pathname: string }) {
 }
 
 export function HakawatiChat() {
-  const { t } = useLingui();
   const router = useRouter();
   const navigate = useNavigate();
   const { load: loadTale } = useLoadTale();
@@ -443,10 +450,6 @@ export function HakawatiChat() {
   const messages = useAssistantStore((state) => state.messages);
   const run = useAssistantStore((state) => state.run);
   const error = useAssistantStore((state) => state.error);
-  const draft = useAssistantStore((state) => state.draft);
-  const setDraft = useAssistantStore((state) => state.setDraft);
-  const focusComposer = useAssistantStore((state) => state.focusComposer);
-  const composerRef = useRef<HTMLTextAreaElement>(null);
   const configured = useSettingsStore((state) =>
     isModelRoleConfigured(state.modelRoles.hakawati),
   );
@@ -462,15 +465,6 @@ export function HakawatiChat() {
   useEffect(() => {
     if (stickToBottom) scrollToBottom("auto");
   }, [messages, run, error, stickToBottom, scrollToBottom]);
-
-  useEffect(() => {
-    if (!focusComposer) return;
-    const timer = window.setTimeout(() => {
-      composerRef.current?.focus();
-      useAssistantStore.getState().clearComposerFocus();
-    });
-    return () => window.clearTimeout(timer);
-  }, [focusComposer]);
 
   const closePanelOnPhone = () => {
     if (isMobilePlatform) useStoryPanelStore.getState().setOpen(false);
@@ -504,7 +498,7 @@ export function HakawatiChat() {
     },
   };
 
-  const send = (text = draft) => {
+  const send = (text: string) => {
     if (!configured || run) return;
     void sendAssistantMessage(text, {
       getPathname: () => router.state.location.pathname,
@@ -571,57 +565,88 @@ export function HakawatiChat() {
             />
           </SetupList>
         )}
-        <div
-          data-composer-surface=""
-          className="flex min-w-0 items-end gap-1 overflow-hidden rounded-xs border border-border/75 bg-[var(--composer-background)] p-1 shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18"
-        >
-          <Textarea
-            ref={composerRef}
-            data-hakawati-composer=""
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (
-                event.key === "Enter" &&
-                !event.shiftKey &&
-                !isMobilePlatform
-              ) {
-                event.preventDefault();
-                send();
-              }
-            }}
-            rows={1}
-            disabled={!configured}
-            placeholder={t`Ask Hakawati`}
-            aria-label={t`Message Hakawati`}
-            className="max-h-40 min-h-10 resize-none border-0 !bg-transparent px-2.5 py-2 text-sm shadow-none focus-visible:border-transparent focus-visible:ring-0 md:text-sm dark:!bg-transparent"
-          />
-          {run ? (
-            <Button
-              type="button"
-              size="icon"
-              data-composer-send=""
-              className="size-10 shrink-0 rounded-xs"
-              onClick={stopAssistant}
-              aria-label={t`Stop`}
-            >
-              <SquareIcon className="size-4 fill-current" />
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              size="icon"
-              data-composer-send=""
-              className="size-10 shrink-0 rounded-xs"
-              disabled={!configured || !draft.trim()}
-              onClick={() => send()}
-              aria-label={t`Send`}
-            >
-              <SendIcon className="size-4" />
-            </Button>
-          )}
-        </div>
+        <Composer
+          configured={configured}
+          running={Boolean(run)}
+          onSend={send}
+        />
       </div>
+    </div>
+  );
+}
+
+/** The message box, apart from the chat so typing doesn't re-render the replies. */
+function Composer({
+  configured,
+  running,
+  onSend,
+}: {
+  configured: boolean;
+  running: boolean;
+  onSend: (text: string) => void;
+}) {
+  const { t } = useLingui();
+  const draft = useAssistantStore((state) => state.draft);
+  const setDraft = useAssistantStore((state) => state.setDraft);
+  const focusComposer = useAssistantStore((state) => state.focusComposer);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+  const { isMobilePlatform } = useIsMobile();
+
+  useEffect(() => {
+    if (!focusComposer) return;
+    const timer = window.setTimeout(() => {
+      composerRef.current?.focus();
+      useAssistantStore.getState().clearComposerFocus();
+    });
+    return () => window.clearTimeout(timer);
+  }, [focusComposer]);
+
+  return (
+    <div
+      data-composer-surface=""
+      className="flex min-w-0 items-end gap-1 overflow-hidden rounded-xs border border-border/75 bg-[var(--composer-background)] p-1 shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18"
+    >
+      <Textarea
+        ref={composerRef}
+        data-hakawati-composer=""
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !event.shiftKey && !isMobilePlatform) {
+            event.preventDefault();
+            onSend(draft);
+          }
+        }}
+        rows={1}
+        disabled={!configured}
+        placeholder={t`Ask Hakawati`}
+        aria-label={t`Message Hakawati`}
+        className="max-h-40 min-h-10 resize-none border-0 !bg-transparent px-2.5 py-2 text-sm shadow-none focus-visible:border-transparent focus-visible:ring-0 md:text-sm dark:!bg-transparent"
+      />
+      {running ? (
+        <Button
+          type="button"
+          size="icon"
+          data-composer-send=""
+          className="size-10 shrink-0 rounded-xs"
+          onClick={stopAssistant}
+          aria-label={t`Stop`}
+        >
+          <SquareIcon className="size-4 fill-current" />
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          size="icon"
+          data-composer-send=""
+          className="size-10 shrink-0 rounded-xs"
+          disabled={!configured || !draft.trim()}
+          onClick={() => onSend(draft)}
+          aria-label={t`Send`}
+        >
+          <SendIcon className="size-4" />
+        </Button>
+      )}
     </div>
   );
 }

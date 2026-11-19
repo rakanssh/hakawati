@@ -43,7 +43,7 @@ import {
 } from "@/services/scenario.service";
 import { addSyncChangedListener } from "@/services/sync-wakeup";
 import { useSettingsStore } from "@/store";
-import { useScenarioDraftStore } from "@/store/useScenarioDraftStore";
+import { useScenarioLibraryStore } from "@/store/useScenarioLibraryStore";
 import { GameMode, type Scenario } from "@/types/context.type";
 
 type ScenarioStart = {
@@ -104,8 +104,7 @@ export default function ScenarioDetails() {
 
   useEffect(
     () =>
-      useScenarioDraftStore.subscribe((state, previous) => {
-        if (state.libraryRevision === previous.libraryRevision) return;
+      useScenarioLibraryStore.subscribe(() => {
         void Promise.all([getScenarioById(id), getScenarioHeadById(id)]).then(
           ([result, head]) => {
             if (!result || currentId.current !== id) return;

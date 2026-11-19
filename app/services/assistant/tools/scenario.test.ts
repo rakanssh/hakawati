@@ -115,7 +115,7 @@ beforeEach(() => {
   openTale.mockClear();
   initTaleFromScenario.mockReset();
   saveAsScenario.mockReset();
-  useScenarioDraftStore.setState({ draft: null, libraryRevision: 0 });
+  useScenarioDraftStore.setState({ draft: null });
 });
 
 describe("edit_scenario", () => {
@@ -139,7 +139,6 @@ describe("edit_scenario", () => {
   it("saves a scenario in the library, and creates new ones", async () => {
     await call("edit_scenario", { scenario: "sea", name: "Signal" });
     expect(library.get("sea")!.name).toBe("Signal");
-    expect(useScenarioDraftStore.getState().libraryRevision).toBe(1);
 
     const created = await call("edit_scenario", {
       scenario: "new",
@@ -242,9 +241,12 @@ describe("start_tale", () => {
       scenarioId: "market",
       answers: { [ids[0]]: "Mara", [ids[1]]: "maps" },
     });
-    expect(initTaleFromScenario).toHaveBeenCalledWith("market", {
-      answers: { [ids[0]]: "Mara", [ids[1]]: "maps" },
-    });
+    expect(initTaleFromScenario).toHaveBeenCalledWith(
+      "market",
+      expect.objectContaining({
+        answers: { [ids[0]]: "Mara", [ids[1]]: "maps" },
+      }),
+    );
     expect(openTale).toHaveBeenCalledWith("tale-1");
     expect(started).toEqual({
       started: true,
@@ -261,10 +263,10 @@ describe("start_tale", () => {
       scenarioId: "sea",
       private: true,
     });
-    expect(initTaleFromScenario).toHaveBeenCalledWith("sea", {
-      answers: {},
-      syncPolicy: "private",
-    });
+    expect(initTaleFromScenario).toHaveBeenCalledWith(
+      "sea",
+      expect.objectContaining({ answers: {}, syncPolicy: "private" }),
+    );
     expect(openTale).toHaveBeenCalledWith("tale-2");
     expect(result).toMatchObject({ started: true, name: "The Meridian" });
   });

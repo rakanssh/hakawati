@@ -80,7 +80,7 @@ describe("parseOpenAIStream", () => {
       'data: {"choices":[{"delta":{},"finish_reason":"length"}]}',
     ]);
     await expect(
-      collect(parseOpenAIStream(stream, { outputLimitAdjustable: false })),
+      collect(parseOpenAIStream(stream, { fixedLimitLabel: "Utility" })),
     ).rejects.toThrow("lower Utility thinking level");
   });
 

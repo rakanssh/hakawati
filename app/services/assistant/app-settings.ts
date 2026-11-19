@@ -1,3 +1,5 @@
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { fontPresets } from "@/data/font-presets";
 import { LOCALES, type Locale } from "@/lib/locales";
 import { setAppLanguage } from "@/services/language";
@@ -14,6 +16,7 @@ import {
 
 /** One setting Hakawati can read and change. Values are what the store holds, so Undo can put them back. */
 export interface SettingEntry {
+  label: MessageDescriptor;
   tab: SettingsTab;
   read: () => unknown;
   apply: (value: unknown) => void;
@@ -82,6 +85,7 @@ type SamplingKey =
 
 function sampling(
   key: SamplingKey,
+  label: MessageDescriptor,
   min: number,
   max: number,
   integer = false,
@@ -97,6 +101,7 @@ function sampling(
     repetitionPenalty: "setRepetitionPenalty",
   } as const;
   return {
+    label,
     tab: "generation",
     read: () => settings()[key] ?? null,
     apply: (value) => settings()[setters[key]](value as number | null),
@@ -129,10 +134,11 @@ const PROMPT_FIELDS: Record<PromptKey, { text: string; use: string }> = {
   },
 };
 
-function prompt(key: PromptKey): SettingEntry {
+function prompt(key: PromptKey, label: MessageDescriptor): SettingEntry {
   const fields = PROMPT_FIELDS[key];
   type Stored = { custom: boolean; text: string | null };
   return {
+    label,
     tab: "prompting",
     read: (): Stored => {
       const state = settings() as unknown as Record<string, unknown>;
@@ -170,6 +176,7 @@ const fontId = (value: string) =>
 
 export const APP_SETTINGS: Record<string, SettingEntry> = {
   theme: {
+    label: msg`Theme`,
     tab: "appearance",
     read: () => useThemeStore.getState().preference,
     apply: (value) =>
@@ -188,6 +195,7 @@ export const APP_SETTINGS: Record<string, SettingEntry> = {
     accepts: THEME_PREFERENCES,
   },
   scenery: {
+    label: msg`Scenery`,
     tab: "appearance",
     read: () => settings().themeScenery ?? null,
     apply: (value) =>
@@ -199,6 +207,7 @@ export const APP_SETTINGS: Record<string, SettingEntry> = {
     accepts: [...SCENERY, "null to follow the system's reduce-motion setting"],
   },
   fontSize: {
+    label: msg`Text size`,
     tab: "appearance",
     read: () => settings().fontSize,
     apply: (value) => settings().setFontSize(value as number),
@@ -209,6 +218,7 @@ export const APP_SETTINGS: Record<string, SettingEntry> = {
     accepts: { min: FONT_SIZE_MIN, max: FONT_SIZE_MAX, default: 1 },
   },
   uiScale: {
+    label: msg`Interface size`,
     tab: "appearance",
     read: () => settings().uiScale,
     apply: (value) => settings().setUiScale(value as number),
@@ -217,6 +227,7 @@ export const APP_SETTINGS: Record<string, SettingEntry> = {
     accepts: { min: UI_SCALE_MIN, max: UI_SCALE_MAX, default: 1 },
   },
   font: {
+    label: msg`Font`,
     tab: "appearance",
     read: () => fontId(settings().fontFamily),
     apply: (value) =>
@@ -237,6 +248,7 @@ export const APP_SETTINGS: Record<string, SettingEntry> = {
     accepts: fontPresets.map((font) => ({ id: font.id, name: font.name })),
   },
   highlightLatest: {
+    label: msg`Highlight the latest passage`,
     tab: "appearance",
     read: () => settings().highlightLatestSection,
     apply: (value) => settings().setHighlightLatestSection(value as boolean),
@@ -245,6 +257,7 @@ export const APP_SETTINGS: Record<string, SettingEntry> = {
     accepts: "true or false",
   },
   thinking: {
+    label: msg`Show AI thinking`,
     tab: "appearance",
     read: () => settings().thinkingVisibility,
     apply: (value) =>
@@ -256,6 +269,7 @@ export const APP_SETTINGS: Record<string, SettingEntry> = {
     accepts: ["all", "latest", "none"],
   },
   language: {
+    label: msg`Language`,
     tab: "appearance",
     read: () => settings().language,
     apply: (value) => setAppLanguage(value as Locale),
@@ -270,6 +284,7 @@ export const APP_SETTINGS: Record<string, SettingEntry> = {
     accepts: LOCALES,
   },
   direction: {
+    label: msg`Direction`,
     tab: "appearance",
     read: () => settings().textDirection,
     apply: (value) =>
@@ -281,6 +296,7 @@ export const APP_SETTINGS: Record<string, SettingEntry> = {
     accepts: ["system", "ltr", "rtl"],
   },
   autoNarrate: {
+    label: msg`Read new narration aloud`,
     tab: "ai-setup",
     read: () => settings().autoNarrate,
     apply: (value) => settings().setAutoNarrate(value as boolean),
@@ -288,6 +304,7 @@ export const APP_SETTINGS: Record<string, SettingEntry> = {
     accepts: "true or false: read new narration aloud",
   },
   contextWindow: {
+    label: msg`Context window`,
     tab: "generation",
     read: () => settings().contextWindow,
     apply: (value) => settings().setContextWindow(value as number),
@@ -302,6 +319,7 @@ export const APP_SETTINGS: Record<string, SettingEntry> = {
     },
   },
   maxTokens: {
+    label: msg`Max output tokens`,
     tab: "generation",
     read: () => settings().maxTokens,
     apply: (value) => settings().setMaxTokens(value as number),
@@ -313,15 +331,21 @@ export const APP_SETTINGS: Record<string, SettingEntry> = {
           })(input),
     accepts: { min: 1, default: 2048 },
   },
-  temperature: sampling("temperature", 0, 2),
-  topP: sampling("topP", 0, 1),
-  topK: sampling("topK", 1, 1000, true),
-  minP: sampling("minP", 0, 1),
-  topA: sampling("topA", 0, 1),
-  frequencyPenalty: sampling("frequencyPenalty", -2, 2),
-  presencePenalty: sampling("presencePenalty", -2, 2),
-  repetitionPenalty: sampling("repetitionPenalty", 0, 10),
+  temperature: sampling("temperature", msg`Temperature`, 0, 2),
+  topP: sampling("topP", msg`Top P`, 0, 1),
+  topK: sampling("topK", msg`Top K`, 1, 1000, true),
+  minP: sampling("minP", msg`Min P`, 0, 1),
+  topA: sampling("topA", msg`Top A`, 0, 1),
+  frequencyPenalty: sampling("frequencyPenalty", msg`Frequency penalty`, -2, 2),
+  presencePenalty: sampling("presencePenalty", msg`Presence penalty`, -2, 2),
+  repetitionPenalty: sampling(
+    "repetitionPenalty",
+    msg`Repetition penalty`,
+    0,
+    10,
+  ),
   seed: {
+    label: msg`Seed`,
     tab: "generation",
     read: () => settings().seed,
     apply: (value) => settings().setSeed(value as number),
@@ -331,11 +355,11 @@ export const APP_SETTINGS: Record<string, SettingEntry> = {
         : number("seed", 0, Number.MAX_SAFE_INTEGER, { integer: true })(input),
     accepts: "a whole number, or null for a new random one",
   },
-  storytellerPrompt: prompt("Storyteller"),
-  gmPrompt: prompt("Gm"),
-  continuePrompt: prompt("Continue"),
-  continueAuthorNote: prompt("ContinueAuthorNote"),
-  storyCardPrompt: prompt("StoryCardGenerator"),
+  storytellerPrompt: prompt("Storyteller", msg`AI instructions`),
+  gmPrompt: prompt("Gm", msg`Game Master mechanics`),
+  continuePrompt: prompt("Continue", msg`Continue`),
+  continueAuthorNote: prompt("ContinueAuthorNote", msg`Continue author note`),
+  storyCardPrompt: prompt("StoryCardGenerator", msg`Story card generator`),
 };
 
 export const SETTING_KEYS = Object.keys(APP_SETTINGS);

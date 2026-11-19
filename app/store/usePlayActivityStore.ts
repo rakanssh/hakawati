@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { abortError } from "@/lib/errors";
 
 /** Work on the open tale that must not overlap: the narrator's turn, saves, and Hakawati's edits. */
 interface PlayActivity {
@@ -30,7 +31,7 @@ export function beginPlayActivity(kind: PlayActivityKind): () => void {
 function nextChange(signal?: AbortSignal): Promise<void> {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) {
-      reject(new DOMException("Request cancelled.", "AbortError"));
+      reject(abortError());
       return;
     }
     const stop = () => {
@@ -39,7 +40,7 @@ function nextChange(signal?: AbortSignal): Promise<void> {
     };
     const abort = () => {
       stop();
-      reject(new DOMException("Request cancelled.", "AbortError"));
+      reject(abortError());
     };
     const unsubscribe = usePlayActivityStore.subscribe(() => {
       stop();

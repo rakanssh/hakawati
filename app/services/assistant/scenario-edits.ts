@@ -16,7 +16,7 @@ import {
 
 export const NEW_SCENARIO = "new";
 
-function withoutThumbnail(scenario: Scenario): ScenarioRecord {
+export function withoutThumbnail(scenario: Scenario): ScenarioRecord {
   const { thumbnail: _thumbnail, ...record } = scenario;
   return record;
 }
@@ -41,7 +41,6 @@ async function saveToLibrary(
     id,
   );
   const saved = withoutThumbnail(await readStored(savedId));
-  useScenarioDraftStore.getState().bumpLibrary();
   return saved;
 }
 
@@ -114,7 +113,6 @@ export async function scenarioFromTale(
 ): Promise<ScenarioChange> {
   const id = await saveAsScenario(taleId);
   const after = withoutThumbnail(await readStored(id));
-  useScenarioDraftStore.getState().bumpLibrary();
   return {
     kind: "scenario",
     target: "library",
@@ -144,13 +142,11 @@ export async function revertScenarioChanges(
 ): Promise<{ changes: ScenarioChange[]; kept: number }> {
   const result = changes.map((change) => ({ ...change }));
   let kept = 0;
-  let libraryChanged = false;
   for (const change of [...result].reverse()) {
     if (change.undone) continue;
     if (!change.before) {
       if (await revertCreated(change)) {
         change.undone = true;
-        libraryChanged = true;
       } else kept += 1;
       continue;
     }
@@ -190,9 +186,7 @@ export async function revertScenarioChanges(
         change.scenarioId,
       );
       change.undone = true;
-      libraryChanged = true;
     }
   }
-  if (libraryChanged) useScenarioDraftStore.getState().bumpLibrary();
   return { changes: result, kept };
 }

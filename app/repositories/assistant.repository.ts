@@ -1,3 +1,4 @@
+import { parseJsonValue } from "@/lib/repository-utils";
 import { enqueueLocalOperation } from "@/lib/local-write-queue";
 import { getDb } from "@/services/db";
 import { withTransaction } from "@/services/db/transaction";
@@ -39,19 +40,14 @@ function threadFromRow(row: ThreadRow): AssistantThread {
   };
 }
 
-function parseJson<T>(value: string | null): T | undefined {
-  if (!value) return undefined;
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return undefined;
-  }
-}
-
 function messageFromRow(row: MessageRow): AssistantMessage {
-  const turn = parseJson<AssistantMessage["turn"]>(row.turn_json);
-  const activity = parseJson<AssistantMessage["activity"]>(row.activity_json);
-  const changes = parseJson<AssistantMessage["changes"]>(row.changes_json);
+  const turn =
+    parseJsonValue<AssistantMessage["turn"]>(row.turn_json) ?? undefined;
+  const activity =
+    parseJsonValue<AssistantMessage["activity"]>(row.activity_json) ??
+    undefined;
+  const changes =
+    parseJsonValue<AssistantMessage["changes"]>(row.changes_json) ?? undefined;
   return {
     id: row.id,
     threadId: row.thread_id,

@@ -1,4 +1,5 @@
 import { resolveModelRole, sendRoleChat } from "@/services/llm";
+import { errorMessage, isAbortError } from "@/lib/errors";
 import { assertNotAborted } from "@/services/llm/adapters/responses";
 import type {
   ChatMessage,
@@ -9,7 +10,7 @@ import { ToolCallAccumulator } from "@/services/llm/tool-call-accumulator";
 import type { ToolCall, ToolDefinition } from "@/services/llm/tools";
 import { ResponseMode, type ModelRole } from "@/types/api.type";
 
-export const DEFAULT_MAX_AGENT_ROUNDS = 10;
+const DEFAULT_MAX_AGENT_ROUNDS = 10;
 
 export interface AgentTool {
   definition: ToolDefinition;
@@ -22,7 +23,7 @@ export interface AgentTool {
 export type AgentEvent =
   | { type: "text"; delta: string }
   | { type: "thinking"; delta: string }
-  | { type: "tool_start"; call: ToolCall }
+  | { type: "tool_start"; call: ToolCall; args: Record<string, unknown> }
   | { type: "tool_end"; call: ToolCall; output: unknown; error?: string };
 
 export interface AgentRunResult {
@@ -73,34 +74,38 @@ async function readRound(
   };
 }
 
-function isAbort(error: unknown): boolean {
-  return error instanceof DOMException && error.name === "AbortError";
-}
-
-async function runTool(
+function parseArgs(
   call: ToolCall,
-  tools: Map<string, AgentTool>,
-  signal: AbortSignal | undefined,
-): Promise<{ output: unknown; error?: string }> {
-  const fail = (error: string) => ({ output: { error }, error });
-  const tool = tools.get(call.function.name);
-  if (!tool) return fail(`Unknown tool: ${call.function.name}`);
+): { args: Record<string, unknown> } | { error: string } {
   let args: unknown;
   try {
     args = call.function.arguments.trim()
       ? JSON.parse(call.function.arguments)
       : {};
   } catch {
-    return fail("Arguments were not valid JSON.");
+    return { error: "Arguments were not valid JSON." };
   }
-  if (!args || typeof args !== "object" || Array.isArray(args))
-    return fail("Arguments must be a JSON object.");
+  return args && typeof args === "object" && !Array.isArray(args)
+    ? { args: args as Record<string, unknown> }
+    : { error: "Arguments must be a JSON object." };
+}
+
+async function runTool(
+  call: ToolCall,
+  parsed: ReturnType<typeof parseArgs>,
+  tools: Map<string, AgentTool>,
+  signal: AbortSignal | undefined,
+): Promise<{ output: unknown; error?: string }> {
+  const fail = (error: string) => ({ output: { error }, error });
+  const tool = tools.get(call.function.name);
+  if (!tool) return fail(`Unknown tool: ${call.function.name}`);
+  if ("error" in parsed) return fail(parsed.error);
   try {
-    return { output: await tool.run(args as Record<string, unknown>, signal) };
+    return { output: await tool.run(parsed.args, signal) };
   } catch (error) {
-    if (isAbort(error)) throw error;
+    if (isAbortError(error)) throw error;
     assertNotAborted(signal);
-    return fail(error instanceof Error ? error.message : String(error));
+    return fail(errorMessage(error));
   }
 }
 
@@ -155,8 +160,13 @@ export async function runAgentLoop(input: {
 
     for (const call of toolCalls) {
       assertNotAborted(signal);
-      onEvent?.({ type: "tool_start", call });
-      const { output, error } = await runTool(call, tools, signal);
+      const parsed = parseArgs(call);
+      onEvent?.({
+        type: "tool_start",
+        call,
+        args: "args" in parsed ? parsed.args : {},
+      });
+      const { output, error } = await runTool(call, parsed, tools, signal);
       onEvent?.({
         type: "tool_end",
         call,

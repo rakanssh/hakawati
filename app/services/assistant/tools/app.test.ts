@@ -20,7 +20,7 @@ vi.mock("@/services/tale-library", () => ({
   importCloudTale: mocks.importCloudTale,
 }));
 vi.mock("@/repositories/tale.repository", () => ({
-  getTalePlayLoad: async () => (mocks.localTale ? { id: "t1" } : null),
+  taleExists: async () => mocks.localTale,
 }));
 vi.mock("../tale-edits", () => ({
   withTaleWrites: (_signal: unknown, run: () => unknown) => run(),

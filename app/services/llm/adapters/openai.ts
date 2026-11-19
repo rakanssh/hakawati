@@ -163,7 +163,6 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
             },
           };
           result.iterator = parseOpenAIStream(r.body!, {
-            outputLimitAdjustable: !fixedLimitLabel,
             fixedLimitLabel,
             signal,
             onReplayFields: (fields) => {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useScenarioDraftStore } from "@/store/useScenarioDraftStore";
+import { useScenarioLibraryStore } from "@/store/useScenarioLibraryStore";
 import {
   removeScenario,
   saveScenario,
@@ -34,10 +34,7 @@ export function useScenariosList(initialPage = 1, initialLimit = 12) {
   );
 
   useEffect(
-    () =>
-      useScenarioDraftStore.subscribe((state, previous) => {
-        if (state.libraryRevision !== previous.libraryRevision) void refresh();
-      }),
+    () => useScenarioLibraryStore.subscribe(() => void refresh()),
     [refresh],
   );
 

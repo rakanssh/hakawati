@@ -27,7 +27,6 @@ const TOOL_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   search_log: SearchIcon,
   get_scenario: FileTextIcon,
   start_tale: PlayIcon,
-  open_tale: BookOpenIcon,
   show: PanelsTopLeftIcon,
   settings: SlidersHorizontalIcon,
   ai_setup: BotIcon,
@@ -101,11 +100,14 @@ function useActivityLabel() {
   const placeName = usePlaceName();
   return (activity: AssistantActivity, running?: boolean): string => {
     const detail = activity.detail ?? "";
+    const result = activity.result;
     const failed = Boolean(activity.error);
     const names = activity.confirm?.names ?? [];
     const count = names.length;
     const [first] = names;
-    const declined = activity.confirm?.answer === "no";
+    if (activity.confirm?.answer === "no") return t`Cancelled`;
+    if (running && activity.confirm && !activity.confirm.answer)
+      return t`Waiting for you`;
     if (running)
       switch (activity.tool) {
         case "update_tale":
@@ -122,7 +124,6 @@ function useActivityLabel() {
           return t`Saving the tale as a scenario`;
         case "start_tale":
           return t`Starting a tale`;
-        case "open_tale":
         case "show":
           return t`Opening`;
         case "settings":
@@ -134,9 +135,7 @@ function useActivityLabel() {
             ? t`Changing AI Setup`
             : t`Checking AI Setup`;
         case "library":
-          return activity.confirm && !activity.confirm.answer
-            ? t`Waiting for you`
-            : t`Changing your library`;
+          return t`Changing your library`;
         case "catalog":
           return t`Checking the catalog`;
       }
@@ -170,16 +169,12 @@ function useActivityLabel() {
       case "start_tale":
         return failed
           ? t`Couldn't start the tale`
-          : detail && detail !== "catalog" && detail !== "quickstart"
-            ? t`Started “${detail}”`
+          : result
+            ? t`Started “${result}”`
             : t`Read the scenario's questions`;
-      case "open_tale":
-        return failed ? t`Couldn't open the tale` : t`Opened “${detail}”`;
       case "show":
         if (failed) return t`Couldn't open that`;
-        return /^(page|settings|panel):/.test(detail)
-          ? t`Opened ${placeName(detail)}`
-          : t`Opened “${detail}”`;
+        return result ? t`Opened “${result}”` : t`Opened ${placeName(detail)}`;
       case "settings":
         if (failed) return t`Couldn't change the settings`;
         return activity.action === "check_updates"
@@ -191,7 +186,6 @@ function useActivityLabel() {
           ? t`Checked AI Setup`
           : t`Looked through the models`;
       case "library":
-        if (declined) return t`Cancelled`;
         if (failed) return t`Couldn't change your library`;
         switch (activity.action) {
           case "delete":
@@ -216,7 +210,6 @@ function useActivityLabel() {
             return t`Changed your library`;
         }
       case "catalog":
-        if (declined) return t`Cancelled`;
         if (failed)
           return activity.action === "unpublish"
             ? t`Couldn't unpublish`

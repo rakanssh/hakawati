@@ -11,23 +11,20 @@ import {
   updateLogEntry,
 } from "@/repositories/tale.repository";
 import { wakeSyncBackground } from "@/services/sync-wakeup";
-import { persistCurrentTale } from "@/services/tale.service";
+import {
+  persistCurrentTale,
+  type TaleMutableSnapshot,
+} from "@/services/tale.service";
 import { claimPlayActivity } from "@/store/usePlayActivityStore";
 import { useTaleStore } from "@/store/useTaleStore";
 import { LogEntryMode, LogEntryRole, type LogEntry } from "@/types";
 import type { TaleChange } from "@/types/assistant.type";
-import {
-  isStateChange,
-  revertStateChange,
-  TaleChanges,
-  TaleEditError,
-  type TaleSnapshot,
-} from "./tale-changes";
+import { isStateChange, revertStateChange, TaleChanges } from "./tale-changes";
 
 /** The play screen keeps the loaded tale in memory and saves it over storage, so edits to it go through the store. */
 const isLoaded = (taleId: string) => useTaleStore.getState().id === taleId;
 
-function loadedSnapshot(): TaleSnapshot {
+function loadedSnapshot(): TaleMutableSnapshot {
   const state = useTaleStore.getState();
   return {
     name: state.name,
@@ -41,10 +38,10 @@ function loadedSnapshot(): TaleSnapshot {
   };
 }
 
-async function readSnapshot(taleId: string): Promise<TaleSnapshot> {
+async function readSnapshot(taleId: string): Promise<TaleMutableSnapshot> {
   if (isLoaded(taleId)) return loadedSnapshot();
   const tale = await getTalePlayLoad(taleId, { logLimit: 0 });
-  if (!tale) throw new TaleEditError("No tale has that id.");
+  if (!tale) throw new Error("No tale has that id.");
   return {
     name: tale.name,
     description: tale.description,
@@ -57,7 +54,7 @@ async function readSnapshot(taleId: string): Promise<TaleSnapshot> {
   };
 }
 
-async function writeSnapshot(taleId: string, tale: TaleSnapshot) {
+async function writeSnapshot(taleId: string, tale: TaleMutableSnapshot) {
   if (isLoaded(taleId)) {
     useTaleStore.setState({
       name: tale.name,
@@ -90,7 +87,6 @@ export async function withTaleWrites<T>(
   }
 }
 
-/** Edits a tale's setup in one write and returns what changed. */
 export async function editTaleSetup(
   taleId: string,
   edit: (changes: TaleChanges) => void,
@@ -122,7 +118,7 @@ export async function rewritePassage(
   text: string,
 ): Promise<TaleChange> {
   const found = await readPassage(taleId, id);
-  if (!found) throw new TaleEditError(`No passage has id ${id}.`);
+  if (!found) throw new Error(`No passage has id ${id}.`);
   await updateLogEntry(taleId, id, { text });
   if (isLoaded(taleId)) useTaleStore.getState().updateLogEntry(id, { text });
   wakeSyncBackground();
@@ -190,8 +186,8 @@ export async function insertPassages(
   entries: LogEntry[],
 ): Promise<TaleChange> {
   if (afterId !== null && !(await readPassage(taleId, afterId)))
-    throw new TaleEditError(`No passage has id ${afterId}.`);
-  await insertLogEntries(taleId, afterId, entries, undefined, clearedRedo());
+    throw new Error(`No passage has id ${afterId}.`);
+  await insertLogEntries(taleId, afterId, entries, clearedRedo());
   if (isLoaded(taleId)) insertIntoLoadedLog(afterId, entries);
   wakeSyncBackground();
   return { taleId, kind: "insert", afterId, entries };
@@ -205,7 +201,7 @@ export async function deletePassages(
   const found = [];
   for (const id of new Set(ids)) {
     const passage = await readPassage(taleId, id);
-    if (!passage) throw new TaleEditError(`No passage has id ${id}.`);
+    if (!passage) throw new Error(`No passage has id ${id}.`);
     found.push(passage);
   }
   found.sort((a, b) => a.index - b.index);
@@ -227,7 +223,7 @@ export async function deletePassages(
       entries: run.map(({ entry }) => entry),
     });
   }
-  await deleteLogEntries(taleId, [...new Set(ids)], undefined, clearedRedo());
+  await deleteLogEntries(taleId, [...new Set(ids)], clearedRedo());
   if (isLoaded(taleId)) removeFromLoadedLog(new Set(ids));
   wakeSyncBackground();
   return changes;
@@ -251,7 +247,7 @@ async function revertLogChange(change: TaleChange): Promise<boolean> {
       if (!found || found.entry.text !== entry.text) return false;
     }
     const ids = change.entries.map((entry) => entry.id);
-    await deleteLogEntries(taleId, ids, undefined, clearedRedo());
+    await deleteLogEntries(taleId, ids, clearedRedo());
     if (isLoaded(taleId)) removeFromLoadedLog(new Set(ids));
     return true;
   }
@@ -270,13 +266,7 @@ async function revertLogChange(change: TaleChange): Promise<boolean> {
             : (await passageAt(taleId, next.index - 1))?.id;
     } else if (!change.previousId) afterId = null;
     if (afterId === undefined) return false;
-    await insertLogEntries(
-      taleId,
-      afterId,
-      change.entries,
-      undefined,
-      clearedRedo(),
-    );
+    await insertLogEntries(taleId, afterId, change.entries, clearedRedo());
     if (isLoaded(taleId)) insertIntoLoadedLog(afterId, change.entries);
     return true;
   }

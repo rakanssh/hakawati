@@ -17,8 +17,6 @@ import {
 import type { TaleChange, TaleField } from "@/types/assistant.type";
 import type { Stat } from "@/types/stats.type";
 
-export type TaleSnapshot = TaleMutableSnapshot;
-
 function stable(value: unknown): string {
   return JSON.stringify(value, (_key, inner) =>
     inner && typeof inner === "object" && !Array.isArray(inner)
@@ -42,15 +40,13 @@ const cardBody = (card: StoryCard | null | undefined) => {
 const sameCard = (a: StoryCard | null | undefined, b: StoryCard | null) =>
   same(cardBody(a), cardBody(b));
 
-export class TaleEditError extends Error {}
-
 /** Collects one tool call's edits to a tale, recording a change for each. */
 export class TaleChanges {
   readonly changes: TaleChange[] = [];
 
   constructor(
     readonly taleId: string,
-    public tale: TaleSnapshot,
+    public tale: TaleMutableSnapshot,
   ) {}
 
   private record(change: TaleChange) {
@@ -65,7 +61,7 @@ export class TaleChanges {
       value !== GameMode.GM &&
       value !== GameMode.STORY_TELLER
     )
-      throw new TaleEditError("mode must be story_teller or game_master.");
+      throw new Error("mode must be story_teller or game_master.");
     this.tale = { ...this.tale, [field]: value };
     this.record({
       taleId: this.taleId,
@@ -137,7 +133,7 @@ export class TaleChanges {
     >,
   ) {
     const before = this.tale.storyCards.find((card) => card.id === id);
-    if (!before) throw new TaleEditError(`No story card has id ${id}.`);
+    if (!before) throw new Error(`No story card has id ${id}.`);
     const after = normalizeStoryCard({
       ...before,
       ...patch,
@@ -155,7 +151,7 @@ export class TaleChanges {
 
   removeCard(id: string) {
     const before = this.tale.storyCards.find((card) => card.id === id);
-    if (!before) throw new TaleEditError(`No story card has id ${id}.`);
+    if (!before) throw new Error(`No story card has id ${id}.`);
     this.tale = {
       ...this.tale,
       storyCards: this.tale.storyCards.filter((card) => card.id !== id),
@@ -174,19 +170,19 @@ export class TaleChanges {
     const before =
       this.tale.stats.find((stat) => stat.name === input.name) ?? null;
     if (!before && input.value === undefined)
-      throw new TaleEditError(
+      throw new Error(
         `No stat is named ${input.name}; give a value to add it.`,
       );
     const min = input.min ?? before?.range[0] ?? 0;
     const max =
       input.max ?? before?.range[1] ?? Math.max(100, input.value ?? 0);
-    if (min > max) throw new TaleEditError("min must not be above max.");
+    if (min > max) throw new Error("min must not be above max.");
     const name = input.newName?.trim() || input.name;
     if (
       name !== input.name &&
       this.tale.stats.some((stat) => stat.name === name)
     )
-      throw new TaleEditError(`A stat is already named ${name}.`);
+      throw new Error(`A stat is already named ${name}.`);
     const description = input.description ?? before?.description;
     const after: Stat = {
       name,
@@ -208,7 +204,7 @@ export class TaleChanges {
 
   removeStat(name: string) {
     const before = this.tale.stats.find((stat) => stat.name === name);
-    if (!before) throw new TaleEditError(`No stat is named ${name}.`);
+    if (!before) throw new Error(`No stat is named ${name}.`);
     this.tale = {
       ...this.tale,
       stats: this.tale.stats.filter((stat) => stat.name !== name),
@@ -235,7 +231,7 @@ export class TaleChanges {
 
   updateItem(id: string, patch: { name?: string; description?: string }) {
     const before = this.tale.inventory.find((item) => item.id === id);
-    if (!before) throw new TaleEditError(`No item has id ${id}.`);
+    if (!before) throw new Error(`No item has id ${id}.`);
     const description = patch.description ?? before.description;
     const after: Item = {
       id,
@@ -254,7 +250,7 @@ export class TaleChanges {
 
   removeItem(id: string) {
     const before = this.tale.inventory.find((item) => item.id === id);
-    if (!before) throw new TaleEditError(`No item has id ${id}.`);
+    if (!before) throw new Error(`No item has id ${id}.`);
     this.tale = {
       ...this.tale,
       inventory: this.tale.inventory.filter((item) => item.id !== id),
@@ -273,9 +269,9 @@ export const isStateChange = (change: TaleChange) =>
  * Returns the tale after the undo, or null when it was changed since and is left alone.
  */
 export function revertStateChange(
-  tale: TaleSnapshot,
+  tale: TaleMutableSnapshot,
   change: TaleChange,
-): TaleSnapshot | null {
+): TaleMutableSnapshot | null {
   switch (change.kind) {
     case "field":
       return String(tale[change.field]) === change.after

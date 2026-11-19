@@ -14,7 +14,6 @@ export function isPassageShown(id: string): boolean {
   return passageElements(id).length > 0;
 }
 
-/** Scrolls the story to a passage and flashes it. */
 export function revealPassage(id: string) {
   const elements = passageElements(id);
   elements[0]?.scrollIntoView({ block: "center", behavior: "smooth" });

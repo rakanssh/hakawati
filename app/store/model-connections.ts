@@ -191,18 +191,26 @@ export function resolveModelRoles(
   ) as Record<ModelRole, ModelRoleSettings>;
 }
 
-/** Drops a thinking level the model on this connection doesn't offer. */
-export function normalizeChoice<T extends RoleModelChoice>(
-  choice: T,
+/** The thinking levels a model offers on a connection. */
+export function connectionReasoning(
+  model: LLMModel | undefined,
   connection: ApiConnection | undefined,
-): T {
-  const reasoning = getModelReasoning(
-    choice.model,
+) {
+  return getModelReasoning(
+    model,
     reasoningProvider(
       connection ? connectionBaseUrl(connection) : "",
       connection?.preset === ApiPreset.CHATGPT,
     ),
   );
+}
+
+/** Drops a thinking level the model on this connection doesn't offer. */
+export function normalizeChoice<T extends RoleModelChoice>(
+  choice: T,
+  connection: ApiConnection | undefined,
+): T {
+  const reasoning = connectionReasoning(choice.model, connection);
   return {
     ...choice,
     reasoningEffort: normalizeReasoningEffort(

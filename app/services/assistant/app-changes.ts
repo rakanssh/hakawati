@@ -31,7 +31,6 @@ export function changeSetting(
   return same(before, after) ? null : { kind: "setting", key, before, after };
 }
 
-/** Runs an AI Setup change to one role and records the role before and after it. */
 export function changeRole(
   role: ModelRole,
   label: string,

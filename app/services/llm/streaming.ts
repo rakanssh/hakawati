@@ -169,12 +169,11 @@ function parseDataLine(
 
 function assertFinishedNormally(
   finishReason: string,
-  outputLimitAdjustable: boolean,
-  fixedLimitLabel: string,
+  fixedLimitLabel: string | undefined,
 ): void {
   if (finishReason === "length") {
     throw new Error(
-      outputLimitAdjustable
+      fixedLimitLabel === undefined
         ? "The response reached its output token limit before finishing. Thinking and the answer share this limit. Increase Max Output Tokens or choose a lower thinking level and try again."
         : `The response reached its output token limit before finishing. Choose a lower ${fixedLimitLabel} thinking level or use a shorter request and try again.`,
     );
@@ -218,14 +217,13 @@ async function readWithin(
 export async function* parseOpenAIStream(
   body: ReadableStream<Uint8Array>,
   options: {
-    outputLimitAdjustable?: boolean;
+    /** The role whose output limit can't be changed, named in the error when it runs out. */
     fixedLimitLabel?: string;
     signal?: AbortSignal;
     onReplayFields?: (fields: Record<string, unknown>) => void;
   } = {},
 ): AsyncGenerator<StreamChunk> {
   const { signal } = options;
-  const outputLimitAdjustable = options.outputLimitAdjustable !== false;
   const replay = new ReasoningReplayCollector();
   const complete = () => {
     const fields = replay.fields();
@@ -269,11 +267,7 @@ export async function* parseOpenAIStream(
         }
         if (event.finishReason) {
           finished = true;
-          assertFinishedNormally(
-            event.finishReason,
-            outputLimitAdjustable,
-            options.fixedLimitLabel ?? "Utility",
-          );
+          assertFinishedNormally(event.finishReason, options.fixedLimitLabel);
         }
       }
       if (done) break;

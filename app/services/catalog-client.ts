@@ -16,9 +16,9 @@ export function currentCatalogTransports() {
       ? createCatalogTransport({ baseUrl, accessToken: token })
       : null;
   return {
+    baseUrl,
     publicTransport,
     authTransport,
     readTransport: authTransport ?? publicTransport,
-    signedIn,
   };
 }

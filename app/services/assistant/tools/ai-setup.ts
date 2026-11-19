@@ -1,10 +1,11 @@
 import { isPresetAllowedForRole } from "@/data/api-presets";
 import { matchModels } from "@/lib/model-match";
-import { getModelReasoning, reasoningProvider } from "@/lib/reasoning";
+import { REASONING_EFFORTS } from "@/lib/reasoning";
 import { getConnectionModels } from "@/services/llm";
-import { chooseRoleModel } from "@/services/model-choice";
+import { chooseRoleModel, modelChoiceWarnings } from "@/services/model-choice";
 import {
   canFollowNarrator,
+  connectionReasoning,
   type FollowingRole,
   findConnection,
   usesReasoning,
@@ -13,10 +14,7 @@ import {
   isModelRoleConfigured,
   useSettingsStore,
 } from "@/store/useSettingsStore";
-import { useTaleStore } from "@/store/useTaleStore";
 import {
-  ApiPreset,
-  GameMode,
   type ApiConnection,
   type LLMModel,
   type ModelRole,
@@ -30,7 +28,7 @@ import {
   type AssistantTool,
   type AssistantToolContext,
 } from "./define";
-import { errorMessage } from "./read";
+import { errorMessage } from "@/lib/errors";
 
 const ROLES = {
   narrator: "narrator",
@@ -42,21 +40,17 @@ const ROLES = {
 
 type RoleName = keyof typeof ROLES;
 const ROLE_NAMES = Object.keys(ROLES) as RoleName[];
-const nameOfRole = (role: ModelRole) =>
-  ROLE_NAMES.find((name) => ROLES[name] === role)!;
 
-const THINKING = [
-  "default",
-  "none",
-  "minimal",
-  "low",
-  "medium",
-  "high",
-  "xhigh",
-  "max",
-] as const;
+const THINKING = ["default", ...REASONING_EFFORTS];
 
 const settings = () => useSettingsStore.getState();
+
+const WARNINGS = {
+  hakawati_tools:
+    "This model may not be able to call tools, so Hakawati may not be able to make changes.",
+  narrator_tools:
+    "This model may not be able to call tools, so Game Master mode may not work properly.",
+} as const;
 
 const connectionName = (connection: ApiConnection) =>
   connection.label ?? connection.preset;
@@ -83,18 +77,8 @@ function findConnectionByWords(words: string): ApiConnection {
   return found;
 }
 
-function reasoningOf(model: LLMModel | undefined, connection: ApiConnection) {
-  return getModelReasoning(
-    model,
-    reasoningProvider(
-      connection.baseUrl,
-      connection.preset === ApiPreset.CHATGPT,
-    ),
-  );
-}
-
 function describeModel(model: LLMModel, connection: ApiConnection) {
-  const efforts = reasoningOf(model, connection)?.supportedEfforts;
+  const efforts = connectionReasoning(model, connection)?.supportedEfforts;
   return {
     id: model.id,
     name: model.name,
@@ -109,7 +93,7 @@ function describeModel(model: LLMModel, connection: ApiConnection) {
   };
 }
 
-async function modelsOf(connection: ApiConnection, signal?: AbortSignal) {
+async function fetchModels(connection: ApiConnection, signal?: AbortSignal) {
   try {
     return await getConnectionModels(connection, signal);
   } catch (error) {
@@ -131,6 +115,17 @@ function movesHakawati(role: ModelRole) {
 export function createAiSetupTools(
   context: AssistantToolContext,
 ): AssistantTool[] {
+  const lists = new Map<string, Promise<LLMModel[]>>();
+  const modelsOf = (connection: ApiConnection, signal?: AbortSignal) => {
+    let list = lists.get(connection.id);
+    if (!list) {
+      list = fetchModels(connection, signal);
+      lists.set(connection.id, list);
+      list.catch(() => lists.delete(connection.id));
+    }
+    return list;
+  };
+
   return [
     defineTool({
       name: "ai_setup",
@@ -158,7 +153,6 @@ export function createAiSetupTools(
         },
         ["action"],
       ),
-      detail: (args) => text(args.role),
       run: async (args, signal) => {
         const state = settings();
         if (args.action === "get") {
@@ -196,9 +190,10 @@ export function createAiSetupTools(
 
         const roleName = text(args.role) as RoleName | undefined;
         const role = roleName ? ROLES[roleName] : undefined;
+        const connectionWords = text(args.connection);
         if (args.action === "models") {
-          const connection = text(args.connection)
-            ? findConnectionByWords(text(args.connection)!)
+          const connection = connectionWords
+            ? findConnectionByWords(connectionWords)
             : role
               ? findConnection(
                   state.connections,
@@ -231,8 +226,8 @@ export function createAiSetupTools(
           throw new Error("Only helper and hakawati can follow the narrator.");
 
         let connection: ApiConnection | undefined;
-        if (text(args.connection)) {
-          connection = findConnectionByWords(text(args.connection)!);
+        if (connectionWords) {
+          connection = findConnectionByWords(connectionWords);
           if (!isPresetAllowedForRole(connection.preset, role))
             throw new Error(
               `${connectionName(connection)} can't be used for ${roleName}.`,
@@ -285,7 +280,7 @@ export function createAiSetupTools(
             const where = modelConnection ?? ownConnection;
             const efforts =
               target && where
-                ? reasoningOf(target, where)?.supportedEfforts
+                ? connectionReasoning(target, where)?.supportedEfforts
                 : undefined;
             if (efforts && !efforts.includes(thinking as ReasoningEffort))
               throw new Error(
@@ -307,20 +302,9 @@ export function createAiSetupTools(
             throw new Error(`The voices are: ${voices.join(", ")}.`);
         }
 
-        const warnings: string[] = [];
-        if (model && !model.supportsToolCalls) {
-          if (role === "hakawati")
-            warnings.push(
-              "This model may not be able to call tools, so Hakawati may not be able to make changes.",
-            );
-          if (
-            role === "narrator" &&
-            useTaleStore.getState().gameMode === GameMode.GM
-          )
-            warnings.push(
-              "This model may not be able to call tools, so Game Master mode may not work properly.",
-            );
-        }
+        const warnings = (model ? modelChoiceWarnings(role, model) : []).map(
+          (warning) => WARNINGS[warning],
+        );
 
         const target = connection ?? (model ? modelConnection : undefined);
         const apply = () => {
@@ -359,7 +343,7 @@ export function createAiSetupTools(
         const change = commit();
         return {
           changed: Boolean(change),
-          role: nameOfRole(role),
+          role: roleName,
           ...(model ? { model: model.id } : {}),
           ...(warnings.length ? { warnings } : {}),
         };

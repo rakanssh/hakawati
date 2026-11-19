@@ -17,16 +17,32 @@ import {
 import { analyzeScenarioQuestions } from "@/lib/scenario-questions";
 import { clip } from "../context";
 import {
+  ask,
+  CANCELLED,
   defineTool,
   integer,
+  modeName,
   objectSchema,
+  strings,
   text,
   type AssistantTool,
   type AssistantToolContext,
 } from "./define";
-import { errorMessage } from "./read";
+import { errorMessage } from "@/lib/errors";
 
 const ACTIONS = ["search", "get", "tags", "published", "unpublish"] as const;
+
+const CAPABILITIES_TTL = 5 * 60_000;
+const checked = new Map<string, { at: number; ok: Promise<boolean> }>();
+
+function hasCatalog(baseUrl: string, transport: CatalogTransport) {
+  const cached = checked.get(baseUrl);
+  if (cached && Date.now() - cached.at < CAPABILITIES_TTL) return cached.ok;
+  const ok = fetchCatalogCapabilities(transport).then(canUseScenarioCatalog);
+  checked.set(baseUrl, { at: Date.now(), ok });
+  ok.catch(() => checked.delete(baseUrl));
+  return ok;
+}
 
 /** A transport to the public catalog, once the server says it has one. */
 export async function catalogTransport(
@@ -45,7 +61,7 @@ export async function catalogTransport(
       "The player isn't signed in. They sign in from Settings › Account & Sync.",
     );
   try {
-    if (!canUseScenarioCatalog(await fetchCatalogCapabilities(transport)))
+    if (!(await hasCatalog(transports.baseUrl, transport)))
       throw new Error("This server has no scenario catalog.");
   } catch (error) {
     throw new Error(`The catalog can't be reached: ${errorMessage(error)}`);
@@ -84,9 +100,7 @@ export function createCatalogTools(
       detail: (args) => text(args.query),
       run: async (args) => {
         const limit = integer(args.limit, 1, 30, 10);
-        const tags = Array.isArray(args.tags)
-          ? args.tags.filter((tag): tag is string => typeof tag === "string")
-          : undefined;
+        const tags = strings(args.tags);
         switch (args.action) {
           case "search": {
             const sort = CATALOG_SORTS.includes(args.sort as CatalogSort)
@@ -111,10 +125,7 @@ export function createCatalogTools(
             const { questions } = analyzeScenarioQuestions(scenario.content);
             return {
               ...summary(detail),
-              mode:
-                scenario.initialGameMode === "gm"
-                  ? "game_master"
-                  : "story_teller",
+              mode: modeName(scenario.initialGameMode),
               description: clip(scenario.description, 1200),
               ...(questions.length
                 ? { asks: questions.map((q) => q.question) }
@@ -151,15 +162,8 @@ export function createCatalogTools(
               throw new Error(
                 "That isn't one of the player's published scenarios.",
               );
-            if (!context.confirm)
-              throw new Error("The player can't be asked from here.");
-            if (
-              !(await context.confirm({
-                action: "unpublish",
-                names: [owned.title],
-              }))
-            )
-              return { done: false, cancelled: true };
+            if (!(await ask(context, "unpublish", [owned.title])))
+              return CANCELLED;
             await unpublishCatalogScenario(transport, id);
             return { unpublished: owned.title };
           }

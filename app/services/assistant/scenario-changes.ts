@@ -15,7 +15,6 @@ import {
 import type { ScenarioRecord } from "@/types/assistant.type";
 import { same } from "./tale-changes";
 
-/** Applies one step's edits to a scenario, field by field. */
 export class ScenarioEdits {
   constructor(public record: ScenarioRecord) {}
 
@@ -240,7 +239,6 @@ function parts(record: ScenarioRecord): Map<string, Part> {
   return map;
 }
 
-/** The parts of a scenario that differ between two versions of it. */
 export function changedParts(before: ScenarioRecord, after: ScenarioRecord) {
   const a = parts(before);
   const b = parts(after);

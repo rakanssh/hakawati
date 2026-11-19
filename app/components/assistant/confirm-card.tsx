@@ -11,54 +11,54 @@ export function ConfirmCard({ confirm }: { confirm: AssistantConfirm }) {
   const [first] = confirm.names;
   const one = count === 1;
 
-  const { title, action, undoable } = (() => {
+  const { title, action, destructive, listsNames } = (() => {
     switch (confirm.action) {
       case "delete_tales":
         return {
           title: one ? t`Delete this tale?` : t`Delete ${count} tales?`,
           action: t`Delete`,
-          undoable: false,
+          destructive: true,
+          listsNames: true,
         };
       case "delete_scenarios":
         return {
           title: one ? t`Delete this scenario?` : t`Delete ${count} scenarios?`,
           action: t`Delete`,
-          undoable: false,
+          destructive: true,
+          listsNames: true,
         };
       case "remove_from_cloud":
         return {
           title: t`Remove from cloud?`,
           action: t`Remove from cloud`,
-          undoable: true,
+          destructive: false,
+          listsNames: true,
         };
       case "keep_local":
         return {
           title: t`Replace the cloud copy of “${first}”?`,
           action: t`Keep This Device`,
-          undoable: false,
+          destructive: true,
+          listsNames: false,
         };
       case "keep_cloud":
         return {
           title: t`Replace this device's copy of “${first}”?`,
           action: t`Keep Cloud`,
-          undoable: false,
+          destructive: true,
+          listsNames: false,
         };
       case "unpublish":
         return {
           title: t`Unpublish “${first}”?`,
           action: t`Unpublish`,
-          undoable: true,
+          destructive: false,
+          listsNames: false,
         };
     }
   })();
-  const listed =
-    confirm.action === "keep_local" ||
-    confirm.action === "keep_cloud" ||
-    confirm.action === "unpublish"
-      ? []
-      : confirm.names.slice(0, SHOWN_NAMES);
+  const listed = listsNames ? confirm.names.slice(0, SHOWN_NAMES) : [];
   const more = count - listed.length;
-  const destructive = !undoable;
 
   return (
     <div

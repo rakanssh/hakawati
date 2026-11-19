@@ -17,22 +17,26 @@ import {
   syncLibraryTaleItem,
 } from "@/services/tale-library";
 import { deleteTaleById } from "@/services/tale.service";
-import { useScenarioDraftStore } from "@/store/useScenarioDraftStore";
 import { useTaleStore } from "@/store/useTaleStore";
-import type { AssistantConfirmAction } from "@/types/assistant.type";
 import { describeRoute } from "../context";
 import { withTaleWrites } from "../tale-edits";
 import {
+  ask,
+  CANCELLED,
   defineTool,
   objectSchema,
   requireUi,
+  strings,
   text,
   type AssistantTool,
   type AssistantToolContext,
 } from "./define";
-import { errorMessage } from "./read";
+import { errorMessage } from "@/lib/errors";
 
 const MAX_IDS = 20;
+
+const failures = (result: { failed?: string[] }) =>
+  result.failed ? { failed: result.failed } : {};
 const ACTIONS = [
   "delete",
   "sync",
@@ -48,13 +52,7 @@ const itemName = (item: LibraryTaleItem) =>
   item.source === "local" ? item.localTale.name : item.remoteTale.title;
 
 function idsOf(args: Record<string, unknown>): string[] {
-  const ids = Array.isArray(args.ids)
-    ? [
-        ...new Set(
-          args.ids.filter((id): id is string => typeof id === "string"),
-        ),
-      ]
-    : [];
+  const ids = [...new Set(strings(args.ids) ?? [])];
   if (!ids.length) throw new Error("Give ids from list_library.");
   if (ids.length > MAX_IDS) throw new Error(`At most ${MAX_IDS} at a time.`);
   return ids;
@@ -75,13 +73,6 @@ async function libraryItems(ids: string[]) {
 export function createLibraryTools(
   context: AssistantToolContext,
 ): AssistantTool[] {
-  const ask = async (action: AssistantConfirmAction, names: string[]) => {
-    if (!context.confirm)
-      throw new Error("The player can't be asked from here.");
-    return context.confirm({ action, names });
-  };
-  const cancelled = { done: false, cancelled: true };
-
   const forEach = async <T>(
     items: T[],
     run: (item: T) => Promise<void>,
@@ -104,7 +95,8 @@ export function createLibraryTools(
   const deleteTales = async (ids: string[], signal?: AbortSignal) => {
     const ui = requireUi(context);
     const { session, syncActive, items } = await libraryItems(ids);
-    if (!(await ask("delete_tales", items.map(itemName)))) return cancelled;
+    if (!(await ask(context, "delete_tales", items.map(itemName))))
+      return CANCELLED;
     const openId = useTaleStore.getState().id;
     if (items.some((item) => itemId(item) === openId)) {
       await withTaleWrites(signal, async () => {
@@ -126,7 +118,7 @@ export function createLibraryTools(
       itemName,
     );
     notifySyncChanged();
-    return { deleted: result.done, ...result };
+    return { deleted: result.done, ...failures(result) };
   };
 
   const deleteScenarios = async (ids: string[]) => {
@@ -140,11 +132,12 @@ export function createLibraryTools(
     );
     if (
       !(await ask(
+        context,
         "delete_scenarios",
         scenarios.map((s) => s.name),
       ))
     )
-      return cancelled;
+      return CANCELLED;
     const route = describeRoute(context.getPathname());
     if (route.scenarioId && ids.includes(route.scenarioId))
       await ui.navigate("/scenarios", { search: { tab: "local" } });
@@ -153,10 +146,9 @@ export function createLibraryTools(
       (scenario) => removeScenario(scenario.id),
       (scenario) => scenario.name,
     );
-    useScenarioDraftStore.getState().bumpLibrary();
     return {
       deleted: result.done,
-      ...result,
+      ...failures(result),
       note: "Copies already published to the catalog stay there.",
     };
   };
@@ -180,14 +172,14 @@ export function createLibraryTools(
       itemName,
     );
     notifySyncChanged();
-    return { syncing: result.done, ...result };
+    return { syncing: result.done, ...failures(result) };
   };
 
   const stopSyncing = async (ids: string[]) => {
     const { session, syncActive, items } = await libraryItems(ids);
     needSync(syncActive);
-    if (!(await ask("remove_from_cloud", items.map(itemName))))
-      return cancelled;
+    if (!(await ask(context, "remove_from_cloud", items.map(itemName))))
+      return CANCELLED;
     const result = await forEach(
       items,
       (item) => removeLibraryTaleItemFromCloud(item, { session, syncActive }),
@@ -196,7 +188,7 @@ export function createLibraryTools(
     notifySyncChanged();
     return {
       removedFromCloud: result.done,
-      ...result,
+      ...failures(result),
       note: "They stay on this device as private tales.",
     };
   };
@@ -219,11 +211,13 @@ export function createLibraryTools(
     if (!choice) throw new Error("keep must be local, cloud or both.");
     if (
       choice !== "keep-both" &&
-      !(await ask(choice === "keep-local" ? "keep_local" : "keep_cloud", [
-        itemName(item),
-      ]))
+      !(await ask(
+        context,
+        choice === "keep-local" ? "keep_local" : "keep_cloud",
+        [itemName(item)],
+      ))
     )
-      return cancelled;
+      return CANCELLED;
     const taleId = await resolveTaleConflict(item, choice, library.session);
     notifySyncChanged();
     return { resolved: itemName(item), kept: keep, taleId };

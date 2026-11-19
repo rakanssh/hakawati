@@ -116,6 +116,8 @@ export interface AssistantActivity {
   at?: number;
   /** The tool's action, for tools that take one. */
   action?: string;
+  /** What the step achieved, such as the name of the tale it opened. */
+  result?: string;
   /** Set when the step recorded changes, which the reply lists on their own. */
   changed?: boolean;
   confirm?: AssistantConfirm;

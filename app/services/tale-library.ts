@@ -22,8 +22,8 @@ import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
 import type { SyncMode, SyncProfile } from "@/types/sync.type";
 import type { TaleHead } from "@/types/tale.type";
 
-export const HOSTED_PROFILE_ID = "hosted";
-export const PERSONAL_PROFILE_ID = "personal";
+const HOSTED_PROFILE_ID = "hosted";
+const PERSONAL_PROFILE_ID = "personal";
 
 export type TaleConflictChoice = "keep-remote" | "keep-local" | "keep-both";
 
@@ -45,7 +45,7 @@ export interface SyncSession {
   canReach: boolean;
 }
 
-export function syncProfileFrom(settings: SyncSettingsSnapshot): SyncProfile {
+function syncProfileFrom(settings: SyncSettingsSnapshot): SyncProfile {
   const personal = settings.activeSyncMode === "personal";
   const accountId = settings.accountId;
   return {
@@ -92,7 +92,7 @@ export const syncTransport = (session: SyncSession) =>
     accessToken: session.accessToken,
   });
 
-export async function isSyncActive(session: SyncSession): Promise<boolean> {
+async function isSyncActive(session: SyncSession): Promise<boolean> {
   if (!session.canReach) return false;
   return Boolean((await getSyncProfile(session.profile.id))?.enabled);
 }

@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { abortError, errorMessage } from "@/lib/errors";
 import {
   appendAssistantMessage,
   createAssistantThread,
@@ -22,7 +23,6 @@ import {
   isTaleChange,
 } from "@/lib/assistant-changes";
 import type {
-  AppChange,
   AssistantActivity,
   AssistantChange,
   AssistantMessage,
@@ -56,9 +56,6 @@ let pendingConfirm: ((yes: boolean) => void) | null = null;
 let showToken = 0;
 /** The tale on the play screen when the chat last looked, or undefined before it first loads. */
 let scope: string | null | undefined;
-
-const errorText = (error: unknown) =>
-  error instanceof Error ? error.message : String(error);
 
 async function showThread(
   thread: AssistantThread | null,
@@ -122,7 +119,7 @@ export async function syncAssistantScope(playTaleId: string | null) {
       playTaleId,
     );
   } catch (error) {
-    store.setState({ error: errorText(error), loaded: true });
+    store.setState({ error: errorMessage(error), loaded: true });
   }
 }
 
@@ -157,18 +154,6 @@ export function stopAssistant() {
   controller?.abort();
 }
 
-function parseArgs(args: string): Record<string, unknown> {
-  try {
-    const parsed: unknown = JSON.parse(args || "{}");
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-      ? (parsed as Record<string, unknown>)
-      : {};
-  } catch {
-    return {};
-  }
-}
-
-/** Answers the confirmation card Hakawati is waiting on. */
 export function answerAssistantConfirm(yes: boolean) {
   const resolve = pendingConfirm;
   pendingConfirm = null;
@@ -261,7 +246,7 @@ export async function sendAssistantMessage(
     });
     store.setState((state) => ({ messages: [...state.messages, user] }));
   } catch (error) {
-    store.setState({ run: null, error: errorText(error), draft: content });
+    store.setState({ run: null, error: errorMessage(error), draft: content });
     return;
   }
 
@@ -270,14 +255,16 @@ export async function sendAssistantMessage(
     role: "user",
     content: withContext(content, workspaceContext(pathname)),
   };
-  const publish = () =>
-    store.setState({
-      run: {
-        ...run,
+  let shown = { activity: run.activity, changes: run.changes };
+  const publish = (stepsChanged = true) => {
+    if (stepsChanged)
+      shown = {
         activity: run.activity.map((step) => ({ ...step })),
         changes: [...run.changes],
-      },
-    });
+      };
+    store.setState({ run: { ...run, ...shown } });
+  };
+  let current: AssistantActivity | undefined;
   controller = new AbortController();
   const signal = controller.signal;
   const afterRun: Array<() => void | Promise<void>> = [];
@@ -286,27 +273,26 @@ export async function sendAssistantMessage(
     ui: options.ui,
     recordChanges: (changes) => {
       run.changes.push(...changes);
+      if (current) current.changed = true;
       publish();
     },
     afterRun: (task) => {
-      const step = run.activity.at(-1);
+      const step = current;
       afterRun.push(async () => {
-        const before = run.changes.length;
+        current = step;
         await task();
-        if (step && run.changes.length > before) step.changed = true;
       });
     },
     confirm: (request) =>
       new Promise<boolean>((resolve, reject) => {
-        const step = run.activity.at(-1);
+        const step = current;
         if (!step) return resolve(false);
         const finish = (yes: boolean, stopped = false) => {
           signal.removeEventListener("abort", onAbort);
           if (pendingConfirm === answer) pendingConfirm = null;
           step.confirm = { ...request, answer: yes ? "yes" : "no" };
           publish();
-          if (stopped)
-            reject(new DOMException("Request cancelled.", "AbortError"));
+          if (stopped) reject(abortError());
           else resolve(yes);
         };
         const answer = (yes: boolean) => finish(yes);
@@ -330,39 +316,38 @@ export async function sendAssistantMessage(
   ];
   const byName = new Map(tools.map((t) => [t.definition.function.name, t]));
   let afterTools = false;
-  const changesBefore = new Map<AssistantActivity, number>();
   const onEvent = (event: AgentEvent) => {
     if (event.type === "text") {
       if (afterTools && run.content && !run.content.endsWith("\n\n"))
         run.content += "\n\n";
       afterTools = false;
       run.content += event.delta;
-    } else if (event.type === "thinking") {
+      return publish(false);
+    }
+    if (event.type === "thinking") {
       run.thinking += event.delta;
-    } else if (event.type === "tool_start") {
+      return publish(false);
+    }
+    const tool = byName.get(event.call.function.name);
+    if (event.type === "tool_start") {
       afterTools = true;
       run.toolRunning = true;
-      const name = event.call.function.name;
-      const args = parseArgs(event.call.function.arguments);
-      const detail = byName.get(name)?.detail?.(args);
-      const step: AssistantActivity = {
-        tool: name,
+      const { args } = event;
+      const detail = tool?.detail?.(args);
+      current = {
+        tool: event.call.function.name,
         at: run.content.length,
         ...(typeof args.action === "string" ? { action: args.action } : {}),
         ...(detail ? { detail } : {}),
       };
-      changesBefore.set(step, run.changes.length);
-      run.activity.push(step);
-    } else {
+      run.activity.push(current);
+    } else if (current) {
       run.toolRunning = false;
-      const last = run.activity.at(-1);
-      if (last && event.error) last.error = event.error;
-      if (last && run.changes.length > (changesBefore.get(last) ?? 0))
-        last.changed = true;
-      const outcome = event.error
-        ? undefined
-        : byName.get(event.call.function.name)?.outcome?.(event.output);
-      if (last && outcome) last.detail = outcome;
+      if (event.error) current.error = event.error;
+      else {
+        const result = tool?.outcome?.(event.output);
+        if (result) current.result = result;
+      }
     }
     publish();
   };
@@ -389,7 +374,7 @@ export async function sendAssistantMessage(
     if (signal.aborted) status = "stopped";
     else {
       status = "failed";
-      error = errorText(failure);
+      error = errorMessage(failure);
     }
   } finally {
     controller = null;
@@ -399,7 +384,7 @@ export async function sendAssistantMessage(
     try {
       await task();
     } catch (failure) {
-      error ??= errorText(failure);
+      error ??= errorMessage(failure);
     }
   }
 
@@ -433,9 +418,38 @@ export async function sendAssistantMessage(
       error,
     }));
   } catch (saveError) {
-    store.setState({ run: null, error: error ?? errorText(saveError) });
+    store.setState({ run: null, error: error ?? errorMessage(saveError) });
   }
 }
+
+type Reverter = {
+  owns: (change: AssistantChange) => boolean;
+  revert: (
+    changes: AssistantChange[],
+  ) => Promise<{ changes: AssistantChange[]; kept: number }>;
+};
+
+const REVERTERS: Reverter[] = [
+  {
+    owns: isAppChange,
+    revert: async (changes) => revertAppChanges(changes.filter(isAppChange)),
+  },
+  {
+    owns: isScenarioChange,
+    revert: (changes) =>
+      revertScenarioChanges(changes.filter(isScenarioChange)),
+  },
+  {
+    owns: isTaleChange,
+    revert: async (changes) => {
+      const reverted = await revertChanges(changes.filter(isTaleChange));
+      return {
+        changes: reverted,
+        kept: reverted.filter((change) => !change.undone).length,
+      };
+    },
+  },
+];
 
 /** Undoes the changes a reply made; any changed again since are kept. Returns how many were kept. */
 export async function undoAssistantReply(messageId: string): Promise<number> {
@@ -445,41 +459,26 @@ export async function undoAssistantReply(messageId: string): Promise<number> {
   store.setState({ undoingId: messageId, error: null });
   try {
     const all = message.changes;
-    const app = revertAppChanges(all.filter(isAppChange));
-    const scenarioChanges = all.filter(isScenarioChange);
-    const scenarios = scenarioChanges.length
-      ? await revertScenarioChanges(scenarioChanges)
-      : { changes: [], kept: 0 };
-    const taleChanges = all.filter(isTaleChange);
-    const tales = taleChanges.length ? await revertChanges(taleChanges) : [];
-    const queues: Record<string, AssistantChange[]> = {
-      tale: [...tales],
-      scenario: [...scenarios.changes],
-      app: [...app.changes] as AppChange[],
-    };
-    const changes = all.map(
-      (change) =>
-        queues[
-          isAppChange(change)
-            ? "app"
-            : isScenarioChange(change)
-              ? "scenario"
-              : "tale"
-        ].shift()!,
-    );
+    const changes = [...all];
+    let kept = 0;
+    for (const { owns, revert } of REVERTERS) {
+      const indexes = all.flatMap((change, index) =>
+        owns(change) ? [index] : [],
+      );
+      if (!indexes.length) continue;
+      const result = await revert(indexes.map((index) => all[index]));
+      result.changes.forEach((change, i) => (changes[indexes[i]] = change));
+      kept += result.kept;
+    }
     await updateAssistantMessageChanges(messageId, changes);
     store.setState((current) => ({
       messages: current.messages.map((m) =>
         m.id === messageId ? { ...m, changes } : m,
       ),
     }));
-    return (
-      tales.filter((change) => !change.undone).length +
-      scenarios.kept +
-      app.kept
-    );
+    return kept;
   } catch (error) {
-    store.setState({ error: errorText(error) });
+    store.setState({ error: errorMessage(error) });
     return 0;
   } finally {
     store.setState({ undoingId: null });

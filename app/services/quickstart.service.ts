@@ -1,4 +1,5 @@
 import { nanoid } from "nanoid";
+import { abortError } from "@/lib/errors";
 import { createPromptComponent } from "@/lib/prompt-components";
 import {
   generateQuickstartTale,
@@ -12,10 +13,6 @@ import {
 } from "@/types/context.type";
 import { LogEntryRole } from "@/types/log.type";
 
-function aborted() {
-  return new DOMException("Request cancelled.", "AbortError");
-}
-
 /** Writes a new tale from Quickstart answers with the helper model and saves it. Returns its id. */
 export async function createQuickstartTale(
   answers: QuickstartTaleAnswers,
@@ -26,7 +23,7 @@ export async function createQuickstartTale(
   } = {},
 ): Promise<string> {
   const generated = await generateQuickstartTale(answers, options.signal);
-  if (options.signal?.aborted) throw aborted();
+  if (options.signal?.aborted) throw abortError();
   options.onSaving?.();
 
   const components: PromptComponent[] = [

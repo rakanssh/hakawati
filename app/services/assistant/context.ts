@@ -10,6 +10,7 @@ import {
   type StoryCard,
 } from "@/types";
 import type { Stat } from "@/types/stats.type";
+import { modeName } from "./tools/define";
 
 export type AssistantPage =
   | "home"
@@ -80,7 +81,7 @@ export function describeTaleSetup(tale: {
   return {
     name: tale.name,
     description: tale.description,
-    mode: gm ? "game_master" : "story_teller",
+    mode: modeName(tale.gameMode),
     plot: componentText(tale.components, PromptComponentType.PLOT),
     authorNote: componentText(tale.components, PromptComponentType.AUTHOR_NOTE),
     aiInstructions: clip(
@@ -140,7 +141,7 @@ export function workspaceContext(pathname: string) {
     openTale: {
       id: taleId,
       name: tale.name,
-      mode: tale.gameMode === GameMode.GM ? "game_master" : "story_teller",
+      mode: modeName(tale.gameMode),
       passages: tale.totalLogCount,
       storyCards: tale.storyCards.map((card) => card.title),
       ...(tale.gameMode === GameMode.GM

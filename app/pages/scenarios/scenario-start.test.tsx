@@ -199,13 +199,13 @@ describe("scenario details start setup", () => {
   }
 
   it("shows a scenario Hakawati changed in the library without reopening it", async () => {
-    const { useScenarioDraftStore } = await import(
-      "@/store/useScenarioDraftStore"
+    const { useScenarioLibraryStore } = await import(
+      "@/store/useScenarioLibraryStore"
     );
     await render();
     expect(container.textContent).toContain("Hello Your name?.");
     mocks.getScenario.mockResolvedValue(localScenario("A new opening."));
-    await act(async () => useScenarioDraftStore.getState().bumpLibrary());
+    await act(async () => useScenarioLibraryStore.getState().bump());
     expect(container.textContent).toContain("A new opening.");
   });
 

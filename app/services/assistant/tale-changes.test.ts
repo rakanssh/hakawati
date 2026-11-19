@@ -1,13 +1,9 @@
+import type { TaleMutableSnapshot } from "@/services/tale.service";
 import { describe, expect, it } from "vitest";
 import { GameMode, PromptComponentType, StorybookCategory } from "@/types";
-import {
-  revertStateChange,
-  TaleChanges,
-  TaleEditError,
-  type TaleSnapshot,
-} from "./tale-changes";
+import { revertStateChange, TaleChanges } from "./tale-changes";
 
-const tale = (): TaleSnapshot => ({
+const tale = (): TaleMutableSnapshot => ({
   name: "Signal",
   description: "A station at sea.",
   components: [
@@ -38,7 +34,7 @@ const tale = (): TaleSnapshot => ({
 });
 
 function undoAll(edits: TaleChanges) {
-  let current: TaleSnapshot | null = edits.tale;
+  let current: TaleMutableSnapshot | null = edits.tale;
   for (const change of [...edits.changes].reverse()) {
     current = revertStateChange(current!, change);
     expect(current).not.toBeNull();
@@ -126,13 +122,13 @@ describe("Hakawati's tale changes", () => {
   it("refuses edits that name things that don't exist", () => {
     const edits = new TaleChanges("t", tale());
     expect(() => edits.updateCard("ghost", { title: "x" })).toThrow(
-      TaleEditError,
+      /No story card has id ghost/,
     );
     expect(() => edits.setStat({ name: "Luck" })).toThrow("give a value");
     expect(() => edits.setStat({ name: "HP", min: 9, max: 1 })).toThrow(
       "min must not be above max",
     );
-    expect(() => edits.removeItem("ghost")).toThrow(TaleEditError);
+    expect(() => edits.removeItem("ghost")).toThrow(/No item has id ghost/);
   });
 
   it("clamps a stat's value to its range", () => {

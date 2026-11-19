@@ -25,7 +25,6 @@ interface AssistantStoreType {
   run: AssistantRun | null;
   undoingId: string | null;
   error: string | null;
-  /** Set when something asks for Hakawati's message box to take focus. */
   focusComposer: boolean;
   setDraft: (draft: string) => void;
   requestComposerFocus: () => void;

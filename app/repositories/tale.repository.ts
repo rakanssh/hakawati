@@ -1186,6 +1186,15 @@ export async function getTaleSaveVersion(taleId: string): Promise<number> {
   });
 }
 
+export async function taleExists(id: string): Promise<boolean> {
+  const db = await getDb();
+  const rows = await db.select<Array<{ id: string }>>(
+    `SELECT id FROM tales WHERE id = ? LIMIT 1`,
+    [id],
+  );
+  return Boolean(rows?.length);
+}
+
 export async function getTalePlayLoad(
   id: string,
   options: { logStart?: number; logLimit: number },
@@ -1358,11 +1367,9 @@ async function finishLogSplice(
   db: Database,
   taleId: string,
   now: number,
-  state?: TaleCurrentState,
   session?: TaleSessionState,
 ): Promise<void> {
   await refreshTaleLogSummary(db, taleId);
-  if (state) await replaceState(db, taleId, state, now);
   if (session) await replaceSession(db, taleId, session, now);
   await db.execute(
     `UPDATE tales SET updated_at = ?, save_version = save_version + 1 WHERE id = ?`,
@@ -1374,7 +1381,6 @@ async function finishLogSplice(
 export async function deleteLogEntries(
   taleId: string,
   entryIds: string[],
-  state?: TaleCurrentState,
   session?: TaleSessionState,
 ): Promise<void> {
   const ids = new Set(entryIds);
@@ -1415,7 +1421,7 @@ export async function deleteLogEntries(
           await shiftTurnsAfter(db, taleId, row.seq, 0, -removed);
         }
       }
-      await finishLogSplice(db, taleId, now, state, session);
+      await finishLogSplice(db, taleId, now, session);
     });
   });
 }
@@ -1428,7 +1434,6 @@ export async function insertLogEntries(
   taleId: string,
   afterId: string | null,
   entries: LogEntry[],
-  state?: TaleCurrentState,
   session?: TaleSessionState,
 ): Promise<void> {
   const inserted = sanitizeTurnEntries(entries);
@@ -1473,7 +1478,7 @@ export async function insertLogEntries(
         );
         await shiftTurnsAfter(db, taleId, row.seq, 0, inserted.length);
       }
-      await finishLogSplice(db, taleId, now, state, session);
+      await finishLogSplice(db, taleId, now, session);
     });
   });
 }
