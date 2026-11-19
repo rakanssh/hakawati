@@ -49,6 +49,12 @@ export const PREVIEW_MODEL = {
   contextLength: 8192,
   supportsToolCalls: true,
 };
+const PREVIEW_PLAIN_MODEL = {
+  id: "preview-plain",
+  name: "Preview plain (no tools)",
+  contextLength: 4096,
+  supportsToolCalls: false,
+};
 
 /** Preview stays offline: the narrator is scripted and cloud requests fail clearly. */
 export async function fetch(
@@ -58,7 +64,7 @@ export async function fetch(
   init?.signal?.throwIfAborted();
   const url = String(input);
   if (url === `${PREVIEW_BASE_URL}/models`)
-    return Response.json({ data: [PREVIEW_MODEL] });
+    return Response.json({ data: [PREVIEW_MODEL, PREVIEW_PLAIN_MODEL] });
   if (url === `${PREVIEW_BASE_URL}/chat/completions`)
     return scriptedChatCompletion(JSON.parse(String(init?.body ?? "{}")));
   return new Response(

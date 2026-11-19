@@ -26,6 +26,13 @@ import {
   type StoryPanelTab,
 } from "@/store/useStoryPanelStore";
 import { useTaleStore } from "@/store/useTaleStore";
+import {
+  useSettingsModalStore,
+  type SettingsTab,
+} from "@/store/useSettingsModalStore";
+import { isTaleChange } from "@/lib/assistant-changes";
+import { APP_SETTINGS } from "@/services/assistant/app-settings";
+import { useAppChangeLabel } from "./app-change-label";
 import { GameMode, PromptComponentType } from "@/types";
 import type { AssistantChange } from "@/types/assistant.type";
 
@@ -33,8 +40,12 @@ type Icon = ComponentType<{ className?: string }>;
 
 function useChangeLabel() {
   const { t } = useLingui();
+  const appLabel = useAppChangeLabel();
   return (change: AssistantChange): { Icon: Icon; label: string } => {
     switch (change.kind) {
+      case "setting":
+      case "role":
+        return appLabel(change);
       case "scenario": {
         const name = change.after.name.trim();
         return {
@@ -133,11 +144,19 @@ function useChangeLabel() {
   };
 }
 
-type Target = { passage: string } | { tab: StoryPanelTab } | { route: string };
+type Target =
+  | { passage: string }
+  | { tab: StoryPanelTab }
+  | { route: string }
+  | { settings: SettingsTab };
 
 function targetOf(change: AssistantChange): Target | null {
   if (change.undone) return null;
   switch (change.kind) {
+    case "setting":
+      return { settings: APP_SETTINGS[change.key]?.tab ?? "appearance" };
+    case "role":
+      return { settings: "ai-setup" };
     case "scenario":
       return change.target === "library"
         ? { route: `/scenarios/${change.scenarioId}` }
@@ -193,6 +212,11 @@ export function ChangeList({
 
   const open = (target: Target) => {
     const panel = useStoryPanelStore.getState();
+    if ("settings" in target) {
+      if (isMobilePlatform) panel.setOpen(false);
+      useSettingsModalStore.getState().openSettings(target.settings);
+      return;
+    }
     if ("route" in target) {
       if (isMobilePlatform) panel.setOpen(false);
       void navigate({ to: target.route });
@@ -214,7 +238,7 @@ export function ChangeList({
       {changes.map((change, index) => {
         const { Icon, label } = describe(change);
         const target =
-          change.kind === "scenario" || (isPlay && change.taleId === openTaleId)
+          !isTaleChange(change) || (isPlay && change.taleId === openTaleId)
             ? targetOf(change)
             : null;
         const chip = (

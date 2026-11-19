@@ -123,6 +123,17 @@ export async function deleteAssistantThread(id: string): Promise<void> {
   });
 }
 
+/** Keeps a chat when its tale is deleted, as a chat about no tale. */
+export async function detachAssistantThread(id: string): Promise<void> {
+  await enqueueLocalOperation(async () => {
+    const db = await getDb();
+    await db.execute(
+      `UPDATE assistant_threads SET tale_id = NULL WHERE id = ?`,
+      [id],
+    );
+  });
+}
+
 export async function listAssistantMessages(
   threadId: string,
 ): Promise<AssistantMessage[]> {

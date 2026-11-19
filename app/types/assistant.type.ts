@@ -1,4 +1,5 @@
 import type { PromptComponentType, Scenario, StoryCard } from "./context.type";
+import type { ModelRole, ModelRoleAssignment } from "./api.type";
 import type { Item } from "./item.type";
 import type { LogEntry } from "./log.type";
 import type { Stat } from "./stats.type";
@@ -45,7 +46,44 @@ export type ScenarioChange = {
   after: ScenarioRecord;
 };
 
-export type AssistantChange = TaleChange | ScenarioChange;
+/** A setting Hakawati changed, by its key in the assistant's settings registry. */
+export type SettingChange = {
+  kind: "setting";
+  undone?: boolean;
+  key: string;
+  before: unknown;
+  after: unknown;
+};
+
+/** A model role Hakawati reassigned in AI Setup. */
+export type RoleChange = {
+  kind: "role";
+  undone?: boolean;
+  role: ModelRole;
+  before: ModelRoleAssignment;
+  after: ModelRoleAssignment;
+  label: string;
+  contextWindow?: { before: number; after: number };
+};
+
+export type AppChange = SettingChange | RoleChange;
+
+export type AssistantChange = TaleChange | ScenarioChange | AppChange;
+
+export type AssistantConfirmAction =
+  | "delete_tales"
+  | "delete_scenarios"
+  | "remove_from_cloud"
+  | "keep_local"
+  | "keep_cloud"
+  | "unpublish";
+
+/** A question the app asks the player with buttons before Hakawati does something that can't be undone. */
+export interface AssistantConfirm {
+  action: AssistantConfirmAction;
+  names: string[];
+  answer?: "yes" | "no";
+}
 
 export interface AssistantThread {
   id: string;
@@ -76,6 +114,11 @@ export interface AssistantActivity {
   error?: string;
   /** Where in the reply's text the step happened. */
   at?: number;
+  /** The tool's action, for tools that take one. */
+  action?: string;
+  /** Set when the step recorded changes, which the reply lists on their own. */
+  changed?: boolean;
+  confirm?: AssistantConfirm;
 }
 
 export type AssistantMessageStatus = "stopped" | "failed";

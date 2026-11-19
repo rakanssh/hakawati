@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type ComponentType,
-  type MouseEvent,
-} from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -12,28 +6,17 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
 import {
-  BookOpenIcon,
   BrainCircuitIcon,
   ChevronDownIcon,
   CircleAlertIcon,
-  FileTextIcon,
-  LibraryIcon,
-  Loader2Icon,
-  MapPinIcon,
   MessageCircleIcon,
   MessageSquarePlusIcon,
-  PlayIcon,
-  ScrollTextIcon,
-  SearchIcon,
   SendIcon,
   SquareIcon,
   Trash2Icon,
-  WrenchIcon,
 } from "lucide-react";
-import { SettingsModal } from "@/components/layout/settings";
 import { LinkRow, SetupList } from "@/components/layout/settings/settings-rows";
 import { RoleIcon } from "@/components/layout/settings/ai-setup/parts";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
@@ -55,7 +38,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { useLoadTale } from "@/hooks/useGameSaves";
+import { clearDeletedTale, useLoadTale } from "@/hooks/useGameSaves";
 import { useStickToBottom } from "@/hooks/useStickToBottom";
 import { replyTimeline } from "@/lib/assistant-timeline";
 import { cn } from "@/lib/utils";
@@ -67,7 +50,9 @@ import {
   stopAssistant,
   syncAssistantScope,
 } from "@/services/assistant/session";
+import type { AssistantUi } from "@/services/assistant/tools/define";
 import { useAssistantStore } from "@/store/useAssistantStore";
+import { useSettingsModalStore } from "@/store/useSettingsModalStore";
 import { useStoryPanelStore } from "@/store/useStoryPanelStore";
 import {
   isModelRoleConfigured,
@@ -79,108 +64,9 @@ import type {
   AssistantChange,
   AssistantMessageStatus,
 } from "@/types/assistant.type";
+import { ActivityChip } from "./activity-chip";
 import { ChangeList } from "./change-list";
-
-const TOOL_ICONS: Record<string, ComponentType<{ className?: string }>> = {
-  get_context: MapPinIcon,
-  list_library: LibraryIcon,
-  get_tale: BookOpenIcon,
-  read_log: ScrollTextIcon,
-  search_log: SearchIcon,
-  get_scenario: FileTextIcon,
-  start_tale: PlayIcon,
-  open_tale: BookOpenIcon,
-};
-
-function ActivityChip({
-  activity,
-  running,
-}: {
-  activity: AssistantActivity;
-  running?: boolean;
-}) {
-  const { t } = useLingui();
-  const detail = activity.detail ?? "";
-  const label = (() => {
-    if (running)
-      switch (activity.tool) {
-        case "update_tale":
-          return t`Changing the tale`;
-        case "edit_story_cards":
-          return t`Changing the story cards`;
-        case "edit_character":
-          return t`Changing the character`;
-        case "edit_log":
-          return t`Changing the story`;
-        case "edit_scenario":
-          return t`Changing the scenario`;
-        case "scenario_from_tale":
-          return t`Saving the tale as a scenario`;
-        case "start_tale":
-          return t`Starting a tale`;
-        case "open_tale":
-          return t`Opening the tale`;
-      }
-    switch (activity.tool) {
-      case "get_context":
-        return t`Checked where you are`;
-      case "list_library":
-        return detail === "scenarios"
-          ? t`Looked through your scenarios`
-          : t`Looked through your tales`;
-      case "get_tale":
-        return t`Read the tale's setup`;
-      case "read_log":
-        return t`Read the story`;
-      case "search_log":
-        return t`Searched the story for “${detail}”`;
-      case "get_scenario":
-        return t`Read a scenario`;
-      case "update_tale":
-        return t`Couldn't change the tale`;
-      case "edit_story_cards":
-        return t`Couldn't change the story cards`;
-      case "edit_character":
-        return t`Couldn't change the character`;
-      case "edit_log":
-        return t`Couldn't change the story`;
-      case "edit_scenario":
-        return t`Couldn't change the scenario`;
-      case "scenario_from_tale":
-        return t`Couldn't save the tale as a scenario`;
-      case "start_tale":
-        return activity.error
-          ? t`Couldn't start the tale`
-          : detail
-            ? t`Started “${detail}”`
-            : t`Read the scenario's questions`;
-      case "open_tale":
-        return activity.error
-          ? t`Couldn't open the tale`
-          : t`Opened “${detail}”`;
-      default:
-        return activity.tool;
-    }
-  })();
-  const Icon = running
-    ? Loader2Icon
-    : (TOOL_ICONS[activity.tool] ?? WrenchIcon);
-  return (
-    <Badge
-      variant="outline"
-      title={activity.error}
-      className={cn(
-        "sidebar-chip max-w-full justify-start border-sidebar-border/80 bg-sidebar-accent/35 font-normal text-sidebar-foreground/85 dark:border-sidebar-foreground/25 dark:bg-sidebar-accent/60",
-        activity.error && "border-destructive/40 text-destructive",
-      )}
-    >
-      <Icon className={cn("shrink-0", running && "animate-spin")} />
-      <span dir="auto" className="truncate">
-        {label}
-      </span>
-    </Badge>
-  );
-}
+import { ConfirmCard } from "./confirm-card";
 
 function ErrorLine({ children }: { children: React.ReactNode }) {
   return (
@@ -344,14 +230,23 @@ function Reply({
     <div className="flex min-w-0 flex-col items-start gap-2">
       {parts.map((part, index) =>
         part.kind === "steps" ? (
-          <div key={index} className="flex max-w-full flex-wrap gap-1">
-            {part.steps.map((step, stepIndex) => (
-              <ActivityChip
-                key={stepIndex}
-                activity={step.activity}
-                running={step.running}
-              />
-            ))}
+          <div key={index} className="flex w-full flex-col gap-2">
+            <div className="flex max-w-full flex-wrap gap-1">
+              {part.steps.map((step, stepIndex) => (
+                <ActivityChip
+                  key={stepIndex}
+                  activity={step.activity}
+                  running={step.running}
+                />
+              ))}
+            </div>
+            {live
+              ? part.steps.map(({ activity: step }, stepIndex) =>
+                  step.confirm && !step.confirm.answer ? (
+                    <ConfirmCard key={stepIndex} confirm={step.confirm} />
+                  ) : null,
+                )
+              : null}
           </div>
         ) : (
           <div
@@ -550,11 +445,13 @@ export function HakawatiChat() {
   const error = useAssistantStore((state) => state.error);
   const draft = useAssistantStore((state) => state.draft);
   const setDraft = useAssistantStore((state) => state.setDraft);
+  const focusComposer = useAssistantStore((state) => state.focusComposer);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
   const configured = useSettingsStore((state) =>
     isModelRoleConfigured(state.modelRoles.hakawati),
   );
   const { isMobilePlatform } = useIsMobile();
-  const [setupOpen, setSetupOpen] = useState(false);
+  const openSettings = useSettingsModalStore((state) => state.openSettings);
   const { viewportRef, handleScroll, stickToBottom, scrollToBottom } =
     useStickToBottom({ scrollBehavior: "auto" });
 
@@ -566,19 +463,52 @@ export function HakawatiChat() {
     if (stickToBottom) scrollToBottom("auto");
   }, [messages, run, error, stickToBottom, scrollToBottom]);
 
-  const openTale = async (taleId: string) => {
-    await loadTale(taleId);
-    const panel = useStoryPanelStore.getState();
-    panel.setTab("hakawati");
-    if (isMobilePlatform) panel.setOpen(false);
-    await navigate({ to: "/play" });
+  useEffect(() => {
+    if (!focusComposer) return;
+    const timer = window.setTimeout(() => {
+      composerRef.current?.focus();
+      useAssistantStore.getState().clearComposerFocus();
+    });
+    return () => window.clearTimeout(timer);
+  }, [focusComposer]);
+
+  const closePanelOnPhone = () => {
+    if (isMobilePlatform) useStoryPanelStore.getState().setOpen(false);
+  };
+  const ui: AssistantUi = {
+    navigate: async (to, options) => {
+      closePanelOnPhone();
+      await navigate({
+        to,
+        ...(options?.search ? { search: options.search } : {}),
+        ...(options?.state
+          ? { state: (previous) => ({ ...(previous ?? {}), ...options.state }) }
+          : {}),
+      } as Parameters<typeof navigate>[0]);
+    },
+    openTale: async (taleId) => {
+      await loadTale(taleId);
+      useStoryPanelStore.getState().setTab("hakawati");
+      closePanelOnPhone();
+      await navigate({ to: "/play" });
+    },
+    forgetTale: clearDeletedTale,
+    showSettings: (tab) => {
+      closePanelOnPhone();
+      openSettings(tab);
+    },
+    showPanelTab: (tab) => {
+      const panel = useStoryPanelStore.getState();
+      panel.setTab(tab);
+      panel.setOpen(true);
+    },
   };
 
   const send = (text = draft) => {
     if (!configured || run) return;
     void sendAssistantMessage(text, {
       getPathname: () => router.state.location.pathname,
-      openTale,
+      ui,
     });
     scrollToBottom("auto");
   };
@@ -637,7 +567,7 @@ export function HakawatiChat() {
             <LinkRow
               leading={<RoleIcon role="hakawati" off />}
               title={<Trans>Set up Hakawati</Trans>}
-              onClick={() => setSetupOpen(true)}
+              onClick={() => openSettings("ai-setup")}
             />
           </SetupList>
         )}
@@ -646,6 +576,8 @@ export function HakawatiChat() {
           className="flex min-w-0 items-end gap-1 overflow-hidden rounded-xs border border-border/75 bg-[var(--composer-background)] p-1 shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18"
         >
           <Textarea
+            ref={composerRef}
+            data-hakawati-composer=""
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={(event) => {
@@ -690,11 +622,6 @@ export function HakawatiChat() {
           )}
         </div>
       </div>
-      <SettingsModal
-        open={setupOpen}
-        onOpenChange={setSetupOpen}
-        defaultTab="ai-setup"
-      />
     </div>
   );
 }

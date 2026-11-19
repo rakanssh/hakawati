@@ -11,6 +11,7 @@ import {
   ApiType,
   LLMModel,
   ModelRole,
+  ModelRoleAssignment,
   ModelRoleSettings,
   ReasoningEffort,
 } from "@/types";
@@ -215,6 +216,11 @@ export interface SettingsStoreType {
   setRoleModel: (role: ModelRole, model: LLMModel | undefined) => void;
   setRoleReasoningEffort: (role: ModelRole, effort?: ReasoningEffort) => void;
   setRoleVoice: (role: ModelRole, voice: string) => void;
+  /** Puts back a role's whole assignment, as Hakawati's Undo does. */
+  restoreRoleAssignment: (
+    role: ModelRole,
+    assignment: ModelRoleAssignment,
+  ) => void;
   chatGptProfileId: string | null;
   clearChatGptModels: (profileId?: string | null) => void;
   setMaxTokens: (maxTokens: number) => void;
@@ -455,6 +461,15 @@ export const useSettingsStore = create<SettingsStoreType>()(
           );
         });
       },
+
+      restoreRoleAssignment: (role, assignment) =>
+        set((state) =>
+          roleState(
+            state.connections,
+            { ...state.roleAssignments, [role]: assignment },
+            state.modelRoles,
+          ),
+        ),
 
       setRoleVoice: (role: ModelRole, voice: string) =>
         set((state) =>

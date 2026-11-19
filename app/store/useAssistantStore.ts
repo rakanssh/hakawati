@@ -25,7 +25,11 @@ interface AssistantStoreType {
   run: AssistantRun | null;
   undoingId: string | null;
   error: string | null;
+  /** Set when something asks for Hakawati's message box to take focus. */
+  focusComposer: boolean;
   setDraft: (draft: string) => void;
+  requestComposerFocus: () => void;
+  clearComposerFocus: () => void;
 }
 
 export const useAssistantStore = create<AssistantStoreType>()((set) => ({
@@ -38,5 +42,8 @@ export const useAssistantStore = create<AssistantStoreType>()((set) => ({
   run: null,
   undoingId: null,
   error: null,
+  focusComposer: false,
   setDraft: (draft) => set({ draft }),
+  requestComposerFocus: () => set({ focusComposer: true }),
+  clearComposerFocus: () => set({ focusComposer: false }),
 }));

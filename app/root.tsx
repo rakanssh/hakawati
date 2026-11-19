@@ -25,6 +25,8 @@ import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "./components/ui";
 import { Titlebar } from "./components/layout";
 import { StoryPanel } from "./components/play/story-panel/story-panel";
+import { AppSettingsModal } from "./components/layout/settings/app-settings-modal";
+import { useHakawatiShortcut } from "./hooks/useHakawatiShortcut";
 import { isUpdaterAvailable, useUpdateStore } from "./store/useUpdateStore";
 import { useAndroidBackButton } from "./hooks/useAndroidBackButton";
 import { useDbReady } from "./hooks/useDbReady";
@@ -59,6 +61,7 @@ export default function AppShell() {
     if (dbReady) void unlinkDeletedAccounts();
   }, [dbReady]);
   useAndroidBackButton();
+  useHakawatiShortcut();
   const uiScale = useSettingsStore((state) => state.uiScale);
   const setUiScale = useSettingsStore((state) => state.setUiScale);
   const { showIndicator: showScaleIndicator, isIndicatorVisible } = useZoom({
@@ -82,7 +85,7 @@ export default function AppShell() {
   }, []);
 
   return (
-    <ThemeProvider defaultTheme="brass-night" storageKey="vite-ui-theme">
+    <ThemeProvider>
       <div
         className="flex h-screen flex-col overflow-hidden"
         style={
@@ -149,6 +152,7 @@ export default function AppShell() {
             </div>
           </div>
         )}
+        <AppSettingsModal />
         <Toaster
           richColors
           expand

@@ -36,6 +36,10 @@ vi.mock("@/services/scenario.service", () => ({
   initTaleFromScenario,
 }));
 vi.mock("@/services/tale.service", () => ({ saveAsScenario }));
+vi.mock("@/services/new-tale-sync", () => ({
+  canSyncNewTales: async () => true,
+  markNewTaleSyncPreference: async () => undefined,
+}));
 vi.mock("@/repositories/scenario-publish-link.repository", () => ({
   getScenarioPublishLink: async (id: string) => (links.has(id) ? { id } : null),
 }));
@@ -73,7 +77,13 @@ const openTale = vi.fn(async (taleId: string) => {
 function tools() {
   const list = createScenarioTools({
     getPathname: () => "/",
-    openTale,
+    ui: {
+      openTale,
+      navigate: async () => undefined,
+      forgetTale: () => undefined,
+      showSettings: () => undefined,
+      showPanelTab: () => undefined,
+    },
     recordChanges: (changes) => recorded.push(...changes),
   });
   return Object.fromEntries(
@@ -198,7 +208,7 @@ describe("undoing scenario changes", () => {
   });
 });
 
-describe("start_tale and open_tale", () => {
+describe("start_tale", () => {
   it("returns the scenario's questions before starting it", async () => {
     library.set("market", {
       ...sea,
@@ -245,10 +255,18 @@ describe("start_tale and open_tale", () => {
     expect(tools().start_tale.outcome?.(asked)).toBeUndefined();
   });
 
-  it("opens a tale", async () => {
-    const result = await call("open_tale", { taleId: "tale-2" });
+  it("starts a tale that stays on this device", async () => {
+    initTaleFromScenario.mockResolvedValue("tale-2");
+    const result = await call("start_tale", {
+      scenarioId: "sea",
+      private: true,
+    });
+    expect(initTaleFromScenario).toHaveBeenCalledWith("sea", {
+      answers: {},
+      syncPolicy: "private",
+    });
     expect(openTale).toHaveBeenCalledWith("tale-2");
-    expect(result).toEqual({ opened: "tale-2", name: "The Meridian" });
+    expect(result).toMatchObject({ started: true, name: "The Meridian" });
   });
 
   it("saves a tale as a scenario", async () => {

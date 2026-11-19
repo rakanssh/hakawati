@@ -6,11 +6,22 @@ import {
   getScenarioById,
   initTaleFromScenario,
 } from "@/services/scenario.service";
+import {
+  getCatalogScenario,
+  startCatalogScenario,
+} from "@/services/catalog.service";
+import { createQuickstartTale } from "@/services/quickstart.service";
+import { canSyncNewTales } from "@/services/new-tale-sync";
+import {
+  isModelRoleConfigured,
+  useSettingsStore,
+} from "@/store/useSettingsStore";
 import { useTaleStore } from "@/store/useTaleStore";
 import {
   GameMode,
   PromptComponentType,
   StorybookCategory,
+  type ScenarioContent,
   type StoryCardContent,
 } from "@/types/context.type";
 import type { ScenarioChange } from "@/types/assistant.type";
@@ -20,11 +31,13 @@ import { withTaleWrites } from "../tale-edits";
 import {
   defineTool,
   objectSchema,
+  requireUi,
   text,
   type AssistantTool,
   type AssistantToolContext,
 } from "./define";
-import { taleIdFor, taleIdProperty } from "./read";
+import { catalogTransport } from "./catalog";
+import { errorMessage, taleIdFor, taleIdProperty } from "./read";
 
 const optionalString = (value: unknown) =>
   typeof value === "string" ? value : undefined;
@@ -135,6 +148,40 @@ const COMPONENTS = [
 
 const CATEGORIES = Object.values(StorybookCategory);
 
+function answersOf(value: unknown): Record<string, string> {
+  const answers: Record<string, string> = {};
+  if (value && typeof value === "object")
+    for (const [key, answer] of Object.entries(value))
+      if (typeof answer === "string") answers[key] = answer;
+  return answers;
+}
+
+/** The questions a scenario still needs answered, as a start_tale result, or null when it can start. */
+function questionsLeft(
+  content: ScenarioContent[],
+  answers: Record<string, string>,
+) {
+  const { questions, diagnostics } = analyzeScenarioQuestions(content);
+  if (diagnostics.length)
+    throw new Error(
+      "This scenario's questions have mistakes; it has to be fixed in the editor before it can start.",
+    );
+  const missing = questions.filter((question) =>
+    getScenarioAnswerError(question, answers[question.id]),
+  );
+  if (!missing.length) return null;
+  return {
+    started: false,
+    questions: missing.map((question) => ({
+      id: question.id,
+      question: question.question,
+      ...(question.options.length
+        ? { options: question.options, onlyThese: question.mode === "choices" }
+        : {}),
+    })),
+  };
+}
+
 const nameOf = (output: unknown) =>
   output && typeof output === "object" && "name" in output
     ? text((output as { name: unknown }).name)
@@ -148,8 +195,8 @@ export function createScenarioTools(
     return change;
   };
   const openTale = async (taleId: string, signal?: AbortSignal) => {
-    if (!context.openTale) throw new Error("Tales can't be opened from here.");
-    await withTaleWrites(signal, () => context.openTale!(taleId));
+    const ui = requireUi(context);
+    await withTaleWrites(signal, () => ui.openTale(taleId));
     return useTaleStore.getState().name;
   };
 
@@ -283,77 +330,128 @@ export function createScenarioTools(
     defineTool({
       name: "start_tale",
       description:
-        "Start a new tale from a saved scenario and open it on the play screen. If the scenario asks the player questions, the first call returns them: ask the player, then call again with their answers.",
-      parameters: objectSchema(
-        {
-          scenarioId: { type: "string" },
-          answers: {
-            type: "object",
-            description: "Answers keyed by question id.",
-            additionalProperties: { type: "string" },
+        "Start a new tale and open it on the play screen: from a saved scenario (scenarioId), a catalog scenario (catalogId), or Quickstart, where the helper model writes a tale from a few answers. If a scenario asks questions, the first call returns them: ask the player, then call again with their answers. private keeps the tale on this device.",
+      parameters: objectSchema({
+        scenarioId: { type: "string" },
+        catalogId: { type: "string" },
+        quickstart: {
+          type: "object",
+          properties: {
+            mode: { type: "string", enum: ["story_teller", "game_master"] },
+            world: { type: "string" },
+            character: {
+              type: "string",
+              description: "The player character's name.",
+            },
+            archetype: { type: "string", description: "Who the character is." },
+            tone: { type: "string" },
+            details: { type: "string" },
           },
+          required: ["world", "character", "archetype"],
         },
-        ["scenarioId"],
-      ),
+        answers: {
+          type: "object",
+          description: "Answers keyed by question id.",
+          additionalProperties: { type: "string" },
+        },
+        private: {
+          type: "boolean",
+          description:
+            "Keep the tale on this device instead of syncing it. Without cloud sync every tale stays on the device anyway.",
+        },
+      }),
+      detail: (args) =>
+        args.quickstart
+          ? "quickstart"
+          : text(args.catalogId)
+            ? "catalog"
+            : undefined,
       run: async (args, signal) => {
+        const syncPolicy =
+          args.private === true && (await canSyncNewTales())
+            ? "private"
+            : undefined;
+        const answers = answersOf(args.answers);
+        const open = async (taleId: string) => {
+          try {
+            return {
+              started: true,
+              taleId,
+              name: await openTale(taleId, signal),
+            };
+          } catch (error) {
+            throw new Error(
+              `The tale was started (id ${taleId}) but couldn't be opened: ${errorMessage(error)}`,
+            );
+          }
+        };
+
+        if (args.quickstart && typeof args.quickstart === "object") {
+          const quick = args.quickstart as Record<string, unknown>;
+          if (
+            !isModelRoleConfigured(
+              useSettingsStore.getState().modelRoles.utility,
+            )
+          )
+            throw new Error(
+              "Quickstart needs the helper model, which isn't set up. The player sets it in Settings › AI Setup.",
+            );
+          const world = text(quick.world);
+          const characterName = text(quick.character);
+          const archetype = text(quick.archetype);
+          if (!world || !characterName || !archetype)
+            throw new Error("quickstart needs world, character and archetype.");
+          const taleId = await createQuickstartTale(
+            {
+              gameMode:
+                quick.mode === "game_master"
+                  ? GameMode.GM
+                  : GameMode.STORY_TELLER,
+              world,
+              characterName,
+              archetype,
+              tone: text(quick.tone),
+              extraDetails: text(quick.details),
+            },
+            { private: syncPolicy === "private", signal },
+          );
+          return open(taleId);
+        }
+
+        const catalogId = text(args.catalogId);
+        if (catalogId) {
+          const transport = await catalogTransport();
+          const detail = await getCatalogScenario(transport, catalogId);
+          const asked = questionsLeft(detail.package.scenario.content, answers);
+          if (asked) return asked;
+          try {
+            return open(
+              await startCatalogScenario(transport, catalogId, {
+                answers,
+                syncPolicy,
+                scenarioSnapshot: detail,
+              }),
+            );
+          } catch (error) {
+            throw new Error(
+              `${errorMessage(error)}. If the scenario changed meanwhile, look at it again with catalog get.`,
+            );
+          }
+        }
+
         const scenarioId = text(args.scenarioId);
         const scenario = scenarioId ? await getScenarioById(scenarioId) : null;
-        if (!scenario) throw new Error("No saved scenario has that id.");
-        const { questions, diagnostics } = analyzeScenarioQuestions(
-          scenario.content,
-        );
-        if (diagnostics.length)
+        if (!scenario)
           throw new Error(
-            "This scenario's questions have mistakes; it has to be fixed in the editor before it can start.",
+            scenarioId
+              ? "No saved scenario has that id."
+              : "Give scenarioId, catalogId or quickstart.",
           );
-        const given =
-          args.answers && typeof args.answers === "object"
-            ? (args.answers as Record<string, unknown>)
-            : {};
-        const answers: Record<string, string> = {};
-        for (const [key, value] of Object.entries(given))
-          if (typeof value === "string") answers[key] = value;
-        const missing = questions.filter((question) =>
-          getScenarioAnswerError(question, answers[question.id]),
+        const asked = questionsLeft(scenario.content, answers);
+        if (asked) return asked;
+        return open(
+          await initTaleFromScenario(scenario.id, { answers, syncPolicy }),
         );
-        if (missing.length)
-          return {
-            started: false,
-            questions: missing.map((question) => ({
-              id: question.id,
-              question: question.question,
-              ...(question.options.length
-                ? {
-                    options: question.options,
-                    onlyThese: question.mode === "choices",
-                  }
-                : {}),
-            })),
-          };
-        const taleId = await initTaleFromScenario(scenario.id, { answers });
-        try {
-          return {
-            started: true,
-            taleId,
-            name: await openTale(taleId, signal),
-          };
-        } catch (error) {
-          const reason = error instanceof Error ? error.message : String(error);
-          throw new Error(
-            `The tale was started (id ${taleId}) but couldn't be opened: ${reason}`,
-          );
-        }
-      },
-      outcome: nameOf,
-    }),
-    defineTool({
-      name: "open_tale",
-      description: "Open one of the player's tales on the play screen.",
-      parameters: objectSchema({ taleId: { type: "string" } }, ["taleId"]),
-      run: async (args, signal) => {
-        const taleId = text(args.taleId);
-        if (!taleId) throw new Error("open_tale needs taleId.");
-        return { opened: taleId, name: await openTale(taleId, signal) };
       },
       outcome: nameOf,
     }),

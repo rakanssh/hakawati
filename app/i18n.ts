@@ -1,12 +1,9 @@
 import { i18n } from "@lingui/core";
 import { messages as enMessages } from "./locales/en/messages.po";
 
-export type Locale = "en" | "ar";
+import type { Locale } from "./lib/locales";
 
-export const LOCALES: Record<Locale, string> = {
-  en: "English",
-  ar: "العربية",
-};
+export { LOCALES, type Locale } from "./lib/locales";
 
 i18n.load("en", enMessages);
 i18n.activate("en");

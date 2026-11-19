@@ -13,7 +13,7 @@ and the app shows it in What's New and Updates.
 
 ### Added
 
-- Hakawati, an assistant on every screen that answers questions about your tales and scenarios, changes them for you, and starts and opens tales, with Undo on every reply.
+- Hakawati, an assistant on every screen (Ctrl+K) that answers questions about your tales and scenarios and does things in the app for you: changing tales, scenarios, settings and AI models, starting and opening tales, and managing your library, sync and catalog scenarios. Its changes can be undone, and it asks before deleting anything.
 
 ## [v1.3.0] - 2026-10-26
 

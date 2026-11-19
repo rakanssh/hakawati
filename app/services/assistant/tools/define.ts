@@ -1,11 +1,39 @@
-import type { AssistantChange } from "@/types/assistant.type";
+import type { SettingsTab } from "@/store/useSettingsModalStore";
+import type { StoryPanelTab } from "@/store/useStoryPanelStore";
+import type { AssistantChange, AssistantConfirm } from "@/types/assistant.type";
 import type { AgentTool } from "../agent-loop";
+
+/** What the chat panel lets tools do to the screen. */
+export interface AssistantUi {
+  navigate: (
+    to: string,
+    options?: {
+      search?: Record<string, unknown>;
+      state?: Record<string, unknown>;
+    },
+  ) => Promise<void>;
+  /** Loads a tale and shows it on the play screen. */
+  openTale: (taleId: string) => Promise<void>;
+  /** Clears a deleted tale from the play screen and Continue. */
+  forgetTale: (taleId: string) => void;
+  showSettings: (tab?: SettingsTab) => void;
+  showPanelTab: (tab: StoryPanelTab) => void;
+}
 
 export interface AssistantToolContext {
   getPathname: () => string;
   recordChanges?: (changes: AssistantChange[]) => void;
-  /** Loads a tale and shows it on the play screen. */
-  openTale?: (taleId: string) => Promise<void>;
+  ui?: AssistantUi;
+  /** Asks the player with buttons in the chat. Resolves true when they say yes. */
+  confirm?: (request: Omit<AssistantConfirm, "answer">) => Promise<boolean>;
+  /** Runs once the reply has finished, before it is saved. */
+  afterRun?: (task: () => void | Promise<void>) => void;
+}
+
+export function requireUi(context: AssistantToolContext): AssistantUi {
+  if (!context.ui)
+    throw new Error("The app's screens can't be reached from here.");
+  return context.ui;
 }
 
 export interface AssistantTool extends AgentTool {

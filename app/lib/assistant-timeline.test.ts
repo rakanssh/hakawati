@@ -48,6 +48,15 @@ describe("replyTimeline", () => {
     });
   });
 
+  it("leaves out steps that changed something, which the reply lists as changes", () => {
+    const set = { tool: "settings", action: "set", at: 5, changed: true };
+    const look = { tool: "settings", action: "get", at: 5 };
+    expect(replyTimeline("Done.", [set, look], false)).toEqual([
+      { kind: "text", text: "Done." },
+      { kind: "steps", steps: [{ activity: look, running: false }] },
+    ]);
+  });
+
   it("clamps positions past the end of the text", () => {
     const parts = replyTimeline("Hi.", [{ tool: "get_tale", at: 99 }], false);
     expect(parts.map((part) => part.kind)).toEqual(["text", "steps"]);

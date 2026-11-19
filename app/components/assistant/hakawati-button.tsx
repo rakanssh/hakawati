@@ -8,6 +8,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { HAKAWATI_SHORTCUT } from "@/hooks/useHakawatiShortcut";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { useStoryPanelStore } from "@/store/useStoryPanelStore";
@@ -55,6 +56,7 @@ export function HakawatiButton({
       </TooltipTrigger>
       <TooltipContent side="bottom">
         <Trans>Hakawati</Trans>
+        <span className="ms-2 opacity-70">{HAKAWATI_SHORTCUT}</span>
       </TooltipContent>
     </Tooltip>
   );

@@ -14,7 +14,7 @@ export type TimelinePart =
   | { kind: "text"; text: string }
   | { kind: "steps"; steps: TimelineStep[] };
 
-/** A reply's text and tool steps in the order they happened. Edits that worked show as changes instead. */
+/** A reply's text and tool steps in the order they happened. Steps that changed something show as changes instead. */
 export function replyTimeline(
   content: string,
   activity: AssistantActivity[],
@@ -24,7 +24,8 @@ export function replyTimeline(
   let from = 0;
   activity.forEach((item, index) => {
     const running = toolRunning && index === activity.length - 1;
-    if (!running && !item.error && EDIT_TOOLS.has(item.tool)) return;
+    if (!running && !item.error && (item.changed || EDIT_TOOLS.has(item.tool)))
+      return;
     const at = Math.min(content.length, Math.max(from, item.at ?? 0));
     const text = content.slice(from, at).trim();
     if (text) parts.push({ kind: "text", text });

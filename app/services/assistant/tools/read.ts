@@ -8,6 +8,8 @@ import {
   getTales,
   searchLogEntries,
 } from "@/repositories/tale.repository";
+import { listScenarioPublishLinks } from "@/repositories/scenario-publish-link.repository";
+import { currentSyncSession, loadTaleLibrary } from "@/services/tale-library";
 import { useScenarioDraftStore } from "@/store/useScenarioDraftStore";
 import { useTaleStore } from "@/store/useTaleStore";
 import { GameMode, PromptComponentType } from "@/types";
@@ -28,6 +30,9 @@ import {
 } from "./define";
 
 const LIBRARY_SCAN = 100;
+
+export const errorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : String(error);
 
 export function taleIdFor(
   args: Record<string, unknown>,
@@ -74,7 +79,7 @@ export function createReadTools(
     defineTool({
       name: "list_library",
       description:
-        "List the player's saved tales or scenarios, most recently changed first.",
+        "List the player's tales or scenarios, most recently changed first, with sync and publishing status. Cloud-only tales are listed apart.",
       parameters: objectSchema(
         {
           kind: { type: "string", enum: ["tales", "scenarios"] },
@@ -92,6 +97,11 @@ export function createReadTools(
         const limit = integer(args.limit, 1, 50, 20);
         if (args.kind === "scenarios") {
           const { data, total } = await getScenarios(1, LIBRARY_SCAN);
+          const published = new Set(
+            (await listScenarioPublishLinks().catch(() => [])).map(
+              (link) => link.localScenarioId,
+            ),
+          );
           return {
             total,
             scenarios: data
@@ -105,25 +115,68 @@ export function createReadTools(
                   s.initialGameMode === GameMode.GM
                     ? "game_master"
                     : "story_teller",
+                ...(published.has(s.id) ? { published: true } : {}),
               })),
           };
         }
         if (args.kind !== "tales")
           throw new Error("kind must be tales or scenarios.");
         const { data, total } = await getTales(1, LIBRARY_SCAN);
+        const library = await loadTaleLibrary(currentSyncSession(), data).catch(
+          () => null,
+        );
+        const sync = new Map(
+          (library?.items ?? []).flatMap((item) =>
+            item.source === "local" && item.sync
+              ? [[item.localTale.id, item.sync.status] as const]
+              : [],
+          ),
+        );
+        const openId = useTaleStore.getState().id;
+        const cloudOnly = (library?.items ?? []).flatMap((item) =>
+          item.source === "remote" &&
+          matches(
+            query,
+            item.remoteTale.title,
+            item.remoteTale.description ?? "",
+          )
+            ? [
+                {
+                  id: item.remoteTale.id,
+                  name: item.remoteTale.title,
+                  description: clip(item.remoteTale.description ?? "", 240),
+                  cloudOnly: true,
+                },
+              ]
+            : [],
+        );
         return {
           total,
+          ...(library?.syncActive ? { syncOn: true } : {}),
+          ...(library?.cloudError
+            ? { cloudError: errorMessage(library.cloudError) }
+            : {}),
           tales: data
             .filter((t) => matches(query, t.name, t.description))
             .slice(0, limit)
-            .map((t) => ({
-              id: t.id,
-              name: t.name,
-              description: clip(t.description, 240),
-              passages: t.logCount,
-              lastPlayed: new Date(t.updatedAt).toISOString().slice(0, 10),
-              ...(t.scenarioHead ? { scenario: t.scenarioHead.name } : {}),
-            })),
+            .map((t) => {
+              const status = sync.get(t.id);
+              return {
+                id: t.id,
+                name: t.name,
+                description: clip(t.description, 240),
+                passages: t.logCount,
+                lastPlayed: new Date(t.updatedAt).toISOString().slice(0, 10),
+                ...(t.scenarioHead ? { scenario: t.scenarioHead.name } : {}),
+                ...(status
+                  ? { sync: status === "idle" ? "synced" : status }
+                  : library?.syncActive
+                    ? { sync: "not synced" }
+                    : {}),
+                ...(t.id === openId ? { open: true } : {}),
+              };
+            }),
+          ...(cloudOnly.length ? { cloudOnly: cloudOnly.slice(0, limit) } : {}),
         };
       },
     }),

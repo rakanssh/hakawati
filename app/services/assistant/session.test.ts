@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChatResponse, StreamChunk } from "@/services/llm/schema";
 import type { AssistantMessage, AssistantThread } from "@/types/assistant.type";
+import type { AssistantToolContext } from "./tools/define";
 import { GameMode } from "@/types/context.type";
 
 vi.mock("@lingui/core/macro", () => ({
@@ -92,6 +93,44 @@ vi.mock("./scenario-edits", () => ({
   editScenario: async () => scenarioChange,
   scenarioFromTale: async () => scenarioChange,
   revertScenarioChanges,
+}));
+
+vi.mock("./tools/library", () => ({
+  createLibraryTools: (context: AssistantToolContext) => [
+    {
+      definition: {
+        type: "function",
+        function: { name: "library", description: "", parameters: {} },
+      },
+      run: async () =>
+        (await context.confirm!({ action: "delete_tales", names: ["Mara"] }))
+          ? { deleted: ["Mara"] }
+          : { done: false, cancelled: true },
+    },
+  ],
+}));
+vi.mock("./tools/ai-setup", () => ({
+  createAiSetupTools: (context: AssistantToolContext) => [
+    {
+      definition: {
+        type: "function",
+        function: { name: "ai_setup", description: "", parameters: {} },
+      },
+      run: async () => {
+        context.afterRun!(() =>
+          context.recordChanges!([
+            {
+              kind: "setting",
+              key: "theme",
+              before: "brass-night",
+              after: "orbit",
+            },
+          ]),
+        );
+        return { appliesAfterThisReply: true };
+      },
+    },
+  ],
 }));
 
 const usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
@@ -296,7 +335,9 @@ describe("Hakawati chat session", () => {
     await session.sendAssistantMessage("Add Mara", home);
     const reply = store.getState().messages.at(-1)!;
     expect(reply.changes).toEqual([cardChange]);
-    expect(reply.activity).toEqual([{ tool: "edit_story_cards", at: 0 }]);
+    expect(reply.activity).toEqual([
+      { tool: "edit_story_cards", at: 0, changed: true },
+    ]);
 
     expect(await session.undoAssistantReply(reply.id)).toBe(0);
     expect(store.getState().messages.at(-1)!.changes).toEqual([
@@ -363,5 +404,92 @@ describe("Hakawati chat session", () => {
     await session.sendAssistantMessage("Hi", { getPathname: () => "/play" });
     expect(db.threads[0].taleId).toBe("t1");
     expect(store.getState().taleId).toBe("t1");
+  });
+  describe("asking the player with buttons", () => {
+    const deleteCall: StreamChunk[] = [
+      {
+        tool_calls: [
+          {
+            index: 0,
+            id: "call_1",
+            type: "function",
+            function: { name: "library", arguments: '{"action":"delete"}' },
+          },
+        ],
+      },
+    ];
+
+    async function waitingCard() {
+      const { session, store } = await load();
+      sendRoleChat
+        .mockResolvedValueOnce(streamed(deleteCall))
+        .mockResolvedValueOnce(streamed([{ content: "Done." }]));
+      const sending = session.sendAssistantMessage("Delete Mara", home);
+      await vi.waitFor(() =>
+        expect(store.getState().run?.activity[0]?.confirm).toEqual({
+          action: "delete_tales",
+          names: ["Mara"],
+        }),
+      );
+      return { session, store, sending };
+    }
+
+    it("goes ahead when the player says yes", async () => {
+      const { session, store, sending } = await waitingCard();
+      session.answerAssistantConfirm(true);
+      await sending;
+      const reply = store.getState().messages.at(-1)!;
+      expect(reply.activity?.[0].confirm?.answer).toBe("yes");
+      expect(JSON.parse(reply.turn![1].content)).toEqual({ deleted: ["Mara"] });
+    });
+
+    it("tells the model when the player cancels", async () => {
+      const { session, store, sending } = await waitingCard();
+      session.answerAssistantConfirm(false);
+      await sending;
+      const reply = store.getState().messages.at(-1)!;
+      expect(reply.activity?.[0].confirm?.answer).toBe("no");
+      expect(JSON.parse(reply.turn![1].content)).toEqual({
+        done: false,
+        cancelled: true,
+      });
+    });
+
+    it("answers no and stops when the player presses Stop", async () => {
+      const { session, store, sending } = await waitingCard();
+      session.stopAssistant();
+      await sending;
+      const reply = store.getState().messages.at(-1)!;
+      expect(reply).toMatchObject({ status: "stopped" });
+      expect(reply.activity?.[0].confirm?.answer).toBe("no");
+    });
+  });
+
+  it("records changes a tool left for after the reply, on that tool's step", async () => {
+    const { session, store } = await load();
+    sendRoleChat
+      .mockResolvedValueOnce(
+        streamed([
+          {
+            tool_calls: [
+              {
+                index: 0,
+                id: "call_1",
+                type: "function",
+                function: { name: "ai_setup", arguments: '{"action":"set"}' },
+              },
+            ],
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(streamed([{ content: "Switched." }]));
+    await session.sendAssistantMessage("Switch yourself", home);
+    const reply = store.getState().messages.at(-1)!;
+    expect(reply.changes).toEqual([
+      expect.objectContaining({ kind: "setting", key: "theme" }),
+    ]);
+    expect(reply.activity).toEqual([
+      { tool: "ai_setup", action: "set", at: 0, changed: true },
+    ]);
   });
 });

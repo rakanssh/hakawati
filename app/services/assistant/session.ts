@@ -14,13 +14,20 @@ import {
   useAssistantStore,
   type AssistantRun,
 } from "@/store/useAssistantStore";
+import { useStoryPanelStore } from "@/store/useStoryPanelStore";
+import {
+  isAppChange,
+  isScenarioChange,
+  isTaleChange,
+} from "@/lib/assistant-changes";
 import type {
+  AppChange,
+  AssistantActivity,
+  AssistantChange,
   AssistantMessage,
   AssistantMessageStatus,
   AssistantModelMessage,
   AssistantThread,
-  ScenarioChange,
-  TaleChange,
 } from "@/types/assistant.type";
 import { runAgentLoop, type AgentEvent } from "./agent-loop";
 import { clip, openTaleId, workspaceContext } from "./context";
@@ -30,15 +37,21 @@ import {
   ASSISTANT_TOOL_NAMESPACE,
   withContext,
 } from "./prompt";
-import type { AssistantTool, AssistantToolContext } from "./tools/define";
+import { revertAppChanges } from "./app-changes";
+import type { AssistantToolContext, AssistantUi } from "./tools/define";
 import { createReadTools } from "./tools/read";
 import { createTaleTools } from "./tools/tale";
 import { revertScenarioChanges } from "./scenario-edits";
 import { revertChanges } from "./tale-edits";
 import { createScenarioTools } from "./tools/scenario";
+import { createAiSetupTools } from "./tools/ai-setup";
+import { createAppTools } from "./tools/app";
+import { createCatalogTools } from "./tools/catalog";
+import { createLibraryTools } from "./tools/library";
 
 const store = useAssistantStore;
 let controller: AbortController | null = null;
+let pendingConfirm: ((yes: boolean) => void) | null = null;
 let showToken = 0;
 let started = false;
 
@@ -112,16 +125,22 @@ export function stopAssistant() {
   controller?.abort();
 }
 
-function toolDetail(tool: AssistantTool | undefined, args: string) {
-  if (!tool?.detail) return undefined;
+function parseArgs(args: string): Record<string, unknown> {
   try {
     const parsed: unknown = JSON.parse(args || "{}");
-    return parsed && typeof parsed === "object"
-      ? tool.detail(parsed as Record<string, unknown>)
-      : undefined;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : {};
   } catch {
-    return undefined;
+    return {};
   }
+}
+
+/** Answers the confirmation card Hakawati is waiting on. */
+export function answerAssistantConfirm(yes: boolean) {
+  const resolve = pendingConfirm;
+  pendingConfirm = null;
+  resolve?.(yes);
 }
 
 function toStored(messages: ChatMessage[]): AssistantModelMessage[] {
@@ -182,7 +201,7 @@ export async function sendAssistantMessage(
   text: string,
   options: {
     getPathname: () => string;
-    openTale?: (taleId: string) => Promise<void>;
+    ui?: AssistantUi;
   },
 ) {
   const content = text.trim();
@@ -226,21 +245,59 @@ export async function sendAssistantMessage(
         changes: [...run.changes],
       },
     });
+  controller = new AbortController();
+  const signal = controller.signal;
+  const afterRun: Array<() => void | Promise<void>> = [];
   const context: AssistantToolContext = {
     getPathname: options.getPathname,
-    openTale: options.openTale,
+    ui: options.ui,
     recordChanges: (changes) => {
       run.changes.push(...changes);
       publish();
     },
+    afterRun: (task) => {
+      const step = run.activity.at(-1);
+      afterRun.push(async () => {
+        const before = run.changes.length;
+        await task();
+        if (step && run.changes.length > before) step.changed = true;
+      });
+    },
+    confirm: (request) =>
+      new Promise<boolean>((resolve, reject) => {
+        const step = run.activity.at(-1);
+        if (!step) return resolve(false);
+        const finish = (yes: boolean, stopped = false) => {
+          signal.removeEventListener("abort", onAbort);
+          if (pendingConfirm === answer) pendingConfirm = null;
+          step.confirm = { ...request, answer: yes ? "yes" : "no" };
+          publish();
+          if (stopped)
+            reject(new DOMException("Request cancelled.", "AbortError"));
+          else resolve(yes);
+        };
+        const answer = (yes: boolean) => finish(yes);
+        const onAbort = () => finish(false, true);
+        if (signal.aborted) return onAbort();
+        step.confirm = { ...request };
+        pendingConfirm = answer;
+        signal.addEventListener("abort", onAbort, { once: true });
+        useStoryPanelStore.setState({ open: true, tab: "hakawati" });
+        publish();
+      }),
   };
   const tools = [
     ...createReadTools(context),
     ...createTaleTools(context),
     ...createScenarioTools(context),
+    ...createAppTools(context),
+    ...createAiSetupTools(context),
+    ...createLibraryTools(context),
+    ...createCatalogTools(context),
   ];
   const byName = new Map(tools.map((t) => [t.definition.function.name, t]));
   let afterTools = false;
+  const changesBefore = new Map<AssistantActivity, number>();
   const onEvent = (event: AgentEvent) => {
     if (event.type === "text") {
       if (afterTools && run.content && !run.content.endsWith("\n\n"))
@@ -253,19 +310,22 @@ export async function sendAssistantMessage(
       afterTools = true;
       run.toolRunning = true;
       const name = event.call.function.name;
-      const detail = toolDetail(
-        byName.get(name),
-        event.call.function.arguments,
-      );
-      run.activity.push({
+      const args = parseArgs(event.call.function.arguments);
+      const detail = byName.get(name)?.detail?.(args);
+      const step: AssistantActivity = {
         tool: name,
         at: run.content.length,
+        ...(typeof args.action === "string" ? { action: args.action } : {}),
         ...(detail ? { detail } : {}),
-      });
+      };
+      changesBefore.set(step, run.changes.length);
+      run.activity.push(step);
     } else {
       run.toolRunning = false;
       const last = run.activity.at(-1);
       if (last && event.error) last.error = event.error;
+      if (last && run.changes.length > (changesBefore.get(last) ?? 0))
+        last.changed = true;
       const outcome = event.error
         ? undefined
         : byName.get(event.call.function.name)?.outcome?.(event.output);
@@ -274,8 +334,6 @@ export async function sendAssistantMessage(
     publish();
   };
 
-  controller = new AbortController();
-  const signal = controller.signal;
   let turn: ChatMessage[] | undefined;
   let status: AssistantMessageStatus | undefined;
   let error: string | null = null;
@@ -302,6 +360,14 @@ export async function sendAssistantMessage(
     }
   } finally {
     controller = null;
+    pendingConfirm = null;
+  }
+  for (const task of afterRun) {
+    try {
+      await task();
+    } catch (failure) {
+      error ??= errorText(failure);
+    }
   }
 
   const replyText = run.content.trim();
@@ -346,20 +412,27 @@ export async function undoAssistantReply(messageId: string): Promise<number> {
   store.setState({ undoingId: messageId, error: null });
   try {
     const all = message.changes;
-    const taleChanges = all.filter(
-      (change): change is TaleChange => change.kind !== "scenario",
-    );
-    const scenarioChanges = all.filter(
-      (change): change is ScenarioChange => change.kind === "scenario",
-    );
+    const app = revertAppChanges(all.filter(isAppChange));
+    const scenarioChanges = all.filter(isScenarioChange);
     const scenarios = scenarioChanges.length
       ? await revertScenarioChanges(scenarioChanges)
       : { changes: [], kept: 0 };
+    const taleChanges = all.filter(isTaleChange);
     const tales = taleChanges.length ? await revertChanges(taleChanges) : [];
-    const queues = { tale: [...tales], scenario: [...scenarios.changes] };
+    const queues: Record<string, AssistantChange[]> = {
+      tale: [...tales],
+      scenario: [...scenarios.changes],
+      app: [...app.changes] as AppChange[],
+    };
     const changes = all.map(
       (change) =>
-        (change.kind === "scenario" ? queues.scenario : queues.tale).shift()!,
+        queues[
+          isAppChange(change)
+            ? "app"
+            : isScenarioChange(change)
+              ? "scenario"
+              : "tale"
+        ].shift()!,
     );
     await updateAssistantMessageChanges(messageId, changes);
     store.setState((current) => ({
@@ -367,7 +440,11 @@ export async function undoAssistantReply(messageId: string): Promise<number> {
         m.id === messageId ? { ...m, changes } : m,
       ),
     }));
-    return tales.filter((change) => !change.undone).length + scenarios.kept;
+    return (
+      tales.filter((change) => !change.undone).length +
+      scenarios.kept +
+      app.kept
+    );
   } catch (error) {
     store.setState({ error: errorText(error) });
     return 0;
