@@ -100,6 +100,10 @@ msgstr "{downloaded} حتى الآن"
 msgid "{inPrice} in · {outPrice} out per million"
 msgstr "{inPrice} للإدخال · {outPrice} للإخراج لكل مليون"
 
+#: app/components/assistant/change-list.tsx:137
+msgid "{kept} changes were edited since, so they were kept."
+msgstr "عُدّلت {kept} تغييرات بعد ذلك، لذا أُبقيت."
+
 #. placeholder {0}: localEntryCount === 1 ? t`entry` : t`entries`
 #: app/components/tales/tale-conflict-dialog.tsx:103
 msgid "{localEntryCount} {0}"
@@ -292,6 +296,23 @@ msgstr "إضافة وسم"
 msgid "Add your API key"
 msgstr "أضف مفتاح API"
 
+#: app/components/assistant/change-list.tsx:101
+msgid "Added {count} passages"
+msgstr "أضاف {count} مقاطع"
+
+#: app/components/assistant/change-list.tsx:71
+#: app/components/assistant/change-list.tsx:89
+msgid "Added {name}"
+msgstr "أضاف {name}"
+
+#: app/components/assistant/change-list.tsx:101
+msgid "Added a passage"
+msgstr "أضاف مقطعًا"
+
+#: app/components/assistant/change-list.tsx:62
+msgid "Added card “{title}”"
+msgstr "أضاف البطاقة «{title}»"
+
 #: app/components/layout/settings/advanced.tsx:80
 msgid "Added in Game Master mode to explain the game’s tools."
 msgstr "يُضاف في وضع مدير اللعبة لشرح أدوات اللعبة."
@@ -384,7 +405,7 @@ msgstr "التطبيق"
 msgid "Appearance"
 msgstr "المظهر"
 
-#: app/components/assistant/hakawati-chat.tsx:514
+#: app/components/assistant/hakawati-chat.tsx:544
 msgid "Ask Hakawati"
 msgstr "اسأل حكواتي"
 
@@ -510,6 +531,31 @@ msgctxt "Release notes section"
 msgid "Changed"
 msgstr "التغييرات"
 
+#: app/components/assistant/change-list.tsx:81
+#: app/components/assistant/change-list.tsx:92
+msgid "Changed {name}"
+msgstr "غيّر {name}"
+
+#: app/components/assistant/change-list.tsx:65
+msgid "Changed card “{title}”"
+msgstr "غيّر البطاقة «{title}»"
+
+#: app/components/assistant/change-list.tsx:54
+msgid "Changed the AI instructions"
+msgstr "غيّر تعليمات الذكاء الاصطناعي"
+
+#: app/components/assistant/change-list.tsx:51
+msgid "Changed the author's note"
+msgstr "غيّر ملاحظة المؤلف"
+
+#: app/components/assistant/change-list.tsx:33
+msgid "Changed the description"
+msgstr "غيّر الوصف"
+
+#: app/components/assistant/change-list.tsx:47
+msgid "Changed the plot"
+msgstr "غيّر الحبكة"
+
 #: app/pages/scenarios/edit.tsx:216
 msgid "Changes stay in your draft until you publish an update."
 msgstr "تبقى التغييرات في مسودتك حتى تنشر تحديثاً."
@@ -551,7 +597,7 @@ msgstr "التحقق من وجود تحديثات للتطبيق وتثبيت ا
 msgid "Check for updates"
 msgstr "التحقق من وجود تحديثات"
 
-#: app/components/assistant/hakawati-chat.tsx:92
+#: app/components/assistant/hakawati-chat.tsx:94
 msgid "Checked where you are"
 msgstr "تحقّق من مكانك"
 
@@ -604,6 +650,18 @@ msgstr "مسح عوامل التصفية"
 #: app/components/question-input.tsx:46
 msgid "Clear input"
 msgstr "مسح الإدخال"
+
+#: app/components/assistant/change-list.tsx:53
+msgid "Cleared the AI instructions"
+msgstr "مسح تعليمات الذكاء الاصطناعي"
+
+#: app/components/assistant/change-list.tsx:50
+msgid "Cleared the author's note"
+msgstr "مسح ملاحظة المؤلف"
+
+#: app/components/assistant/change-list.tsx:46
+msgid "Cleared the plot"
+msgstr "مسح الحبكة"
 
 #: app/components/layout/titlebar.tsx:155
 msgid "Close"
@@ -784,7 +842,7 @@ msgstr "انسخ مفتاح API الخاص بك والصقه هنا"
 msgid "Could not copy the email address"
 msgstr "تعذّر نسخ عنوان البريد الإلكتروني"
 
-#: app/components/assistant/hakawati-chat.tsx:245
+#: app/components/assistant/hakawati-chat.tsx:255
 #: app/components/layout/release-notes.tsx:62
 #: app/components/layout/server-announcement.tsx:105
 #: app/components/layout/settings/about.tsx:46
@@ -794,6 +852,22 @@ msgstr "تعذّر فتح الرابط"
 #: app/components/layout/settings/chatgpt-connection.tsx:38
 msgid "Could not open your browser. Visit ChatGPT Settings → Usage."
 msgstr "تعذّر فتح المتصفح. اذهب إلى Settings ← Usage في ChatGPT."
+
+#: app/components/assistant/hakawati-chat.tsx:112
+msgid "Couldn't change the character"
+msgstr "تعذّر تغيير الشخصية"
+
+#: app/components/assistant/hakawati-chat.tsx:114
+msgid "Couldn't change the story"
+msgstr "تعذّر تغيير القصة"
+
+#: app/components/assistant/hakawati-chat.tsx:110
+msgid "Couldn't change the story cards"
+msgstr "تعذّر تغيير بطاقات القصة"
+
+#: app/components/assistant/hakawati-chat.tsx:108
+msgid "Couldn't change the tale"
+msgstr "تعذّر تغيير الحكاية"
 
 #: app/components/layout/settings/updates.tsx:98
 msgid "Couldn’t check for updates"
@@ -909,7 +983,7 @@ msgstr "حذف"
 msgid "Delete account"
 msgstr "حذف الحساب"
 
-#: app/components/assistant/hakawati-chat.tsx:381
+#: app/components/assistant/hakawati-chat.tsx:408
 msgid "Delete chat"
 msgstr "حذف المحادثة"
 
@@ -1758,11 +1832,11 @@ msgstr "خادم محلي"
 msgid "Long context"
 msgstr "سياق طويل"
 
-#: app/components/assistant/hakawati-chat.tsx:95
+#: app/components/assistant/hakawati-chat.tsx:97
 msgid "Looked through your scenarios"
 msgstr "اطّلع على سيناريوهاتك"
 
-#: app/components/assistant/hakawati-chat.tsx:96
+#: app/components/assistant/hakawati-chat.tsx:98
 msgid "Looked through your tales"
 msgstr "اطّلع على حكاياتك"
 
@@ -1828,7 +1902,7 @@ msgstr "مسعف"
 msgid "Medium"
 msgstr "متوسط"
 
-#: app/components/assistant/hakawati-chat.tsx:515
+#: app/components/assistant/hakawati-chat.tsx:545
 msgid "Message Hakawati"
 msgstr "رسالة إلى حكواتي"
 
@@ -1956,9 +2030,9 @@ msgctxt "Release notes section"
 msgid "New"
 msgstr "الجديد"
 
-#: app/components/assistant/hakawati-chat.tsx:354
-#: app/components/assistant/hakawati-chat.tsx:395
-#: app/components/assistant/hakawati-chat.tsx:401
+#: app/components/assistant/hakawati-chat.tsx:381
+#: app/components/assistant/hakawati-chat.tsx:422
+#: app/components/assistant/hakawati-chat.tsx:428
 msgid "New chat"
 msgstr "محادثة جديدة"
 
@@ -2134,6 +2208,10 @@ msgstr "Ollama وLM Studio وKoboldCpp…"
 #: app/components/layout/settings/cloud-sync.tsx:839
 msgid "On for this device"
 msgstr "مفعّلة على هذا الجهاز"
+
+#: app/components/assistant/change-list.tsx:136
+msgid "One change was edited since, so it was kept."
+msgstr "عُدّل تغيير واحد بعد ذلك، لذا أُبقي."
 
 #: app/components/layout/settings/updates.tsx:107
 msgid "Only the desktop app updates itself"
@@ -2409,7 +2487,7 @@ msgstr "بذرة عشوائية"
 msgid "Ranger"
 msgstr "حارس"
 
-#: app/components/assistant/hakawati-chat.tsx:104
+#: app/components/assistant/hakawati-chat.tsx:106
 msgid "Read a scenario"
 msgstr "قرأ سيناريو"
 
@@ -2422,11 +2500,11 @@ msgstr "قراءة الوصف الكامل"
 msgid "Read new narration aloud"
 msgstr "قراءة السرد الجديد بصوت عالٍ"
 
-#: app/components/assistant/hakawati-chat.tsx:100
+#: app/components/assistant/hakawati-chat.tsx:102
 msgid "Read the story"
 msgstr "قرأ القصة"
 
-#: app/components/assistant/hakawati-chat.tsx:98
+#: app/components/assistant/hakawati-chat.tsx:100
 msgid "Read the tale's setup"
 msgstr "قرأ إعداد الحكاية"
 
@@ -2524,10 +2602,31 @@ msgctxt "Release notes section"
 msgid "Removed"
 msgstr "المحذوفات"
 
+#: app/components/assistant/change-list.tsx:109
+msgid "Removed {count} passages"
+msgstr "حذف {count} مقاطع"
+
+#: app/components/assistant/change-list.tsx:73
+#: app/components/assistant/change-list.tsx:91
+msgid "Removed {name}"
+msgstr "حذف {name}"
+
+#: app/components/assistant/change-list.tsx:109
+msgid "Removed a passage"
+msgstr "حذف مقطعًا"
+
+#: app/components/assistant/change-list.tsx:64
+msgid "Removed card “{title}”"
+msgstr "حذف البطاقة «{title}»"
+
 #: app/components/layout/settings/cloud-sync.tsx:773
 #: app/pages/tales/home.tsx:109
 msgid "Removed from cloud"
 msgstr "تمت الإزالة من السحابة"
+
+#: app/components/assistant/change-list.tsx:31
+msgid "Renamed the tale"
+msgstr "أعاد تسمية الحكاية"
 
 #: app/components/layout/settings/model.tsx:167
 #: app/components/layout/settings/model.tsx:176
@@ -2564,7 +2663,7 @@ msgstr "تم إرسال البلاغ"
 msgid "Report this scenario?"
 msgstr "الإبلاغ عن هذا السيناريو؟"
 
-#: app/components/assistant/hakawati-chat.tsx:330
+#: app/components/assistant/hakawati-chat.tsx:357
 #: app/components/play/log/log-entry-error.tsx:23
 msgid "Request failed"
 msgstr "تعذّر الطلب"
@@ -2629,6 +2728,10 @@ msgstr "مراجعة التعارض"
 #: app/components/layout/settings/settings-modal.tsx:104
 msgid "Review license, dependency, and credit information."
 msgstr "مراجعة معلومات الترخيص والتبعيات والمساهمين."
+
+#: app/components/assistant/change-list.tsx:96
+msgid "Rewrote a passage"
+msgstr "أعاد كتابة مقطع"
 
 #: app/components/layout/settings/game.tsx:230
 msgid "Right to left"
@@ -2814,7 +2917,7 @@ msgstr "البحث في السيناريوهات"
 msgid "Search tales"
 msgstr "البحث في الحكايات"
 
-#: app/components/assistant/hakawati-chat.tsx:102
+#: app/components/assistant/hakawati-chat.tsx:104
 msgid "Searched the story for “{detail}”"
 msgstr "بحث في القصة عن «{detail}»"
 
@@ -2851,7 +2954,7 @@ msgstr "اختر الخط"
 msgid "Select Model"
 msgstr "اختر النموذج"
 
-#: app/components/assistant/hakawati-chat.tsx:537
+#: app/components/assistant/hakawati-chat.tsx:567
 msgid "Send"
 msgstr "إرسال"
 
@@ -2868,7 +2971,7 @@ msgstr "جدي"
 msgid "Set"
 msgstr "ضبط"
 
-#: app/components/assistant/hakawati-chat.tsx:490
+#: app/components/assistant/hakawati-chat.tsx:520
 msgid "Set up Hakawati"
 msgstr "إعداد حكواتي"
 
@@ -3048,7 +3151,7 @@ msgstr "تتبع الخصائص والمخزون"
 msgid "Still"
 msgstr "ثابت"
 
-#: app/components/assistant/hakawati-chat.tsx:525
+#: app/components/assistant/hakawati-chat.tsx:555
 msgid "Stop"
 msgstr "إيقاف"
 
@@ -3065,7 +3168,7 @@ msgstr "إيقاف التوليد"
 msgid "Stop recording"
 msgstr "إيقاف التسجيل"
 
-#: app/components/assistant/hakawati-chat.tsx:326
+#: app/components/assistant/hakawati-chat.tsx:353
 msgid "Stopped"
 msgstr "توقّف"
 
@@ -3133,6 +3236,14 @@ msgstr "فاجئني"
 #: app/data/quickstart-presets.ts:46
 msgid "Survivor"
 msgstr "ناجي"
+
+#: app/components/assistant/change-list.tsx:38
+msgid "Switched to Game Master"
+msgstr "انتقل إلى مدير اللعبة"
+
+#: app/components/assistant/change-list.tsx:39
+msgid "Switched to Story Teller"
+msgstr "انتقل إلى القصّاص"
 
 #: app/components/layout/settings/cloud-sync.tsx:1424
 msgid "Sync"
@@ -3304,7 +3415,7 @@ msgstr "تُرسل هذه المكونات الاختيارية إلى الذك�
 msgid "Thing"
 msgstr "شيء"
 
-#: app/components/assistant/hakawati-chat.tsx:158
+#: app/components/assistant/hakawati-chat.tsx:168
 #: app/components/layout/settings/thinking-level.tsx:56
 #: app/components/layout/settings/thinking-level.tsx:58
 #: app/components/play/log/log-block-bubble.tsx:137
@@ -3380,7 +3491,7 @@ msgstr "سيؤدي هذا إلى حذف محتوى المكون نهائياً. 
 msgid "Title"
 msgstr "العنوان"
 
-#: app/components/assistant/hakawati-chat.tsx:154
+#: app/components/assistant/hakawati-chat.tsx:164
 #: app/components/play/log/log-block-bubble.tsx:133
 msgid "Toggle thinking output"
 msgstr "إظهار التفكير أو إخفاؤه"
@@ -3447,6 +3558,7 @@ msgstr "آلة كاتبة"
 msgid "Uncategorized"
 msgstr "غير مصنف"
 
+#: app/components/assistant/change-list.tsx:175
 #: app/components/play/log/log-control.tsx:167
 #: app/components/play/log/log-control.tsx:171
 msgid "Undo"

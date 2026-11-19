@@ -1,3 +1,37 @@
+import type { PromptComponentType, StoryCard } from "./context.type";
+import type { Item } from "./item.type";
+import type { LogEntry } from "./log.type";
+import type { Stat } from "./stats.type";
+
+export type TaleField = "name" | "description" | "gameMode";
+
+/** One edit Hakawati made, with enough of the before and after to undo it later. */
+export type AssistantChange = { taleId: string; undone?: boolean } & (
+  | { kind: "field"; field: TaleField; before: string; after: string }
+  | {
+      kind: "component";
+      type: PromptComponentType;
+      before: string | null;
+      after: string | null;
+    }
+  | {
+      kind: "card";
+      id: string;
+      before: StoryCard | null;
+      after: StoryCard | null;
+    }
+  | { kind: "stat"; before: Stat | null; after: Stat | null }
+  | { kind: "item"; id: string; before: Item | null; after: Item | null }
+  | { kind: "passage"; id: string; before: string; after: string }
+  | { kind: "insert"; afterId: string | null; entries: LogEntry[] }
+  | {
+      kind: "delete";
+      previousId: string | null;
+      nextId: string | null;
+      entries: LogEntry[];
+    }
+);
+
 export interface AssistantThread {
   id: string;
   taleId: string | null;
@@ -38,7 +72,7 @@ export interface AssistantMessage {
   thinking?: string;
   turn?: AssistantModelMessage[];
   activity?: AssistantActivity[];
-  changes?: unknown[];
+  changes?: AssistantChange[];
   status?: AssistantMessageStatus;
   createdAt: number;
 }

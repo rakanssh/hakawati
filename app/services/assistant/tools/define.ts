@@ -1,7 +1,9 @@
+import type { AssistantChange } from "@/types/assistant.type";
 import type { AgentTool } from "../agent-loop";
 
 export interface AssistantToolContext {
   getPathname: () => string;
+  recordChanges?: (changes: AssistantChange[]) => void;
 }
 
 export interface AssistantTool extends AgentTool {

@@ -71,8 +71,10 @@ import {
 import { useTaleStore } from "@/store/useTaleStore";
 import type {
   AssistantActivity,
+  AssistantChange,
   AssistantMessageStatus,
 } from "@/types/assistant.type";
+import { ChangeList } from "./change-list";
 
 const TOOL_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   get_context: MapPinIcon,
@@ -102,6 +104,14 @@ function ActivityChip({ activity }: { activity: AssistantActivity }) {
         return t`Searched the story for “${detail}”`;
       case "get_scenario":
         return t`Read a scenario`;
+      case "update_tale":
+        return t`Couldn't change the tale`;
+      case "edit_story_cards":
+        return t`Couldn't change the story cards`;
+      case "edit_character":
+        return t`Couldn't change the character`;
+      case "edit_log":
+        return t`Couldn't change the story`;
       default:
         return activity.tool;
     }
@@ -278,19 +288,33 @@ function PlayerMessage({ content }: { content: string }) {
   );
 }
 
+const EDIT_TOOLS = new Set([
+  "update_tale",
+  "edit_story_cards",
+  "edit_character",
+  "edit_log",
+]);
+
 function Reply({
   content,
   thinking,
   activity,
+  changes,
   status,
+  messageId,
   live,
 }: {
   content: string;
   thinking?: string;
   activity?: AssistantActivity[];
+  changes?: AssistantChange[];
   status?: AssistantMessageStatus;
+  messageId?: string;
   live?: boolean;
 }) {
+  const lookups = activity?.filter(
+    (item) => item.error || !EDIT_TOOLS.has(item.tool),
+  );
   const components = useMarkdownComponents();
   const caret = live ? (
     <span
@@ -300,9 +324,9 @@ function Reply({
   ) : null;
   return (
     <div className="flex min-w-0 flex-col items-start gap-2">
-      {activity?.length ? (
+      {lookups?.length ? (
         <div className="flex max-w-full flex-wrap gap-1">
-          {activity.map((item, index) => (
+          {lookups.map((item, index) => (
             <ActivityChip key={index} activity={item} />
           ))}
         </div>
@@ -320,6 +344,9 @@ function Reply({
       ) : (
         caret
       )}
+      {changes?.length ? (
+        <ChangeList changes={changes} messageId={messageId} />
+      ) : null}
       {thinking ? <Thinking text={thinking} /> : null}
       {status === "stopped" ? (
         <p className="text-xs text-muted-foreground">
@@ -466,7 +493,9 @@ export function HakawatiChat() {
                   content={message.content}
                   thinking={message.thinking}
                   activity={message.activity}
+                  changes={message.changes}
                   status={message.status}
+                  messageId={message.id}
                 />
               ),
             )}
@@ -475,6 +504,7 @@ export function HakawatiChat() {
                 content={run.content}
                 thinking={run.thinking}
                 activity={run.activity}
+                changes={run.changes}
                 live
               />
             ) : null}

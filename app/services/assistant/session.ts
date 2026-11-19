@@ -2,6 +2,7 @@ import { nanoid } from "nanoid";
 import {
   appendAssistantMessage,
   createAssistantThread,
+  updateAssistantMessageChanges,
   deleteAssistantThread,
   getLatestAssistantThread,
   listAssistantMessages,
@@ -29,6 +30,8 @@ import {
 } from "./prompt";
 import type { AssistantTool, AssistantToolContext } from "./tools/define";
 import { createReadTools } from "./tools/read";
+import { createTaleTools } from "./tools/tale";
+import { revertChanges } from "./tale-edits";
 
 const store = useAssistantStore;
 let controller: AbortController | null = null;
@@ -178,7 +181,12 @@ export async function sendAssistantMessage(
   const content = text.trim();
   if (!content || store.getState().run) return;
   const pathname = options.getPathname();
-  const run: AssistantRun = { content: "", thinking: "", activity: [] };
+  const run: AssistantRun = {
+    content: "",
+    thinking: "",
+    activity: [],
+    changes: [],
+  };
   store.setState({ draft: "", error: null, run: { ...run } });
 
   let threadId: string;
@@ -202,12 +210,24 @@ export async function sendAssistantMessage(
     role: "user",
     content: withContext(content, workspaceContext(pathname)),
   };
-  const context: AssistantToolContext = { getPathname: options.getPathname };
-  const tools = createReadTools(context);
+  const publish = () =>
+    store.setState({
+      run: {
+        ...run,
+        activity: [...run.activity],
+        changes: [...run.changes],
+      },
+    });
+  const context: AssistantToolContext = {
+    getPathname: options.getPathname,
+    recordChanges: (changes) => {
+      run.changes.push(...changes);
+      publish();
+    },
+  };
+  const tools = [...createReadTools(context), ...createTaleTools(context)];
   const byName = new Map(tools.map((t) => [t.definition.function.name, t]));
   let afterTools = false;
-  const publish = () =>
-    store.setState({ run: { ...run, activity: [...run.activity] } });
   const onEvent = (event: AgentEvent) => {
     if (event.type === "text") {
       if (afterTools && run.content && !run.content.endsWith("\n\n"))
@@ -269,6 +289,7 @@ export async function sendAssistantMessage(
     ...(run.thinking.trim() ? { thinking: run.thinking.trim() } : {}),
     ...(turn ? { turn: toStored(turn) } : {}),
     ...(run.activity.length ? { activity: run.activity } : {}),
+    ...(run.changes.length ? { changes: run.changes } : {}),
     ...(status ? { status } : {}),
     createdAt: Date.now(),
   };
@@ -285,5 +306,28 @@ export async function sendAssistantMessage(
     }));
   } catch (saveError) {
     store.setState({ run: null, error: error ?? errorText(saveError) });
+  }
+}
+
+/** Undoes the changes a reply made; any changed again since are kept. Returns how many were kept. */
+export async function undoAssistantReply(messageId: string): Promise<number> {
+  const state = store.getState();
+  const message = state.messages.find((m) => m.id === messageId);
+  if (!message?.changes?.length || state.run || state.undoingId) return 0;
+  store.setState({ undoingId: messageId, error: null });
+  try {
+    const changes = await revertChanges(message.changes);
+    await updateAssistantMessageChanges(messageId, changes);
+    store.setState((current) => ({
+      messages: current.messages.map((m) =>
+        m.id === messageId ? { ...m, changes } : m,
+      ),
+    }));
+    return changes.filter((change) => !change.undone).length;
+  } catch (error) {
+    store.setState({ error: errorText(error) });
+    return 0;
+  } finally {
+    store.setState({ undoingId: null });
   }
 }

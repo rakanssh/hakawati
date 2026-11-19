@@ -1354,6 +1354,130 @@ export async function getLogEntries(
   }
 }
 
+async function finishLogSplice(
+  db: Database,
+  taleId: string,
+  now: number,
+  state?: TaleCurrentState,
+  session?: TaleSessionState,
+): Promise<void> {
+  await refreshTaleLogSummary(db, taleId);
+  if (state) await replaceState(db, taleId, state, now);
+  if (session) await replaceSession(db, taleId, session, now);
+  await db.execute(
+    `UPDATE tales SET updated_at = ?, save_version = save_version + 1 WHERE id = ?`,
+    [now, taleId],
+  );
+}
+
+/** Removes passages anywhere in the log; a turn left empty is removed with them. */
+export async function deleteLogEntries(
+  taleId: string,
+  entryIds: string[],
+  state?: TaleCurrentState,
+  session?: TaleSessionState,
+): Promise<void> {
+  const ids = new Set(entryIds);
+  if (ids.size === 0) return;
+  await enqueueLocalOperation(async () => {
+    const db = await getDb();
+    const now = Date.now();
+    await withTransaction(db, async (db) => {
+      await requireTaleRow(db, taleId);
+      await markLinkedTaleForPush(db, taleId);
+      const rows = await selectTurnRowsForEntryIds(db, taleId, [...ids]);
+      const found = new Set(
+        rows.flatMap((row) => parseTurnEntries(row).map((entry) => entry.id)),
+      );
+      if ([...ids].some((id) => !found.has(id)))
+        throw new Error("Tale log entry not found");
+
+      for (const row of [...rows].sort((a, b) => b.seq - a.seq)) {
+        const kept = parseTurnEntries(row).filter(
+          (entry) => !ids.has(entry.id),
+        );
+        const removed = row.entry_count - kept.length;
+        if (kept.length === 0) {
+          await db.execute(`DELETE FROM tale_turns WHERE id = ?`, [row.id]);
+          await shiftTurnsAfter(db, taleId, row.seq, -1, -removed);
+        } else {
+          await db.execute(
+            `UPDATE tale_turns
+             SET entries_json = ?, entry_count = ?, updated_at = ?
+             WHERE id = ?`,
+            [
+              JSON.stringify(sanitizeTurnEntries(kept)),
+              kept.length,
+              now,
+              row.id,
+            ],
+          );
+          await shiftTurnsAfter(db, taleId, row.seq, 0, -removed);
+        }
+      }
+      await finishLogSplice(db, taleId, now, state, session);
+    });
+  });
+}
+
+/**
+ * Adds passages after `afterId`, or at the start when it is null. They join that
+ * passage's turn, or become a turn of their own after the last passage.
+ */
+export async function insertLogEntries(
+  taleId: string,
+  afterId: string | null,
+  entries: LogEntry[],
+  state?: TaleCurrentState,
+  session?: TaleSessionState,
+): Promise<void> {
+  const inserted = sanitizeTurnEntries(entries);
+  await enqueueLocalOperation(async () => {
+    const db = await getDb();
+    const now = Date.now();
+    await withTransaction(db, async (db) => {
+      await requireTaleRow(db, taleId);
+      await markLinkedTaleForPush(db, taleId);
+      const count = await selectLogCount(db, taleId);
+
+      let row: TaleTurnRow | undefined;
+      let at = 0;
+      if (afterId === null) {
+        [row] = await db.select<TaleTurnRow[]>(
+          `SELECT * FROM tale_turns WHERE tale_id = ? ORDER BY seq ASC LIMIT 1`,
+          [taleId],
+        );
+      } else {
+        [row] = await selectTurnRowsForEntryIds(db, taleId, [afterId]);
+        if (!row) throw new Error("Tale log entry not found");
+        at = parseTurnEntries(row).findIndex((e) => e.id === afterId) + 1;
+      }
+
+      if (!row || (afterId !== null && row.entry_start_index + at === count)) {
+        await insertTurn(
+          db,
+          taleId,
+          { entries: inserted, createdAt: now },
+          (row?.seq ?? 0) + 1,
+          count,
+          now,
+        );
+      } else {
+        const next = parseTurnEntries(row);
+        next.splice(at, 0, ...inserted);
+        await db.execute(
+          `UPDATE tale_turns
+           SET entries_json = ?, entry_count = ?, updated_at = ?
+           WHERE id = ?`,
+          [JSON.stringify(sanitizeTurnEntries(next)), next.length, now, row.id],
+        );
+        await shiftTurnsAfter(db, taleId, row.seq, 0, inserted.length);
+      }
+      await finishLogSplice(db, taleId, now, state, session);
+    });
+  });
+}
+
 export interface IndexedLogEntry {
   index: number;
   entry: LogEntry;

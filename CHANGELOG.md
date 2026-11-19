@@ -13,7 +13,7 @@ and the app shows it in What's New and Updates.
 
 ### Added
 
-- Hakawati, an assistant on every screen that answers questions about your tales and scenarios.
+- Hakawati, an assistant on every screen that answers questions about your tales and scenarios, and can change your tales for you, with Undo on every reply.
 
 ## [v1.3.0] - 2026-10-26
 

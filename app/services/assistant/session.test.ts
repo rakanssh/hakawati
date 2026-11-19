@@ -47,8 +47,29 @@ vi.mock("@/repositories/assistant.repository", () => {
       db.messages.push(saved);
       return saved;
     },
+    updateAssistantMessageChanges: async (
+      id: string,
+      changes: AssistantMessage["changes"],
+    ) => {
+      const message = db.messages.find((m) => m.id === id);
+      if (message) message.changes = changes;
+    },
   };
 });
+
+const cardChange = {
+  taleId: "t1",
+  kind: "card" as const,
+  id: "mara",
+  before: null,
+  after: null,
+};
+vi.mock("./tale-edits", () => ({
+  withTaleWrites: (_signal: unknown, run: () => unknown) => run(),
+  editTaleSetup: async () => [cardChange],
+  revertChanges: async (changes: Array<Record<string, unknown>>) =>
+    changes.map((change) => ({ ...change, undone: true })),
+}));
 
 const usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 
@@ -198,9 +219,47 @@ describe("Hakawati chat session", () => {
     await session.syncAssistantScope("t2");
     expect(store.getState()).toMatchObject({ threadId: null, taleId: "t2" });
 
-    store.setState({ run: { content: "", thinking: "", activity: [] } });
+    store.setState({
+      run: { content: "", thinking: "", activity: [], changes: [] },
+    });
     await session.syncAssistantScope("t1");
     expect(store.getState().threadId).toBeNull();
+  });
+
+  it("saves the changes a reply made and undoes them", async () => {
+    const { session, store } = await load();
+    sendRoleChat
+      .mockResolvedValueOnce(
+        streamed([
+          {
+            tool_calls: [
+              {
+                index: 0,
+                id: "call_1",
+                type: "function",
+                function: {
+                  name: "edit_story_cards",
+                  arguments:
+                    '{"taleId":"t1","ops":[{"op":"add","title":"Mara"}]}',
+                },
+              },
+            ],
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(streamed([{ content: "Added Mara." }]));
+
+    await session.sendAssistantMessage("Add Mara", home);
+    const reply = store.getState().messages.at(-1)!;
+    expect(reply.changes).toEqual([cardChange]);
+    expect(reply.activity).toEqual([{ tool: "edit_story_cards" }]);
+
+    expect(await session.undoAssistantReply(reply.id)).toBe(0);
+    expect(store.getState().messages.at(-1)!.changes).toEqual([
+      { ...cardChange, undone: true },
+    ]);
+    expect(db.messages.at(-1)!.changes?.[0].undone).toBe(true);
+    expect(store.getState().undoingId).toBeNull();
   });
 
   it("starts a new chat for the tale on the play screen", async () => {

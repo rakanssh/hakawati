@@ -100,6 +100,10 @@ msgstr "{downloaded} so far"
 msgid "{inPrice} in · {outPrice} out per million"
 msgstr "{inPrice} in · {outPrice} out per million"
 
+#: app/components/assistant/change-list.tsx:137
+msgid "{kept} changes were edited since, so they were kept."
+msgstr "{kept} changes were edited since, so they were kept."
+
 #. placeholder {0}: localEntryCount === 1 ? t`entry` : t`entries`
 #: app/components/tales/tale-conflict-dialog.tsx:103
 msgid "{localEntryCount} {0}"
@@ -292,6 +296,23 @@ msgstr "Add tag"
 msgid "Add your API key"
 msgstr "Add your API key"
 
+#: app/components/assistant/change-list.tsx:101
+msgid "Added {count} passages"
+msgstr "Added {count} passages"
+
+#: app/components/assistant/change-list.tsx:71
+#: app/components/assistant/change-list.tsx:89
+msgid "Added {name}"
+msgstr "Added {name}"
+
+#: app/components/assistant/change-list.tsx:101
+msgid "Added a passage"
+msgstr "Added a passage"
+
+#: app/components/assistant/change-list.tsx:62
+msgid "Added card “{title}”"
+msgstr "Added card “{title}”"
+
 #: app/components/layout/settings/advanced.tsx:80
 msgid "Added in Game Master mode to explain the game’s tools."
 msgstr "Added in Game Master mode to explain the game’s tools."
@@ -384,7 +405,7 @@ msgstr "App"
 msgid "Appearance"
 msgstr "Appearance"
 
-#: app/components/assistant/hakawati-chat.tsx:514
+#: app/components/assistant/hakawati-chat.tsx:544
 msgid "Ask Hakawati"
 msgstr "Ask Hakawati"
 
@@ -510,6 +531,31 @@ msgctxt "Release notes section"
 msgid "Changed"
 msgstr "Changed"
 
+#: app/components/assistant/change-list.tsx:81
+#: app/components/assistant/change-list.tsx:92
+msgid "Changed {name}"
+msgstr "Changed {name}"
+
+#: app/components/assistant/change-list.tsx:65
+msgid "Changed card “{title}”"
+msgstr "Changed card “{title}”"
+
+#: app/components/assistant/change-list.tsx:54
+msgid "Changed the AI instructions"
+msgstr "Changed the AI instructions"
+
+#: app/components/assistant/change-list.tsx:51
+msgid "Changed the author's note"
+msgstr "Changed the author's note"
+
+#: app/components/assistant/change-list.tsx:33
+msgid "Changed the description"
+msgstr "Changed the description"
+
+#: app/components/assistant/change-list.tsx:47
+msgid "Changed the plot"
+msgstr "Changed the plot"
+
 #: app/pages/scenarios/edit.tsx:216
 msgid "Changes stay in your draft until you publish an update."
 msgstr "Changes stay in your draft until you publish an update."
@@ -551,7 +597,7 @@ msgstr "Check for app updates and install new versions."
 msgid "Check for updates"
 msgstr "Check for updates"
 
-#: app/components/assistant/hakawati-chat.tsx:92
+#: app/components/assistant/hakawati-chat.tsx:94
 msgid "Checked where you are"
 msgstr "Checked where you are"
 
@@ -604,6 +650,18 @@ msgstr "Clear filters"
 #: app/components/question-input.tsx:46
 msgid "Clear input"
 msgstr "Clear input"
+
+#: app/components/assistant/change-list.tsx:53
+msgid "Cleared the AI instructions"
+msgstr "Cleared the AI instructions"
+
+#: app/components/assistant/change-list.tsx:50
+msgid "Cleared the author's note"
+msgstr "Cleared the author's note"
+
+#: app/components/assistant/change-list.tsx:46
+msgid "Cleared the plot"
+msgstr "Cleared the plot"
 
 #: app/components/layout/titlebar.tsx:155
 msgid "Close"
@@ -784,7 +842,7 @@ msgstr "Copy your API key and paste it here"
 msgid "Could not copy the email address"
 msgstr "Could not copy the email address"
 
-#: app/components/assistant/hakawati-chat.tsx:245
+#: app/components/assistant/hakawati-chat.tsx:255
 #: app/components/layout/release-notes.tsx:62
 #: app/components/layout/server-announcement.tsx:105
 #: app/components/layout/settings/about.tsx:46
@@ -794,6 +852,22 @@ msgstr "Could not open the link"
 #: app/components/layout/settings/chatgpt-connection.tsx:38
 msgid "Could not open your browser. Visit ChatGPT Settings → Usage."
 msgstr "Could not open your browser. Visit ChatGPT Settings → Usage."
+
+#: app/components/assistant/hakawati-chat.tsx:112
+msgid "Couldn't change the character"
+msgstr "Couldn't change the character"
+
+#: app/components/assistant/hakawati-chat.tsx:114
+msgid "Couldn't change the story"
+msgstr "Couldn't change the story"
+
+#: app/components/assistant/hakawati-chat.tsx:110
+msgid "Couldn't change the story cards"
+msgstr "Couldn't change the story cards"
+
+#: app/components/assistant/hakawati-chat.tsx:108
+msgid "Couldn't change the tale"
+msgstr "Couldn't change the tale"
 
 #: app/components/layout/settings/updates.tsx:98
 msgid "Couldn’t check for updates"
@@ -909,7 +983,7 @@ msgstr "Delete"
 msgid "Delete account"
 msgstr "Delete account"
 
-#: app/components/assistant/hakawati-chat.tsx:381
+#: app/components/assistant/hakawati-chat.tsx:408
 msgid "Delete chat"
 msgstr "Delete chat"
 
@@ -1758,11 +1832,11 @@ msgstr "Local server"
 msgid "Long context"
 msgstr "Long context"
 
-#: app/components/assistant/hakawati-chat.tsx:95
+#: app/components/assistant/hakawati-chat.tsx:97
 msgid "Looked through your scenarios"
 msgstr "Looked through your scenarios"
 
-#: app/components/assistant/hakawati-chat.tsx:96
+#: app/components/assistant/hakawati-chat.tsx:98
 msgid "Looked through your tales"
 msgstr "Looked through your tales"
 
@@ -1828,7 +1902,7 @@ msgstr "Medic"
 msgid "Medium"
 msgstr "Medium"
 
-#: app/components/assistant/hakawati-chat.tsx:515
+#: app/components/assistant/hakawati-chat.tsx:545
 msgid "Message Hakawati"
 msgstr "Message Hakawati"
 
@@ -1956,9 +2030,9 @@ msgctxt "Release notes section"
 msgid "New"
 msgstr "New"
 
-#: app/components/assistant/hakawati-chat.tsx:354
-#: app/components/assistant/hakawati-chat.tsx:395
-#: app/components/assistant/hakawati-chat.tsx:401
+#: app/components/assistant/hakawati-chat.tsx:381
+#: app/components/assistant/hakawati-chat.tsx:422
+#: app/components/assistant/hakawati-chat.tsx:428
 msgid "New chat"
 msgstr "New chat"
 
@@ -2134,6 +2208,10 @@ msgstr "Ollama, LM Studio, KoboldCpp…"
 #: app/components/layout/settings/cloud-sync.tsx:839
 msgid "On for this device"
 msgstr "On for this device"
+
+#: app/components/assistant/change-list.tsx:136
+msgid "One change was edited since, so it was kept."
+msgstr "One change was edited since, so it was kept."
 
 #: app/components/layout/settings/updates.tsx:107
 msgid "Only the desktop app updates itself"
@@ -2409,7 +2487,7 @@ msgstr "Random seed"
 msgid "Ranger"
 msgstr "Ranger"
 
-#: app/components/assistant/hakawati-chat.tsx:104
+#: app/components/assistant/hakawati-chat.tsx:106
 msgid "Read a scenario"
 msgstr "Read a scenario"
 
@@ -2422,11 +2500,11 @@ msgstr "Read full description"
 msgid "Read new narration aloud"
 msgstr "Read new narration aloud"
 
-#: app/components/assistant/hakawati-chat.tsx:100
+#: app/components/assistant/hakawati-chat.tsx:102
 msgid "Read the story"
 msgstr "Read the story"
 
-#: app/components/assistant/hakawati-chat.tsx:98
+#: app/components/assistant/hakawati-chat.tsx:100
 msgid "Read the tale's setup"
 msgstr "Read the tale's setup"
 
@@ -2524,10 +2602,31 @@ msgctxt "Release notes section"
 msgid "Removed"
 msgstr "Removed"
 
+#: app/components/assistant/change-list.tsx:109
+msgid "Removed {count} passages"
+msgstr "Removed {count} passages"
+
+#: app/components/assistant/change-list.tsx:73
+#: app/components/assistant/change-list.tsx:91
+msgid "Removed {name}"
+msgstr "Removed {name}"
+
+#: app/components/assistant/change-list.tsx:109
+msgid "Removed a passage"
+msgstr "Removed a passage"
+
+#: app/components/assistant/change-list.tsx:64
+msgid "Removed card “{title}”"
+msgstr "Removed card “{title}”"
+
 #: app/components/layout/settings/cloud-sync.tsx:773
 #: app/pages/tales/home.tsx:109
 msgid "Removed from cloud"
 msgstr "Removed from cloud"
+
+#: app/components/assistant/change-list.tsx:31
+msgid "Renamed the tale"
+msgstr "Renamed the tale"
 
 #: app/components/layout/settings/model.tsx:167
 #: app/components/layout/settings/model.tsx:176
@@ -2564,7 +2663,7 @@ msgstr "Report submitted"
 msgid "Report this scenario?"
 msgstr "Report this scenario?"
 
-#: app/components/assistant/hakawati-chat.tsx:330
+#: app/components/assistant/hakawati-chat.tsx:357
 #: app/components/play/log/log-entry-error.tsx:23
 msgid "Request failed"
 msgstr "Request failed"
@@ -2629,6 +2728,10 @@ msgstr "Review conflict"
 #: app/components/layout/settings/settings-modal.tsx:104
 msgid "Review license, dependency, and credit information."
 msgstr "Review license, dependency, and credit information."
+
+#: app/components/assistant/change-list.tsx:96
+msgid "Rewrote a passage"
+msgstr "Rewrote a passage"
 
 #: app/components/layout/settings/game.tsx:230
 msgid "Right to left"
@@ -2814,7 +2917,7 @@ msgstr "Search scenarios"
 msgid "Search tales"
 msgstr "Search tales"
 
-#: app/components/assistant/hakawati-chat.tsx:102
+#: app/components/assistant/hakawati-chat.tsx:104
 msgid "Searched the story for “{detail}”"
 msgstr "Searched the story for “{detail}”"
 
@@ -2851,7 +2954,7 @@ msgstr "Select Font"
 msgid "Select Model"
 msgstr "Select Model"
 
-#: app/components/assistant/hakawati-chat.tsx:537
+#: app/components/assistant/hakawati-chat.tsx:567
 msgid "Send"
 msgstr "Send"
 
@@ -2868,7 +2971,7 @@ msgstr "Serious"
 msgid "Set"
 msgstr "Set"
 
-#: app/components/assistant/hakawati-chat.tsx:490
+#: app/components/assistant/hakawati-chat.tsx:520
 msgid "Set up Hakawati"
 msgstr "Set up Hakawati"
 
@@ -3048,7 +3151,7 @@ msgstr "Stats and inventory tracking"
 msgid "Still"
 msgstr "Still"
 
-#: app/components/assistant/hakawati-chat.tsx:525
+#: app/components/assistant/hakawati-chat.tsx:555
 msgid "Stop"
 msgstr "Stop"
 
@@ -3065,7 +3168,7 @@ msgstr "Stop generating"
 msgid "Stop recording"
 msgstr "Stop recording"
 
-#: app/components/assistant/hakawati-chat.tsx:326
+#: app/components/assistant/hakawati-chat.tsx:353
 msgid "Stopped"
 msgstr "Stopped"
 
@@ -3133,6 +3236,14 @@ msgstr "Surprise Me"
 #: app/data/quickstart-presets.ts:46
 msgid "Survivor"
 msgstr "Survivor"
+
+#: app/components/assistant/change-list.tsx:38
+msgid "Switched to Game Master"
+msgstr "Switched to Game Master"
+
+#: app/components/assistant/change-list.tsx:39
+msgid "Switched to Story Teller"
+msgstr "Switched to Story Teller"
 
 #: app/components/layout/settings/cloud-sync.tsx:1424
 msgid "Sync"
@@ -3304,7 +3415,7 @@ msgstr "These optional components are sent to the AI."
 msgid "Thing"
 msgstr "Thing"
 
-#: app/components/assistant/hakawati-chat.tsx:158
+#: app/components/assistant/hakawati-chat.tsx:168
 #: app/components/layout/settings/thinking-level.tsx:56
 #: app/components/layout/settings/thinking-level.tsx:58
 #: app/components/play/log/log-block-bubble.tsx:137
@@ -3380,7 +3491,7 @@ msgstr "This will permanently delete the component content. This action cannot b
 msgid "Title"
 msgstr "Title"
 
-#: app/components/assistant/hakawati-chat.tsx:154
+#: app/components/assistant/hakawati-chat.tsx:164
 #: app/components/play/log/log-block-bubble.tsx:133
 msgid "Toggle thinking output"
 msgstr "Toggle thinking output"
@@ -3447,6 +3558,7 @@ msgstr "Typewriter"
 msgid "Uncategorized"
 msgstr "Uncategorized"
 
+#: app/components/assistant/change-list.tsx:175
 #: app/components/play/log/log-control.tsx:167
 #: app/components/play/log/log-control.tsx:171
 msgid "Undo"

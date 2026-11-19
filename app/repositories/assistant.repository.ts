@@ -134,6 +134,19 @@ export async function listAssistantMessages(
   return rows.map(messageFromRow);
 }
 
+export async function updateAssistantMessageChanges(
+  id: string,
+  changes: AssistantMessage["changes"],
+): Promise<void> {
+  await enqueueLocalOperation(async () => {
+    const db = await getDb();
+    await db.execute(
+      `UPDATE assistant_messages SET changes_json = ? WHERE id = ?`,
+      [json(changes), id],
+    );
+  });
+}
+
 /** Appends a message after the thread's last one and returns it with its position. */
 export async function appendAssistantMessage(
   message: Omit<AssistantMessage, "seq">,

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { AssistantMessage } from "@/types/assistant.type";
-import { HISTORY_MESSAGES, OMITTED_RESULT, toModelHistory } from "./history";
+import {
+  HISTORY_MESSAGES,
+  OMITTED_RESULT,
+  PARTLY_UNDONE_NOTE,
+  toModelHistory,
+  UNDONE_NOTE,
+} from "./history";
 
 let seq = 0;
 const user = (content: string): AssistantMessage => ({
@@ -99,5 +105,37 @@ describe("toModelHistory", () => {
     const history = toModelHistory(messages);
     expect(history.length).toBeLessThanOrEqual(HISTORY_MESSAGES);
     expect(history[0].role).toBe("user");
+  });
+});
+
+describe("toModelHistory after undo", () => {
+  const change = (undone?: boolean) => ({
+    taleId: "t",
+    kind: "passage" as const,
+    id: "p",
+    before: "a",
+    after: "b",
+    ...(undone ? { undone } : {}),
+  });
+
+  it("tells the model when the player undid a reply's changes", () => {
+    const history = toModelHistory([
+      user("Rewrite it"),
+      reply("Done.", {
+        turn: [{ role: "assistant", content: "Done." }],
+        changes: [change(true)],
+      }),
+      user("Again"),
+    ]);
+    expect(history[1].content).toBe(`Done.\n\n${UNDONE_NOTE}`);
+  });
+
+  it("says when only some changes were undone", () => {
+    const history = toModelHistory([
+      user("Rewrite it"),
+      reply("Done.", { changes: [change(true), change()], status: "stopped" }),
+      user("Again"),
+    ]);
+    expect(history[1].content).toBe(`Done.\n\n${PARTLY_UNDONE_NOTE}`);
   });
 });

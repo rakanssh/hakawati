@@ -28,7 +28,7 @@ import {
 
 const LIBRARY_SCAN = 100;
 
-function taleIdFor(
+export function taleIdFor(
   args: Record<string, unknown>,
   context: AssistantToolContext,
 ): string {
@@ -52,7 +52,7 @@ function snippet(source: string, query: string): string {
   return `${start > 0 ? "…" : ""}${source.slice(start, end)}${end < source.length ? "…" : ""}`;
 }
 
-const taleIdProperty = {
+export const taleIdProperty = {
   taleId: {
     type: "string",
     description: "Tale id. Leave out for the tale open on the play screen.",

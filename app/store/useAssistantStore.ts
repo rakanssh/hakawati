@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type {
   AssistantActivity,
+  AssistantChange,
   AssistantMessage,
   AssistantThread,
 } from "@/types/assistant.type";
@@ -9,6 +10,7 @@ export interface AssistantRun {
   content: string;
   thinking: string;
   activity: AssistantActivity[];
+  changes: AssistantChange[];
 }
 
 interface AssistantStoreType {
@@ -20,6 +22,7 @@ interface AssistantStoreType {
   messages: AssistantMessage[];
   draft: string;
   run: AssistantRun | null;
+  undoingId: string | null;
   error: string | null;
   setDraft: (draft: string) => void;
 }
@@ -32,6 +35,7 @@ export const useAssistantStore = create<AssistantStoreType>()((set) => ({
   messages: [],
   draft: "",
   run: null,
+  undoingId: null,
   error: null,
   setDraft: (draft) => set({ draft }),
 }));
