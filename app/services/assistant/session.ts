@@ -14,6 +14,7 @@ import {
   useAssistantStore,
   type AssistantRun,
 } from "@/store/useAssistantStore";
+import { useAssistantMemoryStore } from "@/store/useAssistantMemoryStore";
 import { useStoryPanelStore } from "@/store/useStoryPanelStore";
 import {
   isAppChange,
@@ -53,7 +54,8 @@ const store = useAssistantStore;
 let controller: AbortController | null = null;
 let pendingConfirm: ((yes: boolean) => void) | null = null;
 let showToken = 0;
-let started = false;
+/** The tale on the play screen when the chat last looked, or undefined before it first loads. */
+let scope: string | null | undefined;
 
 const errorText = (error: unknown) =>
   error instanceof Error ? error.message : String(error);
@@ -71,25 +73,54 @@ async function showThread(
     messages,
     error: null,
   });
+  if (thread) rememberChat(thread.id);
 }
 
-/** Loads the chats once, then switches to a tale's latest chat when the player opens that tale. */
+function rememberChat(threadId: string) {
+  useAssistantMemoryStore.getState().remember(threadId, scope ?? null);
+}
+
+/**
+ * Shows the chat that belongs where the player is. It acts only when the play screen's tale changes,
+ * so the chat survives the panel closing or switching tabs. A tale gets the chat last open on it, or
+ * its latest; on first load away from play, the chat last open.
+ */
 export async function syncAssistantScope(playTaleId: string | null) {
   try {
     if (!store.getState().loaded) {
       const threads = await listAssistantThreads();
       store.setState({ threads, loaded: true });
     }
+    if (playTaleId === scope) return;
+    const first = scope === undefined;
+    scope = playTaleId;
     const state = store.getState();
-    if (state.run) return;
-    if (playTaleId) {
-      if (state.taleId === playTaleId && started) return;
-      started = true;
-      await showThread(await getLatestAssistantThread(playTaleId), playTaleId);
-    } else if (!started) {
-      started = true;
-      await showThread(await getLatestAssistantThread(), null);
+    const memory = useAssistantMemoryStore.getState();
+    const known = (id: string | null | undefined) =>
+      id ? state.threads.find((thread) => thread.id === id) : undefined;
+    if (state.run || (!first && !playTaleId)) {
+      if (state.threadId) rememberChat(state.threadId);
+      return;
     }
+    if (!playTaleId) {
+      await showThread(
+        known(memory.lastThreadId) ?? (await getLatestAssistantThread()),
+        null,
+      );
+      return;
+    }
+    const remembered = known(memory.taleThreads[playTaleId]);
+    if (
+      remembered?.id === state.threadId ||
+      (!remembered && !first && state.taleId === playTaleId)
+    ) {
+      if (state.threadId) rememberChat(state.threadId);
+      return;
+    }
+    await showThread(
+      remembered ?? (await getLatestAssistantThread(playTaleId)),
+      playTaleId,
+    );
   } catch (error) {
     store.setState({ error: errorText(error), loaded: true });
   }
@@ -115,6 +146,7 @@ export async function selectAssistantThread(id: string) {
 export async function removeAssistantThread(id: string, pathname: string) {
   if (store.getState().run) return;
   await deleteAssistantThread(id);
+  useAssistantMemoryStore.getState().forgetThread(id);
   store.setState((state) => ({
     threads: state.threads.filter((thread) => thread.id !== id),
   }));
@@ -176,6 +208,7 @@ async function ensureThread(
     updatedAt: now,
   };
   await createAssistantThread(thread);
+  rememberChat(thread.id);
   store.setState((state) => ({
     threadId: thread.id,
     taleId: thread.taleId,

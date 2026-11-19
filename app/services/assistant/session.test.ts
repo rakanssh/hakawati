@@ -166,6 +166,7 @@ async function load() {
 const home = { getPathname: () => "/" };
 
 beforeEach(() => {
+  localStorage.clear();
   db.threads = [];
   db.messages = [];
   sendRoleChat.mockReset();
@@ -307,6 +308,58 @@ describe("Hakawati chat session", () => {
     });
     await session.syncAssistantScope("t1");
     expect(store.getState().threadId).toBeNull();
+  });
+
+  describe("remembering the chat the player was on", () => {
+    const threads = () => [
+      { id: "general", taleId: null, title: "G", createdAt: 1, updatedAt: 9 },
+      { id: "older", taleId: "t1", title: "O", createdAt: 1, updatedAt: 2 },
+      { id: "newer", taleId: "t1", title: "N", createdAt: 1, updatedAt: 3 },
+    ];
+
+    it("keeps the open chat when the panel or tab shows it again", async () => {
+      const { session, store } = await load();
+      db.threads = threads();
+      await session.syncAssistantScope("t1");
+      await session.selectAssistantThread("general");
+      await session.syncAssistantScope("t1");
+      expect(store.getState().threadId).toBe("general");
+    });
+
+    it("goes back to the chat last open on a tale, not its latest", async () => {
+      const { session, store } = await load();
+      db.threads = threads();
+      await session.syncAssistantScope("t1");
+      expect(store.getState().threadId).toBe("newer");
+      await session.selectAssistantThread("older");
+      await session.syncAssistantScope("t2");
+      expect(store.getState().threadId).toBeNull();
+      await session.syncAssistantScope(null);
+      await session.syncAssistantScope("t1");
+      expect(store.getState().threadId).toBe("older");
+    });
+
+    it("opens the chat that was open when the app was last closed", async () => {
+      db.threads = threads();
+      const first = await load();
+      await first.session.syncAssistantScope(null);
+      await first.session.selectAssistantThread("older");
+
+      const next = await load();
+      await next.session.syncAssistantScope(null);
+      expect(next.store.getState().threadId).toBe("older");
+    });
+
+    it("forgets a deleted chat", async () => {
+      const { session, store } = await load();
+      db.threads = threads();
+      await session.syncAssistantScope("t1");
+      await session.selectAssistantThread("older");
+      await session.removeAssistantThread("older", "/play");
+      await session.syncAssistantScope("t2");
+      await session.syncAssistantScope("t1");
+      expect(store.getState().threadId).toBe("newer");
+    });
   });
 
   it("saves the changes a reply made and undoes them", async () => {
