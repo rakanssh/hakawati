@@ -5,6 +5,8 @@ const EDIT_TOOLS = new Set([
   "edit_story_cards",
   "edit_character",
   "edit_log",
+  "edit_scenario",
+  "scenario_from_tale",
 ]);
 
 export type TimelineStep = { activity: AssistantActivity; running: boolean };

@@ -1,3 +1,4 @@
+import { useScenarioDraftStore } from "@/store/useScenarioDraftStore";
 import { useTaleStore } from "@/store/useTaleStore";
 import {
   GameMode,
@@ -118,7 +119,16 @@ const RECENT_PASSAGES = 8;
 export function workspaceContext(pathname: string) {
   const route = describeRoute(pathname);
   const taleId = openTaleId(pathname);
-  if (!taleId) return route;
+  if (!taleId) {
+    const draft = useScenarioDraftStore.getState().draft?.read();
+    return draft &&
+      (route.page === "scenario_editor" || route.page === "new_scenario")
+      ? {
+          ...route,
+          scenarioInEditor: { id: draft.id || null, name: draft.name },
+        }
+      : route;
+  }
   const tale = useTaleStore.getState();
   const start = tale.oldestLoadedIndex;
   const recent = tale.log

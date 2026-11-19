@@ -43,6 +43,7 @@ import {
 } from "@/services/scenario.service";
 import { addSyncChangedListener } from "@/services/sync-wakeup";
 import { useSettingsStore } from "@/store";
+import { useScenarioDraftStore } from "@/store/useScenarioDraftStore";
 import { GameMode, type Scenario } from "@/types/context.type";
 
 type ScenarioStart = {
@@ -100,6 +101,21 @@ export default function ScenarioDetails() {
       cancelled = true;
     };
   }, [id, t]);
+
+  useEffect(
+    () =>
+      useScenarioDraftStore.subscribe((state, previous) => {
+        if (state.libraryRevision === previous.libraryRevision) return;
+        void Promise.all([getScenarioById(id), getScenarioHeadById(id)]).then(
+          ([result, head]) => {
+            if (!result || currentId.current !== id) return;
+            setScenario(result);
+            setUpdatedAt(head?.updatedAt ?? null);
+          },
+        );
+      }),
+    [id],
+  );
 
   useEffect(() => {
     let disposed = false;

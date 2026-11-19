@@ -6,7 +6,7 @@ import {
   type MouseEvent,
 } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useRouter, useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -22,6 +22,7 @@ import {
   MapPinIcon,
   MessageCircleIcon,
   MessageSquarePlusIcon,
+  PlayIcon,
   ScrollTextIcon,
   SearchIcon,
   SendIcon,
@@ -54,6 +55,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useLoadTale } from "@/hooks/useGameSaves";
 import { useStickToBottom } from "@/hooks/useStickToBottom";
 import { replyTimeline } from "@/lib/assistant-timeline";
 import { cn } from "@/lib/utils";
@@ -66,6 +68,7 @@ import {
   syncAssistantScope,
 } from "@/services/assistant/session";
 import { useAssistantStore } from "@/store/useAssistantStore";
+import { useStoryPanelStore } from "@/store/useStoryPanelStore";
 import {
   isModelRoleConfigured,
   useSettingsStore,
@@ -85,6 +88,8 @@ const TOOL_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   read_log: ScrollTextIcon,
   search_log: SearchIcon,
   get_scenario: FileTextIcon,
+  start_tale: PlayIcon,
+  open_tale: BookOpenIcon,
 };
 
 function ActivityChip({
@@ -107,6 +112,14 @@ function ActivityChip({
           return t`Changing the character`;
         case "edit_log":
           return t`Changing the story`;
+        case "edit_scenario":
+          return t`Changing the scenario`;
+        case "scenario_from_tale":
+          return t`Saving the tale as a scenario`;
+        case "start_tale":
+          return t`Starting a tale`;
+        case "open_tale":
+          return t`Opening the tale`;
       }
     switch (activity.tool) {
       case "get_context":
@@ -131,6 +144,20 @@ function ActivityChip({
         return t`Couldn't change the character`;
       case "edit_log":
         return t`Couldn't change the story`;
+      case "edit_scenario":
+        return t`Couldn't change the scenario`;
+      case "scenario_from_tale":
+        return t`Couldn't save the tale as a scenario`;
+      case "start_tale":
+        return activity.error
+          ? t`Couldn't start the tale`
+          : detail
+            ? t`Started “${detail}”`
+            : t`Read the scenario's questions`;
+      case "open_tale":
+        return activity.error
+          ? t`Couldn't open the tale`
+          : t`Opened “${detail}”`;
       default:
         return activity.tool;
     }
@@ -510,6 +537,8 @@ function ChatMenu({ pathname }: { pathname: string }) {
 export function HakawatiChat() {
   const { t } = useLingui();
   const router = useRouter();
+  const navigate = useNavigate();
+  const { load: loadTale } = useLoadTale();
   const pathname = useRouterState({
     select: (state) => state.location.pathname ?? "/",
   });
@@ -537,10 +566,19 @@ export function HakawatiChat() {
     if (stickToBottom) scrollToBottom("auto");
   }, [messages, run, error, stickToBottom, scrollToBottom]);
 
+  const openTale = async (taleId: string) => {
+    await loadTale(taleId);
+    const panel = useStoryPanelStore.getState();
+    panel.setTab("hakawati");
+    if (isMobilePlatform) panel.setOpen(false);
+    await navigate({ to: "/play" });
+  };
+
   const send = (text = draft) => {
     if (!configured || run) return;
     void sendAssistantMessage(text, {
       getPathname: () => router.state.location.pathname,
+      openTale,
     });
     scrollToBottom("auto");
   };

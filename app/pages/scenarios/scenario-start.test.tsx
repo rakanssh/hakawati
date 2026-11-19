@@ -198,6 +198,17 @@ describe("scenario details start setup", () => {
     });
   }
 
+  it("shows a scenario Hakawati changed in the library without reopening it", async () => {
+    const { useScenarioDraftStore } = await import(
+      "@/store/useScenarioDraftStore"
+    );
+    await render();
+    expect(container.textContent).toContain("Hello Your name?.");
+    mocks.getScenario.mockResolvedValue(localScenario("A new opening."));
+    await act(async () => useScenarioDraftStore.getState().bumpLibrary());
+    expect(container.textContent).toContain("A new opening.");
+  });
+
   it("cancels locally without creating a tale, then starts with the chosen private snapshot", async () => {
     const scenario = localScenario();
     mocks.getScenario.mockResolvedValue(scenario);

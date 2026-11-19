@@ -15,7 +15,7 @@ import { persistCurrentTale } from "@/services/tale.service";
 import { claimPlayActivity } from "@/store/usePlayActivityStore";
 import { useTaleStore } from "@/store/useTaleStore";
 import { LogEntryMode, LogEntryRole, type LogEntry } from "@/types";
-import type { AssistantChange } from "@/types/assistant.type";
+import type { TaleChange } from "@/types/assistant.type";
 import {
   isStateChange,
   revertStateChange,
@@ -94,7 +94,7 @@ export async function withTaleWrites<T>(
 export async function editTaleSetup(
   taleId: string,
   edit: (changes: TaleChanges) => void,
-): Promise<AssistantChange[]> {
+): Promise<TaleChange[]> {
   const changes = new TaleChanges(taleId, await readSnapshot(taleId));
   edit(changes);
   if (changes.changes.length) await writeSnapshot(taleId, changes.tale);
@@ -120,7 +120,7 @@ export async function rewritePassage(
   taleId: string,
   id: string,
   text: string,
-): Promise<AssistantChange> {
+): Promise<TaleChange> {
   const found = await readPassage(taleId, id);
   if (!found) throw new TaleEditError(`No passage has id ${id}.`);
   await updateLogEntry(taleId, id, { text });
@@ -188,7 +188,7 @@ export async function insertPassages(
   taleId: string,
   afterId: string | null,
   entries: LogEntry[],
-): Promise<AssistantChange> {
+): Promise<TaleChange> {
   if (afterId !== null && !(await readPassage(taleId, afterId)))
     throw new TaleEditError(`No passage has id ${afterId}.`);
   await insertLogEntries(taleId, afterId, entries, undefined, clearedRedo());
@@ -201,7 +201,7 @@ export async function insertPassages(
 export async function deletePassages(
   taleId: string,
   ids: string[],
-): Promise<AssistantChange[]> {
+): Promise<TaleChange[]> {
   const found = [];
   for (const id of new Set(ids)) {
     const passage = await readPassage(taleId, id);
@@ -215,7 +215,7 @@ export async function deletePassages(
     if (run && run.at(-1)!.index + 1 === passage.index) run.push(passage);
     else runs.push([passage]);
   }
-  const changes: AssistantChange[] = [];
+  const changes: TaleChange[] = [];
   for (const run of runs) {
     const previous = await passageAt(taleId, run[0].index - 1);
     const next = await passageAt(taleId, run.at(-1)!.index + 1);
@@ -233,7 +233,7 @@ export async function deletePassages(
   return changes;
 }
 
-async function revertLogChange(change: AssistantChange): Promise<boolean> {
+async function revertLogChange(change: TaleChange): Promise<boolean> {
   const { taleId } = change;
   if (change.kind === "passage") {
     const found = await readPassage(taleId, change.id);
@@ -285,9 +285,9 @@ async function revertLogChange(change: AssistantChange): Promise<boolean> {
 
 /** Undoes changes newest first, leaving any that were changed again since; returns them marked. */
 export async function revertChanges(
-  changes: AssistantChange[],
+  changes: TaleChange[],
   signal?: AbortSignal,
-): Promise<AssistantChange[]> {
+): Promise<TaleChange[]> {
   return withTaleWrites(signal, async () => {
     const result = changes.map((change) => ({ ...change }));
     const taleIds = new Set(

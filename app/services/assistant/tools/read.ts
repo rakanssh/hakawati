@@ -8,6 +8,7 @@ import {
   getTales,
   searchLogEntries,
 } from "@/repositories/tale.repository";
+import { useScenarioDraftStore } from "@/store/useScenarioDraftStore";
 import { useTaleStore } from "@/store/useTaleStore";
 import { GameMode, PromptComponentType } from "@/types";
 import {
@@ -226,19 +227,37 @@ export function createReadTools(
     defineTool({
       name: "get_scenario",
       description:
-        "A saved scenario in full: opening, plot, author's note, AI instructions, story cards, stats and inventory.",
-      parameters: objectSchema({ scenarioId: { type: "string" } }, [
-        "scenarioId",
-      ]),
+        "A scenario in full: opening, plot, author's note, AI instructions, story cards, stats and inventory, with the ids edit_scenario needs.",
+      parameters: objectSchema({
+        scenarioId: {
+          type: "string",
+          description:
+            "Leave out for the scenario open in the editor, with its unsaved changes.",
+        },
+      }),
       run: async (args) => {
         const scenarioId = text(args.scenarioId);
-        const scenario = scenarioId ? await getScenario(scenarioId) : null;
-        if (!scenario) throw new Error("No saved scenario has that id.");
+        const open = useScenarioDraftStore.getState().draft?.read();
+        const inEditor = Boolean(
+          open && (!scenarioId || scenarioId === open.id),
+        );
+        const scenario = inEditor
+          ? open
+          : scenarioId
+            ? await getScenario(scenarioId)
+            : null;
+        if (!scenario)
+          throw new Error(
+            scenarioId
+              ? "No saved scenario has that id."
+              : "No scenario is open in the editor. Pass scenarioId.",
+          );
         const fields = scenarioContentToEditorFields(scenario.content);
         const component = (type: PromptComponentType) =>
           fields.components.find((c) => c.type === type)?.content ?? "";
         return {
-          id: scenario.id,
+          id: scenario.id || null,
+          ...(inEditor ? { inEditor: true } : {}),
           name: scenario.name,
           description: scenario.description,
           mode:
@@ -253,6 +272,7 @@ export function createReadTools(
             4000,
           ),
           storyCards: fields.initialStoryCards.map((card) => ({
+            id: card.id,
             title: card.title,
             category: card.category,
             triggers: card.triggers,
@@ -263,8 +283,13 @@ export function createReadTools(
             name: stat.name,
             value: stat.value,
             range: stat.range,
+            ...(stat.description ? { description: stat.description } : {}),
           })),
-          inventory: fields.initialInventory.map((item) => item.name),
+          inventory: fields.initialInventory.map((item) => ({
+            id: item.id,
+            name: item.name,
+            ...(item.description ? { description: item.description } : {}),
+          })),
         };
       },
     }),

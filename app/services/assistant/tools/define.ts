@@ -4,11 +4,15 @@ import type { AgentTool } from "../agent-loop";
 export interface AssistantToolContext {
   getPathname: () => string;
   recordChanges?: (changes: AssistantChange[]) => void;
+  /** Loads a tale and shows it on the play screen. */
+  openTale?: (taleId: string) => Promise<void>;
 }
 
 export interface AssistantTool extends AgentTool {
   /** A short value shown beside the tool's name in the chat, such as a search query. */
   detail?(args: Record<string, unknown>): string | undefined;
+  /** Replaces the detail once the tool has run, such as the name of the tale it opened. */
+  outcome?(output: unknown): string | undefined;
 }
 
 export function objectSchema(
@@ -29,6 +33,7 @@ export function defineTool(input: {
   parameters: Record<string, unknown>;
   run: AgentTool["run"];
   detail?: AssistantTool["detail"];
+  outcome?: AssistantTool["outcome"];
 }): AssistantTool {
   return {
     definition: {
@@ -41,6 +46,7 @@ export function defineTool(input: {
     },
     run: input.run,
     ...(input.detail ? { detail: input.detail } : {}),
+    ...(input.outcome ? { outcome: input.outcome } : {}),
   };
 }
 

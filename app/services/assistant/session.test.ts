@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChatResponse, StreamChunk } from "@/services/llm/schema";
 import type { AssistantMessage, AssistantThread } from "@/types/assistant.type";
+import { GameMode } from "@/types/context.type";
 
 vi.mock("@lingui/core/macro", () => ({
   msg: (value: TemplateStringsArray | string) =>
@@ -69,6 +70,28 @@ vi.mock("./tale-edits", () => ({
   editTaleSetup: async () => [cardChange],
   revertChanges: async (changes: Array<Record<string, unknown>>) =>
     changes.map((change) => ({ ...change, undone: true })),
+}));
+
+const scenarioChange = {
+  kind: "scenario" as const,
+  target: "library" as const,
+  scenarioId: "s1",
+  before: null,
+  after: {
+    id: "s1",
+    name: "Lantern",
+    description: "",
+    initialGameMode: GameMode.STORY_TELLER,
+    content: [],
+  },
+};
+const revertScenarioChanges = vi.fn();
+vi.mock("./scenario-edits", () => ({
+  NEW_SCENARIO: "new",
+  openDraft: () => null,
+  editScenario: async () => scenarioChange,
+  scenarioFromTale: async () => scenarioChange,
+  revertScenarioChanges,
 }));
 
 const usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
@@ -281,6 +304,54 @@ describe("Hakawati chat session", () => {
     ]);
     expect(db.messages.at(-1)!.changes?.[0].undone).toBe(true);
     expect(store.getState().undoingId).toBeNull();
+  });
+
+  it("undoes a reply's tale and scenario changes together, in order", async () => {
+    const { session, store } = await load();
+    revertScenarioChanges.mockResolvedValueOnce({
+      changes: [{ ...scenarioChange, undone: true }],
+      kept: 2,
+    });
+    sendRoleChat
+      .mockResolvedValueOnce(
+        streamed([
+          {
+            tool_calls: [
+              {
+                index: 0,
+                id: "call_1",
+                type: "function",
+                function: {
+                  name: "edit_scenario",
+                  arguments: '{"scenario":"new","name":"Lantern"}',
+                },
+              },
+              {
+                index: 1,
+                id: "call_2",
+                type: "function",
+                function: {
+                  name: "edit_story_cards",
+                  arguments:
+                    '{"taleId":"t1","ops":[{"op":"add","title":"Mara"}]}',
+                },
+              },
+            ],
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(streamed([{ content: "Done." }]));
+
+    await session.sendAssistantMessage("Make both", home);
+    const reply = store.getState().messages.at(-1)!;
+    expect(reply.changes).toEqual([scenarioChange, cardChange]);
+
+    expect(await session.undoAssistantReply(reply.id)).toBe(2);
+    expect(revertScenarioChanges).toHaveBeenCalledWith([scenarioChange]);
+    expect(store.getState().messages.at(-1)!.changes).toEqual([
+      { ...scenarioChange, undone: true },
+      { ...cardChange, undone: true },
+    ]);
   });
 
   it("starts a new chat for the tale on the play screen", async () => {

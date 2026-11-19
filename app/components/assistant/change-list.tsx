@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   ChartBarIcon,
+  FileTextIcon,
   LibraryIcon,
   Loader2Icon,
   PencilLineIcon,
@@ -11,7 +12,7 @@ import {
   Trash2Icon,
   Undo2Icon,
 } from "lucide-react";
-import { useRouterState } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,17 @@ function useChangeLabel() {
   const { t } = useLingui();
   return (change: AssistantChange): { Icon: Icon; label: string } => {
     switch (change.kind) {
+      case "scenario": {
+        const name = change.after.name.trim();
+        return {
+          Icon: FileTextIcon,
+          label: !change.before
+            ? t`Created scenario “${name}”`
+            : name
+              ? t`Changed scenario “${name}”`
+              : t`Changed the open scenario`,
+        };
+      }
       case "field":
         if (change.field === "name")
           return { Icon: PencilLineIcon, label: t`Renamed the tale` };
@@ -121,11 +133,15 @@ function useChangeLabel() {
   };
 }
 
-type Target = { passage: string } | { tab: StoryPanelTab };
+type Target = { passage: string } | { tab: StoryPanelTab } | { route: string };
 
 function targetOf(change: AssistantChange): Target | null {
   if (change.undone) return null;
   switch (change.kind) {
+    case "scenario":
+      return change.target === "library"
+        ? { route: `/scenarios/${change.scenarioId}` }
+        : null;
     case "passage":
       return { passage: change.id };
     case "insert":
@@ -158,6 +174,7 @@ export function ChangeList({
   });
   const openTaleId = useTaleStore((state) => state.id);
   const { isMobilePlatform } = useIsMobile();
+  const navigate = useNavigate();
   const running = useAssistantStore((state) => Boolean(state.run));
   const undoingId = useAssistantStore((state) => state.undoingId);
   const undoing = Boolean(messageId) && undoingId === messageId;
@@ -176,6 +193,11 @@ export function ChangeList({
 
   const open = (target: Target) => {
     const panel = useStoryPanelStore.getState();
+    if ("route" in target) {
+      if (isMobilePlatform) panel.setOpen(false);
+      void navigate({ to: target.route });
+      return;
+    }
     if ("tab" in target) {
       panel.setTab(target.tab);
       return;
@@ -192,7 +214,9 @@ export function ChangeList({
       {changes.map((change, index) => {
         const { Icon, label } = describe(change);
         const target =
-          isPlay && change.taleId === openTaleId ? targetOf(change) : null;
+          change.kind === "scenario" || (isPlay && change.taleId === openTaleId)
+            ? targetOf(change)
+            : null;
         const chip = (
           <>
             <Icon className="shrink-0 text-primary" />

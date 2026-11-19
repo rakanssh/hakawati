@@ -10,6 +10,7 @@ import { StatsEditor } from "@/components/scenario/StatsEditor";
 import { InventoryEditor } from "@/components/scenario/InventoryEditor";
 import { StorybookEditor } from "@/components/storybook";
 import { PromptComponentsEditor } from "@/components/prompt-components/PromptComponentsEditor";
+import { useOpenScenarioDraft } from "@/hooks/useOpenScenarioDraft";
 import { useScenarioForm } from "@/hooks/useScenarioForm";
 import { SCENARIO_COMPONENT_TYPES } from "@/lib/prompt-components";
 import { ArrowLeftIcon } from "lucide-react";
@@ -70,6 +71,11 @@ export default function ScenarioEdit() {
     updateComponent,
     removeComponent,
   } = useScenarioForm(scenario, setScenario);
+  useOpenScenarioDraft(
+    scenario,
+    setScenario,
+    !loading && !loadError && scenario.id === id,
+  );
 
   useEffect(() => {
     let cancelled = false;

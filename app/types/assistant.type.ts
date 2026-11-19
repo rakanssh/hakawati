@@ -1,12 +1,12 @@
-import type { PromptComponentType, StoryCard } from "./context.type";
+import type { PromptComponentType, Scenario, StoryCard } from "./context.type";
 import type { Item } from "./item.type";
 import type { LogEntry } from "./log.type";
 import type { Stat } from "./stats.type";
 
 export type TaleField = "name" | "description" | "gameMode";
 
-/** One edit Hakawati made, with enough of the before and after to undo it later. */
-export type AssistantChange = { taleId: string; undone?: boolean } & (
+/** One edit Hakawati made to a tale, with enough of the before and after to undo it later. */
+export type TaleChange = { taleId: string; undone?: boolean } & (
   | { kind: "field"; field: TaleField; before: string; after: string }
   | {
       kind: "component";
@@ -31,6 +31,21 @@ export type AssistantChange = { taleId: string; undone?: boolean } & (
       entries: LogEntry[];
     }
 );
+
+export type ScenarioRecord = Omit<Scenario, "thumbnail">;
+
+/** Hakawati's edits to one scenario in one step: in the library, or in the form open in the scenario editor. */
+export type ScenarioChange = {
+  kind: "scenario";
+  undone?: boolean;
+  target: "library" | "draft";
+  /** Empty for a new scenario that has not been saved yet. */
+  scenarioId: string;
+  before: ScenarioRecord | null;
+  after: ScenarioRecord;
+};
+
+export type AssistantChange = TaleChange | ScenarioChange;
 
 export interface AssistantThread {
   id: string;

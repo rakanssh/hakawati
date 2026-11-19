@@ -19,6 +19,8 @@ import type {
   AssistantMessageStatus,
   AssistantModelMessage,
   AssistantThread,
+  ScenarioChange,
+  TaleChange,
 } from "@/types/assistant.type";
 import { runAgentLoop, type AgentEvent } from "./agent-loop";
 import { clip, openTaleId, workspaceContext } from "./context";
@@ -31,7 +33,9 @@ import {
 import type { AssistantTool, AssistantToolContext } from "./tools/define";
 import { createReadTools } from "./tools/read";
 import { createTaleTools } from "./tools/tale";
+import { revertScenarioChanges } from "./scenario-edits";
 import { revertChanges } from "./tale-edits";
+import { createScenarioTools } from "./tools/scenario";
 
 const store = useAssistantStore;
 let controller: AbortController | null = null;
@@ -176,7 +180,10 @@ function touchThread(threadId: string, updatedAt: number) {
 
 export async function sendAssistantMessage(
   text: string,
-  options: { getPathname: () => string },
+  options: {
+    getPathname: () => string;
+    openTale?: (taleId: string) => Promise<void>;
+  },
 ) {
   const content = text.trim();
   if (!content || store.getState().run) return;
@@ -221,12 +228,17 @@ export async function sendAssistantMessage(
     });
   const context: AssistantToolContext = {
     getPathname: options.getPathname,
+    openTale: options.openTale,
     recordChanges: (changes) => {
       run.changes.push(...changes);
       publish();
     },
   };
-  const tools = [...createReadTools(context), ...createTaleTools(context)];
+  const tools = [
+    ...createReadTools(context),
+    ...createTaleTools(context),
+    ...createScenarioTools(context),
+  ];
   const byName = new Map(tools.map((t) => [t.definition.function.name, t]));
   let afterTools = false;
   const onEvent = (event: AgentEvent) => {
@@ -254,6 +266,10 @@ export async function sendAssistantMessage(
       run.toolRunning = false;
       const last = run.activity.at(-1);
       if (last && event.error) last.error = event.error;
+      const outcome = event.error
+        ? undefined
+        : byName.get(event.call.function.name)?.outcome?.(event.output);
+      if (last && outcome) last.detail = outcome;
     }
     publish();
   };
@@ -329,14 +345,29 @@ export async function undoAssistantReply(messageId: string): Promise<number> {
   if (!message?.changes?.length || state.run || state.undoingId) return 0;
   store.setState({ undoingId: messageId, error: null });
   try {
-    const changes = await revertChanges(message.changes);
+    const all = message.changes;
+    const taleChanges = all.filter(
+      (change): change is TaleChange => change.kind !== "scenario",
+    );
+    const scenarioChanges = all.filter(
+      (change): change is ScenarioChange => change.kind === "scenario",
+    );
+    const scenarios = scenarioChanges.length
+      ? await revertScenarioChanges(scenarioChanges)
+      : { changes: [], kept: 0 };
+    const tales = taleChanges.length ? await revertChanges(taleChanges) : [];
+    const queues = { tale: [...tales], scenario: [...scenarios.changes] };
+    const changes = all.map(
+      (change) =>
+        (change.kind === "scenario" ? queues.scenario : queues.tale).shift()!,
+    );
     await updateAssistantMessageChanges(messageId, changes);
     store.setState((current) => ({
       messages: current.messages.map((m) =>
         m.id === messageId ? { ...m, changes } : m,
       ),
     }));
-    return changes.filter((change) => !change.undone).length;
+    return tales.filter((change) => !change.undone).length + scenarios.kept;
   } catch (error) {
     store.setState({ error: errorText(error) });
     return 0;

@@ -14,7 +14,7 @@ import {
   type Item,
   type StoryCard,
 } from "@/types";
-import type { AssistantChange, TaleField } from "@/types/assistant.type";
+import type { TaleChange, TaleField } from "@/types/assistant.type";
 import type { Stat } from "@/types/stats.type";
 
 export type TaleSnapshot = TaleMutableSnapshot;
@@ -46,14 +46,14 @@ export class TaleEditError extends Error {}
 
 /** Collects one tool call's edits to a tale, recording a change for each. */
 export class TaleChanges {
-  readonly changes: AssistantChange[] = [];
+  readonly changes: TaleChange[] = [];
 
   constructor(
     readonly taleId: string,
     public tale: TaleSnapshot,
   ) {}
 
-  private record(change: AssistantChange) {
+  private record(change: TaleChange) {
     this.changes.push(change);
   }
 
@@ -265,7 +265,7 @@ export class TaleChanges {
 
 const STATE_KINDS = new Set(["field", "component", "card", "stat", "item"]);
 
-export const isStateChange = (change: AssistantChange) =>
+export const isStateChange = (change: TaleChange) =>
   STATE_KINDS.has(change.kind);
 
 /**
@@ -274,7 +274,7 @@ export const isStateChange = (change: AssistantChange) =>
  */
 export function revertStateChange(
   tale: TaleSnapshot,
-  change: AssistantChange,
+  change: TaleChange,
 ): TaleSnapshot | null {
   switch (change.kind) {
     case "field":
