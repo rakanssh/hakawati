@@ -85,9 +85,58 @@ function toStreamChunk(json: unknown): StreamChunk | null {
   return null;
 }
 
+export class ReasoningReplayCollector {
+  private content = "";
+  private readonly details: Record<string, unknown>[] = [];
+
+  add(source: unknown): void {
+    if (!source || typeof source !== "object") return;
+    const { reasoning_content, reasoning_details } = source as Record<
+      string,
+      unknown
+    >;
+    if (typeof reasoning_content === "string")
+      this.content += reasoning_content;
+    if (!Array.isArray(reasoning_details)) return;
+    for (const value of reasoning_details) {
+      if (!value || typeof value !== "object") continue;
+      const detail = value as Record<string, unknown>;
+      const index =
+        typeof detail.index === "number" ? detail.index : this.details.length;
+      const existing = this.details[index];
+      if (!existing) {
+        this.details[index] = { ...detail };
+        continue;
+      }
+      for (const [key, part] of Object.entries(detail)) {
+        if (part === undefined || part === null) continue;
+        const previous = existing[key];
+        existing[key] =
+          (key === "text" || key === "summary") &&
+          typeof previous === "string" &&
+          typeof part === "string"
+            ? previous + part
+            : part;
+      }
+    }
+  }
+
+  fields(): Record<string, unknown> | undefined {
+    const details = this.details.filter(Boolean);
+    if (!this.content && !details.length) return undefined;
+    return {
+      ...(this.content ? { reasoning_content: this.content } : {}),
+      ...(details.length ? { reasoning_details: details } : {}),
+    };
+  }
+}
+
 function parseDataLine(
   line: string,
-): { chunk: StreamChunk | null; finishReason?: string } | "done" | null {
+):
+  | { chunk: StreamChunk | null; delta?: unknown; finishReason?: string }
+  | "done"
+  | null {
   if (!line.startsWith("data:")) return null;
   const payload = line.slice(5).trim();
   if (payload === "[DONE]") return "done";
@@ -112,6 +161,8 @@ function parseDataLine(
   const finishReason = response.choices?.[0]?.finish_reason;
   return {
     chunk: toStreamChunk(json),
+    delta: (json as { choices?: Array<{ delta?: unknown }> })?.choices?.[0]
+      ?.delta,
     ...(typeof finishReason === "string" ? { finishReason } : {}),
   };
 }
@@ -119,12 +170,13 @@ function parseDataLine(
 function assertFinishedNormally(
   finishReason: string,
   outputLimitAdjustable: boolean,
+  fixedLimitLabel: string,
 ): void {
   if (finishReason === "length") {
     throw new Error(
       outputLimitAdjustable
         ? "The response reached its output token limit before finishing. Thinking and the answer share this limit. Increase Max Output Tokens or choose a lower thinking level and try again."
-        : "The response reached its output token limit before finishing. Choose a lower Utility thinking level or use a shorter request and try again.",
+        : `The response reached its output token limit before finishing. Choose a lower ${fixedLimitLabel} thinking level or use a shorter request and try again.`,
     );
   }
   if (finishReason === "content_filter") {
@@ -165,10 +217,20 @@ async function readWithin(
 
 export async function* parseOpenAIStream(
   body: ReadableStream<Uint8Array>,
-  options: { outputLimitAdjustable?: boolean; signal?: AbortSignal } = {},
+  options: {
+    outputLimitAdjustable?: boolean;
+    fixedLimitLabel?: string;
+    signal?: AbortSignal;
+    onReplayFields?: (fields: Record<string, unknown>) => void;
+  } = {},
 ): AsyncGenerator<StreamChunk> {
   const { signal } = options;
   const outputLimitAdjustable = options.outputLimitAdjustable !== false;
+  const replay = new ReasoningReplayCollector();
+  const complete = () => {
+    const fields = replay.fields();
+    if (fields) options.onReplayFields?.(fields);
+  };
   const reader = body.getReader();
   const decoder = new TextDecoder("utf-8");
   // A stalled body never settles a pending read, so Stop ends the read itself.
@@ -195,15 +257,23 @@ export async function* parseOpenAIStream(
 
       for (const line of lines) {
         const event = parseDataLine(line);
-        if (event === "done") return;
+        if (event === "done") {
+          complete();
+          return;
+        }
         if (!event) continue;
+        replay.add(event.delta);
         if (event.chunk) {
           started = true;
           yield event.chunk;
         }
         if (event.finishReason) {
           finished = true;
-          assertFinishedNormally(event.finishReason, outputLimitAdjustable);
+          assertFinishedNormally(
+            event.finishReason,
+            outputLimitAdjustable,
+            options.fixedLimitLabel ?? "Utility",
+          );
         }
       }
       if (done) break;
@@ -213,6 +283,7 @@ export async function* parseOpenAIStream(
         "The connection ended before the response finished. Retry the request.",
       );
     }
+    complete();
   } catch (error) {
     assertNotAborted(signal);
     throw error;

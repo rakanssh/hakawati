@@ -43,7 +43,6 @@ import { loadOlderLogEntries } from "@/services/tale-log";
 import { useTtsPlayback } from "@/hooks/useTtsPlayback";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ThemeScene } from "@/themes/scenes/theme-scene";
-import { StoryPanel } from "@/components/play/story-panel/story-panel";
 
 export default function Play() {
   const { t } = useLingui();
@@ -415,7 +414,6 @@ export default function Play() {
           >
             {renderMainContent()}
           </SidebarInset>
-          <StoryPanel />
         </SidebarProvider>
       ) : (
         <div className="flex h-full overflow-hidden">
@@ -432,7 +430,6 @@ export default function Play() {
           >
             {renderMainContent()}
           </div>
-          <StoryPanel />
         </div>
       )}
     </>

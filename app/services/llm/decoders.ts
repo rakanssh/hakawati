@@ -1,6 +1,7 @@
 import { StreamChunk } from "./schema";
 import { GameMode, LLMAction } from "@/types";
-import { convertToolCallsToActions, ToolCall } from "./tools";
+import { convertToolCallsToActions } from "./tools";
+import { ToolCallAccumulator } from "./tool-call-accumulator";
 
 export interface DecodedResponse {
   story?: string;
@@ -84,10 +85,7 @@ export class ToolCallingDecoder implements OutputDecoder {
   async *decode(
     iterator: AsyncIterable<StreamChunk>,
   ): AsyncGenerator<Partial<DecodedResponse>> {
-    const toolCallsAccumulator: Map<
-      number,
-      { id?: string; name?: string; arguments: string }
-    > = new Map();
+    const accumulator = new ToolCallAccumulator();
 
     for await (const chunk of iterator) {
       if (chunk.content) {
@@ -96,58 +94,19 @@ export class ToolCallingDecoder implements OutputDecoder {
       if (chunk.thinking) {
         yield { thinking: chunk.thinking };
       }
-
-      if (chunk.tool_calls) {
-        for (const toolCallDelta of chunk.tool_calls) {
-          const index = toolCallDelta.index;
-          let accumulated = toolCallsAccumulator.get(index);
-
-          if (!accumulated) {
-            accumulated = { arguments: "" };
-            toolCallsAccumulator.set(index, accumulated);
-          }
-
-          if (toolCallDelta.id) {
-            accumulated.id = toolCallDelta.id;
-          }
-
-          if (toolCallDelta.function?.name) {
-            accumulated.name = toolCallDelta.function.name;
-            console.debug(
-              `Tool call ${index}: name=${toolCallDelta.function.name}`,
-            );
-          }
-
-          if (toolCallDelta.function?.arguments) {
-            accumulated.arguments += toolCallDelta.function.arguments;
-            console.debug(
-              `Tool call ${index}: args chunk="${toolCallDelta.function.arguments}" (total: ${accumulated.arguments.length} chars)`,
-            );
-          }
-        }
-      }
+      accumulator.add(chunk.tool_calls);
     }
 
-    if (toolCallsAccumulator.size > 0) {
-      const toolCalls: ToolCall[] = [];
-
-      for (const [index, data] of toolCallsAccumulator.entries()) {
-        if (data.id && data.name) {
-          if (!data.arguments || data.arguments.trim().length === 0) {
-            console.warn(
-              `Tool call ${data.name} has empty arguments after accumulation`,
-            );
-          }
-          toolCalls.push({
-            id: data.id,
-            type: "function",
-            function: {
-              name: data.name,
-              arguments: data.arguments,
-            },
-          });
-        } else {
-          console.warn(`Incomplete tool call at index ${index}:`, data);
+    if (accumulator.size > 0) {
+      const { calls: toolCalls, incomplete } = accumulator.result();
+      for (const call of incomplete) {
+        console.warn("Incomplete tool call:", call);
+      }
+      for (const call of toolCalls) {
+        if (!call.function.arguments.trim()) {
+          console.warn(
+            `Tool call ${call.function.name} has empty arguments after accumulation`,
+          );
         }
       }
 

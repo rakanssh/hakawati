@@ -414,7 +414,7 @@ describe("connections", () => {
       useSettingsStore.getState().modelRoles.narrator,
     );
 
-    settings.setUtilitySameAsNarrator(false);
+    settings.setRoleSameAsNarrator("utility", false);
     settings.setRoleModel("utility", otherModel);
     const state = useSettingsStore.getState();
     expect(state.modelRoles.utility).toMatchObject({
@@ -470,7 +470,7 @@ describe("connections", () => {
     });
     settings.setRoleConnection("narrator", chatGpt);
     settings.setRoleModel("narrator", legacyModel);
-    settings.setUtilitySameAsNarrator(false);
+    settings.setRoleSameAsNarrator("utility", false);
     settings.setRoleModel("utility", legacyModel);
     settings.setRoleConnection("utility", other);
     settings.setRoleModel("utility", otherModel);
@@ -542,7 +542,7 @@ describe("thinking-level settings", () => {
     const openRouter = connect();
     settings.setRoleModel("narrator", thinkingModel);
     settings.setRoleReasoningEffort("narrator", "high");
-    settings.setUtilitySameAsNarrator(false);
+    settings.setRoleSameAsNarrator("utility", false);
     settings.setRoleReasoningEffort("utility", "low");
 
     const openAi = connect(ApiPreset.OPENAI);

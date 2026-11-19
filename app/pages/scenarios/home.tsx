@@ -77,6 +77,7 @@ import {
   type ScenarioTab,
 } from "@/lib/catalog-browse";
 import { imageBadgeClass, imageMenuButtonClass } from "@/lib/card-badges";
+import { PhoneHakawatiButton } from "@/components/assistant/hakawati-button";
 
 type PendingScenarioDelete = {
   id: string;
@@ -437,6 +438,7 @@ export default function ScenariosHome() {
               </h1>
             }
           />
+          <PhoneHakawatiButton className="ms-auto" />
         </div>
         {activeTab === "local" || catalog.signedIn ? (
           <div className="flex flex-wrap items-center gap-2">

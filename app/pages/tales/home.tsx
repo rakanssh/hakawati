@@ -40,6 +40,7 @@ import type { LibraryTaleItem } from "@/lib/tale-library";
 import type { TaleConflictChoice } from "@/hooks/useTaleLibrary";
 import { imageBadgeClass, imageMenuButtonClass } from "@/lib/card-badges";
 import { getTaleSyncBadge } from "@/lib/sync-ui";
+import { PhoneHakawatiButton } from "@/components/assistant/hakawati-button";
 
 type PendingTaleDelete = {
   item: LibraryTaleItem;
@@ -202,6 +203,7 @@ export default function TalesHome() {
               <Trans>Tales</Trans>
             </h1>
           </nav>
+          <PhoneHakawatiButton className="ms-auto" />
         </div>
         <div className="relative w-full sm:w-80">
           <SearchIcon

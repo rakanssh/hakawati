@@ -7,6 +7,7 @@ import {
   type PointerEvent,
 } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useRouterState } from "@tanstack/react-router";
 import {
   BookOpenIcon,
   BotIcon,
@@ -16,7 +17,9 @@ import {
   PanelRightCloseIcon,
   UserRoundIcon,
 } from "lucide-react";
+import { HakawatiChat } from "@/components/assistant/hakawati-chat";
 import { Button } from "@/components/ui/button";
+import { FezIcon } from "@/components/ui/fez-icon";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -47,16 +50,81 @@ type TabDefinition = {
   icon: ComponentType<{ className?: string }>;
   label: React.ReactNode;
   render: () => React.ReactNode;
+  scrolls?: boolean;
 };
 
-function StoryPanelContent({ onClose }: { onClose: () => void }) {
+function useIsPlayRoute() {
+  return useRouterState({
+    select: (state) => Boolean(state.location.pathname?.startsWith("/play")),
+  });
+}
+
+function PanelHeader({
+  title,
+  onClose,
+}: {
+  title: React.ReactNode;
+  onClose: () => void;
+}) {
   const { t } = useLingui();
+  return (
+    <div className="flex shrink-0 items-center gap-2 px-4 pt-3 pb-2">
+      <h2
+        data-sidebar-heading=""
+        dir="auto"
+        className="min-w-0 flex-1 truncate text-sm font-semibold text-sidebar-foreground"
+      >
+        {title}
+      </h2>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8 shrink-0 text-sidebar-foreground/70 hover:text-sidebar-foreground"
+            onClick={onClose}
+            aria-label={t`Close panel`}
+          >
+            <PanelRightCloseIcon className="size-4 rtl:-scale-x-100" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          <Trans>Close panel</Trans>
+        </TooltipContent>
+      </Tooltip>
+    </div>
+  );
+}
+
+function StoryPanelContent({
+  isPlay,
+  onClose,
+}: {
+  isPlay: boolean;
+  onClose: () => void;
+}) {
   const tab = useStoryPanelStore((state) => state.tab);
   const setTab = useStoryPanelStore((state) => state.setTab);
   const taleName = useTaleStore((state) => state.name);
   const gameMode = useTaleStore((state) => state.gameMode);
 
+  if (!isPlay) {
+    return (
+      <div className="flex h-full min-h-0 flex-col">
+        <PanelHeader title={<Trans>Hakawati</Trans>} onClose={onClose} />
+        <HakawatiChat />
+      </div>
+    );
+  }
+
   const tabs: TabDefinition[] = [
+    {
+      id: "hakawati",
+      icon: FezIcon,
+      label: <Trans>Hakawati</Trans>,
+      render: () => <HakawatiChat />,
+      scrolls: false,
+    },
     {
       id: "story",
       icon: BookOpenIcon,
@@ -101,32 +169,10 @@ function StoryPanelContent({ onClose }: { onClose: () => void }) {
       onValueChange={(value) => setTab(value as StoryPanelTab)}
       className="flex h-full min-h-0 flex-col gap-0"
     >
-      <div className="flex shrink-0 items-center gap-2 px-4 pt-3 pb-2">
-        <h2
-          data-sidebar-heading=""
-          dir="auto"
-          className="min-w-0 flex-1 truncate text-sm font-semibold text-sidebar-foreground"
-          title={taleName}
-        >
-          {taleName.trim() || <Trans>Story</Trans>}
-        </h2>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8 shrink-0 text-sidebar-foreground/70 hover:text-sidebar-foreground"
-              onClick={onClose}
-              aria-label={t`Close story panel`}
-            >
-              <PanelRightCloseIcon className="size-4 rtl:-scale-x-100" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <Trans>Close story panel</Trans>
-          </TooltipContent>
-        </Tooltip>
-      </div>
+      <PanelHeader
+        title={taleName.trim() || <Trans>Story</Trans>}
+        onClose={onClose}
+      />
       <TabsList
         data-story-panel-tabs=""
         className="h-auto w-full shrink-0 justify-stretch gap-0 rounded-none border-b border-sidebar-border bg-transparent p-0 px-2"
@@ -146,13 +192,21 @@ function StoryPanelContent({ onClose }: { onClose: () => void }) {
           </TabsTrigger>
         ))}
       </TabsList>
-      <ScrollArea className="min-h-0 flex-1">
-        {tabs.map(({ id, render }) => (
-          <TabsContent key={id} value={id} className="px-4 pt-4 pb-6">
-            {render()}
-          </TabsContent>
-        ))}
-      </ScrollArea>
+      {tabs.map(({ id, render, scrolls }) => (
+        <TabsContent
+          key={id}
+          value={id}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          {scrolls === false ? (
+            render()
+          ) : (
+            <ScrollArea className="min-h-0 flex-1">
+              <div className="px-4 pt-4 pb-6">{render()}</div>
+            </ScrollArea>
+          )}
+        </TabsContent>
+      ))}
     </Tabs>
   );
 }
@@ -173,12 +227,14 @@ const fitWidth = (width: number) =>
   );
 
 /**
- * The story panel on the right of the play screen: story setup, story cards, the character in Game
- * Master tales, the narrator model and the look of the tale. On desktop it is a side pane that shares
- * the screen with the story and can be resized from its edge; on phones it slides over the story.
+ * The panel on the right of every screen. It holds Hakawati, and on the play screen also the story
+ * setup, story cards, the character in Game Master tales, the narrator model and the look of the tale.
+ * On desktop it is a side pane that can be resized from its edge; on phones it slides over the page.
  */
 export function StoryPanel() {
   const { t } = useLingui();
+  const isPlay = useIsPlayRoute();
+  const label = isPlay ? t`Story panel` : t`Hakawati`;
   const open = useStoryPanelStore((state) => state.open);
   const setOpen = useStoryPanelStore((state) => state.setOpen);
   const savedWidth = useStoryPanelStore((state) => state.width);
@@ -209,8 +265,8 @@ export function StoryPanel() {
             paddingBottom: "env(safe-area-inset-bottom)",
           }}
         >
-          <SheetTitle className="sr-only">{t`Story panel`}</SheetTitle>
-          <StoryPanelContent onClose={close} />
+          <SheetTitle className="sr-only">{label}</SheetTitle>
+          <StoryPanelContent isPlay={isPlay} onClose={close} />
         </SheetContent>
       </Sheet>
     );
@@ -266,10 +322,14 @@ export function StoryPanel() {
 
   return (
     <>
-      <StoryPanelHandle open={open} onToggle={() => setOpen(!open)} />
+      <StoryPanelHandle
+        open={open}
+        isPlay={isPlay}
+        onToggle={() => setOpen(!open)}
+      />
       <aside
         id={STORY_PANEL_ID}
-        aria-label={t`Story panel`}
+        aria-label={label}
         inert={!open}
         className={cn(
           "relative z-45 h-full shrink-0 overflow-hidden",
@@ -283,13 +343,13 @@ export function StoryPanel() {
           className="flex h-full flex-col border-s border-sidebar-border/70 bg-sidebar text-sidebar-foreground"
           style={{ width }}
         >
-          <StoryPanelContent onClose={close} />
+          <StoryPanelContent isPlay={isPlay} onClose={close} />
         </div>
         {/* Drag the panel's edge, or focus it and use the arrow keys, to resize. Double-click resets. */}
         <div
           role="separator"
           aria-orientation="vertical"
-          aria-label={t`Resize story panel`}
+          aria-label={t`Resize panel`}
           aria-valuemin={STORY_PANEL_WIDTH.min}
           aria-valuemax={STORY_PANEL_WIDTH.max}
           aria-valuenow={width}
@@ -312,9 +372,11 @@ export function StoryPanel() {
  */
 function StoryPanelHandle({
   open,
+  isPlay,
   onToggle,
 }: {
   open: boolean;
+  isPlay: boolean;
   onToggle: () => void;
 }) {
   const { t } = useLingui();
@@ -329,27 +391,31 @@ function StoryPanelHandle({
             onClick={onToggle}
             aria-expanded={open}
             aria-controls={STORY_PANEL_ID}
-            aria-label={open ? t`Close story panel` : t`Open story panel`}
+            aria-label={open ? t`Close panel` : t`Open panel`}
             className="absolute end-0 top-[38%] flex w-6 -translate-y-1/2 flex-col items-center gap-2 rounded-s-xs border border-e-0 border-sidebar-border bg-sidebar/95 py-3 text-sidebar-foreground/70 shadow-sm backdrop-blur-sm transition-colors hover:bg-sidebar hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {open ? (
               <ChevronRightIcon className="size-4 rtl:-scale-x-100" />
-            ) : (
+            ) : isPlay ? (
               <BookOpenIcon className="size-4" />
+            ) : (
+              <FezIcon className="size-4" />
             )}
             <span
               data-sidebar-heading=""
               className="text-[0.7rem] font-medium tracking-wide [writing-mode:vertical-rl]"
             >
-              <Trans>Story</Trans>
+              {isPlay ? <Trans>Story</Trans> : <Trans>Hakawati</Trans>}
             </span>
           </button>
         </TooltipTrigger>
         <TooltipContent side="left">
           {open ? (
-            <Trans>Close story panel</Trans>
+            <Trans>Close panel</Trans>
+          ) : isPlay ? (
+            <Trans>Hakawati, story and cards</Trans>
           ) : (
-            <Trans>Story, cards and display</Trans>
+            <Trans>Hakawati</Trans>
           )}
         </TooltipContent>
       </Tooltip>

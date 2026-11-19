@@ -28,6 +28,7 @@ import {
   ScenarioQuestionErrors,
   ScenarioQuestionsHelp,
 } from "@/components/scenario/ScenarioQuestionsHelp";
+import { PhoneHakawatiButton } from "@/components/assistant/hakawati-button";
 
 export default function ScenarioCreate() {
   const navigate = useNavigate();
@@ -84,6 +85,7 @@ export default function ScenarioCreate() {
             parent={<Trans>Scenarios</Trans>}
             current={<Trans>Create</Trans>}
           />
+          <PhoneHakawatiButton />
         </div>
         <div className="flex flex-wrap items-center justify-end gap-3">
           {canPublishOnCreate ? (

@@ -44,7 +44,7 @@ function assertRoleConfig(role: ModelRole): ModelRoleSettings {
     if (role === "speechToText" || role === "textToSpeech") {
       throw new ModelRoleConfigurationError(
         role,
-        "ChatGPT plan usage supports narrator and utility models. Choose another provider for speech.",
+        "ChatGPT plan usage does not support speech. Choose another provider for speech.",
       );
     }
     return config;

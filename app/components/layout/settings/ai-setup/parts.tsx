@@ -8,6 +8,7 @@ import {
   Volume2Icon,
   WandSparklesIcon,
 } from "lucide-react";
+import { FezIcon } from "@/components/ui/fez-icon";
 import { apiPresetMap } from "@/data/api-presets";
 import { cn } from "@/lib/utils";
 import { useSettingsStore } from "@/store/useSettingsStore";
@@ -19,6 +20,8 @@ export function RoleName({ role }: { role: ModelRole }) {
       return <Trans>Narrator</Trans>;
     case "utility":
       return <Trans>Helper</Trans>;
+    case "hakawati":
+      return <Trans>Hakawati</Trans>;
     case "speechToText":
       return <Trans>Speech to Text</Trans>;
     case "textToSpeech":
@@ -29,6 +32,7 @@ export function RoleName({ role }: { role: ModelRole }) {
 const ROLE_ICONS = {
   narrator: BookOpenIcon,
   utility: WandSparklesIcon,
+  hakawati: FezIcon,
   speechToText: MicIcon,
   textToSpeech: Volume2Icon,
 } as const;

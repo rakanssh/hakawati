@@ -5,7 +5,7 @@ import { PlusIcon } from "lucide-react";
 import { apiPresetMap } from "@/data/api-presets";
 import { cn } from "@/lib/utils";
 import { useChatGpt } from "@/hooks/useChatGpt";
-import { findConnection } from "@/store/model-connections";
+import { canFollowNarrator, findConnection } from "@/store/model-connections";
 import {
   isModelRoleConfigured,
   useSettingsStore,
@@ -37,6 +37,8 @@ function RoleDescription({ role }: { role: ModelRole }) {
       return <Trans>Writes the story</Trans>;
     case "utility":
       return <Trans>Scenarios, story cards, summaries</Trans>;
+    case "hakawati":
+      return <Trans>Edits tales and scenarios</Trans>;
     default:
       return null;
   }
@@ -58,7 +60,7 @@ function Overview() {
   const open = (page: AiSetupPage) => navigation.push(pageKey(page));
 
   function roleSummary(role: ModelRole) {
-    if (role === "utility" && assignments.utility.sameAsNarrator) {
+    if (canFollowNarrator(role) && assignments[role].sameAsNarrator) {
       return t`Same as Narrator`;
     }
     const config = modelRoles[role];
@@ -113,8 +115,8 @@ function Overview() {
               const summary = roleSummary(role);
               const off =
                 modelRoles[role].connectionId === null &&
-                !(role === "utility" && assignments.utility.sameAsNarrator);
-              const described = role === "narrator" || role === "utility";
+                !(canFollowNarrator(role) && assignments[role].sameAsNarrator);
+              const described = !isSpeechRole(role);
               const summaryClass =
                 off && !isSpeechRole(role) ? "text-destructive" : undefined;
               return (

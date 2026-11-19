@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export const STORY_PANEL_TABS = [
+  "hakawati",
   "story",
   "cards",
   "character",

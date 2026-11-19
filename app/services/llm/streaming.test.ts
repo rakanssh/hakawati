@@ -355,3 +355,47 @@ describe("decoders", () => {
     ]);
   });
 });
+
+describe("parseOpenAIStream reasoning replay", () => {
+  it("joins reasoning details by index and reports them at the end", async () => {
+    const onReplayFields = vi.fn();
+    const stream = makeSseStream([
+      'data: {"choices":[{"delta":{"reasoning_details":[{"type":"reasoning.summary","index":0,"summary":"Plan "},{"type":"reasoning.encrypted","index":1,"data":"abc"}]}}]}',
+      'data: {"choices":[{"delta":{"reasoning_details":[{"type":"reasoning.summary","index":0,"summary":"ahead."}]}}]}',
+      'data: {"choices":[{"delta":{"content":"Hi"},"finish_reason":"stop"}]}',
+    ]);
+    const chunks = await collect(parseOpenAIStream(stream, { onReplayFields }));
+    expect(chunks).toEqual([{ content: "Hi" }]);
+    expect(onReplayFields).toHaveBeenCalledWith({
+      reasoning_details: [
+        { type: "reasoning.summary", index: 0, summary: "Plan ahead." },
+        { type: "reasoning.encrypted", index: 1, data: "abc" },
+      ],
+    });
+  });
+
+  it("reports nothing when the reply had no reasoning or failed", async () => {
+    const onReplayFields = vi.fn();
+    await collect(
+      parseOpenAIStream(
+        makeSseStream([
+          'data: {"choices":[{"delta":{"content":"Hi"}}]}',
+          "data: [DONE]",
+        ]),
+        { onReplayFields },
+      ),
+    );
+    await expect(
+      collect(
+        parseOpenAIStream(
+          makeSseStream([
+            'data: {"choices":[{"delta":{"reasoning_content":"x"}}]}',
+            'data: {"choices":[{"delta":{},"finish_reason":"length"}]}',
+          ]),
+          { onReplayFields },
+        ),
+      ),
+    ).rejects.toThrow();
+    expect(onReplayFields).not.toHaveBeenCalled();
+  });
+});

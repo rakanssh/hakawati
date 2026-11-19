@@ -114,6 +114,7 @@ const migrationFiles = [
   "005_add_sync_metadata.sql",
   "006_add_scenario_content_catalog_metadata.sql",
   "007_unify_scenario_draft_cover.sql",
+  "008_create_assistant_chats.sql",
 ];
 
 function applyMigration(db: TestDatabase, index: number) {
@@ -2199,4 +2200,109 @@ describe("stored tale cover upload", () => {
       expect(coverUploadHttp.fetch).not.toHaveBeenCalled();
     },
   );
+});
+
+describe("Hakawati storage", () => {
+  beforeEach(() => {
+    dbState.current = createAdapter();
+    applyMigrations(dbState.current);
+  });
+
+  afterEach(() => {
+    dbState.current?.close();
+    dbState.current = null;
+  });
+
+  async function taleWithStory() {
+    const { appendTurn } = await import("./tale.repository");
+    const taleId = await createEmptyTale();
+    const turns = [
+      [
+        playerEntry("p1", "We meet Mara at the docks"),
+        gmEntry("g1", "Mara smiles"),
+      ],
+      [gmEntry("g2", "The docks burn")],
+      [playerEntry("p2", "Ask MARA about the docks")],
+    ];
+    for (const [index, entries] of turns.entries()) {
+      await appendTurn(
+        taleId,
+        { entries, createdAt: index + 1 },
+        emptyState(),
+        createTaleSessionState(),
+      );
+    }
+    return taleId;
+  }
+
+  it("finds passages containing every word, newest first", async () => {
+    const { searchLogEntries } = await import("./tale.repository");
+    const taleId = await taleWithStory();
+    const found = await searchLogEntries(taleId, "mara  Docks", 10);
+    expect(found.map(({ index, entry }) => [index, entry.id])).toEqual([
+      [3, "p2"],
+      [0, "p1"],
+    ]);
+    expect(await searchLogEntries(taleId, "docks", 1)).toHaveLength(1);
+    expect(await searchLogEntries(taleId, "   ", 10)).toEqual([]);
+  });
+
+  it("finds a passage's place in the story", async () => {
+    const { findLogEntryIndex } = await import("./tale.repository");
+    const taleId = await taleWithStory();
+    expect(await findLogEntryIndex(taleId, "g2")).toBe(2);
+    expect(await findLogEntryIndex(taleId, "missing")).toBeNull();
+  });
+
+  it("keeps chats in order and removes a tale's chats with the tale", async () => {
+    const { deleteTale } = await import("./tale.repository");
+    const chats = await import("./assistant.repository");
+    const taleId = await createEmptyTale();
+    await chats.createAssistantThread({
+      id: "tale-chat",
+      taleId,
+      title: "About Mara",
+      createdAt: 1,
+      updatedAt: 1,
+    });
+    await chats.createAssistantThread({
+      id: "general",
+      taleId: null,
+      title: "Ideas",
+      createdAt: 2,
+      updatedAt: 2,
+    });
+    const first = await chats.appendAssistantMessage({
+      id: "m1",
+      threadId: "tale-chat",
+      role: "user",
+      content: "Who is Mara?",
+      createdAt: 10,
+    });
+    const second = await chats.appendAssistantMessage({
+      id: "m2",
+      threadId: "tale-chat",
+      role: "assistant",
+      content: "A smuggler.",
+      thinking: "Check the card.",
+      turn: [{ role: "assistant", content: "A smuggler." }],
+      activity: [{ tool: "search_log", detail: "Mara" }],
+      createdAt: 11,
+    });
+    expect([first.seq, second.seq]).toEqual([1, 2]);
+    expect(await chats.listAssistantMessages("tale-chat")).toEqual([
+      { ...first },
+      { ...second },
+    ]);
+    expect((await chats.getLatestAssistantThread())?.id).toBe("tale-chat");
+    expect((await chats.getLatestAssistantThread(taleId))?.id).toBe(
+      "tale-chat",
+    );
+
+    await deleteTale(taleId);
+    expect((await chats.listAssistantThreads()).map((t) => t.id)).toEqual([
+      "general",
+    ]);
+    expect(await chats.listAssistantMessages("tale-chat")).toEqual([]);
+  });
 });

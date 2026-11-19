@@ -9,7 +9,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-pub const TARGET_SCHEMA_VERSION: i64 = 7;
+pub const TARGET_SCHEMA_VERSION: i64 = 8;
 const BACKUP_DIRECTORY: &str = "migration-backups";
 const PENDING_MARKER_FILE: &str = "migration-attempt.json";
 const MIN_FREE_SPACE_BUFFER_BYTES: u64 = 16 * 1024 * 1024;
@@ -510,8 +510,10 @@ fn ensure_absent(path: &Path) -> Result<(), String> {
 fn source_app_version_hint(source_schema_version: i64) -> &'static str {
     if source_schema_version <= 3 {
         "v0.15.2-or-earlier"
-    } else {
+    } else if source_schema_version < 7 {
         "1.0-prerelease"
+    } else {
+        "v1.0-to-v1.3"
     }
 }
 

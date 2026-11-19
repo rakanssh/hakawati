@@ -11,6 +11,10 @@ and the app shows it in What's New and Updates.
 
 ## [Unreleased]
 
+### Added
+
+- Hakawati, an assistant on every screen that answers questions about your tales and scenarios.
+
 ## [v1.3.0] - 2026-10-26
 
 ### Added

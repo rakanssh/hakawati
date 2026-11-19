@@ -1,4 +1,4 @@
-import type { ChatResponse, StreamChunk } from "../schema";
+import type { ChatMessage, ChatResponse, StreamChunk } from "../schema";
 import type { ToolCall } from "../tools";
 
 type JsonObject = Record<string, unknown>;
@@ -11,6 +11,65 @@ function object(value: unknown): JsonObject {
 
 function string(value: unknown): string | undefined {
   return typeof value === "string" ? value : undefined;
+}
+
+function replayItems(message: ChatMessage, model: string): unknown[] | null {
+  const replay = message.replay;
+  if (replay?.format !== "responses" || replay.model !== model) return null;
+  const callIds = new Set(
+    replay.items
+      .map(object)
+      .filter((item) => item.type === "function_call")
+      .map((item) => item.call_id),
+  );
+  if (message.tool_calls?.some((call) => !callIds.has(call.id))) return null;
+  // Items are not stored server-side (store: false), so their ids would not resolve.
+  return replay.items.map((item) => {
+    const { id: _id, ...rest } = object(item);
+    return rest;
+  });
+}
+
+export function toResponsesInput(
+  messages: ChatMessage[],
+  options: { model: string; namespace?: string },
+): unknown[] {
+  const input: unknown[] = [];
+  for (const message of messages) {
+    if (message.role === "tool") {
+      input.push({
+        type: "function_call_output",
+        call_id: message.tool_call_id,
+        output: message.content,
+      });
+      continue;
+    }
+    if (message.role === "assistant") {
+      const replayed = replayItems(message, options.model);
+      if (replayed) {
+        input.push(...replayed);
+        continue;
+      }
+      if (message.tool_calls?.length) {
+        if (message.content)
+          input.push({ role: "assistant", content: message.content });
+        for (const call of message.tool_calls)
+          input.push({
+            type: "function_call",
+            call_id: call.id,
+            name: call.function.name,
+            arguments: call.function.arguments,
+            ...(options.namespace ? { namespace: options.namespace } : {}),
+          });
+        continue;
+      }
+    }
+    input.push({
+      role: message.role === "system" ? "developer" : message.role,
+      content: message.content,
+    });
+  }
+  return input;
 }
 
 export function assertNotAborted(signal?: AbortSignal): void {
@@ -84,6 +143,7 @@ async function* events(
 
 export interface ResponsesOptions {
   provider: string;
+  model?: string;
   namespace?: string;
   incompleteMessage?: string;
   error(message: string, details: unknown): Error;
@@ -147,6 +207,7 @@ async function* responseEvents(
   };
   const texts = new Map<string, string>();
   const calls = new Map<number, ToolCall>();
+  const doneItems = new Map<number, unknown>();
 
   function textChunk(
     key: string,
@@ -307,6 +368,7 @@ async function* responseEvents(
           chunks = functionItem(index, object(event.item));
         break;
       case "response.output_item.done":
+        doneItems.set(index, event.item);
         chunks = outputItem(index, object(event.item));
         break;
       case "response.function_call_arguments.delta": {
@@ -393,6 +455,19 @@ async function* responseEvents(
           result.tool_calls = [...calls.entries()]
             .sort(([a], [b]) => a - b)
             .map(([, call]) => call);
+        if (options.model) {
+          const items = output.length
+            ? output
+            : [...doneItems.entries()]
+                .sort(([a], [b]) => a - b)
+                .map(([, item]) => item);
+          if (items.length)
+            result.replay = {
+              format: "responses",
+              model: options.model,
+              items,
+            };
+        }
         return;
       }
     }

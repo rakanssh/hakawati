@@ -1354,6 +1354,99 @@ export async function getLogEntries(
   }
 }
 
+export interface IndexedLogEntry {
+  index: number;
+  entry: LogEntry;
+}
+
+async function selectIndexedEntries(
+  db: Database,
+  taleId: string,
+  where: string,
+  params: unknown[],
+  limit: number,
+): Promise<IndexedLogEntry[]> {
+  const rows = await db.select<Array<{ idx: number; entry_json: string }>>(
+    `SELECT tt.entry_start_index + CAST(entry.key AS INTEGER) AS idx,
+            entry.value AS entry_json
+     FROM tale_turns tt, json_each(tt.entries_json) entry
+     WHERE tt.tale_id = ? AND ${where}
+     ORDER BY idx DESC
+     LIMIT ?`,
+    [taleId, ...params, limit],
+  );
+  return rows.flatMap((row) => {
+    const entry = parseJsonValue<LogEntry>(row.entry_json);
+    return entry ? [{ index: Number(row.idx), entry }] : [];
+  });
+}
+
+async function selectLegacyEntries(
+  db: Database,
+  taleId: string,
+): Promise<IndexedLogEntry[]> {
+  const entries = await selectLogEntries(
+    db,
+    taleId,
+    0,
+    await selectLogCount(db, taleId),
+  );
+  return entries.map((entry, index) => ({ index, entry }));
+}
+
+/** Passages whose text contains every word of the query, newest first. */
+export async function searchLogEntries(
+  taleId: string,
+  query: string,
+  limit: number,
+): Promise<IndexedLogEntry[]> {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
+  if (words.length === 0) return [];
+  return enqueueLocalOperation(async () => {
+    const db = await getDb();
+    if (!(await hasSplitStorage(db, taleId))) {
+      return (await selectLegacyEntries(db, taleId))
+        .filter(({ entry }) =>
+          words.every((word) => entry.text.toLowerCase().includes(word)),
+        )
+        .reverse()
+        .slice(0, limit);
+    }
+    return selectIndexedEntries(
+      db,
+      taleId,
+      words
+        .map(() => `instr(lower(json_extract(entry.value, '$.text')), ?) > 0`)
+        .join(" AND "),
+      words,
+      limit,
+    );
+  });
+}
+
+export async function findLogEntryIndex(
+  taleId: string,
+  entryId: string,
+): Promise<number | null> {
+  return enqueueLocalOperation(async () => {
+    const db = await getDb();
+    if (!(await hasSplitStorage(db, taleId))) {
+      const found = (await selectLegacyEntries(db, taleId)).find(
+        ({ entry }) => entry.id === entryId,
+      );
+      return found ? found.index : null;
+    }
+    const [found] = await selectIndexedEntries(
+      db,
+      taleId,
+      `json_extract(entry.value, '$.id') = ?`,
+      [entryId],
+      1,
+    );
+    return found ? found.index : null;
+  });
+}
+
 export async function getLogCount(taleId: string): Promise<number> {
   try {
     return await enqueueLocalOperation(async () => {

@@ -23,6 +23,11 @@ export function useChooseModel(role: ModelRole) {
           t`Model cannot be confirmed to support tool calling. GM mode may not work properly.`,
         );
       }
+      if (role === "hakawati" && !model.supportsToolCalls) {
+        toast.warning(
+          t`Model cannot be confirmed to support tool calling. Hakawati may not be able to make changes.`,
+        );
+      }
       setRoleModel(role, model);
       // Keep a voice the new model offers.
       if (role === "textToSpeech" && model.supportedVoices?.length) {

@@ -1,0 +1,272 @@
+import { scenarioContentToEditorFields } from "@/lib/scenario-content";
+import { getScenario, getScenarios } from "@/repositories/scenario.repository";
+import {
+  findLogEntryIndex,
+  getLogCount,
+  getLogEntries,
+  getTalePlayLoad,
+  getTales,
+  searchLogEntries,
+} from "@/repositories/tale.repository";
+import { useTaleStore } from "@/store/useTaleStore";
+import { GameMode, PromptComponentType } from "@/types";
+import {
+  clip,
+  describePassage,
+  describeTaleSetup,
+  openTaleId,
+  workspaceContext,
+} from "../context";
+import {
+  defineTool,
+  integer,
+  objectSchema,
+  text,
+  type AssistantTool,
+  type AssistantToolContext,
+} from "./define";
+
+const LIBRARY_SCAN = 100;
+
+function taleIdFor(
+  args: Record<string, unknown>,
+  context: AssistantToolContext,
+): string {
+  const taleId = text(args.taleId) ?? openTaleId(context.getPathname());
+  if (!taleId)
+    throw new Error(
+      "No tale is open. Pass taleId; list_library finds the player's tales.",
+    );
+  return taleId;
+}
+
+const matches = (query: string | undefined, ...fields: string[]) =>
+  !query ||
+  fields.some((field) => field.toLowerCase().includes(query.toLowerCase()));
+
+function snippet(source: string, query: string): string {
+  const first = query.toLowerCase().split(/\s+/).filter(Boolean)[0] ?? "";
+  const at = Math.max(0, source.toLowerCase().indexOf(first));
+  const start = Math.max(0, at - 160);
+  const end = Math.min(source.length, at + first.length + 160);
+  return `${start > 0 ? "…" : ""}${source.slice(start, end)}${end < source.length ? "…" : ""}`;
+}
+
+const taleIdProperty = {
+  taleId: {
+    type: "string",
+    description: "Tale id. Leave out for the tale open on the play screen.",
+  },
+};
+
+export function createReadTools(
+  context: AssistantToolContext,
+): AssistantTool[] {
+  return [
+    defineTool({
+      name: "get_context",
+      description:
+        "Where the player is in the app, and the open tale with its latest passages.",
+      parameters: objectSchema({}),
+      run: async () => workspaceContext(context.getPathname()),
+    }),
+    defineTool({
+      name: "list_library",
+      description:
+        "List the player's saved tales or scenarios, most recently changed first.",
+      parameters: objectSchema(
+        {
+          kind: { type: "string", enum: ["tales", "scenarios"] },
+          query: {
+            type: "string",
+            description: "Only items whose name or description contains this.",
+          },
+          limit: { type: "integer", description: "Up to 50. Default 20." },
+        },
+        ["kind"],
+      ),
+      detail: (args) => text(args.kind),
+      run: async (args) => {
+        const query = text(args.query);
+        const limit = integer(args.limit, 1, 50, 20);
+        if (args.kind === "scenarios") {
+          const { data, total } = await getScenarios(1, LIBRARY_SCAN);
+          return {
+            total,
+            scenarios: data
+              .filter((s) => matches(query, s.name, s.description))
+              .slice(0, limit)
+              .map((s) => ({
+                id: s.id,
+                name: s.name,
+                description: clip(s.description, 240),
+                mode:
+                  s.initialGameMode === GameMode.GM
+                    ? "game_master"
+                    : "story_teller",
+              })),
+          };
+        }
+        if (args.kind !== "tales")
+          throw new Error("kind must be tales or scenarios.");
+        const { data, total } = await getTales(1, LIBRARY_SCAN);
+        return {
+          total,
+          tales: data
+            .filter((t) => matches(query, t.name, t.description))
+            .slice(0, limit)
+            .map((t) => ({
+              id: t.id,
+              name: t.name,
+              description: clip(t.description, 240),
+              passages: t.logCount,
+              lastPlayed: new Date(t.updatedAt).toISOString().slice(0, 10),
+              ...(t.scenarioHead ? { scenario: t.scenarioHead.name } : {}),
+            })),
+        };
+      },
+    }),
+    defineTool({
+      name: "get_tale",
+      description:
+        "A tale's setup: name, description, mode, plot, author's note, AI instructions, story cards, and in Game Master mode its stats and inventory.",
+      parameters: objectSchema(taleIdProperty),
+      run: async (args) => {
+        const taleId = taleIdFor(args, context);
+        if (taleId === openTaleId(context.getPathname())) {
+          const tale = useTaleStore.getState();
+          return {
+            id: taleId,
+            open: true,
+            passages: tale.totalLogCount,
+            ...describeTaleSetup(tale),
+          };
+        }
+        const tale = await getTalePlayLoad(taleId, { logLimit: 0 });
+        if (!tale) throw new Error("No tale has that id.");
+        return {
+          id: taleId,
+          open: false,
+          passages: tale.totalLogCount,
+          ...(tale.scenarioId ? { scenarioId: tale.scenarioId } : {}),
+          ...describeTaleSetup(tale),
+        };
+      },
+    }),
+    defineTool({
+      name: "read_log",
+      description:
+        "Read passages of a tale's story in order. Gives the latest passages unless you pass around or start.",
+      parameters: objectSchema({
+        ...taleIdProperty,
+        around: {
+          type: "string",
+          description: "A passage id to read around.",
+        },
+        start: {
+          type: "integer",
+          description: "Index of the first passage to read, from 0.",
+        },
+        count: { type: "integer", description: "Up to 40. Default 20." },
+      }),
+      run: async (args) => {
+        const taleId = taleIdFor(args, context);
+        const count = integer(args.count, 1, 40, 20);
+        const total = await getLogCount(taleId);
+        let start = Math.max(0, total - count);
+        const around = text(args.around);
+        if (around) {
+          const index = await findLogEntryIndex(taleId, around);
+          if (index === null) throw new Error("No passage has that id.");
+          start = Math.max(0, index - Math.floor(count / 2));
+        } else if (args.start !== undefined) {
+          start = integer(args.start, 0, Math.max(0, total - 1), 0);
+        }
+        const entries = await getLogEntries(taleId, start, count);
+        return {
+          taleId,
+          total,
+          passages: entries.map((entry, offset) =>
+            describePassage(entry, start + offset),
+          ),
+        };
+      },
+    }),
+    defineTool({
+      name: "search_log",
+      description:
+        "Find passages in a tale's story that contain every word of a query, newest first.",
+      parameters: objectSchema(
+        {
+          ...taleIdProperty,
+          query: { type: "string" },
+          limit: { type: "integer", description: "Up to 20. Default 10." },
+        },
+        ["query"],
+      ),
+      detail: (args) => text(args.query),
+      run: async (args) => {
+        const taleId = taleIdFor(args, context);
+        const query = text(args.query);
+        if (!query) throw new Error("query is empty.");
+        const found = await searchLogEntries(
+          taleId,
+          query,
+          integer(args.limit, 1, 20, 10),
+        );
+        return {
+          taleId,
+          matches: found.map(({ entry, index }) => ({
+            ...describePassage(entry, index),
+            text: snippet(entry.text, query),
+          })),
+        };
+      },
+    }),
+    defineTool({
+      name: "get_scenario",
+      description:
+        "A saved scenario in full: opening, plot, author's note, AI instructions, story cards, stats and inventory.",
+      parameters: objectSchema({ scenarioId: { type: "string" } }, [
+        "scenarioId",
+      ]),
+      run: async (args) => {
+        const scenarioId = text(args.scenarioId);
+        const scenario = scenarioId ? await getScenario(scenarioId) : null;
+        if (!scenario) throw new Error("No saved scenario has that id.");
+        const fields = scenarioContentToEditorFields(scenario.content);
+        const component = (type: PromptComponentType) =>
+          fields.components.find((c) => c.type === type)?.content ?? "";
+        return {
+          id: scenario.id,
+          name: scenario.name,
+          description: scenario.description,
+          mode:
+            scenario.initialGameMode === GameMode.GM
+              ? "game_master"
+              : "story_teller",
+          opening: component(PromptComponentType.OPENING),
+          plot: component(PromptComponentType.PLOT),
+          authorNote: component(PromptComponentType.AUTHOR_NOTE),
+          aiInstructions: clip(
+            component(PromptComponentType.AI_INSTRUCTIONS),
+            4000,
+          ),
+          storyCards: fields.initialStoryCards.map((card) => ({
+            title: card.title,
+            category: card.category,
+            triggers: card.triggers,
+            pinned: card.isPinned,
+            content: card.content,
+          })),
+          stats: fields.initialStats.map((stat) => ({
+            name: stat.name,
+            value: stat.value,
+            range: stat.range,
+          })),
+          inventory: fields.initialInventory.map((item) => item.name),
+        };
+      },
+    }),
+  ];
+}

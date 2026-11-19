@@ -16,12 +16,14 @@ export enum ApiPreset {
 export type ModelRole =
   | "narrator"
   | "utility"
+  | "hakawati"
   | "speechToText"
   | "textToSpeech";
 
 export const MODEL_ROLES = [
   "narrator",
   "utility",
+  "hakawati",
   "speechToText",
   "textToSpeech",
 ] as const satisfies readonly ModelRole[];
@@ -52,7 +54,7 @@ export interface RoleModelChoice {
 
 export interface ModelRoleAssignment extends RoleModelChoice {
   connectionId: string | null;
-  /** Utility only: use the narrator's connection, model, and thinking level. */
+  /** Utility and Hakawati only: use the narrator's connection, model, and thinking level. */
   sameAsNarrator?: boolean;
   voice?: string;
   /** The choice made on each other connection, restored when the role switches back. */

@@ -6,6 +6,7 @@ import {
 } from "@/lib/reasoning";
 import type { ReasoningEffort } from "@/types";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import type { ReasoningRole } from "@/store/model-connections";
 import { ApiPreset } from "@/types/api.type";
 import { Segmented, SetupSection } from "./settings-rows";
 
@@ -29,7 +30,7 @@ export function EffortLabel({ effort }: { effort: ReasoningEffort }) {
 }
 
 /** The thinking levels the role's model offers; hidden when it offers none. */
-export function ThinkingLevel({ role }: { role: "narrator" | "utility" }) {
+export function ThinkingLevel({ role }: { role: ReasoningRole }) {
   const { t } = useLingui();
   const config = useSettingsStore((state) => state.modelRoles[role]);
   const maxTokens = useSettingsStore((state) => state.maxTokens);

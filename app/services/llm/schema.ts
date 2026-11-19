@@ -1,13 +1,25 @@
 import { ResponseMode } from "@/types/api.type";
 import type { LLMModel, ReasoningEffort } from "@/types/model.type";
-import { ToolCall } from "./tools";
+import { ToolCall, ToolDefinition } from "./tools";
+
+export type ProviderReplay =
+  | { format: "chat"; model: string; fields: Record<string, unknown> }
+  | { format: "responses"; model: string; items: unknown[] };
 
 /**
  * Core chat message types
  */
 export interface ChatMessage {
-  role: "user" | "assistant" | "system";
+  role: "user" | "assistant" | "system" | "tool";
   content: string;
+  tool_calls?: ToolCall[];
+  tool_call_id?: string;
+  replay?: ProviderReplay;
+}
+
+export interface ToolNamespace {
+  name: string;
+  description: string;
 }
 
 export interface ChatRequestOptions {
@@ -30,6 +42,8 @@ export interface ChatRequest {
   reasoningEffort?: ReasoningEffort;
   options?: ChatRequestOptions;
   responseMode: ResponseMode;
+  tools?: ToolDefinition[];
+  toolNamespace?: ToolNamespace;
 }
 
 /**
@@ -62,6 +76,7 @@ export interface ChatResponse {
     total_tokens: number;
   };
   tool_calls?: ToolCall[];
+  replay?: ProviderReplay;
 }
 
 export interface LLMClient {

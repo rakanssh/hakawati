@@ -47,14 +47,22 @@ export interface LegacyRoleSettings {
   voice?: string;
 }
 
-export function usesReasoning(role: ModelRole): boolean {
-  return role === "narrator" || role === "utility";
+export type ReasoningRole = "narrator" | "utility" | "hakawati";
+export type FollowingRole = "utility" | "hakawati";
+
+export function usesReasoning(role: ModelRole): role is ReasoningRole {
+  return role === "narrator" || role === "utility" || role === "hakawati";
+}
+
+export function canFollowNarrator(role: ModelRole): role is FollowingRole {
+  return role === "utility" || role === "hakawati";
 }
 
 export function createDefaultRoleAssignments(): RoleAssignments {
   return {
     narrator: { connectionId: null, model: undefined },
     utility: { connectionId: null, model: undefined, sameAsNarrator: true },
+    hakawati: { connectionId: null, model: undefined, sameAsNarrator: true },
     speechToText: { connectionId: null, model: undefined },
     textToSpeech: {
       connectionId: null,
@@ -93,12 +101,12 @@ export function normalizeConnections(input: unknown): ApiConnection[] {
   return connections;
 }
 
-/** The assignment a role runs on: a utility that follows the narrator uses the narrator's. */
+/** The assignment a role runs on: a role that follows the narrator uses the narrator's. */
 export function effectiveAssignment(
   assignments: RoleAssignments,
   role: ModelRole,
 ): ModelRoleAssignment {
-  return role === "utility" && assignments.utility.sameAsNarrator
+  return canFollowNarrator(role) && assignments[role].sameAsNarrator
     ? assignments.narrator
     : assignments[role];
 }
@@ -393,13 +401,16 @@ export function connectionsFromLegacyRoles(
     };
   }
 
-  // A utility that matched the narrator, or was never set up, follows it.
-  const { narrator, utility } = roleAssignments;
-  utility.sameAsNarrator =
-    utility.connectionId === null ||
-    (utility.connectionId === narrator.connectionId &&
-      utility.model?.id === narrator.model?.id &&
-      utility.reasoningEffort === narrator.reasoningEffort);
+  // A role that matched the narrator, or was never set up, follows it.
+  const { narrator } = roleAssignments;
+  for (const role of ["utility", "hakawati"] as const) {
+    const assignment = roleAssignments[role];
+    assignment.sameAsNarrator =
+      assignment.connectionId === null ||
+      (assignment.connectionId === narrator.connectionId &&
+        assignment.model?.id === narrator.model?.id &&
+        assignment.reasoningEffort === narrator.reasoningEffort);
+  }
 
   return { connections, roleAssignments };
 }
