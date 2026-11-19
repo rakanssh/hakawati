@@ -11,12 +11,20 @@ import {
   Trash2Icon,
   Undo2Icon,
 } from "lucide-react";
+import { useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { isPassageShown, revealPassage } from "@/lib/reveal-passage";
 import { cn } from "@/lib/utils";
 import { undoAssistantReply } from "@/services/assistant/session";
 import { useAssistantStore } from "@/store/useAssistantStore";
+import {
+  useStoryPanelStore,
+  type StoryPanelTab,
+} from "@/store/useStoryPanelStore";
+import { useTaleStore } from "@/store/useTaleStore";
 import { GameMode, PromptComponentType } from "@/types";
 import type { AssistantChange } from "@/types/assistant.type";
 
@@ -113,6 +121,29 @@ function useChangeLabel() {
   };
 }
 
+type Target = { passage: string } | { tab: StoryPanelTab };
+
+function targetOf(change: AssistantChange): Target | null {
+  if (change.undone) return null;
+  switch (change.kind) {
+    case "passage":
+      return { passage: change.id };
+    case "insert":
+      return change.entries[0] ? { passage: change.entries[0].id } : null;
+    case "delete":
+      return null;
+    case "card":
+      return change.after ? { tab: "cards" } : null;
+    case "stat":
+    case "item":
+      return change.after ? { tab: "character" } : null;
+    case "field":
+    case "component":
+      return { tab: "story" };
+  }
+}
+
+/** The chips for a reply's changes, each opening what it changed, and the reply's Undo. */
 export function ChangeList({
   changes,
   messageId,
@@ -122,6 +153,11 @@ export function ChangeList({
 }) {
   const { t } = useLingui();
   const describe = useChangeLabel();
+  const isPlay = useRouterState({
+    select: (state) => state.location.pathname.startsWith("/play"),
+  });
+  const openTaleId = useTaleStore((state) => state.id);
+  const { isMobilePlatform } = useIsMobile();
   const running = useAssistantStore((state) => Boolean(state.run));
   const undoingId = useAssistantStore((state) => state.undoingId);
   const undoing = Boolean(messageId) && undoingId === messageId;
@@ -138,23 +174,50 @@ export function ChangeList({
       );
   };
 
+  const open = (target: Target) => {
+    const panel = useStoryPanelStore.getState();
+    if ("tab" in target) {
+      panel.setTab(target.tab);
+      return;
+    }
+    if (!isPassageShown(target.passage)) return;
+    if (isMobilePlatform && panel.open) {
+      panel.setOpen(false);
+      window.setTimeout(() => revealPassage(target.passage), 300);
+    } else revealPassage(target.passage);
+  };
+
   return (
-    <div className="flex w-full flex-wrap items-center gap-1">
+    <>
       {changes.map((change, index) => {
         const { Icon, label } = describe(change);
-        return (
-          <Badge
-            key={index}
-            variant="outline"
-            className={cn(
-              "sidebar-chip max-w-full justify-start border-primary/30 bg-primary/8 font-normal text-sidebar-foreground/90",
-              change.undone && "line-through opacity-55",
-            )}
-          >
+        const target =
+          isPlay && change.taleId === openTaleId ? targetOf(change) : null;
+        const chip = (
+          <>
             <Icon className="shrink-0 text-primary" />
             <span dir="auto" className="truncate">
               {label}
             </span>
+          </>
+        );
+        const className = cn(
+          "sidebar-chip max-w-full justify-start border-primary/30 bg-primary/8 font-normal text-sidebar-foreground/90",
+          change.undone && "line-through opacity-55",
+        );
+        return target ? (
+          <Badge key={index} variant="outline" asChild className={className}>
+            <button
+              type="button"
+              className="cursor-pointer hover:border-primary/55 hover:bg-primary/15"
+              onClick={() => open(target)}
+            >
+              {chip}
+            </button>
+          </Badge>
+        ) : (
+          <Badge key={index} variant="outline" className={className}>
+            {chip}
           </Badge>
         );
       })}
@@ -175,6 +238,6 @@ export function ChangeList({
           <Trans>Undo</Trans>
         </Button>
       ) : null}
-    </div>
+    </>
   );
 }

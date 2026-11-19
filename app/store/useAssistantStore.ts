@@ -11,6 +11,7 @@ export interface AssistantRun {
   thinking: string;
   activity: AssistantActivity[];
   changes: AssistantChange[];
+  toolRunning: boolean;
 }
 
 interface AssistantStoreType {

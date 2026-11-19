@@ -18,6 +18,7 @@ import {
   CircleAlertIcon,
   FileTextIcon,
   LibraryIcon,
+  Loader2Icon,
   MapPinIcon,
   MessageCircleIcon,
   MessageSquarePlusIcon,
@@ -54,6 +55,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useStickToBottom } from "@/hooks/useStickToBottom";
+import { replyTimeline } from "@/lib/assistant-timeline";
 import { cn } from "@/lib/utils";
 import {
   removeAssistantThread,
@@ -85,10 +87,27 @@ const TOOL_ICONS: Record<string, ComponentType<{ className?: string }>> = {
   get_scenario: FileTextIcon,
 };
 
-function ActivityChip({ activity }: { activity: AssistantActivity }) {
+function ActivityChip({
+  activity,
+  running,
+}: {
+  activity: AssistantActivity;
+  running?: boolean;
+}) {
   const { t } = useLingui();
   const detail = activity.detail ?? "";
   const label = (() => {
+    if (running)
+      switch (activity.tool) {
+        case "update_tale":
+          return t`Changing the tale`;
+        case "edit_story_cards":
+          return t`Changing the story cards`;
+        case "edit_character":
+          return t`Changing the character`;
+        case "edit_log":
+          return t`Changing the story`;
+      }
     switch (activity.tool) {
       case "get_context":
         return t`Checked where you are`;
@@ -116,7 +135,9 @@ function ActivityChip({ activity }: { activity: AssistantActivity }) {
         return activity.tool;
     }
   })();
-  const Icon = TOOL_ICONS[activity.tool] ?? WrenchIcon;
+  const Icon = running
+    ? Loader2Icon
+    : (TOOL_ICONS[activity.tool] ?? WrenchIcon);
   return (
     <Badge
       variant="outline"
@@ -126,7 +147,7 @@ function ActivityChip({ activity }: { activity: AssistantActivity }) {
         activity.error && "border-destructive/40 text-destructive",
       )}
     >
-      <Icon className="shrink-0" />
+      <Icon className={cn("shrink-0", running && "animate-spin")} />
       <span dir="auto" className="truncate">
         {label}
       </span>
@@ -149,41 +170,6 @@ function ErrorLine({ children }: { children: React.ReactNode }) {
         {children}
       </span>
     </p>
-  );
-}
-
-function Thinking({ text }: { text: string }) {
-  const { t } = useLingui();
-  const [open, setOpen] = useState(false);
-  return (
-    <Collapsible open={open} onOpenChange={setOpen} className="w-full">
-      <CollapsibleTrigger asChild>
-        <button
-          type="button"
-          className="inline-flex h-7 items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-          aria-label={t`Toggle thinking output`}
-        >
-          <BrainCircuitIcon className="h-3.5 w-3.5" />
-          <span>
-            <Trans>Thinking</Trans>
-          </span>
-          <ChevronDownIcon
-            className={cn(
-              "h-3.5 w-3.5 transition-transform",
-              open && "rotate-180",
-            )}
-          />
-        </button>
-      </CollapsibleTrigger>
-      <CollapsibleContent className="mt-1 rounded-xs border border-border/60 bg-card/60 p-2.5 shadow-sm backdrop-blur-sm">
-        <p
-          dir="auto"
-          className="text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground"
-        >
-          {text}
-        </p>
-      </CollapsibleContent>
-    </Collapsible>
   );
 }
 
@@ -288,13 +274,6 @@ function PlayerMessage({ content }: { content: string }) {
   );
 }
 
-const EDIT_TOOLS = new Set([
-  "update_tale",
-  "edit_story_cards",
-  "edit_character",
-  "edit_log",
-]);
-
 function Reply({
   content,
   thinking,
@@ -303,6 +282,7 @@ function Reply({
   status,
   messageId,
   live,
+  toolRunning,
 }: {
   content: string;
   thinking?: string;
@@ -311,43 +291,106 @@ function Reply({
   status?: AssistantMessageStatus;
   messageId?: string;
   live?: boolean;
+  toolRunning?: boolean;
 }) {
-  const lookups = activity?.filter(
-    (item) => item.error || !EDIT_TOOLS.has(item.tool),
+  const { t } = useLingui();
+  const [thinkingOpen, setThinkingOpen] = useState(false);
+  const thinkingVisibility = useSettingsStore(
+    (state) => state.thinkingVisibility,
   );
   const components = useMarkdownComponents();
-  const caret = live ? (
+  const parts = replyTimeline(content, activity ?? [], Boolean(toolRunning));
+  const showThinking = Boolean(thinking) && thinkingVisibility !== "none";
+  const thinkingLive =
+    showThinking && Boolean(live) && !content && !toolRunning;
+  const lastPart = parts.at(-1);
+  const caret = (
     <span
       data-log-caret=""
       className="ms-0.5 inline-block h-[1.1em] w-0.5 animate-pulse bg-primary/70 align-middle"
     />
-  ) : null;
+  );
+  const waiting =
+    live && !toolRunning && !thinkingLive && lastPart?.kind !== "text";
+
   return (
     <div className="flex min-w-0 flex-col items-start gap-2">
-      {lookups?.length ? (
-        <div className="flex max-w-full flex-wrap gap-1">
-          {lookups.map((item, index) => (
-            <ActivityChip key={index} activity={item} />
-          ))}
-        </div>
-      ) : null}
-      {content ? (
-        <div
-          dir="auto"
-          className="w-full text-sm leading-relaxed break-words [overflow-wrap:anywhere] text-sidebar-foreground/95"
-        >
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
-            {content}
-          </ReactMarkdown>
-          {caret}
-        </div>
-      ) : (
-        caret
+      {parts.map((part, index) =>
+        part.kind === "steps" ? (
+          <div key={index} className="flex max-w-full flex-wrap gap-1">
+            {part.steps.map((step, stepIndex) => (
+              <ActivityChip
+                key={stepIndex}
+                activity={step.activity}
+                running={step.running}
+              />
+            ))}
+          </div>
+        ) : (
+          <div
+            key={index}
+            dir="auto"
+            className="w-full text-sm leading-relaxed break-words [overflow-wrap:anywhere] text-sidebar-foreground/95"
+          >
+            <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+              {part.text}
+            </ReactMarkdown>
+            {live && part === lastPart ? caret : null}
+          </div>
+        ),
       )}
-      {changes?.length ? (
-        <ChangeList changes={changes} messageId={messageId} />
+      {waiting ? caret : null}
+      {showThinking || changes?.length ? (
+        <Collapsible
+          open={thinkingOpen}
+          onOpenChange={setThinkingOpen}
+          className="w-full"
+        >
+          <div
+            data-log-meta=""
+            className="flex w-full flex-wrap items-center gap-1.5"
+          >
+            {showThinking ? (
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex h-7 items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                  aria-label={t`Toggle thinking output`}
+                >
+                  <BrainCircuitIcon
+                    className={cn(
+                      "h-3.5 w-3.5",
+                      thinkingLive && "animate-pulse text-primary",
+                    )}
+                  />
+                  <span className={cn(thinkingLive && "animate-pulse")}>
+                    <Trans>Thinking</Trans>
+                  </span>
+                  <ChevronDownIcon
+                    className={cn(
+                      "h-3.5 w-3.5 transition-transform",
+                      thinkingOpen && "rotate-180",
+                    )}
+                  />
+                </button>
+              </CollapsibleTrigger>
+            ) : null}
+            {changes?.length ? (
+              <ChangeList changes={changes} messageId={messageId} />
+            ) : null}
+          </div>
+          {showThinking ? (
+            <CollapsibleContent className="mt-1 rounded-xs border border-border/60 bg-card/60 p-2.5 shadow-sm backdrop-blur-sm">
+              <p
+                dir="auto"
+                className="text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground"
+              >
+                {thinking}
+              </p>
+            </CollapsibleContent>
+          ) : null}
+        </Collapsible>
       ) : null}
-      {thinking ? <Thinking text={thinking} /> : null}
       {status === "stopped" ? (
         <p className="text-xs text-muted-foreground">
           <Trans>Stopped</Trans>
@@ -357,6 +400,38 @@ function Reply({
           <Trans>Request failed</Trans>
         </ErrorLine>
       ) : null}
+    </div>
+  );
+}
+
+function Suggestions({
+  isPlay,
+  onPick,
+}: {
+  isPlay: boolean;
+  onPick: (text: string) => void;
+}) {
+  const { t } = useLingui();
+  const items = isPlay
+    ? [
+        t`Recap the story so far`,
+        t`Who have I met so far?`,
+        t`Add a twist to the plot`,
+      ]
+    : [t`Catch me up on my latest tale`, t`What scenarios do I have?`];
+  return (
+    <div className="flex w-full flex-col gap-1.5">
+      {items.map((item) => (
+        <button
+          key={item}
+          type="button"
+          dir="auto"
+          onClick={() => onPick(item)}
+          className="rounded-xs border border-sidebar-border/80 bg-sidebar-accent/35 px-3 py-2 text-start text-sm text-sidebar-foreground/85 transition-colors hover:border-primary/45 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none dark:border-sidebar-foreground/20 dark:bg-sidebar-accent/50"
+        >
+          {item}
+        </button>
+      ))}
     </div>
   );
 }
@@ -462,9 +537,9 @@ export function HakawatiChat() {
     if (stickToBottom) scrollToBottom("auto");
   }, [messages, run, error, stickToBottom, scrollToBottom]);
 
-  const send = () => {
+  const send = (text = draft) => {
     if (!configured || run) return;
-    void sendAssistantMessage(draft, {
+    void sendAssistantMessage(text, {
       getPathname: () => router.state.location.pathname,
     });
     scrollToBottom("auto");
@@ -479,8 +554,13 @@ export function HakawatiChat() {
         className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pt-2 pb-4"
       >
         {messages.length === 0 && !run && !error ? (
-          <div className="flex h-full items-center justify-center">
-            <FezIcon className="size-10 text-sidebar-foreground/15" />
+          <div className="flex h-full flex-col">
+            <div className="flex flex-1 items-center justify-center">
+              <FezIcon className="size-12 text-sidebar-foreground/20" />
+            </div>
+            {configured ? (
+              <Suggestions isPlay={isPlay} onPick={(text) => send(text)} />
+            ) : null}
           </div>
         ) : (
           <div className="flex flex-col gap-4">
@@ -506,6 +586,7 @@ export function HakawatiChat() {
                 activity={run.activity}
                 changes={run.changes}
                 live
+                toolRunning={run.toolRunning}
               />
             ) : null}
             {error ? <ErrorLine>{error}</ErrorLine> : null}
@@ -563,7 +644,7 @@ export function HakawatiChat() {
               data-composer-send=""
               className="size-10 shrink-0 rounded-xs"
               disabled={!configured || !draft.trim()}
-              onClick={send}
+              onClick={() => send()}
               aria-label={t`Send`}
             >
               <SendIcon className="size-4" />

@@ -132,7 +132,7 @@ describe("Hakawati chat session", () => {
       ["assistant", "Looking.\n\nYou are home."],
     ]);
     const reply = state.messages[1];
-    expect(reply.activity).toEqual([{ tool: "get_context" }]);
+    expect(reply.activity).toEqual([{ tool: "get_context", at: 8 }]);
     expect(reply.turn?.map((m) => m.role)).toEqual([
       "assistant",
       "tool",
@@ -147,6 +147,21 @@ describe("Hakawati chat session", () => {
       /^<context>\n\{"page":"home"\}\n<\/context>\n\nWhere am I\?$/,
     );
     expect(firstRequest.toolNamespace.name).toBe("hakawati");
+  });
+
+  it("saves where each step happened in the trimmed reply", async () => {
+    const { session, store } = await load();
+    sendRoleChat
+      .mockResolvedValueOnce(
+        streamed([{ content: "\n\nLet me look." }, ...contextCall.slice(1)]),
+      )
+      .mockResolvedValueOnce(streamed([{ content: "You are home." }]));
+
+    await session.sendAssistantMessage("Where am I?", home);
+
+    const reply = store.getState().messages.at(-1)!;
+    expect(reply.content).toBe("Let me look.\n\nYou are home.");
+    expect(reply.activity).toEqual([{ tool: "get_context", at: 12 }]);
   });
 
   it("shows stored replies, not the context block, on the next turn", async () => {
@@ -220,7 +235,13 @@ describe("Hakawati chat session", () => {
     expect(store.getState()).toMatchObject({ threadId: null, taleId: "t2" });
 
     store.setState({
-      run: { content: "", thinking: "", activity: [], changes: [] },
+      run: {
+        content: "",
+        thinking: "",
+        activity: [],
+        changes: [],
+        toolRunning: false,
+      },
     });
     await session.syncAssistantScope("t1");
     expect(store.getState().threadId).toBeNull();
@@ -252,7 +273,7 @@ describe("Hakawati chat session", () => {
     await session.sendAssistantMessage("Add Mara", home);
     const reply = store.getState().messages.at(-1)!;
     expect(reply.changes).toEqual([cardChange]);
-    expect(reply.activity).toEqual([{ tool: "edit_story_cards" }]);
+    expect(reply.activity).toEqual([{ tool: "edit_story_cards", at: 0 }]);
 
     expect(await session.undoAssistantReply(reply.id)).toBe(0);
     expect(store.getState().messages.at(-1)!.changes).toEqual([

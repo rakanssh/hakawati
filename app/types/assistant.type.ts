@@ -59,6 +59,8 @@ export interface AssistantActivity {
   tool: string;
   detail?: string;
   error?: string;
+  /** Where in the reply's text the step happened. */
+  at?: number;
 }
 
 export type AssistantMessageStatus = "stopped" | "failed";

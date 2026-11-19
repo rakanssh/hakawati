@@ -186,6 +186,7 @@ export async function sendAssistantMessage(
     thinking: "",
     activity: [],
     changes: [],
+    toolRunning: false,
   };
   store.setState({ draft: "", error: null, run: { ...run } });
 
@@ -214,7 +215,7 @@ export async function sendAssistantMessage(
     store.setState({
       run: {
         ...run,
-        activity: [...run.activity],
+        activity: run.activity.map((step) => ({ ...step })),
         changes: [...run.changes],
       },
     });
@@ -238,15 +239,21 @@ export async function sendAssistantMessage(
       run.thinking += event.delta;
     } else if (event.type === "tool_start") {
       afterTools = true;
+      run.toolRunning = true;
       const name = event.call.function.name;
       const detail = toolDetail(
         byName.get(name),
         event.call.function.arguments,
       );
-      run.activity.push({ tool: name, ...(detail ? { detail } : {}) });
-    } else if (event.error) {
+      run.activity.push({
+        tool: name,
+        at: run.content.length,
+        ...(detail ? { detail } : {}),
+      });
+    } else {
+      run.toolRunning = false;
       const last = run.activity.at(-1);
-      if (last) last.error = event.error;
+      if (last && event.error) last.error = event.error;
     }
     publish();
   };
@@ -281,14 +288,20 @@ export async function sendAssistantMessage(
     controller = null;
   }
 
+  const replyText = run.content.trim();
+  const lead = run.content.length - run.content.trimStart().length;
+  const activity = run.activity.map((step) => ({
+    ...step,
+    at: Math.min(replyText.length, Math.max(0, (step.at ?? 0) - lead)),
+  }));
   const reply: Omit<AssistantMessage, "seq"> = {
     id: nanoid(),
     threadId,
     role: "assistant",
-    content: run.content.trim(),
+    content: replyText,
     ...(run.thinking.trim() ? { thinking: run.thinking.trim() } : {}),
     ...(turn ? { turn: toStored(turn) } : {}),
-    ...(run.activity.length ? { activity: run.activity } : {}),
+    ...(activity.length ? { activity } : {}),
     ...(run.changes.length ? { changes: run.changes } : {}),
     ...(status ? { status } : {}),
     createdAt: Date.now(),
