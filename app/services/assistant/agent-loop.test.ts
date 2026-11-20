@@ -1,14 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { markOutputLimit } from "@/lib/errors";
 import type { ChatResponse, StreamChunk } from "@/services/llm/schema";
 import { ResponseMode } from "@/types/api.type";
 import { runAgentLoop, type AgentEvent, type AgentTool } from "./agent-loop";
 import { OMITTED_RESULT } from "./history";
 
-const { sendRoleChat, resolveModelRole } = vi.hoisted(() => ({
-  sendRoleChat: vi.fn(),
-  resolveModelRole: vi.fn(),
+const { sendRoleChat, resolveModelRole, lowerRoleReasoningEffort } = vi.hoisted(
+  () => ({
+    sendRoleChat: vi.fn(),
+    resolveModelRole: vi.fn(),
+    lowerRoleReasoningEffort: vi.fn(),
+  }),
+);
+vi.mock("@/services/llm", () => ({
+  sendRoleChat,
+  resolveModelRole,
+  lowerRoleReasoningEffort,
 }));
-vi.mock("@/services/llm", () => ({ sendRoleChat, resolveModelRole }));
 vi.mock("@/services/llm/tokenCounter", () => ({
   countTokens: (text: string) => text.length,
 }));
@@ -24,6 +32,16 @@ function streamed(
   }
   return { content: "", iterator: iterator(), raw: null, usage, ...extra };
 }
+
+function cutOff(chunks: StreamChunk[]): ChatResponse {
+  async function* iterator(): AsyncGenerator<StreamChunk> {
+    for (const chunk of chunks) yield chunk;
+    throw markOutputLimit(new Error("Reached the output limit."));
+  }
+  return { content: "", iterator: iterator(), raw: null, usage };
+}
+
+const wrapUp = { max_rounds: "Wrap up.", output_limit: "Cut off." };
 
 function callChunks(id: string, name: string, args: string): StreamChunk[] {
   const half = Math.ceil(args.length / 2);
@@ -57,6 +75,7 @@ describe("runAgentLoop", () => {
   beforeEach(() => {
     sendRoleChat.mockReset();
     resolveModelRole.mockReset();
+    lowerRoleReasoningEffort.mockReset();
     resolveModelRole.mockReturnValue({ model: { id: "model-a" } });
   });
 
@@ -275,7 +294,7 @@ describe("runAgentLoop", () => {
       messages: [{ role: "user", content: "Do three things." }],
       tools: [tool("a")],
       maxRounds: 2,
-      wrapUp: "Wrap up.",
+      wrapUp,
       onEvent: (event) => events.push(event),
     });
     const request = sendRoleChat.mock.calls[2][1];
@@ -311,7 +330,7 @@ describe("runAgentLoop", () => {
       messages: [],
       tools: [a],
       maxRounds: 1,
-      wrapUp: "Wrap up.",
+      wrapUp,
     });
     expect(a.run).toHaveBeenCalledOnce();
     expect(result.messages.at(-1)).toEqual({
@@ -329,10 +348,81 @@ describe("runAgentLoop", () => {
       messages: [],
       tools: [tool("a")],
       maxRounds: 1,
-      wrapUp: "Wrap up.",
+      wrapUp,
     });
     expect(result.stopReason).toBe("max_rounds");
     expect(result.messages).toHaveLength(2);
+  });
+
+  it("retries a cut-off round with less thinking, dropping what it streamed", async () => {
+    lowerRoleReasoningEffort
+      .mockReturnValueOnce("medium")
+      .mockReturnValueOnce("low");
+    sendRoleChat
+      .mockResolvedValueOnce(cutOff([{ thinking: "Plan every card" }]))
+      .mockResolvedValueOnce(cutOff([{ content: "Half a" }]))
+      .mockResolvedValueOnce(streamed(callChunks("call_1", "a", "{}")))
+      .mockResolvedValueOnce(streamed([{ content: "Done." }]));
+    const events: AgentEvent[] = [];
+    const result = await runAgentLoop({
+      role: "hakawati",
+      messages: [{ role: "user", content: "Build a scenario." }],
+      tools: [tool("a")],
+      onEvent: (event) => events.push(event),
+    });
+    const requests = sendRoleChat.mock.calls.map(([, request]) => request);
+    expect(requests.map((request) => request.reasoningEffort)).toEqual([
+      undefined,
+      "medium",
+      "low",
+      "low",
+    ]);
+    expect(lowerRoleReasoningEffort.mock.calls).toEqual([
+      ["hakawati", undefined],
+      ["hakawati", "medium"],
+    ]);
+    expect(requests[1].messages.at(-1)).toMatchObject({
+      role: "user",
+      content: expect.stringContaining("output limit"),
+    });
+    expect(JSON.stringify(requests[3].messages)).not.toContain("output limit");
+    expect(events.filter((event) => event.type === "discard")).toHaveLength(2);
+    expect(result.stopReason).toBe("done");
+    expect(result.messages).toHaveLength(3);
+  });
+
+  it("pauses with a summary when a round keeps getting cut off", async () => {
+    const a = tool("a");
+    sendRoleChat
+      .mockResolvedValueOnce(streamed(callChunks("call_1", "a", "{}")))
+      .mockResolvedValueOnce(cutOff([]))
+      .mockResolvedValueOnce(cutOff([]))
+      .mockResolvedValueOnce(cutOff([]))
+      .mockResolvedValueOnce(streamed([{ content: "Cards are left." }]));
+    const result = await runAgentLoop({
+      role: "hakawati",
+      messages: [{ role: "user", content: "Build a scenario." }],
+      tools: [a],
+      wrapUp,
+    });
+    const last = sendRoleChat.mock.calls.at(-1)![1];
+    expect(sendRoleChat).toHaveBeenCalledTimes(5);
+    expect(last.toolChoice).toBe("none");
+    expect(last.messages.at(-1)).toEqual({ role: "user", content: "Cut off." });
+    expect(a.run).toHaveBeenCalledOnce();
+    expect(result.stopReason).toBe("output_limit");
+    expect(result.messages.at(-1)).toEqual({
+      role: "assistant",
+      content: "Cards are left.",
+    });
+  });
+
+  it("still fails on other errors", async () => {
+    sendRoleChat.mockRejectedValueOnce(new Error("Invalid API key"));
+    await expect(
+      runAgentLoop({ role: "hakawati", messages: [], tools: [] }),
+    ).rejects.toThrow("Invalid API key");
+    expect(sendRoleChat).toHaveBeenCalledOnce();
   });
 
   it("omits older tool results once the context fills, keeping the latest", async () => {

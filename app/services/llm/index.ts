@@ -10,9 +10,11 @@ import {
   ModelRole,
   ModelRoleSettings,
 } from "@/types";
+import type { ReasoningEffort } from "@/types/model.type";
 import { connectionBaseUrl } from "@/data/api-presets";
 import {
   getModelReasoning,
+  lowerReasoningEffort,
   normalizeReasoningEffort,
   reasoningProvider,
 } from "@/lib/reasoning";
@@ -87,19 +89,35 @@ export function resolveModelRole(role: ModelRole): ResolvedModelRole {
   return { role, config, model: config.model };
 }
 
+function roleReasoning(config: ModelRoleSettings, modelId: string | undefined) {
+  return getModelReasoning(
+    config.model?.id === modelId ? config.model : undefined,
+    reasoningProvider(
+      config.baseUrl,
+      config.activePreset === ApiPreset.CHATGPT,
+    ),
+  );
+}
+
+/** A lower thinking level than `current` (or the role's own) that its model supports, if there is one. */
+export function lowerRoleReasoningEffort(
+  role: ModelRole,
+  current?: ReasoningEffort,
+): ReasoningEffort | undefined {
+  const config = assertRoleConfig(role);
+  return lowerReasoningEffort(
+    current ?? config.reasoningEffort,
+    roleReasoning(config, config.model?.id),
+  );
+}
+
 export async function sendRoleChat(
   role: ModelRole,
   req: ChatRequest,
   signal?: AbortSignal,
 ) {
   const config = assertRoleConfig(role);
-  const reasoning = getModelReasoning(
-    config.model?.id === req.model ? config.model : undefined,
-    reasoningProvider(
-      config.baseUrl,
-      config.activePreset === ApiPreset.CHATGPT,
-    ),
-  );
+  const reasoning = roleReasoning(config, req.model);
   const requested = req.reasoningEffort ?? config.reasoningEffort;
   const reasoningEffort = normalizeReasoningEffort(requested, reasoning);
   if (requested !== undefined && reasoningEffort === undefined) {

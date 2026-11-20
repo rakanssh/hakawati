@@ -50,7 +50,7 @@ export function createTaleTools(
     defineTool({
       name: "edit_tale",
       description:
-        "Change a tale's setup: name, description, plot, author's note, AI instructions, mode, story cards, and in Game Master mode its stats and inventory. Leave out what stays the same; an empty string clears plot, author's note or AI instructions. The narrator sees a story card when one of its triggers comes up in the story, or always when it is pinned.",
+        "Change a tale's setup: name, description, plot, author's note, AI instructions, mode, story cards, and in Game Master mode its stats and inventory. Leave out what stays the same; an empty string clears plot, author's note or AI instructions. The narrator sees a story card when one of its triggers comes up in the story, or always when it is pinned. Add many cards over several calls.",
       parameters: objectSchema({
         ...taleIdProperty,
         name: { type: "string" },

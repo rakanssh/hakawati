@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getModelReasoning,
   knownOpenAiReasoning,
+  lowerReasoningEffort,
   normalizeReasoningEffort,
   readReasoningCapabilities,
   reasoningProvider,
@@ -181,5 +182,24 @@ describe("reasoning capability discovery", () => {
         mandatory: true,
       }),
     ).toBeUndefined();
+  });
+
+  it("steps down to the next supported thinking level", () => {
+    const reasoning = {
+      supportedEfforts: ["none", "low", "high"] as Array<
+        (typeof REASONING_EFFORTS)[number]
+      >,
+    };
+    expect(lowerReasoningEffort("high", reasoning)).toBe("low");
+    expect(lowerReasoningEffort("low", reasoning)).toBe("none");
+    expect(lowerReasoningEffort("none", reasoning)).toBeUndefined();
+    expect(lowerReasoningEffort(undefined, reasoning)).toBe("low");
+    expect(
+      lowerReasoningEffort(undefined, { ...reasoning, defaultEffort: "low" }),
+    ).toBe("none");
+    expect(
+      lowerReasoningEffort("low", { ...reasoning, mandatory: true }),
+    ).toBeUndefined();
+    expect(lowerReasoningEffort("high", undefined)).toBeUndefined();
   });
 });

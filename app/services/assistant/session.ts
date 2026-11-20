@@ -37,6 +37,7 @@ import { toModelHistory } from "./history";
 import {
   ASSISTANT_SYSTEM_PROMPT,
   ASSISTANT_TOOL_NAMESPACE,
+  ASSISTANT_CUT_OFF_PROMPT,
   ASSISTANT_WRAP_UP_PROMPT,
   withContext,
 } from "./prompt";
@@ -319,7 +320,14 @@ export async function sendAssistantMessage(
   ];
   const byName = new Map(tools.map((t) => [t.definition.function.name, t]));
   let afterTools = false;
+  let kept = { content: "", thinking: "", afterTools };
   const onEvent = (event: AgentEvent) => {
+    if (event.type === "discard") {
+      run.content = kept.content;
+      run.thinking = kept.thinking;
+      afterTools = kept.afterTools;
+      return publish(false);
+    }
     if (event.type === "text") {
       if (afterTools && run.content && !run.content.endsWith("\n\n"))
         run.content += "\n\n";
@@ -351,6 +359,7 @@ export async function sendAssistantMessage(
         const result = tool?.outcome?.(event.output);
         if (result) current.result = result;
       }
+      kept = { content: run.content, thinking: run.thinking, afterTools };
     }
     publish();
   };
@@ -375,12 +384,15 @@ export async function sendAssistantMessage(
           useSettingsStore.getState().contextWindow,
           UNREPORTED_CONTEXT_LENGTH,
         ),
-      wrapUp: ASSISTANT_WRAP_UP_PROMPT,
+      wrapUp: {
+        max_rounds: ASSISTANT_WRAP_UP_PROMPT,
+        output_limit: ASSISTANT_CUT_OFF_PROMPT,
+      },
       signal,
       onEvent,
     });
     turn = result.messages;
-    if (result.stopReason === "max_rounds") status = "paused";
+    if (result.stopReason !== "done") status = "paused";
   } catch (failure) {
     if (signal.aborted) status = "stopped";
     else {

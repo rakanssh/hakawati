@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { isOutputLimitError } from "@/lib/errors";
 import { ResponseMode } from "@/types/api.type";
 import type { ChatRequest, StreamChunk } from "../schema";
 import { ChatGptClient, ChatGptInferenceError } from "./chatgpt";
@@ -415,10 +416,29 @@ describe("ChatGPT plan inference", () => {
       .chat(request)
       .catch((value: unknown) => value);
     expect(error).toBeInstanceOf(ChatGptInferenceError);
+    expect(isOutputLimitError(error)).toBe(true);
     expect((error as Error).message).toContain("Lower the thinking level");
     expect((error as Error).message).not.toContain(
       "Increase the output token limit",
     );
+  });
+
+  it("doesn't treat a filtered response as an output limit", async () => {
+    fetchMock.mockResolvedValue(
+      sse([
+        event("response.incomplete", {
+          response: {
+            status: "incomplete",
+            incomplete_details: { reason: "content_filter" },
+          },
+        }),
+      ]).response,
+    );
+    const error = await ChatGptClient()
+      .chat(request)
+      .catch((value: unknown) => value);
+    expect(error).toBeInstanceOf(ChatGptInferenceError);
+    expect(isOutputLimitError(error)).toBe(false);
   });
 
   it("preserves structured errors and direct-admission detail bodies without retrying", async () => {

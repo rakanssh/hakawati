@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { isOutputLimitError } from "@/lib/errors";
 import {
   parseOpenAIStream,
   STREAM_IDLE_TIMEOUT_MS,
@@ -63,6 +64,26 @@ describe("parseOpenAIStream", () => {
     expect((await iterator.next()).value).toEqual({ thinking: "Planning" });
     await expect(iterator.next()).rejects.toThrow("Increase Max Output Tokens");
     expect(stream.locked).toBe(false);
+  });
+
+  it("marks a cutoff as an output limit, and other failures not", async () => {
+    const cutOff = await collect(
+      parseOpenAIStream(
+        makeSseStream([
+          'data: {"choices":[{"delta":{},"finish_reason":"length"}]}',
+        ]),
+      ),
+    ).catch((error: unknown) => error);
+    expect(isOutputLimitError(cutOff)).toBe(true);
+    const filtered = await collect(
+      parseOpenAIStream(
+        makeSseStream([
+          'data: {"choices":[{"delta":{},"finish_reason":"content_filter"}]}',
+        ]),
+      ),
+    ).catch((error: unknown) => error);
+    expect(filtered).toBeInstanceOf(Error);
+    expect(isOutputLimitError(filtered)).toBe(false);
   });
 
   it("surfaces provider routing errors sent inside a successful HTTP stream", async () => {

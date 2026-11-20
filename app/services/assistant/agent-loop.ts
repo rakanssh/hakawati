@@ -1,5 +1,9 @@
-import { resolveModelRole, sendRoleChat } from "@/services/llm";
-import { errorMessage, isAbortError } from "@/lib/errors";
+import {
+  lowerRoleReasoningEffort,
+  resolveModelRole,
+  sendRoleChat,
+} from "@/services/llm";
+import { errorMessage, isAbortError, isOutputLimitError } from "@/lib/errors";
 import { assertNotAborted } from "@/services/llm/adapters/responses";
 import type {
   ChatMessage,
@@ -10,9 +14,13 @@ import { ToolCallAccumulator } from "@/services/llm/tool-call-accumulator";
 import type { ToolCall, ToolDefinition } from "@/services/llm/tools";
 import { countTokens } from "@/services/llm/tokenCounter";
 import { ResponseMode, type ModelRole } from "@/types/api.type";
+import type { ReasoningEffort } from "@/types/model.type";
 import { OMITTED_RESULT } from "./history";
 
 const DEFAULT_MAX_AGENT_ROUNDS = 50;
+const CUT_OFF_RETRIES = 2;
+const CUT_OFF_NOTE =
+  "Your last response reached the output limit before it finished, and none of it was kept. Think briefly and do less in this step: make one smaller call now and the rest in later calls.";
 const KEPT_RESULTS = 4;
 const CONTEXT_FILL = 0.8;
 const MESSAGE_OVERHEAD_TOKENS = 4;
@@ -28,13 +36,16 @@ export interface AgentTool {
 export type AgentEvent =
   | { type: "text"; delta: string }
   | { type: "thinking"; delta: string }
+  | { type: "discard" }
   | { type: "tool_start"; call: ToolCall; args: Record<string, unknown> }
   | { type: "tool_end"; call: ToolCall; output: unknown; error?: string };
 
 export interface AgentRunResult {
   messages: ChatMessage[];
-  stopReason: "done" | "max_rounds";
+  stopReason: "done" | AgentStop;
 }
+
+export type AgentStop = "max_rounds" | "output_limit";
 
 async function readRound(
   response: ChatResponse,
@@ -161,7 +172,7 @@ export async function runAgentLoop(input: {
   maxRounds?: number;
   maxTokens?: number;
   contextLength?: number;
-  wrapUp?: string;
+  wrapUp?: Record<AgentStop, string>;
   signal?: AbortSignal;
   onEvent?: (event: AgentEvent) => void;
 }): Promise<AgentRunResult> {
@@ -182,6 +193,7 @@ export async function runAgentLoop(input: {
           CONTEXT_FILL,
       )
     : undefined;
+  let effort: ReasoningEffort | undefined;
   const send = (messages: ChatMessage[], toolChoice?: "none") => {
     if (budget !== undefined) fitContext(messages, budget);
     return sendRoleChat(
@@ -193,6 +205,7 @@ export async function runAgentLoop(input: {
         ...(input.maxTokens !== undefined
           ? { max_tokens: input.maxTokens }
           : {}),
+        ...(effort ? { reasoningEffort: effort } : {}),
         responseMode: ResponseMode.TOOL_CALLING,
         tools: definitions,
         ...(toolChoice ? { toolChoice } : {}),
@@ -202,10 +215,34 @@ export async function runAgentLoop(input: {
     );
   };
 
+  const attempt = async (round: number) => {
+    for (let retries = 0; ; retries += 1) {
+      try {
+        const response = await send(
+          retries
+            ? [...conversation, { role: "user", content: CUT_OFF_NOTE }]
+            : conversation,
+        );
+        return { response, ...(await readRound(response, round, onEvent)) };
+      } catch (error) {
+        if (!isOutputLimitError(error)) throw error;
+        assertNotAborted(signal);
+        onEvent?.({ type: "discard" });
+        if (retries === CUT_OFF_RETRIES) return null;
+        effort = lowerRoleReasoningEffort(role, effort) ?? effort;
+      }
+    }
+  };
+
+  let stopReason: AgentStop = "max_rounds";
   for (let round = 0; round < maxRounds; round += 1) {
     assertNotAborted(signal);
-    const response = await send(conversation);
-    const { content, toolCalls } = await readRound(response, round, onEvent);
+    const reply = await attempt(round);
+    if (!reply) {
+      stopReason = "output_limit";
+      break;
+    }
+    const { response, content, toolCalls } = reply;
     assertNotAborted(signal);
     const assistant: ChatMessage = {
       role: "assistant",
@@ -245,7 +282,7 @@ export async function runAgentLoop(input: {
   if (input.wrapUp) {
     try {
       const response = await send(
-        [...conversation, { role: "user", content: input.wrapUp }],
+        [...conversation, { role: "user", content: input.wrapUp[stopReason] }],
         "none",
       );
       const { content, toolCalls } = await readRound(
@@ -264,7 +301,8 @@ export async function runAgentLoop(input: {
     } catch (error) {
       if (isAbortError(error)) throw error;
       assertNotAborted(signal);
+      onEvent?.({ type: "discard" });
     }
   }
-  return { messages: added, stopReason: "max_rounds" };
+  return { messages: added, stopReason };
 }

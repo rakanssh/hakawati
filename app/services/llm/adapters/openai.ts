@@ -1,3 +1,4 @@
+import { markOutputLimit } from "@/lib/errors";
 import { ResponseMode } from "@/types/api.type";
 import {
   AudioTranscriptionRequest,
@@ -173,10 +174,12 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
         } else {
           const json = await r.json();
           if (json.choices?.[0]?.finish_reason === "length") {
-            throw new Error(
-              fixedLimitLabel
-                ? `The response reached the output token limit. Lower the ${fixedLimitLabel} thinking level or try a shorter request.`
-                : "The response reached the output token limit. Increase Max Output Tokens or lower the thinking level and retry.",
+            throw markOutputLimit(
+              new Error(
+                fixedLimitLabel
+                  ? `The response reached the output token limit. Lower the ${fixedLimitLabel} thinking level or try a shorter request.`
+                  : "The response reached the output token limit. Increase Max Output Tokens or lower the thinking level and retry.",
+              ),
             );
           }
           const message = json.choices[0].message;

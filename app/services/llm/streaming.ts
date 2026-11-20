@@ -1,3 +1,4 @@
+import { markOutputLimit } from "@/lib/errors";
 import { StreamChunk, ToolCallDelta } from "./schema";
 import { assertNotAborted } from "./adapters/responses";
 
@@ -172,10 +173,12 @@ function assertFinishedNormally(
   fixedLimitLabel: string | undefined,
 ): void {
   if (finishReason === "length") {
-    throw new Error(
-      fixedLimitLabel === undefined
-        ? "The response reached its output token limit before finishing. Thinking and the answer share this limit. Increase Max Output Tokens or choose a lower thinking level and try again."
-        : `The response reached its output token limit before finishing. Choose a lower ${fixedLimitLabel} thinking level or use a shorter request and try again.`,
+    throw markOutputLimit(
+      new Error(
+        fixedLimitLabel === undefined
+          ? "The response reached its output token limit before finishing. Thinking and the answer share this limit. Increase Max Output Tokens or choose a lower thinking level and try again."
+          : `The response reached its output token limit before finishing. Choose a lower ${fixedLimitLabel} thinking level or use a shorter request and try again.`,
+      ),
     );
   }
   if (finishReason === "content_filter") {

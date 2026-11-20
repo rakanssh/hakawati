@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { markOutputLimit } from "@/lib/errors";
 import type { ChatResponse, StreamChunk } from "@/services/llm/schema";
 import type { AssistantMessage, AssistantThread } from "@/types/assistant.type";
 import type { AssistantToolContext } from "./tools/define";
@@ -18,7 +19,11 @@ const { db, sendRoleChat, resolveModelRole } = vi.hoisted(() => ({
   resolveModelRole: vi.fn(),
 }));
 
-vi.mock("@/services/llm", () => ({ sendRoleChat, resolveModelRole }));
+vi.mock("@/services/llm", () => ({
+  sendRoleChat,
+  resolveModelRole,
+  lowerRoleReasoningEffort: () => undefined,
+}));
 vi.mock("@/repositories/tale.repository", () => ({}));
 vi.mock("@/repositories/scenario.repository", () => ({}));
 vi.mock("@/repositories/assistant.repository", () => {
@@ -143,6 +148,14 @@ function streamed(chunks: StreamChunk[]): ChatResponse {
   return { content: "", iterator: iterator(), raw: null, usage };
 }
 
+function cutOff(chunks: StreamChunk[]): ChatResponse {
+  async function* iterator(): AsyncGenerator<StreamChunk> {
+    for (const chunk of chunks) yield chunk;
+    throw markOutputLimit(new Error("Reached the output limit."));
+  }
+  return { content: "", iterator: iterator(), raw: null, usage };
+}
+
 const contextCall: StreamChunk[] = [
   { content: "Looking." },
   {
@@ -216,6 +229,31 @@ describe("Hakawati chat session", () => {
       /^<context>\n\{"page":"home"\}\n<\/context>\n\nWhere am I\?$/,
     );
     expect(firstRequest.toolNamespace.name).toBe("hakawati");
+  });
+
+  it("drops a cut-off attempt's text and pauses when it keeps getting cut off", async () => {
+    const { session, store } = await load();
+    sendRoleChat
+      .mockResolvedValueOnce(streamed(contextCall))
+      .mockResolvedValueOnce(
+        cutOff([{ thinking: "Every card at once" }, { content: "Here is" }]),
+      )
+      .mockResolvedValueOnce(cutOff([{ content: "Here" }]))
+      .mockResolvedValueOnce(cutOff([]))
+      .mockResolvedValueOnce(streamed([{ content: "Cards are left." }]));
+
+    await session.sendAssistantMessage("Build a scenario.", home);
+
+    const reply = store.getState().messages[1];
+    expect(reply.status).toBe("paused");
+    expect(reply.content).toBe("Looking.\n\nCards are left.");
+    expect(reply.thinking).toBeUndefined();
+    expect(reply.turn?.map((m) => m.role)).toEqual([
+      "assistant",
+      "tool",
+      "assistant",
+    ]);
+    expect(store.getState().error).toBeNull();
   });
 
   it("pauses a reply that runs out of steps and picks it up on Continue", async () => {

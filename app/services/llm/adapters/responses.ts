@@ -1,3 +1,4 @@
+import { markOutputLimit } from "@/lib/errors";
 import type { ChatMessage, ChatResponse, StreamChunk } from "../schema";
 import type { ToolCall } from "../tools";
 
@@ -409,13 +410,18 @@ async function* responseEvents(
       case "response.failed":
         fail(`${options.provider} inference failed.`, object(event.response));
         break;
-      case "response.incomplete":
-        fail(
+      case "response.incomplete": {
+        const incomplete = object(event.response);
+        const error = options.error(
           options.incompleteMessage ??
             `${options.provider} did not complete the response. Increase the output token limit, lower the thinking level, or try a shorter request.`,
-          { code: "response_incomplete", ...object(event.response) },
+          { code: "response_incomplete", ...incomplete },
         );
-        break;
+        throw string(object(incomplete.incomplete_details).reason) ===
+          "content_filter"
+          ? error
+          : markOutputLimit(error);
+      }
       case "response.completed": {
         const completed = object(event.response);
         if (completed.status && completed.status !== "completed")

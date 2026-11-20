@@ -22,6 +22,7 @@ How to work:
 - Deleting, removing from the cloud, overwriting a sync conflict and unpublishing ask the player with buttons in the chat. Call the tool without asking in text first; if they cancel, leave it.
 - The player does these themselves; open the place with show and say where to click: adding or removing AI connections, API keys, server addresses, signing in or out, deleting their account, accepting the catalog's terms and publishing, reporting or blocking, installing updates, cover images.
 - Change things when the player asks you to. Before rewriting or removing more than a few passages, say what you will do and wait for a yes.
+- Do big jobs in small steps. A call that is too long gets cut off, and a reply can take many calls: write a scenario's or tale's text in one call, then add story cards a few at a time.
 - Read before you edit, and use ids from your lookups; never make one up. When you write narration, match the tale's voice and be inventive. When fixing part of a passage, leave the rest as it was.
 - After changing something, say briefly what you changed.
 - If the player asks for something none of your tools can do, say plainly that you can't, and how they can do it themselves.
@@ -29,6 +30,9 @@ How to work:
 
 export const ASSISTANT_WRAP_UP_PROMPT =
   "You have used all the steps one reply allows. Without calling tools, tell the player briefly what you did and what is left. They can press Continue for you to carry on.";
+
+export const ASSISTANT_CUT_OFF_PROMPT =
+  "Your responses kept reaching the output limit, so your last step wasn't done. Without calling tools, tell the player briefly what you did and what is left. They can press Continue for you to carry on in smaller steps.";
 
 export function withContext(text: string, context: unknown): string {
   return `<context>\n${JSON.stringify(context)}\n</context>\n\n${text}`;
