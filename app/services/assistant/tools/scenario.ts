@@ -197,7 +197,7 @@ export function createScenarioTools(
             details: {
               type: "string",
               description:
-                "Only what the player said beyond the other answers.",
+                "More to shape the tale: what the player asked for, and your own ideas where they left room.",
             },
           },
           required: ["world", "character", "archetype"],
