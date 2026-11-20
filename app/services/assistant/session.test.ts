@@ -212,6 +212,33 @@ describe("Hakawati chat session", () => {
     expect(firstRequest.toolNamespace.name).toBe("hakawati");
   });
 
+  it("pauses a reply that runs out of steps and picks it up on Continue", async () => {
+    const { session, store } = await load();
+    sendRoleChat.mockImplementation(async (_role, request) =>
+      request.toolChoice === "none"
+        ? streamed([{ content: "More to do." }])
+        : streamed(contextCall),
+    );
+
+    await session.sendAssistantMessage("Do a lot.", home);
+
+    const reply = store.getState().messages[1];
+    expect(reply.status).toBe("paused");
+    expect(reply.content.endsWith("More to do.")).toBe(true);
+    expect(reply.activity).toHaveLength(50);
+
+    sendRoleChat.mockReset();
+    sendRoleChat.mockResolvedValueOnce(streamed([{ content: "Done." }]));
+    await session.sendAssistantMessage("Continue", home);
+
+    const sent = sendRoleChat.mock.calls[0][1].messages;
+    expect(
+      sent.filter((m: { role: string }) => m.role === "tool"),
+    ).toHaveLength(50);
+    expect(sent.at(-2)).toEqual({ role: "assistant", content: "More to do." });
+    expect(store.getState().messages.at(-1)?.status).toBeUndefined();
+  });
+
   it("saves where each step happened in the trimmed reply", async () => {
     const { session, store } = await load();
     sendRoleChat

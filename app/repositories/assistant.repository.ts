@@ -58,7 +58,9 @@ function messageFromRow(row: MessageRow): AssistantMessage {
     ...(turn ? { turn } : {}),
     ...(activity?.length ? { activity } : {}),
     ...(changes?.length ? { changes } : {}),
-    ...(row.status === "stopped" || row.status === "failed"
+    ...(row.status === "stopped" ||
+    row.status === "failed" ||
+    row.status === "paused"
       ? { status: row.status as AssistantMessageStatus }
       : {}),
     createdAt: Number(row.created_at),

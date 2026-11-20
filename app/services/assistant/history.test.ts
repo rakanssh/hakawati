@@ -82,6 +82,19 @@ describe("toModelHistory", () => {
     expect(history.at(-1)).toEqual({ role: "user", content: "5" });
   });
 
+  it("replays the steps of a reply that ran out of steps", () => {
+    const paused = { ...withTool("c1", "r1"), status: "paused" as const };
+    const history = toModelHistory([user("1"), paused, user("Continue")]);
+    expect(history.map((m) => m.role)).toEqual([
+      "user",
+      "assistant",
+      "tool",
+      "assistant",
+      "user",
+    ]);
+    expect(history[2].content).toBe("r1");
+  });
+
   it("keeps stopped and failed replies as text and drops empty ones", () => {
     const history = toModelHistory([
       user("a"),

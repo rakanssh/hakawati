@@ -424,7 +424,7 @@ msgstr "التطبيق"
 msgid "Appearance"
 msgstr "المظهر"
 
-#: app/components/assistant/hakawati-chat.tsx:622
+#: app/components/assistant/hakawati-chat.tsx:636
 msgid "Ask Hakawati"
 msgstr "اسأل حكواتي"
 
@@ -914,6 +914,8 @@ msgstr "نافذة السياق"
 msgid "Continuation {0}"
 msgstr "تكملة {0}"
 
+#: app/components/assistant/hakawati-chat.tsx:553
+#: app/components/assistant/hakawati-chat.tsx:555
 #: app/components/layout/settings/advanced.tsx:54
 #: app/components/layout/settings/cloud-sync.tsx:1242
 #: app/components/play/play-input-controls.tsx:557
@@ -2113,7 +2115,7 @@ msgstr "مسعف"
 msgid "Medium"
 msgstr "متوسط"
 
-#: app/components/assistant/hakawati-chat.tsx:623
+#: app/components/assistant/hakawati-chat.tsx:637
 msgid "Message Hakawati"
 msgstr "رسالة إلى حكواتي"
 
@@ -3246,7 +3248,7 @@ msgstr "اختر الخط"
 msgid "Select Model"
 msgstr "اختر النموذج"
 
-#: app/components/assistant/hakawati-chat.tsx:645
+#: app/components/assistant/hakawati-chat.tsx:659
 msgid "Send"
 msgstr "إرسال"
 
@@ -3263,7 +3265,7 @@ msgstr "جدي"
 msgid "Set"
 msgstr "ضبط"
 
-#: app/components/assistant/hakawati-chat.tsx:563
+#: app/components/assistant/hakawati-chat.tsx:577
 msgid "Set up Hakawati"
 msgstr "إعداد حكواتي"
 
@@ -3462,7 +3464,7 @@ msgstr "تتبع الخصائص والمخزون"
 msgid "Still"
 msgstr "ثابت"
 
-#: app/components/assistant/hakawati-chat.tsx:633
+#: app/components/assistant/hakawati-chat.tsx:647
 msgid "Stop"
 msgstr "إيقاف"
 

@@ -16,6 +16,7 @@ import {
   type AssistantRun,
 } from "@/store/useAssistantStore";
 import { useAssistantMemoryStore } from "@/store/useAssistantMemoryStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import { useStoryPanelStore } from "@/store/useStoryPanelStore";
 import {
   isAppChange,
@@ -36,6 +37,7 @@ import { toModelHistory } from "./history";
 import {
   ASSISTANT_SYSTEM_PROMPT,
   ASSISTANT_TOOL_NAMESPACE,
+  ASSISTANT_WRAP_UP_PROMPT,
   withContext,
 } from "./prompt";
 import { revertAppChanges } from "./app-changes";
@@ -365,11 +367,15 @@ export async function sendAssistantMessage(
       ],
       tools,
       toolNamespace: ASSISTANT_TOOL_NAMESPACE,
-      maxTokens: Math.min(model.maxOutputTokens ?? 4096, 8192),
+      maxTokens: Math.min(model.maxOutputTokens ?? 4096, 16384),
+      contextLength:
+        model.contextLength ?? useSettingsStore.getState().contextWindow,
+      wrapUp: ASSISTANT_WRAP_UP_PROMPT,
       signal,
       onEvent,
     });
     turn = result.messages;
+    if (result.stopReason === "max_rounds") status = "paused";
   } catch (failure) {
     if (signal.aborted) status = "stopped";
     else {

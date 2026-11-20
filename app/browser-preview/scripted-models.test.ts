@@ -62,4 +62,28 @@ describe("browser preview scripted models", () => {
     expect(calls).toEqual([]);
     expect(content).toContain('{"page":"home"}');
   });
+
+  it("keeps calling the tools on /loop until tools are turned off", async () => {
+    const messages = [
+      { role: "user", content: "/loop\n/tool get_context" },
+      { role: "assistant", content: "" },
+      { role: "tool", tool_call_id: "c", content: "{}" },
+    ];
+    const again = await read(
+      scriptedChatCompletion({ stream: true, tools: assistantTools, messages }),
+    );
+    expect(again.calls.map((call) => call.function.name)).toEqual([
+      "get_context",
+    ]);
+    const done = await read(
+      scriptedChatCompletion({
+        stream: true,
+        tools: assistantTools,
+        tool_choice: "none",
+        messages: [...messages, { role: "user", content: "Wrap up." }],
+      }),
+    );
+    expect(done.calls).toEqual([]);
+    expect(done.content).toBe("Scripted Hakawati reply.");
+  });
 });

@@ -133,7 +133,7 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
 
     if (useToolCalling) {
       body.tools = req.tools ?? GM_TOOLS;
-      body.tool_choice = "auto";
+      body.tool_choice = req.toolChoice ?? "auto";
     }
 
     console.debug(`Sending request to ${req.model}:`, body);
@@ -261,7 +261,7 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
         type: tool.type,
         ...tool.function,
       }));
-      body.tool_choice = "auto";
+      body.tool_choice = req.toolChoice ?? "auto";
       if (req.tools) body.include = ["reasoning.encrypted_content"];
     }
     const response = await fetch(`${base}/responses`, {

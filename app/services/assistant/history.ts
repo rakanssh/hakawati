@@ -8,6 +8,9 @@ export const UNDONE_NOTE = "(The player undid the changes from this reply.)";
 export const PARTLY_UNDONE_NOTE =
   "(The player undid some of the changes from this reply.)";
 
+const replaysTurn = (message: AssistantMessage) =>
+  Boolean(message.turn) && (!message.status || message.status === "paused");
+
 function undoNote(message: AssistantMessage): string | null {
   const undone = message.changes?.filter((change) => change.undone).length ?? 0;
   if (!undone) return null;
@@ -20,8 +23,7 @@ export function toModelHistory(messages: AssistantMessage[]): ChatMessage[] {
   const firstUser = recent.findIndex((message) => message.role === "user");
   recent = firstUser === -1 ? [] : recent.slice(firstUser);
   const replies = recent.filter(
-    (message) =>
-      message.role === "assistant" && message.turn && !message.status,
+    (message) => message.role === "assistant" && replaysTurn(message),
   );
   const keepResults = new Set(replies.slice(-RECENT_TOOL_RESULTS));
 
@@ -29,7 +31,7 @@ export function toModelHistory(messages: AssistantMessage[]): ChatMessage[] {
     if (message.role === "user")
       return [{ role: "user", content: message.content }];
     const note = undoNote(message);
-    if (message.turn && !message.status) {
+    if (message.turn && replaysTurn(message)) {
       const full = keepResults.has(message);
       const items = message.turn.map(
         (item): ChatMessage => ({

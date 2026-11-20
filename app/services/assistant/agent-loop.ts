@@ -8,9 +8,14 @@ import type {
 } from "@/services/llm/schema";
 import { ToolCallAccumulator } from "@/services/llm/tool-call-accumulator";
 import type { ToolCall, ToolDefinition } from "@/services/llm/tools";
+import { countTokens } from "@/services/llm/tokenCounter";
 import { ResponseMode, type ModelRole } from "@/types/api.type";
+import { OMITTED_RESULT } from "./history";
 
-const DEFAULT_MAX_AGENT_ROUNDS = 10;
+const DEFAULT_MAX_AGENT_ROUNDS = 50;
+const KEPT_RESULTS = 4;
+const CONTEXT_FILL = 0.8;
+const MESSAGE_OVERHEAD_TOKENS = 4;
 
 export interface AgentTool {
   definition: ToolDefinition;
@@ -109,6 +114,45 @@ async function runTool(
   }
 }
 
+const messageSizes = new WeakMap<ChatMessage, number>();
+
+function messageTokens(message: ChatMessage): number {
+  let size = messageSizes.get(message);
+  if (size === undefined) {
+    size =
+      MESSAGE_OVERHEAD_TOKENS +
+      countTokens(message.content) +
+      (message.tool_calls ?? []).reduce(
+        (sum, call) =>
+          sum +
+          countTokens(call.function.name) +
+          countTokens(call.function.arguments),
+        0,
+      );
+    messageSizes.set(message, size);
+  }
+  return size;
+}
+
+function fitContext(conversation: ChatMessage[], budget: number) {
+  let total = conversation.reduce(
+    (sum, message) => sum + messageTokens(message),
+    0,
+  );
+  if (total <= budget) return;
+  const results = conversation.flatMap((message, index) =>
+    message.role === "tool" && message.content !== OMITTED_RESULT
+      ? [index]
+      : [],
+  );
+  for (const index of results.slice(0, -KEPT_RESULTS)) {
+    if (total <= budget) return;
+    const trimmed = { ...conversation[index], content: OMITTED_RESULT };
+    total += messageTokens(trimmed) - messageTokens(conversation[index]);
+    conversation[index] = trimmed;
+  }
+}
+
 export async function runAgentLoop(input: {
   role: ModelRole;
   messages: ChatMessage[];
@@ -116,6 +160,8 @@ export async function runAgentLoop(input: {
   toolNamespace?: ToolNamespace;
   maxRounds?: number;
   maxTokens?: number;
+  contextLength?: number;
+  wrapUp?: string;
   signal?: AbortSignal;
   onEvent?: (event: AgentEvent) => void;
 }): Promise<AgentRunResult> {
@@ -128,24 +174,37 @@ export async function runAgentLoop(input: {
   const conversation = [...input.messages];
   const added: ChatMessage[] = [];
   const maxRounds = input.maxRounds ?? DEFAULT_MAX_AGENT_ROUNDS;
-
-  for (let round = 0; round < maxRounds; round += 1) {
-    assertNotAborted(signal);
-    const response = await sendRoleChat(
+  const budget = input.contextLength
+    ? Math.floor(
+        (input.contextLength -
+          (input.maxTokens ?? 0) -
+          countTokens(JSON.stringify(definitions))) *
+          CONTEXT_FILL,
+      )
+    : undefined;
+  const send = (messages: ChatMessage[], toolChoice?: "none") => {
+    if (budget !== undefined) fitContext(messages, budget);
+    return sendRoleChat(
       role,
       {
         model: model.id,
-        messages: [...conversation],
+        messages: [...messages],
         stream: true,
         ...(input.maxTokens !== undefined
           ? { max_tokens: input.maxTokens }
           : {}),
         responseMode: ResponseMode.TOOL_CALLING,
         tools: definitions,
+        ...(toolChoice ? { toolChoice } : {}),
         ...(input.toolNamespace ? { toolNamespace: input.toolNamespace } : {}),
       },
       signal,
     );
+  };
+
+  for (let round = 0; round < maxRounds; round += 1) {
+    assertNotAborted(signal);
+    const response = await send(conversation);
     const { content, toolCalls } = await readRound(response, round, onEvent);
     assertNotAborted(signal);
     const assistant: ChatMessage = {
@@ -181,6 +240,30 @@ export async function runAgentLoop(input: {
       };
       conversation.push(result);
       added.push(result);
+    }
+  }
+  if (input.wrapUp) {
+    try {
+      const response = await send(
+        [...conversation, { role: "user", content: input.wrapUp }],
+        "none",
+      );
+      const { content, toolCalls } = await readRound(
+        response,
+        maxRounds,
+        onEvent,
+      );
+      if (content)
+        added.push({
+          role: "assistant",
+          content,
+          ...(response.replay && !toolCalls.length
+            ? { replay: response.replay }
+            : {}),
+        });
+    } catch (error) {
+      if (isAbortError(error)) throw error;
+      assertNotAborted(signal);
     }
   }
   return { messages: added, stopReason: "max_rounds" };

@@ -123,7 +123,7 @@ export interface AssistantActivity {
   confirm?: AssistantConfirm;
 }
 
-export type AssistantMessageStatus = "stopped" | "failed";
+export type AssistantMessageStatus = "stopped" | "failed" | "paused";
 
 export interface AssistantMessage {
   id: string;

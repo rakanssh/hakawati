@@ -2,12 +2,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChatResponse, StreamChunk } from "@/services/llm/schema";
 import { ResponseMode } from "@/types/api.type";
 import { runAgentLoop, type AgentEvent, type AgentTool } from "./agent-loop";
+import { OMITTED_RESULT } from "./history";
 
 const { sendRoleChat, resolveModelRole } = vi.hoisted(() => ({
   sendRoleChat: vi.fn(),
   resolveModelRole: vi.fn(),
 }));
 vi.mock("@/services/llm", () => ({ sendRoleChat, resolveModelRole }));
+vi.mock("@/services/llm/tokenCounter", () => ({
+  countTokens: (text: string) => text.length,
+}));
 
 const usage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
 
@@ -250,6 +254,118 @@ describe("runAgentLoop", () => {
     expect(result.stopReason).toBe("max_rounds");
     expect(sendRoleChat).toHaveBeenCalledTimes(2);
     expect(result.messages).toHaveLength(4);
+  });
+
+  it("allows 50 rounds by default", async () => {
+    sendRoleChat.mockImplementation(async () =>
+      streamed(callChunks("call_1", "a", "{}")),
+    );
+    await runAgentLoop({ role: "utility", messages: [], tools: [tool("a")] });
+    expect(sendRoleChat).toHaveBeenCalledTimes(50);
+  });
+
+  it("asks for a summary without tools when the rounds run out", async () => {
+    sendRoleChat
+      .mockResolvedValueOnce(streamed(callChunks("call_1", "a", "{}")))
+      .mockResolvedValueOnce(streamed(callChunks("call_2", "a", "{}")))
+      .mockResolvedValueOnce(streamed([{ content: "Two done, one left." }]));
+    const events: AgentEvent[] = [];
+    const result = await runAgentLoop({
+      role: "utility",
+      messages: [{ role: "user", content: "Do three things." }],
+      tools: [tool("a")],
+      maxRounds: 2,
+      wrapUp: "Wrap up.",
+      onEvent: (event) => events.push(event),
+    });
+    const request = sendRoleChat.mock.calls[2][1];
+    expect(request.toolChoice).toBe("none");
+    expect(request.messages.at(-1)).toEqual({
+      role: "user",
+      content: "Wrap up.",
+    });
+    expect(result.stopReason).toBe("max_rounds");
+    expect(result.messages).toHaveLength(5);
+    expect(result.messages.at(-1)).toEqual({
+      role: "assistant",
+      content: "Two done, one left.",
+    });
+    expect(events.at(-1)).toEqual({
+      type: "text",
+      delta: "Two done, one left.",
+    });
+  });
+
+  it("drops tool calls from the summary round", async () => {
+    const a = tool("a");
+    sendRoleChat
+      .mockResolvedValueOnce(streamed(callChunks("call_1", "a", "{}")))
+      .mockResolvedValueOnce(
+        streamed(
+          [{ content: "One done." }, ...callChunks("call_2", "a", "{}")],
+          { replay: { format: "responses", model: "model-a", items: [] } },
+        ),
+      );
+    const result = await runAgentLoop({
+      role: "utility",
+      messages: [],
+      tools: [a],
+      maxRounds: 1,
+      wrapUp: "Wrap up.",
+    });
+    expect(a.run).toHaveBeenCalledOnce();
+    expect(result.messages.at(-1)).toEqual({
+      role: "assistant",
+      content: "One done.",
+    });
+  });
+
+  it("keeps the steps when the summary round fails", async () => {
+    sendRoleChat
+      .mockResolvedValueOnce(streamed(callChunks("call_1", "a", "{}")))
+      .mockRejectedValueOnce(new Error("tool_choice is not supported"));
+    const result = await runAgentLoop({
+      role: "utility",
+      messages: [],
+      tools: [tool("a")],
+      maxRounds: 1,
+      wrapUp: "Wrap up.",
+    });
+    expect(result.stopReason).toBe("max_rounds");
+    expect(result.messages).toHaveLength(2);
+  });
+
+  it("omits older tool results once the context fills, keeping the latest", async () => {
+    const big = "x".repeat(1000);
+    const reader = tool("read", async () => big);
+    for (let round = 0; round < 6; round += 1)
+      sendRoleChat.mockResolvedValueOnce(
+        streamed(callChunks(`call_${round}`, "read", "{}")),
+      );
+    sendRoleChat.mockResolvedValueOnce(streamed([{ content: "Read it all." }]));
+    const result = await runAgentLoop({
+      role: "utility",
+      messages: [{ role: "user", content: "Read everything." }],
+      tools: [reader],
+      contextLength: 3000,
+    });
+    const sent = sendRoleChat.mock.calls[6][1].messages as {
+      role: string;
+      content: string;
+    }[];
+    expect(sent.filter((m) => m.role === "tool").map((m) => m.content)).toEqual(
+      [OMITTED_RESULT, OMITTED_RESULT, big, big, big, big],
+    );
+    expect(
+      sendRoleChat.mock.calls[3][1].messages
+        .filter((m: { role: string }) => m.role === "tool")
+        .map((m: { content: string }) => m.content),
+    ).toEqual([big, big, big]);
+    expect(
+      result.messages
+        .filter((m) => m.role === "tool")
+        .every((m) => m.content === big),
+    ).toBe(true);
   });
 
   it("stops between tools when cancelled and does not run the rest", async () => {

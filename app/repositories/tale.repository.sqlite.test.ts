@@ -2287,6 +2287,7 @@ describe("Hakawati storage", () => {
       thinking: "Check the card.",
       turn: [{ role: "assistant", content: "A smuggler." }],
       activity: [{ tool: "search_log", detail: "Mara" }],
+      status: "paused",
       createdAt: 11,
     });
     expect([first.seq, second.seq]).toEqual([1, 2]);

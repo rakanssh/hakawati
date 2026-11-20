@@ -438,6 +438,7 @@ function ChatMenu({ pathname }: { pathname: string }) {
 }
 
 export function HakawatiChat() {
+  const { t } = useLingui();
   const router = useRouter();
   const navigate = useNavigate();
   const { load: loadTale } = useLoadTale();
@@ -455,6 +456,12 @@ export function HakawatiChat() {
   );
   const { isMobilePlatform } = useIsMobile();
   const openSettings = useSettingsModalStore((state) => state.openSettings);
+  const last = messages.at(-1);
+  const canContinue =
+    configured &&
+    !run &&
+    last?.role === "assistant" &&
+    last.status === "paused";
   const { viewportRef, handleScroll, stickToBottom, scrollToBottom } =
     useStickToBottom({ scrollBehavior: "auto" });
 
@@ -541,6 +548,16 @@ export function HakawatiChat() {
                 />
               ),
             )}
+            {canContinue ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="self-start"
+                onClick={() => send(t`Continue`)}
+              >
+                <Trans>Continue</Trans>
+              </Button>
+            ) : null}
             {run ? (
               <Reply
                 content={run.content}

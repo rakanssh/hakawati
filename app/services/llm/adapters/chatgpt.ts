@@ -128,7 +128,7 @@ export function ChatGptClient(): LLMClient {
           })),
         },
       ];
-      body.tool_choice = "auto";
+      body.tool_choice = req.toolChoice ?? "auto";
       if (req.tools) body.include = ["reasoning.encrypted_content"];
     }
     // This route rejects sampling/output limits; never spread generic options here.

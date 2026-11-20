@@ -8,6 +8,7 @@ type ChatRequest = {
   stream?: boolean;
   messages?: Message[];
   tools?: Array<{ function?: { name?: string } }>;
+  tool_choice?: string;
 };
 
 type Delta = Record<string, unknown>;
@@ -42,19 +43,29 @@ function reply(request: ChatRequest, content: string): Response {
   });
 }
 
-/** `/tool name {json}` lines in the player's message, after the context block the app adds. */
+const playerText = (content: string) =>
+  content.replace(/^<context>[\s\S]*?<\/context>\s*/, "");
+
+/** `/tool name {json}` lines in the player's message; a `/loop` line repeats them every round. */
 function requestedCalls(content: string) {
-  const text = content.replace(/^<context>[\s\S]*?<\/context>\s*/, "");
-  return text.split("\n").flatMap((line) => {
-    const match = /^\/tool\s+(\w+)\s*(.*)$/.exec(line.trim());
-    return match ? [{ name: match[1], args: match[2].trim() || "{}" }] : [];
-  });
+  return playerText(content)
+    .split("\n")
+    .flatMap((line) => {
+      const match = /^\/tool\s+(\w+)\s*(.*)$/.exec(line.trim());
+      return match ? [{ name: match[1], args: match[2].trim() || "{}" }] : [];
+    });
 }
 
 function assistant(request: ChatRequest): Response {
   const messages = request.messages ?? [];
   const last = messages.at(-1);
-  if (last?.role === "tool") {
+  const player = String(
+    [...messages].reverse().find((message) => message.role === "user")
+      ?.content ?? "",
+  );
+  const loops =
+    request.tool_choice !== "none" && /^\/loop$/m.test(playerText(player));
+  if (last?.role === "tool" && !loops) {
     const results: string[] = [];
     for (let i = messages.length - 1; messages[i]?.role === "tool"; i -= 1)
       results.unshift(String(messages[i].content ?? "").slice(0, 400));
@@ -63,7 +74,7 @@ function assistant(request: ChatRequest): Response {
       `Scripted Hakawati reply.\n\n${results.map((r) => `- \`${r}\``).join("\n")}`,
     );
   }
-  const calls = requestedCalls(String(last?.content ?? ""));
+  const calls = requestedCalls(player);
   if (!calls.length || !request.stream)
     return reply(request, "Scripted Hakawati reply.");
   callCount += 1;

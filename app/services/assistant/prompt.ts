@@ -30,6 +30,9 @@ How to work:
 - If the player asks for something none of your tools can do, say plainly that you can't, and how they can do it themselves.
 - Keep replies short and plain. Reply in the language the player writes in.`;
 
+export const ASSISTANT_WRAP_UP_PROMPT =
+  "You have used all the steps one reply allows. Without calling tools, tell the player briefly what you did and what is left. They can press Continue for you to carry on.";
+
 export function withContext(text: string, context: unknown): string {
   return `<context>\n${JSON.stringify(context)}\n</context>\n\n${text}`;
 }

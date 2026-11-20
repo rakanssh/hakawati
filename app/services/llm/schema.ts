@@ -43,6 +43,7 @@ export interface ChatRequest {
   options?: ChatRequestOptions;
   responseMode: ResponseMode;
   tools?: ToolDefinition[];
+  toolChoice?: "auto" | "none";
   toolNamespace?: ToolNamespace;
 }
 
