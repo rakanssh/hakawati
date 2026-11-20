@@ -4,7 +4,7 @@ import { normalizeStoryCard } from "@/lib/story-card-utils";
 import { createTaleSessionState } from "@/lib/tale-storage";
 import {
   deleteLogEntries,
-  findLogEntryIndex,
+  findLogEntries,
   getLogEntries,
   getTalePlayLoad,
   insertLogEntries,
@@ -38,10 +38,12 @@ function loadedSnapshot(): TaleMutableSnapshot {
   };
 }
 
-async function readSnapshot(taleId: string): Promise<TaleMutableSnapshot> {
+async function readSnapshot(
+  taleId: string,
+): Promise<TaleMutableSnapshot | null> {
   if (isLoaded(taleId)) return loadedSnapshot();
   const tale = await getTalePlayLoad(taleId, { logLimit: 0 });
-  if (!tale) throw new Error("No tale has that id.");
+  if (!tale) return null;
   return {
     name: tale.name,
     description: tale.description,
@@ -91,17 +93,21 @@ export async function editTaleSetup(
   taleId: string,
   edit: (changes: TaleChanges) => void,
 ): Promise<TaleChange[]> {
-  const changes = new TaleChanges(taleId, await readSnapshot(taleId));
+  const tale = await readSnapshot(taleId);
+  if (!tale) throw new Error("No tale has that id.");
+  const changes = new TaleChanges(taleId, tale);
   edit(changes);
   if (changes.changes.length) await writeSnapshot(taleId, changes.tale);
   return changes.changes;
 }
 
+async function readPassages(taleId: string, ids: string[]) {
+  const found = await findLogEntries(taleId, ids);
+  return new Map(found.map((passage) => [passage.entry.id, passage]));
+}
+
 async function readPassage(taleId: string, id: string) {
-  const index = await findLogEntryIndex(taleId, id);
-  if (index === null) return null;
-  const [entry] = await getLogEntries(taleId, index, 1);
-  return entry?.id === id ? { entry, index } : null;
+  return (await readPassages(taleId, [id])).get(id) ?? null;
 }
 
 async function passageAt(taleId: string, index: number) {
@@ -149,14 +155,16 @@ export function toLogEntry(passage: NewPassage): LogEntry {
       };
 }
 
+function loadedPosition(afterId: string | null): number {
+  const { log, oldestLoadedIndex } = useTaleStore.getState();
+  if (afterId === null) return oldestLoadedIndex === 0 ? 0 : -1;
+  const index = log.findIndex((entry) => entry.id === afterId);
+  return index < 0 ? -1 : index + 1;
+}
+
 function insertIntoLoadedLog(afterId: string | null, entries: LogEntry[]) {
   const state = useTaleStore.getState();
-  const at =
-    afterId === null
-      ? state.oldestLoadedIndex === 0
-        ? 0
-        : -1
-      : state.log.findIndex((entry) => entry.id === afterId) + 1;
+  const at = loadedPosition(afterId);
   useTaleStore.setState({
     log:
       at >= 0
@@ -198,13 +206,11 @@ export async function deletePassages(
   taleId: string,
   ids: string[],
 ): Promise<TaleChange[]> {
-  const found = [];
-  for (const id of new Set(ids)) {
-    const passage = await readPassage(taleId, id);
-    if (!passage) throw new Error(`No passage has id ${id}.`);
-    found.push(passage);
-  }
-  found.sort((a, b) => a.index - b.index);
+  const unique = [...new Set(ids)];
+  const byId = await readPassages(taleId, unique);
+  const missing = unique.find((id) => !byId.has(id));
+  if (missing) throw new Error(`No passage has id ${missing}.`);
+  const found = [...byId.values()].sort((a, b) => a.index - b.index);
   const runs: Array<typeof found> = [];
   for (const passage of found) {
     const run = runs.at(-1);
@@ -223,8 +229,8 @@ export async function deletePassages(
       entries: run.map(({ entry }) => entry),
     });
   }
-  await deleteLogEntries(taleId, [...new Set(ids)], clearedRedo());
-  if (isLoaded(taleId)) removeFromLoadedLog(new Set(ids));
+  await deleteLogEntries(taleId, unique, clearedRedo());
+  if (isLoaded(taleId)) removeFromLoadedLog(new Set(unique));
   wakeSyncBackground();
   return changes;
 }
@@ -242,18 +248,21 @@ async function revertLogChange(change: TaleChange): Promise<boolean> {
     return true;
   }
   if (change.kind === "insert") {
-    for (const entry of change.entries) {
-      const found = await readPassage(taleId, entry.id);
-      if (!found || found.entry.text !== entry.text) return false;
-    }
     const ids = change.entries.map((entry) => entry.id);
+    const found = await readPassages(taleId, ids);
+    if (
+      change.entries.some(
+        (entry) => found.get(entry.id)?.entry.text !== entry.text,
+      )
+    )
+      return false;
     await deleteLogEntries(taleId, ids, clearedRedo());
     if (isLoaded(taleId)) removeFromLoadedLog(new Set(ids));
     return true;
   }
   if (change.kind === "delete") {
-    for (const entry of change.entries)
-      if (await readPassage(taleId, entry.id)) return false;
+    const ids = change.entries.map((entry) => entry.id);
+    if ((await readPassages(taleId, ids)).size) return false;
     let afterId: string | null | undefined;
     if (change.previousId && (await readPassage(taleId, change.previousId)))
       afterId = change.previousId;
@@ -280,15 +289,14 @@ export async function revertChanges(
 ): Promise<TaleChange[]> {
   return withTaleWrites(signal, async () => {
     const result = changes.map((change) => ({ ...change }));
-    const taleIds = new Set(
-      result.filter((c) => !c.undone && isStateChange(c)).map((c) => c.taleId),
-    );
-    for (const taleId of taleIds) {
+    const newestFirst = result.filter((change) => !change.undone).reverse();
+    for (const taleId of new Set(newestFirst.map((change) => change.taleId))) {
+      const ofTale = newestFirst.filter((change) => change.taleId === taleId);
       let tale = await readSnapshot(taleId);
+      if (!tale) continue;
       let changed = false;
-      for (const change of [...result].reverse()) {
-        if (change.undone || change.taleId !== taleId || !isStateChange(change))
-          continue;
+      for (const change of ofTale) {
+        if (!isStateChange(change)) continue;
         const reverted = revertStateChange(tale, change);
         if (!reverted) continue;
         tale = reverted;
@@ -296,10 +304,9 @@ export async function revertChanges(
         changed = true;
       }
       if (changed) await writeSnapshot(taleId, tale);
-    }
-    for (const change of [...result].reverse()) {
-      if (change.undone || isStateChange(change)) continue;
-      if (await revertLogChange(change)) change.undone = true;
+      for (const change of ofTale)
+        if (!isStateChange(change) && (await revertLogChange(change)))
+          change.undone = true;
     }
     wakeSyncBackground();
     return result;

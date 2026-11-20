@@ -31,7 +31,7 @@ vi.mock("@/services/tale-library", () => ({
   resolveTaleConflict: mocks.resolveTaleConflict,
 }));
 vi.mock("@/repositories/tale.repository", () => ({
-  getTales: async () => ({ data: [], total: 0 }),
+  getTaleHeads: async () => [],
 }));
 vi.mock("@/services/tale.service", () => ({
   deleteTaleById: mocks.deleteTaleById,

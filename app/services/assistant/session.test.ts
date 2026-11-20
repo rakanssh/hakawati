@@ -69,8 +69,9 @@ const cardChange = {
 vi.mock("./tale-edits", () => ({
   withTaleWrites: (_signal: unknown, run: () => unknown) => run(),
   editTaleSetup: async () => [cardChange],
-  revertChanges: async (changes: Array<Record<string, unknown>>) =>
+  revertChanges: vi.fn(async (changes: Array<Record<string, unknown>>) =>
     changes.map((change) => ({ ...change, undone: true })),
+  ),
 }));
 
 const scenarioChange = {
@@ -480,6 +481,56 @@ describe("Hakawati chat session", () => {
       { ...scenarioChange, undone: true },
       { ...cardChange, undone: true },
     ]);
+  });
+
+  it("keeps what Undo reverted when a later part fails", async () => {
+    const { session, store } = await load();
+    const edits = await import("./tale-edits");
+    revertScenarioChanges.mockResolvedValueOnce({
+      changes: [{ ...scenarioChange, undone: true }],
+      kept: 0,
+    });
+    vi.mocked(edits.revertChanges).mockRejectedValueOnce(
+      new Error("Disk full"),
+    );
+    sendRoleChat
+      .mockResolvedValueOnce(
+        streamed([
+          {
+            tool_calls: [
+              {
+                index: 0,
+                id: "call_1",
+                type: "function",
+                function: {
+                  name: "edit_scenario",
+                  arguments: '{"scenarioId":"new","name":"Lantern"}',
+                },
+              },
+              {
+                index: 1,
+                id: "call_2",
+                type: "function",
+                function: {
+                  name: "edit_tale",
+                  arguments:
+                    '{"taleId":"t1","cards":[{"op":"add","title":"Mara"}]}',
+                },
+              },
+            ],
+          },
+        ]),
+      )
+      .mockResolvedValueOnce(streamed([{ content: "Done." }]));
+
+    await session.sendAssistantMessage("Make both", home);
+    const reply = store.getState().messages.at(-1)!;
+
+    expect(await session.undoAssistantReply(reply.id)).toBe(0);
+    expect(store.getState().error).toBe("Disk full");
+    const saved = [{ ...scenarioChange, undone: true }, cardChange];
+    expect(store.getState().messages.at(-1)!.changes).toEqual(saved);
+    expect(db.messages.at(-1)!.changes).toEqual(saved);
   });
 
   it("starts a new chat for the tale on the play screen", async () => {

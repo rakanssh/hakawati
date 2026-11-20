@@ -1,6 +1,6 @@
 import { copyTextToClipboard, readTextFromClipboard } from "@/lib/clipboard";
 import type { LibraryTaleItem } from "@/lib/tale-library";
-import { getTales } from "@/repositories/tale.repository";
+import { getTaleHeads } from "@/repositories/tale.repository";
 import {
   deserializeScenarioExport,
   getScenarioById,
@@ -60,8 +60,7 @@ function idsOf(args: Record<string, unknown>): string[] {
 
 async function libraryItems(ids: string[]) {
   const session = currentSyncSession();
-  const { data } = await getTales(1, 500);
-  const library = await loadTaleLibrary(session, data);
+  const library = await loadTaleLibrary(session, await getTaleHeads(ids));
   const items = ids.map((id) => {
     const item = library.items.find((entry) => itemId(entry) === id);
     if (!item) throw new Error(`No tale has id ${id}.`);

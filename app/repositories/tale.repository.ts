@@ -1286,16 +1286,23 @@ function taleHeadSelect(whereClause = ""): string {
 export async function getTales(
   page: number,
   limit: number,
+  query?: string,
 ): Promise<PaginatedResponse<TaleHead>> {
+  const search = query?.trim().toLowerCase();
+  const where = search
+    ? `WHERE instr(lower(t.name), ?) > 0 OR instr(lower(COALESCE(t.description, '')), ?) > 0`
+    : "";
+  const params = search ? [search, search] : [];
   return enqueueLocalOperation(async () => {
     const db = await getDb();
     const rows = await db.select<TaleHeadRow[]>(
-      `${taleHeadSelect()}
+      `${taleHeadSelect(where)}
       ORDER BY t.updated_at DESC LIMIT ? OFFSET ?`,
-      [limit, (page - 1) * limit],
+      [...params, limit, (page - 1) * limit],
     );
     const countRows = await db.select<Array<{ count: number }>>(
-      `SELECT COUNT(*) as count FROM tales`,
+      `SELECT COUNT(*) as count FROM tales t ${where}`,
+      params,
     );
     const total = countRows?.[0]?.count ?? 0;
     const data: TaleHead[] = [];
@@ -1308,6 +1315,20 @@ export async function getTales(
       page,
       limit,
     };
+  });
+}
+
+export async function getTaleHeads(ids: string[]): Promise<TaleHead[]> {
+  if (!ids.length) return [];
+  return enqueueLocalOperation(async () => {
+    const db = await getDb();
+    const rows = await db.select<TaleHeadRow[]>(
+      taleHeadSelect(`WHERE t.id IN (SELECT value FROM json_each(?))`),
+      [JSON.stringify(ids)],
+    );
+    const heads: TaleHead[] = [];
+    for (const row of rows) heads.push(await mapTaleHeadRow(row));
+    return heads;
   });
 }
 
@@ -1553,26 +1574,28 @@ export async function searchLogEntries(
   });
 }
 
-export async function findLogEntryIndex(
+/** The passages with these ids and their place in the story; ids not in the log are left out. */
+export async function findLogEntries(
   taleId: string,
-  entryId: string,
-): Promise<number | null> {
+  entryIds: string[],
+): Promise<IndexedLogEntry[]> {
+  const ids = [...new Set(entryIds)];
+  if (!ids.length) return [];
   return enqueueLocalOperation(async () => {
     const db = await getDb();
     if (!(await hasSplitStorage(db, taleId))) {
-      const found = (await selectLegacyEntries(db, taleId)).find(
-        ({ entry }) => entry.id === entryId,
+      const wanted = new Set(ids);
+      return (await selectLegacyEntries(db, taleId)).filter(({ entry }) =>
+        wanted.has(entry.id),
       );
-      return found ? found.index : null;
     }
-    const [found] = await selectIndexedEntries(
+    return selectIndexedEntries(
       db,
       taleId,
-      `json_extract(entry.value, '$.id') = ?`,
-      [entryId],
-      1,
+      `json_extract(entry.value, '$.id') IN (SELECT value FROM json_each(?))`,
+      [JSON.stringify(ids)],
+      ids.length,
     );
-    return found ? found.index : null;
   });
 }
 

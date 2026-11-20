@@ -53,6 +53,7 @@ import { createCatalogTools } from "./tools/catalog";
 import { createLibraryTools } from "./tools/library";
 
 const store = useAssistantStore;
+const UNREPORTED_CONTEXT_LENGTH = 32_768;
 let controller: AbortController | null = null;
 let pendingConfirm: ((yes: boolean) => void) | null = null;
 let showToken = 0;
@@ -369,7 +370,11 @@ export async function sendAssistantMessage(
       toolNamespace: ASSISTANT_TOOL_NAMESPACE,
       maxTokens: Math.min(model.maxOutputTokens ?? 4096, 16384),
       contextLength:
-        model.contextLength ?? useSettingsStore.getState().contextWindow,
+        model.contextLength ??
+        Math.max(
+          useSettingsStore.getState().contextWindow,
+          UNREPORTED_CONTEXT_LENGTH,
+        ),
       wrapUp: ASSISTANT_WRAP_UP_PROMPT,
       signal,
       onEvent,
@@ -463,10 +468,11 @@ export async function undoAssistantReply(messageId: string): Promise<number> {
   const message = state.messages.find((m) => m.id === messageId);
   if (!message?.changes?.length || state.run || state.undoingId) return 0;
   store.setState({ undoingId: messageId, error: null });
+  const all = message.changes;
+  const changes = [...all];
+  let kept = 0;
+  let failure: unknown = null;
   try {
-    const all = message.changes;
-    const changes = [...all];
-    let kept = 0;
     for (const { owns, revert } of REVERTERS) {
       const indexes = all.flatMap((change, index) =>
         owns(change) ? [index] : [],
@@ -476,13 +482,18 @@ export async function undoAssistantReply(messageId: string): Promise<number> {
       result.changes.forEach((change, i) => (changes[indexes[i]] = change));
       kept += result.kept;
     }
+  } catch (error) {
+    failure = error;
+  }
+  try {
     await updateAssistantMessageChanges(messageId, changes);
     store.setState((current) => ({
       messages: current.messages.map((m) =>
         m.id === messageId ? { ...m, changes } : m,
       ),
+      ...(failure ? { error: errorMessage(failure) } : {}),
     }));
-    return kept;
+    return failure ? 0 : kept;
   } catch (error) {
     store.setState({ error: errorMessage(error) });
     return 0;

@@ -129,7 +129,13 @@ export async function deleteScenario(id: string): Promise<void> {
 export async function getScenarios(
   page: number,
   limit: number,
+  query?: string,
 ): Promise<PaginatedResponse<ScenarioHead>> {
+  const search = query?.trim().toLowerCase();
+  const where = search
+    ? `WHERE instr(lower(name), ?) > 0 OR instr(lower(COALESCE(initial_description, '')), ?) > 0`
+    : "";
+  const params = search ? [search, search] : [];
   const db = await getDb();
   const rows = await db.select<
     Pick<
@@ -144,12 +150,14 @@ export async function getScenarios(
   >(
     `SELECT id, name, initial_game_mode, initial_description, updated_at, thumbnail_data
      FROM scenarios
+     ${where}
      ORDER BY updated_at DESC
      LIMIT ? OFFSET ?`,
-    [limit, (page - 1) * limit],
+    [...params, limit, (page - 1) * limit],
   );
   const countRows = await db.select<Array<{ count: number }>>(
-    `SELECT COUNT(*) as count FROM scenarios`,
+    `SELECT COUNT(*) as count FROM scenarios ${where}`,
+    params,
   );
   const total = countRows?.[0]?.count ?? 0;
   return {

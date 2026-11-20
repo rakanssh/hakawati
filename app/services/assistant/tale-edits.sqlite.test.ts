@@ -314,6 +314,38 @@ describe("Hakawati's edits", () => {
     expect(await storedIds(taleId)).toEqual(["z1", "z2", "b", "c", "d"]);
   });
 
+  it("keeps passages added or restored above the loaded part out of it", async () => {
+    const taleId = await createTale([
+      [gm("a")],
+      [gm("b")],
+      [gm("c")],
+      [gm("d")],
+    ]);
+    await loadIntoStore(taleId);
+    const all = useTaleStore.getState().log;
+    useTaleStore.setState({ log: all.slice(2), oldestLoadedIndex: 2 });
+    await insertPassages(taleId, "a", [gm("z")]);
+    const removed = await deletePassages(taleId, ["b"]);
+    await revertChanges(removed);
+    const store = useTaleStore.getState();
+    expect(store.log.map((e) => e.id)).toEqual(["c", "d"]);
+    expect(store.oldestLoadedIndex).toBe(3);
+    expect(store.totalLogCount).toBe(5);
+    expect(await storedIds(taleId)).toEqual(["a", "z", "b", "c", "d"]);
+  });
+
+  it("keeps changes to a tale that was deleted since", async () => {
+    const taleId = await createTale([[gm("a")], [gm("b")]]);
+    const renamed = await editTaleSetup(taleId, (changes) =>
+      changes.setField("name", "Renamed"),
+    );
+    const removed = await deletePassages(taleId, ["a", "b"]);
+    await repo.deleteTale(taleId);
+    const result = await revertChanges([...renamed, ...removed]);
+    expect(result).toHaveLength(2);
+    expect(result.some((change) => change.undone)).toBe(false);
+  });
+
   it("leaves passages that were changed again since", async () => {
     const taleId = await createTale([[gm("g1", "Before")]]);
     const change = await rewritePassage(taleId, "g1", "Hakawati's");
@@ -416,6 +448,27 @@ describe("Hakawati's tale tools", () => {
       }),
     ).rejects.toThrow("Game Master mode");
     expect(recorded).toEqual([]);
+  });
+
+  it("says which ops were applied when a later one fails", async () => {
+    const taleId = await createTale([[gm("g1")]]);
+    await loadIntoStore(taleId);
+    const recorded: unknown[] = [];
+    const run = tools(taleId, recorded)("edit_log", {
+      ops: [
+        {
+          op: "add",
+          after: "g1",
+          passages: [{ by: "narrator", text: "Then." }],
+        },
+        { op: "update", id: "nope", text: "x" },
+      ],
+    });
+    await expect(run).rejects.toThrow(
+      /^Op 2 failed: No passage has id nope\. The ops before it were applied, adding \S+; don't repeat them\.$/,
+    );
+    expect(recorded).toHaveLength(1);
+    expect(await storedIds(taleId)).toHaveLength(2);
   });
 
   it("adds passages at the start of the story", async () => {

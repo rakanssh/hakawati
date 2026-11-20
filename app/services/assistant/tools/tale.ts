@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errors";
 import { GameMode, LogEntryMode, PromptComponentType } from "@/types";
 import type { AssistantChange } from "@/types/assistant.type";
 import {
@@ -164,49 +165,59 @@ export function createTaleTools(
         const taleId = taleIdFor(args, context);
         const added: string[] = [];
         let changed = 0;
+        const apply = async (op: Record<string, unknown>) => {
+          if (op.op === "update") {
+            const textValue = optionalString(op.text);
+            if (!textValue?.trim()) throw new Error("update needs text.");
+            changed += record([
+              await rewritePassage(taleId, required(op, "id"), textValue),
+            ]).length;
+          } else if (op.op === "add") {
+            const after = required(op, "after");
+            const passages = Array.isArray(op.passages)
+              ? op.passages.flatMap((p): NewPassage[] => {
+                  const passage = p as Record<string, unknown>;
+                  const value = optionalString(passage?.text);
+                  if (!value?.trim()) return [];
+                  const mode = Object.values(LogEntryMode).find(
+                    (m) => m === passage.mode,
+                  );
+                  return [
+                    {
+                      by: passage.by === "player" ? "player" : "narrator",
+                      ...(mode ? { mode } : {}),
+                      text: value,
+                    },
+                  ];
+                })
+              : [];
+            if (!passages.length)
+              throw new Error("add needs passages with text.");
+            const entries = passages.map(toLogEntry);
+            changed += record([
+              await insertPassages(
+                taleId,
+                after === "start" ? null : after,
+                entries,
+              ),
+            ]).length;
+            added.push(...entries.map((entry) => entry.id));
+          } else if (op.op === "remove") {
+            const ids = strings(op.ids) ?? [];
+            if (!ids.length) throw new Error("remove needs ids.");
+            changed += record(await deletePassages(taleId, ids)).length;
+          } else throw new Error("op must be add, update or remove.");
+        };
         await withTaleWrites(signal, async () => {
-          for (const op of list) {
-            if (op.op === "update") {
-              const textValue = optionalString(op.text);
-              if (!textValue?.trim()) throw new Error("update needs text.");
-              changed += record([
-                await rewritePassage(taleId, required(op, "id"), textValue),
-              ]).length;
-            } else if (op.op === "add") {
-              const after = required(op, "after");
-              const passages = Array.isArray(op.passages)
-                ? op.passages.flatMap((p): NewPassage[] => {
-                    const passage = p as Record<string, unknown>;
-                    const value = optionalString(passage?.text);
-                    if (!value?.trim()) return [];
-                    const mode = Object.values(LogEntryMode).find(
-                      (m) => m === passage.mode,
-                    );
-                    return [
-                      {
-                        by: passage.by === "player" ? "player" : "narrator",
-                        ...(mode ? { mode } : {}),
-                        text: value,
-                      },
-                    ];
-                  })
-                : [];
-              if (!passages.length)
-                throw new Error("add needs passages with text.");
-              const entries = passages.map(toLogEntry);
-              changed += record([
-                await insertPassages(
-                  taleId,
-                  after === "start" ? null : after,
-                  entries,
-                ),
-              ]).length;
-              added.push(...entries.map((entry) => entry.id));
-            } else if (op.op === "remove") {
-              const ids = strings(op.ids) ?? [];
-              if (!ids.length) throw new Error("remove needs ids.");
-              changed += record(await deletePassages(taleId, ids)).length;
-            } else throw new Error("op must be add, update or remove.");
+          for (const [index, op] of list.entries()) {
+            try {
+              await apply(op);
+            } catch (error) {
+              if (!index) throw error;
+              throw new Error(
+                `Op ${index + 1} failed: ${errorMessage(error).replace(/\.?$/, ".")} The ops before it were applied${added.length ? `, adding ${added.join(", ")}` : ""}; don't repeat them.`,
+              );
+            }
           }
         });
         return { changed, ...(added.length ? { added } : {}) };

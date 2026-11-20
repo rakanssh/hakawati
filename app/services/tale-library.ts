@@ -1,6 +1,7 @@
 import {
   deleteTaleSyncState,
   getSyncProfile,
+  getTaleSyncState,
   listTaleSyncStates,
   setTaleSyncPreference,
 } from "@/repositories/sync.repository";
@@ -105,6 +106,15 @@ function parseMetadataRev(value: string | null): number {
   return parsed;
 }
 
+const hasSyncState = async (session: SyncSession, localTaleId: string) =>
+  Boolean(
+    await getTaleSyncState({
+      profileId: session.profile.id,
+      accountId: session.profile.accountId,
+      localTaleId,
+    }),
+  );
+
 const isMissing = (error: unknown) =>
   error instanceof SyncHttpError && error.status === 404;
 
@@ -179,7 +189,10 @@ export async function deleteLibraryTaleItem(
 ) {
   const { session, syncActive, deleteLocal, onRemoteError } = options;
   if (item.source === "local") {
-    if (item.sync && !syncActive) {
+    if (
+      !syncActive &&
+      (item.sync || (await hasSyncState(session, item.localTale.id)))
+    ) {
       const error = new Error(
         "Reconnect cloud sync before permanently deleting this synced tale.",
       );

@@ -2247,11 +2247,41 @@ describe("Hakawati storage", () => {
     expect(await searchLogEntries(taleId, "   ", 10)).toEqual([]);
   });
 
-  it("finds a passage's place in the story", async () => {
-    const { findLogEntryIndex } = await import("./tale.repository");
+  it("finds passages' places in the story in one lookup", async () => {
+    const { findLogEntries } = await import("./tale.repository");
     const taleId = await taleWithStory();
-    expect(await findLogEntryIndex(taleId, "g2")).toBe(2);
-    expect(await findLogEntryIndex(taleId, "missing")).toBeNull();
+    const found = await findLogEntries(taleId, ["g2", "p1", "missing", "g2"]);
+    expect(found.map(({ index, entry }) => [index, entry.id]).sort()).toEqual([
+      [0, "p1"],
+      [2, "g2"],
+    ]);
+    expect(await findLogEntries(taleId, [])).toEqual([]);
+  });
+
+  it("searches tales by name or description, and reads chosen ones", async () => {
+    const { createTale, getTales, getTaleHeads } = await import(
+      "./tale.repository"
+    );
+    const first = await createEmptyTale();
+    const second = await createTale({
+      name: "Pirate Coast",
+      description: "A local tale.",
+      components: [],
+      storyCards: [],
+      stats: [],
+      inventory: [],
+      log: [],
+      gameMode: GameMode.STORY_TELLER,
+      undoStack: [],
+    });
+    const named = await getTales(1, 10, "  PIRATE ");
+    expect(named.total).toBe(1);
+    expect(named.data.map((tale) => tale.id)).toEqual([second]);
+    expect((await getTales(1, 10, "local tale")).total).toBe(2);
+    expect((await getTales(1, 10)).total).toBe(2);
+    expect(
+      (await getTaleHeads([first, "missing"])).map((tale) => tale.id),
+    ).toEqual([first]);
   });
 
   it("keeps chats in order and removes a tale's chats with the tale", async () => {

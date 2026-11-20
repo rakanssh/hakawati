@@ -1,7 +1,7 @@
 import { scenarioContentToEditorFields } from "@/lib/scenario-content";
 import { getScenario, getScenarios } from "@/repositories/scenario.repository";
 import {
-  findLogEntryIndex,
+  findLogEntries,
   getLogCount,
   getLogEntries,
   getTalePlayLoad,
@@ -29,8 +29,6 @@ import {
   type AssistantTool,
   type AssistantToolContext,
 } from "./define";
-
-const LIBRARY_SCAN = 100;
 
 export function taleIdFor(
   args: Record<string, unknown>,
@@ -87,7 +85,7 @@ export function createReadTools(
         const query = text(args.query);
         const limit = integer(args.limit, 1, 50, 20);
         if (args.kind === "scenarios") {
-          const { data, total } = await getScenarios(1, LIBRARY_SCAN);
+          const { data, total } = await getScenarios(1, limit, query);
           const published = new Set(
             (await listScenarioPublishLinks().catch(() => [])).map(
               (link) => link.localScenarioId,
@@ -95,21 +93,18 @@ export function createReadTools(
           );
           return {
             total,
-            scenarios: data
-              .filter((s) => matches(query, s.name, s.description))
-              .slice(0, limit)
-              .map((s) => ({
-                id: s.id,
-                name: s.name,
-                description: clip(s.description, 240),
-                mode: modeName(s.initialGameMode),
-                ...(published.has(s.id) ? { published: true } : {}),
-              })),
+            scenarios: data.map((s) => ({
+              id: s.id,
+              name: s.name,
+              description: clip(s.description, 240),
+              mode: modeName(s.initialGameMode),
+              ...(published.has(s.id) ? { published: true } : {}),
+            })),
           };
         }
         if (args.kind !== "tales")
           throw new Error("kind must be tales or scenarios.");
-        const { data, total } = await getTales(1, LIBRARY_SCAN);
+        const { data, total } = await getTales(1, limit, query);
         const library = await loadTaleLibrary(currentSyncSession(), data).catch(
           () => null,
         );
@@ -144,26 +139,23 @@ export function createReadTools(
           ...(library?.cloudError
             ? { cloudError: errorMessage(library.cloudError) }
             : {}),
-          tales: data
-            .filter((t) => matches(query, t.name, t.description))
-            .slice(0, limit)
-            .map((t) => {
-              const status = sync.get(t.id);
-              return {
-                id: t.id,
-                name: t.name,
-                description: clip(t.description, 240),
-                passages: t.logCount,
-                lastPlayed: new Date(t.updatedAt).toISOString().slice(0, 10),
-                ...(t.scenarioHead ? { scenario: t.scenarioHead.name } : {}),
-                ...(status
-                  ? { sync: status === "idle" ? "synced" : status }
-                  : library?.syncActive
-                    ? { sync: "not synced" }
-                    : {}),
-                ...(t.id === openId ? { open: true } : {}),
-              };
-            }),
+          tales: data.map((t) => {
+            const status = sync.get(t.id);
+            return {
+              id: t.id,
+              name: t.name,
+              description: clip(t.description, 240),
+              passages: t.logCount,
+              lastPlayed: new Date(t.updatedAt).toISOString().slice(0, 10),
+              ...(t.scenarioHead ? { scenario: t.scenarioHead.name } : {}),
+              ...(status
+                ? { sync: status === "idle" ? "synced" : status }
+                : library?.syncActive
+                  ? { sync: "not synced" }
+                  : {}),
+              ...(t.id === openId ? { open: true } : {}),
+            };
+          }),
           ...(cloudOnly.length ? { cloudOnly: cloudOnly.slice(0, limit) } : {}),
         };
       },
@@ -218,9 +210,9 @@ export function createReadTools(
         let start = Math.max(0, total - count);
         const around = text(args.around);
         if (around) {
-          const index = await findLogEntryIndex(taleId, around);
-          if (index === null) throw new Error("No passage has that id.");
-          start = Math.max(0, index - Math.floor(count / 2));
+          const [found] = await findLogEntries(taleId, [around]);
+          if (!found) throw new Error("No passage has that id.");
+          start = Math.max(0, found.index - Math.floor(count / 2));
         } else if (args.start !== undefined) {
           start = integer(args.start, 0, Math.max(0, total - 1), 0);
         }

@@ -9,7 +9,7 @@ vi.mock("@lingui/core/macro", () => ({
 const repo = vi.hoisted(() => ({
   getLogCount: vi.fn(),
   getLogEntries: vi.fn(),
-  findLogEntryIndex: vi.fn(),
+  findLogEntries: vi.fn(),
   searchLogEntries: vi.fn(),
   getTalePlayLoad: vi.fn(),
   getTales: vi.fn(),
@@ -92,7 +92,9 @@ describe("Hakawati read tools", () => {
 
   it("reads passages around one, with their place in the story", async () => {
     repo.getLogCount.mockResolvedValue(100);
-    repo.findLogEntryIndex.mockResolvedValue(50);
+    repo.findLogEntries.mockResolvedValue([
+      { index: 50, entry: entry("b", "Two") },
+    ]);
     repo.getLogEntries.mockResolvedValue([
       entry("a", "One"),
       entry("b", "Two"),
@@ -127,9 +129,9 @@ describe("Hakawati read tools", () => {
     expect(match.text.length).toBeLessThan(long.length);
   });
 
-  it("filters the library by name", async () => {
+  it("searches the whole library by name", async () => {
     repo.getTales.mockResolvedValue({
-      total: 2,
+      total: 1,
       data: [
         {
           id: "1",
@@ -138,13 +140,13 @@ describe("Hakawati read tools", () => {
           logCount: 3,
           updatedAt: 0,
         },
-        { id: "2", name: "Noir", description: "", logCount: 1, updatedAt: 0 },
       ],
     });
     const listed = await tools("/")("list_library", {
       kind: "tales",
       query: "pir",
     });
-    expect(listed).toMatchObject({ total: 2, tales: [{ id: "1" }] });
+    expect(repo.getTales).toHaveBeenCalledWith(1, 20, "pir");
+    expect(listed).toMatchObject({ total: 1, tales: [{ id: "1" }] });
   });
 });
