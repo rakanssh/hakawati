@@ -38,3 +38,27 @@ export function replyTimeline(
   if (rest) parts.push({ kind: "text", text: rest });
   return parts;
 }
+
+/** Splits a timeline into what folds behind a step count and what stays in view: the last part, or the last step of a trailing run of steps. */
+export function foldTimeline(parts: TimelinePart[]): {
+  folded: TimelinePart[];
+  shown: TimelinePart[];
+} {
+  const last = parts.at(-1);
+  if (!last) return { folded: [], shown: [] };
+  const folded = parts.slice(0, -1);
+  let shown: TimelinePart[] = [last];
+  if (last.kind === "steps" && last.steps.length > 1) {
+    folded.push({ kind: "steps", steps: last.steps.slice(0, -1) });
+    shown = [{ kind: "steps", steps: last.steps.slice(-1) }];
+  }
+  return folded.some((part) => part.kind === "steps")
+    ? { folded, shown }
+    : { folded: [], shown: parts };
+}
+
+export const stepCount = (parts: TimelinePart[]) =>
+  parts.reduce(
+    (count, part) => count + (part.kind === "steps" ? part.steps.length : 0),
+    0,
+  );

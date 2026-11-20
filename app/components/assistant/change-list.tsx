@@ -178,15 +178,8 @@ function targetOf(change: AssistantChange): Target | null {
   }
 }
 
-/** The chips for a reply's changes, each opening what it changed, and the reply's Undo. */
-export function ChangeList({
-  changes,
-  messageId,
-}: {
-  changes: AssistantChange[];
-  messageId?: string;
-}) {
-  const { t } = useLingui();
+/** The chips for a reply's changes, each opening what it changed. */
+export function ChangeChips({ changes }: { changes: AssistantChange[] }) {
   const describe = useChangeLabel();
   const isPlay = useRouterState({
     select: (state) => state.location.pathname.startsWith("/play"),
@@ -194,21 +187,6 @@ export function ChangeList({
   const openTaleId = useTaleStore((state) => state.id);
   const { isMobilePlatform } = useIsMobile();
   const navigate = useNavigate();
-  const running = useAssistantStore((state) => Boolean(state.run));
-  const undoingId = useAssistantStore((state) => state.undoingId);
-  const undoing = Boolean(messageId) && undoingId === messageId;
-  const canUndo = Boolean(messageId) && changes.some((c) => !c.undone);
-
-  const undo = async () => {
-    if (!messageId) return;
-    const kept = await undoAssistantReply(messageId);
-    if (kept > 0)
-      toast.warning(
-        kept === 1
-          ? t`One change was edited since, so it was kept.`
-          : t`${kept} changes were edited since, so they were kept.`,
-      );
-  };
 
   const open = (target: Target) => {
     const panel = useStoryPanelStore.getState();
@@ -269,23 +247,47 @@ export function ChangeList({
           </Badge>
         );
       })}
-      {canUndo ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
-          disabled={running || Boolean(undoingId)}
-          onClick={() => void undo()}
-        >
-          {undoing ? (
-            <Loader2Icon className="size-3.5 animate-spin" />
-          ) : (
-            <Undo2Icon className="size-3.5" />
-          )}
-          <Trans>Undo</Trans>
-        </Button>
-      ) : null}
     </>
+  );
+}
+
+export function UndoReplyButton({
+  changes,
+  messageId,
+}: {
+  changes: AssistantChange[];
+  messageId?: string;
+}) {
+  const { t } = useLingui();
+  const running = useAssistantStore((state) => Boolean(state.run));
+  const undoingId = useAssistantStore((state) => state.undoingId);
+  if (!messageId || !changes.some((change) => !change.undone)) return null;
+
+  const undo = async () => {
+    const kept = await undoAssistantReply(messageId);
+    if (kept > 0)
+      toast.warning(
+        kept === 1
+          ? t`One change was edited since, so it was kept.`
+          : t`${kept} changes were edited since, so they were kept.`,
+      );
+  };
+
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+      disabled={running || Boolean(undoingId)}
+      onClick={() => void undo()}
+    >
+      {undoingId === messageId ? (
+        <Loader2Icon className="size-3.5 animate-spin" />
+      ) : (
+        <Undo2Icon className="size-3.5" />
+      )}
+      <Trans>Undo</Trans>
+    </Button>
   );
 }

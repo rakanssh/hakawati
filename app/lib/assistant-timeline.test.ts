@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { replyTimeline } from "./assistant-timeline";
+import {
+  foldTimeline,
+  replyTimeline,
+  stepCount,
+  type TimelinePart,
+} from "./assistant-timeline";
 
 describe("replyTimeline", () => {
   it("puts steps between the text written before and after them", () => {
@@ -60,5 +65,40 @@ describe("replyTimeline", () => {
   it("clamps positions past the end of the text", () => {
     const parts = replyTimeline("Hi.", [{ tool: "get_tale", at: 99 }], false);
     expect(parts.map((part) => part.kind)).toEqual(["text", "steps"]);
+  });
+});
+
+describe("foldTimeline", () => {
+  const text = (value: string): TimelinePart => ({ kind: "text", text: value });
+  const step = (tool: string) => ({ activity: { tool }, running: false });
+  const steps = (...tools: string[]): TimelinePart => ({
+    kind: "steps",
+    steps: tools.map(step),
+  });
+
+  it("folds everything before the final text once there is a step", () => {
+    const parts = [text("Looking."), steps("get_tale"), text("Done.")];
+    expect(foldTimeline(parts)).toEqual({
+      folded: [text("Looking."), steps("get_tale")],
+      shown: [text("Done.")],
+    });
+    expect(stepCount(foldTimeline(parts).folded)).toBe(1);
+  });
+
+  it("keeps the latest step of a trailing run in view", () => {
+    expect(foldTimeline([text("Looking."), steps("a", "b", "c")])).toEqual({
+      folded: [text("Looking."), steps("a", "b")],
+      shown: [steps("c")],
+    });
+  });
+
+  it("folds nothing when only text would fold", () => {
+    const parts = [text("Looking."), steps("get_tale")];
+    expect(foldTimeline(parts)).toEqual({ folded: [], shown: parts });
+    expect(foldTimeline([text("Hi.")])).toEqual({
+      folded: [],
+      shown: [text("Hi.")],
+    });
+    expect(foldTimeline([])).toEqual({ folded: [], shown: [] });
   });
 });

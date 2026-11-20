@@ -27,6 +27,11 @@ msgstr "تعذّر رفع الحكاية إلى السحابة"
 msgid "..."
 msgstr "..."
 
+#. placeholder {0}: changeList.length
+#: app/components/assistant/hakawati-chat.tsx:353
+msgid "{0, plural, one {# change} other {# changes}}"
+msgstr "{0, plural, zero {# تغييرات} one {تغيير واحد} two {تغييران} few {# تغييرات} many {# تغييرًا} other {# تغيير}}"
+
 #. placeholder {0}: inventory.length
 #: app/components/layout/settings/inventory-stats.tsx:200
 msgid "{0, plural, one {# item} other {# items}}"
@@ -96,11 +101,15 @@ msgstr "{descriptionChars} حرفًا · ~{descriptionTokens} رمزًا"
 msgid "{downloaded} so far"
 msgstr "{downloaded} حتى الآن"
 
+#: app/components/assistant/hakawati-chat.tsx:312
+msgid "{foldedSteps, plural, one {# step} other {# steps}}"
+msgstr "{foldedSteps, plural, zero {# خطوات} one {خطوة واحدة} two {خطوتان} few {# خطوات} many {# خطوةً} other {# خطوة}}"
+
 #: app/components/layout/settings/ai-setup/model-picker.tsx:75
 msgid "{inPrice} in · {outPrice} out per million"
 msgstr "{inPrice} للإدخال · {outPrice} للإخراج لكل مليون"
 
-#: app/components/assistant/change-list.tsx:209
+#: app/components/assistant/change-list.tsx:272
 msgid "{kept} changes were edited since, so they were kept."
 msgstr "عُدّلت {kept} تغييرات بعد ذلك، لذا أُبقيت."
 
@@ -225,7 +234,7 @@ msgstr "أضف اسماً للسيناريو قبل النشر."
 msgid "Add a stat to track character attributes"
 msgstr "أضف خاصية لتتبع سمات الشخصية"
 
-#: app/components/assistant/hakawati-chat.tsx:349
+#: app/components/assistant/hakawati-chat.tsx:406
 msgid "Add a twist to the plot"
 msgstr "أضف منعطفًا إلى الحبكة"
 
@@ -424,7 +433,7 @@ msgstr "التطبيق"
 msgid "Appearance"
 msgstr "المظهر"
 
-#: app/components/assistant/hakawati-chat.tsx:636
+#: app/components/assistant/hakawati-chat.tsx:696
 msgid "Ask Hakawati"
 msgstr "اسأل حكواتي"
 
@@ -543,7 +552,7 @@ msgstr "البطاقات"
 msgid "Cartridge"
 msgstr "خرطوشة"
 
-#: app/components/assistant/hakawati-chat.tsx:351
+#: app/components/assistant/hakawati-chat.tsx:408
 msgid "Catch me up on my latest tale"
 msgstr "ذكّرني بما جرى في آخر حكاياتي"
 
@@ -914,8 +923,8 @@ msgstr "نافذة السياق"
 msgid "Continuation {0}"
 msgstr "تكملة {0}"
 
-#: app/components/assistant/hakawati-chat.tsx:553
-#: app/components/assistant/hakawati-chat.tsx:555
+#: app/components/assistant/hakawati-chat.tsx:613
+#: app/components/assistant/hakawati-chat.tsx:615
 #: app/components/layout/settings/advanced.tsx:54
 #: app/components/layout/settings/cloud-sync.tsx:1242
 #: app/components/play/play-input-controls.tsx:557
@@ -954,7 +963,7 @@ msgstr "انسخ مفتاح API الخاص بك والصقه هنا"
 msgid "Could not copy the email address"
 msgstr "تعذّر نسخ عنوان البريد الإلكتروني"
 
-#: app/components/assistant/hakawati-chat.tsx:159
+#: app/components/assistant/hakawati-chat.tsx:163
 #: app/components/layout/release-notes.tsx:62
 #: app/components/layout/server-announcement.tsx:105
 #: app/components/layout/settings/about.tsx:46
@@ -1148,7 +1157,7 @@ msgstr "حذف {count} حكايات؟"
 msgid "Delete account"
 msgstr "حذف الحساب"
 
-#: app/components/assistant/hakawati-chat.tsx:413
+#: app/components/assistant/hakawati-chat.tsx:470
 msgid "Delete chat"
 msgstr "حذف المحادثة"
 
@@ -2115,7 +2124,7 @@ msgstr "مسعف"
 msgid "Medium"
 msgstr "متوسط"
 
-#: app/components/assistant/hakawati-chat.tsx:637
+#: app/components/assistant/hakawati-chat.tsx:697
 msgid "Message Hakawati"
 msgstr "رسالة إلى حكواتي"
 
@@ -2245,9 +2254,9 @@ msgctxt "Release notes section"
 msgid "New"
 msgstr "الجديد"
 
-#: app/components/assistant/hakawati-chat.tsx:386
-#: app/components/assistant/hakawati-chat.tsx:427
-#: app/components/assistant/hakawati-chat.tsx:433
+#: app/components/assistant/hakawati-chat.tsx:443
+#: app/components/assistant/hakawati-chat.tsx:484
+#: app/components/assistant/hakawati-chat.tsx:490
 msgid "New chat"
 msgstr "محادثة جديدة"
 
@@ -2430,7 +2439,7 @@ msgstr "تشغيل"
 msgid "On for this device"
 msgstr "مفعّلة على هذا الجهاز"
 
-#: app/components/assistant/change-list.tsx:208
+#: app/components/assistant/change-list.tsx:271
 msgid "One change was edited since, so it was kept."
 msgstr "عُدّل تغيير واحد بعد ذلك، لذا أُبقي."
 
@@ -2780,7 +2789,7 @@ msgstr "جاهز للعب"
 msgid "Ready to start your tale?"
 msgstr "هل أنت مستعد لبدء حكايتك؟"
 
-#: app/components/assistant/hakawati-chat.tsx:347
+#: app/components/assistant/hakawati-chat.tsx:404
 msgid "Recap the story so far"
 msgstr "لخّص القصة حتى الآن"
 
@@ -2941,7 +2950,7 @@ msgstr "تم إرسال البلاغ"
 msgid "Report this scenario?"
 msgstr "الإبلاغ عن هذا السيناريو؟"
 
-#: app/components/assistant/hakawati-chat.tsx:330
+#: app/components/assistant/hakawati-chat.tsx:387
 #: app/components/play/log/log-entry-error.tsx:23
 msgid "Request failed"
 msgstr "تعذّر الطلب"
@@ -3248,7 +3257,7 @@ msgstr "اختر الخط"
 msgid "Select Model"
 msgstr "اختر النموذج"
 
-#: app/components/assistant/hakawati-chat.tsx:659
+#: app/components/assistant/hakawati-chat.tsx:719
 msgid "Send"
 msgstr "إرسال"
 
@@ -3265,7 +3274,7 @@ msgstr "جدي"
 msgid "Set"
 msgstr "ضبط"
 
-#: app/components/assistant/hakawati-chat.tsx:577
+#: app/components/assistant/hakawati-chat.tsx:637
 msgid "Set up Hakawati"
 msgstr "إعداد حكواتي"
 
@@ -3464,7 +3473,7 @@ msgstr "تتبع الخصائص والمخزون"
 msgid "Still"
 msgstr "ثابت"
 
-#: app/components/assistant/hakawati-chat.tsx:647
+#: app/components/assistant/hakawati-chat.tsx:707
 msgid "Stop"
 msgstr "إيقاف"
 
@@ -3481,7 +3490,7 @@ msgstr "إيقاف التوليد"
 msgid "Stop recording"
 msgstr "إيقاف التسجيل"
 
-#: app/components/assistant/hakawati-chat.tsx:326
+#: app/components/assistant/hakawati-chat.tsx:383
 msgid "Stopped"
 msgstr "توقّف"
 
@@ -3736,7 +3745,7 @@ msgstr "تُرسل هذه المكونات الاختيارية إلى الذك�
 msgid "Thing"
 msgstr "شيء"
 
-#: app/components/assistant/hakawati-chat.tsx:297
+#: app/components/assistant/hakawati-chat.tsx:336
 #: app/components/layout/settings/thinking-level.tsx:56
 #: app/components/layout/settings/thinking-level.tsx:58
 #: app/components/play/log/log-block-bubble.tsx:137
@@ -3816,7 +3825,7 @@ msgstr "سيؤدي هذا إلى حذف محتوى المكون نهائياً. 
 msgid "Title"
 msgstr "العنوان"
 
-#: app/components/assistant/hakawati-chat.tsx:288
+#: app/components/assistant/hakawati-chat.tsx:334
 #: app/components/play/log/log-block-bubble.tsx:133
 msgid "Toggle thinking output"
 msgstr "إظهار التفكير أو إخفاؤه"
@@ -3886,7 +3895,7 @@ msgstr "آلة كاتبة"
 msgid "Uncategorized"
 msgstr "غير مصنف"
 
-#: app/components/assistant/change-list.tsx:286
+#: app/components/assistant/change-list.tsx:290
 #: app/components/play/log/log-control.tsx:167
 #: app/components/play/log/log-control.tsx:171
 msgid "Undo"
@@ -4043,7 +4052,7 @@ msgstr "ألوان مائية في الزوايا ورسوم بأقلام الت
 msgid "What is your character's name?"
 msgstr "ما اسم شخصيتك؟"
 
-#: app/components/assistant/hakawati-chat.tsx:351
+#: app/components/assistant/hakawati-chat.tsx:408
 msgid "What scenarios do I have?"
 msgstr "ما السيناريوهات التي لديّ؟"
 
@@ -4063,7 +4072,7 @@ msgstr "ما الجديد"
 msgid "Who are you in this world?"
 msgstr "من أنت في هذا العالم؟"
 
-#: app/components/assistant/hakawati-chat.tsx:348
+#: app/components/assistant/hakawati-chat.tsx:405
 msgid "Who have I met so far?"
 msgstr "من قابلت حتى الآن؟"
 

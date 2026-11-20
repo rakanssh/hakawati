@@ -4,8 +4,11 @@ import {
   useMemo,
   useRef,
   useState,
+  type ComponentType,
   type MouseEvent,
+  type ReactNode,
 } from "react";
+import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNavigate, useRouter, useRouterState } from "@tanstack/react-router";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -16,20 +19,16 @@ import {
   BrainCircuitIcon,
   ChevronDownIcon,
   CircleAlertIcon,
-  MessageCircleIcon,
   MessageSquarePlusIcon,
+  PencilLineIcon,
   SendIcon,
   SquareIcon,
   Trash2Icon,
+  WrenchIcon,
 } from "lucide-react";
 import { LinkRow, SetupList } from "@/components/layout/settings/settings-rows";
 import { RoleIcon } from "@/components/layout/settings/ai-setup/parts";
 import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,7 +46,12 @@ import {
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { clearDeletedTale, useLoadTale } from "@/hooks/useGameSaves";
 import { useStickToBottom } from "@/hooks/useStickToBottom";
-import { replyTimeline } from "@/lib/assistant-timeline";
+import {
+  foldTimeline,
+  replyTimeline,
+  stepCount,
+  type TimelinePart,
+} from "@/lib/assistant-timeline";
 import { cn } from "@/lib/utils";
 import {
   removeAssistantThread,
@@ -72,7 +76,7 @@ import type {
   AssistantMessageStatus,
 } from "@/types/assistant.type";
 import { ActivityChip } from "./activity-chip";
-import { ChangeList } from "./change-list";
+import { ChangeChips, UndoReplyButton } from "./change-list";
 import { ConfirmCard } from "./confirm-card";
 
 function ErrorLine({ children }: { children: React.ReactNode }) {
@@ -171,24 +175,50 @@ function useMarkdownComponents(): Components {
 
 function PlayerMessage({ content }: { content: string }) {
   return (
-    <div
-      data-log-entry="chat"
-      className="rounded-xs border border-s-2 border-border/60 border-s-primary/55 bg-card/65 px-3 py-2 shadow-sm backdrop-blur-sm"
-    >
-      <div className="flex items-start text-sm">
-        <MessageCircleIcon
-          data-log-entry-icon=""
-          className="me-2 mt-[0.3125em] inline h-[1em] w-[1em] shrink-0 text-primary"
-        />
-        <div
-          data-log-entry-text=""
-          dir="auto"
-          className="me-1 min-w-0 flex-1 whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed text-foreground/90"
-        >
-          {content}
-        </div>
+    <div className="max-w-[88%] self-end rounded-md rounded-ee-xs border border-sidebar-border/80 bg-sidebar-accent/50 px-3 py-2">
+      <div
+        data-log-entry-text=""
+        dir="auto"
+        className="text-sm leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sidebar-foreground/95"
+      >
+        {content}
       </div>
     </div>
+  );
+}
+
+const keepInView = (node: HTMLElement | null) =>
+  node?.scrollIntoView({ block: "nearest" });
+
+function FoldToggle({
+  icon: Icon,
+  open,
+  onToggle,
+  pulse,
+  label,
+  children,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  open: boolean;
+  onToggle: () => void;
+  pulse?: boolean;
+  label?: string;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-expanded={open}
+      aria-label={label}
+      onClick={onToggle}
+      className="inline-flex h-7 items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+    >
+      <Icon className={cn("size-3.5", pulse && "animate-pulse text-primary")} />
+      <span className={cn(pulse && "animate-pulse")}>{children}</span>
+      <ChevronDownIcon
+        className={cn("size-3.5 transition-transform", open && "rotate-180")}
+      />
+    </button>
   );
 }
 
@@ -212,12 +242,17 @@ const Reply = memo(function Reply({
   toolRunning?: boolean;
 }) {
   const { t } = useLingui();
+  const [stepsOpen, setStepsOpen] = useState(false);
   const [thinkingOpen, setThinkingOpen] = useState(false);
+  const [changesOpen, setChangesOpen] = useState(false);
   const thinkingVisibility = useSettingsStore(
     (state) => state.thinkingVisibility,
   );
   const components = useMarkdownComponents();
   const parts = replyTimeline(content, activity ?? [], Boolean(toolRunning));
+  const { folded, shown } = foldTimeline(parts);
+  const foldedSteps = stepCount(folded);
+  const changeList = changes ?? [];
   const showThinking = Boolean(thinking) && thinkingVisibility !== "none";
   const thinkingLive =
     showThinking && Boolean(live) && !content && !toolRunning;
@@ -231,95 +266,123 @@ const Reply = memo(function Reply({
   const waiting =
     live && !toolRunning && !thinkingLive && lastPart?.kind !== "text";
 
+  const renderPart = (part: TimelinePart, index: number, inFold: boolean) =>
+    part.kind === "steps" ? (
+      <div key={index} className="flex w-full flex-col gap-2">
+        <div className="flex max-w-full flex-wrap gap-1">
+          {part.steps.map((step, stepIndex) => (
+            <ActivityChip
+              key={stepIndex}
+              activity={step.activity}
+              running={step.running}
+            />
+          ))}
+        </div>
+        {live && !inFold
+          ? part.steps.map(({ activity: step }, stepIndex) =>
+              step.confirm && !step.confirm.answer ? (
+                <ConfirmCard key={stepIndex} confirm={step.confirm} />
+              ) : null,
+            )
+          : null}
+      </div>
+    ) : (
+      <div
+        key={index}
+        dir="auto"
+        className={cn(
+          "w-full leading-relaxed break-words [overflow-wrap:anywhere]",
+          inFold
+            ? "text-xs text-muted-foreground"
+            : "text-sm text-sidebar-foreground/95",
+        )}
+      >
+        <ReactMarkdown remarkPlugins={REMARK_PLUGINS} components={components}>
+          {part.text}
+        </ReactMarkdown>
+        {live && part === lastPart ? caret : null}
+      </div>
+    );
+
   return (
     <div className="flex min-w-0 flex-col items-start gap-2">
-      {parts.map((part, index) =>
-        part.kind === "steps" ? (
-          <div key={index} className="flex w-full flex-col gap-2">
-            <div className="flex max-w-full flex-wrap gap-1">
-              {part.steps.map((step, stepIndex) => (
-                <ActivityChip
-                  key={stepIndex}
-                  activity={step.activity}
-                  running={step.running}
-                />
-              ))}
-            </div>
-            {live
-              ? part.steps.map(({ activity: step }, stepIndex) =>
-                  step.confirm && !step.confirm.answer ? (
-                    <ConfirmCard key={stepIndex} confirm={step.confirm} />
-                  ) : null,
-                )
-              : null}
-          </div>
-        ) : (
-          <div
-            key={index}
-            dir="auto"
-            className="w-full text-sm leading-relaxed break-words [overflow-wrap:anywhere] text-sidebar-foreground/95"
-          >
-            <ReactMarkdown
-              remarkPlugins={REMARK_PLUGINS}
-              components={components}
-            >
-              {part.text}
-            </ReactMarkdown>
-            {live && part === lastPart ? caret : null}
-          </div>
-        ),
-      )}
-      {waiting ? caret : null}
-      {showThinking || changes?.length ? (
-        <Collapsible
-          open={thinkingOpen}
-          onOpenChange={setThinkingOpen}
-          className="w-full"
+      {foldedSteps ? (
+        <FoldToggle
+          icon={WrenchIcon}
+          open={stepsOpen}
+          onToggle={() => setStepsOpen((open) => !open)}
         >
+          {plural(foldedSteps, { one: "# step", other: "# steps" })}
+        </FoldToggle>
+      ) : null}
+      {foldedSteps && stepsOpen ? (
+        <div className="flex w-full flex-col gap-2 border-s border-sidebar-border ps-3">
+          {folded.map((part, index) => renderPart(part, index, true))}
+        </div>
+      ) : null}
+      {shown.map((part, index) => renderPart(part, index, false))}
+      {waiting ? caret : null}
+      {showThinking || changeList.length ? (
+        <div className="flex w-full flex-col gap-1.5">
           <div
             data-log-meta=""
             className="flex w-full flex-wrap items-center gap-1.5"
           >
             {showThinking ? (
-              <CollapsibleTrigger asChild>
-                <button
-                  type="button"
-                  className="inline-flex h-7 items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-                  aria-label={t`Toggle thinking output`}
-                >
-                  <BrainCircuitIcon
-                    className={cn(
-                      "h-3.5 w-3.5",
-                      thinkingLive && "animate-pulse text-primary",
-                    )}
-                  />
-                  <span className={cn(thinkingLive && "animate-pulse")}>
-                    <Trans>Thinking</Trans>
-                  </span>
-                  <ChevronDownIcon
-                    className={cn(
-                      "h-3.5 w-3.5 transition-transform",
-                      thinkingOpen && "rotate-180",
-                    )}
-                  />
-                </button>
-              </CollapsibleTrigger>
+              <FoldToggle
+                icon={BrainCircuitIcon}
+                open={thinkingOpen}
+                onToggle={() => setThinkingOpen((open) => !open)}
+                pulse={thinkingLive}
+                label={t`Toggle thinking output`}
+              >
+                <Trans>Thinking</Trans>
+              </FoldToggle>
             ) : null}
-            {changes?.length ? (
-              <ChangeList changes={changes} messageId={messageId} />
+            {changeList.length === 1 ? (
+              <ChangeChips changes={changeList} />
+            ) : changeList.length ? (
+              <FoldToggle
+                icon={PencilLineIcon}
+                open={changesOpen}
+                onToggle={() => setChangesOpen((open) => !open)}
+              >
+                <span
+                  className={cn(
+                    changeList.every((change) => change.undone) &&
+                      "line-through",
+                  )}
+                >
+                  {plural(changeList.length, {
+                    one: "# change",
+                    other: "# changes",
+                  })}
+                </span>
+              </FoldToggle>
+            ) : null}
+            {changeList.length ? (
+              <UndoReplyButton changes={changeList} messageId={messageId} />
             ) : null}
           </div>
-          {showThinking ? (
-            <CollapsibleContent className="mt-1 rounded-xs border border-border/60 bg-card/60 p-2.5 shadow-sm backdrop-blur-sm">
+          {showThinking && thinkingOpen ? (
+            <div
+              ref={keepInView}
+              className="rounded-xs border border-border/60 bg-card/60 p-2.5 shadow-sm backdrop-blur-sm"
+            >
               <p
                 dir="auto"
                 className="text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground"
               >
                 {thinking}
               </p>
-            </CollapsibleContent>
+            </div>
           ) : null}
-        </Collapsible>
+          {changesOpen && changeList.length > 1 ? (
+            <div ref={keepInView} className="flex w-full flex-wrap gap-1">
+              <ChangeChips changes={changeList} />
+            </div>
+          ) : null}
+        </div>
       ) : null}
       {status === "stopped" ? (
         <p className="text-xs text-muted-foreground">
