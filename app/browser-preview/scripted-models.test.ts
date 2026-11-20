@@ -3,7 +3,7 @@ import { parseOpenAIStream } from "@/services/llm/streaming";
 import { ToolCallAccumulator } from "@/services/llm/tool-call-accumulator";
 import { scriptedChatCompletion } from "./scripted-models";
 
-const assistantTools = [{ function: { name: "get_context" } }];
+const assistantTools = [{ function: { name: "list_library" } }];
 
 async function read(response: Response) {
   let content = "";
@@ -20,7 +20,7 @@ describe("browser preview scripted models", () => {
     const { content } = await read(
       scriptedChatCompletion({
         stream: true,
-        messages: [{ role: "user", content: "/tool get_context {}" }],
+        messages: [{ role: "user", content: "/tool get_tale {}" }],
       }),
     );
     expect(content).toContain("Scripted browser preview response");
@@ -35,7 +35,7 @@ describe("browser preview scripted models", () => {
           {
             role: "user",
             content:
-              '<context>\n{"page":"home"}\n</context>\n\n/tool list_library {"kind":"tales"}\n/tool get_context',
+              '<context>\n{"page":"home"}\n</context>\n\n/tool list_library {"kind":"tales"}\n/tool get_tale',
           },
         ],
       }),
@@ -43,7 +43,7 @@ describe("browser preview scripted models", () => {
     expect(content).toBe("Looking.");
     expect(calls.map((call) => call.function)).toEqual([
       { name: "list_library", arguments: '{"kind":"tales"}' },
-      { name: "get_context", arguments: "{}" },
+      { name: "get_tale", arguments: "{}" },
     ]);
   });
 
@@ -53,7 +53,7 @@ describe("browser preview scripted models", () => {
         stream: true,
         tools: assistantTools,
         messages: [
-          { role: "user", content: "/tool get_context" },
+          { role: "user", content: "/tool get_tale" },
           { role: "assistant", content: "" },
           { role: "tool", tool_call_id: "c", content: '{"page":"home"}' },
         ],
@@ -65,16 +65,14 @@ describe("browser preview scripted models", () => {
 
   it("keeps calling the tools on /loop until tools are turned off", async () => {
     const messages = [
-      { role: "user", content: "/loop\n/tool get_context" },
+      { role: "user", content: "/loop\n/tool get_tale" },
       { role: "assistant", content: "" },
       { role: "tool", tool_call_id: "c", content: "{}" },
     ];
     const again = await read(
       scriptedChatCompletion({ stream: true, tools: assistantTools, messages }),
     );
-    expect(again.calls.map((call) => call.function.name)).toEqual([
-      "get_context",
-    ]);
+    expect(again.calls.map((call) => call.function.name)).toEqual(["get_tale"]);
     const done = await read(
       scriptedChatCompletion({
         stream: true,

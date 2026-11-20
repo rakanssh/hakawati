@@ -227,7 +227,7 @@ export function createLibraryTools(
     defineTool({
       name: "library",
       description:
-        "Manage the player's library. delete removes tales or scenarios for good; sync and stop_syncing move tales into or out of the cloud; resolve_conflict settles a tale's sync conflict; export copies a scenario to the clipboard as JSON; import opens a copied scenario in the editor. Deleting, stop_syncing and overwriting a conflict ask the player with buttons first, so don't ask in text.",
+        "Manage the player's library. delete removes tales or scenarios for good; sync and stop_syncing move tales into or out of the cloud; resolve_conflict settles a tale's sync conflict; export copies a scenario to the clipboard as JSON; import opens a copied scenario in the editor. Deleting, stop_syncing and overwriting a conflict ask the player with buttons.",
       parameters: objectSchema(
         {
           action: { type: "string", enum: [...ACTIONS] },

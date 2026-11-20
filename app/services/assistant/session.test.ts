@@ -150,7 +150,10 @@ const contextCall: StreamChunk[] = [
         index: 0,
         id: "call_1",
         type: "function",
-        function: { name: "get_context", arguments: "{}" },
+        function: {
+          name: "settings",
+          arguments: '{"action":"get","keys":["theme"]}',
+        },
       },
     ],
   },
@@ -195,13 +198,15 @@ describe("Hakawati chat session", () => {
       ["assistant", "Looking.\n\nYou are home."],
     ]);
     const reply = state.messages[1];
-    expect(reply.activity).toEqual([{ tool: "get_context", at: 8 }]);
+    expect(reply.activity).toEqual([
+      { tool: "settings", action: "get", at: 8 },
+    ]);
     expect(reply.turn?.map((m) => m.role)).toEqual([
       "assistant",
       "tool",
       "assistant",
     ]);
-    expect(JSON.parse(reply.turn![1].content)).toEqual({ page: "home" });
+    expect(JSON.parse(reply.turn![1].content)).toHaveProperty("theme");
 
     const firstRequest = sendRoleChat.mock.calls[0][1];
     expect(sendRoleChat.mock.calls[0][0]).toBe("hakawati");
@@ -251,7 +256,9 @@ describe("Hakawati chat session", () => {
 
     const reply = store.getState().messages.at(-1)!;
     expect(reply.content).toBe("Let me look.\n\nYou are home.");
-    expect(reply.activity).toEqual([{ tool: "get_context", at: 12 }]);
+    expect(reply.activity).toEqual([
+      { tool: "settings", action: "get", at: 12 },
+    ]);
   });
 
   it("shows stored replies, not the context block, on the next turn", async () => {
@@ -401,9 +408,9 @@ describe("Hakawati chat session", () => {
                 id: "call_1",
                 type: "function",
                 function: {
-                  name: "edit_story_cards",
+                  name: "edit_tale",
                   arguments:
-                    '{"taleId":"t1","ops":[{"op":"add","title":"Mara"}]}',
+                    '{"taleId":"t1","cards":[{"op":"add","title":"Mara"}]}',
                 },
               },
             ],
@@ -416,7 +423,7 @@ describe("Hakawati chat session", () => {
     const reply = store.getState().messages.at(-1)!;
     expect(reply.changes).toEqual([cardChange]);
     expect(reply.activity).toEqual([
-      { tool: "edit_story_cards", at: 0, changed: true },
+      { tool: "edit_tale", at: 0, changed: true },
     ]);
 
     expect(await session.undoAssistantReply(reply.id)).toBe(0);
@@ -444,7 +451,7 @@ describe("Hakawati chat session", () => {
                 type: "function",
                 function: {
                   name: "edit_scenario",
-                  arguments: '{"scenario":"new","name":"Lantern"}',
+                  arguments: '{"scenarioId":"new","name":"Lantern"}',
                 },
               },
               {
@@ -452,9 +459,9 @@ describe("Hakawati chat session", () => {
                 id: "call_2",
                 type: "function",
                 function: {
-                  name: "edit_story_cards",
+                  name: "edit_tale",
                   arguments:
-                    '{"taleId":"t1","ops":[{"op":"add","title":"Mara"}]}',
+                    '{"taleId":"t1","cards":[{"op":"add","title":"Mara"}]}',
                 },
               },
             ],

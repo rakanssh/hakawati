@@ -8,7 +8,7 @@ import { taleExists } from "@/repositories/tale.repository";
 import type { SettingChange } from "@/types/assistant.type";
 import { changeSetting } from "../app-changes";
 import { APP_SETTINGS, SETTING_KEYS } from "../app-settings";
-import { describeRoute } from "../context";
+import { describeRoute, workspaceContext } from "../context";
 import { changedParts } from "../scenario-changes";
 import { openDraft, withoutThumbnail } from "../scenario-edits";
 import {
@@ -115,7 +115,7 @@ export function createAppTools(context: AssistantToolContext): AssistantTool[] {
     defineTool({
       name: "show",
       description:
-        "Show the player a screen: a page, a tale on the play screen, a Settings tab, or a tab of the play screen's side panel. Use it to open the place where the player does something you can't.",
+        "Show the player a screen: a page, a tale on the play screen, a Settings tab (cloud-sync is Account & Sync, maintenance is Updates), or a tab of the play screen's side panel. Use it to open the place where the player does something you can't. After a page, it returns the new context.",
       parameters: objectSchema({
         page: { type: "string", enum: [...PAGES] },
         id: {
@@ -200,7 +200,11 @@ export function createAppTools(context: AssistantToolContext): AssistantTool[] {
         }
         if (!shown.length)
           throw new Error("Say what to show: page, settings or panel.");
-        return { shown, ...(name ? { name } : {}) };
+        return {
+          shown,
+          ...(name ? { name } : {}),
+          ...(page ? { context: workspaceContext(context.getPathname()) } : {}),
+        };
       },
       outcome: outputName,
     }),

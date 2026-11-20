@@ -21,7 +21,7 @@ import {
   type ScenarioContent,
 } from "@/types/context.type";
 import type { ScenarioChange } from "@/types/assistant.type";
-import type { ScenarioEdits } from "../scenario-changes";
+import { workspaceContext } from "../context";
 import { editScenario, scenarioFromTale } from "../scenario-edits";
 import { errorMessage } from "@/lib/errors";
 import {
@@ -31,7 +31,6 @@ import {
   objectSchema,
   opList,
   optionalString,
-  required,
   text,
   type AssistantTool,
   type AssistantToolContext,
@@ -39,40 +38,14 @@ import {
 import { catalogTransport } from "./catalog";
 import { openTaleNamed, outputName } from "./open-tale";
 import {
-  addItemFrom,
   applyCardOps,
+  applyItemOps,
+  applyStatOps,
   CARD_OP_SCHEMA,
-  setStatFrom,
-  updateItemFrom,
+  ITEM_OP_SCHEMA,
+  STAT_OP_SCHEMA,
 } from "./ops";
 import { taleIdFor, taleIdProperty } from "./read";
-
-function applyStats(
-  edits: ScenarioEdits,
-  list: Array<Record<string, unknown>>,
-) {
-  for (const op of list) {
-    if (op.op === "set") setStatFrom(edits, op);
-    else if (op.op === "remove") edits.removeStat(required(op, "name"));
-    else throw new Error("A stat op must be set or remove.");
-  }
-}
-
-function applyItems(
-  edits: ScenarioEdits,
-  list: Array<Record<string, unknown>>,
-) {
-  const added: Array<{ id: string; name: string }> = [];
-  for (const op of list) {
-    if (op.op === "add") {
-      const item = addItemFrom(edits, op);
-      added.push({ id: item.id, name: item.name });
-    } else if (op.op === "update") updateItemFrom(edits, op);
-    else if (op.op === "remove") edits.removeItem(required(op, "id"));
-    else throw new Error("An item op must be add, update or remove.");
-  }
-  return added;
-}
 
 const COMPONENTS = [
   ["opening", PromptComponentType.OPENING],
@@ -127,9 +100,9 @@ export function createScenarioTools(
     defineTool({
       name: "edit_scenario",
       description:
-        "Change a scenario, or create one. With the scenario editor open, this fills in its form, and the player saves it. Leave out what stays the same; an empty string clears opening, plot, author's note or AI instructions. Keep any ${...} questions the player wrote.",
+        "Change a scenario, or create one. With the scenario editor open, this fills in its form, and the player saves it; tell them. Leave out what stays the same; an empty string clears opening, plot, author's note or AI instructions. Keep any ${...} questions the player wrote.",
       parameters: objectSchema({
-        scenario: {
+        scenarioId: {
           type: "string",
           description:
             'Leave out for the scenario open in the editor. Otherwise a saved scenario\'s id, or "new" to create one in the library.',
@@ -151,36 +124,12 @@ export function createScenarioTools(
         stats: {
           type: "array",
           description: "Starting stats, used in Game Master mode.",
-          items: {
-            type: "object",
-            properties: {
-              op: { type: "string", enum: ["set", "remove"] },
-              name: { type: "string" },
-              newName: { type: "string" },
-              value: { type: "number" },
-              min: { type: "number" },
-              max: { type: "number" },
-              description: { type: "string" },
-            },
-            required: ["op", "name"],
-          },
+          items: STAT_OP_SCHEMA,
         },
         items: {
           type: "array",
           description: "Starting inventory, used in Game Master mode.",
-          items: {
-            type: "object",
-            properties: {
-              op: { type: "string", enum: ["add", "update", "remove"] },
-              id: {
-                type: "string",
-                description: "The item's id, for update and remove.",
-              },
-              name: { type: "string" },
-              description: { type: "string" },
-            },
-            required: ["op"],
-          },
+          items: ITEM_OP_SCHEMA,
         },
       }),
       run: async (args) => {
@@ -190,7 +139,7 @@ export function createScenarioTools(
         let addedCards: Array<{ id: string; title: string }> = [];
         let addedItems: Array<{ id: string; name: string }> = [];
         const change = record(
-          await editScenario(text(args.scenario), (edits) => {
+          await editScenario(text(args.scenarioId), (edits) => {
             const name = optionalString(args.name);
             if (name !== undefined) edits.setName(name);
             const description = optionalString(args.description);
@@ -201,8 +150,8 @@ export function createScenarioTools(
               if (value !== undefined) edits.setComponent(type, value);
             }
             addedCards = applyCardOps(edits, cards);
-            applyStats(edits, stats);
-            addedItems = applyItems(edits, items);
+            applyStatOps(edits, stats);
+            addedItems = applyItemOps(edits, items);
           }),
         );
         if (!change) return { changed: false };
@@ -220,7 +169,7 @@ export function createScenarioTools(
     defineTool({
       name: "scenario_from_tale",
       description:
-        "Save a tale's setup (plot, notes, story cards, stats and inventory) as a new scenario in the library. Not for tales that were started from a scenario.",
+        "Save a tale's setup (plot, author's note, AI instructions, story cards, stats and inventory) as a new scenario in the library. The story, including its opening, is not copied. Not for tales that were started from a scenario.",
       parameters: objectSchema({ ...taleIdProperty }),
       run: async (args) => {
         const change = record(await scenarioFromTale(taleIdFor(args, context)));
@@ -230,7 +179,7 @@ export function createScenarioTools(
     defineTool({
       name: "start_tale",
       description:
-        "Start a new tale and open it on the play screen: from a saved scenario (scenarioId), a catalog scenario (catalogId), or Quickstart, where the helper model writes a tale from a few answers. If a scenario asks questions, the first call returns them: ask the player, then call again with their answers. private keeps the tale on this device.",
+        "Start a new tale and open it on the play screen: from a saved scenario (scenarioId), a catalog scenario (catalogId), or Quickstart, where the helper model writes a tale from a few answers. If a scenario asks questions, the first call returns them: ask the player, unless they told you to choose, then call again with the answers. private keeps the tale on this device. Once started, it returns the new context.",
       parameters: objectSchema({
         scenarioId: { type: "string" },
         catalogId: { type: "string" },
@@ -245,7 +194,11 @@ export function createScenarioTools(
             },
             archetype: { type: "string", description: "Who the character is." },
             tone: { type: "string" },
-            details: { type: "string" },
+            details: {
+              type: "string",
+              description:
+                "Only what the player said beyond the other answers.",
+            },
           },
           required: ["world", "character", "archetype"],
         },
@@ -272,6 +225,7 @@ export function createScenarioTools(
               started: true,
               taleId,
               name: await openTaleNamed(context, taleId, signal),
+              context: workspaceContext(context.getPathname()),
             };
           } catch (error) {
             throw new Error(

@@ -19,7 +19,6 @@ import {
   describePassage,
   describeTaleSetup,
   openTaleId,
-  workspaceContext,
 } from "../context";
 import {
   defineTool,
@@ -68,13 +67,6 @@ export function createReadTools(
   context: AssistantToolContext,
 ): AssistantTool[] {
   return [
-    defineTool({
-      name: "get_context",
-      description:
-        "Where the player is in the app, and the open tale with its latest passages.",
-      parameters: objectSchema({}),
-      run: async () => workspaceContext(context.getPathname()),
-    }),
     defineTool({
       name: "list_library",
       description:

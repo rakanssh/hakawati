@@ -1,9 +1,7 @@
 import type { AssistantActivity } from "@/types/assistant.type";
 
 const EDIT_TOOLS = new Set([
-  "update_tale",
-  "edit_story_cards",
-  "edit_character",
+  "edit_tale",
   "edit_log",
   "edit_scenario",
   "scenario_from_tale",

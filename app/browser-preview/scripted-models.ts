@@ -108,7 +108,7 @@ function assistant(request: ChatRequest): Response {
 /** The preview's offline models: a scripted narrator, and a Hakawati that calls the tools you name. */
 export function scriptedChatCompletion(request: ChatRequest): Response {
   const isAssistant = request.tools?.some(
-    (tool) => tool.function?.name === "get_context",
+    (tool) => tool.function?.name === "list_library",
   );
   return isAssistant ? assistant(request) : reply(request, NARRATION);
 }

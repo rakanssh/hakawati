@@ -368,8 +368,8 @@ describe("Hakawati's tale tools", () => {
     await loadIntoStore(taleId);
     const recorded: unknown[] = [];
     const run = tools(taleId, recorded);
-    const result = await run("edit_story_cards", {
-      ops: [
+    const result = await run("edit_tale", {
+      cards: [
         {
           op: "add",
           title: "Mara",
@@ -378,8 +378,32 @@ describe("Hakawati's tale tools", () => {
         },
       ],
     });
-    expect(result).toMatchObject({ changed: 1, added: [{ title: "Mara" }] });
+    expect(result).toMatchObject({
+      changed: 1,
+      addedCards: [{ title: "Mara" }],
+    });
     expect(recorded).toHaveLength(1);
+  });
+
+  it("switches a tale to Game Master and sets it up in one call", async () => {
+    const taleId = await createTale([[gm("g1")]], GameMode.STORY_TELLER);
+    await loadIntoStore(taleId);
+    const recorded: unknown[] = [];
+    const result = await tools(taleId, recorded)("edit_tale", {
+      mode: "game_master",
+      plot: "Reach the lighthouse.",
+      stats: [{ op: "set", name: "Health", value: 10, min: 0, max: 10 }],
+      items: [{ op: "add", name: "Flare" }],
+    });
+    expect(result).toMatchObject({
+      changed: 4,
+      addedItems: [{ name: "Flare" }],
+    });
+    const tale = useTaleStore.getState();
+    expect(tale.gameMode).toBe(GameMode.GM);
+    expect(tale.stats.map((stat) => stat.name)).toContain("Health");
+    expect(tale.inventory.map((item) => item.name)).toEqual(["Flare"]);
+    expect(recorded).toHaveLength(4);
   });
 
   it("refuses stats and inventory in a Story Teller tale and changes nothing", async () => {
@@ -387,8 +411,8 @@ describe("Hakawati's tale tools", () => {
     await loadIntoStore(taleId);
     const recorded: unknown[] = [];
     await expect(
-      tools(taleId, recorded)("edit_character", {
-        ops: [{ op: "add_item", name: "Flare" }],
+      tools(taleId, recorded)("edit_tale", {
+        items: [{ op: "add", name: "Flare" }],
       }),
     ).rejects.toThrow("Game Master mode");
     expect(recorded).toEqual([]);
@@ -400,13 +424,13 @@ describe("Hakawati's tale tools", () => {
     const result = await tools(taleId, [])("edit_log", {
       ops: [
         {
-          op: "insert",
+          op: "add",
           after: "start",
           passages: [{ by: "narrator", text: "Long ago." }],
         },
       ],
     });
-    const [first] = result.inserted as string[];
+    const [first] = result.added as string[];
     expect((await storedIds(taleId))[0]).toBe(first);
     expect(useTaleStore.getState().log[0].id).toBe(first);
   });

@@ -215,7 +215,7 @@ export const APP_SETTINGS: Record<string, SettingEntry> = {
       input === null
         ? 1
         : number("fontSize", FONT_SIZE_MIN, FONT_SIZE_MAX)(input),
-    accepts: { min: FONT_SIZE_MIN, max: FONT_SIZE_MAX, default: 1 },
+    accepts: { min: FONT_SIZE_MIN, max: FONT_SIZE_MAX, step: 0.1, default: 1 },
   },
   uiScale: {
     label: msg`Interface size`,
@@ -224,7 +224,7 @@ export const APP_SETTINGS: Record<string, SettingEntry> = {
     apply: (value) => settings().setUiScale(value as number),
     parse: (input) =>
       input === null ? 1 : number("uiScale", UI_SCALE_MIN, UI_SCALE_MAX)(input),
-    accepts: { min: UI_SCALE_MIN, max: UI_SCALE_MAX, default: 1 },
+    accepts: { min: UI_SCALE_MIN, max: UI_SCALE_MAX, step: 0.1, default: 1 },
   },
   font: {
     label: msg`Font`,

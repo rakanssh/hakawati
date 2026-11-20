@@ -1,6 +1,5 @@
 import { GameMode, LogEntryMode, PromptComponentType } from "@/types";
 import type { AssistantChange } from "@/types/assistant.type";
-import type { TaleChanges } from "../tale-changes";
 import {
   deletePassages,
   editTaleSetup,
@@ -23,20 +22,20 @@ import {
   type AssistantToolContext,
 } from "./define";
 import {
-  addItemFrom,
   applyCardOps,
+  applyItemOps,
+  applyStatOps,
   CARD_OP_SCHEMA,
-  setStatFrom,
-  updateItemFrom,
+  ITEM_OP_SCHEMA,
+  STAT_OP_SCHEMA,
 } from "./ops";
 import { taleIdFor, taleIdProperty } from "./read";
 
-const ops = (args: Record<string, unknown>) =>
-  opList(args.ops, "ops", { required: true });
-
-const describeChanges = (changes: AssistantChange[]) => ({
-  changed: changes.length,
-});
+const COMPONENTS = [
+  ["plot", PromptComponentType.PLOT],
+  ["authorNote", PromptComponentType.AUTHOR_NOTE],
+  ["aiInstructions", PromptComponentType.AI_INSTRUCTIONS],
+] as const;
 
 export function createTaleTools(
   context: AssistantToolContext,
@@ -45,143 +44,68 @@ export function createTaleTools(
     if (changes.length) context.recordChanges?.(changes);
     return changes;
   };
-  const setup = (
-    args: Record<string, unknown>,
-    signal: AbortSignal | undefined,
-    edit: (changes: TaleChanges) => void,
-  ) =>
-    withTaleWrites(signal, async () =>
-      record(await editTaleSetup(taleIdFor(args, context), edit)),
-    );
 
   return [
     defineTool({
-      name: "update_tale",
+      name: "edit_tale",
       description:
-        "Change a tale's name, description, plot, author's note, AI instructions or mode. Leave out what stays the same; an empty string clears plot, author's note or AI instructions.",
+        "Change a tale's setup: name, description, plot, author's note, AI instructions, mode, story cards, and in Game Master mode its stats and inventory. Leave out what stays the same; an empty string clears plot, author's note or AI instructions. The narrator sees a story card when one of its triggers comes up in the story, or always when it is pinned.",
       parameters: objectSchema({
         ...taleIdProperty,
         name: { type: "string" },
         description: { type: "string" },
+        mode: MODE_PROPERTY,
         plot: { type: "string" },
         authorNote: { type: "string" },
         aiInstructions: { type: "string" },
-        mode: MODE_PROPERTY,
+        cards: { type: "array", items: CARD_OP_SCHEMA },
+        stats: { type: "array", items: STAT_OP_SCHEMA },
+        items: {
+          type: "array",
+          description: "Inventory.",
+          items: ITEM_OP_SCHEMA,
+        },
       }),
       run: async (args, signal) => {
         const name = optionalString(args.name);
         if (name !== undefined && !name.trim())
           throw new Error("name cannot be empty.");
-        const changes = await setup(args, signal, (tale) => {
-          if (name !== undefined) tale.setField("name", name.trim());
-          const description = optionalString(args.description);
-          if (description !== undefined)
-            tale.setField("description", description);
-          for (const [key, type] of [
-            ["plot", PromptComponentType.PLOT],
-            ["authorNote", PromptComponentType.AUTHOR_NOTE],
-            ["aiInstructions", PromptComponentType.AI_INSTRUCTIONS],
-          ] as const) {
-            const value = optionalString(args[key]);
-            if (value !== undefined) tale.setComponent(type, value);
-          }
-          if (args.mode !== undefined)
-            tale.setField("gameMode", modeFrom(args.mode));
-        });
-        return describeChanges(changes);
-      },
-    }),
-    defineTool({
-      name: "edit_story_cards",
-      description:
-        "Add, change or remove a tale's story cards in one go. The narrator sees a card when one of its triggers comes up in the story, or always when it is pinned.",
-      parameters: objectSchema(
-        {
-          ...taleIdProperty,
-          ops: { type: "array", items: CARD_OP_SCHEMA },
-        },
-        ["ops"],
-      ),
-      run: async (args, signal) => {
-        const list = ops(args);
-        let added: Array<{ id: string; title: string }> = [];
-        const changes = await setup(args, signal, (tale) => {
-          added = applyCardOps(tale, list);
-        });
-        return { ...describeChanges(changes), added };
-      },
-    }),
-    defineTool({
-      name: "edit_character",
-      description:
-        "Change a Game Master tale's stats and inventory in one go. set_stat adds a stat or changes its value, range, description or name.",
-      parameters: objectSchema(
-        {
-          ...taleIdProperty,
-          ops: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                op: {
-                  type: "string",
-                  enum: [
-                    "set_stat",
-                    "remove_stat",
-                    "add_item",
-                    "update_item",
-                    "remove_item",
-                  ],
-                },
-                name: {
-                  type: "string",
-                  description: "The stat's name, or the item's name.",
-                },
-                newName: {
-                  type: "string",
-                  description: "set_stat: rename the stat.",
-                },
-                value: { type: "number" },
-                min: { type: "number" },
-                max: { type: "number" },
-                id: {
-                  type: "string",
-                  description:
-                    "The item's id, for update_item and remove_item.",
-                },
-                description: { type: "string" },
-              },
-              required: ["op"],
-            },
-          },
-        },
-        ["ops"],
-      ),
-      run: async (args, signal) => {
-        const list = ops(args);
-        const added: Array<{ id: string; name: string }> = [];
-        const changes = await setup(args, signal, (tale) => {
-          if (tale.tale.gameMode !== GameMode.GM)
-            throw new Error(
-              "Stats and inventory are only used in Game Master mode. Switch the mode with update_tale first if the player wants that.",
-            );
-          for (const op of list) {
-            if (op.op === "set_stat") setStatFrom(tale, op);
-            else if (op.op === "remove_stat")
-              tale.removeStat(required(op, "name"));
-            else if (op.op === "add_item") {
-              const item = addItemFrom(tale, op);
-              added.push({ id: item.id, name: item.name });
-            } else if (op.op === "update_item") updateItemFrom(tale, op);
-            else if (op.op === "remove_item")
-              tale.removeItem(required(op, "id"));
-            else
-              throw new Error(
-                "op must be set_stat, remove_stat, add_item, update_item or remove_item.",
-              );
-          }
-        });
-        return { ...describeChanges(changes), added };
+        const cards = opList(args.cards, "cards");
+        const stats = opList(args.stats, "stats");
+        const items = opList(args.items, "items");
+        let addedCards: Array<{ id: string; title: string }> = [];
+        let addedItems: Array<{ id: string; name: string }> = [];
+        const changes = await withTaleWrites(signal, async () =>
+          record(
+            await editTaleSetup(taleIdFor(args, context), (tale) => {
+              if (name !== undefined) tale.setField("name", name.trim());
+              const description = optionalString(args.description);
+              if (description !== undefined)
+                tale.setField("description", description);
+              if (args.mode !== undefined)
+                tale.setField("gameMode", modeFrom(args.mode));
+              for (const [key, type] of COMPONENTS) {
+                const value = optionalString(args[key]);
+                if (value !== undefined) tale.setComponent(type, value);
+              }
+              addedCards = applyCardOps(tale, cards);
+              if (
+                (stats.length || items.length) &&
+                tale.tale.gameMode !== GameMode.GM
+              )
+                throw new Error(
+                  "Stats and inventory are only used in Game Master mode. Set mode to game_master as well if the player wants that.",
+                );
+              applyStatOps(tale, stats);
+              addedItems = applyItemOps(tale, items);
+            }),
+          ),
+        );
+        return {
+          changed: changes.length,
+          ...(addedCards.length ? { addedCards } : {}),
+          ...(addedItems.length ? { addedItems } : {}),
+        };
       },
     }),
     defineTool({
@@ -196,20 +120,19 @@ export function createTaleTools(
             items: {
               type: "object",
               properties: {
-                op: { type: "string", enum: ["edit", "insert", "delete"] },
+                op: { type: "string", enum: ["add", "update", "remove"] },
                 id: {
                   type: "string",
-                  description: "edit: the passage to rewrite.",
+                  description: "update: the passage to rewrite.",
                 },
-                text: { type: "string", description: "edit: the new text." },
+                text: { type: "string", description: "update: the new text." },
                 after: {
                   type: "string",
-                  description:
-                    'insert: the passage id to add after, or "start".',
+                  description: 'add: the passage id to add after, or "start".',
                 },
                 passages: {
                   type: "array",
-                  description: "insert: the passages to add, in order.",
+                  description: "add: the passages to add, in order.",
                   items: {
                     type: "object",
                     properties: {
@@ -227,7 +150,7 @@ export function createTaleTools(
                 ids: {
                   type: "array",
                   items: { type: "string" },
-                  description: "delete: the passages to remove.",
+                  description: "remove: the passages to remove.",
                 },
               },
               required: ["op"],
@@ -237,19 +160,19 @@ export function createTaleTools(
         ["ops"],
       ),
       run: async (args, signal) => {
-        const list = ops(args);
+        const list = opList(args.ops, "ops", { required: true });
         const taleId = taleIdFor(args, context);
-        const inserted: string[] = [];
+        const added: string[] = [];
         let changed = 0;
         await withTaleWrites(signal, async () => {
           for (const op of list) {
-            if (op.op === "edit") {
+            if (op.op === "update") {
               const textValue = optionalString(op.text);
-              if (!textValue?.trim()) throw new Error("edit needs text.");
+              if (!textValue?.trim()) throw new Error("update needs text.");
               changed += record([
                 await rewritePassage(taleId, required(op, "id"), textValue),
               ]).length;
-            } else if (op.op === "insert") {
+            } else if (op.op === "add") {
               const after = required(op, "after");
               const passages = Array.isArray(op.passages)
                 ? op.passages.flatMap((p): NewPassage[] => {
@@ -269,7 +192,7 @@ export function createTaleTools(
                   })
                 : [];
               if (!passages.length)
-                throw new Error("insert needs passages with text.");
+                throw new Error("add needs passages with text.");
               const entries = passages.map(toLogEntry);
               changed += record([
                 await insertPassages(
@@ -278,15 +201,15 @@ export function createTaleTools(
                   entries,
                 ),
               ]).length;
-              inserted.push(...entries.map((entry) => entry.id));
-            } else if (op.op === "delete") {
+              added.push(...entries.map((entry) => entry.id));
+            } else if (op.op === "remove") {
               const ids = strings(op.ids) ?? [];
-              if (!ids.length) throw new Error("delete needs ids.");
+              if (!ids.length) throw new Error("remove needs ids.");
               changed += record(await deletePassages(taleId, ids)).length;
-            } else throw new Error("op must be edit, insert or delete.");
+            } else throw new Error("op must be add, update or remove.");
           }
         });
-        return { changed, ...(inserted.length ? { inserted } : {}) };
+        return { changed, ...(added.length ? { added } : {}) };
       },
     }),
   ];

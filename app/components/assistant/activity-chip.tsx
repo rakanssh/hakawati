@@ -7,7 +7,6 @@ import {
   GlobeIcon,
   LibraryIcon,
   Loader2Icon,
-  MapPinIcon,
   PanelsTopLeftIcon,
   PlayIcon,
   ScrollTextIcon,
@@ -20,7 +19,6 @@ import { cn } from "@/lib/utils";
 import type { AssistantActivity } from "@/types/assistant.type";
 
 const TOOL_ICONS: Record<string, ComponentType<{ className?: string }>> = {
-  get_context: MapPinIcon,
   list_library: LibraryIcon,
   get_tale: BookOpenIcon,
   read_log: ScrollTextIcon,
@@ -110,12 +108,8 @@ function useActivityLabel() {
       return t`Waiting for you`;
     if (running)
       switch (activity.tool) {
-        case "update_tale":
+        case "edit_tale":
           return t`Changing the tale`;
-        case "edit_story_cards":
-          return t`Changing the story cards`;
-        case "edit_character":
-          return t`Changing the character`;
         case "edit_log":
           return t`Changing the story`;
         case "edit_scenario":
@@ -140,8 +134,6 @@ function useActivityLabel() {
           return t`Checking the catalog`;
       }
     switch (activity.tool) {
-      case "get_context":
-        return t`Checked where you are`;
       case "list_library":
         return detail === "scenarios"
           ? t`Looked through your scenarios`
@@ -154,12 +146,8 @@ function useActivityLabel() {
         return t`Searched the story for “${detail}”`;
       case "get_scenario":
         return t`Read a scenario`;
-      case "update_tale":
+      case "edit_tale":
         return t`Couldn't change the tale`;
-      case "edit_story_cards":
-        return t`Couldn't change the story cards`;
-      case "edit_character":
-        return t`Couldn't change the character`;
       case "edit_log":
         return t`Couldn't change the story`;
       case "edit_scenario":

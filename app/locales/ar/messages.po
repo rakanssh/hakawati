@@ -28,7 +28,7 @@ msgid "..."
 msgstr "..."
 
 #. placeholder {0}: changeList.length
-#: app/components/assistant/hakawati-chat.tsx:353
+#: app/components/assistant/hakawati-chat.tsx:356
 msgid "{0, plural, one {# change} other {# changes}}"
 msgstr "{0, plural, zero {# تغييرات} one {تغيير واحد} two {تغييران} few {# تغييرات} many {# تغييرًا} other {# تغيير}}"
 
@@ -101,7 +101,7 @@ msgstr "{descriptionChars} حرفًا · ~{descriptionTokens} رمزًا"
 msgid "{downloaded} so far"
 msgstr "{downloaded} حتى الآن"
 
-#: app/components/assistant/hakawati-chat.tsx:312
+#: app/components/assistant/hakawati-chat.tsx:315
 msgid "{foldedSteps, plural, one {# step} other {# steps}}"
 msgstr "{foldedSteps, plural, zero {# خطوات} one {خطوة واحدة} two {خطوتان} few {# خطوات} many {# خطوةً} other {# خطوة}}"
 
@@ -185,7 +185,7 @@ msgstr "ورقة تخرج من آلة كاتبة على مكتب من خشب ا�
 msgid "A starship tablet against a night sky and a slowly turning red planet."
 msgstr "جهاز لوحي لمركبة فضائية أمام سماء ليل وكوكب أحمر يدور ببطء."
 
-#: app/components/assistant/activity-chip.tsx:56
+#: app/components/assistant/activity-chip.tsx:54
 #: app/components/layout/settings/settings-modal.tsx:102
 msgid "About"
 msgstr "عن التطبيق"
@@ -195,7 +195,7 @@ msgstr "عن التطبيق"
 msgid "Account"
 msgstr "الحساب"
 
-#: app/components/assistant/activity-chip.tsx:52
+#: app/components/assistant/activity-chip.tsx:50
 #: app/components/layout/settings/cloud-sync.tsx:1309
 #: app/components/layout/settings/settings-modal.tsx:83
 msgid "Account & Sync"
@@ -234,7 +234,7 @@ msgstr "أضف اسماً للسيناريو قبل النشر."
 msgid "Add a stat to track character attributes"
 msgstr "أضف خاصية لتتبع سمات الشخصية"
 
-#: app/components/assistant/hakawati-chat.tsx:406
+#: app/components/assistant/hakawati-chat.tsx:412
 msgid "Add a twist to the plot"
 msgstr "أضف منعطفًا إلى الحبكة"
 
@@ -347,7 +347,7 @@ msgstr "يُضاف قرب نهاية الموجّه عند متابعة القص
 msgid "Address"
 msgstr "العنوان"
 
-#: app/components/assistant/activity-chip.tsx:69
+#: app/components/assistant/activity-chip.tsx:67
 #: app/components/layout/settings/settings-modal.tsx:54
 #: app/components/layout/settings/settings-modal.tsx:67
 #: app/components/layout/settings/settings-modal.tsx:76
@@ -372,7 +372,7 @@ msgstr "تعليمات الذكاء الاصطناعي"
 msgid "AI Instructions still apply in Game Master mode; GM mechanics and tool behavior are added separately."
 msgstr "لا تزال تعليمات الذكاء الاصطناعي سارية في وضع مدير اللعبة (GM)؛ وتُضاف آليات مدير اللعبة وسلوك الأدوات بشكل منفصل."
 
-#: app/components/assistant/activity-chip.tsx:46
+#: app/components/assistant/activity-chip.tsx:44
 #: app/components/layout/settings/ai-setup/index.tsx:216
 #: app/components/layout/settings/settings-modal.tsx:49
 msgid "AI Setup"
@@ -427,13 +427,13 @@ msgstr "مفتاح API"
 msgid "App"
 msgstr "التطبيق"
 
-#: app/components/assistant/activity-chip.tsx:44
+#: app/components/assistant/activity-chip.tsx:42
 #: app/components/layout/settings/game.tsx:297
 #: app/components/layout/settings/settings-modal.tsx:37
 msgid "Appearance"
 msgstr "المظهر"
 
-#: app/components/assistant/hakawati-chat.tsx:696
+#: app/components/assistant/hakawati-chat.tsx:702
 msgid "Ask Hakawati"
 msgstr "اسأل حكواتي"
 
@@ -539,11 +539,11 @@ msgstr "إلغاء التسجيل"
 msgid "Cancel transcription"
 msgstr "إلغاء تحويل الكلام إلى نص"
 
-#: app/components/assistant/activity-chip.tsx:108
+#: app/components/assistant/activity-chip.tsx:106
 msgid "Cancelled"
 msgstr "أُلغي"
 
-#: app/components/assistant/activity-chip.tsx:65
+#: app/components/assistant/activity-chip.tsx:63
 #: app/components/play/story-panel/story-panel.tsx:137
 msgid "Cards"
 msgstr "البطاقات"
@@ -552,7 +552,7 @@ msgstr "البطاقات"
 msgid "Cartridge"
 msgstr "خرطوشة"
 
-#: app/components/assistant/hakawati-chat.tsx:408
+#: app/components/assistant/hakawati-chat.tsx:414
 msgid "Catch me up on my latest tale"
 msgstr "ذكّرني بما جرى في آخر حكاياتي"
 
@@ -607,7 +607,7 @@ msgstr "غيّر السيناريو المفتوح"
 msgid "Changed the plot"
 msgstr "غيّر الحبكة"
 
-#: app/components/assistant/activity-chip.tsx:210
+#: app/components/assistant/activity-chip.tsx:198
 msgid "Changed your library"
 msgstr "غيّر مكتبتك"
 
@@ -615,39 +615,31 @@ msgstr "غيّر مكتبتك"
 msgid "Changes stay in your draft until you publish an update."
 msgstr "تبقى التغييرات في مسودتك حتى تنشر تحديثاً."
 
-#: app/components/assistant/activity-chip.tsx:135
+#: app/components/assistant/activity-chip.tsx:129
 msgid "Changing AI Setup"
 msgstr "يغيّر إعداد الذكاء الاصطناعي"
 
-#: app/components/assistant/activity-chip.tsx:118
-msgid "Changing the character"
-msgstr "يغيّر الشخصية"
-
-#: app/components/assistant/activity-chip.tsx:122
+#: app/components/assistant/activity-chip.tsx:116
 msgid "Changing the scenario"
 msgstr "يغيّر السيناريو"
 
-#: app/components/assistant/activity-chip.tsx:131
+#: app/components/assistant/activity-chip.tsx:125
 msgid "Changing the settings"
 msgstr "يغيّر الإعدادات"
 
-#: app/components/assistant/activity-chip.tsx:120
+#: app/components/assistant/activity-chip.tsx:114
 msgid "Changing the story"
 msgstr "يغيّر القصة"
 
-#: app/components/assistant/activity-chip.tsx:116
-msgid "Changing the story cards"
-msgstr "يغيّر بطاقات القصة"
-
-#: app/components/assistant/activity-chip.tsx:114
+#: app/components/assistant/activity-chip.tsx:112
 msgid "Changing the tale"
 msgstr "يغيّر الحكاية"
 
-#: app/components/assistant/activity-chip.tsx:138
+#: app/components/assistant/activity-chip.tsx:132
 msgid "Changing your library"
 msgstr "يغيّر مكتبتك"
 
-#: app/components/assistant/activity-chip.tsx:67
+#: app/components/assistant/activity-chip.tsx:65
 #: app/components/play/story-panel/story-panel.tsx:145
 #: app/components/quickstart/quickstart-wizard.tsx:346
 #: app/components/storybook/CategoryFilter.tsx:35
@@ -685,23 +677,19 @@ msgstr "التحقق من وجود تحديثات للتطبيق وتثبيت ا
 msgid "Check for updates"
 msgstr "التحقق من وجود تحديثات"
 
-#: app/components/assistant/activity-chip.tsx:186
+#: app/components/assistant/activity-chip.tsx:174
 msgid "Checked AI Setup"
 msgstr "اطّلع على إعداد الذكاء الاصطناعي"
 
-#: app/components/assistant/activity-chip.tsx:181
+#: app/components/assistant/activity-chip.tsx:169
 msgid "Checked for updates"
 msgstr "بحث عن تحديثات"
 
-#: app/components/assistant/activity-chip.tsx:182
+#: app/components/assistant/activity-chip.tsx:170
 msgid "Checked the settings"
 msgstr "اطّلع على الإعدادات"
 
-#: app/components/assistant/activity-chip.tsx:144
-msgid "Checked where you are"
-msgstr "تحقّق من مكانك"
-
-#: app/components/assistant/activity-chip.tsx:136
+#: app/components/assistant/activity-chip.tsx:130
 msgid "Checking AI Setup"
 msgstr "يطّلع على إعداد الذكاء الاصطناعي"
 
@@ -713,11 +701,11 @@ msgstr "جارٍ التحقق من الاتصال بـ ChatGPT..."
 msgid "Checking for updates…"
 msgstr "جارٍ البحث عن تحديثات…"
 
-#: app/components/assistant/activity-chip.tsx:140
+#: app/components/assistant/activity-chip.tsx:134
 msgid "Checking the catalog"
 msgstr "يطّلع على الفهرس"
 
-#: app/components/assistant/activity-chip.tsx:132
+#: app/components/assistant/activity-chip.tsx:126
 msgid "Checking the settings"
 msgstr "يطّلع على الإعدادات"
 
@@ -923,8 +911,8 @@ msgstr "نافذة السياق"
 msgid "Continuation {0}"
 msgstr "تكملة {0}"
 
-#: app/components/assistant/hakawati-chat.tsx:613
-#: app/components/assistant/hakawati-chat.tsx:615
+#: app/components/assistant/hakawati-chat.tsx:619
+#: app/components/assistant/hakawati-chat.tsx:621
 #: app/components/layout/settings/advanced.tsx:54
 #: app/components/layout/settings/cloud-sync.tsx:1242
 #: app/components/play/play-input-controls.tsx:557
@@ -947,7 +935,7 @@ msgstr "المتابعة باستخدام ChatGPT"
 msgid "Control the app theme, reading comfort, and language."
 msgstr "التحكم في مظهر التطبيق، وراحة القراءة، واللغة."
 
-#: app/components/assistant/activity-chip.tsx:206
+#: app/components/assistant/activity-chip.tsx:194
 msgid "Copied the scenario"
 msgstr "نسخ السيناريو"
 
@@ -974,35 +962,27 @@ msgstr "تعذّر فتح الرابط"
 msgid "Could not open your browser. Visit ChatGPT Settings → Usage."
 msgstr "تعذّر فتح المتصفح. اذهب إلى Settings ← Usage في ChatGPT."
 
-#: app/components/assistant/activity-chip.tsx:184
+#: app/components/assistant/activity-chip.tsx:172
 msgid "Couldn't change AI Setup"
 msgstr "تعذّر تغيير إعداد الذكاء الاصطناعي"
 
-#: app/components/assistant/activity-chip.tsx:162
-msgid "Couldn't change the character"
-msgstr "تعذّر تغيير الشخصية"
-
-#: app/components/assistant/activity-chip.tsx:166
+#: app/components/assistant/activity-chip.tsx:154
 msgid "Couldn't change the scenario"
 msgstr "تعذّر تغيير السيناريو"
 
-#: app/components/assistant/activity-chip.tsx:179
+#: app/components/assistant/activity-chip.tsx:167
 msgid "Couldn't change the settings"
 msgstr "تعذّر تغيير الإعدادات"
 
-#: app/components/assistant/activity-chip.tsx:164
+#: app/components/assistant/activity-chip.tsx:152
 msgid "Couldn't change the story"
 msgstr "تعذّر تغيير القصة"
 
-#: app/components/assistant/activity-chip.tsx:160
-msgid "Couldn't change the story cards"
-msgstr "تعذّر تغيير بطاقات القصة"
-
-#: app/components/assistant/activity-chip.tsx:158
+#: app/components/assistant/activity-chip.tsx:150
 msgid "Couldn't change the tale"
 msgstr "تعذّر تغيير الحكاية"
 
-#: app/components/assistant/activity-chip.tsx:189
+#: app/components/assistant/activity-chip.tsx:177
 msgid "Couldn't change your library"
 msgstr "تعذّر تغيير مكتبتك"
 
@@ -1023,15 +1003,15 @@ msgstr "تعذّر حذف حسابك"
 msgid "Couldn’t load models"
 msgstr "تعذّر تحميل النماذج"
 
-#: app/components/assistant/activity-chip.tsx:176
+#: app/components/assistant/activity-chip.tsx:164
 msgid "Couldn't open that"
 msgstr "تعذّر فتح ذلك"
 
-#: app/components/assistant/activity-chip.tsx:216
+#: app/components/assistant/activity-chip.tsx:204
 msgid "Couldn't reach the catalog"
 msgstr "تعذّر الوصول إلى الفهرس"
 
-#: app/components/assistant/activity-chip.tsx:168
+#: app/components/assistant/activity-chip.tsx:156
 msgid "Couldn't save the tale as a scenario"
 msgstr "تعذّر حفظ الحكاية كسيناريو"
 
@@ -1039,11 +1019,11 @@ msgstr "تعذّر حفظ الحكاية كسيناريو"
 msgid "Couldn't save your progress, so Hakawati stayed open. Go back again to retry."
 msgstr "تعذّر حفظ تقدّمك، لذا بقي حكواتي مفتوحًا. ارجع مرة أخرى لإعادة المحاولة."
 
-#: app/components/assistant/activity-chip.tsx:171
+#: app/components/assistant/activity-chip.tsx:159
 msgid "Couldn't start the tale"
 msgstr "تعذّر بدء الحكاية"
 
-#: app/components/assistant/activity-chip.tsx:215
+#: app/components/assistant/activity-chip.tsx:203
 msgid "Couldn't unpublish"
 msgstr "تعذّر إلغاء النشر"
 
@@ -1157,7 +1137,7 @@ msgstr "حذف {count} حكايات؟"
 msgid "Delete account"
 msgstr "حذف الحساب"
 
-#: app/components/assistant/hakawati-chat.tsx:470
+#: app/components/assistant/hakawati-chat.tsx:476
 msgid "Delete chat"
 msgstr "حذف المحادثة"
 
@@ -1183,15 +1163,15 @@ msgstr "حذف هذه الحكاية؟"
 msgid "Delete your Hakawati Cloud account?"
 msgstr "حذف حسابك في سحابة حكواتي؟"
 
-#: app/components/assistant/activity-chip.tsx:193
+#: app/components/assistant/activity-chip.tsx:181
 msgid "Deleted “{first}”"
 msgstr "حذف «{first}»"
 
-#: app/components/assistant/activity-chip.tsx:195
+#: app/components/assistant/activity-chip.tsx:183
 msgid "Deleted {count} scenarios"
 msgstr "حذف {count} سيناريوهات"
 
-#: app/components/assistant/activity-chip.tsx:196
+#: app/components/assistant/activity-chip.tsx:184
 msgid "Deleted {count} tales"
 msgstr "حذف {count} حكايات"
 
@@ -1288,7 +1268,7 @@ msgstr "قطع الاتصال"
 msgid "Disconnecting..."
 msgstr "جارٍ قطع الاتصال..."
 
-#: app/components/assistant/activity-chip.tsx:81
+#: app/components/assistant/activity-chip.tsx:79
 #: app/pages/home/home.tsx:814
 #: app/pages/scenarios/catalog-details.tsx:145
 #: app/pages/scenarios/home.tsx:470
@@ -1299,7 +1279,7 @@ msgstr "استكشف"
 msgid "Dismiss announcement"
 msgstr "إخفاء الإعلان"
 
-#: app/components/assistant/activity-chip.tsx:71
+#: app/components/assistant/activity-chip.tsx:69
 #: app/components/play/story-panel/story-panel.tsx:159
 msgid "Display"
 msgstr "العرض"
@@ -1349,7 +1329,7 @@ msgstr "تعديل الملف الشخصي"
 msgid "Edit scenario"
 msgstr "تعديل السيناريو"
 
-#: app/components/assistant/activity-chip.tsx:85
+#: app/components/assistant/activity-chip.tsx:83
 #: app/pages/scenarios/edit.tsx:217
 msgid "Edit Scenario"
 msgstr "تعديل السيناريو"
@@ -1625,7 +1605,7 @@ msgstr "توليد سيناريو"
 msgid "Generate Tale"
 msgstr "توليد الحكاية"
 
-#: app/components/assistant/activity-chip.tsx:48
+#: app/components/assistant/activity-chip.tsx:46
 #: app/components/layout/settings/settings-modal.tsx:62
 msgid "Generation"
 msgstr "التوليد"
@@ -1734,7 +1714,7 @@ msgstr "مرتفع"
 msgid "Highlight the latest passage"
 msgstr "تمييز آخر مقطع"
 
-#: app/components/assistant/activity-chip.tsx:93
+#: app/components/assistant/activity-chip.tsx:91
 #: app/components/layout/titlebar.tsx:90
 #: app/components/layout/titlebar.tsx:96
 #: app/pages/scenarios/home.tsx:428
@@ -2036,28 +2016,28 @@ msgstr "خادم محلي"
 msgid "Long context"
 msgstr "سياق طويل"
 
-#: app/components/assistant/activity-chip.tsx:221
-#: app/components/assistant/activity-chip.tsx:231
+#: app/components/assistant/activity-chip.tsx:209
+#: app/components/assistant/activity-chip.tsx:219
 msgid "Looked through the catalog"
 msgstr "اطّلع على الفهرس"
 
-#: app/components/assistant/activity-chip.tsx:225
+#: app/components/assistant/activity-chip.tsx:213
 msgid "Looked through the catalog's tags"
 msgstr "اطّلع على وسوم الفهرس"
 
-#: app/components/assistant/activity-chip.tsx:187
+#: app/components/assistant/activity-chip.tsx:175
 msgid "Looked through the models"
 msgstr "اطّلع على النماذج"
 
-#: app/components/assistant/activity-chip.tsx:227
+#: app/components/assistant/activity-chip.tsx:215
 msgid "Looked through your published scenarios"
 msgstr "اطّلع على سيناريوهاتك المنشورة"
 
-#: app/components/assistant/activity-chip.tsx:147
+#: app/components/assistant/activity-chip.tsx:139
 msgid "Looked through your scenarios"
 msgstr "اطّلع على سيناريوهاتك"
 
-#: app/components/assistant/activity-chip.tsx:148
+#: app/components/assistant/activity-chip.tsx:140
 msgid "Looked through your tales"
 msgstr "اطّلع على حكاياتك"
 
@@ -2124,7 +2104,7 @@ msgstr "مسعف"
 msgid "Medium"
 msgstr "متوسط"
 
-#: app/components/assistant/hakawati-chat.tsx:697
+#: app/components/assistant/hakawati-chat.tsx:703
 msgid "Message Hakawati"
 msgstr "رسالة إلى حكواتي"
 
@@ -2254,13 +2234,13 @@ msgctxt "Release notes section"
 msgid "New"
 msgstr "الجديد"
 
-#: app/components/assistant/hakawati-chat.tsx:443
-#: app/components/assistant/hakawati-chat.tsx:484
+#: app/components/assistant/hakawati-chat.tsx:449
 #: app/components/assistant/hakawati-chat.tsx:490
+#: app/components/assistant/hakawati-chat.tsx:496
 msgid "New chat"
 msgstr "محادثة جديدة"
 
-#: app/components/assistant/activity-chip.tsx:87
+#: app/components/assistant/activity-chip.tsx:85
 #: app/pages/home/home.tsx:869
 msgid "New scenario"
 msgstr "سيناريو جديد"
@@ -2466,20 +2446,20 @@ msgstr "فتح الإعدادات"
 msgid "OpenAI"
 msgstr "OpenAI"
 
-#: app/components/assistant/activity-chip.tsx:177
+#: app/components/assistant/activity-chip.tsx:165
 msgid "Opened “{result}”"
 msgstr "فتح «{result}»"
 
 #. placeholder {0}: placeName(detail)
-#: app/components/assistant/activity-chip.tsx:177
+#: app/components/assistant/activity-chip.tsx:165
 msgid "Opened {0}"
 msgstr "فتح {0}"
 
-#: app/components/assistant/activity-chip.tsx:208
+#: app/components/assistant/activity-chip.tsx:196
 msgid "Opened the copied scenario"
 msgstr "فتح السيناريو المنسوخ"
 
-#: app/components/assistant/activity-chip.tsx:128
+#: app/components/assistant/activity-chip.tsx:122
 msgid "Opening"
 msgstr "يفتح"
 
@@ -2580,7 +2560,7 @@ msgstr "مكان"
 msgid "Platform"
 msgstr "المنصة"
 
-#: app/components/assistant/activity-chip.tsx:91
+#: app/components/assistant/activity-chip.tsx:89
 msgid "Play"
 msgstr "اللعب"
 
@@ -2633,7 +2613,7 @@ msgstr "الملف الشخصي غير مكتمل"
 msgid "Prompt"
 msgstr "الموجّه"
 
-#: app/components/assistant/activity-chip.tsx:50
+#: app/components/assistant/activity-chip.tsx:48
 #: app/components/layout/settings/advanced.tsx:349
 #: app/components/layout/settings/settings-modal.tsx:73
 msgid "Prompting"
@@ -2680,7 +2660,7 @@ msgstr "انشر الاسم والوصف والغلاف ومحتوى القصة 
 msgid "Publish update"
 msgstr "نشر تحديث"
 
-#: app/components/assistant/activity-chip.tsx:83
+#: app/components/assistant/activity-chip.tsx:81
 #: app/pages/scenarios/catalog-details.tsx:145
 #: app/pages/scenarios/catalog-details.tsx:391
 #: app/pages/scenarios/home.tsx:478
@@ -2724,7 +2704,7 @@ msgstr "السؤال {questionNumber} من {totalQuestions}"
 msgid "Question progress"
 msgstr "التقدّم في الأسئلة"
 
-#: app/components/assistant/activity-chip.tsx:89
+#: app/components/assistant/activity-chip.tsx:87
 #: app/components/quickstart/quickstart-wizard.tsx:582
 #: app/pages/home/home.tsx:565
 msgid "Quickstart"
@@ -2742,11 +2722,11 @@ msgstr "بذرة عشوائية"
 msgid "Ranger"
 msgstr "حارس"
 
-#: app/components/assistant/activity-chip.tsx:223
+#: app/components/assistant/activity-chip.tsx:211
 msgid "Read a catalog scenario"
 msgstr "قرأ سيناريو من الفهرس"
 
-#: app/components/assistant/activity-chip.tsx:156
+#: app/components/assistant/activity-chip.tsx:148
 msgid "Read a scenario"
 msgstr "قرأ سيناريو"
 
@@ -2760,15 +2740,15 @@ msgstr "قراءة الوصف الكامل"
 msgid "Read new narration aloud"
 msgstr "قراءة السرد الجديد بصوت عالٍ"
 
-#: app/components/assistant/activity-chip.tsx:174
+#: app/components/assistant/activity-chip.tsx:162
 msgid "Read the scenario's questions"
 msgstr "قرأ أسئلة السيناريو"
 
-#: app/components/assistant/activity-chip.tsx:152
+#: app/components/assistant/activity-chip.tsx:144
 msgid "Read the story"
 msgstr "قرأ القصة"
 
-#: app/components/assistant/activity-chip.tsx:150
+#: app/components/assistant/activity-chip.tsx:142
 msgid "Read the tale's setup"
 msgstr "قرأ إعداد الحكاية"
 
@@ -2789,7 +2769,7 @@ msgstr "جاهز للعب"
 msgid "Ready to start your tale?"
 msgstr "هل أنت مستعد لبدء حكايتك؟"
 
-#: app/components/assistant/hakawati-chat.tsx:404
+#: app/components/assistant/hakawati-chat.tsx:410
 msgid "Recap the story so far"
 msgstr "لخّص القصة حتى الآن"
 
@@ -2872,7 +2852,7 @@ msgctxt "Release notes section"
 msgid "Removed"
 msgstr "المحذوفات"
 
-#: app/components/assistant/activity-chip.tsx:201
+#: app/components/assistant/activity-chip.tsx:189
 msgid "Removed “{first}” from the cloud"
 msgstr "أزال «{first}» من السحابة"
 
@@ -2880,7 +2860,7 @@ msgstr "أزال «{first}» من السحابة"
 msgid "Removed {count} passages"
 msgstr "حذف {count} مقاطع"
 
-#: app/components/assistant/activity-chip.tsx:202
+#: app/components/assistant/activity-chip.tsx:190
 msgid "Removed {count} tales from the cloud"
 msgstr "أزال {count} حكايات من السحابة"
 
@@ -2950,7 +2930,7 @@ msgstr "تم إرسال البلاغ"
 msgid "Report this scenario?"
 msgstr "الإبلاغ عن هذا السيناريو؟"
 
-#: app/components/assistant/hakawati-chat.tsx:387
+#: app/components/assistant/hakawati-chat.tsx:393
 #: app/components/play/log/log-entry-error.tsx:23
 msgid "Request failed"
 msgstr "تعذّر الطلب"
@@ -3084,7 +3064,7 @@ msgstr "حفظ المسودة"
 msgid "Saving profile"
 msgstr "جارٍ حفظ الملف الشخصي"
 
-#: app/components/assistant/activity-chip.tsx:124
+#: app/components/assistant/activity-chip.tsx:118
 msgid "Saving the tale as a scenario"
 msgstr "يحفظ الحكاية كسيناريو"
 
@@ -3151,7 +3131,7 @@ msgstr "تم إلغاء نشر السيناريو"
 msgid "Scenario update published"
 msgstr "تم نشر تحديث السيناريو"
 
-#: app/components/assistant/activity-chip.tsx:79
+#: app/components/assistant/activity-chip.tsx:77
 #: app/components/scenario/ScenarioBreadcrumb.tsx:21
 #: app/pages/scenarios/create.tsx:87
 #: app/pages/scenarios/home.tsx:437
@@ -3215,11 +3195,11 @@ msgstr "البحث في السيناريوهات"
 msgid "Search tales"
 msgstr "البحث في الحكايات"
 
-#: app/components/assistant/activity-chip.tsx:220
+#: app/components/assistant/activity-chip.tsx:208
 msgid "Searched the catalog for “{detail}”"
 msgstr "بحث في الفهرس عن «{detail}»"
 
-#: app/components/assistant/activity-chip.tsx:154
+#: app/components/assistant/activity-chip.tsx:146
 msgid "Searched the story for “{detail}”"
 msgstr "بحث في القصة عن «{detail}»"
 
@@ -3257,7 +3237,7 @@ msgstr "اختر الخط"
 msgid "Select Model"
 msgstr "اختر النموذج"
 
-#: app/components/assistant/hakawati-chat.tsx:719
+#: app/components/assistant/hakawati-chat.tsx:725
 msgid "Send"
 msgstr "إرسال"
 
@@ -3274,7 +3254,7 @@ msgstr "جدي"
 msgid "Set"
 msgstr "ضبط"
 
-#: app/components/assistant/hakawati-chat.tsx:637
+#: app/components/assistant/hakawati-chat.tsx:643
 msgid "Set up Hakawati"
 msgstr "إعداد حكواتي"
 
@@ -3283,7 +3263,7 @@ msgstr "إعداد حكواتي"
 msgid "Set up the Narrator to play"
 msgstr "أعدّ الراوي لتبدأ اللعب"
 
-#: app/components/assistant/activity-chip.tsx:58
+#: app/components/assistant/activity-chip.tsx:56
 #: app/components/layout/settings/settings-button.tsx:64
 #: app/components/layout/settings/settings-button.tsx:77
 #: app/components/layout/settings/settings-modal.tsx:160
@@ -3291,7 +3271,7 @@ msgstr "أعدّ الراوي لتبدأ اللعب"
 msgid "Settings"
 msgstr "الإعدادات"
 
-#: app/components/assistant/activity-chip.tsx:204
+#: app/components/assistant/activity-chip.tsx:192
 msgid "Settled a sync conflict"
 msgstr "حلّ تعارضًا في المزامنة"
 
@@ -3434,15 +3414,15 @@ msgstr "بدء الحكاية"
 msgid "Start the server (Different tools have different ways to start the server, look up your tool's documentation)"
 msgstr "قم بتشغيل الخادم (تختلف طرق تشغيل الخادم باختلاف الأدوات، راجع وثائق أداتك)"
 
-#: app/components/assistant/activity-chip.tsx:173
+#: app/components/assistant/activity-chip.tsx:161
 msgid "Started “{result}”"
 msgstr "بدأ «{result}»"
 
-#: app/components/assistant/activity-chip.tsx:198
+#: app/components/assistant/activity-chip.tsx:186
 msgid "Started syncing"
 msgstr "بدأ المزامنة"
 
-#: app/components/assistant/activity-chip.tsx:126
+#: app/components/assistant/activity-chip.tsx:120
 msgid "Starting a tale"
 msgstr "يبدأ حكاية"
 
@@ -3473,7 +3453,7 @@ msgstr "تتبع الخصائص والمخزون"
 msgid "Still"
 msgstr "ثابت"
 
-#: app/components/assistant/hakawati-chat.tsx:707
+#: app/components/assistant/hakawati-chat.tsx:713
 msgid "Stop"
 msgstr "إيقاف"
 
@@ -3490,7 +3470,7 @@ msgstr "إيقاف التوليد"
 msgid "Stop recording"
 msgstr "إيقاف التسجيل"
 
-#: app/components/assistant/hakawati-chat.tsx:383
+#: app/components/assistant/hakawati-chat.tsx:389
 msgid "Stopped"
 msgstr "توقّف"
 
@@ -3506,7 +3486,7 @@ msgstr "مساحة التخزين المستخدمة"
 msgid "Storage usage is unavailable."
 msgstr "معلومات استخدام التخزين غير متاحة."
 
-#: app/components/assistant/activity-chip.tsx:63
+#: app/components/assistant/activity-chip.tsx:61
 #: app/components/play/play-input-controls.tsx:284
 #: app/components/play/story-panel/story-panel.tsx:131
 #: app/components/play/story-panel/story-panel.tsx:173
@@ -3635,7 +3615,7 @@ msgstr "تم حذف الحكاية"
 msgid "Tale usage"
 msgstr "عدد الحكايات المستخدمة"
 
-#: app/components/assistant/activity-chip.tsx:75
+#: app/components/assistant/activity-chip.tsx:73
 #: app/components/layout/settings/cloud-sync.tsx:1367
 #: app/pages/tales/home.tsx:192
 #: app/pages/tales/home.tsx:203
@@ -3745,7 +3725,7 @@ msgstr "تُرسل هذه المكونات الاختيارية إلى الذك�
 msgid "Thing"
 msgstr "شيء"
 
-#: app/components/assistant/hakawati-chat.tsx:336
+#: app/components/assistant/hakawati-chat.tsx:339
 #: app/components/layout/settings/thinking-level.tsx:56
 #: app/components/layout/settings/thinking-level.tsx:58
 #: app/components/play/log/log-block-bubble.tsx:137
@@ -3825,7 +3805,7 @@ msgstr "سيؤدي هذا إلى حذف محتوى المكون نهائياً. 
 msgid "Title"
 msgstr "العنوان"
 
-#: app/components/assistant/hakawati-chat.tsx:334
+#: app/components/assistant/hakawati-chat.tsx:337
 #: app/components/play/log/log-block-bubble.tsx:133
 msgid "Toggle thinking output"
 msgstr "إظهار التفكير أو إخفاؤه"
@@ -3927,7 +3907,7 @@ msgstr "إلغاء النشر"
 msgid "Unpublish “{first}”?"
 msgstr "إلغاء نشر «{first}»؟"
 
-#: app/components/assistant/activity-chip.tsx:229
+#: app/components/assistant/activity-chip.tsx:217
 msgid "Unpublished “{first}”"
 msgstr "ألغى نشر «{first}»"
 
@@ -3963,7 +3943,7 @@ msgstr "حدّث حكواتي للمزامنة"
 msgid "Updated"
 msgstr "آخر تحديث"
 
-#: app/components/assistant/activity-chip.tsx:54
+#: app/components/assistant/activity-chip.tsx:52
 #: app/components/layout/settings/settings-modal.tsx:93
 msgid "Updates"
 msgstr "التحديثات"
@@ -4036,7 +4016,7 @@ msgstr "الصوت"
 msgid "Voice id"
 msgstr "معرّف الصوت"
 
-#: app/components/assistant/activity-chip.tsx:110
+#: app/components/assistant/activity-chip.tsx:108
 msgid "Waiting for you"
 msgstr "بانتظارك"
 
@@ -4052,7 +4032,7 @@ msgstr "ألوان مائية في الزوايا ورسوم بأقلام الت
 msgid "What is your character's name?"
 msgstr "ما اسم شخصيتك؟"
 
-#: app/components/assistant/hakawati-chat.tsx:408
+#: app/components/assistant/hakawati-chat.tsx:414
 msgid "What scenarios do I have?"
 msgstr "ما السيناريوهات التي لديّ؟"
 
@@ -4072,7 +4052,7 @@ msgstr "ما الجديد"
 msgid "Who are you in this world?"
 msgstr "من أنت في هذا العالم؟"
 
-#: app/components/assistant/hakawati-chat.tsx:405
+#: app/components/assistant/hakawati-chat.tsx:411
 msgid "Who have I met so far?"
 msgstr "من قابلت حتى الآن؟"
 

@@ -33,12 +33,12 @@ describe("replyTimeline", () => {
   });
 
   it("keeps steps from older replies, which have no position, first", () => {
-    const parts = replyTimeline("Done.", [{ tool: "get_context" }], false);
+    const parts = replyTimeline("Done.", [{ tool: "list_library" }], false);
     expect(parts.map((part) => part.kind)).toEqual(["steps", "text"]);
   });
 
   it("shows an edit while it runs and hides it once it worked", () => {
-    const edit = { tool: "edit_story_cards", at: 5 };
+    const edit = { tool: "edit_tale", at: 5 };
     expect(replyTimeline("Sure.", [edit], true).at(-1)).toEqual({
       kind: "steps",
       steps: [{ activity: edit, running: true }],

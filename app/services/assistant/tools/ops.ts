@@ -95,21 +95,67 @@ export function applyCardOps(target: CardTarget, ops: Op[]) {
   return added;
 }
 
-export const setStatFrom = (target: StatTarget, op: Op) =>
-  target.setStat({
-    name: required(op, "name"),
-    newName: text(op.newName),
-    value: optionalNumber(op.value),
-    min: optionalNumber(op.min),
-    max: optionalNumber(op.max),
-    description: optionalString(op.description),
-  });
+export const STAT_OP_SCHEMA = {
+  type: "object",
+  properties: {
+    op: {
+      type: "string",
+      enum: ["set", "remove"],
+      description: "set adds a stat or changes it.",
+    },
+    name: { type: "string" },
+    newName: { type: "string", description: "set: rename the stat." },
+    value: { type: "number" },
+    min: { type: "number" },
+    max: { type: "number" },
+    description: { type: "string" },
+  },
+  required: ["op", "name"],
+};
 
-export const addItemFrom = (target: ItemTarget, op: Op) =>
-  target.addItem(required(op, "name"), text(op.description));
+export const ITEM_OP_SCHEMA = {
+  type: "object",
+  properties: {
+    op: { type: "string", enum: ["add", "update", "remove"] },
+    id: {
+      type: "string",
+      description: "The item's id, for update and remove.",
+    },
+    name: { type: "string" },
+    description: { type: "string" },
+  },
+  required: ["op"],
+};
 
-export const updateItemFrom = (target: ItemTarget, op: Op) =>
-  target.updateItem(required(op, "id"), {
-    name: text(op.name),
-    description: optionalString(op.description),
-  });
+export function applyStatOps(target: StatTarget, ops: Op[]) {
+  for (const op of ops) {
+    if (op.op === "set")
+      target.setStat({
+        name: required(op, "name"),
+        newName: text(op.newName),
+        value: optionalNumber(op.value),
+        min: optionalNumber(op.min),
+        max: optionalNumber(op.max),
+        description: optionalString(op.description),
+      });
+    else if (op.op === "remove") target.removeStat(required(op, "name"));
+    else throw new Error("A stat op must be set or remove.");
+  }
+}
+
+export function applyItemOps(target: ItemTarget, ops: Op[]) {
+  const added: Array<{ id: string; name: string }> = [];
+  for (const op of ops) {
+    if (op.op === "add") {
+      const item = target.addItem(required(op, "name"), text(op.description));
+      added.push({ id: item.id, name: item.name });
+    } else if (op.op === "update")
+      target.updateItem(required(op, "id"), {
+        name: text(op.name),
+        description: optionalString(op.description),
+      });
+    else if (op.op === "remove") target.removeItem(required(op, "id"));
+    else throw new Error("An item op must be add, update or remove.");
+  }
+  return added;
+}

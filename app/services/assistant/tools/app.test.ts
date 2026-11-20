@@ -76,11 +76,13 @@ beforeEach(() => {
 
 describe("show", () => {
   it("opens pages, Settings tabs and side-panel tabs", async () => {
-    await call("show", { page: "discover", query: "pirates" });
+    const page = await call("show", { page: "discover", query: "pirates" });
     expect(ui.navigate).toHaveBeenCalledWith("/scenarios", {
       search: { tab: "discover", q: "pirates" },
     });
-    await call("show", { settings: "generation" });
+    expect(page).toHaveProperty("context.page");
+    const settings = await call("show", { settings: "generation" });
+    expect(settings).not.toHaveProperty("context");
     expect(ui.showSettings).toHaveBeenCalledWith("generation");
     await expect(call("show", { panel: "cards" })).rejects.toThrow(
       /only on the play screen/,

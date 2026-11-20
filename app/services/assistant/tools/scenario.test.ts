@@ -137,11 +137,11 @@ describe("edit_scenario", () => {
   });
 
   it("saves a scenario in the library, and creates new ones", async () => {
-    await call("edit_scenario", { scenario: "sea", name: "Signal" });
+    await call("edit_scenario", { scenarioId: "sea", name: "Signal" });
     expect(library.get("sea")!.name).toBe("Signal");
 
     const created = await call("edit_scenario", {
-      scenario: "new",
+      scenarioId: "new",
       name: "Lantern Market",
       mode: "game_master",
       stats: [{ op: "set", name: "Coins", value: 3 }],
@@ -159,15 +159,15 @@ describe("edit_scenario", () => {
       /No scenario is open/,
     );
     await expect(
-      call("edit_scenario", { scenario: "new", plot: "x" }),
+      call("edit_scenario", { scenarioId: "new", plot: "x" }),
     ).rejects.toThrow(/needs a name/);
   });
 });
 
 describe("undoing scenario changes", () => {
   it("puts a library scenario back, and removes one it created", async () => {
-    await call("edit_scenario", { scenario: "sea", name: "Signal" });
-    await call("edit_scenario", { scenario: "new", name: "Lantern" });
+    await call("edit_scenario", { scenarioId: "sea", name: "Signal" });
+    await call("edit_scenario", { scenarioId: "new", name: "Lantern" });
     const { changes, kept } = await revertScenarioChanges(
       recorded as ScenarioChange[],
     );
@@ -178,7 +178,7 @@ describe("undoing scenario changes", () => {
   });
 
   it("keeps a created scenario that was published since", async () => {
-    await call("edit_scenario", { scenario: "new", name: "Lantern" });
+    await call("edit_scenario", { scenarioId: "new", name: "Lantern" });
     const id = (recorded[0] as ScenarioChange).scenarioId;
     links.add(id);
     const { kept } = await revertScenarioChanges(recorded as ScenarioChange[]);
@@ -196,7 +196,7 @@ describe("undoing scenario changes", () => {
     expect(form()).toMatchObject({ name: "Quiet Sea", content: sea.content });
 
     useScenarioDraftStore.setState({ draft: null });
-    await call("edit_scenario", { scenario: "sea", plot: "" });
+    await call("edit_scenario", { scenarioId: "sea", plot: "" });
     openEditor(sea);
     await call("edit_scenario", { name: "Signal" });
     useScenarioDraftStore.setState({ draft: null });
@@ -248,10 +248,11 @@ describe("start_tale", () => {
       }),
     );
     expect(openTale).toHaveBeenCalledWith("tale-1");
-    expect(started).toEqual({
+    expect(started).toMatchObject({
       started: true,
       taleId: "tale-1",
       name: "The Meridian",
+      context: expect.any(Object),
     });
     expect(tools().start_tale.outcome?.(started)).toBe("The Meridian");
     expect(tools().start_tale.outcome?.(asked)).toBeUndefined();
