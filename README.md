@@ -20,6 +20,7 @@ scenario publishing.
 - [Game modes](#game-modes)
 - [Getting started](#getting-started)
 - [Tales and scenarios](#tales-and-scenarios)
+- [Hakawati assistant](#hakawati-assistant)
 - [Accounts and cloud](#accounts-and-cloud)
 - [Development](#development)
 - [Support and license](#support-and-license)
@@ -120,6 +121,24 @@ Answers replace the placeholders in the new tale. Repeated questions reuse the
 same answer, and the original scenario stays unchanged. These are text
 placeholders, not executable scripts. See [Scenario questions](SCENARIO_QUESTIONS.md)
 for supported fields, fixed choices, and escaping.
+
+## Hakawati assistant
+
+The Hakawati button, or **Ctrl+K** (**⌘K** on macOS), opens a chat in the side
+panel on every screen. Ask it about your tales and scenarios, or ask it to do
+things in the app: edit a tale's setup, story cards, character, and passages;
+write scenarios; start and open tales; change settings and AI Setup models; and
+manage your library, sync, and published scenarios. It doesn't take turns in a
+story.
+
+Each reply lists what it changed, and **Undo** reverts those changes while
+keeping anything edited since. Deleting, removing from the cloud, overwriting a
+sync conflict, and unpublishing are confirmed with buttons in the chat. API keys,
+server addresses, sign-in, and publishing are left to you. Long tasks pause with
+**Continue**.
+
+Hakawati uses the **Narrator** model unless it has its own in **Settings → AI
+Setup**, and needs a model that supports tool calling. Chats are kept per tale.
 
 ## Accounts and cloud
 
@@ -230,6 +249,10 @@ npm run dev:browser
 Open [http://127.0.0.1:1422](http://127.0.0.1:1422). This UI development preview
 uses disposable sample tales and scenarios in an in-memory SQLite database,
 with scripted narration. Reloading resets the sample data.
+
+The preview's Hakawati calls the tools named in your message, one
+`/tool name {"arg":"value"}` line per call. A `/loop` line repeats them every
+step, and `/cutoff` cuts off each step after the first tool results.
 
 It needs no Rust runtime, account, or API key and cannot access desktop saves.
 Live AI calls, cloud features, audio, and native updates are unavailable in this
