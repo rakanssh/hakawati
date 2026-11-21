@@ -28,7 +28,7 @@ msgid "..."
 msgstr "..."
 
 #. placeholder {0}: changeList.length
-#: app/components/assistant/hakawati-chat.tsx:356
+#: app/components/assistant/hakawati-chat.tsx:389
 msgid "{0, plural, one {# change} other {# changes}}"
 msgstr "{0, plural, one {# change} other {# changes}}"
 
@@ -101,7 +101,7 @@ msgstr "{descriptionChars} characters · ~{descriptionTokens} tokens"
 msgid "{downloaded} so far"
 msgstr "{downloaded} so far"
 
-#: app/components/assistant/hakawati-chat.tsx:315
+#: app/components/assistant/hakawati-chat.tsx:348
 msgid "{foldedSteps, plural, one {# step} other {# steps}}"
 msgstr "{foldedSteps, plural, one {# step} other {# steps}}"
 
@@ -109,7 +109,7 @@ msgstr "{foldedSteps, plural, one {# step} other {# steps}}"
 msgid "{inPrice} in · {outPrice} out per million"
 msgstr "{inPrice} in · {outPrice} out per million"
 
-#: app/components/assistant/change-list.tsx:272
+#: app/components/assistant/change-list.tsx:271
 msgid "{kept} changes were edited since, so they were kept."
 msgstr "{kept} changes were edited since, so they were kept."
 
@@ -206,7 +206,7 @@ msgstr "Account & Sync"
 msgid "Account deleted"
 msgstr "Account deleted"
 
-#: app/components/play/play-input-controls.tsx:282
+#: app/components/play/play-input-controls.tsx:111
 msgid "Act"
 msgstr "Act"
 
@@ -234,7 +234,7 @@ msgstr "Add a scenario name before publishing."
 msgid "Add a stat to track character attributes"
 msgstr "Add a stat to track character attributes"
 
-#: app/components/assistant/hakawati-chat.tsx:412
+#: app/components/assistant/hakawati-chat.tsx:457
 msgid "Add a twist to the plot"
 msgstr "Add a twist to the plot"
 
@@ -275,6 +275,11 @@ msgstr "Add Entry"
 #: app/data/api-presets.ts:78
 msgid "Add funds or subscribe to a plan"
 msgstr "Add funds or subscribe to a plan"
+
+#: app/components/assistant/hakawati-chat.tsx:836
+#: app/components/assistant/hakawati-chat.tsx:844
+msgid "Add image"
+msgstr "Add image"
 
 #: app/components/scenario/InventoryEditor.tsx:64
 msgid "Add inventory item"
@@ -364,7 +369,7 @@ msgid "AI Components"
 msgstr "AI Components"
 
 #: app/components/layout/settings/advanced.tsx:52
-#: app/services/assistant/app-settings.ts:358
+#: app/services/assistant/app-settings.ts:355
 msgid "AI instructions"
 msgstr "AI instructions"
 
@@ -433,7 +438,7 @@ msgstr "App"
 msgid "Appearance"
 msgstr "Appearance"
 
-#: app/components/assistant/hakawati-chat.tsx:702
+#: app/components/assistant/hakawati-chat.tsx:873
 msgid "Ask Hakawati"
 msgstr "Ask Hakawati"
 
@@ -531,11 +536,11 @@ msgstr "Can’t find it? <0>Type a model id</0>"
 msgid "Cancel"
 msgstr "Cancel"
 
-#: app/components/play/play-input-controls.tsx:503
+#: app/components/speech/speech-input.tsx:269
 msgid "Cancel recording"
 msgstr "Cancel recording"
 
-#: app/components/play/play-input-controls.tsx:529
+#: app/components/speech/speech-input.tsx:297
 msgid "Cancel transcription"
 msgstr "Cancel transcription"
 
@@ -552,7 +557,7 @@ msgstr "Cards"
 msgid "Cartridge"
 msgstr "Cartridge"
 
-#: app/components/assistant/hakawati-chat.tsx:414
+#: app/components/assistant/hakawati-chat.tsx:459
 msgid "Catch me up on my latest tale"
 msgstr "Catch me up on my latest tale"
 
@@ -775,8 +780,8 @@ msgstr "Close narration player"
 #: app/components/play/story-panel/story-panel-button.tsx:41
 #: app/components/play/story-panel/story-panel.tsx:86
 #: app/components/play/story-panel/story-panel.tsx:92
-#: app/components/play/story-panel/story-panel.tsx:394
-#: app/components/play/story-panel/story-panel.tsx:414
+#: app/components/play/story-panel/story-panel.tsx:391
+#: app/components/play/story-panel/story-panel.tsx:411
 msgid "Close panel"
 msgstr "Close panel"
 
@@ -902,7 +907,7 @@ msgstr "Content"
 
 #: app/components/layout/settings/model.tsx:218
 #: app/components/layout/settings/model.tsx:227
-#: app/services/assistant/app-settings.ts:307
+#: app/services/assistant/app-settings.ts:304
 msgid "Context window"
 msgstr "Context window"
 
@@ -911,19 +916,19 @@ msgstr "Context window"
 msgid "Continuation {0}"
 msgstr "Continuation {0}"
 
-#: app/components/assistant/hakawati-chat.tsx:619
-#: app/components/assistant/hakawati-chat.tsx:621
+#: app/components/assistant/hakawati-chat.tsx:684
+#: app/components/assistant/hakawati-chat.tsx:686
 #: app/components/layout/settings/advanced.tsx:54
 #: app/components/layout/settings/cloud-sync.tsx:1242
-#: app/components/play/play-input-controls.tsx:557
+#: app/components/play/play-input-controls.tsx:297
 #: app/pages/home/home.tsx:729
 #: app/pages/tales/home.tsx:278
-#: app/services/assistant/app-settings.ts:360
+#: app/services/assistant/app-settings.ts:357
 msgid "Continue"
 msgstr "Continue"
 
 #: app/components/layout/settings/advanced.tsx:56
-#: app/services/assistant/app-settings.ts:361
+#: app/services/assistant/app-settings.ts:358
 msgid "Continue author note"
 msgstr "Continue author note"
 
@@ -951,7 +956,7 @@ msgstr "Copy your API key and paste it here"
 msgid "Could not copy the email address"
 msgstr "Could not copy the email address"
 
-#: app/components/assistant/hakawati-chat.tsx:163
+#: app/components/assistant/hakawati-chat.tsx:174
 #: app/components/layout/release-notes.tsx:62
 #: app/components/layout/server-announcement.tsx:105
 #: app/components/layout/settings/about.tsx:46
@@ -1010,6 +1015,10 @@ msgstr "Couldn't open that"
 #: app/components/assistant/activity-chip.tsx:204
 msgid "Couldn't reach the catalog"
 msgstr "Couldn't reach the catalog"
+
+#: app/components/assistant/hakawati-chat.tsx:771
+msgid "Couldn't read that image."
+msgstr "Couldn't read that image."
 
 #: app/components/assistant/activity-chip.tsx:156
 msgid "Couldn't save the tale as a scenario"
@@ -1137,7 +1146,7 @@ msgstr "Delete {count} tales?"
 msgid "Delete account"
 msgstr "Delete account"
 
-#: app/components/assistant/hakawati-chat.tsx:476
+#: app/components/assistant/hakawati-chat.tsx:521
 msgid "Delete chat"
 msgstr "Delete chat"
 
@@ -1246,13 +1255,13 @@ msgstr "Devices"
 msgid "Devices are unavailable."
 msgstr "Devices are unavailable."
 
-#: app/components/play/play-input-controls.tsx:285
+#: app/components/play/play-input-controls.tsx:114
 msgid "Direct"
 msgstr "Direct"
 
 #: app/components/layout/settings/game.tsx:218
 #: app/components/layout/settings/game.tsx:221
-#: app/services/assistant/app-settings.ts:287
+#: app/services/assistant/app-settings.ts:284
 msgid "Direction"
 msgstr "Direction"
 
@@ -1367,7 +1376,7 @@ msgstr "Enter the base URL in the URL field"
 msgid "Enter the full address, starting with http:// or https://"
 msgstr "Enter the full address, starting with http:// or https://"
 
-#: app/components/play/play-input-controls.tsx:479
+#: app/components/play/play-input-controls.tsx:273
 msgid "Enter your action"
 msgstr "Enter your action"
 
@@ -1501,7 +1510,7 @@ msgstr "Failed to start scenario"
 msgid "Failed to submit report"
 msgstr "Failed to submit report"
 
-#: app/components/play/play-input-controls.tsx:251
+#: app/components/speech/speech-input.tsx:158
 msgid "Failed to transcribe speech."
 msgstr "Failed to transcribe speech."
 
@@ -1544,7 +1553,7 @@ msgstr "Fixed"
 #: app/components/layout/settings/game.tsx:242
 #: app/components/layout/settings/game.tsx:293
 #: app/components/play/story-panel/display-tab.tsx:54
-#: app/services/assistant/app-settings.ts:230
+#: app/services/assistant/app-settings.ts:227
 msgid "Font"
 msgstr "Font"
 
@@ -1559,7 +1568,7 @@ msgstr "Free"
 
 #: app/components/layout/settings/model.tsx:139
 #: app/components/layout/settings/model.tsx:148
-#: app/services/assistant/app-settings.ts:339
+#: app/services/assistant/app-settings.ts:336
 msgid "Frequency penalty"
 msgstr "Frequency penalty"
 
@@ -1579,7 +1588,7 @@ msgid "Game Master (GM)"
 msgstr "Game Master (GM)"
 
 #: app/components/layout/settings/advanced.tsx:58
-#: app/services/assistant/app-settings.ts:359
+#: app/services/assistant/app-settings.ts:356
 msgid "Game Master mechanics"
 msgstr "Game Master mechanics"
 
@@ -1640,14 +1649,14 @@ msgid "Got it"
 msgstr "Got it"
 
 #: app/components/assistant/app-change-label.ts:27
-#: app/components/assistant/hakawati-button.tsx:46
-#: app/components/assistant/hakawati-button.tsx:58
+#: app/components/assistant/hakawati-button.tsx:45
+#: app/components/assistant/hakawati-button.tsx:57
 #: app/components/layout/settings/ai-setup/parts.tsx:24
 #: app/components/play/story-panel/story-panel.tsx:114
 #: app/components/play/story-panel/story-panel.tsx:124
-#: app/components/play/story-panel/story-panel.tsx:237
-#: app/components/play/story-panel/story-panel.tsx:408
-#: app/components/play/story-panel/story-panel.tsx:418
+#: app/components/play/story-panel/story-panel.tsx:234
+#: app/components/play/story-panel/story-panel.tsx:405
+#: app/components/play/story-panel/story-panel.tsx:415
 msgid "Hakawati"
 msgstr "Hakawati"
 
@@ -1668,7 +1677,7 @@ msgstr "Hakawati is up to date"
 msgid "Hakawati is up to date."
 msgstr "Hakawati is up to date."
 
-#: app/components/play/play-input-controls.tsx:240
+#: app/components/speech/speech-input.tsx:147
 msgid "Hakawati needs microphone access to record speech."
 msgstr "Hakawati needs microphone access to record speech."
 
@@ -1677,9 +1686,13 @@ msgid "Hakawati will now consume resources from your ChatGPT plan when you have 
 msgstr "Hakawati will now consume resources from your ChatGPT plan when you have the ChatGPT subscription provider selected."
 
 #: app/components/play/story-panel/story-panel-button.tsx:43
-#: app/components/play/story-panel/story-panel.tsx:416
+#: app/components/play/story-panel/story-panel.tsx:413
 msgid "Hakawati, story and cards"
 msgstr "Hakawati, story and cards"
+
+#: app/components/assistant/hakawati-chat.tsx:845
+msgid "Hakawati's model doesn't take images"
+msgstr "Hakawati's model doesn't take images"
 
 #: app/components/layout/settings/provider-help-modal.tsx:54
 msgid "Help for {label}"
@@ -1710,7 +1723,7 @@ msgstr "High"
 #: app/components/layout/settings/game.tsx:181
 #: app/components/play/story-panel/display-tab.tsx:58
 #: app/components/play/story-panel/display-tab.tsx:62
-#: app/services/assistant/app-settings.ts:251
+#: app/services/assistant/app-settings.ts:248
 msgid "Highlight the latest passage"
 msgstr "Highlight the latest passage"
 
@@ -1815,7 +1828,7 @@ msgstr "Instructions"
 
 #: app/components/layout/settings/game.tsx:149
 #: app/components/layout/settings/game.tsx:154
-#: app/services/assistant/app-settings.ts:221
+#: app/services/assistant/app-settings.ts:218
 msgid "Interface size"
 msgstr "Interface size"
 
@@ -1877,7 +1890,7 @@ msgstr "Key saved · ends {tail}"
 #: app/components/layout/settings/game.tsx:209
 #: app/components/layout/settings/game.tsx:273
 #: app/components/layout/settings/game.tsx:295
-#: app/services/assistant/app-settings.ts:272
+#: app/services/assistant/app-settings.ts:269
 msgid "Language"
 msgstr "Language"
 
@@ -2080,7 +2093,7 @@ msgstr "Max"
 #: app/components/layout/settings/model.tsx:243
 #: app/components/play/story-panel/ai-tab.tsx:80
 #: app/components/play/story-panel/ai-tab.tsx:89
-#: app/services/assistant/app-settings.ts:322
+#: app/services/assistant/app-settings.ts:319
 msgid "Max output tokens"
 msgstr "Max output tokens"
 
@@ -2104,17 +2117,17 @@ msgstr "Medic"
 msgid "Medium"
 msgstr "Medium"
 
-#: app/components/assistant/hakawati-chat.tsx:703
+#: app/components/assistant/hakawati-chat.tsx:874
 msgid "Message Hakawati"
 msgstr "Message Hakawati"
 
-#: app/components/play/play-input-controls.tsx:239
+#: app/components/speech/speech-input.tsx:146
 msgid "Microphone access is turned off for Hakawati. Allow it in your device settings to record speech."
 msgstr "Microphone access is turned off for Hakawati. Allow it in your device settings to record speech."
 
 #: app/components/layout/settings/model.tsx:111
 #: app/components/layout/settings/model.tsx:120
-#: app/services/assistant/app-settings.ts:337
+#: app/services/assistant/app-settings.ts:334
 msgid "Min P"
 msgstr "Min P"
 
@@ -2234,9 +2247,9 @@ msgctxt "Release notes section"
 msgid "New"
 msgstr "New"
 
-#: app/components/assistant/hakawati-chat.tsx:449
-#: app/components/assistant/hakawati-chat.tsx:490
-#: app/components/assistant/hakawati-chat.tsx:496
+#: app/components/assistant/hakawati-chat.tsx:494
+#: app/components/assistant/hakawati-chat.tsx:535
+#: app/components/assistant/hakawati-chat.tsx:541
 msgid "New chat"
 msgstr "New chat"
 
@@ -2419,7 +2432,7 @@ msgstr "On"
 msgid "On for this device"
 msgstr "On for this device"
 
-#: app/components/assistant/change-list.tsx:271
+#: app/components/assistant/change-list.tsx:270
 msgid "One change was edited since, so it was kept."
 msgstr "One change was edited since, so it was kept."
 
@@ -2433,7 +2446,7 @@ msgid "Open {0}"
 msgstr "Open {0}"
 
 #: app/components/play/story-panel/story-panel-button.tsx:30
-#: app/components/play/story-panel/story-panel.tsx:394
+#: app/components/play/story-panel/story-panel.tsx:391
 msgid "Open panel"
 msgstr "Open panel"
 
@@ -2578,7 +2591,7 @@ msgstr "Popular"
 
 #: app/components/layout/settings/model.tsx:153
 #: app/components/layout/settings/model.tsx:162
-#: app/services/assistant/app-settings.ts:340
+#: app/services/assistant/app-settings.ts:337
 msgid "Presence penalty"
 msgstr "Presence penalty"
 
@@ -2736,7 +2749,7 @@ msgstr "Read full description"
 
 #: app/components/layout/settings/ai-setup/role-page.tsx:243
 #: app/components/layout/settings/ai-setup/role-page.tsx:247
-#: app/services/assistant/app-settings.ts:299
+#: app/services/assistant/app-settings.ts:296
 msgid "Read new narration aloud"
 msgstr "Read new narration aloud"
 
@@ -2769,7 +2782,7 @@ msgstr "Ready to play"
 msgid "Ready to start your tale?"
 msgstr "Ready to start your tale?"
 
-#: app/components/assistant/hakawati-chat.tsx:410
+#: app/components/assistant/hakawati-chat.tsx:455
 msgid "Recap the story so far"
 msgstr "Recap the story so far"
 
@@ -2785,11 +2798,11 @@ msgstr "Reconnecting..."
 msgid "Reconnecting…"
 msgstr "Reconnecting…"
 
-#: app/components/play/play-input-controls.tsx:422
+#: app/components/speech/speech-input.tsx:202
 msgid "Record speech"
 msgstr "Record speech"
 
-#: app/components/play/play-input-controls.tsx:245
+#: app/components/speech/speech-input.tsx:152
 msgid "Recording stopped because you left Hakawati."
 msgstr "Recording stopped because you left Hakawati."
 
@@ -2847,6 +2860,10 @@ msgstr "Remove from cloud"
 msgid "Remove from cloud?"
 msgstr "Remove from cloud?"
 
+#: app/components/assistant/hakawati-chat.tsx:814
+msgid "Remove image"
+msgstr "Remove image"
+
 #: app/components/layout/release-notes.tsx:39
 msgctxt "Release notes section"
 msgid "Removed"
@@ -2888,7 +2905,7 @@ msgstr "Renamed the tale"
 
 #: app/components/layout/settings/model.tsx:167
 #: app/components/layout/settings/model.tsx:176
-#: app/services/assistant/app-settings.ts:343
+#: app/services/assistant/app-settings.ts:340
 msgid "Repetition penalty"
 msgstr "Repetition penalty"
 
@@ -2930,7 +2947,7 @@ msgstr "Report submitted"
 msgid "Report this scenario?"
 msgstr "Report this scenario?"
 
-#: app/components/assistant/hakawati-chat.tsx:393
+#: app/components/assistant/hakawati-chat.tsx:438
 #: app/components/play/log/log-entry-error.tsx:23
 msgid "Request failed"
 msgstr "Request failed"
@@ -2963,7 +2980,7 @@ msgstr "Reset to default"
 msgid "Reset to Default"
 msgstr "Reset to Default"
 
-#: app/components/play/story-panel/story-panel.tsx:352
+#: app/components/play/story-panel/story-panel.tsx:349
 msgid "Resize panel"
 msgstr "Resize panel"
 
@@ -2975,6 +2992,7 @@ msgstr "Resolve sync conflict"
 msgid "Restoring session"
 msgstr "Restoring session"
 
+#: app/components/assistant/hakawati-chat.tsx:408
 #: app/components/layout/settings/ai-setup/connection-page.tsx:320
 #: app/components/layout/settings/ai-setup/model-picker.tsx:203
 #: app/components/play/log/log-control.tsx:122
@@ -3020,12 +3038,12 @@ msgstr "Roles"
 msgid "Roles using it will need another connection."
 msgstr "Roles using it will need another connection."
 
-#: app/components/play/play-input-controls.tsx:405
+#: app/components/play/play-input-controls.tsx:234
 msgid "Roll"
 msgstr "Roll"
 
-#: app/components/play/play-input-controls.tsx:382
-#: app/components/play/play-input-controls.tsx:410
+#: app/components/play/play-input-controls.tsx:211
+#: app/components/play/play-input-controls.tsx:239
 msgid "Roll a dice"
 msgstr "Roll a dice"
 
@@ -3145,7 +3163,7 @@ msgstr "Scenarios, story cards, summaries"
 #: app/components/layout/settings/appearance-fields.tsx:31
 #: app/components/layout/settings/game.tsx:130
 #: app/components/play/story-panel/display-tab.tsx:36
-#: app/services/assistant/app-settings.ts:198
+#: app/services/assistant/app-settings.ts:195
 msgid "Scenery"
 msgstr "Scenery"
 
@@ -3209,7 +3227,7 @@ msgstr "Searching…"
 
 #: app/components/layout/settings/model.tsx:269
 #: app/components/layout/settings/model.tsx:276
-#: app/services/assistant/app-settings.ts:348
+#: app/services/assistant/app-settings.ts:345
 msgid "Seed"
 msgstr "Seed"
 
@@ -3225,7 +3243,7 @@ msgstr "Select a game mode"
 msgid "Select a model"
 msgstr "Select a model"
 
-#: app/components/play/play-input-controls.tsx:308
+#: app/components/play/play-input-controls.tsx:137
 msgid "Select action mode"
 msgstr "Select action mode"
 
@@ -3237,7 +3255,7 @@ msgstr "Select Font"
 msgid "Select Model"
 msgstr "Select Model"
 
-#: app/components/assistant/hakawati-chat.tsx:725
+#: app/components/assistant/hakawati-chat.tsx:897
 msgid "Send"
 msgstr "Send"
 
@@ -3254,7 +3272,7 @@ msgstr "Serious"
 msgid "Set"
 msgstr "Set"
 
-#: app/components/assistant/hakawati-chat.tsx:643
+#: app/components/assistant/hakawati-chat.tsx:708
 msgid "Set up Hakawati"
 msgstr "Set up Hakawati"
 
@@ -3297,7 +3315,7 @@ msgstr "Shorten the scenario name to 160 characters before publishing."
 
 #: app/components/layout/settings/game.tsx:184
 #: app/components/layout/settings/game.tsx:187
-#: app/services/assistant/app-settings.ts:260
+#: app/services/assistant/app-settings.ts:257
 msgid "Show AI thinking"
 msgstr "Show AI thinking"
 
@@ -3390,7 +3408,7 @@ msgstr "Sort scenarios"
 msgid "Space Marine"
 msgstr "Space Marine"
 
-#: app/components/play/play-input-controls.tsx:283
+#: app/components/play/play-input-controls.tsx:112
 msgid "Speak"
 msgstr "Speak"
 
@@ -3453,24 +3471,24 @@ msgstr "Stats and inventory tracking"
 msgid "Still"
 msgstr "Still"
 
-#: app/components/assistant/hakawati-chat.tsx:713
+#: app/components/assistant/hakawati-chat.tsx:885
 msgid "Stop"
 msgstr "Stop"
 
-#: app/components/play/play-input-controls.tsx:515
-#: app/components/play/play-input-controls.tsx:521
+#: app/components/speech/speech-input.tsx:281
+#: app/components/speech/speech-input.tsx:287
 msgid "Stop and transcribe"
 msgstr "Stop and transcribe"
 
-#: app/components/play/play-input-controls.tsx:555
+#: app/components/play/play-input-controls.tsx:295
 msgid "Stop generating"
 msgstr "Stop generating"
 
-#: app/components/play/play-input-controls.tsx:419
+#: app/components/speech/speech-input.tsx:199
 msgid "Stop recording"
 msgstr "Stop recording"
 
-#: app/components/assistant/hakawati-chat.tsx:389
+#: app/components/assistant/hakawati-chat.tsx:434
 msgid "Stopped"
 msgstr "Stopped"
 
@@ -3487,19 +3505,19 @@ msgid "Storage usage is unavailable."
 msgstr "Storage usage is unavailable."
 
 #: app/components/assistant/activity-chip.tsx:61
-#: app/components/play/play-input-controls.tsx:284
+#: app/components/play/play-input-controls.tsx:113
 #: app/components/play/story-panel/story-panel.tsx:131
 #: app/components/play/story-panel/story-panel.tsx:173
-#: app/components/play/story-panel/story-panel.tsx:408
+#: app/components/play/story-panel/story-panel.tsx:405
 msgid "Story"
 msgstr "Story"
 
 #: app/components/layout/settings/advanced.tsx:60
-#: app/services/assistant/app-settings.ts:362
+#: app/services/assistant/app-settings.ts:359
 msgid "Story card generator"
 msgstr "Story card generator"
 
-#: app/components/play/story-panel/story-panel.tsx:237
+#: app/components/play/story-panel/story-panel.tsx:234
 msgid "Story panel"
 msgstr "Story panel"
 
@@ -3519,7 +3537,7 @@ msgstr "Storybook"
 msgid "Structured gameplay"
 msgstr "Structured gameplay"
 
-#: app/components/play/play-input-controls.tsx:558
+#: app/components/play/play-input-controls.tsx:298
 msgid "Submit action"
 msgstr "Submit action"
 
@@ -3644,7 +3662,7 @@ msgstr "Tell the moderators what is wrong with it."
 #: app/components/layout/settings/model.tsx:263
 #: app/components/play/story-panel/ai-tab.tsx:95
 #: app/components/play/story-panel/ai-tab.tsx:104
-#: app/services/assistant/app-settings.ts:334
+#: app/services/assistant/app-settings.ts:331
 msgid "Temperature"
 msgstr "Temperature"
 
@@ -3657,7 +3675,7 @@ msgstr "Terms of Service"
 #: app/components/layout/settings/game.tsx:144
 #: app/components/play/story-panel/display-tab.tsx:45
 #: app/components/play/story-panel/display-tab.tsx:50
-#: app/services/assistant/app-settings.ts:210
+#: app/services/assistant/app-settings.ts:207
 msgid "Text size"
 msgstr "Text size"
 
@@ -3704,7 +3722,7 @@ msgstr "The type each theme was designed with"
 #: app/components/layout/settings/game.tsx:291
 #: app/components/layout/settings/theme-picker.tsx:119
 #: app/components/play/story-panel/display-tab.tsx:33
-#: app/services/assistant/app-settings.ts:179
+#: app/services/assistant/app-settings.ts:176
 msgid "Theme"
 msgstr "Theme"
 
@@ -3725,7 +3743,7 @@ msgstr "These optional components are sent to the AI."
 msgid "Thing"
 msgstr "Thing"
 
-#: app/components/assistant/hakawati-chat.tsx:339
+#: app/components/assistant/hakawati-chat.tsx:372
 #: app/components/layout/settings/thinking-level.tsx:56
 #: app/components/layout/settings/thinking-level.tsx:58
 #: app/components/play/log/log-block-bubble.tsx:137
@@ -3805,7 +3823,7 @@ msgstr "This will permanently delete the component content. This action cannot b
 msgid "Title"
 msgstr "Title"
 
-#: app/components/assistant/hakawati-chat.tsx:337
+#: app/components/assistant/hakawati-chat.tsx:370
 #: app/components/play/log/log-block-bubble.tsx:133
 msgid "Toggle thinking output"
 msgstr "Toggle thinking output"
@@ -3816,19 +3834,19 @@ msgstr "Tone (Optional)"
 
 #: app/components/layout/settings/model.tsx:125
 #: app/components/layout/settings/model.tsx:134
-#: app/services/assistant/app-settings.ts:338
+#: app/services/assistant/app-settings.ts:335
 msgid "Top A"
 msgstr "Top A"
 
 #: app/components/layout/settings/model.tsx:98
 #: app/components/layout/settings/model.tsx:106
-#: app/services/assistant/app-settings.ts:336
+#: app/services/assistant/app-settings.ts:333
 msgid "Top K"
 msgstr "Top K"
 
 #: app/components/layout/settings/model.tsx:84
 #: app/components/layout/settings/model.tsx:93
-#: app/services/assistant/app-settings.ts:335
+#: app/services/assistant/app-settings.ts:332
 msgid "Top P"
 msgstr "Top P"
 
@@ -3836,8 +3854,8 @@ msgstr "Top P"
 msgid "Top P, Top K, penalties"
 msgstr "Top P, Top K, penalties"
 
-#: app/components/play/play-input-controls.tsx:421
-#: app/components/play/play-input-controls.tsx:532
+#: app/components/speech/speech-input.tsx:201
+#: app/components/speech/speech-input.tsx:301
 msgid "Transcribing..."
 msgstr "Transcribing..."
 
@@ -3875,7 +3893,7 @@ msgstr "Typewriter"
 msgid "Uncategorized"
 msgstr "Uncategorized"
 
-#: app/components/assistant/change-list.tsx:290
+#: app/components/assistant/change-list.tsx:289
 #: app/components/play/log/log-control.tsx:167
 #: app/components/play/log/log-control.tsx:171
 msgid "Undo"
@@ -3922,6 +3940,10 @@ msgstr "Untitled"
 #: app/components/layout/settings/model.tsx:219
 msgid "Up to {limit} tokens"
 msgstr "Up to {limit} tokens"
+
+#: app/components/assistant/hakawati-chat.tsx:765
+msgid "Up to {MAX_CHAT_IMAGES} images per message."
+msgstr "Up to {MAX_CHAT_IMAGES} images per message."
 
 #. placeholder {0}: update.version
 #: app/store/useUpdateStore.ts:137
@@ -4032,7 +4054,7 @@ msgstr "Watercolour corners and crayon doodles."
 msgid "What is your character's name?"
 msgstr "What is your character's name?"
 
-#: app/components/assistant/hakawati-chat.tsx:414
+#: app/components/assistant/hakawati-chat.tsx:459
 msgid "What scenarios do I have?"
 msgstr "What scenarios do I have?"
 
@@ -4052,7 +4074,7 @@ msgstr "What’s New"
 msgid "Who are you in this world?"
 msgstr "Who are you in this world?"
 
-#: app/components/assistant/hakawati-chat.tsx:411
+#: app/components/assistant/hakawati-chat.tsx:456
 msgid "Who have I met so far?"
 msgstr "Who have I met so far?"
 

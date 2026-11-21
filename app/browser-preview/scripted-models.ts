@@ -1,8 +1,20 @@
 type Message = {
   role: string;
-  content?: string | null;
+  content?: string | Array<{ type?: string; text?: string }> | null;
   tool_call_id?: string;
 };
+
+const textOf = (message: Message | undefined) =>
+  typeof message?.content === "string"
+    ? message.content
+    : Array.isArray(message?.content)
+      ? message.content.map((part) => part.text ?? "").join("")
+      : "";
+
+const imageCount = (message: Message | undefined) =>
+  Array.isArray(message?.content)
+    ? message.content.filter((part) => part.type === "image_url").length
+    : 0;
 
 type ChatRequest = {
   stream?: boolean;
@@ -60,9 +72,7 @@ function playerIndex(messages: Message[]) {
     .flatMap((message, index) => (message.role === "user" ? [index] : []))
     .reverse();
   return (
-    users.find((index) =>
-      String(messages[index].content ?? "").startsWith("<context>"),
-    ) ??
+    users.find((index) => textOf(messages[index]).startsWith("<context>")) ??
     users[0] ??
     -1
   );
@@ -72,7 +82,11 @@ function assistant(request: ChatRequest): Response {
   const messages = request.messages ?? [];
   const last = messages.at(-1);
   const playerAt = playerIndex(messages);
-  const player = String(messages[playerAt]?.content ?? "");
+  const player = textOf(messages[playerAt]);
+  const images = imageCount(messages[playerAt]);
+  const plain = images
+    ? `Scripted Hakawati reply. Images: ${images}.`
+    : "Scripted Hakawati reply.";
   const usesTools = request.tool_choice !== "none";
   if (
     usesTools &&
@@ -84,15 +98,14 @@ function assistant(request: ChatRequest): Response {
   if (last?.role === "tool" && !loops) {
     const results: string[] = [];
     for (let i = messages.length - 1; messages[i]?.role === "tool"; i -= 1)
-      results.unshift(String(messages[i].content ?? "").slice(0, 400));
+      results.unshift(textOf(messages[i]).slice(0, 400));
     return reply(
       request,
-      `Scripted Hakawati reply.\n\n${results.map((r) => `- \`${r}\``).join("\n")}`,
+      `${plain}\n\n${results.map((r) => `- \`${r}\``).join("\n")}`,
     );
   }
   const calls = requestedCalls(player);
-  if (!calls.length || !request.stream)
-    return reply(request, "Scripted Hakawati reply.");
+  if (!calls.length || !request.stream) return reply(request, plain);
   callCount += 1;
   const deltas: Delta[] = [{ content: "Looking." }];
   calls.forEach((call, index) => {

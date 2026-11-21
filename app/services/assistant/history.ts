@@ -28,7 +28,13 @@ export function toModelHistory(messages: AssistantMessage[]): ChatMessage[] {
 
   return recent.flatMap((message): ChatMessage[] => {
     if (message.role === "user")
-      return [{ role: "user", content: message.content }];
+      return [
+        {
+          role: "user",
+          content: message.content,
+          ...(message.images?.length ? { images: message.images } : {}),
+        },
+      ];
     const note = undoNote(message);
     if (message.turn && replaysTurn(message)) {
       const full = keepResults.has(message);

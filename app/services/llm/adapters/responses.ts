@@ -67,7 +67,15 @@ export function toResponsesInput(
     }
     input.push({
       role: message.role === "system" ? "developer" : message.role,
-      content: message.content,
+      content: message.images?.length
+        ? [
+            { type: "input_text", text: message.content },
+            ...message.images.map((url) => ({
+              type: "input_image",
+              image_url: url,
+            })),
+          ]
+        : message.content,
     });
   }
   return input;

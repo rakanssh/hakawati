@@ -21,11 +21,13 @@ interface AssistantStoreType {
   taleId: string | null;
   messages: AssistantMessage[];
   draft: string;
+  draftImages: string[];
   run: AssistantRun | null;
   undoingId: string | null;
   error: string | null;
   focusComposer: boolean;
   setDraft: (draft: string) => void;
+  setDraftImages: (images: string[]) => void;
   requestComposerFocus: () => void;
   clearComposerFocus: () => void;
 }
@@ -37,11 +39,13 @@ export const useAssistantStore = create<AssistantStoreType>()((set) => ({
   taleId: null,
   messages: [],
   draft: "",
+  draftImages: [],
   run: null,
   undoingId: null,
   error: null,
   focusComposer: false,
   setDraft: (draft) => set({ draft }),
+  setDraftImages: (draftImages) => set({ draftImages }),
   requestComposerFocus: () => set({ focusComposer: true }),
   clearComposerFocus: () => set({ focusComposer: false }),
 }));

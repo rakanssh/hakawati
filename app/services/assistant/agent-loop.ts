@@ -24,6 +24,7 @@ const CUT_OFF_NOTE =
 const KEPT_RESULTS = 4;
 const CONTEXT_FILL = 0.8;
 const MESSAGE_OVERHEAD_TOKENS = 4;
+const IMAGE_TOKENS = 1_000;
 
 export interface AgentTool {
   definition: ToolDefinition;
@@ -133,6 +134,7 @@ function messageTokens(message: ChatMessage): number {
     size =
       MESSAGE_OVERHEAD_TOKENS +
       countTokens(message.content) +
+      (message.images?.length ?? 0) * IMAGE_TOKENS +
       (message.tool_calls ?? []).reduce(
         (sum, call) =>
           sum +

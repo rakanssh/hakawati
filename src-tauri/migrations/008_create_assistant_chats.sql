@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS assistant_messages (
     seq INTEGER NOT NULL,
     role TEXT NOT NULL,
     content TEXT NOT NULL,
+    images_json TEXT NULL,
     thinking TEXT NULL,
     turn_json TEXT NULL,
     activity_json TEXT NULL,

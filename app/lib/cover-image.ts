@@ -178,7 +178,7 @@ async function encodeCover(
   }
 }
 
-async function decodeImage(blob: Blob): Promise<{
+export async function decodeImage(blob: Blob): Promise<{
   image: CanvasImageSource;
   width: number;
   height: number;

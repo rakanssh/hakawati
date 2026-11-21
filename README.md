@@ -135,7 +135,8 @@ Each reply lists what it changed, and **Undo** reverts those changes while
 keeping anything edited since. Deleting, removing from the cloud, overwriting a
 sync conflict, and unpublishing are confirmed with buttons in the chat. API keys,
 server addresses, sign-in, and publishing are left to you. Long tasks pause with
-**Continue**.
+**Continue**, and **Retry** runs the latest reply again after undoing its changes.
+You can also dictate with **Speech to Text** and attach up to four images.
 
 Hakawati uses the **Narrator** model unless it has its own in **Settings → AI
 Setup**, and needs a model that supports tool calling. Chats are kept per tale.

@@ -50,7 +50,15 @@ function toChatMessages(messages: ChatMessage[], model: string) {
       };
     const out: Record<string, unknown> = {
       role: message.role,
-      content: message.content,
+      content: message.images?.length
+        ? [
+            { type: "text", text: message.content },
+            ...message.images.map((url) => ({
+              type: "image_url",
+              image_url: { url },
+            })),
+          ]
+        : message.content,
     };
     if (message.role === "assistant" && message.tool_calls?.length) {
       out.content = message.content || null;
@@ -361,6 +369,8 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
           )
         : undefined;
       const supportedVoices = readSupportedVoices(model);
+      const inputModalities =
+        model.architecture?.input_modalities ?? model.input_modalities;
       const reasoning = readReasoningCapabilities(model, provider);
       const maxOutputTokens =
         model.top_provider?.max_completion_tokens ??
@@ -375,6 +385,9 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
         supportsResponseFormat:
           supportedParameters?.includes("response_format"),
         supportsToolCalls,
+        ...(Array.isArray(inputModalities)
+          ? { supportsImages: inputModalities.includes("image") }
+          : {}),
         supportedVoices,
         ...(supportedParameters ? { supportedParameters } : {}),
         ...(reasoning ? { reasoning } : {}),

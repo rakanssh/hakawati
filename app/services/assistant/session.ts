@@ -3,6 +3,7 @@ import { abortError, errorMessage } from "@/lib/errors";
 import {
   appendAssistantMessage,
   createAssistantThread,
+  deleteAssistantMessage,
   updateAssistantMessageChanges,
   deleteAssistantThread,
   getLatestAssistantThread,
@@ -213,46 +214,102 @@ function touchThread(threadId: string, updatedAt: number) {
   });
 }
 
+type RunOptions = {
+  getPathname: () => string;
+  ui?: AssistantUi;
+};
+
+const emptyRun = (): AssistantRun => ({
+  content: "",
+  thinking: "",
+  activity: [],
+  changes: [],
+  toolRunning: false,
+});
+
 export async function sendAssistantMessage(
   text: string,
-  options: {
-    getPathname: () => string;
-    ui?: AssistantUi;
-  },
+  options: RunOptions & { images?: string[] },
 ) {
   const content = text.trim();
+  const images = options.images ?? [];
   if (!content || store.getState().run) return;
-  const pathname = options.getPathname();
-  const run: AssistantRun = {
-    content: "",
-    thinking: "",
-    activity: [],
-    changes: [],
-    toolRunning: false,
-  };
-  store.setState({ draft: "", error: null, run: { ...run } });
+  const run = emptyRun();
+  store.setState({ draft: "", draftImages: [], error: null, run: { ...run } });
 
   let threadId: string;
   try {
-    threadId = await ensureThread(content, pathname);
+    threadId = await ensureThread(content, options.getPathname());
     const user = await appendAssistantMessage({
       id: nanoid(),
       threadId,
       role: "user",
       content,
+      ...(images.length ? { images } : {}),
       createdAt: Date.now(),
     });
     store.setState((state) => ({ messages: [...state.messages, user] }));
   } catch (error) {
-    store.setState({ run: null, error: errorMessage(error), draft: content });
+    store.setState({
+      run: null,
+      error: errorMessage(error),
+      draft: content,
+      draftImages: images,
+    });
     return;
   }
+  await runReply(threadId, run, options);
+}
 
+export async function retryAssistantReply(
+  messageId: string,
+  options: RunOptions,
+) {
+  const { messages, run: running, undoingId, threadId } = store.getState();
+  const reply = messages.at(-1);
+  if (running || undoingId || !threadId || reply?.id !== messageId) return;
+  if (reply.role !== "assistant") return;
+  const run = emptyRun();
+  store.setState({ error: null, run: { ...run } });
+  try {
+    if (reply.changes?.some((change) => !change.undone)) {
+      const { changes, failure } = await revertReply(reply.changes);
+      if (failure) {
+        await updateAssistantMessageChanges(reply.id, changes);
+        store.setState((state) => ({
+          run: null,
+          error: errorMessage(failure),
+          messages: state.messages.map((m) =>
+            m.id === reply.id ? { ...m, changes } : m,
+          ),
+        }));
+        return;
+      }
+    }
+    await deleteAssistantMessage(reply.id);
+  } catch (error) {
+    store.setState({ run: null, error: errorMessage(error) });
+    return;
+  }
+  store.setState((state) => ({
+    messages: state.messages.filter((m) => m.id !== reply.id),
+  }));
+  await runReply(threadId, run, options);
+}
+
+async function runReply(
+  threadId: string,
+  run: AssistantRun,
+  options: RunOptions,
+) {
+  const pathname = options.getPathname();
   const history = toModelHistory(store.getState().messages);
-  history[history.length - 1] = {
-    role: "user",
-    content: withContext(content, workspaceContext(pathname)),
-  };
+  const asked = history.at(-1);
+  if (asked?.role === "user")
+    history[history.length - 1] = {
+      ...asked,
+      content: withContext(asked.content, workspaceContext(pathname)),
+    };
   let shown = { activity: run.activity, changes: run.changes };
   const publish = (stepsChanged = true) => {
     if (stepsChanged)
@@ -468,12 +525,7 @@ const REVERTERS: Reverter[] = [
   },
 ];
 
-export async function undoAssistantReply(messageId: string): Promise<number> {
-  const state = store.getState();
-  const message = state.messages.find((m) => m.id === messageId);
-  if (!message?.changes?.length || state.run || state.undoingId) return 0;
-  store.setState({ undoingId: messageId, error: null });
-  const all = message.changes;
+async function revertReply(all: AssistantChange[]) {
   const changes = [...all];
   let kept = 0;
   let failure: unknown = null;
@@ -490,6 +542,15 @@ export async function undoAssistantReply(messageId: string): Promise<number> {
   } catch (error) {
     failure = error;
   }
+  return { changes, kept, failure };
+}
+
+export async function undoAssistantReply(messageId: string): Promise<number> {
+  const state = store.getState();
+  const message = state.messages.find((m) => m.id === messageId);
+  if (!message?.changes?.length || state.run || state.undoingId) return 0;
+  store.setState({ undoingId: messageId, error: null });
+  const { changes, kept, failure } = await revertReply(message.changes);
   try {
     await updateAssistantMessageChanges(messageId, changes);
     store.setState((current) => ({

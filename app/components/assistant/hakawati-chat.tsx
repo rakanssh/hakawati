@@ -19,15 +19,23 @@ import {
   BrainCircuitIcon,
   ChevronDownIcon,
   CircleAlertIcon,
+  ImagePlusIcon,
   MessageSquarePlusIcon,
   PencilLineIcon,
+  RefreshCwIcon,
   SendIcon,
   SquareIcon,
   Trash2Icon,
   WrenchIcon,
+  XIcon,
 } from "lucide-react";
 import { LinkRow, SetupList } from "@/components/layout/settings/settings-rows";
 import { RoleIcon } from "@/components/layout/settings/ai-setup/parts";
+import {
+  SpeechActivity,
+  SpeechButton,
+  useSpeechInput,
+} from "@/components/speech/speech-input";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -52,9 +60,12 @@ import {
   stepCount,
   type TimelinePart,
 } from "@/lib/assistant-timeline";
+import { chatImageFromFile, MAX_CHAT_IMAGES } from "@/lib/chat-image";
+import { appendTranscriptToInput } from "@/lib/speech-recording";
 import { cn } from "@/lib/utils";
 import {
   removeAssistantThread,
+  retryAssistantReply,
   selectAssistantThread,
   sendAssistantMessage,
   startNewAssistantChat,
@@ -173,15 +184,35 @@ function useMarkdownComponents(): Components {
   );
 }
 
-function PlayerMessage({ content }: { content: string }) {
+function PlayerMessage({
+  content,
+  images,
+}: {
+  content: string;
+  images?: string[];
+}) {
   return (
-    <div className="max-w-[88%] self-end rounded-md rounded-ee-xs border border-sidebar-border/80 bg-sidebar-accent/50 px-3 py-2">
-      <div
-        data-log-entry-text=""
-        dir="auto"
-        className="text-sm leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sidebar-foreground/95"
-      >
-        {content}
+    <div className="flex max-w-[88%] flex-col items-end gap-1.5 self-end">
+      {images?.length ? (
+        <div className="flex flex-wrap justify-end gap-1.5">
+          {images.map((src, index) => (
+            <img
+              key={index}
+              src={src}
+              alt=""
+              className="size-20 rounded-xs border border-sidebar-border/80 object-cover"
+            />
+          ))}
+        </div>
+      ) : null}
+      <div className="rounded-md rounded-ee-xs border border-sidebar-border/80 bg-sidebar-accent/50 px-3 py-2">
+        <div
+          data-log-entry-text=""
+          dir="auto"
+          className="text-sm leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-sidebar-foreground/95"
+        >
+          {content}
+        </div>
       </div>
     </div>
   );
@@ -231,6 +262,7 @@ const Reply = memo(function Reply({
   messageId,
   live,
   toolRunning,
+  onRetry,
 }: {
   content: string;
   thinking?: string;
@@ -240,6 +272,7 @@ const Reply = memo(function Reply({
   messageId?: string;
   live?: boolean;
   toolRunning?: boolean;
+  onRetry?: () => void;
 }) {
   const { t } = useLingui();
   const [stepsOpen, setStepsOpen] = useState(false);
@@ -322,7 +355,7 @@ const Reply = memo(function Reply({
       ) : null}
       {shown.map((part, index) => renderPart(part, index, false))}
       {waiting ? caret : null}
-      {showThinking || changeList.length ? (
+      {showThinking || changeList.length || onRetry ? (
         <div className="flex w-full flex-col gap-1.5">
           <div
             data-log-meta=""
@@ -362,6 +395,18 @@ const Reply = memo(function Reply({
             ) : null}
             {changeList.length ? (
               <UndoReplyButton changes={changeList} messageId={messageId} />
+            ) : null}
+            {onRetry ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+                onClick={onRetry}
+              >
+                <RefreshCwIcon className="size-3.5" />
+                <Trans>Retry</Trans>
+              </Button>
             ) : null}
           </div>
           {showThinking && thinkingOpen ? (
@@ -513,9 +558,13 @@ export function HakawatiChat() {
   const playTaleId = isPlay && taleId ? taleId : null;
   const messages = useAssistantStore((state) => state.messages);
   const run = useAssistantStore((state) => state.run);
+  const undoingId = useAssistantStore((state) => state.undoingId);
   const error = useAssistantStore((state) => state.error);
   const configured = useSettingsStore((state) =>
     isModelRoleConfigured(state.modelRoles.hakawati),
+  );
+  const imagesAllowed = useSettingsStore(
+    (state) => state.modelRoles.hakawati.model?.supportsImages !== false,
   );
   const { isMobilePlatform } = useIsMobile();
   const openSettings = useSettingsModalStore((state) => state.openSettings);
@@ -525,6 +574,8 @@ export function HakawatiChat() {
     !run &&
     last?.role === "assistant" &&
     last.status === "paused";
+  const canRetry =
+    configured && !run && !undoingId && last?.role === "assistant";
   const { viewportRef, handleScroll, stickToBottom, scrollToBottom } =
     useStickToBottom({ scrollBehavior: "auto" });
 
@@ -568,12 +619,17 @@ export function HakawatiChat() {
     },
   };
 
-  const send = (text: string) => {
+  const runOptions = {
+    getPathname: () => router.state.location.pathname,
+    ui,
+  };
+  const send = (text: string, images?: string[]) => {
     if (!configured || run) return;
-    void sendAssistantMessage(text, {
-      getPathname: () => router.state.location.pathname,
-      ui,
-    });
+    void sendAssistantMessage(text, { ...runOptions, images });
+    scrollToBottom("auto");
+  };
+  const retry = (messageId: string) => {
+    void retryAssistantReply(messageId, runOptions);
     scrollToBottom("auto");
   };
 
@@ -598,7 +654,11 @@ export function HakawatiChat() {
           <div className="flex flex-col gap-4">
             {messages.map((message) =>
               message.role === "user" ? (
-                <PlayerMessage key={message.id} content={message.content} />
+                <PlayerMessage
+                  key={message.id}
+                  content={message.content}
+                  images={message.images}
+                />
               ) : (
                 <Reply
                   key={message.id}
@@ -608,6 +668,11 @@ export function HakawatiChat() {
                   changes={message.changes}
                   status={message.status}
                   messageId={message.id}
+                  onRetry={
+                    canRetry && message === last
+                      ? () => retry(message.id)
+                      : undefined
+                  }
                 />
               ),
             )}
@@ -648,6 +713,7 @@ export function HakawatiChat() {
         <Composer
           configured={configured}
           running={Boolean(run)}
+          imagesAllowed={imagesAllowed}
           onSend={send}
         />
       </div>
@@ -659,18 +725,28 @@ export function HakawatiChat() {
 function Composer({
   configured,
   running,
+  imagesAllowed,
   onSend,
 }: {
   configured: boolean;
   running: boolean;
-  onSend: (text: string) => void;
+  imagesAllowed: boolean;
+  onSend: (text: string, images: string[]) => void;
 }) {
   const { t } = useLingui();
   const draft = useAssistantStore((state) => state.draft);
+  const draftImages = useAssistantStore((state) => state.draftImages);
   const setDraft = useAssistantStore((state) => state.setDraft);
+  const setDraftImages = useAssistantStore((state) => state.setDraftImages);
   const focusComposer = useAssistantStore((state) => state.focusComposer);
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const { isMobilePlatform } = useIsMobile();
+  const recorder = useSpeechInput((text) =>
+    setDraft(appendTranscriptToInput(useAssistantStore.getState().draft, text)),
+  );
+  const canAttach =
+    configured && imagesAllowed && draftImages.length < MAX_CHAT_IMAGES;
 
   useEffect(() => {
     if (!focusComposer) return;
@@ -681,52 +757,161 @@ function Composer({
     return () => window.clearTimeout(timer);
   }, [focusComposer]);
 
+  const addImages = async (files: Iterable<File>) => {
+    const picked = [...files].filter((file) => file.type.startsWith("image/"));
+    const room =
+      MAX_CHAT_IMAGES - useAssistantStore.getState().draftImages.length;
+    if (picked.length > room)
+      toast.info(t`Up to ${MAX_CHAT_IMAGES} images per message.`);
+    const added: string[] = [];
+    for (const file of picked.slice(0, Math.max(0, room))) {
+      try {
+        added.push(await chatImageFromFile(file));
+      } catch {
+        toast.error(t`Couldn't read that image.`);
+      }
+    }
+    if (added.length)
+      setDraftImages(
+        [...useAssistantStore.getState().draftImages, ...added].slice(
+          0,
+          MAX_CHAT_IMAGES,
+        ),
+      );
+  };
+
+  const send = () => onSend(draft, draftImages);
+
   return (
     <div
       data-composer-surface=""
-      className="flex min-w-0 items-end gap-1 overflow-hidden rounded-xs border border-border/75 bg-[var(--composer-background)] p-1 shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18"
+      className="flex min-w-0 flex-col gap-1 overflow-hidden rounded-xs border border-border/75 bg-[var(--composer-background)] p-1 shadow-lg shadow-background/25 transition-[border-color,box-shadow] focus-within:border-ring/55 focus-within:ring-2 focus-within:ring-ring/18"
+      onDragOver={(event) => {
+        if (canAttach && event.dataTransfer.types.includes("Files"))
+          event.preventDefault();
+      }}
+      onDrop={(event) => {
+        if (!canAttach || !event.dataTransfer.files.length) return;
+        event.preventDefault();
+        void addImages(event.dataTransfer.files);
+      }}
     >
-      <Textarea
-        ref={composerRef}
-        data-hakawati-composer=""
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" && !event.shiftKey && !isMobilePlatform) {
-            event.preventDefault();
-            onSend(draft);
-          }
-        }}
-        rows={1}
-        disabled={!configured}
-        placeholder={t`Ask Hakawati`}
-        aria-label={t`Message Hakawati`}
-        className="max-h-40 min-h-10 resize-none border-0 !bg-transparent px-2.5 py-2 text-sm shadow-none focus-visible:border-transparent focus-visible:ring-0 md:text-sm dark:!bg-transparent"
-      />
-      {running ? (
-        <Button
-          type="button"
-          size="icon"
-          data-composer-send=""
-          className="size-10 shrink-0 rounded-xs"
-          onClick={stopAssistant}
-          aria-label={t`Stop`}
-        >
-          <SquareIcon className="size-4 fill-current" />
-        </Button>
+      {draftImages.length ? (
+        <div className="flex flex-wrap gap-1.5 px-1 pt-1">
+          {draftImages.map((src, index) => (
+            <div key={index} className="relative">
+              <img
+                src={src}
+                alt=""
+                className="size-14 rounded-xs border border-border/75 object-cover"
+              />
+              <button
+                type="button"
+                className="absolute -end-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full border border-border bg-background text-muted-foreground hover:text-foreground"
+                onClick={() =>
+                  setDraftImages(draftImages.filter((_, i) => i !== index))
+                }
+                aria-label={t`Remove image`}
+              >
+                <XIcon className="size-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {recorder.status !== "idle" ? (
+        <SpeechActivity recorder={recorder} />
       ) : (
-        <Button
-          type="button"
-          size="icon"
-          data-composer-send=""
-          className="size-10 shrink-0 rounded-xs"
-          disabled={!configured || !draft.trim()}
-          onClick={() => onSend(draft)}
-          aria-label={t`Send`}
-        >
-          <SendIcon className="size-4" />
-        </Button>
+        <div className="flex min-w-0 items-end gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="shrink-0">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-10 rounded-xs text-muted-foreground hover:text-foreground"
+                  disabled={!canAttach}
+                  onClick={() => fileRef.current?.click()}
+                  aria-label={t`Add image`}
+                >
+                  <ImagePlusIcon className="size-5" strokeWidth={1.5} />
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              {imagesAllowed
+                ? t`Add image`
+                : t`Hakawati's model doesn't take images`}
+            </TooltipContent>
+          </Tooltip>
+          <Textarea
+            ref={composerRef}
+            data-hakawati-composer=""
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (
+                event.key === "Enter" &&
+                !event.shiftKey &&
+                !isMobilePlatform
+              ) {
+                event.preventDefault();
+                send();
+              }
+            }}
+            onPaste={(event) => {
+              const files = [...event.clipboardData.files].filter((file) =>
+                file.type.startsWith("image/"),
+              );
+              if (!files.length || !canAttach) return;
+              event.preventDefault();
+              void addImages(files);
+            }}
+            rows={1}
+            disabled={!configured}
+            placeholder={t`Ask Hakawati`}
+            aria-label={t`Message Hakawati`}
+            className="max-h-40 min-h-10 resize-none border-0 !bg-transparent px-1.5 py-2 text-sm shadow-none focus-visible:border-transparent focus-visible:ring-0 md:text-sm dark:!bg-transparent"
+          />
+          <SpeechButton recorder={recorder} disabled={!configured} />
+          {running ? (
+            <Button
+              type="button"
+              size="icon"
+              data-composer-send=""
+              className="size-10 shrink-0 rounded-xs"
+              onClick={stopAssistant}
+              aria-label={t`Stop`}
+            >
+              <SquareIcon className="size-4 fill-current" />
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="icon"
+              data-composer-send=""
+              className="size-10 shrink-0 rounded-xs"
+              disabled={!configured || !draft.trim()}
+              onClick={send}
+              aria-label={t`Send`}
+            >
+              <SendIcon className="size-4" />
+            </Button>
+          )}
+        </div>
       )}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        onChange={(event) => {
+          if (event.target.files) void addImages(event.target.files);
+          event.target.value = "";
+        }}
+      />
     </div>
   );
 }

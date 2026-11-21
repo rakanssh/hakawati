@@ -63,6 +63,26 @@ describe("browser preview scripted models", () => {
     expect(content).toContain('{"page":"home"}');
   });
 
+  it("says how many images the player sent", async () => {
+    const { content } = await read(
+      scriptedChatCompletion({
+        stream: true,
+        tools: assistantTools,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "<context>{}</context>\n\nLook" },
+              { type: "image_url" },
+              { type: "image_url" },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(content).toBe("Scripted Hakawati reply. Images: 2.");
+  });
+
   it("keeps calling the tools on /loop until tools are turned off", async () => {
     const messages = [
       { role: "user", content: "/loop\n/tool get_tale" },

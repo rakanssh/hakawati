@@ -48,12 +48,14 @@ export const PREVIEW_MODEL = {
   name: "Preview narrator (scripted)",
   contextLength: 8192,
   supportsToolCalls: true,
+  supportsImages: true,
 };
 const PREVIEW_PLAIN_MODEL = {
   id: "preview-plain",
   name: "Preview plain (no tools)",
   contextLength: 4096,
   supportsToolCalls: false,
+  supportsImages: false,
 };
 
 /** Preview stays offline: the narrator is scripted and cloud requests fail clearly. */

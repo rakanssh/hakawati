@@ -203,6 +203,9 @@ export function ChatGptClient(): LLMClient {
             ? { maxOutputTokens }
             : {}),
           name: string(model.display_name) || model.slug,
+          ...(Array.isArray(model.input_modalities)
+            ? { supportsImages: model.input_modalities.includes("image") }
+            : {}),
           ...(typeof context === "number" && context > 0
             ? { contextLength: context }
             : {}),

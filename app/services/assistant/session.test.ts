@@ -54,6 +54,9 @@ vi.mock("@/repositories/assistant.repository", () => {
       db.messages.push(saved);
       return saved;
     },
+    deleteAssistantMessage: async (id: string) => {
+      db.messages = db.messages.filter((message) => message.id !== id);
+    },
     updateAssistantMessageChanges: async (
       id: string,
       changes: AssistantMessage["changes"],
@@ -433,6 +436,99 @@ describe("Hakawati chat session", () => {
       await session.syncAssistantScope("t1");
       expect(store.getState().threadId).toBe("newer");
     });
+  });
+
+  it("sends the player's images and keeps them with their message", async () => {
+    const { session, store } = await load();
+    sendRoleChat.mockResolvedValueOnce(streamed([{ content: "A map." }]));
+
+    await session.sendAssistantMessage("What is this?", {
+      ...home,
+      images: ["data:image/jpeg;base64,AA"],
+    });
+
+    expect(db.messages[0].images).toEqual(["data:image/jpeg;base64,AA"]);
+    expect(store.getState().draftImages).toEqual([]);
+    const asked = sendRoleChat.mock.calls[0][1].messages.at(-1);
+    expect(asked.images).toEqual(["data:image/jpeg;base64,AA"]);
+    expect(asked.content).toMatch(/^<context>[\s\S]*What is this\?$/);
+  });
+
+  it("retries a failed reply in its place", async () => {
+    const { session, store } = await load();
+    resolveModelRole.mockImplementationOnce(() => {
+      throw new Error("No hakawati model selected.");
+    });
+    await session.sendAssistantMessage("Hello", home);
+    const failed = store.getState().messages.at(-1)!;
+    expect(failed.status).toBe("failed");
+
+    sendRoleChat.mockResolvedValueOnce(streamed([{ content: "Hi." }]));
+    await session.retryAssistantReply(failed.id, home);
+
+    const state = store.getState();
+    expect(state.error).toBeNull();
+    expect(state.messages.map((m) => [m.role, m.content])).toEqual([
+      ["user", "Hello"],
+      ["assistant", "Hi."],
+    ]);
+    expect(db.messages.map((m) => m.id)).toEqual(
+      state.messages.map((m) => m.id),
+    );
+    expect(sendRoleChat.mock.calls[0][1].messages.at(-1).content).toMatch(
+      /^<context>[\s\S]*Hello$/,
+    );
+  });
+
+  it("undoes a reply's changes before retrying it", async () => {
+    const { session, store } = await load();
+    const edit = streamed([
+      {
+        tool_calls: [
+          {
+            index: 0,
+            id: "call_1",
+            type: "function",
+            function: {
+              name: "edit_tale",
+              arguments:
+                '{"taleId":"t1","cards":[{"op":"add","title":"Mara"}]}',
+            },
+          },
+        ],
+      },
+    ]);
+    sendRoleChat
+      .mockResolvedValueOnce(edit)
+      .mockResolvedValueOnce(streamed([{ content: "Added Mara." }]));
+    await session.sendAssistantMessage("Add Mara", home);
+    const first = store.getState().messages.at(-1)!;
+    const { revertChanges } = await import("./tale-edits");
+
+    sendRoleChat.mockResolvedValueOnce(streamed([{ content: "Not now." }]));
+    await session.retryAssistantReply(first.id, home);
+
+    expect(revertChanges).toHaveBeenCalledWith([cardChange]);
+    expect(store.getState().messages.map((m) => m.content)).toEqual([
+      "Add Mara",
+      "Not now.",
+    ]);
+    expect(db.messages.some((m) => m.id === first.id)).toBe(false);
+  });
+
+  it("only retries the latest reply, and not while one runs", async () => {
+    const { session, store } = await load();
+    sendRoleChat
+      .mockResolvedValueOnce(streamed([{ content: "One." }]))
+      .mockResolvedValueOnce(streamed([{ content: "Two." }]));
+    await session.sendAssistantMessage("First", home);
+    await session.sendAssistantMessage("Second", home);
+    const older = store.getState().messages[1];
+
+    await session.retryAssistantReply(older.id, home);
+
+    expect(sendRoleChat).toHaveBeenCalledTimes(2);
+    expect(store.getState().messages).toHaveLength(4);
   });
 
   it("saves the changes a reply made and undoes them", async () => {

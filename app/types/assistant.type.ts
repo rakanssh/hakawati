@@ -121,6 +121,7 @@ export interface AssistantMessage {
   seq: number;
   role: "user" | "assistant";
   content: string;
+  images?: string[];
   thinking?: string;
   turn?: AssistantModelMessage[];
   activity?: AssistantActivity[];

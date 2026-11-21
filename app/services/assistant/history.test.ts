@@ -111,6 +111,15 @@ describe("toModelHistory", () => {
     ]);
   });
 
+  it("keeps the player's images with their message", () => {
+    const history = toModelHistory([
+      { ...user("What is this?"), images: ["data:a"] },
+    ]);
+    expect(history).toEqual([
+      { role: "user", content: "What is this?", images: ["data:a"] },
+    ]);
+  });
+
   it("keeps only recent messages and starts on a player message", () => {
     const messages = Array.from({ length: HISTORY_MESSAGES + 5 }, (_, i) =>
       i % 2 === 0 ? user(`u${i}`) : reply(`a${i}`),

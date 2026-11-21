@@ -22,6 +22,7 @@ type MessageRow = {
   seq: number;
   role: string;
   content: string;
+  images_json: string | null;
   thinking: string | null;
   turn_json: string | null;
   activity_json: string | null;
@@ -41,6 +42,8 @@ function threadFromRow(row: ThreadRow): AssistantThread {
 }
 
 function messageFromRow(row: MessageRow): AssistantMessage {
+  const images =
+    parseJsonValue<AssistantMessage["images"]>(row.images_json) ?? undefined;
   const turn =
     parseJsonValue<AssistantMessage["turn"]>(row.turn_json) ?? undefined;
   const activity =
@@ -54,6 +57,7 @@ function messageFromRow(row: MessageRow): AssistantMessage {
     seq: Number(row.seq),
     role: row.role === "assistant" ? "assistant" : "user",
     content: row.content,
+    ...(images?.length ? { images } : {}),
     ...(row.thinking ? { thinking: row.thinking } : {}),
     ...(turn ? { turn } : {}),
     ...(activity?.length ? { activity } : {}),
@@ -155,6 +159,13 @@ export async function updateAssistantMessageChanges(
   });
 }
 
+export async function deleteAssistantMessage(id: string): Promise<void> {
+  await enqueueLocalOperation(async () => {
+    const db = await getDb();
+    await db.execute(`DELETE FROM assistant_messages WHERE id = ?`, [id]);
+  });
+}
+
 export async function appendAssistantMessage(
   message: Omit<AssistantMessage, "seq">,
 ): Promise<AssistantMessage> {
@@ -168,15 +179,16 @@ export async function appendAssistantMessage(
       const seq = Number(last?.seq ?? 0) + 1;
       await tx.execute(
         `INSERT INTO assistant_messages (
-           id, thread_id, seq, role, content, thinking,
+           id, thread_id, seq, role, content, images_json, thinking,
            turn_json, activity_json, changes_json, status, created_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           message.id,
           message.threadId,
           seq,
           message.role,
           message.content,
+          json(message.images),
           message.thinking ?? null,
           json(message.turn),
           json(message.activity),

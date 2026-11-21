@@ -12,6 +12,7 @@ export type ProviderReplay =
 export interface ChatMessage {
   role: "user" | "assistant" | "system" | "tool";
   content: string;
+  images?: string[];
   tool_calls?: ToolCall[];
   tool_call_id?: string;
   replay?: ProviderReplay;

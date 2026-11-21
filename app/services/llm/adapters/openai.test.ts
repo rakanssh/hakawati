@@ -197,6 +197,37 @@ describe("thinking level provider adapters", () => {
     });
   });
 
+  it("sends a player's images as image parts in both API formats", async () => {
+    const withImage: ChatRequest = {
+      ...request,
+      messages: [
+        { role: "user", content: "What is this?", images: ["data:image/a"] },
+      ],
+    };
+    fetchMock.mockResolvedValueOnce(completion());
+    await openai().chat({ ...withImage, model: "gpt-4.1" });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).messages).toEqual([
+      {
+        role: "user",
+        content: [
+          { type: "text", text: "What is this?" },
+          { type: "image_url", image_url: { url: "data:image/a" } },
+        ],
+      },
+    ]);
+    fetchMock.mockResolvedValueOnce(Response.json(completed([message()])));
+    await openai().chat({ ...withImage, reasoningEffort: "high" });
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).input).toEqual([
+      {
+        role: "user",
+        content: [
+          { type: "input_text", text: "What is this?" },
+          { type: "input_image", image_url: "data:image/a" },
+        ],
+      },
+    ]);
+  });
+
   it("preserves the ordinary OpenAI Chat Completions path", async () => {
     fetchMock.mockResolvedValue(completion());
     await openai().chat({
@@ -679,6 +710,7 @@ describe("thinking level provider adapters", () => {
             },
             top_provider: { max_completion_tokens: 64000 },
             supported_parameters: ["reasoning", "tools"],
+            architecture: { input_modalities: ["text", "image"] },
           },
           { id: "ordinary", reasoning: { supported_efforts: [] } },
           { id: "unknown" },
@@ -696,8 +728,10 @@ describe("thinking level provider adapters", () => {
       },
       maxOutputTokens: 64000,
       supportsToolCalls: true,
+      supportsImages: true,
       supportedParameters: ["reasoning", "tools"],
     });
+    expect(models[1].supportsImages).toBeUndefined();
     expect(models[1].reasoning?.supportedEfforts).toEqual([]);
     expect(models[2].reasoning).toBeUndefined();
   });
