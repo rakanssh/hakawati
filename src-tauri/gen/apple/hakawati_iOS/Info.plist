@@ -41,7 +41,9 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Hakawati uses the microphone to record speech and transcribe it into the story input box.</string>
+	<string>Hakawati uses the microphone to record speech and turn it into text.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Hakawati uses the camera to take photos you attach to a chat message.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Hakawati connects to AI servers you run on your local network.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>

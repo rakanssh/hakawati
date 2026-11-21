@@ -1186,6 +1186,15 @@ export async function getTaleSaveVersion(taleId: string): Promise<number> {
   });
 }
 
+export async function taleExists(id: string): Promise<boolean> {
+  const db = await getDb();
+  const rows = await db.select<Array<{ id: string }>>(
+    `SELECT id FROM tales WHERE id = ? LIMIT 1`,
+    [id],
+  );
+  return Boolean(rows?.length);
+}
+
 export async function getTalePlayLoad(
   id: string,
   options: { logStart?: number; logLimit: number },
@@ -1277,16 +1286,23 @@ function taleHeadSelect(whereClause = ""): string {
 export async function getTales(
   page: number,
   limit: number,
+  query?: string,
 ): Promise<PaginatedResponse<TaleHead>> {
+  const search = query?.trim().toLowerCase();
+  const where = search
+    ? `WHERE instr(lower(t.name), ?) > 0 OR instr(lower(COALESCE(t.description, '')), ?) > 0`
+    : "";
+  const params = search ? [search, search] : [];
   return enqueueLocalOperation(async () => {
     const db = await getDb();
     const rows = await db.select<TaleHeadRow[]>(
-      `${taleHeadSelect()}
+      `${taleHeadSelect(where)}
       ORDER BY t.updated_at DESC LIMIT ? OFFSET ?`,
-      [limit, (page - 1) * limit],
+      [...params, limit, (page - 1) * limit],
     );
     const countRows = await db.select<Array<{ count: number }>>(
-      `SELECT COUNT(*) as count FROM tales`,
+      `SELECT COUNT(*) as count FROM tales t ${where}`,
+      params,
     );
     const total = countRows?.[0]?.count ?? 0;
     const data: TaleHead[] = [];
@@ -1299,6 +1315,20 @@ export async function getTales(
       page,
       limit,
     };
+  });
+}
+
+export async function getTaleHeads(ids: string[]): Promise<TaleHead[]> {
+  if (!ids.length) return [];
+  return enqueueLocalOperation(async () => {
+    const db = await getDb();
+    const rows = await db.select<TaleHeadRow[]>(
+      taleHeadSelect(`WHERE t.id IN (SELECT value FROM json_each(?))`),
+      [JSON.stringify(ids)],
+    );
+    const heads: TaleHead[] = [];
+    for (const row of rows) heads.push(await mapTaleHeadRow(row));
+    return heads;
   });
 }
 
@@ -1352,6 +1382,214 @@ export async function getLogEntries(
     console.error("Error fetching log entries:", error);
     return [];
   }
+}
+
+async function finishLogSplice(
+  db: Database,
+  taleId: string,
+  now: number,
+  session?: TaleSessionState,
+): Promise<void> {
+  await refreshTaleLogSummary(db, taleId);
+  if (session) await replaceSession(db, taleId, session, now);
+  await db.execute(
+    `UPDATE tales SET updated_at = ?, save_version = save_version + 1 WHERE id = ?`,
+    [now, taleId],
+  );
+}
+
+export async function deleteLogEntries(
+  taleId: string,
+  entryIds: string[],
+  session?: TaleSessionState,
+): Promise<void> {
+  const ids = new Set(entryIds);
+  if (ids.size === 0) return;
+  await enqueueLocalOperation(async () => {
+    const db = await getDb();
+    const now = Date.now();
+    await withTransaction(db, async (db) => {
+      await requireTaleRow(db, taleId);
+      await markLinkedTaleForPush(db, taleId);
+      const rows = await selectTurnRowsForEntryIds(db, taleId, [...ids]);
+      const found = new Set(
+        rows.flatMap((row) => parseTurnEntries(row).map((entry) => entry.id)),
+      );
+      if ([...ids].some((id) => !found.has(id)))
+        throw new Error("Tale log entry not found");
+
+      for (const row of [...rows].sort((a, b) => b.seq - a.seq)) {
+        const kept = parseTurnEntries(row).filter(
+          (entry) => !ids.has(entry.id),
+        );
+        const removed = row.entry_count - kept.length;
+        if (kept.length === 0) {
+          await db.execute(`DELETE FROM tale_turns WHERE id = ?`, [row.id]);
+          await shiftTurnsAfter(db, taleId, row.seq, -1, -removed);
+        } else {
+          await db.execute(
+            `UPDATE tale_turns
+             SET entries_json = ?, entry_count = ?, updated_at = ?
+             WHERE id = ?`,
+            [
+              JSON.stringify(sanitizeTurnEntries(kept)),
+              kept.length,
+              now,
+              row.id,
+            ],
+          );
+          await shiftTurnsAfter(db, taleId, row.seq, 0, -removed);
+        }
+      }
+      await finishLogSplice(db, taleId, now, session);
+    });
+  });
+}
+
+export async function insertLogEntries(
+  taleId: string,
+  afterId: string | null,
+  entries: LogEntry[],
+  session?: TaleSessionState,
+): Promise<void> {
+  const inserted = sanitizeTurnEntries(entries);
+  await enqueueLocalOperation(async () => {
+    const db = await getDb();
+    const now = Date.now();
+    await withTransaction(db, async (db) => {
+      await requireTaleRow(db, taleId);
+      await markLinkedTaleForPush(db, taleId);
+      const count = await selectLogCount(db, taleId);
+
+      let row: TaleTurnRow | undefined;
+      let at = 0;
+      if (afterId === null) {
+        [row] = await db.select<TaleTurnRow[]>(
+          `SELECT * FROM tale_turns WHERE tale_id = ? ORDER BY seq ASC LIMIT 1`,
+          [taleId],
+        );
+      } else {
+        [row] = await selectTurnRowsForEntryIds(db, taleId, [afterId]);
+        if (!row) throw new Error("Tale log entry not found");
+        at = parseTurnEntries(row).findIndex((e) => e.id === afterId) + 1;
+      }
+
+      if (!row || (afterId !== null && row.entry_start_index + at === count)) {
+        await insertTurn(
+          db,
+          taleId,
+          { entries: inserted, createdAt: now },
+          (row?.seq ?? 0) + 1,
+          count,
+          now,
+        );
+      } else {
+        const next = parseTurnEntries(row);
+        next.splice(at, 0, ...inserted);
+        await db.execute(
+          `UPDATE tale_turns
+           SET entries_json = ?, entry_count = ?, updated_at = ?
+           WHERE id = ?`,
+          [JSON.stringify(sanitizeTurnEntries(next)), next.length, now, row.id],
+        );
+        await shiftTurnsAfter(db, taleId, row.seq, 0, inserted.length);
+      }
+      await finishLogSplice(db, taleId, now, session);
+    });
+  });
+}
+
+export interface IndexedLogEntry {
+  index: number;
+  entry: LogEntry;
+}
+
+async function selectIndexedEntries(
+  db: Database,
+  taleId: string,
+  where: string,
+  params: unknown[],
+  limit: number,
+): Promise<IndexedLogEntry[]> {
+  const rows = await db.select<Array<{ idx: number; entry_json: string }>>(
+    `SELECT tt.entry_start_index + CAST(entry.key AS INTEGER) AS idx,
+            entry.value AS entry_json
+     FROM tale_turns tt, json_each(tt.entries_json) entry
+     WHERE tt.tale_id = ? AND ${where}
+     ORDER BY idx DESC
+     LIMIT ?`,
+    [taleId, ...params, limit],
+  );
+  return rows.flatMap((row) => {
+    const entry = parseJsonValue<LogEntry>(row.entry_json);
+    return entry ? [{ index: Number(row.idx), entry }] : [];
+  });
+}
+
+async function selectLegacyEntries(
+  db: Database,
+  taleId: string,
+): Promise<IndexedLogEntry[]> {
+  const entries = await selectLogEntries(
+    db,
+    taleId,
+    0,
+    await selectLogCount(db, taleId),
+  );
+  return entries.map((entry, index) => ({ index, entry }));
+}
+
+export async function searchLogEntries(
+  taleId: string,
+  query: string,
+  limit: number,
+): Promise<IndexedLogEntry[]> {
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
+  if (words.length === 0) return [];
+  return enqueueLocalOperation(async () => {
+    const db = await getDb();
+    if (!(await hasSplitStorage(db, taleId))) {
+      return (await selectLegacyEntries(db, taleId))
+        .filter(({ entry }) =>
+          words.every((word) => entry.text.toLowerCase().includes(word)),
+        )
+        .reverse()
+        .slice(0, limit);
+    }
+    return selectIndexedEntries(
+      db,
+      taleId,
+      words
+        .map(() => `instr(lower(json_extract(entry.value, '$.text')), ?) > 0`)
+        .join(" AND "),
+      words,
+      limit,
+    );
+  });
+}
+
+export async function findLogEntries(
+  taleId: string,
+  entryIds: string[],
+): Promise<IndexedLogEntry[]> {
+  const ids = [...new Set(entryIds)];
+  if (!ids.length) return [];
+  return enqueueLocalOperation(async () => {
+    const db = await getDb();
+    if (!(await hasSplitStorage(db, taleId))) {
+      const wanted = new Set(ids);
+      return (await selectLegacyEntries(db, taleId)).filter(({ entry }) =>
+        wanted.has(entry.id),
+      );
+    }
+    return selectIndexedEntries(
+      db,
+      taleId,
+      `json_extract(entry.value, '$.id') IN (SELECT value FROM json_each(?))`,
+      [JSON.stringify(ids)],
+      ids.length,
+    );
+  });
 }
 
 export async function getLogCount(taleId: string): Promise<number> {

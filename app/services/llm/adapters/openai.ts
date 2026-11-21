@@ -1,3 +1,4 @@
+import { markOutputLimit } from "@/lib/errors";
 import { ResponseMode } from "@/types/api.type";
 import {
   AudioTranscriptionRequest,
@@ -5,10 +6,11 @@ import {
   AudioSpeechRequest,
   AudioSpeechResponse,
   LLMClient,
+  ChatMessage,
   ChatRequest,
   ChatResponse,
 } from "../schema";
-import { parseOpenAIStream } from "../streaming";
+import { parseOpenAIStream, ReasoningReplayCollector } from "../streaming";
 import {
   knownOpenAiReasoning,
   readReasoningCapabilities,
@@ -18,6 +20,7 @@ import {
   assertNotAborted,
   readResponseJson,
   responseChunks,
+  toResponsesInput,
   type ResponsesOptions,
 } from "./responses";
 import { fetch } from "@tauri-apps/plugin-http";
@@ -37,6 +40,36 @@ const samplingParameterNames: Record<string, string> = {
   seed: "seed",
 };
 
+function toChatMessages(messages: ChatMessage[], model: string) {
+  return messages.map((message) => {
+    if (message.role === "tool")
+      return {
+        role: "tool",
+        tool_call_id: message.tool_call_id,
+        content: message.content,
+      };
+    const out: Record<string, unknown> = {
+      role: message.role,
+      content: message.images?.length
+        ? [
+            { type: "text", text: message.content },
+            ...message.images.map((url) => ({
+              type: "image_url",
+              image_url: { url },
+            })),
+          ]
+        : message.content,
+    };
+    if (message.role === "assistant" && message.tool_calls?.length) {
+      out.content = message.content || null;
+      out.tool_calls = message.tool_calls;
+    }
+    if (message.replay?.format === "chat" && message.replay.model === model)
+      Object.assign(out, message.replay.fields);
+    return out;
+  });
+}
+
 export interface OpenAiConnection {
   baseUrl: string;
   apiKey?: string;
@@ -49,6 +82,12 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
   const apiKey = connection.apiKey?.trim();
   const provider = reasoningProvider(base);
   const isOpenRouter = provider === "openrouter";
+  const fixedLimitLabel =
+    connection.role === "utility"
+      ? "Utility"
+      : connection.role === "hakawati"
+        ? "Hakawati"
+        : undefined;
 
   async function chat(
     req: ChatRequest,
@@ -83,7 +122,7 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
 
     const body: Record<string, unknown> = {
       model: req.model,
-      messages: req.messages,
+      messages: toChatMessages(req.messages, req.model),
       stream: req.stream,
       max_tokens: req.max_tokens,
       ...samplingOptions,
@@ -102,8 +141,8 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
     }
 
     if (useToolCalling) {
-      body.tools = GM_TOOLS;
-      body.tool_choice = "auto";
+      body.tools = req.tools ?? GM_TOOLS;
+      body.tool_choice = req.toolChoice ?? "auto";
     }
 
     console.debug(`Sending request to ${req.model}:`, body);
@@ -123,12 +162,8 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
       }).then(async (r) => {
         if (!r.ok) throw new Error(await readErrorMessage(r, "Request failed"));
         if (req.stream) {
-          return {
+          const result: ChatResponse = {
             content: "",
-            iterator: parseOpenAIStream(r.body!, {
-              outputLimitAdjustable: connection.role !== "utility",
-              signal,
-            }),
             raw: r,
             usage: {
               prompt_tokens: 0,
@@ -136,13 +171,23 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
               total_tokens: 0,
             },
           };
+          result.iterator = parseOpenAIStream(r.body!, {
+            fixedLimitLabel,
+            signal,
+            onReplayFields: (fields) => {
+              result.replay = { format: "chat", model: req.model, fields };
+            },
+          });
+          return result;
         } else {
           const json = await r.json();
           if (json.choices?.[0]?.finish_reason === "length") {
-            throw new Error(
-              connection.role === "utility"
-                ? "The response reached the output token limit. Lower the Utility thinking level or try a shorter request."
-                : "The response reached the output token limit. Increase Max Output Tokens or lower the thinking level and retry.",
+            throw markOutputLimit(
+              new Error(
+                fixedLimitLabel
+                  ? `The response reached the output token limit. Lower the ${fixedLimitLabel} thinking level or try a shorter request.`
+                  : "The response reached the output token limit. Increase Max Output Tokens or lower the thinking level and retry.",
+              ),
             );
           }
           const message = json.choices[0].message;
@@ -152,11 +197,23 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
               message.reasoning_content) ||
             (typeof message.thinking === "string" && message.thinking) ||
             "";
+          const replay = new ReasoningReplayCollector();
+          replay.add(message);
+          const replayFields = replay.fields();
           const response: ChatResponse = {
             content: repairCommonMojibake(message.content || ""),
             ...(thinking ? { thinking: repairCommonMojibake(thinking) } : {}),
             raw: json,
             usage: json.usage,
+            ...(replayFields
+              ? {
+                  replay: {
+                    format: "chat" as const,
+                    model: req.model,
+                    fields: replayFields,
+                  },
+                }
+              : {}),
           };
 
           if (message.tool_calls && Array.isArray(message.tool_calls)) {
@@ -195,10 +252,7 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
       knownReasoning?.supportedEfforts.includes("none");
     const body: Record<string, unknown> = {
       model: req.model,
-      input: req.messages.map((message) => ({
-        role: message.role === "system" ? "developer" : message.role,
-        content: message.content,
-      })),
+      input: toResponsesInput(req.messages, { model: req.model }),
       store: false,
       stream: Boolean(req.stream),
       ...(req.max_tokens !== undefined
@@ -214,11 +268,12 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
       if (typeof req.options?.topP === "number") body.top_p = req.options.topP;
     }
     if (req.responseMode !== ResponseMode.FREE_FORM) {
-      body.tools = GM_TOOLS.map((tool) => ({
+      body.tools = (req.tools ?? GM_TOOLS).map((tool) => ({
         type: tool.type,
         ...tool.function,
       }));
-      body.tool_choice = "auto";
+      body.tool_choice = req.toolChoice ?? "auto";
+      if (req.tools) body.include = ["reasoning.encrypted_content"];
     }
     const response = await fetch(`${base}/responses`, {
       method: "POST",
@@ -242,10 +297,10 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
     };
     const options: ResponsesOptions = {
       provider: "OpenAI",
-      ...(connection.role === "utility"
+      model: req.model,
+      ...(fixedLimitLabel
         ? {
-            incompleteMessage:
-              "OpenAI did not complete the response. Lower the Utility thinking level or try a shorter request.",
+            incompleteMessage: `OpenAI did not complete the response. Lower the ${fixedLimitLabel} thinking level or try a shorter request.`,
           }
         : {}),
       error: (message, details) => {
@@ -314,6 +369,8 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
           )
         : undefined;
       const supportedVoices = readSupportedVoices(model);
+      const inputModalities =
+        model.architecture?.input_modalities ?? model.input_modalities;
       const reasoning = readReasoningCapabilities(model, provider);
       const maxOutputTokens =
         model.top_provider?.max_completion_tokens ??
@@ -328,6 +385,9 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
         supportsResponseFormat:
           supportedParameters?.includes("response_format"),
         supportsToolCalls,
+        ...(Array.isArray(inputModalities)
+          ? { supportsImages: inputModalities.includes("image") }
+          : {}),
         supportedVoices,
         ...(supportedParameters ? { supportedParameters } : {}),
         ...(reasoning ? { reasoning } : {}),

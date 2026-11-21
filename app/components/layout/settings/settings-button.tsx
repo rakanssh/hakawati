@@ -1,7 +1,7 @@
 import { Button } from "../../ui/button";
 import { SettingsIcon } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
-import { SettingsModal } from "@/components/layout/settings";
+import { useSettingsModalStore } from "@/store/useSettingsModalStore";
 import { useUpdateStore } from "@/store/useUpdateStore";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
@@ -12,7 +12,8 @@ export function SettingsButton({
   ...props
 }: React.ComponentProps<typeof Button>) {
   const { t } = useLingui();
-  const [isOpen, setIsOpen] = useState(false);
+  const isOpen = useSettingsModalStore((state) => state.open);
+  const openSettings = useSettingsModalStore((state) => state.openSettings);
   const [tooltipOpen, setTooltipOpen] = useState(false);
   const hasUpdateNotification = useUpdateStore(
     (state) => state.hasNotification,
@@ -41,9 +42,9 @@ export function SettingsButton({
       if (isEditableElement || hasOpenDialog) return;
 
       event.preventDefault();
-      setIsOpen(true);
+      openSettings();
     },
-    [isOpen],
+    [isOpen, openSettings],
   );
 
   useEffect(() => {
@@ -58,7 +59,7 @@ export function SettingsButton({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsOpen(true)}
+            onClick={() => openSettings()}
             className={cn("relative", className)}
             aria-label={t`Settings`}
             {...props}
@@ -76,8 +77,6 @@ export function SettingsButton({
           <Trans>Settings</Trans>
         </TooltipContent>
       </Tooltip>
-
-      <SettingsModal open={isOpen} onOpenChange={setIsOpen} />
     </>
   );
 }

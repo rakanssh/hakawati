@@ -10,6 +10,11 @@ import { nanoid } from "nanoid";
 import { toast } from "sonner";
 import { useTaleStore } from "@/store/useTaleStore";
 import {
+  claimPlayActivity,
+  tryBeginPlayActivity,
+  usePlayActivityStore,
+} from "@/store/usePlayActivityStore";
+import {
   isModelRoleConfigured,
   useSettingsStore,
 } from "@/store/useSettingsStore";
@@ -335,8 +340,12 @@ export function usePlaySession(
     retryEntry,
     undoToEntryCount,
     redoEntry,
-    saving,
+    saving: persisting,
   } = usePersistTale();
+  const assistantWriting = usePlayActivityStore(
+    (state) => state.assistantWriting > 0,
+  );
+  const saving = persisting || assistantWriting;
   const narratorConfig = useSettingsStore((state) => state.modelRoles.narrator);
   const randomSeed = useSettingsStore((state) => state.randomSeed);
 
@@ -374,222 +383,228 @@ export function usePlaySession(
       mode: LogEntryMode,
       options: ExecuteLlmSendOptions = {},
     ) => {
-      const sessionRevision = sessionRevisionRef.current;
-      const isCurrentSession = () =>
-        sessionRevisionRef.current === sessionRevision &&
-        useTaleStore.getState().id === taleId;
-      if (!isCurrentSession()) return null;
-      if (!isModelRoleConfigured(narratorConfig)) {
-        console.error("Narrator model not configured.");
-        toast.error("No narrator model selected. Choose one in Settings.");
-        return null;
-      }
-
-      const continueChain = options.continueChain ?? false;
-      let payloadText = message;
-      if (mode === LogEntryMode.CONTINUE) {
-        const currentLog = useTaleStore.getState().log;
-        const lastGm = [...currentLog]
-          .reverse()
-          .find((e) => e.role === LogEntryRole.GM);
-        if (!lastGm) {
-          console.error("No GM entry to continue.");
-          return null;
-        }
-        payloadText = lastGm.text;
-      }
-
-      let gmResponseId: string;
-      if (continueChain) {
-        const lastEntry = useTaleStore.getState().log.at(-1);
-        if (!lastEntry || lastEntry.role !== LogEntryRole.GM) {
-          console.error("No GM entry to continue.");
-          return null;
-        }
-        const chainId = lastEntry.chainId ?? lastEntry.id;
-        gmResponseId = nanoid();
-        addLog({
-          id: gmResponseId,
-          role: LogEntryRole.GM,
-          text: "",
-          mode: LogEntryMode.STORY,
-          chainId,
-        });
-      } else {
-        gmResponseId = nanoid();
-        addLog({
-          id: gmResponseId,
-          role: LogEntryRole.GM,
-          text: "",
-          mode: LogEntryMode.STORY,
-          chainId: gmResponseId,
-        });
-      }
-
-      let storyContent = "";
-      let thinkingContent = "";
-      let rafId: number | null = null;
-      let sendError: unknown = null;
-      let sendAborted = false;
-      const flushResponse = () => {
-        rafId = null;
-        if (!isCurrentSession()) return;
-        updateLogEntry(gmResponseId, {
-          ...(storyContent.length > 0 ? { text: storyContent } : {}),
-          ...(thinkingContent ? { thinking: thinkingContent } : {}),
-        });
-      };
-      const scheduleFlush = () => {
-        if (rafId !== null) return;
-        const raf = globalThis.requestAnimationFrame;
-        if (typeof raf === "function") {
-          rafId = raf(() => flushResponse());
-        } else {
-          // Fallback (non-browser/test env)
-          flushResponse();
-        }
-      };
-      const recordError = (error: unknown) => {
-        console.error("LLM Error:", error);
-        updateLogEntry(gmResponseId, {
-          error: getLogErrorReason(error) ?? true,
-          ...(thinkingContent ? { thinking: thinkingContent } : {}),
-        });
-      };
-
+      const endNarration =
+        tryBeginPlayActivity("narrating", ["assistantWriting"]) ??
+        (await claimPlayActivity("narrating", ["assistantWriting"]));
       try {
-        const sendResult = await send(
-          { text: payloadText, mode },
-          {
-            onStoryStream: (storyChunk) => {
-              if (!isCurrentSession()) return;
-              storyContent += storyChunk;
-              scheduleFlush();
-            },
-            onThinkingStream: (thinkingChunk) => {
-              if (!isCurrentSession()) return;
-              thinkingContent += thinkingChunk;
-              scheduleFlush();
-            },
-            onActionsReady: (actions) => {
-              if (!isCurrentSession()) return;
-              console.debug(
-                `Processing received actions: ${JSON.stringify(actions)}`,
-              );
-              if (Array.isArray(actions) && actions.length > 0) {
-                const previous = useTaleStore
-                  .getState()
-                  .log.find((entry) => entry.id === gmResponseId);
-                const before =
-                  previous?.actionState?.before ?? snapshotActionState();
-                processActions(actions);
-                updateLogEntry(gmResponseId, {
-                  actions: [...(previous?.actions ?? []), ...actions],
-                  actionState: { before, after: snapshotActionState() },
-                });
-              }
-            },
-            onActionParseError: () => {
-              if (!isCurrentSession()) return;
-              console.warn("Failed to parse actions from LLM response");
-              updateLogEntry(gmResponseId, {
-                isActionError: true,
-              });
-            },
-            onError: (error) => {
-              if (!isCurrentSession()) return;
-              if (isAbortError(error)) return;
-              recordError(error);
-            },
-          },
-        );
-        if (sendResult.status === "aborted") {
-          sendAborted = true;
-          sendError = sendResult.error;
-        } else if (sendResult.status === "error") {
-          sendError = sendResult.error;
+        const sessionRevision = sessionRevisionRef.current;
+        const isCurrentSession = () =>
+          sessionRevisionRef.current === sessionRevision &&
+          useTaleStore.getState().id === taleId;
+        if (!isCurrentSession()) return null;
+        if (!isModelRoleConfigured(narratorConfig)) {
+          console.error("Narrator model not configured.");
+          toast.error("No narrator model selected. Choose one in Settings.");
+          return null;
         }
-      } catch (error) {
-        sendError = error;
-        if (isAbortError(error)) {
-          sendAborted = true;
+
+        const continueChain = options.continueChain ?? false;
+        let payloadText = message;
+        if (mode === LogEntryMode.CONTINUE) {
+          const currentLog = useTaleStore.getState().log;
+          const lastGm = [...currentLog]
+            .reverse()
+            .find((e) => e.role === LogEntryRole.GM);
+          if (!lastGm) {
+            console.error("No GM entry to continue.");
+            return null;
+          }
+          payloadText = lastGm.text;
         }
-        if (isCurrentSession() && !isAbortError(error)) {
-          recordError(error);
+
+        let gmResponseId: string;
+        if (continueChain) {
+          const lastEntry = useTaleStore.getState().log.at(-1);
+          if (!lastEntry || lastEntry.role !== LogEntryRole.GM) {
+            console.error("No GM entry to continue.");
+            return null;
+          }
+          const chainId = lastEntry.chainId ?? lastEntry.id;
+          gmResponseId = nanoid();
+          addLog({
+            id: gmResponseId,
+            role: LogEntryRole.GM,
+            text: "",
+            mode: LogEntryMode.STORY,
+            chainId,
+          });
+        } else {
+          gmResponseId = nanoid();
+          addLog({
+            id: gmResponseId,
+            role: LogEntryRole.GM,
+            text: "",
+            mode: LogEntryMode.STORY,
+            chainId: gmResponseId,
+          });
         }
-      } finally {
-        if (rafId !== null) {
-          const cancelRaf = globalThis.cancelAnimationFrame;
-          if (typeof cancelRaf === "function") cancelRaf(rafId);
+
+        let storyContent = "";
+        let thinkingContent = "";
+        let rafId: number | null = null;
+        let sendError: unknown = null;
+        let sendAborted = false;
+        const flushResponse = () => {
           rafId = null;
-          if (
-            isCurrentSession() &&
-            (storyContent.length > 0 || thinkingContent.length > 0)
-          ) {
-            updateLogEntry(gmResponseId, {
-              ...(storyContent.length > 0 ? { text: storyContent } : {}),
-              ...(thinkingContent ? { thinking: thinkingContent } : {}),
-            });
+          if (!isCurrentSession()) return;
+          updateLogEntry(gmResponseId, {
+            ...(storyContent.length > 0 ? { text: storyContent } : {}),
+            ...(thinkingContent ? { thinking: thinkingContent } : {}),
+          });
+        };
+        const scheduleFlush = () => {
+          if (rafId !== null) return;
+          const raf = globalThis.requestAnimationFrame;
+          if (typeof raf === "function") {
+            rafId = raf(() => flushResponse());
+          } else {
+            // Fallback (non-browser/test env)
+            flushResponse();
+          }
+        };
+        const recordError = (error: unknown) => {
+          console.error("LLM Error:", error);
+          updateLogEntry(gmResponseId, {
+            error: getLogErrorReason(error) ?? true,
+            ...(thinkingContent ? { thinking: thinkingContent } : {}),
+          });
+        };
+
+        try {
+          const sendResult = await send(
+            { text: payloadText, mode },
+            {
+              onStoryStream: (storyChunk) => {
+                if (!isCurrentSession()) return;
+                storyContent += storyChunk;
+                scheduleFlush();
+              },
+              onThinkingStream: (thinkingChunk) => {
+                if (!isCurrentSession()) return;
+                thinkingContent += thinkingChunk;
+                scheduleFlush();
+              },
+              onActionsReady: (actions) => {
+                if (!isCurrentSession()) return;
+                console.debug(
+                  `Processing received actions: ${JSON.stringify(actions)}`,
+                );
+                if (Array.isArray(actions) && actions.length > 0) {
+                  const previous = useTaleStore
+                    .getState()
+                    .log.find((entry) => entry.id === gmResponseId);
+                  const before =
+                    previous?.actionState?.before ?? snapshotActionState();
+                  processActions(actions);
+                  updateLogEntry(gmResponseId, {
+                    actions: [...(previous?.actions ?? []), ...actions],
+                    actionState: { before, after: snapshotActionState() },
+                  });
+                }
+              },
+              onActionParseError: () => {
+                if (!isCurrentSession()) return;
+                console.warn("Failed to parse actions from LLM response");
+                updateLogEntry(gmResponseId, {
+                  isActionError: true,
+                });
+              },
+              onError: (error) => {
+                if (!isCurrentSession()) return;
+                if (isAbortError(error)) return;
+                recordError(error);
+              },
+            },
+          );
+          if (sendResult.status === "aborted") {
+            sendAborted = true;
+            sendError = sendResult.error;
+          } else if (sendResult.status === "error") {
+            sendError = sendResult.error;
+          }
+        } catch (error) {
+          sendError = error;
+          if (isAbortError(error)) {
+            sendAborted = true;
+          }
+          if (isCurrentSession() && !isAbortError(error)) {
+            recordError(error);
+          }
+        } finally {
+          if (rafId !== null) {
+            const cancelRaf = globalThis.cancelAnimationFrame;
+            if (typeof cancelRaf === "function") cancelRaf(rafId);
+            rafId = null;
+            if (
+              isCurrentSession() &&
+              (storyContent.length > 0 || thinkingContent.length > 0)
+            ) {
+              updateLogEntry(gmResponseId, {
+                ...(storyContent.length > 0 ? { text: storyContent } : {}),
+                ...(thinkingContent ? { thinking: thinkingContent } : {}),
+              });
+            }
           }
         }
-      }
 
-      // Leaving the play screen stops the reply as Stop does: what was shown is
-      // saved, or the log goes back to how it was, so the loaded tale still
-      // matches the saved one. Only another tale taking this one's place skips it.
-      if (useTaleStore.getState().id !== taleId) return null;
-      if (!isCurrentSession()) sendAborted = true;
-      const persistence: GenerationPersistence = options.persistence ?? {
-        type: "continuation",
-      };
-      const currentLog = useTaleStore.getState().log;
-      const finalGmEntry =
-        currentLog.find((entry) => entry.id === gmResponseId) ?? null;
-      const removeGeneratedPlaceholder = () => {
+        // Leaving play stops the reply like Stop, so the loaded tale still matches
+        // the saved one; only another tale taking its place skips this.
+        if (useTaleStore.getState().id !== taleId) return null;
+        if (!isCurrentSession()) sendAborted = true;
+        const persistence: GenerationPersistence = options.persistence ?? {
+          type: "continuation",
+        };
         const currentLog = useTaleStore.getState().log;
-        if (currentLog.at(-1)?.id === gmResponseId) {
-          removeLastLogEntry();
+        const finalGmEntry =
+          currentLog.find((entry) => entry.id === gmResponseId) ?? null;
+        const removeGeneratedPlaceholder = () => {
+          const currentLog = useTaleStore.getState().log;
+          if (currentLog.at(-1)?.id === gmResponseId) {
+            removeLastLogEntry();
+          }
+        };
+        const isEmptyAbort =
+          sendAborted && !hasVisibleGeneratedText(finalGmEntry);
+
+        try {
+          const result = await persistGeneratedResponse({
+            persistence,
+            finalGmEntry,
+            sendAborted,
+            actions: {
+              taleId,
+              getLog: () => useTaleStore.getState().log,
+              removeGeneratedPlaceholder,
+              removeTrailingEntries,
+              restoreLogEntry,
+              saveTurn,
+              completePendingTurn,
+              retryTurn,
+              retryEntry,
+              undoToEntryCount,
+            },
+          });
+          if (result === "cancelled") return null;
+          if (result === "missing") return null;
+          onSaveComplete?.();
+        } catch (error) {
+          console.error(
+            isEmptyAbort
+              ? "Failed to cancel aborted tale generation:"
+              : "Failed to save tale:",
+            error,
+          );
+          toast.error("Failed to save progress");
+          if (isEmptyAbort) return null;
         }
-      };
-      const isEmptyAbort =
-        sendAborted && !hasVisibleGeneratedText(finalGmEntry);
 
-      try {
-        const result = await persistGeneratedResponse({
-          persistence,
-          finalGmEntry,
-          sendAborted,
-          actions: {
-            taleId,
-            getLog: () => useTaleStore.getState().log,
-            removeGeneratedPlaceholder,
-            removeTrailingEntries,
-            restoreLogEntry,
-            saveTurn,
-            completePendingTurn,
-            retryTurn,
-            retryEntry,
-            undoToEntryCount,
-          },
-        });
-        if (result === "cancelled") return null;
-        if (result === "missing") return null;
-        onSaveComplete?.();
-      } catch (error) {
-        console.error(
-          isEmptyAbort
-            ? "Failed to cancel aborted tale generation:"
-            : "Failed to save tale:",
-          error,
-        );
-        toast.error("Failed to save progress");
-        if (isEmptyAbort) return null;
-      }
-
-      if (sendError && !isAbortError(sendError)) {
+        if (sendError && !isAbortError(sendError)) {
+          return finalGmEntry;
+        }
         return finalGmEntry;
+      } finally {
+        endNarration();
       }
-      return finalGmEntry;
     },
     [
       narratorConfig,

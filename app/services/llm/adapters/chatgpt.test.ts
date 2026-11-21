@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { isOutputLimitError } from "@/lib/errors";
 import { ResponseMode } from "@/types/api.type";
 import type { ChatRequest, StreamChunk } from "../schema";
 import { ChatGptClient, ChatGptInferenceError } from "./chatgpt";
@@ -415,10 +416,29 @@ describe("ChatGPT plan inference", () => {
       .chat(request)
       .catch((value: unknown) => value);
     expect(error).toBeInstanceOf(ChatGptInferenceError);
+    expect(isOutputLimitError(error)).toBe(true);
     expect((error as Error).message).toContain("Lower the thinking level");
     expect((error as Error).message).not.toContain(
       "Increase the output token limit",
     );
+  });
+
+  it("doesn't treat a filtered response as an output limit", async () => {
+    fetchMock.mockResolvedValue(
+      sse([
+        event("response.incomplete", {
+          response: {
+            status: "incomplete",
+            incomplete_details: { reason: "content_filter" },
+          },
+        }),
+      ]).response,
+    );
+    const error = await ChatGptClient()
+      .chat(request)
+      .catch((value: unknown) => value);
+    expect(error).toBeInstanceOf(ChatGptInferenceError);
+    expect(isOutputLimitError(error)).toBe(false);
   });
 
   it("preserves structured errors and direct-admission detail bodies without retrying", async () => {
@@ -618,5 +638,174 @@ describe("ChatGPT plan inference", () => {
       }),
     ).rejects.toThrow("does not support speech");
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("ChatGPT tool round trips", () => {
+  beforeEach(() => fetchMock.mockReset());
+
+  const tools = [
+    {
+      type: "function" as const,
+      function: {
+        name: "read_log",
+        description: "Read passages.",
+        parameters: { type: "object", properties: {} },
+      },
+    },
+  ];
+  const fnCall = {
+    type: "function_call",
+    id: "fc_1",
+    namespace: "hakawati",
+    call_id: "call_1",
+    name: "read_log",
+    arguments: "{}",
+  };
+  const readLog = {
+    id: "call_1",
+    type: "function" as const,
+    function: { name: "read_log", arguments: "{}" },
+  };
+
+  it("sends the request's tools under its namespace with prior calls and results", async () => {
+    fetchMock.mockResolvedValue(sse([completed([])]).response);
+    const result = await ChatGptClient().chat({
+      ...request,
+      responseMode: ResponseMode.TOOL_CALLING,
+      stream: true,
+      tools,
+      toolNamespace: { name: "hakawati", description: "Tale tools." },
+      messages: [
+        { role: "system", content: "Help." },
+        { role: "assistant", content: "Checking.", tool_calls: [readLog] },
+        { role: "tool", tool_call_id: "call_1", content: "[]" },
+      ],
+    });
+    await collect(result.iterator);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body).toMatchObject({
+      stream: true,
+      store: false,
+      tool_choice: "auto",
+      include: ["reasoning.encrypted_content"],
+    });
+    expect(body.tools).toEqual([
+      {
+        type: "namespace",
+        name: "hakawati",
+        description: "Tale tools.",
+        tools: [
+          {
+            type: "function",
+            name: "read_log",
+            description: "Read passages.",
+            parameters: { type: "object", properties: {} },
+          },
+        ],
+      },
+    ]);
+    expect(body.input).toEqual([
+      { role: "developer", content: "Help." },
+      { role: "assistant", content: "Checking." },
+      {
+        type: "function_call",
+        call_id: "call_1",
+        name: "read_log",
+        arguments: "{}",
+        namespace: "hakawati",
+      },
+      { type: "function_call_output", call_id: "call_1", output: "[]" },
+    ]);
+  });
+
+  it("keeps streamed output items for replay when the completed event has none", async () => {
+    const reasoning = {
+      id: "rs_1",
+      type: "reasoning",
+      summary: [],
+      encrypted_content: "enc",
+    };
+    fetchMock.mockResolvedValue(
+      sse([
+        event("response.output_item.done", {
+          output_index: 0,
+          item: reasoning,
+        }),
+        event("response.output_item.added", {
+          output_index: 1,
+          item: { ...fnCall, arguments: "" },
+        }),
+        event("response.function_call_arguments.delta", {
+          output_index: 1,
+          delta: "{}",
+        }),
+        event("response.output_item.done", { output_index: 1, item: fnCall }),
+        completed([]),
+      ]).response,
+    );
+    const result = await ChatGptClient().chat({
+      ...request,
+      responseMode: ResponseMode.TOOL_CALLING,
+      stream: true,
+      tools,
+    });
+    await collect(result.iterator);
+    expect(result.tool_calls?.map((c) => c.id)).toEqual(["call_1"]);
+    expect(result.replay).toEqual({
+      format: "responses",
+      model: "account-model",
+      items: [reasoning, fnCall],
+    });
+  });
+
+  it("rebuilds calls instead of replaying items from another model", async () => {
+    fetchMock.mockResolvedValue(sse([completed([])]).response);
+    const result = await ChatGptClient().chat({
+      ...request,
+      responseMode: ResponseMode.TOOL_CALLING,
+      stream: true,
+      tools,
+      messages: [
+        {
+          role: "assistant",
+          content: "",
+          tool_calls: [readLog],
+          replay: {
+            format: "responses",
+            model: "older-model",
+            items: [{ type: "reasoning", encrypted_content: "x" }, fnCall],
+          },
+        },
+        { role: "tool", tool_call_id: "call_1", content: "[]" },
+      ],
+    });
+    await collect(result.iterator);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.input).toEqual([
+      {
+        type: "function_call",
+        call_id: "call_1",
+        name: "read_log",
+        arguments: "{}",
+        namespace: "hakawati",
+      },
+      { type: "function_call_output", call_id: "call_1", output: "[]" },
+    ]);
+  });
+
+  it("keeps the Game Master namespace and leaves out encrypted reasoning", async () => {
+    fetchMock.mockResolvedValue(sse([completed([])]).response);
+    const result = await ChatGptClient().chat({
+      ...request,
+      responseMode: ResponseMode.TOOL_CALLING,
+      stream: true,
+    });
+    await collect(result.iterator);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.include).toBeUndefined();
+    expect(body.tools[0].description).toBe(
+      "Update player stats and inventory in the current adventure.",
+    );
   });
 });

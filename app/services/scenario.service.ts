@@ -23,6 +23,7 @@ import {
 } from "@/types/context.type";
 import { initTale } from "./tale.service";
 import { nanoid } from "nanoid";
+import { useScenarioLibraryStore } from "@/store/useScenarioLibraryStore";
 import { PaginatedResponse } from "@/types/db.type";
 import type {
   ScenarioExportV1,
@@ -52,7 +53,9 @@ export async function saveScenario(
     content: normalizeScenarioContent(scenario.content),
     thumbnail: scenario.thumbnail ?? null,
   };
-  return upsertScenario(normalized, id);
+  const savedId = await upsertScenario(normalized, id);
+  useScenarioLibraryStore.getState().bump();
+  return savedId;
 }
 
 export async function getScenarioById(id: string): Promise<Scenario | null> {
@@ -69,7 +72,8 @@ export async function getScenarioHeadById(
 }
 
 export async function removeScenario(id: string): Promise<void> {
-  return deleteScenario(id);
+  await deleteScenario(id);
+  useScenarioLibraryStore.getState().bump();
 }
 
 export async function getAllScenarios(

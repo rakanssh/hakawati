@@ -14,10 +14,7 @@ import {
   ScenarioPreviewCard,
 } from "@/components/scenario";
 import { TaleConflictDialog } from "@/components/tales/tale-conflict-dialog";
-import {
-  SettingsModal,
-  type GlobalSettingsSectionId,
-} from "@/components/layout/settings";
+import { useSettingsModalStore } from "@/store/useSettingsModalStore";
 import { WhatsNewModal } from "@/components/layout";
 import { ServerAnnouncementBanner } from "@/components/layout/server-announcement";
 import placeholderImage from "@/assets/scen-ph.png";
@@ -252,9 +249,7 @@ export default function Home() {
   const { name, description, log, id: currentTaleId } = useTaleStore();
   const lastEntry = log.at(-1);
   const { isMobilePlatform } = useIsMobile();
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settingsTab, setSettingsTab] =
-    useState<GlobalSettingsSectionId>("ai-setup");
+  const openSettings = useSettingsModalStore((state) => state.openSettings);
   const [generateOpen, setGenerateOpen] = useState(false);
   const [whatsNewOpen, setWhatsNewOpen] = useState(false);
   const [loadingTaleId, setLoadingTaleId] = useState<string | null>(null);
@@ -477,11 +472,6 @@ export default function Home() {
     homeSyncProfile?.disabledReason,
     hostedProfile,
   ]);
-
-  const openSettings = (tab: GlobalSettingsSectionId) => {
-    setSettingsTab(tab);
-    setSettingsOpen(true);
-  };
 
   const handleLoadTale = async (item: LibraryTaleItem) => {
     if (item.source === "local" && item.sync?.status === "conflict") {
@@ -924,11 +914,6 @@ export default function Home() {
         </div>
       </div>
 
-      <SettingsModal
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        defaultTab={settingsTab}
-      />
       <GenerateScenarioDialog
         open={generateOpen}
         onOpenChange={setGenerateOpen}

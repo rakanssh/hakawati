@@ -1,5 +1,6 @@
 import { HomeIcon, MinusIcon, SquareIcon, XIcon } from "lucide-react";
 import { SettingsButton } from "./settings";
+import { HakawatiButton } from "@/components/assistant/hakawati-button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { Button } from "../ui/button";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
@@ -96,6 +97,7 @@ export function Titlebar() {
                 </TooltipContent>
               </Tooltip>
               <SettingsButton className={titlebarButtonClass} />
+              <HakawatiButton className={titlebarButtonClass} />
             </>
           )}
         </div>

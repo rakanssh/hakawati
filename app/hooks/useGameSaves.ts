@@ -15,6 +15,7 @@ import type { LogEntry } from "@/types/log.type";
 import { DEFAULT_WINDOW_SIZE, useTaleStore } from "@/store/useTaleStore";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 import { wakeSyncBackground } from "@/services/sync-wakeup";
+import { beginPlayActivity } from "@/store/usePlayActivityStore";
 
 function snapshotMutableTale(taleId: string): TaleMutableSnapshot {
   const state = useTaleStore.getState();
@@ -47,6 +48,7 @@ export function usePersistTale() {
   );
 
   const runPersist = useCallback(async (operation: () => Promise<void>) => {
+    const endSaving = beginPlayActivity("saving");
     pendingSaveCountRef.current += 1;
     setSaving(true);
     setLastSaveSuccess(false);
@@ -64,6 +66,7 @@ export function usePersistTale() {
       setError(e);
       throw e;
     } finally {
+      endSaving();
       pendingSaveCountRef.current = Math.max(
         0,
         pendingSaveCountRef.current - 1,

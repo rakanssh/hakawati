@@ -150,6 +150,7 @@ export function PlayLogDisplay({
                         return (
                           <div
                             key={entry.id}
+                            data-log-entry-id={entry.id}
                             className={`rounded-xs ${!isEditing && !isStreaming ? "cursor-pointer hover:bg-accent/20" : ""}`}
                             role={
                               !isEditing && !isStreaming ? "button" : undefined

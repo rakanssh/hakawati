@@ -11,6 +11,7 @@ import {
   ApiType,
   LLMModel,
   ModelRole,
+  ModelRoleAssignment,
   ModelRoleSettings,
   ReasoningEffort,
 } from "@/types";
@@ -24,6 +25,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
   DEFAULT_TTS_VOICE,
+  canFollowNarrator,
   connectionsFromLegacyRoles,
   createConnection,
   createDefaultRoleAssignments,
@@ -36,6 +38,7 @@ import {
   switchConnection,
   updateChoicesOn,
   usesReasoning,
+  type FollowingRole,
   type NewConnection,
   type RoleAssignments,
 } from "./model-connections";
@@ -209,10 +212,14 @@ export interface SettingsStoreType {
   ) => void;
   removeConnection: (id: string) => void;
   setRoleConnection: (role: ModelRole, connectionId: string | null) => void;
-  setUtilitySameAsNarrator: (same: boolean) => void;
+  setRoleSameAsNarrator: (role: FollowingRole, same: boolean) => void;
   setRoleModel: (role: ModelRole, model: LLMModel | undefined) => void;
   setRoleReasoningEffort: (role: ModelRole, effort?: ReasoningEffort) => void;
   setRoleVoice: (role: ModelRole, voice: string) => void;
+  restoreRoleAssignment: (
+    role: ModelRole,
+    assignment: ModelRoleAssignment,
+  ) => void;
   chatGptProfileId: string | null;
   clearChatGptModels: (profileId?: string | null) => void;
   setMaxTokens: (maxTokens: number) => void;
@@ -374,23 +381,25 @@ export const useSettingsStore = create<SettingsStoreType>()(
             state.connections,
             {
               ...state.roleAssignments,
-              [role]:
-                role === "utility" ? { ...next, sameAsNarrator: false } : next,
+              [role]: canFollowNarrator(role)
+                ? { ...next, sameAsNarrator: false }
+                : next,
             },
             state.modelRoles,
           );
         }),
 
-      setUtilitySameAsNarrator: (same) =>
+      setRoleSameAsNarrator: (role, same) =>
         set((state) => {
-          const { narrator, utility } = state.roleAssignments;
-          if (Boolean(utility.sameAsNarrator) === same) return {};
-          // A utility that never had its own connection starts from the narrator's.
+          const { narrator } = state.roleAssignments;
+          const current = state.roleAssignments[role];
+          if (Boolean(current.sameAsNarrator) === same) return {};
+          // A role that never had its own connection starts from the narrator's.
           const own =
-            same || utility.connectionId
-              ? utility
+            same || current.connectionId
+              ? current
               : {
-                  ...utility,
+                  ...current,
                   connectionId: narrator.connectionId,
                   model: narrator.model,
                   reasoningEffort: narrator.reasoningEffort,
@@ -399,7 +408,7 @@ export const useSettingsStore = create<SettingsStoreType>()(
             state.connections,
             {
               ...state.roleAssignments,
-              utility: { ...own, sameAsNarrator: same },
+              [role]: { ...own, sameAsNarrator: same },
             },
             state.modelRoles,
           );
@@ -451,6 +460,15 @@ export const useSettingsStore = create<SettingsStoreType>()(
           );
         });
       },
+
+      restoreRoleAssignment: (role, assignment) =>
+        set((state) =>
+          roleState(
+            state.connections,
+            { ...state.roleAssignments, [role]: assignment },
+            state.modelRoles,
+          ),
+        ),
 
       setRoleVoice: (role: ModelRole, voice: string) =>
         set((state) =>

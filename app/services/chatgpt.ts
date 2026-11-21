@@ -1,4 +1,5 @@
 import { Channel, invoke, isTauri } from "@tauri-apps/api/core";
+import { abortError } from "@/lib/errors";
 import type { ChatGptSession } from "@/types/chatgpt.type";
 
 const sessionListeners = new Set<() => void>();
@@ -10,10 +11,6 @@ export function subscribeChatGptSession(listener: () => void): () => void {
 
 function notifySessionChanged() {
   for (const listener of sessionListeners) listener();
-}
-
-function abortError() {
-  return new DOMException("ChatGPT request cancelled", "AbortError");
 }
 
 function requireDesktop() {

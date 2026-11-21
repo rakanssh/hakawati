@@ -287,6 +287,11 @@ mod tests {
                     "unify_scenario_draft_cover",
                     include_str!("../migrations/007_unify_scenario_draft_cover.sql"),
                 ),
+                (
+                    8_i64,
+                    "create_assistant_chats",
+                    include_str!("../migrations/008_create_assistant_chats.sql"),
+                ),
             ] {
                 sqlx::raw_sql(migration).execute(&pool).await.unwrap();
                 sqlx::query(
@@ -532,6 +537,12 @@ pub fn run() {
                 version: 7,
                 description: "unify_scenario_draft_cover",
                 sql: include_str!("../migrations/007_unify_scenario_draft_cover.sql"),
+                kind: MigrationKind::Up,
+            },
+            Migration {
+                version: 8,
+                description: "create_assistant_chats",
+                sql: include_str!("../migrations/008_create_assistant_chats.sql"),
                 kind: MigrationKind::Up,
             },
         ];

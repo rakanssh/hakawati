@@ -210,6 +210,19 @@ export function getModelReasoning(
     : undefined;
 }
 
+export function lowerReasoningEffort(
+  effort: ReasoningEffort | undefined,
+  reasoning: ReasoningCapabilities | undefined,
+): ReasoningEffort | undefined {
+  if (!reasoning) return undefined;
+  const from = REASONING_EFFORTS.indexOf(
+    effort ?? reasoning.defaultEffort ?? "medium",
+  );
+  return REASONING_EFFORTS.slice(0, from)
+    .reverse()
+    .find((level) => normalizeReasoningEffort(level, reasoning) === level);
+}
+
 export function normalizeReasoningEffort(
   effort: unknown,
   reasoning: ReasoningCapabilities | undefined,

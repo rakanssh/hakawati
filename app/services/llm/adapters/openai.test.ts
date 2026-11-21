@@ -197,6 +197,37 @@ describe("thinking level provider adapters", () => {
     });
   });
 
+  it("sends a player's images as image parts in both API formats", async () => {
+    const withImage: ChatRequest = {
+      ...request,
+      messages: [
+        { role: "user", content: "What is this?", images: ["data:image/a"] },
+      ],
+    };
+    fetchMock.mockResolvedValueOnce(completion());
+    await openai().chat({ ...withImage, model: "gpt-4.1" });
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).messages).toEqual([
+      {
+        role: "user",
+        content: [
+          { type: "text", text: "What is this?" },
+          { type: "image_url", image_url: { url: "data:image/a" } },
+        ],
+      },
+    ]);
+    fetchMock.mockResolvedValueOnce(Response.json(completed([message()])));
+    await openai().chat({ ...withImage, reasoningEffort: "high" });
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).input).toEqual([
+      {
+        role: "user",
+        content: [
+          { type: "input_text", text: "What is this?" },
+          { type: "input_image", image_url: "data:image/a" },
+        ],
+      },
+    ]);
+  });
+
   it("preserves the ordinary OpenAI Chat Completions path", async () => {
     fetchMock.mockResolvedValue(completion());
     await openai().chat({
@@ -679,6 +710,7 @@ describe("thinking level provider adapters", () => {
             },
             top_provider: { max_completion_tokens: 64000 },
             supported_parameters: ["reasoning", "tools"],
+            architecture: { input_modalities: ["text", "image"] },
           },
           { id: "ordinary", reasoning: { supported_efforts: [] } },
           { id: "unknown" },
@@ -696,8 +728,10 @@ describe("thinking level provider adapters", () => {
       },
       maxOutputTokens: 64000,
       supportsToolCalls: true,
+      supportsImages: true,
       supportedParameters: ["reasoning", "tools"],
     });
+    expect(models[1].supportsImages).toBeUndefined();
     expect(models[1].reasoning?.supportedEfforts).toEqual([]);
     expect(models[2].reasoning).toBeUndefined();
   });
@@ -716,5 +750,240 @@ describe("thinking level provider adapters", () => {
         }).models()
       )[0].reasoning,
     ).toBeUndefined();
+  });
+});
+
+describe("tool round trips", () => {
+  beforeEach(() => fetchMock.mockReset());
+
+  const tools = [
+    {
+      type: "function" as const,
+      function: {
+        name: "read_log",
+        description: "Read passages.",
+        parameters: { type: "object", properties: {} },
+      },
+    },
+  ];
+  const toolCall = {
+    id: "call_1",
+    type: "function" as const,
+    function: { name: "read_log", arguments: "{}" },
+  };
+  const roundTrip: ChatRequest = {
+    model: "deepseek-reasoner",
+    responseMode: ResponseMode.TOOL_CALLING,
+    tools,
+    messages: [
+      { role: "user", content: "Recap." },
+      {
+        role: "assistant",
+        content: "",
+        tool_calls: [toolCall],
+        replay: {
+          format: "chat",
+          model: "deepseek-reasoner",
+          fields: { reasoning_content: "Read first." },
+        },
+      },
+      { role: "tool", tool_call_id: "call_1", content: '{"passages":[]}' },
+      {
+        role: "assistant",
+        content: "Earlier.",
+        replay: {
+          format: "chat",
+          model: "other-model",
+          fields: { reasoning_content: "Ignored." },
+        },
+      },
+    ],
+  };
+
+  it("sends tool calls, tool results and same-model reasoning on Chat Completions", async () => {
+    fetchMock.mockResolvedValue(completion());
+    await OpenAiClient({ baseUrl: "https://api.deepseek.com" }).chat(roundTrip);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.tools).toEqual(tools);
+    expect(body.messages).toEqual([
+      { role: "user", content: "Recap." },
+      {
+        role: "assistant",
+        content: null,
+        tool_calls: [toolCall],
+        reasoning_content: "Read first.",
+      },
+      { role: "tool", tool_call_id: "call_1", content: '{"passages":[]}' },
+      { role: "assistant", content: "Earlier." },
+    ]);
+  });
+
+  it("keeps streamed reasoning for the next round", async () => {
+    fetchMock.mockResolvedValue(
+      sse([
+        { choices: [{ delta: { reasoning_content: "Read " } }] },
+        { choices: [{ delta: { reasoning_content: "first." } }] },
+        {
+          choices: [
+            {
+              delta: {
+                reasoning_details: [
+                  { type: "reasoning.text", index: 0, text: "Read " },
+                ],
+              },
+            },
+          ],
+        },
+        {
+          choices: [
+            {
+              delta: {
+                reasoning_details: [
+                  {
+                    type: "reasoning.text",
+                    index: 0,
+                    text: "first.",
+                    signature: "sig",
+                  },
+                ],
+              },
+            },
+          ],
+        },
+        { choices: [{ delta: { content: "Done." }, finish_reason: "stop" }] },
+      ]),
+    );
+    const result = await OpenAiClient({
+      baseUrl: "https://openrouter.ai/api/v1",
+    }).chat({ ...roundTrip, stream: true });
+    expect(result.replay).toBeUndefined();
+    await collect(result.iterator);
+    expect(result.replay).toEqual({
+      format: "chat",
+      model: "deepseek-reasoner",
+      fields: {
+        reasoning_content: "Read first.",
+        reasoning_details: [
+          {
+            type: "reasoning.text",
+            index: 0,
+            text: "Read first.",
+            signature: "sig",
+          },
+        ],
+      },
+    });
+  });
+
+  it("keeps non-streamed reasoning for the next round", async () => {
+    fetchMock.mockResolvedValue(
+      Response.json({
+        choices: [
+          {
+            finish_reason: "tool_calls",
+            message: {
+              content: null,
+              reasoning_content: "Read first.",
+              tool_calls: [toolCall],
+            },
+          },
+        ],
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      }),
+    );
+    const result = await OpenAiClient({
+      baseUrl: "https://api.deepseek.com",
+    }).chat(roundTrip);
+    expect(result.tool_calls).toEqual([toolCall]);
+    expect(result.replay).toEqual({
+      format: "chat",
+      model: "deepseek-reasoner",
+      fields: { reasoning_content: "Read first." },
+    });
+  });
+
+  it("sends Responses function calls, outputs and replayed items without their ids", async () => {
+    const replayed = [
+      { id: "rs_1", type: "reasoning", encrypted_content: "enc", summary: [] },
+      { id: "fc_1", ...call, call_id: "call_1", name: "read_log" },
+    ];
+    fetchMock.mockResolvedValue(Response.json(completed([message("Done.")])));
+    await openai().chat({
+      ...request,
+      responseMode: ResponseMode.TOOL_CALLING,
+      reasoningEffort: "high",
+      tools,
+      messages: [
+        { role: "system", content: "Help." },
+        {
+          role: "assistant",
+          content: "",
+          tool_calls: [toolCall],
+          replay: { format: "responses", model: "gpt-5", items: replayed },
+        },
+        { role: "tool", tool_call_id: "call_1", content: "[]" },
+        {
+          role: "assistant",
+          content: "",
+          tool_calls: [{ ...toolCall, id: "call_2" }],
+        },
+        { role: "tool", tool_call_id: "call_2", content: "[]" },
+      ],
+    });
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.include).toEqual(["reasoning.encrypted_content"]);
+    expect(body.tools).toEqual([
+      {
+        type: "function",
+        name: "read_log",
+        description: "Read passages.",
+        parameters: { type: "object", properties: {} },
+      },
+    ]);
+    expect(body.input).toEqual([
+      { role: "developer", content: "Help." },
+      { type: "reasoning", encrypted_content: "enc", summary: [] },
+      { ...call, call_id: "call_1", name: "read_log" },
+      { type: "function_call_output", call_id: "call_1", output: "[]" },
+      {
+        type: "function_call",
+        call_id: "call_2",
+        name: "read_log",
+        arguments: "{}",
+      },
+      { type: "function_call_output", call_id: "call_2", output: "[]" },
+    ]);
+  });
+
+  it("keeps Responses output items to replay in the next round", async () => {
+    const reasoning = { id: "rs_1", type: "reasoning", summary: [] };
+    fetchMock.mockResolvedValue(Response.json(completed([reasoning, call])));
+    const result = await openai().chat({
+      ...request,
+      responseMode: ResponseMode.TOOL_CALLING,
+      reasoningEffort: "high",
+      tools,
+    });
+    expect(result.replay).toEqual({
+      format: "responses",
+      model: "gpt-5",
+      items: [reasoning, call],
+    });
+  });
+
+  it("leaves Game Master requests as they were", async () => {
+    fetchMock.mockResolvedValue(Response.json(completed([message()])));
+    await openai().chat({
+      ...request,
+      responseMode: ResponseMode.TOOL_CALLING,
+      reasoningEffort: "high",
+    });
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.include).toBeUndefined();
+    expect(body.tools.map((tool: { name: string }) => tool.name)).toEqual([
+      "modify_stat",
+      "add_to_inventory",
+      "remove_from_inventory",
+    ]);
   });
 });

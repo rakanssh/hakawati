@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useScenarioLibraryStore } from "@/store/useScenarioLibraryStore";
 import {
   removeScenario,
   saveScenario,
@@ -30,6 +31,11 @@ export function useScenariosList(initialPage = 1, initialLimit = 12) {
     getAllScenarios,
     initialPage,
     initialLimit,
+  );
+
+  useEffect(
+    () => useScenarioLibraryStore.subscribe(() => void refresh()),
+    [refresh],
   );
 
   const remove = useCallback(

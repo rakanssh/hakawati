@@ -119,6 +119,20 @@
   }
 }
 
+@keyframes passage-flash {
+  from {
+    background-color: color-mix(in oklab, var(--primary) 30%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 30%, transparent);
+  }
+}
+
+[data-passage-flash] {
+  animation: passage-flash 1.6s ease-out;
+  border-radius: 2px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
 /* ---------- Latest passage ---------- */
 
 :root {

@@ -10,9 +10,11 @@ import {
   ModelRole,
   ModelRoleSettings,
 } from "@/types";
+import type { ReasoningEffort } from "@/types/model.type";
 import { connectionBaseUrl } from "@/data/api-presets";
 import {
   getModelReasoning,
+  lowerReasoningEffort,
   normalizeReasoningEffort,
   reasoningProvider,
 } from "@/lib/reasoning";
@@ -44,7 +46,7 @@ function assertRoleConfig(role: ModelRole): ModelRoleSettings {
     if (role === "speechToText" || role === "textToSpeech") {
       throw new ModelRoleConfigurationError(
         role,
-        "ChatGPT plan usage supports narrator and utility models. Choose another provider for speech.",
+        "ChatGPT plan usage does not support speech. Choose another provider for speech.",
       );
     }
     return config;
@@ -87,19 +89,34 @@ export function resolveModelRole(role: ModelRole): ResolvedModelRole {
   return { role, config, model: config.model };
 }
 
+function roleReasoning(config: ModelRoleSettings, modelId: string | undefined) {
+  return getModelReasoning(
+    config.model?.id === modelId ? config.model : undefined,
+    reasoningProvider(
+      config.baseUrl,
+      config.activePreset === ApiPreset.CHATGPT,
+    ),
+  );
+}
+
+export function lowerRoleReasoningEffort(
+  role: ModelRole,
+  current?: ReasoningEffort,
+): ReasoningEffort | undefined {
+  const config = assertRoleConfig(role);
+  return lowerReasoningEffort(
+    current ?? config.reasoningEffort,
+    roleReasoning(config, config.model?.id),
+  );
+}
+
 export async function sendRoleChat(
   role: ModelRole,
   req: ChatRequest,
   signal?: AbortSignal,
 ) {
   const config = assertRoleConfig(role);
-  const reasoning = getModelReasoning(
-    config.model?.id === req.model ? config.model : undefined,
-    reasoningProvider(
-      config.baseUrl,
-      config.activePreset === ApiPreset.CHATGPT,
-    ),
-  );
+  const reasoning = roleReasoning(config, req.model);
   const requested = req.reasoningEffort ?? config.reasoningEffort;
   const reasoningEffort = normalizeReasoningEffort(requested, reasoning);
   if (requested !== undefined && reasoningEffort === undefined) {
