@@ -56,18 +56,23 @@ function requestedCalls(content: string) {
     });
 }
 
+function playerIndex(messages: Message[]) {
+  const users = messages
+    .flatMap((message, index) => (message.role === "user" ? [index] : []))
+    .reverse();
+  return (
+    users.find((index) =>
+      String(messages[index].content ?? "").startsWith("<context>"),
+    ) ??
+    users[0] ??
+    -1
+  );
+}
+
 function assistant(request: ChatRequest): Response {
   const messages = request.messages ?? [];
   const last = messages.at(-1);
-  let playerAt = messages.length - 1;
-  while (
-    playerAt >= 0 &&
-    !(
-      messages[playerAt].role === "user" &&
-      String(messages[playerAt].content ?? "").startsWith("<context>")
-    )
-  )
-    playerAt -= 1;
+  const playerAt = playerIndex(messages);
   const player = String(messages[playerAt]?.content ?? "");
   const usesTools = request.tool_choice !== "none";
   if (
