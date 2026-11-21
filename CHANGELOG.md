@@ -13,8 +13,7 @@ and the app shows it in What's New and Updates.
 
 ### Added
 
-- Hakawati, an assistant on every screen (Ctrl+K) that edits tales and scenarios, starts tales, changes settings and models, and manages your library and sync.
-- Hakawati's changes can be undone, and it asks before deleting anything.
+- Hakawati, an in-client AI assistant that can make tales and scenarios, edit your game mid-play, and do everything else in the app.
 
 ## [v1.3.0] - 2026-10-26
 
