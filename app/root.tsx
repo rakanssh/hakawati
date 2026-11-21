@@ -53,6 +53,7 @@ export default function AppShell() {
     (state) => state.phase === "installing",
   );
   const hasRunRef = useRef(false);
+  const scrollerRef = useRef<HTMLDivElement>(null);
   const { isReady: dbReady, error: dbError } = useDbReady();
   const { isMobilePlatform } = useIsMobile();
   const routerState = useRouterState();
@@ -111,6 +112,7 @@ export default function AppShell() {
           className={`flex min-h-0 flex-1 overflow-hidden ${isMobilePlatform ? "" : "pt-8"}`}
         >
           <div
+            ref={scrollerRef}
             className={`min-h-0 min-w-0 flex-1 ${isPlayRoute ? "overflow-hidden" : "overflow-auto"}`}
             style={
               isMobilePlatform && !isPlayRoute
@@ -138,7 +140,7 @@ export default function AppShell() {
           </div>
           {dbReady && <StoryPanel />}
         </div>
-        {dbReady && <HakawatiFab />}
+        {dbReady && <HakawatiFab scroller={scrollerRef} />}
         {showScaleIndicator && (
           <div
             role="status"

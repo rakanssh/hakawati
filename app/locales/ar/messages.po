@@ -1649,9 +1649,9 @@ msgid "Got it"
 msgstr "حسناً"
 
 #: app/components/assistant/app-change-label.ts:27
-#: app/components/assistant/hakawati-button.tsx:45
-#: app/components/assistant/hakawati-button.tsx:57
-#: app/components/assistant/hakawati-button.tsx:104
+#: app/components/assistant/hakawati-button.tsx:50
+#: app/components/assistant/hakawati-button.tsx:62
+#: app/components/assistant/hakawati-button.tsx:150
 #: app/components/layout/settings/ai-setup/parts.tsx:24
 #: app/components/play/story-panel/story-panel.tsx:114
 #: app/components/play/story-panel/story-panel.tsx:124
@@ -1819,7 +1819,7 @@ msgstr "الإصدار المثبت"
 msgid "Installing the update…"
 msgstr "جارٍ تثبيت التحديث…"
 
-#: app/root.tsx:171
+#: app/root.tsx:173
 msgid "Installing update…"
 msgstr "جارٍ تثبيت التحديث…"
 
@@ -3087,7 +3087,7 @@ msgstr "جارٍ حفظ الملف الشخصي"
 msgid "Saving the tale as a scenario"
 msgstr "يحفظ الحكاية كسيناريو"
 
-#: app/root.tsx:174
+#: app/root.tsx:176
 msgid "Saving your progress. Hakawati will restart when the update is ready."
 msgstr "جارٍ حفظ تقدّمك. سيُعاد تشغيل حكواتي عندما يصبح التحديث جاهزاً."
 
@@ -3999,7 +3999,7 @@ msgstr "تستخدمه الحكايات والسيناريوهات التي لا
 msgid "Used when generating story cards."
 msgstr "يُستخدم عند توليد بطاقات القصة."
 
-#: app/root.tsx:152
+#: app/root.tsx:154
 msgid "User interface scale"
 msgstr "مقياس الواجهة"
 

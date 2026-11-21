@@ -23,14 +23,21 @@ const { useStoryPanelStore } = await import("@/store/useStoryPanelStore");
 describe("HakawatiFab", () => {
   let root: Root;
   let container: HTMLDivElement;
+  let scroller: HTMLDivElement;
+  let scrollTop = 0;
 
   const fab = () =>
     container.querySelector<HTMLButtonElement>("[data-hakawati-fab]");
+  const scrollTo = (top: number) =>
+    act(() => {
+      scrollTop = top;
+      scroller.dispatchEvent(new Event("scroll"));
+    });
   const render = () =>
     act(() =>
       root.render(
         <>
-          <HakawatiFab />
+          <HakawatiFab scroller={{ current: scroller }} />
           <input aria-label="search" />
           <input type="checkbox" aria-label="toggle" />
         </>,
@@ -45,13 +52,21 @@ describe("HakawatiFab", () => {
     device.phone = true;
     useStoryPanelStore.getState().setOpen(false);
     container = document.createElement("div");
-    document.body.append(container);
+    scroller = document.createElement("div");
+    scrollTop = 0;
+    Object.defineProperties(scroller, {
+      scrollTop: { get: () => scrollTop },
+      scrollHeight: { value: 2000 },
+      clientHeight: { value: 800 },
+    });
+    document.body.append(container, scroller);
     root = createRoot(container);
   });
 
   afterEach(() => {
     act(() => root.unmount());
     container.remove();
+    scroller.remove();
   });
 
   it("opens the panel from the bottom of a phone screen", () => {
@@ -85,6 +100,24 @@ describe("HakawatiFab", () => {
     expect(fab()).not.toBeNull();
     act(() => search.focus());
     act(() => search.blur());
+    expect(fab()).not.toBeNull();
+  });
+
+  it("hides while scrolling down and returns on the way up or on a new page", () => {
+    render();
+    scrollTo(300);
+    expect(fab()).toBeNull();
+    scrollTo(1260);
+    scrollTo(1200);
+    expect(fab()).toBeNull();
+    scrollTo(900);
+    expect(fab()).not.toBeNull();
+    scrollTo(905);
+    expect(fab()).not.toBeNull();
+    scrollTo(1000);
+    expect(fab()).toBeNull();
+    device.pathname = "/tales";
+    render();
     expect(fab()).not.toBeNull();
   });
 });

@@ -1649,9 +1649,9 @@ msgid "Got it"
 msgstr "Got it"
 
 #: app/components/assistant/app-change-label.ts:27
-#: app/components/assistant/hakawati-button.tsx:45
-#: app/components/assistant/hakawati-button.tsx:57
-#: app/components/assistant/hakawati-button.tsx:104
+#: app/components/assistant/hakawati-button.tsx:50
+#: app/components/assistant/hakawati-button.tsx:62
+#: app/components/assistant/hakawati-button.tsx:150
 #: app/components/layout/settings/ai-setup/parts.tsx:24
 #: app/components/play/story-panel/story-panel.tsx:114
 #: app/components/play/story-panel/story-panel.tsx:124
@@ -1819,7 +1819,7 @@ msgstr "Installed version"
 msgid "Installing the update…"
 msgstr "Installing the update…"
 
-#: app/root.tsx:171
+#: app/root.tsx:173
 msgid "Installing update…"
 msgstr "Installing update…"
 
@@ -3087,7 +3087,7 @@ msgstr "Saving profile"
 msgid "Saving the tale as a scenario"
 msgstr "Saving the tale as a scenario"
 
-#: app/root.tsx:174
+#: app/root.tsx:176
 msgid "Saving your progress. Hakawati will restart when the update is ready."
 msgstr "Saving your progress. Hakawati will restart when the update is ready."
 
@@ -3999,7 +3999,7 @@ msgstr "Used by tales and scenarios that don’t set their own."
 msgid "Used when generating story cards."
 msgstr "Used when generating story cards."
 
-#: app/root.tsx:152
+#: app/root.tsx:154
 msgid "User interface scale"
 msgstr "User interface scale"
 

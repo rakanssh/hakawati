@@ -1,4 +1,9 @@
-import { useEffect, useState, type ComponentProps } from "react";
+import {
+  useEffect,
+  useState,
+  type ComponentProps,
+  type RefObject,
+} from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useRouterState } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -84,17 +89,58 @@ function useEditingText() {
   return editing;
 }
 
-export function HakawatiFab() {
+function useScrollingDown(
+  scroller: RefObject<HTMLElement | null>,
+  page: string,
+) {
+  const [downOn, setDownOn] = useState<string | null>(null);
+  useEffect(() => {
+    const element = scroller.current;
+    if (!element) return;
+    const position = () =>
+      Math.max(
+        0,
+        Math.min(
+          element.scrollTop,
+          element.scrollHeight - element.clientHeight,
+        ),
+      );
+    let last = position();
+    const onScroll = () => {
+      const top = position();
+      if (Math.abs(top - last) < 8) return;
+      setDownOn(top > last ? page : null);
+      last = top;
+    };
+    element.addEventListener("scroll", onScroll, { passive: true });
+    return () => element.removeEventListener("scroll", onScroll);
+  }, [scroller, page]);
+  return downOn === page;
+}
+
+export function HakawatiFab({
+  scroller,
+}: {
+  scroller: RefObject<HTMLElement | null>;
+}) {
   const { t } = useLingui();
   const { isMobilePlatform } = useIsMobile();
-  const isPlay = useRouterState({
-    select: (state) => Boolean(state.location.pathname?.startsWith("/play")),
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname ?? "",
   });
   const open = useStoryPanelStore((state) => state.open);
   const editing = useEditingText();
+  const scrollingDown = useScrollingDown(scroller, pathname);
 
   // Play keeps Hakawati in its story panel, so its composer has the bottom to itself.
-  if (!isMobilePlatform || isPlay || open || editing) return null;
+  if (
+    !isMobilePlatform ||
+    pathname.startsWith("/play") ||
+    open ||
+    editing ||
+    scrollingDown
+  )
+    return null;
 
   return (
     <Button
