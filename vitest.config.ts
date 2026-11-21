@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import path from "path";
 
@@ -19,6 +19,7 @@ export default defineConfig({
         "**/*.config.ts",
       ],
     },
+    exclude: [...configDefaults.exclude, ".claude/**"],
   },
   resolve: {
     alias: {

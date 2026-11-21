@@ -29,7 +29,8 @@
     "licenses:cargo": "cd src-tauri && cargo about generate about.hbs -o ../THIRD_PARTY_LICENSES-rust.md",
     "i18n:extract": "lingui extract",
     "i18n:extract-template": "lingui extract-template",
-    "i18n:compile": "lingui compile"
+    "i18n:compile": "lingui compile",
+    "i18n:check": "lingui extract-template && lingui compile --strict"
   },
   "dependencies": {
     "@lingui/core": "^5.6.1",

@@ -53,13 +53,9 @@ describe("tale storage helpers", () => {
     expect(state.gm.scratchpad).toEqual({});
   });
 
-  it("strips transient token counts before persistence or package export", () => {
-    const clean = sanitizeLogEntries([
-      {
-        ...entry("entry-1"),
-        _tokenCount: 42,
-      },
-    ]);
+  it("strips token counts left in older saves before persistence or package export", () => {
+    const legacy = { ...entry("entry-1"), _tokenCount: 42 };
+    const clean = sanitizeLogEntries([legacy]);
 
     expect(clean[0]).not.toHaveProperty("_tokenCount");
     expect(clean[0].id).toBe("entry-1");
