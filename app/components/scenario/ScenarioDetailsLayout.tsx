@@ -4,7 +4,6 @@ import { ArrowLeftIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { PhoneHakawatiButton } from "@/components/assistant/hakawati-button";
 
 type ScenarioDetailsLayoutProps = {
   breadcrumb: ReactNode;
@@ -60,7 +59,6 @@ export function ScenarioDetailsLayout({
             <ArrowLeftIcon className="size-4 rtl:rotate-180" />
           </Button>
           <div className="min-w-0">{breadcrumb}</div>
-          <PhoneHakawatiButton className="ms-auto" />
         </div>
         {headerAction ? (
           <div className="ms-auto max-w-full">{headerAction}</div>

@@ -66,7 +66,6 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { PhoneHakawatiButton } from "@/components/assistant/hakawati-button";
 
 const HOSTED_PROFILE_ID = "hosted";
 
@@ -650,7 +649,6 @@ export default function Home() {
                 <SettingsIcon className="size-4" />
               </Button>
             )}
-            <PhoneHakawatiButton className="size-11 border-border/70 bg-card/60 shadow-none" />
           </div>
         </header>
 

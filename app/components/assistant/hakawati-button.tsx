@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useRouterState } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -61,10 +61,55 @@ export function HakawatiButton({
   );
 }
 
-export function PhoneHakawatiButton({ className }: { className?: string }) {
+const TEXT_FIELD =
+  "textarea, select, [contenteditable=''], [contenteditable='true'], input:not([type=button],[type=checkbox],[type=file],[type=radio],[type=range],[type=submit])";
+
+const isTextField = (target: EventTarget | null) =>
+  target instanceof Element && target.matches(TEXT_FIELD);
+
+function useEditingText() {
+  const [editing, setEditing] = useState(false);
+  useEffect(() => {
+    const focusIn = (event: FocusEvent) =>
+      setEditing(isTextField(event.target));
+    const focusOut = (event: FocusEvent) =>
+      setEditing(isTextField(event.relatedTarget));
+    document.addEventListener("focusin", focusIn);
+    document.addEventListener("focusout", focusOut);
+    return () => {
+      document.removeEventListener("focusin", focusIn);
+      document.removeEventListener("focusout", focusOut);
+    };
+  }, []);
+  return editing;
+}
+
+export function HakawatiFab() {
+  const { t } = useLingui();
   const { isMobilePlatform } = useIsMobile();
-  if (!isMobilePlatform) return null;
+  const isPlay = useRouterState({
+    select: (state) => Boolean(state.location.pathname?.startsWith("/play")),
+  });
+  const open = useStoryPanelStore((state) => state.open);
+  const editing = useEditingText();
+
+  // Play keeps Hakawati in its story panel, so its composer has the bottom to itself.
+  if (!isMobilePlatform || isPlay || open || editing) return null;
+
   return (
-    <HakawatiButton variant="outline" className={cn("shrink-0", className)} />
+    <Button
+      size="icon"
+      data-hakawati-fab=""
+      onClick={() => useStoryPanelStore.getState().setOpen(true)}
+      aria-label={t`Hakawati`}
+      className="fixed z-40 size-14 shadow-lg animate-in fade-in zoom-in-90 duration-150"
+      style={{
+        bottom: "calc(1rem + env(safe-area-inset-bottom))",
+        insetInlineEnd:
+          "calc(1rem + max(env(safe-area-inset-left), env(safe-area-inset-right)))",
+      }}
+    >
+      <FezIcon className="size-6" />
+    </Button>
   );
 }

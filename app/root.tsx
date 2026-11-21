@@ -25,6 +25,7 @@ import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "./components/ui";
 import { Titlebar } from "./components/layout";
 import { StoryPanel } from "./components/play/story-panel/story-panel";
+import { HakawatiFab } from "./components/assistant/hakawati-button";
 import { AppSettingsModal } from "./components/layout/settings/app-settings-modal";
 import { useHakawatiShortcut } from "./hooks/useHakawatiShortcut";
 import { isUpdaterAvailable, useUpdateStore } from "./store/useUpdateStore";
@@ -116,6 +117,7 @@ export default function AppShell() {
                 ? {
                     paddingInlineStart: "env(safe-area-inset-left)",
                     paddingInlineEnd: "env(safe-area-inset-right)",
+                    paddingBottom: "5.5rem",
                   }
                 : undefined
             }
@@ -136,6 +138,7 @@ export default function AppShell() {
           </div>
           {dbReady && <StoryPanel />}
         </div>
+        {dbReady && <HakawatiFab />}
         {showScaleIndicator && (
           <div
             role="status"

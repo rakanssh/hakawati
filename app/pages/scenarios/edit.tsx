@@ -32,7 +32,6 @@ import {
   ScenarioQuestionErrors,
   ScenarioQuestionsHelp,
 } from "@/components/scenario/ScenarioQuestionsHelp";
-import { PhoneHakawatiButton } from "@/components/assistant/hakawati-button";
 export default function ScenarioEdit() {
   const { id } = useParams({ from: "/scenarios/$id/edit" });
   const navigate = useNavigate();
@@ -148,7 +147,6 @@ export default function ScenarioEdit() {
             parent={<Trans>Your scenarios</Trans>}
             current={<Trans>Edit</Trans>}
           />
-          <PhoneHakawatiButton className="ms-auto" />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button
