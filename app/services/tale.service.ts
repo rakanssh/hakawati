@@ -13,6 +13,7 @@ import {
   linkTaleToScenario,
 } from "@/repositories/tale.repository";
 import { saveScenario } from "@/services/scenario.service";
+import { keepOpenChat } from "@/services/assistant/threads";
 import { PaginatedResponse } from "@/types/db.type";
 import { createTaleDTO, Tale, TaleHead } from "@/types/tale.type";
 import { PromptComponentType, Scenario } from "@/types/context.type";
@@ -260,6 +261,7 @@ export async function getAllTales(
 }
 
 export async function deleteTaleById(id: string): Promise<void> {
+  await keepOpenChat(id);
   return deleteTale(id);
 }
 

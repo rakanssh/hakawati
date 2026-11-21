@@ -218,6 +218,7 @@ export function legacyModelRoles(
   return {
     narrator: normalizeRoleSettings(legacyRole, undefined, "narrator"),
     utility: normalizeRoleSettings(legacyRole, undefined, "utility"),
+    hakawati: createDefaultRoleSettings("hakawati"),
     speechToText: createDefaultRoleSettings("speechToText"),
     textToSpeech: createDefaultRoleSettings("textToSpeech"),
   };

@@ -27,7 +27,7 @@ export function StoryPanelButton({
           variant="ghost"
           size="icon"
           onClick={toggle}
-          aria-label={open ? t`Close story panel` : t`Open story panel`}
+          aria-label={open ? t`Close panel` : t`Open panel`}
           aria-expanded={open}
           aria-controls={STORY_PANEL_ID}
           className={cn(open && "bg-accent text-accent-foreground", className)}
@@ -38,9 +38,9 @@ export function StoryPanelButton({
       </TooltipTrigger>
       <TooltipContent side="bottom">
         {open ? (
-          <Trans>Close story panel</Trans>
+          <Trans>Close panel</Trans>
         ) : (
-          <Trans>Story, cards and display</Trans>
+          <Trans>Hakawati, story and cards</Trans>
         )}
       </TooltipContent>
     </Tooltip>

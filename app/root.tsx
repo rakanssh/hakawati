@@ -24,6 +24,10 @@ import "./App.css";
 import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "./components/ui";
 import { Titlebar } from "./components/layout";
+import { StoryPanel } from "./components/play/story-panel/story-panel";
+import { HakawatiFab } from "./components/assistant/hakawati-button";
+import { AppSettingsModal } from "./components/layout/settings/app-settings-modal";
+import { useHakawatiShortcut } from "./hooks/useHakawatiShortcut";
 import { isUpdaterAvailable, useUpdateStore } from "./store/useUpdateStore";
 import { useAndroidBackButton } from "./hooks/useAndroidBackButton";
 import { useDbReady } from "./hooks/useDbReady";
@@ -58,6 +62,7 @@ export default function AppShell() {
     if (dbReady) void unlinkDeletedAccounts();
   }, [dbReady]);
   useAndroidBackButton();
+  useHakawatiShortcut();
   const uiScale = useSettingsStore((state) => state.uiScale);
   const setUiScale = useSettingsStore((state) => state.setUiScale);
   const { showIndicator: showScaleIndicator, isIndicatorVisible } = useZoom({
@@ -81,7 +86,7 @@ export default function AppShell() {
   }, []);
 
   return (
-    <ThemeProvider defaultTheme="brass-night" storageKey="vite-ui-theme">
+    <ThemeProvider>
       <div
         className="flex h-screen flex-col overflow-hidden"
         style={
@@ -103,28 +108,37 @@ export default function AppShell() {
       >
         <Titlebar />
         <div
-          className={`min-h-0 flex-1 ${isPlayRoute ? "overflow-hidden" : "overflow-auto"} ${isMobilePlatform ? "" : "pt-8"}`}
-          style={
-            isMobilePlatform && !isPlayRoute
-              ? {
-                  paddingInlineStart: "env(safe-area-inset-left)",
-                  paddingInlineEnd: "env(safe-area-inset-right)",
-                }
-              : undefined
-          }
+          className={`flex min-h-0 flex-1 overflow-hidden ${isMobilePlatform ? "" : "pt-8"}`}
         >
-          {!dbReady && !dbError && (
-            <div className="flex h-full items-center justify-center">
-              <div className="text-muted-foreground">Initializing...</div>
-            </div>
-          )}
-          {dbError && (
-            <div className="flex h-full items-center justify-center">
-              <div className="text-destructive">Database error: {dbError}</div>
-            </div>
-          )}
-          {dbReady && <Outlet />}
+          <div
+            className={`min-h-0 min-w-0 flex-1 ${isPlayRoute ? "overflow-hidden" : "overflow-auto"}`}
+            style={
+              isMobilePlatform && !isPlayRoute
+                ? {
+                    paddingInlineStart: "env(safe-area-inset-left)",
+                    paddingInlineEnd: "env(safe-area-inset-right)",
+                    paddingBottom: "5.5rem",
+                  }
+                : undefined
+            }
+          >
+            {!dbReady && !dbError && (
+              <div className="flex h-full items-center justify-center">
+                <div className="text-muted-foreground">Initializing...</div>
+              </div>
+            )}
+            {dbError && (
+              <div className="flex h-full items-center justify-center">
+                <div className="text-destructive">
+                  Database error: {dbError}
+                </div>
+              </div>
+            )}
+            {dbReady && <Outlet />}
+          </div>
+          {dbReady && <StoryPanel />}
         </div>
+        {dbReady && <HakawatiFab />}
         {showScaleIndicator && (
           <div
             role="status"
@@ -141,6 +155,7 @@ export default function AppShell() {
             </div>
           </div>
         )}
+        <AppSettingsModal />
         <Toaster
           richColors
           expand

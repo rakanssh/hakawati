@@ -58,7 +58,10 @@ export function useDescribeModel(role: ModelRole) {
       parts.push(t`${size} context`);
     }
     if (detail === "abilities") {
-      if (role === "narrator" && model.supportsToolCalls) {
+      if (
+        (role === "narrator" || role === "hakawati") &&
+        model.supportsToolCalls
+      ) {
         parts.push(t`can use tools`);
       }
     } else if (isFree(model)) {
@@ -103,7 +106,10 @@ export function ModelPicker({
     const options: { value: Filter; label: string }[] = [];
     const some = (test: (m: LLMModel) => boolean) =>
       models.some(test) && !models.every(test);
-    if (role === "narrator" && some((m) => Boolean(m.supportsToolCalls))) {
+    if (
+      (role === "narrator" || role === "hakawati") &&
+      some((m) => Boolean(m.supportsToolCalls))
+    ) {
       options.push({ value: "tools", label: t`Can use tools` });
     }
     if (some(isFree)) options.push({ value: "free", label: t`Free` });

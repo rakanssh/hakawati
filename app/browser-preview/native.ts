@@ -1,6 +1,7 @@
 // Keep exports used by transitive Tauri dependencies; override only invoke.
 export * from "../../node_modules/@tauri-apps/api/core.js";
 import Database from "./sql";
+import { scriptedChatCompletion } from "./scripted-models";
 import { version } from "../../package.json";
 
 export const getVersion = async () => version;
@@ -46,6 +47,15 @@ export const PREVIEW_MODEL = {
   id: "preview-narrator",
   name: "Preview narrator (scripted)",
   contextLength: 8192,
+  supportsToolCalls: true,
+  supportsImages: true,
+};
+const PREVIEW_PLAIN_MODEL = {
+  id: "preview-plain",
+  name: "Preview plain (no tools)",
+  contextLength: 4096,
+  supportsToolCalls: false,
+  supportsImages: false,
 };
 
 /** Preview stays offline: the narrator is scripted and cloud requests fail clearly. */
@@ -56,24 +66,9 @@ export async function fetch(
   init?.signal?.throwIfAborted();
   const url = String(input);
   if (url === `${PREVIEW_BASE_URL}/models`)
-    return Response.json({ data: [PREVIEW_MODEL] });
-  if (url === `${PREVIEW_BASE_URL}/chat/completions`) {
-    const request = JSON.parse(String(init?.body ?? "{}"));
-    const content =
-      "*Scripted browser preview response.*\n\nThe lantern flickers. Somewhere beyond the doorway, footsteps pause, and a folded note slides across the threshold. You have a moment to decide what to do next.";
-    if (request.stream) {
-      const data = `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content }, finish_reason: null }] })}\n\ndata: ${JSON.stringify({ choices: [{ index: 0, delta: {}, finish_reason: "stop" }] })}\n\ndata: [DONE]\n\n`;
-      return new Response(data, {
-        headers: { "Content-Type": "text/event-stream" },
-      });
-    }
-    return Response.json({
-      choices: [
-        { message: { role: "assistant", content }, finish_reason: "stop" },
-      ],
-      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-    });
-  }
+    return Response.json({ data: [PREVIEW_MODEL, PREVIEW_PLAIN_MODEL] });
+  if (url === `${PREVIEW_BASE_URL}/chat/completions`)
+    return scriptedChatCompletion(JSON.parse(String(init?.body ?? "{}")));
   return new Response(
     "Cloud, external inference, and audio are unavailable in browser preview. Use the desktop app for these features.",
     { status: 503 },

@@ -1,20 +1,13 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { DirectionProvider } from "@radix-ui/react-direction";
 import {
   useSettingsStore,
   resolveTextDirection,
 } from "@/store/useSettingsStore";
+import { useThemeStore } from "@/store/useThemeStore";
 import {
   THEME_FONT,
   getTheme,
-  parseThemePreference,
   resolveThemePreference,
   themeClassNames,
   type ThemeDefinition,
@@ -26,8 +19,6 @@ import { useThemeScenery } from "@/hooks/useThemeScenery";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
-  defaultTheme?: ThemePreference;
-  storageKey?: string;
 };
 
 type ThemeProviderState = {
@@ -60,11 +51,7 @@ function useSystemPrefersDark() {
   return prefersDark;
 }
 
-export function ThemeProvider({
-  children,
-  defaultTheme = "system",
-  storageKey = "vite-ui-theme",
-}: ThemeProviderProps) {
+export function ThemeProvider({ children }: ThemeProviderProps) {
   const uiScale = useSettingsStore((state) => state.uiScale);
   const fontFamily = useSettingsStore((state) => state.fontFamily);
   const scenery = useThemeScenery();
@@ -76,15 +63,8 @@ export function ThemeProvider({
     [textDirection, language],
   );
 
-  const [preference, setPreferenceState] = useState<ThemePreference>(() => {
-    try {
-      return (
-        parseThemePreference(localStorage.getItem(storageKey)) ?? defaultTheme
-      );
-    } catch {
-      return defaultTheme;
-    }
-  });
+  const preference = useThemeStore((state) => state.preference);
+  const setPreference = useThemeStore((state) => state.setPreference);
   // Re-resolve "system" whenever the OS switches between light and dark.
   const systemPrefersDark = useSystemPrefersDark();
   const theme = useMemo(
@@ -126,18 +106,6 @@ export function ThemeProvider({
   useEffect(() => {
     document.documentElement.dir = resolvedDirection;
   }, [resolvedDirection]);
-
-  const setPreference = useCallback(
-    (next: ThemePreference) => {
-      try {
-        localStorage.setItem(storageKey, next);
-      } catch {
-        // Storage can be unavailable; the choice still applies for this session.
-      }
-      setPreferenceState(next);
-    },
-    [storageKey],
-  );
 
   const value = useMemo(
     () => ({ preference, theme, setPreference }),

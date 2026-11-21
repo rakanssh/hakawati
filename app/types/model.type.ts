@@ -28,6 +28,7 @@ export interface LLMModel {
   pricing?: ModelPricing;
   supportsResponseFormat?: boolean;
   supportsToolCalls?: boolean;
+  supportsImages?: boolean;
   supportedParameters?: string[];
   supportedVoices?: string[];
   /** Missing metadata means unknown; an empty list explicitly has no selector. */

@@ -2,43 +2,30 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLoadTale } from "@/hooks/useGameSaves";
 import { useTalesList } from "@/hooks/useTales";
 import {
-  deleteTaleSyncState,
   getSyncProfile,
   listTaleSyncStates,
-  setTaleSyncPreference,
 } from "@/repositories/sync.repository";
 import {
-  applyRemoteTalePackage,
   assertSyncAvailable,
-  createSyncTransport,
-  deleteRemoteTale,
-  importRemoteTalePackage,
   fetchSyncCapabilities,
-  keepBothTalePackage,
   listAllRemoteTales,
-  replaceRemoteTalePackage,
-  SyncHttpError,
 } from "@/services/sync";
-import type { RemoteTale, SyncProfile, TaleSyncState } from "@/types/sync.type";
+import type { RemoteTale, TaleSyncState } from "@/types/sync.type";
+import { addSyncChangedListener } from "@/services/sync-wakeup";
 import {
-  addSyncChangedListener,
-  wakeSyncBackground,
-} from "@/services/sync-wakeup";
+  deleteLibraryTaleItem,
+  importCloudTale,
+  removeLibraryTaleItemFromCloud,
+  resolveTaleConflict,
+  syncLibraryTaleItem,
+  syncSessionFrom,
+  syncTransport,
+  type TaleConflictChoice,
+} from "@/services/tale-library.service";
 import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
 import { mergeTaleLibrary, type LibraryTaleItem } from "@/lib/tale-library";
 
-const HOSTED_PROFILE_ID = "hosted";
-const PERSONAL_PROFILE_ID = "personal";
-
-export type TaleConflictChoice = "keep-remote" | "keep-local" | "keep-both";
-
-function parseMetadataRev(value: string | null): number {
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed < 1) {
-    throw new Error("Synced tale is missing a valid metadata revision");
-  }
-  return parsed;
-}
+export type { TaleConflictChoice };
 
 export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
   const local = useTalesList(initialPage, initialLimit);
@@ -65,24 +52,23 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
   const [remoteLoading, setRemoteLoading] = useState(false);
   const [remoteError, setRemoteError] = useState<unknown>(null);
 
-  const profile = useMemo<SyncProfile>(
-    () => ({
-      id:
-        activeSyncMode === "personal" ? PERSONAL_PROFILE_ID : HOSTED_PROFILE_ID,
-      baseUrl:
-        activeSyncMode === "personal"
-          ? personalBaseUrl.trim()
-          : cloudBaseUrl.trim(),
-      mode: activeSyncMode,
-      accountId: activeSyncMode === "hosted" ? accountId || null : null,
-      deviceId:
-        activeSyncMode === "hosted"
-          ? accountId
-            ? (hostedDeviceIdsByAccountId[accountId] ?? deviceId).trim()
-            : deviceId.trim()
-          : null,
-    }),
+  const tokenExpired =
+    accessTokenExpiresAt !== null && accessTokenExpiresAt <= Date.now();
+  const session = useMemo(
+    () =>
+      syncSessionFrom({
+        accountId,
+        activeSyncMode,
+        cloudBaseUrl,
+        deviceId,
+        hostedDeviceIdsByAccountId,
+        personalBaseUrl,
+        accessToken,
+        accessTokenExpiresAt: tokenExpired ? 0 : null,
+      }),
     [
+      accessToken,
+      tokenExpired,
       accountId,
       activeSyncMode,
       cloudBaseUrl,
@@ -91,14 +77,8 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
       personalBaseUrl,
     ],
   );
-  const tokenExpired =
-    accessTokenExpiresAt !== null && accessTokenExpiresAt <= Date.now();
-  const hostedTokenOk = accessToken.trim().length > 0 && !tokenExpired;
+  const { profile, canReach: canReachProfile } = session;
   const refreshGenerationRef = useRef(0);
-  const canReachProfile =
-    profile.baseUrl.length > 0 &&
-    (profile.mode === "personal" ||
-      (hostedTokenOk && Boolean(profile.accountId)));
 
   const refreshRemote = useCallback(async () => {
     const generation = ++refreshGenerationRef.current;
@@ -141,10 +121,7 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
       } finally {
         if (isCurrent()) setSyncStatesHydrated(true);
       }
-      const transport = createSyncTransport({
-        profile,
-        accessToken: profile.mode === "hosted" ? accessToken.trim() : undefined,
-      });
+      const transport = syncTransport(session);
       const capabilities = await fetchSyncCapabilities(transport);
       assertSyncAvailable(capabilities);
       const tales = await listAllRemoteTales(transport, local.limit);
@@ -165,7 +142,7 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
         setRemoteLoading(false);
       }
     }
-  }, [accessToken, canReachProfile, local.limit, profile]);
+  }, [canReachProfile, local.limit, profile, session]);
 
   useEffect(() => {
     void refreshRemote();
@@ -206,178 +183,54 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
         await local.loadIntoGame(item.localTale.id);
         return item.localTale.id;
       }
-      const localTaleId = await importRemoteTalePackage({
-        profile,
-        transport: createSyncTransport({
-          profile,
-          accessToken:
-            profile.mode === "hosted" ? accessToken.trim() : undefined,
-        }),
-        remoteTaleId: item.remoteTale.id,
-      });
+      const localTaleId = await importCloudTale(session, item.remoteTale.id);
       await load(localTaleId);
       await refresh();
       return localTaleId;
     },
-    [accessToken, load, local, profile, refresh],
+    [load, local, refresh, session],
   );
 
   const deleteLibraryTale = useCallback(
     async (item: LibraryTaleItem) => {
-      const transport = createSyncTransport({
-        profile,
-        accessToken: profile.mode === "hosted" ? accessToken.trim() : undefined,
+      await deleteLibraryTaleItem(item, {
+        session,
+        syncActive,
+        deleteLocal: local.deleteTale,
+        onRemoteError: setRemoteError,
       });
-      if (item.source === "local") {
-        if (item.sync && !syncActive) {
-          const error = new Error(
-            "Reconnect cloud sync before permanently deleting this synced tale.",
-          );
-          setRemoteError(error);
-          throw error;
-        }
-        if (item.sync && syncActive) {
-          try {
-            await deleteRemoteTale(
-              transport,
-              item.sync.remoteTaleId,
-              item.sync.remoteTale?.metadataRev ??
-                parseMetadataRev(item.sync.metadataRev),
-            );
-          } catch (error) {
-            if (error instanceof SyncHttpError && error.status === 404) {
-              // Already absent is an idempotent remote-delete success.
-            } else {
-              setRemoteError(error);
-              throw error;
-            }
-          }
-        }
-        await local.deleteTale(item.localTale.id);
-        await refresh();
-        return;
-      }
-      await deleteRemoteTale(
-        transport,
-        item.remoteTale.id,
-        item.remoteTale.metadataRev,
-      );
       await refresh();
     },
-    [accessToken, local, profile, refresh, syncActive],
+    [local, refresh, session, syncActive],
   );
 
   const syncLibraryTale = useCallback(
     async (item: LibraryTaleItem) => {
-      if (!syncActive || item.source !== "local" || item.sync) return;
-      await setTaleSyncPreference({
-        profileId: profile.id,
-        accountId: profile.accountId,
-        localTaleId: item.localTale.id,
-        policy: "sync",
-      });
-      wakeSyncBackground();
-      await refresh();
+      if (await syncLibraryTaleItem(item, { session, syncActive }))
+        await refresh();
     },
-    [profile.accountId, profile.id, refresh, syncActive],
+    [refresh, session, syncActive],
   );
 
   const removeLibraryTaleFromCloud = useCallback(
     async (item: LibraryTaleItem) => {
-      if (!syncActive) throw new Error("Sync is not active");
-      const transport = createSyncTransport({
-        profile,
-        accessToken: profile.mode === "hosted" ? accessToken.trim() : undefined,
-      });
-      const localTaleId =
-        item.source === "local"
-          ? item.localTale.id
-          : await importRemoteTalePackage({
-              profile,
-              transport,
-              remoteTaleId: item.remoteTale.id,
-            });
-      const remoteTaleId =
-        item.source === "local" ? item.sync?.remoteTaleId : item.remoteTale.id;
-      if (!remoteTaleId) throw new Error("Tale is not synced");
-      const metadataRev =
-        item.source === "local"
-          ? (item.sync?.remoteTale?.metadataRev ??
-            parseMetadataRev(item.sync?.metadataRev ?? null))
-          : item.remoteTale.metadataRev;
-
-      try {
-        await deleteRemoteTale(transport, remoteTaleId, metadataRev);
-      } catch (error) {
-        if (!(error instanceof SyncHttpError && error.status === 404)) {
-          setRemoteError(error);
-          throw error;
-        }
-      }
-
-      await setTaleSyncPreference({
-        profileId: profile.id,
-        accountId: profile.accountId,
-        localTaleId,
-        policy: "private",
-      });
-      await deleteTaleSyncState({
-        profileId: profile.id,
-        accountId: profile.accountId,
-        localTaleId,
+      await removeLibraryTaleItemFromCloud(item, {
+        session,
+        syncActive,
+        onRemoteError: setRemoteError,
       });
       await refresh();
     },
-    [accessToken, profile, refresh, syncActive],
+    [refresh, session, syncActive],
   );
 
   const resolveConflict = useCallback(
     async (item: LibraryTaleItem, choice: TaleConflictChoice) => {
-      if (item.source !== "local" || item.sync?.status !== "conflict") {
-        throw new Error("Tale does not have a sync conflict");
-      }
-      const transport = createSyncTransport({
-        profile,
-        accessToken: profile.mode === "hosted" ? accessToken.trim() : undefined,
-      });
-      const idempotencyKey = `conflict-${item.localTale.id}-${Date.now()}`;
-
-      let resolvedLocalTaleId = item.localTale.id;
-      if (choice === "keep-remote") {
-        const applied = await applyRemoteTalePackage({
-          profile,
-          transport,
-          localTaleId: item.localTale.id,
-        });
-        if (!applied) {
-          throw new SyncHttpError(
-            "The local tale changed while resolving the conflict. Review it and try again.",
-            409,
-            "local_changed",
-          );
-        }
-      } else if (choice === "keep-local") {
-        await replaceRemoteTalePackage({
-          profile,
-          transport,
-          localTaleId: item.localTale.id,
-          idempotencyKey,
-          forceReplace: true,
-          existingCover: item.sync.remoteTale?.cover,
-        });
-      } else {
-        resolvedLocalTaleId = await keepBothTalePackage({
-          profile,
-          transport,
-          localTaleId: item.localTale.id,
-          idempotencyKey,
-        });
-      }
-
+      const resolved = await resolveTaleConflict(item, choice, session);
       await refresh();
-      return resolvedLocalTaleId;
+      return resolved;
     },
-    [accessToken, profile, refresh],
+    [refresh, session],
   );
 
   return {

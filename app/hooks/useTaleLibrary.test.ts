@@ -16,6 +16,7 @@ const gameSaveMocks = vi.hoisted(() => ({
 const syncRepoMocks = vi.hoisted(() => ({
   deleteTaleSyncState: vi.fn(),
   getSyncProfile: vi.fn(),
+  getTaleSyncState: vi.fn(),
   listTaleSyncStates: vi.fn(),
   setTaleSyncPreference: vi.fn(),
 }));
@@ -115,6 +116,7 @@ describe("useTaleLibrary", () => {
     });
     taleHookMocks.useTalesList.mockReturnValue(localList());
     syncRepoMocks.listTaleSyncStates.mockResolvedValue([]);
+    syncRepoMocks.getTaleSyncState.mockResolvedValue(null);
     syncRepoMocks.setTaleSyncPreference.mockResolvedValue(undefined);
     syncRepoMocks.deleteTaleSyncState.mockResolvedValue(undefined);
     syncServiceMocks.applyRemoteTalePackage.mockResolvedValue(true);
@@ -643,6 +645,35 @@ describe("useTaleLibrary", () => {
     });
 
     expect(syncServiceMocks.deleteRemoteTale).not.toHaveBeenCalled();
+    expect(localDelete).not.toHaveBeenCalled();
+
+    harness.cleanup();
+  });
+
+  it("keeps a synced tale while cloud sync can't be reached", async () => {
+    const localDelete = vi.fn();
+    taleHookMocks.useTalesList.mockReturnValue({
+      ...localList(),
+      deleteTale: localDelete,
+    });
+    syncStoreState.accessTokenExpiresAt = Date.now() - 1;
+    syncRepoMocks.getSyncProfile.mockResolvedValue({ enabled: true });
+    syncRepoMocks.getTaleSyncState.mockResolvedValue(linkedTale());
+    const harness = renderHarness();
+
+    await harness.flush();
+
+    await act(async () => {
+      await expect(
+        harness.controls.deleteLibraryTale(harness.controls.items[0]),
+      ).rejects.toThrow("Reconnect cloud sync");
+    });
+
+    expect(syncRepoMocks.getTaleSyncState).toHaveBeenCalledWith({
+      profileId: "hosted",
+      accountId: "account-1",
+      localTaleId: "local-1",
+    });
     expect(localDelete).not.toHaveBeenCalled();
 
     harness.cleanup();

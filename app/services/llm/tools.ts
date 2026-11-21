@@ -1,9 +1,19 @@
 import { LLMAction } from "@/types/log.type";
 
+export interface ToolDefinition {
+  type: "function";
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+    strict?: boolean;
+  };
+}
+
 /**
  * OpenAI tool definitions for Game Master mode
  */
-export const GM_TOOLS = [
+export const GM_TOOLS: ToolDefinition[] = [
   {
     type: "function" as const,
     function: {

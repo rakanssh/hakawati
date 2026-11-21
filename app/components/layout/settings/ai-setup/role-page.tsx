@@ -18,7 +18,7 @@ import {
 import { isPresetAllowedForRole } from "@/data/api-presets";
 import { cn } from "@/lib/utils";
 import { useLLMProviders } from "@/hooks/useLLMProviders";
-import { usesReasoning } from "@/store/model-connections";
+import { canFollowNarrator, usesReasoning } from "@/store/model-connections";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { ApiPreset, type ModelRole } from "@/types";
 import { useSettingsNavigation, useSettingsWindow } from "../settings-shell";
@@ -49,13 +49,14 @@ function ConnectionChooser({ role }: { role: ModelRole }) {
   const setRoleConnection = useSettingsStore(
     (state) => state.setRoleConnection,
   );
-  const setUtilitySameAsNarrator = useSettingsStore(
-    (state) => state.setUtilitySameAsNarrator,
+  const setRoleSameAsNarrator = useSettingsStore(
+    (state) => state.setRoleSameAsNarrator,
   );
   const allowed = connections.filter((connection) =>
     isPresetAllowedForRole(connection.preset, role),
   );
-  const following = role === "utility" && Boolean(assignment.sameAsNarrator);
+  const following =
+    canFollowNarrator(role) && Boolean(assignment.sameAsNarrator);
   const current =
     !following && allowed.some((c) => c.id === assignment.connectionId)
       ? assignment.connectionId
@@ -67,12 +68,12 @@ function ConnectionChooser({ role }: { role: ModelRole }) {
     <SetupSection title={<Trans>Connection</Trans>}>
       <SetupList>
         <div role="radiogroup" aria-label={t`Connection`} className="contents">
-          {role === "utility" && (
+          {canFollowNarrator(role) && (
             <RadioRow
               leading={<RoleIcon role="narrator" />}
               title={<Trans>Same as Narrator</Trans>}
               checked={following}
-              onClick={() => setUtilitySameAsNarrator(true)}
+              onClick={() => setRoleSameAsNarrator(role, true)}
             />
           )}
           {(role === "speechToText" || role === "textToSpeech") && (
@@ -318,9 +319,7 @@ function RoleWithModels({
     <div className="flex flex-col gap-6">
       <ConnectionChooser role={role} />
       <ModelSection role={role} providers={providers} />
-      {usesReasoning(role) && (
-        <ThinkingLevel role={role as "narrator" | "utility"} />
-      )}
+      {usesReasoning(role) && <ThinkingLevel role={role} />}
       {role === "textToSpeech" && <VoiceSection />}
       {role === "textToSpeech" && <NarrationSection />}
     </div>
@@ -338,7 +337,7 @@ export function RoleScreen({
   const connected = useSettingsStore(
     (state) =>
       state.modelRoles[role].connectionId !== null &&
-      !(role === "utility" && state.roleAssignments.utility.sameAsNarrator),
+      !(canFollowNarrator(role) && state.roleAssignments[role].sameAsNarrator),
   );
   if (!connected) {
     return (

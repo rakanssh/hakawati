@@ -4,7 +4,8 @@ import {
   type TextDirection,
   type ThinkingVisibility,
 } from "@/store/useSettingsStore";
-import { type Locale, LOCALES, loadLocale } from "@/i18n";
+import { type Locale, LOCALES } from "@/i18n";
+import { setAppLanguage } from "@/services/language";
 import { useTheme } from "@/components/theme-provider";
 import { fontPresets } from "@/data/font-presets";
 import { THEME_FONT, themes, type ThemePreference } from "@/themes/registry";
@@ -63,18 +64,13 @@ function useFontName() {
   return font.value === THEME_FONT ? t`Theme font` : font.name;
 }
 
-function pickLanguage(code: Locale) {
-  useSettingsStore.getState().setLanguage(code);
-  void loadLocale(code);
-}
-
 function LanguageSelect() {
   const { t } = useLingui();
   const language = useSettingsStore((state) => state.language);
   return (
     <Select
       value={language}
-      onValueChange={(code) => pickLanguage(code as Locale)}
+      onValueChange={(code) => setAppLanguage(code as Locale)}
     >
       <SelectTrigger className="w-56" aria-label={t`Language`}>
         <SelectValue />
@@ -280,7 +276,7 @@ function LanguagePage() {
           key={code}
           checked={language === code}
           lang={code}
-          onClick={() => pickLanguage(code)}
+          onClick={() => setAppLanguage(code)}
           title={name}
         />
       ))}

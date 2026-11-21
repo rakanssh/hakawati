@@ -19,9 +19,7 @@ import {
   QUICKSTART_WORLD_OPTIONS,
 } from "@/data/quickstart-presets";
 import { useTaleStore } from "@/store/useTaleStore";
-import { initTale } from "@/services/tale.service";
-import { LogEntryRole } from "@/types/log.type";
-import { nanoid } from "nanoid";
+import { createQuickstartTale } from "@/services/quickstart.service";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLingui as useLinguiCore } from "@lingui/react";
@@ -30,14 +28,7 @@ import {
   isModelRoleConfigured,
   useSettingsStore,
 } from "@/store/useSettingsStore";
-import { generateQuickstartTale } from "@/services/llm/quickstartTaleGenerator";
-import {
-  canSyncNewTales,
-  markNewTaleSyncPreference,
-} from "@/services/new-tale-sync";
-import { createPromptComponent } from "@/lib/prompt-components";
-import { PromptComponentType } from "@/types/context.type";
-import type { PromptComponent } from "@/types/context.type";
+import { canSyncNewTales } from "@/services/new-tale-sync";
 import { ArrowLeftIcon, LoaderCircle } from "lucide-react";
 
 export interface QuickstartState {
@@ -469,7 +460,7 @@ export function QuickstartPage() {
     setGenerationPhase("generating");
 
     try {
-      const generated = await generateQuickstartTale(
+      const taleId = await createQuickstartTale(
         {
           gameMode: state.gameMode,
           world: state.world.trim(),
@@ -478,47 +469,13 @@ export function QuickstartPage() {
           tone: state.tone.trim(),
           extraDetails: state.extraDetails,
         },
-        abort.signal,
-      );
-      if (abort.signal.aborted || abortRef.current !== abort) return;
-      setGenerationPhase("saving");
-
-      const components: PromptComponent[] = [
-        createPromptComponent(PromptComponentType.PLOT, generated.plot),
-      ];
-      if (generated.authorNote.trim()) {
-        components.push(
-          createPromptComponent(
-            PromptComponentType.AUTHOR_NOTE,
-            generated.authorNote,
-          ),
-        );
-      }
-
-      const taleId = await initTale({
-        name: generated.name,
-        description: generated.description,
-        thumbnail: null,
-        components,
-        storyCards: generated.storyCards,
-        scenarioId: undefined,
-        stats: generated.stats,
-        inventory: generated.inventory,
-        log: generated.openingText
-          ? [
-              {
-                id: nanoid(12),
-                role: LogEntryRole.GM,
-                text: generated.openingText,
-              },
-            ]
-          : [],
-        gameMode: state.gameMode,
-        undoStack: [],
-      });
-      await markNewTaleSyncPreference(
-        taleId,
-        localOnly ? "private" : "default",
+        {
+          private: localOnly,
+          signal: abort.signal,
+          onSaving: () => {
+            if (abortRef.current === abort) setGenerationPhase("saving");
+          },
+        },
       );
       if (abort.signal.aborted || abortRef.current !== abort) return;
 

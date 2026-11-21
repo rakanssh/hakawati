@@ -1,10 +1,19 @@
 import { fetchChatGpt } from "@/services/chatgpt";
 import { ResponseMode } from "@/types/api.type";
 import type { LLMModel } from "@/types/model.type";
-import type { ChatRequest, ChatResponse, LLMClient } from "../schema";
+import type {
+  ChatRequest,
+  ChatResponse,
+  LLMClient,
+  ToolNamespace,
+} from "../schema";
 import { GM_TOOLS } from "../tools";
 
-import { assertNotAborted, responseChunks } from "./responses";
+import {
+  assertNotAborted,
+  responseChunks,
+  toResponsesInput,
+} from "./responses";
 import { readReasoningCapabilities } from "@/lib/reasoning";
 
 type JsonObject = Record<string, unknown>;
@@ -83,6 +92,11 @@ async function assertOk(response: Response): Promise<void> {
   );
 }
 
+const GM_NAMESPACE: ToolNamespace = {
+  name: "hakawati",
+  description: "Update player stats and inventory in the current adventure.",
+};
+
 /** A separate adapter keeps ChatGPT plan billing distinct from API-key providers. */
 export function ChatGptClient(): LLMClient {
   async function chat(
@@ -90,12 +104,13 @@ export function ChatGptClient(): LLMClient {
     signal?: AbortSignal,
   ): Promise<ChatResponse> {
     assertNotAborted(signal);
+    const namespace = req.toolNamespace ?? GM_NAMESPACE;
     const body: JsonObject = {
       model: req.model,
-      input: req.messages.map((message) => ({
-        role: message.role === "system" ? "developer" : message.role,
-        content: message.content,
-      })),
+      input: toResponsesInput(req.messages, {
+        model: req.model,
+        namespace: namespace.name,
+      }),
       store: false,
       stream: true,
     };
@@ -105,16 +120,16 @@ export function ChatGptClient(): LLMClient {
       body.tools = [
         {
           type: "namespace",
-          name: "hakawati",
-          description:
-            "Update player stats and inventory in the current adventure.",
-          tools: GM_TOOLS.map((tool) => ({
+          name: namespace.name,
+          description: namespace.description,
+          tools: (req.tools ?? GM_TOOLS).map((tool) => ({
             type: tool.type,
             ...tool.function,
           })),
         },
       ];
-      body.tool_choice = "auto";
+      body.tool_choice = req.toolChoice ?? "auto";
+      if (req.tools) body.include = ["reasoning.encrypted_content"];
     }
     // This route rejects sampling/output limits; never spread generic options here.
     const response = await fetchChatGpt("/responses", {
@@ -131,7 +146,8 @@ export function ChatGptClient(): LLMClient {
     };
     const iterator = responseChunks(response, result, signal, {
       provider: "ChatGPT",
-      namespace: "hakawati",
+      model: req.model,
+      namespace: namespace.name,
       incompleteMessage:
         "ChatGPT did not complete the response. Lower the thinking level, try a shorter request, or choose another model.",
       error: (message, details) =>
@@ -187,6 +203,9 @@ export function ChatGptClient(): LLMClient {
             ? { maxOutputTokens }
             : {}),
           name: string(model.display_name) || model.slug,
+          ...(Array.isArray(model.input_modalities)
+            ? { supportsImages: model.input_modalities.includes("image") }
+            : {}),
           ...(typeof context === "number" && context > 0
             ? { contextLength: context }
             : {}),

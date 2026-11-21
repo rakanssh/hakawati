@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { NumberInput } from "@/components/ui";
 import { ModelSelect } from "@/components/layout/model-select";
@@ -11,10 +10,7 @@ import {
   SetupList,
   SetupSection,
 } from "@/components/layout/settings/settings-rows";
-import {
-  SettingsModal,
-  type GlobalSettingsSectionId,
-} from "@/components/layout/settings/settings-modal";
+import { useSettingsModalStore } from "@/store/useSettingsModalStore";
 import {
   ProviderBadge,
   useConnectionNames,
@@ -43,8 +39,7 @@ export function AiTab() {
   );
   const setMaxTokens = useSettingsStore((state) => state.setMaxTokens);
   const setTemperature = useSettingsStore((state) => state.setTemperature);
-  const [settingsSection, setSettingsSection] =
-    useState<GlobalSettingsSectionId | null>(null);
+  const openSettings = useSettingsModalStore((state) => state.openSettings);
 
   const isChatGpt = narrator.activePreset === ApiPreset.CHATGPT;
   const maxOutput =
@@ -59,7 +54,7 @@ export function AiTab() {
               <LinkRow
                 leading={<ProviderBadge preset={connection.preset} />}
                 title={connectionName(connection)}
-                onClick={() => setSettingsSection("ai-setup")}
+                onClick={() => openSettings("ai-setup")}
               />
               <BlockRow title={<Trans>Model</Trans>}>
                 <ModelSelect role="narrator" />
@@ -69,7 +64,7 @@ export function AiTab() {
             <LinkRow
               title={<Trans>Set up the Narrator to play</Trans>}
               detailClassName="text-destructive"
-              onClick={() => setSettingsSection("ai-setup")}
+              onClick={() => openSettings("ai-setup")}
             />
           )}
         </SetupList>
@@ -123,18 +118,9 @@ export function AiTab() {
       <SetupList>
         <LinkRow
           title={<Trans>All AI settings</Trans>}
-          onClick={() => setSettingsSection("generation")}
+          onClick={() => openSettings("generation")}
         />
       </SetupList>
-
-      <SettingsModal
-        key={settingsSection ?? "closed"}
-        open={settingsSection !== null}
-        onOpenChange={(open) => {
-          if (!open) setSettingsSection(null);
-        }}
-        defaultTab={settingsSection ?? undefined}
-      />
     </div>
   );
 }

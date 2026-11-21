@@ -211,6 +211,29 @@ describe("scenario draft editing and publication", () => {
     });
   }
 
+  it("lets Hakawati read and fill in the open form until the page closes", async () => {
+    const { useScenarioDraftStore } = await import(
+      "@/store/useScenarioDraftStore"
+    );
+    await render();
+    const draft = useScenarioDraftStore.getState().draft!;
+    expect(draft.read()).toEqual(initialScenario());
+
+    act(() => draft.write({ ...draft.read(), name: "Filled by Hakawati" }));
+    expect(
+      container.querySelector<HTMLInputElement>('[aria-label="Name"]')!.value,
+    ).toBe("Filled by Hakawati");
+    fill("Description", "Then the player");
+    expect(draft.read()).toMatchObject({
+      name: "Filled by Hakawati",
+      description: "Then the player",
+    });
+
+    act(() => root.unmount());
+    expect(useScenarioDraftStore.getState().draft).toBeNull();
+    root = createRoot(container);
+  });
+
   it("saves name, description and cover removal only as a draft", async () => {
     await render();
     fill("Name", "New draft name");

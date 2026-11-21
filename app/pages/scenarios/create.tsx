@@ -13,6 +13,7 @@ import { StatsEditor } from "@/components/scenario/StatsEditor";
 import { InventoryEditor } from "@/components/scenario/InventoryEditor";
 import { StorybookEditor } from "@/components/storybook";
 import { PromptComponentsEditor } from "@/components/prompt-components/PromptComponentsEditor";
+import { useOpenScenarioDraft } from "@/hooks/useOpenScenarioDraft";
 import { useScenarioForm } from "@/hooks/useScenarioForm";
 import { SCENARIO_COMPONENT_TYPES } from "@/lib/prompt-components";
 import { Scenario } from "@/types";
@@ -67,6 +68,7 @@ export default function ScenarioCreate() {
     updateComponent,
     removeComponent,
   } = useScenarioForm(scenario, setScenario);
+  useOpenScenarioDraft(scenario, setScenario);
 
   return (
     <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5 px-3 py-4 sm:px-4 lg:px-6">

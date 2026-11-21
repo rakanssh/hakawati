@@ -11,6 +11,10 @@ and the app shows it in What's New and Updates.
 
 ## [Unreleased]
 
+### Added
+
+- Hakawati, an in-client AI assistant that can make tales and scenarios, edit your game mid-play, and do everything else in the app.
+
 ## [v1.3.0] - 2026-10-26
 
 ### Added
