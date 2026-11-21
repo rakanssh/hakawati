@@ -44,5 +44,4 @@ export type LogEntry = {
   isStoryInput?: boolean;
   /** Why the reply failed, or `true` without a reason. Older saves may hold `{}`. */
   error?: unknown;
-  _tokenCount?: number;
 };

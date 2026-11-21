@@ -240,6 +240,8 @@ preview. Normal desktop and release builds use the native integrations.
 ```sh
 npm run typecheck
 npm run lint
+npm run format
+npm run i18n:check
 npm run test:run
 npm run build
 cargo test --locked --manifest-path src-tauri/Cargo.toml

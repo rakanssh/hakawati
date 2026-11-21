@@ -46,6 +46,8 @@ jobs:
         run: |
           npm run typecheck
           npm run lint
+          npm run format
+          npm run i18n:check
           npm run test:run
 
       - name: Install cargo-about
