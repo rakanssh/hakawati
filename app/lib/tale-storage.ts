@@ -47,7 +47,8 @@ export function createTaleCurrentState(input: {
 
 export function sanitizeLogEntries(entries: LogEntry[]): LogEntry[] {
   return entries.map((entry) => {
-    const { _tokenCount: _omitTokenCount, ...cleanEntry } = entry;
+    const { _tokenCount: _omitTokenCount, ...cleanEntry } =
+      entry as LogEntry & { _tokenCount?: unknown };
     return cleanEntry;
   });
 }

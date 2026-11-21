@@ -103,6 +103,7 @@ const layerBoundaries = [
 export default tseslint.config(
   {
     ignores: [
+      ".claude/**",
       "build/**",
       "dist/**",
       "node_modules/**",
