@@ -15,7 +15,6 @@ const otherDialogOpen = () =>
     (dialog) => !dialog.closest("[data-story-panel]"),
   );
 
-/** Ctrl+K (⌘K on a Mac) opens Hakawati ready to type, and closes it again from its message box. */
 export function useHakawatiShortcut() {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,

@@ -17,7 +17,6 @@ function undoNote(message: AssistantMessage): string | null {
   return undone === message.changes!.length ? UNDONE_NOTE : PARTLY_UNDONE_NOTE;
 }
 
-/** The stored chat as the model sees it: replies keep their tool calls, older tool results are shortened. */
 export function toModelHistory(messages: AssistantMessage[]): ChatMessage[] {
   let recent = messages.slice(-HISTORY_MESSAGES);
   const firstUser = recent.findIndex((message) => message.role === "user");

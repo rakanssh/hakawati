@@ -15,7 +15,7 @@ import {
   removeLibraryTaleItemFromCloud,
   resolveTaleConflict,
   syncLibraryTaleItem,
-} from "@/services/tale-library";
+} from "@/services/tale-library.service";
 import { deleteTaleById } from "@/services/tale.service";
 import { useTaleStore } from "@/store/useTaleStore";
 import { describeRoute } from "../context";

@@ -5,7 +5,6 @@ import {
 } from "@/store/useScenarioDraftStore";
 import type { Scenario } from "@/types/context.type";
 
-/** Lets Hakawati read and fill in the scenario form while it is open. */
 export function useOpenScenarioDraft(
   scenario: Scenario,
   setScenario: (scenario: Scenario) => void,

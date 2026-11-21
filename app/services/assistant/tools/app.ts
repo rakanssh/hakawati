@@ -1,5 +1,8 @@
 import { getScenarioById } from "@/services/scenario.service";
-import { currentSyncSession, importCloudTale } from "@/services/tale-library";
+import {
+  currentSyncSession,
+  importCloudTale,
+} from "@/services/tale-library.service";
 import { SETTINGS_TABS } from "@/store/useSettingsModalStore";
 import { STORY_PANEL_TABS } from "@/store/useStoryPanelStore";
 import { useTaleStore } from "@/store/useTaleStore";

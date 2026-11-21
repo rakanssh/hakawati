@@ -40,7 +40,6 @@ const cardBody = (card: StoryCard | null | undefined) => {
 const sameCard = (a: StoryCard | null | undefined, b: StoryCard | null) =>
   same(cardBody(a), cardBody(b));
 
-/** Collects one tool call's edits to a tale, recording a change for each. */
 export class TaleChanges {
   readonly changes: TaleChange[] = [];
 
@@ -264,10 +263,6 @@ const STATE_KINDS = new Set(["field", "component", "card", "stat", "item"]);
 export const isStateChange = (change: TaleChange) =>
   STATE_KINDS.has(change.kind);
 
-/**
- * Puts one setup change back if the tale still shows what Hakawati wrote.
- * Returns the tale after the undo, or null when it was changed since and is left alone.
- */
 export function revertStateChange(
   tale: TaleMutableSnapshot,
   change: TaleChange,

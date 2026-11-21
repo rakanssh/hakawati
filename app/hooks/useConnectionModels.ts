@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { errorMessage } from "@/lib/errors";
 import { getConnectionModels } from "@/services/llm";
 import { ApiConnection, ApiPreset, type LLMModel } from "@/types";
 import { useChatGpt } from "./useChatGpt";
@@ -37,7 +38,7 @@ export function useConnectionModels(connection: ApiConnection | undefined) {
       if (!controller.signal.aborted) setModels(list);
     } catch (cause) {
       if (controller.signal.aborted) return;
-      setError(cause instanceof Error ? cause.message : String(cause));
+      setError(errorMessage(cause));
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }

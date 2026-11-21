@@ -19,7 +19,7 @@ const mocks = vi.hoisted(() => ({
   copy: vi.fn(),
   clipboard: "",
 }));
-vi.mock("@/services/tale-library", () => ({
+vi.mock("@/services/tale-library.service", () => ({
   currentSyncSession: () => ({ profile: { id: "hosted" } }),
   loadTaleLibrary: async () => ({
     items: mocks.items,

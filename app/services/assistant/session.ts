@@ -58,7 +58,6 @@ const UNREPORTED_CONTEXT_LENGTH = 32_768;
 let controller: AbortController | null = null;
 let pendingConfirm: ((yes: boolean) => void) | null = null;
 let showToken = 0;
-/** The tale on the play screen when the chat last looked, or undefined before it first loads. */
 let scope: string | null | undefined;
 
 async function showThread(
@@ -81,11 +80,6 @@ function rememberChat(threadId: string) {
   useAssistantMemoryStore.getState().remember(threadId, scope ?? null);
 }
 
-/**
- * Shows the chat that belongs where the player is. It acts only when the play screen's tale changes,
- * so the chat survives the panel closing or switching tabs. A tale gets the chat last open on it, or
- * its latest; on first load away from play, the chat last open.
- */
 export async function syncAssistantScope(playTaleId: string | null) {
   try {
     if (!store.getState().loaded) {
@@ -474,7 +468,6 @@ const REVERTERS: Reverter[] = [
   },
 ];
 
-/** Undoes the changes a reply made; any changed again since are kept. Returns how many were kept. */
 export async function undoAssistantReply(messageId: string): Promise<number> {
   const state = store.getState();
   const message = state.messages.find((m) => m.id === messageId);

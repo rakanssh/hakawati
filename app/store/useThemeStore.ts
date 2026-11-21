@@ -15,7 +15,6 @@ function savedPreference(): ThemePreference {
 }
 
 interface ThemeStoreType {
-  /** What the player picked, which may be "system". */
   preference: ThemePreference;
   setPreference: (preference: ThemePreference) => void;
 }

@@ -39,7 +39,6 @@ export interface SyncSettingsSnapshot {
   hostedDeviceIdsByAccountId: Record<string, string>;
 }
 
-/** The sync profile the settings point at, how to reach it, and whether they let the app reach it. */
 export interface SyncSession {
   profile: SyncProfile;
   accessToken?: string;
@@ -118,7 +117,6 @@ const hasSyncState = async (session: SyncSession, localTaleId: string) =>
 const isMissing = (error: unknown) =>
   error instanceof SyncHttpError && error.status === 404;
 
-/** The library as the Tales page shows it. When the cloud can't be reached, only local tales, with the reason. */
 export async function loadTaleLibrary(
   session: SyncSession,
   localTales: TaleHead[],
@@ -224,7 +222,6 @@ export async function deleteLibraryTaleItem(
   );
 }
 
-/** Starts syncing a local tale. Returns false when there was nothing to do. */
 export async function syncLibraryTaleItem(
   item: LibraryTaleItem,
   options: { session: SyncSession; syncActive: boolean },
@@ -291,7 +288,6 @@ export async function removeLibraryTaleItemFromCloud(
   });
 }
 
-/** Settles a sync conflict. Returns the local tale that holds the result. */
 export async function resolveTaleConflict(
   item: LibraryTaleItem,
   choice: TaleConflictChoice,

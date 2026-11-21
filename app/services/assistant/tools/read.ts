@@ -10,7 +10,10 @@ import {
 } from "@/repositories/tale.repository";
 import { errorMessage } from "@/lib/errors";
 import { listScenarioPublishLinks } from "@/repositories/scenario-publish-link.repository";
-import { currentSyncSession, loadTaleLibrary } from "@/services/tale-library";
+import {
+  currentSyncSession,
+  loadTaleLibrary,
+} from "@/services/tale-library.service";
 import { useScenarioDraftStore } from "@/store/useScenarioDraftStore";
 import { useTaleStore } from "@/store/useTaleStore";
 import { PromptComponentType } from "@/types";

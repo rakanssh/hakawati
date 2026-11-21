@@ -72,7 +72,6 @@ async function writeSnapshot(taleId: string, tale: TaleMutableSnapshot) {
   wakeSyncBackground();
 }
 
-/** Waits for the narrator and any save to finish, and holds the tale while Hakawati writes. */
 export async function withTaleWrites<T>(
   signal: AbortSignal | undefined,
   run: () => Promise<T>,
@@ -201,7 +200,6 @@ export async function insertPassages(
   return { taleId, kind: "insert", afterId, entries };
 }
 
-/** Removes passages, recording each run of neighbouring ones with what surrounded it. */
 export async function deletePassages(
   taleId: string,
   ids: string[],
@@ -282,7 +280,6 @@ async function revertLogChange(change: TaleChange): Promise<boolean> {
   return false;
 }
 
-/** Undoes changes newest first, leaving any that were changed again since; returns them marked. */
 export async function revertChanges(
   changes: TaleChange[],
   signal?: AbortSignal,

@@ -42,7 +42,6 @@ export function describeRoute(pathname: string): {
   return { page: "home" };
 }
 
-/** The tale open on the play screen, whose live state is in the tale store. */
 export function openTaleId(pathname: string): string | null {
   if (describeRoute(pathname).page !== "play") return null;
   return useTaleStore.getState().id || null;
@@ -116,7 +115,6 @@ export function describeTaleSetup(tale: {
 
 const RECENT_PASSAGES = 8;
 
-/** Where the player is and what is open, attached to their newest message. */
 export function workspaceContext(pathname: string) {
   const route = describeRoute(pathname);
   const taleId = openTaleId(pathname);

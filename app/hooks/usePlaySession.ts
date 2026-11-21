@@ -547,9 +547,8 @@ export function usePlaySession(
           }
         }
 
-        // Leaving the play screen stops the reply as Stop does: what was shown is
-        // saved, or the log goes back to how it was, so the loaded tale still
-        // matches the saved one. Only another tale taking this one's place skips it.
+        // Leaving play stops the reply like Stop, so the loaded tale still matches
+        // the saved one; only another tale taking its place skips this.
         if (useTaleStore.getState().id !== taleId) return null;
         if (!isCurrentSession()) sendAborted = true;
         const persistence: GenerationPersistence = options.persistence ?? {

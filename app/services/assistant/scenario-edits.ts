@@ -44,10 +44,6 @@ async function saveToLibrary(
   return saved;
 }
 
-/**
- * Edits the scenario open in the editor when there is one and `scenario` is left out or names it;
- * otherwise a saved scenario, or a new one when `scenario` is "new".
- */
 export async function editScenario(
   scenario: string | undefined,
   edit: (edits: ScenarioEdits) => void,
@@ -107,7 +103,6 @@ export async function editScenario(
   };
 }
 
-/** Saves a tale's setup as a new scenario in the library, like Save as scenario in Tales. */
 export async function scenarioFromTale(
   taleId: string,
 ): Promise<ScenarioChange> {
@@ -133,10 +128,6 @@ async function revertCreated(change: ScenarioChange): Promise<boolean> {
   return true;
 }
 
-/**
- * Undoes scenario changes, newest first. Returns the changes with what was undone marked,
- * and how many parts were kept because they were changed since.
- */
 export async function revertScenarioChanges(
   changes: ScenarioChange[],
 ): Promise<{ changes: ScenarioChange[]; kept: number }> {

@@ -46,7 +46,6 @@ function reply(request: ChatRequest, content: string): Response {
 const playerText = (content: string) =>
   content.replace(/^<context>[\s\S]*?<\/context>\s*/, "");
 
-/** `/tool name {json}` lines in the player's message; a `/loop` line repeats them every round, and `/cutoff` cuts off every round after them. */
 function requestedCalls(content: string) {
   return playerText(content)
     .split("\n")
@@ -122,7 +121,6 @@ function assistant(request: ChatRequest): Response {
   return sse(deltas, "tool_calls");
 }
 
-/** The preview's offline models: a scripted narrator, and a Hakawati that calls the tools you name. */
 export function scriptedChatCompletion(request: ChatRequest): Response {
   const isAssistant = request.tools?.some(
     (tool) => tool.function?.name === "list_library",

@@ -6,7 +6,6 @@ import type { Stat } from "./stats.type";
 
 export type TaleField = "name" | "description" | "gameMode";
 
-/** One edit Hakawati made to a tale, with enough of the before and after to undo it later. */
 export type TaleChange = { taleId: string; undone?: boolean } & (
   | { kind: "field"; field: TaleField; before: string; after: string }
   | {
@@ -35,7 +34,6 @@ export type TaleChange = { taleId: string; undone?: boolean } & (
 
 export type ScenarioRecord = Omit<Scenario, "thumbnail">;
 
-/** Hakawati's edits to one scenario in one step: in the library, or in the form open in the scenario editor. */
 export type ScenarioChange = {
   kind: "scenario";
   undone?: boolean;
@@ -46,7 +44,6 @@ export type ScenarioChange = {
   after: ScenarioRecord;
 };
 
-/** A setting Hakawati changed, by its key in the assistant's settings registry. */
 export type SettingChange = {
   kind: "setting";
   undone?: boolean;
@@ -55,7 +52,6 @@ export type SettingChange = {
   after: unknown;
 };
 
-/** A model role Hakawati reassigned in AI Setup. */
 export type RoleChange = {
   kind: "role";
   undone?: boolean;
@@ -78,7 +74,6 @@ export type AssistantConfirmAction =
   | "keep_cloud"
   | "unpublish";
 
-/** A question the app asks the player with buttons before Hakawati does something that can't be undone. */
 export interface AssistantConfirm {
   action: AssistantConfirmAction;
   names: string[];
@@ -99,7 +94,6 @@ export interface AssistantToolCall {
   function: { name: string; arguments: string };
 }
 
-/** A model-facing message kept with a reply, so later turns can show the model what it did. */
 export interface AssistantModelMessage {
   role: "assistant" | "tool";
   content: string;
@@ -112,13 +106,9 @@ export interface AssistantActivity {
   tool: string;
   detail?: string;
   error?: string;
-  /** Where in the reply's text the step happened. */
   at?: number;
-  /** The tool's action, for tools that take one. */
   action?: string;
-  /** What the step achieved, such as the name of the tale it opened. */
   result?: string;
-  /** Set when the step recorded changes, which the reply lists on their own. */
   changed?: boolean;
   confirm?: AssistantConfirm;
 }

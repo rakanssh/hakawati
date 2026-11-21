@@ -216,7 +216,6 @@ export interface SettingsStoreType {
   setRoleModel: (role: ModelRole, model: LLMModel | undefined) => void;
   setRoleReasoningEffort: (role: ModelRole, effort?: ReasoningEffort) => void;
   setRoleVoice: (role: ModelRole, voice: string) => void;
-  /** Puts back a role's whole assignment, as Hakawati's Undo does. */
   restoreRoleAssignment: (
     role: ModelRole,
     assignment: ModelRoleAssignment,

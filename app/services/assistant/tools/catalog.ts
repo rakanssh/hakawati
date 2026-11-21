@@ -44,7 +44,6 @@ function hasCatalog(baseUrl: string, transport: CatalogTransport) {
   return ok;
 }
 
-/** A transport to the public catalog, once the server says it has one. */
 export async function catalogTransport(
   signedIn = false,
 ): Promise<CatalogTransport> {

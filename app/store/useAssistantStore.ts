@@ -18,7 +18,6 @@ interface AssistantStoreType {
   loaded: boolean;
   threads: AssistantThread[];
   threadId: string | null;
-  /** The tale the shown chat belongs to, or that a new chat will belong to. */
   taleId: string | null;
   messages: AssistantMessage[];
   draft: string;

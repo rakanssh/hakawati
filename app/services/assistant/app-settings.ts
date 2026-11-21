@@ -14,15 +14,12 @@ import {
   UI_SCALE_MIN,
 } from "@/lib/appearance-limits";
 
-/** One setting Hakawati can read and change. Values are what the store holds, so Undo can put them back. */
 export interface SettingEntry {
   label: MessageDescriptor;
   tab: SettingsTab;
   read: () => unknown;
   apply: (value: unknown) => void;
-  /** Turns what the model sent into a stored value, or explains why it can't. `null` asks for the default. */
   parse: (input: unknown) => unknown;
-  /** What `get` tells the model the setting accepts. */
   accepts: unknown;
 }
 

@@ -1398,7 +1398,6 @@ async function finishLogSplice(
   );
 }
 
-/** Removes passages anywhere in the log; a turn left empty is removed with them. */
 export async function deleteLogEntries(
   taleId: string,
   entryIds: string[],
@@ -1447,10 +1446,6 @@ export async function deleteLogEntries(
   });
 }
 
-/**
- * Adds passages after `afterId`, or at the start when it is null. They join that
- * passage's turn, or become a turn of their own after the last passage.
- */
 export async function insertLogEntries(
   taleId: string,
   afterId: string | null,
@@ -1544,7 +1539,6 @@ async function selectLegacyEntries(
   return entries.map((entry, index) => ({ index, entry }));
 }
 
-/** Passages whose text contains every word of the query, newest first. */
 export async function searchLogEntries(
   taleId: string,
   query: string,
@@ -1574,7 +1568,6 @@ export async function searchLogEntries(
   });
 }
 
-/** The passages with these ids and their place in the story; ids not in the log are left out. */
 export async function findLogEntries(
   taleId: string,
   entryIds: string[],

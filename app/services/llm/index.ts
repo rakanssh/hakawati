@@ -99,7 +99,6 @@ function roleReasoning(config: ModelRoleSettings, modelId: string | undefined) {
   );
 }
 
-/** A lower thinking level than `current` (or the role's own) that its model supports, if there is one. */
 export function lowerRoleReasoningEffort(
   role: ModelRole,
   current?: ReasoningEffort,

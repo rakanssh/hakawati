@@ -4,7 +4,6 @@ import { GameMode, type LLMModel, type ModelRole } from "@/types";
 
 export type ModelChoiceWarning = "narrator_tools" | "hakawati_tools";
 
-/** What might not work if a role uses this model. */
 export function modelChoiceWarnings(
   role: ModelRole,
   model: LLMModel,
@@ -16,7 +15,6 @@ export function modelChoiceWarnings(
     : [];
 }
 
-/** Sets a role's model the same way wherever it is chosen, and says what might not work with it. */
 export function chooseRoleModel(
   role: ModelRole,
   model: LLMModel,

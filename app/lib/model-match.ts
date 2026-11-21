@@ -1,9 +1,5 @@
 import type { LLMModel } from "@/types/model.type";
 
-/**
- * The models a player's words point at, from the most exact kind of match that finds any:
- * the id, the name, the id after its provider, then every word somewhere in the id or name.
- */
 export function matchModels(models: LLMModel[], query: string): LLMModel[] {
   const wanted = query.trim().toLowerCase();
   if (!wanted) return [];

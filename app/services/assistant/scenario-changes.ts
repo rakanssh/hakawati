@@ -247,10 +247,6 @@ export function changedParts(before: ScenarioRecord, after: ScenarioRecord) {
   );
 }
 
-/**
- * Puts back what one step changed, part by part, where the scenario still shows what Hakawati wrote.
- * Parts changed since are left alone and counted as kept.
- */
 export function revertScenario(
   current: ScenarioRecord,
   before: ScenarioRecord,

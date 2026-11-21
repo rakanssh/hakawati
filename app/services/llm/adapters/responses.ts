@@ -1,4 +1,4 @@
-import { markOutputLimit } from "@/lib/errors";
+import { abortError, markOutputLimit } from "@/lib/errors";
 import type { ChatMessage, ChatResponse, StreamChunk } from "../schema";
 import type { ToolCall } from "../tools";
 
@@ -74,8 +74,7 @@ export function toResponsesInput(
 }
 
 export function assertNotAborted(signal?: AbortSignal): void {
-  if (signal?.aborted)
-    throw new DOMException("Request cancelled.", "AbortError");
+  if (signal?.aborted) throw abortError();
 }
 
 /** SSE frames can span UTF-8 bytes, CRLF pairs, and multiple data lines. */

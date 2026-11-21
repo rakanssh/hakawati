@@ -13,7 +13,6 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 import { useStoryPanelStore } from "@/store/useStoryPanelStore";
 
-/** Opens the panel on Hakawati, or closes it when Hakawati is already showing. */
 export function HakawatiButton({
   className,
   ...props
@@ -62,7 +61,6 @@ export function HakawatiButton({
   );
 }
 
-/** The Hakawati button for page headers on phones, which have no title bar. */
 export function PhoneHakawatiButton({ className }: { className?: string }) {
   const { isMobilePlatform } = useIsMobile();
   if (!isMobilePlatform) return null;

@@ -103,7 +103,6 @@ async function fetchModels(connection: ApiConnection, signal?: AbortSignal) {
   }
 }
 
-/** True when a change to this role changes the model Hakawati itself is running on. */
 function movesHakawati(role: ModelRole) {
   return (
     role === "hakawati" ||

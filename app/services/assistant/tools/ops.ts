@@ -17,7 +17,6 @@ type CardPatch = Partial<{
   isPinned: boolean;
 }>;
 
-/** What both tales and scenarios offer for editing story cards, stats and items. */
 export interface CardTarget {
   addCard(input: {
     title: string;

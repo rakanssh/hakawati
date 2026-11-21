@@ -101,7 +101,6 @@ export function normalizeConnections(input: unknown): ApiConnection[] {
   return connections;
 }
 
-/** The assignment a role runs on: a role that follows the narrator uses the narrator's. */
 export function effectiveAssignment(
   assignments: RoleAssignments,
   role: ModelRole,
@@ -191,7 +190,6 @@ export function resolveModelRoles(
   ) as Record<ModelRole, ModelRoleSettings>;
 }
 
-/** The thinking levels a model offers on a connection. */
 export function connectionReasoning(
   model: LLMModel | undefined,
   connection: ApiConnection | undefined,

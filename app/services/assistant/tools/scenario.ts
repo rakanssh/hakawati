@@ -62,7 +62,6 @@ function answersOf(value: unknown): Record<string, string> {
   return answers;
 }
 
-/** The questions a scenario still needs answered, as a start_tale result, or null when it can start. */
 function questionsLeft(
   content: ScenarioContent[],
   answers: Record<string, string>,

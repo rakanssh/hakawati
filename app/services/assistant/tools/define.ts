@@ -8,7 +8,6 @@ import type {
 } from "@/types/assistant.type";
 import type { AgentTool } from "../agent-loop";
 
-/** What the chat panel lets tools do to the screen. */
 export interface AssistantUi {
   navigate: (
     to: string,
@@ -18,7 +17,6 @@ export interface AssistantUi {
     },
   ) => Promise<void>;
   openTale: (taleId: string) => Promise<void>;
-  /** Clears a deleted tale from the play screen and Continue. */
   forgetTale: (taleId: string) => void;
   showSettings: (tab?: SettingsTab) => void;
   showPanelTab: (tab: StoryPanelTab) => void;
@@ -28,9 +26,7 @@ export interface AssistantToolContext {
   getPathname: () => string;
   recordChanges?: (changes: AssistantChange[]) => void;
   ui?: AssistantUi;
-  /** Asks the player with buttons in the chat. Resolves true when they say yes. */
   confirm?: (request: Omit<AssistantConfirm, "answer">) => Promise<boolean>;
-  /** Runs once the reply has finished, before it is saved. */
   afterRun?: (task: () => void | Promise<void>) => void;
 }
 
@@ -52,9 +48,7 @@ export function ask(
 }
 
 export interface AssistantTool extends AgentTool {
-  /** A short value shown beside the tool's name in the chat, such as a search query. */
   detail?(args: Record<string, unknown>): string | undefined;
-  /** What the step achieved, shown in its place once the tool has run, such as the tale it opened. */
   outcome?(output: unknown): string | undefined;
 }
 
@@ -130,7 +124,6 @@ export function required(op: Record<string, unknown>, key: string): string {
   return value;
 }
 
-/** A list of op objects; `name` says which argument it was, for the error. */
 export function opList(
   value: unknown,
   name: string,

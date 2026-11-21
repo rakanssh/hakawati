@@ -21,7 +21,7 @@ import {
   syncSessionFrom,
   syncTransport,
   type TaleConflictChoice,
-} from "@/services/tale-library";
+} from "@/services/tale-library.service";
 import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
 import { mergeTaleLibrary, type LibraryTaleItem } from "@/lib/tale-library";
 

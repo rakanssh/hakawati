@@ -15,7 +15,7 @@ vi.mock("@/i18n", () => ({ loadLocale: vi.fn() }));
 vi.mock("@/services/scenario.service", () => ({
   getScenarioById: async () => mocks.stored,
 }));
-vi.mock("@/services/tale-library", () => ({
+vi.mock("@/services/tale-library.service", () => ({
   currentSyncSession: () => ({}),
   importCloudTale: mocks.importCloudTale,
 }));

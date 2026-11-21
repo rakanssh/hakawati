@@ -13,7 +13,6 @@ import {
 } from "@/types/context.type";
 import { LogEntryRole } from "@/types/log.type";
 
-/** Writes a new tale from Quickstart answers with the helper model and saves it. Returns its id. */
 export async function createQuickstartTale(
   answers: QuickstartTaleAnswers,
   options: {

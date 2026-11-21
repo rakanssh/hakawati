@@ -1,3 +1,4 @@
+import { errorMessage } from "@/lib/errors";
 import {
   getChatGptSession,
   signInWithChatGpt,
@@ -10,10 +11,6 @@ import type { ChatGptSession } from "@/types/chatgpt.type";
 
 let sessionRequest = 0;
 let signInController: AbortController | null = null;
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
 
 function applySession(session: ChatGptSession) {
   const accountId =

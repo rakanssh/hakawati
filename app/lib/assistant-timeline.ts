@@ -12,7 +12,6 @@ export type TimelinePart =
   | { kind: "text"; text: string }
   | { kind: "steps"; steps: TimelineStep[] };
 
-/** A reply's text and tool steps in the order they happened. Steps that changed something show as changes instead. */
 export function replyTimeline(
   content: string,
   activity: AssistantActivity[],
@@ -37,7 +36,6 @@ export function replyTimeline(
   return parts;
 }
 
-/** Splits a timeline into what folds behind a step count and what stays in view: the last part, or the last step of a trailing run of steps. */
 export function foldTimeline(parts: TimelinePart[]): {
   folded: TimelinePart[];
   shown: TimelinePart[];

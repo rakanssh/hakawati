@@ -2,16 +2,13 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 interface AssistantMemoryStoreType {
-  /** The chat open most recently, wherever it was. */
   lastThreadId: string | null;
-  /** The chat open most recently while each tale was on the play screen. */
   taleThreads: Record<string, string>;
   remember: (threadId: string, taleId: string | null) => void;
   forgetThread: (threadId: string) => void;
   forgetTale: (taleId: string) => void;
 }
 
-/** Which Hakawati chat the player was on, so coming back shows it again. */
 export const useAssistantMemoryStore = create<AssistantMemoryStoreType>()(
   persist(
     (set) => ({

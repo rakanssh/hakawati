@@ -227,9 +227,6 @@ const fitWidth = (width: number) =>
   );
 
 /**
- * The panel on the right of every screen. It holds Hakawati, and on the play screen also the story
- * setup, story cards, the character in Game Master tales, the narrator model and the look of the tale.
- * On desktop it is a side pane that can be resized from its edge; on phones it slides over the page.
  */
 export function StoryPanel() {
   const { t } = useLingui();

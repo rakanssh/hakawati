@@ -210,7 +210,6 @@ export function getModelReasoning(
     : undefined;
 }
 
-/** The next thinking level below this one that the model supports, starting from its default when none is set. */
 export function lowerReasoningEffort(
   effort: ReasoningEffort | undefined,
   reasoning: ReasoningCapabilities | undefined,

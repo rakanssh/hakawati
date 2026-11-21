@@ -178,7 +178,6 @@ function targetOf(change: AssistantChange): Target | null {
   }
 }
 
-/** The chips for a reply's changes, each opening what it changed. */
 export function ChangeChips({ changes }: { changes: AssistantChange[] }) {
   const describe = useChangeLabel();
   const isPlay = useRouterState({

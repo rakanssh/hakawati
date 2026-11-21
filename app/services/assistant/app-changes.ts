@@ -17,7 +17,6 @@ export function settingEntry(key: string) {
   return entry;
 }
 
-/** Changes one setting and records it, or returns null when it already had that value. */
 export function changeSetting(
   key: string,
   input: unknown,
@@ -55,7 +54,6 @@ export function changeRole(
   };
 }
 
-/** Undoes setting and AI Setup changes, newest first, where they still hold what Hakawati set. */
 export function revertAppChanges(changes: AppChange[]): {
   changes: AppChange[];
   kept: number;

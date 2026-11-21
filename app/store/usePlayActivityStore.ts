@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { abortError } from "@/lib/errors";
 
-/** Work on the open tale that must not overlap: the narrator's turn, saves, and Hakawati's edits. */
 interface PlayActivity {
   narrating: number;
   saving: number;
@@ -50,7 +49,6 @@ function nextChange(signal?: AbortSignal): Promise<void> {
   });
 }
 
-/** Starts `kind` now if none of `blockers` is running. */
 export function tryBeginPlayActivity(
   kind: PlayActivityKind,
   blockers: PlayActivityKind[],
@@ -61,10 +59,7 @@ export function tryBeginPlayActivity(
     : beginPlayActivity(kind);
 }
 
-/**
- * Waits until none of `blockers` is running, then starts `kind` in the same step,
- * so two kinds that block each other can never both start.
- */
+// Checks and starts in the same step, so two kinds that block each other can't both start.
 export async function claimPlayActivity(
   kind: PlayActivityKind,
   blockers: PlayActivityKind[],
