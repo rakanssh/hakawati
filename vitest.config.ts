@@ -7,6 +7,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
+    // Node 25+ has its own localStorage, which hides jsdom's.
+    execArgv: ["--no-experimental-webstorage"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
