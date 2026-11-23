@@ -309,6 +309,17 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+      - name: Upload the bundle to Play's internal track
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          RELEASE_TAG: ${{ needs.verify.outputs.tag }}
+        run: |
+          if [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ]; then
+            echo "::error::Set PLAY_SERVICE_ACCOUNT_JSON in the GitHub production environment."
+            exit 1
+          fi
+          node scripts/play-upload.mjs dev.hakawati.app internal android-release/*.aab "${RELEASE_TAG#v}"
+
   ios:
     # Uploads to TestFlight, where testers and App Review pick the build up. An
     # IPA can't be installed from GitHub, so nothing is attached to the release.
