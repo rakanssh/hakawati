@@ -972,6 +972,44 @@ describe("sync transport", () => {
     ]);
   });
 
+  it("records a cover refused for storage as a full cloud", async () => {
+    taleRepo.exportTalePackage.mockResolvedValue(samplePackage());
+    const transport = {
+      ...transportFixture(),
+      post: vi.fn(async (path: string) => {
+        if (path === "/v1/assets/cover-upload-intents") {
+          throw new SyncHttpError("Quota exceeded.", 409, "quota_exceeded");
+        }
+        return { id: "remote-tale", contentRev: 1, metadataRev: 1 };
+      }),
+    };
+
+    await expect(
+      uploadTalePackage({
+        profile: {
+          id: "cloud",
+          baseUrl: "https://sync.example",
+          mode: "hosted",
+        },
+        transport,
+        localTaleId: "local-tale",
+        idempotencyKey: "idem-cover-full",
+        capabilities: capabilitiesFixture(),
+      }),
+    ).rejects.toMatchObject({ code: "quota_exceeded" });
+
+    expect(transport.post.mock.calls.map(([path]) => path)).toEqual([
+      "/v1/assets/cover-upload-intents",
+    ]);
+    expect(syncRepo.setTaleSyncStatus).toHaveBeenCalledWith(
+      expect.objectContaining({
+        localTaleId: "local-tale",
+        pendingStatus: "error",
+        lastErrorCode: "quota_exceeded",
+      }),
+    );
+  });
+
   it.each(["quota_exceeded", "package_too_large", "413"])(
     "does not push a tale refused with %s again until it changes",
     async (code) => {

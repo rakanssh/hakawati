@@ -183,10 +183,6 @@ export type HostedAccount = {
 };
 
 export type HostedAccountUsage = {
-  tales: {
-    used: number;
-    limit: number;
-  };
   storage: {
     usedBytes: number;
     limitBytes: number;

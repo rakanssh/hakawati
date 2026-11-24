@@ -1020,13 +1020,11 @@ export default function SettingsCloudSync() {
     );
   } else {
     const signedOut = syncUiKind === "local";
-    const talesUsed = accountUsage?.tales.used ?? 0;
-    const talesLimit = accountUsage?.tales.limit ?? 0;
     const storageUsed = formatMegabytes(accountUsage?.storage.usedBytes ?? 0);
     const storageLimit = formatMegabytes(accountUsage?.storage.limitBytes ?? 0);
     const usageLine =
       showHostedUsage && accountUsage
-        ? t`${talesUsed} of ${talesLimit} tales · ${storageUsed} of ${storageLimit}`
+        ? t`${storageUsed} of ${storageLimit} used`
         : showHostedUsage && usageError
           ? t`Storage usage is unavailable.`
           : null;
@@ -1446,32 +1444,16 @@ function UsageBar({
   );
 }
 
-function UsageBars({ usage }: { usage: HostedAccountUsage }) {
+function StorageUsageBar({ usage }: { usage: HostedAccountUsage }) {
   const { t } = useLingui();
-  const talesUsed = usage.tales.used;
-  const talesLimit = usage.tales.limit;
-  const storageUsed = formatMegabytes(usage.storage.usedBytes);
-  const storageLimit = formatMegabytes(usage.storage.limitBytes);
   return (
-    <>
-      <UsageBar
-        label={<Trans>Tales</Trans>}
-        used={talesUsed}
-        limit={talesLimit}
-        percent={usagePercent(talesUsed, talesLimit)}
-        ariaLabel={t`Tale usage`}
-      />
-      <UsageBar
-        label={<Trans>Storage</Trans>}
-        used={storageUsed}
-        limit={storageLimit}
-        percent={usagePercent(
-          usage.storage.usedBytes,
-          usage.storage.limitBytes,
-        )}
-        ariaLabel={t`Storage usage`}
-      />
-    </>
+    <UsageBar
+      label={<Trans>Storage</Trans>}
+      used={formatMegabytes(usage.storage.usedBytes)}
+      limit={formatMegabytes(usage.storage.limitBytes)}
+      percent={usagePercent(usage.storage.usedBytes, usage.storage.limitBytes)}
+      ariaLabel={t`Storage usage`}
+    />
   );
 }
 
@@ -1560,7 +1542,7 @@ function CloudTales({
     <div className="flex flex-col gap-6">
       {usage ? (
         <div className="flex flex-col gap-3 rounded-xs border border-border/70 bg-background/60 p-3.5">
-          <UsageBars usage={usage} />
+          <StorageUsageBar usage={usage} />
         </div>
       ) : null}
       <div className="flex flex-col gap-2">

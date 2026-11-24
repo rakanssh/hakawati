@@ -272,8 +272,7 @@ describe("SettingsCloudSync storage usage", () => {
     syncRepoMocks.setSyncProfileDisabled.mockResolvedValue(undefined);
     vi.mocked(deleteHostedRefreshToken).mockResolvedValue(undefined);
     syncServiceMocks.fetchHostedAccountUsage.mockResolvedValue({
-      tales: { used: 3, limit: 50 },
-      storage: { usedBytes: 1.5 * 1024 * 1024, limitBytes: 10 * 1024 * 1024 },
+      storage: { usedBytes: 1.5 * 1024 * 1024, limitBytes: 60 * 1024 * 1024 },
     });
     syncServiceMocks.listHostedDevices.mockResolvedValue([
       device("device-1", "Laptop"),
@@ -363,9 +362,7 @@ describe("SettingsCloudSync storage usage", () => {
     const view = render();
     await flush();
 
-    expect(document.body.textContent).toContain(
-      "3 of 50 tales · 1.5 MB of 10 MB",
-    );
+    expect(document.body.textContent).toContain("1.5 MB of 60 MB used");
     // The bars stay on the cloud tales page.
     expect(
       document.body.querySelectorAll('[data-slot="progress"]'),
@@ -391,9 +388,9 @@ describe("SettingsCloudSync storage usage", () => {
     const bars = [
       ...document.body.querySelectorAll('[data-slot="progress-indicator"]'),
     ];
-    expect(bars).toHaveLength(2);
-    expect(bars[0]?.getAttribute("style")).toContain("translateX(-94%)");
-    expect(bars[1]?.getAttribute("style")).toContain("translateX(-85%)");
+    expect(bars).toHaveLength(1);
+    expect(bars[0]?.getAttribute("style")).toContain("translateX(-97.5%)");
+    expect(document.body.textContent).toContain("1.5 MB of 60 MB");
 
     const remove = [...document.body.querySelectorAll("button")].find(
       (button) => button.textContent?.includes("Remove from cloud"),
@@ -882,8 +879,7 @@ describe("SettingsCloudSync encryption", () => {
       disabledReason: null,
     });
     syncServiceMocks.fetchHostedAccountUsage.mockResolvedValue({
-      tales: { used: 1, limit: 50 },
-      storage: { usedBytes: 0, limitBytes: 10 * 1024 * 1024 },
+      storage: { usedBytes: 0, limitBytes: 60 * 1024 * 1024 },
     });
     syncServiceMocks.listHostedDevices.mockResolvedValue([device("device-1")]);
   });
