@@ -16,7 +16,6 @@ and the app shows it in What's New and Updates.
 ### Added
 
 - End-to-end encryption to Hakawati Sync accounts.
-- Cloud saves are end-to-end encrypted. Unlock a new device with a QR code from another device or with your recovery key.
 
 ### Changed
 
