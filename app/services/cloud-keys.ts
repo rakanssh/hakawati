@@ -27,6 +27,7 @@ export type LocalCloudKey = {
   keyId: string | null;
   hasKey: boolean;
   pendingKeyId: string | null;
+  migrated: boolean;
 };
 
 export type CloudKeySetup = {
@@ -75,6 +76,8 @@ export const cloudKeys = {
   discardPending: (scope: CloudKeyScope) =>
     invoke<void>("cloud_key_discard_pending", { scope }),
   forget: (scope: CloudKeyScope) => invoke<void>("cloud_key_forget", { scope }),
+  markMigrated: (context: CloudEncryptionContext) =>
+    invoke<void>("cloud_key_mark_migrated", keyArgs(context)),
   proof: (context: CloudEncryptionContext) =>
     invoke<string>("cloud_key_proof", keyArgs(context)),
   newRecovery: (context: CloudEncryptionContext) =>

@@ -606,6 +606,7 @@ pub fn run() {
             cloud_key::cloud_key_adopt,
             cloud_key::cloud_key_discard_pending,
             cloud_key::cloud_key_forget,
+            cloud_key::cloud_key_mark_migrated,
             cloud_key::cloud_key_proof,
             cloud_key::cloud_key_new_recovery,
             cloud_key::cloud_key_recover,

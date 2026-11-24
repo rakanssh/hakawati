@@ -2,8 +2,10 @@ import { create } from "zustand";
 import { asApiObject } from "@/services/api-error";
 import {
   advanceMigratedTaleRevisions,
+  deletePendingSyncWrite,
   getPendingSyncWrite,
   relinkTalesAfterCloudReset,
+  savePendingSyncWrite,
 } from "@/repositories/sync.repository";
 import {
   CLOUD_ENCRYPTION_SCHEME,
@@ -216,16 +218,49 @@ function hasCloudEncryption(capabilities: SyncCapabilities) {
   );
 }
 
-function ready(
+async function ready(
   scope: CloudKeyScope,
   keyId: string,
   info: CloudKeyInfo,
-): CloudEncryptionStatus {
+  migrated: boolean,
+): Promise<CloudEncryptionStatus> {
+  if (migrated && info.state !== "client") {
+    return { kind: "paused", reason: "downgraded" };
+  }
+  if (!migrated && info.state === "client") {
+    await cloudKeys.markMigrated({ ...scope, keyId });
+  }
   return {
     kind: "ready",
     info,
     session: { ...scope, keyId, acceptServerTales: info.state !== "client" },
   };
+}
+
+const RESET_WRITE_KEY = "cloud-reset";
+const resetsInFlight = new Set<string>();
+
+async function finishInterruptedReset(
+  profile: SyncProfile,
+  scope: CloudKeyScope,
+  info: CloudKeyInfo,
+) {
+  const write = {
+    profileId: profile.id,
+    accountId: profile.accountId,
+    writeKey: RESET_WRITE_KEY,
+  };
+  const stored = await getPendingSyncWrite(write);
+  if (!stored || resetsInFlight.has(scopeKey(scope))) return;
+  const { keyId } = JSON.parse(stored.body) as { keyId: string };
+  if (info.keyId === keyId) {
+    await deletePendingSyncWrite(write);
+    return;
+  }
+  if ((await cloudKeys.local(scope)).keyId === keyId) {
+    await cloudKeys.forget(scope);
+  }
+  await relinkTalesAfterCloudReset(profile.id, profile.accountId);
 }
 
 // Compares this device's record with what the server reports, per the
@@ -242,14 +277,17 @@ async function evaluateCloudEncryption(input: {
       ? { kind: "plaintext" }
       : { kind: "paused", reason: "unsupported" };
   }
-  let local = await cloudKeys.local(scope);
   if (!supported) {
-    if (local.keyId) return { kind: "paused", reason: "downgraded" };
+    if ((await cloudKeys.local(scope)).keyId) {
+      return { kind: "paused", reason: "downgraded" };
+    }
     return input.profile.mode === "personal"
       ? { kind: "plaintext" }
       : { kind: "paused", reason: "unsupported" };
   }
   const info = await fetchCloudKey(input.transport);
+  await finishInterruptedReset(input.profile, scope, info);
+  let local = await cloudKeys.local(scope);
 
   if (local.pendingKeyId) {
     if (
@@ -257,7 +295,12 @@ async function evaluateCloudEncryption(input: {
       info.keyCheck &&
       (await cloudKeys.adopt(scope, info.keyId, info.keyCheck))
     ) {
-      local = { keyId: info.keyId, hasKey: true, pendingKeyId: null };
+      local = {
+        keyId: info.keyId,
+        hasKey: true,
+        pendingKeyId: null,
+        migrated: false,
+      };
     } else if (info.keyId !== null) {
       await cloudKeys.discardPending(scope);
     }
@@ -269,14 +312,14 @@ async function evaluateCloudEncryption(input: {
   if (info.keyId === null) return { kind: "setup", info };
   if (local.keyId === info.keyId) {
     return local.hasKey
-      ? ready(scope, info.keyId, info)
+      ? ready(scope, info.keyId, info, local.migrated)
       : { kind: "locked", reason: "missing", info };
   }
   if (
     info.keyCheck &&
     (await cloudKeys.adopt(scope, info.keyId, info.keyCheck))
   ) {
-    return ready(scope, info.keyId, info);
+    return ready(scope, info.keyId, info, false);
   }
   return {
     kind: "locked",
@@ -384,7 +427,31 @@ export async function resetCloudEncryption(input: {
 }): Promise<void> {
   const scope = cloudKeyScope(input.profile);
   if (!scope) throw new Error("Sign in to reset cloud saves");
-  await resetCloudSaves(input.transport, input.keyId);
+  const write = {
+    profileId: input.profile.id,
+    accountId: input.profile.accountId,
+    writeKey: RESET_WRITE_KEY,
+  };
+  await savePendingSyncWrite({
+    ...write,
+    idempotencyKey: input.keyId,
+    method: "POST",
+    path: `${CLOUD_KEY_PATH}/reset`,
+    body: JSON.stringify({ confirmDeleteCloudSaves: true, keyId: input.keyId }),
+    saveVersion: null,
+  });
+  resetsInFlight.add(scopeKey(scope));
+  try {
+    await resetCloudSaves(input.transport, input.keyId);
+  } catch (error) {
+    if (error instanceof SyncHttpError && error.status < 500) {
+      await deletePendingSyncWrite(write);
+    }
+    forgetCloudEncryptionStatus();
+    throw error;
+  } finally {
+    resetsInFlight.delete(scopeKey(scope));
+  }
   await cloudKeys.forget(scope);
   await relinkTalesAfterCloudReset(input.profile.id, input.profile.accountId);
   forgetCloudEncryptionStatus();
@@ -569,6 +636,9 @@ export async function migrateCloudSaves(input: {
       input.transport,
       await cloudKeys.proof(session),
     );
+    if (done.state === "client" && done.keyId === session.keyId) {
+      await cloudKeys.markMigrated(session);
+    }
     forgetCloudEncryptionStatus();
     return done;
   }

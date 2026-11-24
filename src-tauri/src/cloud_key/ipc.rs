@@ -29,6 +29,7 @@ impl Device {
                 super::cloud_key_adopt,
                 super::cloud_key_discard_pending,
                 super::cloud_key_forget,
+                super::cloud_key_mark_migrated,
                 super::cloud_key_proof,
                 super::cloud_key_new_recovery,
                 super::cloud_key_recover,
@@ -104,13 +105,21 @@ fn commands_accept_the_arguments_the_app_sends() {
     let phone = Device::new("https://sync.example", &account_id);
     assert_eq!(
         phone.call("cloud_key_local", json!({ "scope": phone.scope })),
-        json!({ "keyId": null, "hasKey": false, "pendingKeyId": null })
+        json!({ "keyId": null, "hasKey": false, "pendingKeyId": null, "migrated": false })
     );
     let setup = phone.set_up();
     let key_id = setup["keyId"].clone();
     assert_eq!(
         phone.call("cloud_key_local", json!({ "scope": phone.scope })),
-        json!({ "keyId": key_id, "hasKey": true, "pendingKeyId": null })
+        json!({ "keyId": key_id, "hasKey": true, "pendingKeyId": null, "migrated": false })
+    );
+    phone.call(
+        "cloud_key_mark_migrated",
+        json!({ "scope": phone.scope, "keyId": key_id }),
+    );
+    assert_eq!(
+        phone.call("cloud_key_local", json!({ "scope": phone.scope }))["migrated"],
+        json!(true)
     );
 
     let revision = json!({ "taleId": "tale-1", "contentRev": 2, "metadataRev": 3 });
@@ -320,7 +329,7 @@ fn pair(direction: &str) {
 
     assert_eq!(
         locked.call("cloud_key_local", json!({ "scope": locked.scope })),
-        json!({ "keyId": key_id, "hasKey": true, "pendingKeyId": null })
+        json!({ "keyId": key_id, "hasKey": true, "pendingKeyId": null, "migrated": false })
     );
     assert_eq!(
         locked.call(

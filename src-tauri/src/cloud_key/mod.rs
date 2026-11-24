@@ -100,6 +100,8 @@ struct LocalRecord {
     server_origin: String,
     account_id: String,
     key_id: String,
+    #[serde(default)]
+    migrated: bool,
 }
 
 #[derive(Debug, Default, PartialEq, Serialize)]
@@ -108,6 +110,7 @@ pub struct LocalKeyState {
     key_id: Option<String>,
     has_key: bool,
     pending_key_id: Option<String>,
+    migrated: bool,
 }
 
 #[derive(Serialize)]
@@ -138,7 +141,7 @@ struct Keys<'a, S: SecretStore> {
 }
 
 impl<S: SecretStore> Keys<'_, S> {
-    fn record(&self, scope: &Scope) -> Result<Option<String>, String> {
+    fn read_record(&self, scope: &Scope) -> Result<Option<LocalRecord>, String> {
         let Some(value) = self.store.get(&scope.record_name())? else {
             return Ok(None);
         };
@@ -147,7 +150,16 @@ impl<S: SecretStore> Keys<'_, S> {
         if record.server_origin != scope.server_origin || record.account_id != scope.account_id {
             return Err("cloud_key_record_invalid".into());
         }
-        Ok(Some(record.key_id))
+        Ok(Some(record))
+    }
+
+    fn record(&self, scope: &Scope) -> Result<Option<String>, String> {
+        Ok(self.read_record(scope)?.map(|record| record.key_id))
+    }
+
+    fn write_record(&self, scope: &Scope, record: &LocalRecord) -> Result<(), String> {
+        let value = serde_json::to_string(record).map_err(|_| "cloud_key_record_invalid")?;
+        self.store.set(&scope.record_name(), &value)
     }
 
     fn load(&self, scope: &Scope, key_id: &str) -> Result<Option<CloudKey>, String> {
@@ -168,13 +180,14 @@ impl<S: SecretStore> Keys<'_, S> {
 
     fn local(&self, scope: &Scope) -> Result<LocalKeyState, String> {
         scope.validate()?;
-        let key_id = self.record(scope)?;
-        let has_key = match &key_id {
-            Some(key_id) => self.load(scope, key_id)?.is_some(),
+        let record = self.read_record(scope)?;
+        let has_key = match &record {
+            Some(record) => self.load(scope, &record.key_id)?.is_some(),
             None => false,
         };
         Ok(LocalKeyState {
-            key_id,
+            migrated: record.as_ref().is_some_and(|record| record.migrated),
+            key_id: record.map(|record| record.key_id),
             has_key,
             pending_key_id: self.store.get(&scope.pending_name())?,
         })
@@ -183,15 +196,35 @@ impl<S: SecretStore> Keys<'_, S> {
     fn save(&self, scope: &Scope, key_id: &str, key: &CloudKey) -> Result<(), String> {
         self.store
             .set(&scope.key_name(key_id), &STANDARD.encode(key))?;
-        let record = serde_json::to_string(&LocalRecord {
-            server_origin: scope.server_origin.clone(),
-            account_id: scope.account_id.clone(),
-            key_id: key_id.into(),
-        })
-        .map_err(|_| "cloud_key_record_invalid")?;
-        self.store.set(&scope.record_name(), &record)?;
+        let migrated = self
+            .read_record(scope)
+            .ok()
+            .flatten()
+            .is_some_and(|record| record.key_id == key_id && record.migrated);
+        self.write_record(
+            scope,
+            &LocalRecord {
+                server_origin: scope.server_origin.clone(),
+                account_id: scope.account_id.clone(),
+                key_id: key_id.into(),
+                migrated,
+            },
+        )?;
         if self.store.get(&scope.pending_name())?.as_deref() == Some(key_id) {
             self.store.delete(&scope.pending_name())?;
+        }
+        Ok(())
+    }
+
+    fn mark_migrated(&self, scope: &Scope, key_id: &str) -> Result<(), String> {
+        scope.validate()?;
+        let mut record = self
+            .read_record(scope)?
+            .filter(|record| record.key_id == key_id)
+            .ok_or("cloud_key_missing")?;
+        if !record.migrated {
+            record.migrated = true;
+            self.write_record(scope, &record)?;
         }
         Ok(())
     }
@@ -411,6 +444,11 @@ pub fn cloud_key_discard_pending(scope: Scope) -> Result<(), String> {
 #[tauri::command(async)]
 pub fn cloud_key_forget(scope: Scope) -> Result<(), String> {
     Keys { store: &store() }.forget(&scope)
+}
+
+#[tauri::command(async)]
+pub fn cloud_key_mark_migrated(scope: Scope, key_id: String) -> Result<(), String> {
+    Keys { store: &store() }.mark_migrated(&scope, &key_id)
 }
 
 #[tauri::command(async)]
@@ -835,6 +873,7 @@ mod tests {
                 key_id: None,
                 has_key: false,
                 pending_key_id: Some(setup.key_id.clone()),
+                migrated: false,
             }
         );
         assert!(store.0.borrow().contains_key(&format!(
@@ -853,6 +892,7 @@ mod tests {
                 key_id: Some(setup.key_id.clone()),
                 has_key: true,
                 pending_key_id: None,
+                migrated: false,
             }
         );
         let record: LocalRecord = serde_json::from_str(
@@ -864,6 +904,31 @@ mod tests {
         .unwrap();
         assert_eq!(record.key_id, setup.key_id);
         assert!(keys.require(&scope(), &setup.key_id).is_ok());
+    }
+
+    #[test]
+    fn remembers_a_finished_migration_for_its_key_only() {
+        let store = MemoryStore::default();
+        let keys = Keys { store: &store };
+        let setup = keys.begin_setup(&scope()).unwrap();
+        keys.adopt(&scope(), &setup.key_id, &setup.key_check)
+            .unwrap();
+        assert_eq!(
+            keys.mark_migrated(&scope(), &uuid::Uuid::new_v4().to_string()),
+            Err("cloud_key_missing".into())
+        );
+        assert!(!keys.local(&scope()).unwrap().migrated);
+
+        keys.mark_migrated(&scope(), &setup.key_id).unwrap();
+        assert!(keys.local(&scope()).unwrap().migrated);
+        let key = keys.require(&scope(), &setup.key_id).unwrap();
+        keys.accept(&scope(), &setup.key_id, &key, &setup.key_check)
+            .unwrap();
+        assert!(keys.local(&scope()).unwrap().migrated);
+
+        let next = keys.begin_setup(&scope()).unwrap();
+        keys.adopt(&scope(), &next.key_id, &next.key_check).unwrap();
+        assert!(!keys.local(&scope()).unwrap().migrated);
     }
 
     #[test]

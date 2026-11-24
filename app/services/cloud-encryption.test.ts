@@ -20,7 +20,7 @@ const mocks = vi.hoisted(() => {
     invoke: vi.fn(),
     syncRepo: {
       advanceMigratedTaleRevisions: vi.fn(),
-      relinkTalesAfterCloudReset: vi.fn(),
+      relinkTalesAfterCloudReset: vi.fn(async () => pending.clear()),
       getPendingSyncWrite: vi.fn(
         async ({ writeKey }: { writeKey: string }) =>
           pending.get(writeKey) ?? null,
@@ -65,6 +65,7 @@ type Local = {
   keyId: string | null;
   hasKey: boolean;
   pendingKeyId: string | null;
+  migrated?: boolean;
 };
 
 let local: Local;
@@ -155,6 +156,9 @@ describe("cloud encryption state", () => {
           case "cloud_key_forget":
             local = { keyId: null, hasKey: false, pendingKeyId: null };
             return undefined;
+          case "cloud_key_mark_migrated":
+            local.migrated = true;
+            return undefined;
           case "cloud_key_proof":
             return "proof-1";
           default:
@@ -166,6 +170,12 @@ describe("cloud encryption state", () => {
 
   it("syncs when this device holds the account's key", async () => {
     local = { keyId: KEY_ID, hasKey: true, pendingKeyId: null };
+    const migrating = await resolve(cloudKey({ state: "migrating" }));
+    expect(migrating).toMatchObject({
+      kind: "ready",
+      session: { acceptServerTales: true },
+    });
+    expect(local.migrated).toBeUndefined();
     const status = await resolve(cloudKey());
     expect(status).toMatchObject({
       kind: "ready",
@@ -176,10 +186,14 @@ describe("cloud encryption state", () => {
         acceptServerTales: false,
       },
     });
-    const migrating = await resolve(cloudKey({ state: "migrating" }));
-    expect(migrating).toMatchObject({
-      kind: "ready",
-      session: { acceptServerTales: true },
+    expect(local.migrated).toBe(true);
+  });
+
+  it("pauses when a finished migration is reported as migrating again", async () => {
+    local = { keyId: KEY_ID, hasKey: true, pendingKeyId: null, migrated: true };
+    expect(await resolve(cloudKey({ state: "migrating" }))).toEqual({
+      kind: "paused",
+      reason: "downgraded",
     });
   });
 
@@ -285,6 +299,56 @@ describe("cloud encryption state", () => {
       "hosted",
       "account-1",
     );
+    expect(
+      mocks.syncRepo.savePendingSyncWrite.mock.invocationCallOrder[0],
+    ).toBeLessThan(connection.post.mock.invocationCallOrder[0]);
+  });
+
+  it("finishes a reset whose response was lost", async () => {
+    local = { keyId: KEY_ID, hasKey: true, pendingKeyId: null };
+    const connection = transport(cloudKey());
+    connection.post.mockRejectedValue(new Error("Network error"));
+    await expect(
+      resetCloudEncryption({ profile, transport: connection, keyId: KEY_ID }),
+    ).rejects.toThrow("Network error");
+    expect(mocks.pending.has("cloud-reset")).toBe(true);
+    expect(mocks.syncRepo.relinkTalesAfterCloudReset).not.toHaveBeenCalled();
+
+    expect(
+      await resolve(
+        cloudKey({ state: "migrating", keyId: null, keyCheck: null }),
+      ),
+    ).toMatchObject({ kind: "setup" });
+    expect(local.keyId).toBeNull();
+    expect(mocks.syncRepo.relinkTalesAfterCloudReset).toHaveBeenCalledWith(
+      "hosted",
+      "account-1",
+    );
+  });
+
+  it("drops a reset the cloud never received", async () => {
+    local = { keyId: KEY_ID, hasKey: true, pendingKeyId: null };
+    const connection = transport(cloudKey());
+    connection.post.mockRejectedValue(new Error("Network error"));
+    await expect(
+      resetCloudEncryption({ profile, transport: connection, keyId: KEY_ID }),
+    ).rejects.toThrow("Network error");
+
+    expect(await resolve(cloudKey())).toMatchObject({ kind: "ready" });
+    expect(mocks.pending.has("cloud-reset")).toBe(false);
+    expect(local.keyId).toBe(KEY_ID);
+    expect(mocks.syncRepo.relinkTalesAfterCloudReset).not.toHaveBeenCalled();
+  });
+
+  it("drops a reset the cloud refused", async () => {
+    const connection = transport(cloudKey());
+    connection.post.mockRejectedValue(
+      new SyncHttpError("Changed", 409, "cloud_key_mismatch"),
+    );
+    await expect(
+      resetCloudEncryption({ profile, transport: connection, keyId: KEY_ID }),
+    ).rejects.toMatchObject({ code: "cloud_key_mismatch" });
+    expect(mocks.pending.has("cloud-reset")).toBe(false);
   });
 });
 
@@ -317,6 +381,7 @@ describe("cloud save migration", () => {
         }
         if (command === "cloud_cover_encrypt") return "ZW5jcnlwdGVk";
         if (command === "cloud_key_proof") return "proof-1";
+        if (command === "cloud_key_mark_migrated") return undefined;
         throw new Error(`Unexpected command ${command}`);
       },
     );
@@ -476,6 +541,10 @@ describe("cloud save migration", () => {
       "/v1/accounts/me/cloud-key/complete-migration",
       { keyProof: "proof-1" },
     );
+    expect(mocks.invoke).toHaveBeenCalledWith("cloud_key_mark_migrated", {
+      scope: { serverOrigin: "https://sync.example", accountId: "account-1" },
+      keyId: KEY_ID,
+    });
     expect(mocks.pending.size).toBe(0);
   });
 
