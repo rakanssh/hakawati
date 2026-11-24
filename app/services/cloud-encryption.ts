@@ -272,11 +272,18 @@ async function reconcileCloudReset(
       await resetCloudSaves(transport, keyId);
     } catch (error) {
       if (!(error instanceof SyncHttpError)) throw error;
-      if (!retry && error.status < 500 && error.status !== 408) {
-        await deletePendingSyncWrite(write);
-      }
       // A replacement key on replay confirms the old key is already gone.
-      if (!retry || error.code !== "cloud_key_mismatch") throw error;
+      if (!retry || error.code !== "cloud_key_mismatch") {
+        const transient =
+          error.status >= 500 ||
+          error.status === 408 ||
+          (retry && (error.status === 401 || error.status === 429));
+        if (!transient) {
+          await deletePendingSyncWrite(write);
+          if (!requestedKeyId) return;
+        }
+        throw error;
+      }
     }
     if ((await cloudKeys.local(scope)).keyId === keyId) {
       await cloudKeys.forget(scope);

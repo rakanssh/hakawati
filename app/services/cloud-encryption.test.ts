@@ -417,6 +417,34 @@ describe("cloud encryption state", () => {
     ).rejects.toMatchObject({ code: "cloud_key_mismatch" });
     expect(mocks.pending.has("cloud-reset")).toBe(false);
   });
+
+  it("drops a stored reset the cloud refuses and keeps syncing", async () => {
+    local = { keyId: KEY_ID, hasKey: true, pendingKeyId: null };
+    const connection = transport(cloudKey());
+    const check = () =>
+      resolveCloudEncryption({
+        profile,
+        transport: connection,
+        capabilities: capabilities(),
+      });
+
+    mocks.pending.set("cloud-reset", { idempotencyKey: KEY_ID });
+    connection.post.mockRejectedValueOnce(
+      new SyncHttpError("Slow down", 429, "rate_limited"),
+    );
+    forgetCloudEncryptionStatus();
+    await expect(check()).rejects.toMatchObject({ status: 429 });
+    expect(mocks.pending.has("cloud-reset")).toBe(true);
+
+    connection.post.mockRejectedValueOnce(
+      new SyncHttpError("Not encrypted", 409, "cloud_encryption_not_enabled"),
+    );
+    forgetCloudEncryptionStatus();
+    expect(await check()).toMatchObject({ kind: "ready" });
+    expect(mocks.pending.has("cloud-reset")).toBe(false);
+    expect(local.keyId).toBe(KEY_ID);
+    expect(mocks.syncRepo.relinkTalesAfterCloudReset).not.toHaveBeenCalled();
+  });
 });
 
 describe("cloud save migration", () => {
