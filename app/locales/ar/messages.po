@@ -97,10 +97,6 @@ msgstr "{chars} حرف • ~{tokens} رمز"
 msgid "{cloudOnlyTales, plural, one {# cloud tale isn't on this device and will be lost.} other {# cloud tales aren't on this device and will be lost.}}"
 msgstr "{cloudOnlyTales, plural, zero {# حكايات سحابية ليست على هذا الجهاز وستُفقد.} one {حكاية سحابية واحدة ليست على هذا الجهاز وستُفقد.} two {حكايتان سحابيتان ليستا على هذا الجهاز وستُفقدان.} few {# حكايات سحابية ليست على هذا الجهاز وستُفقد.} many {# حكاية سحابية ليست على هذا الجهاز وستُفقد.} other {# حكاية سحابية ليست على هذا الجهاز وستُفقد.}}"
 
-#: app/components/layout/settings/tale.tsx:92
-msgid "{descriptionChars} characters · ~{descriptionTokens} tokens"
-msgstr "{descriptionChars} حرفًا · ~{descriptionTokens} رمزًا"
-
 #: app/components/layout/settings/updates.tsx:72
 msgid "{downloaded} so far"
 msgstr "{downloaded} حتى الآن"
@@ -364,7 +360,7 @@ msgstr "العنوان"
 msgid "AI"
 msgstr "الذكاء الاصطناعي"
 
-#: app/components/layout/settings/tale.tsx:39
+#: app/components/layout/settings/tale.tsx:58
 msgid "AI components"
 msgstr "مكوّنات الذكاء الاصطناعي"
 
@@ -393,7 +389,7 @@ msgstr "إعداد الذكاء الاصطناعي"
 msgid "All"
 msgstr "الكل"
 
-#: app/components/play/story-panel/ai-tab.tsx:120
+#: app/components/play/story-panel/ai-tab.tsx:127
 msgid "All AI settings"
 msgstr "كل إعدادات الذكاء الاصطناعي"
 
@@ -751,7 +747,7 @@ msgstr "اختر صورة بصيغة JPEG أو PNG أو WebP."
 msgid "Choose a model"
 msgstr "اختر نموذجًا"
 
-#: app/components/play/story-panel/ai-tab.tsx:112
+#: app/components/play/story-panel/ai-tab.tsx:119
 msgid "Choose a model above before you continue the story."
 msgstr "اختر نموذجًا أعلاه قبل أن تكمل القصة."
 
@@ -942,6 +938,8 @@ msgstr "المحتوى"
 
 #: app/components/layout/settings/model.tsx:218
 #: app/components/layout/settings/model.tsx:227
+#: app/components/play/story-panel/ai-tab.tsx:84
+#: app/components/play/story-panel/ai-tab.tsx:93
 #: app/services/assistant/app-settings.ts:304
 msgid "Context window"
 msgstr "نافذة السياق"
@@ -1168,7 +1166,6 @@ msgstr "أزرق مخضرّ عميق وكريمي ونحاسي، بخط الكت
 #: app/components/layout/settings/model.tsx:58
 #: app/components/layout/settings/model.tsx:262
 #: app/components/layout/settings/thinking-level.tsx:61
-#: app/components/play/story-panel/ai-tab.tsx:103
 msgid "Default"
 msgstr "افتراضي"
 
@@ -1626,7 +1623,7 @@ msgstr "الإصلاحات"
 #: app/components/layout/settings/game.tsx:167
 #: app/components/layout/settings/game.tsx:242
 #: app/components/layout/settings/game.tsx:293
-#: app/components/play/story-panel/display-tab.tsx:54
+#: app/components/play/story-panel/display-tab.tsx:71
 #: app/services/assistant/app-settings.ts:227
 msgid "Font"
 msgstr "الخط"
@@ -1658,7 +1655,7 @@ msgstr "من جهاز مفتوح القفل"
 msgid "From Hakawati"
 msgstr "من حكواتي"
 
-#: app/components/layout/settings/tale.tsx:64
+#: app/components/layout/settings/tale.tsx:42
 #: app/components/scenario/GameModeField.tsx:22
 #: app/pages/home/home.tsx:230
 #: app/pages/scenarios/details.tsx:251
@@ -1804,8 +1801,8 @@ msgstr "مرتفع"
 
 #: app/components/layout/settings/game.tsx:177
 #: app/components/layout/settings/game.tsx:181
-#: app/components/play/story-panel/display-tab.tsx:58
-#: app/components/play/story-panel/display-tab.tsx:62
+#: app/components/play/story-panel/display-tab.tsx:75
+#: app/components/play/story-panel/display-tab.tsx:79
 #: app/services/assistant/app-settings.ts:248
 msgid "Highlight the latest passage"
 msgstr "تمييز آخر مقطع"
@@ -1915,6 +1912,8 @@ msgstr "التعليمات"
 
 #: app/components/layout/settings/game.tsx:149
 #: app/components/layout/settings/game.tsx:154
+#: app/components/play/story-panel/display-tab.tsx:62
+#: app/components/play/story-panel/display-tab.tsx:67
 #: app/services/assistant/app-settings.ts:218
 msgid "Interface size"
 msgstr "حجم الواجهة"
@@ -2006,13 +2005,9 @@ msgid "Left to right"
 msgstr "من اليسار إلى اليمين"
 
 #: app/components/layout/settings/model.tsx:215
+#: app/components/play/story-panel/ai-tab.tsx:80
 msgid "Length"
 msgstr "الطول"
-
-#: app/components/layout/settings/tale.tsx:80
-#: app/components/layout/settings/tale.tsx:85
-msgid "Library summary"
-msgstr "ملخص المكتبة"
 
 #: app/components/layout/settings/about.tsx:105
 msgid "License"
@@ -2194,8 +2189,8 @@ msgstr "الحد الأقصى"
 
 #: app/components/layout/settings/model.tsx:234
 #: app/components/layout/settings/model.tsx:243
-#: app/components/play/story-panel/ai-tab.tsx:80
-#: app/components/play/story-panel/ai-tab.tsx:89
+#: app/components/play/story-panel/ai-tab.tsx:101
+#: app/components/play/story-panel/ai-tab.tsx:110
 #: app/services/assistant/app-settings.ts:319
 msgid "Max output tokens"
 msgstr "الحد الأقصى لرموز المخرجات"
@@ -2247,15 +2242,15 @@ msgstr "تصغير"
 msgid "Missing settings: {0}. Configure your API in Settings."
 msgstr "الإعدادات المفقودة: {0}. قم بتعيين API في الإعدادات."
 
-#: app/components/layout/settings/tale.tsx:54
-#: app/components/layout/settings/tale.tsx:57
+#: app/components/layout/settings/tale.tsx:32
+#: app/components/layout/settings/tale.tsx:35
 msgid "Mode"
 msgstr "الوضع"
 
 #: app/components/layout/settings/ai-setup/role-page.tsx:182
 #: app/components/layout/settings/ai-setup/role-page.tsx:195
 #: app/components/layout/settings/ai-setup/role-page.tsx:199
-#: app/components/play/story-panel/ai-tab.tsx:59
+#: app/components/play/story-panel/ai-tab.tsx:63
 msgid "Model"
 msgstr "النموذج"
 
@@ -2324,7 +2319,7 @@ msgstr "السرد الصوتي"
 
 #: app/components/assistant/app-change-label.ts:23
 #: app/components/layout/settings/ai-setup/parts.tsx:20
-#: app/components/play/story-panel/ai-tab.tsx:50
+#: app/components/play/story-panel/ai-tab.tsx:54
 msgid "Narrator"
 msgstr "الراوي"
 
@@ -2886,7 +2881,7 @@ msgid "Read the tale's setup"
 msgstr "قرأ إعداد الحكاية"
 
 #: app/components/layout/settings/game.tsx:136
-#: app/components/play/story-panel/display-tab.tsx:42
+#: app/components/play/story-panel/display-tab.tsx:49
 msgid "Reading"
 msgstr "القراءة"
 
@@ -3048,10 +3043,6 @@ msgstr "استبدال النسخة السحابية من «{first}»؟"
 #: app/components/assistant/confirm-card.tsx:46
 msgid "Replace this device's copy of “{first}”?"
 msgstr "استبدال نسخة هذا الجهاز من «{first}»؟"
-
-#: app/components/play/story-panel/ai-tab.tsx:76
-msgid "Replies"
-msgstr "الردود"
 
 #: app/pages/scenarios/home.tsx:177
 #: app/pages/scenarios/home.tsx:852
@@ -3325,7 +3316,7 @@ msgstr "السيناريوهات، وبطاقات القصة، والملخصا�
 
 #: app/components/layout/settings/appearance-fields.tsx:31
 #: app/components/layout/settings/game.tsx:130
-#: app/components/play/story-panel/display-tab.tsx:36
+#: app/components/play/story-panel/display-tab.tsx:43
 #: app/services/assistant/app-settings.ts:195
 msgid "Scenery"
 msgstr "المشهد"
@@ -3448,7 +3439,7 @@ msgid "Set up Hakawati"
 msgstr "إعداد حكواتي"
 
 #: app/components/layout/settings/ai-setup/index.tsx:106
-#: app/components/play/story-panel/ai-tab.tsx:65
+#: app/components/play/story-panel/ai-tab.tsx:69
 msgid "Set up the Narrator to play"
 msgstr "أعدّ الراوي لتبدأ اللعب"
 
@@ -3515,10 +3506,6 @@ msgstr "عرض أقل"
 #: app/components/scenario/ScenarioBasicsFields.tsx:186
 msgid "Shown in your library and the public catalog. It is not sent to the AI."
 msgstr "يظهر في مكتبتك وفي فهرس السيناريوهات العام. لا يتم إرساله إلى الذكاء الاصطناعي."
-
-#: app/components/layout/settings/tale.tsx:89
-msgid "Shown in your library, not sent to the AI."
-msgstr "يظهر في مكتبتك ولا يُرسَل إلى الذكاء الاصطناعي."
 
 #: app/components/layout/settings/cloud-sync.tsx:1081
 #: app/components/layout/settings/cloud-sync.tsx:1107
@@ -3706,7 +3693,7 @@ msgstr "مولّد بطاقات القصة"
 msgid "Story panel"
 msgstr "لوحة القصة"
 
-#: app/components/layout/settings/tale.tsx:62
+#: app/components/layout/settings/tale.tsx:40
 #: app/components/quickstart/steps/game-mode-step.tsx:15
 #: app/components/scenario/GameModeField.tsx:22
 #: app/pages/home/home.tsx:232
@@ -3844,8 +3831,6 @@ msgstr "أخبر المشرفين بما فيه من مخالفة."
 
 #: app/components/layout/settings/model.tsx:254
 #: app/components/layout/settings/model.tsx:263
-#: app/components/play/story-panel/ai-tab.tsx:95
-#: app/components/play/story-panel/ai-tab.tsx:104
 #: app/services/assistant/app-settings.ts:331
 msgid "Temperature"
 msgstr "درجة الحرارة"
@@ -3857,8 +3842,8 @@ msgstr "شروط الخدمة"
 
 #: app/components/layout/settings/game.tsx:139
 #: app/components/layout/settings/game.tsx:144
-#: app/components/play/story-panel/display-tab.tsx:45
-#: app/components/play/story-panel/display-tab.tsx:50
+#: app/components/play/story-panel/display-tab.tsx:52
+#: app/components/play/story-panel/display-tab.tsx:57
 #: app/services/assistant/app-settings.ts:207
 msgid "Text size"
 msgstr "حجم النص"
@@ -3872,11 +3857,11 @@ msgstr "تحويل النص إلى كلام"
 msgid "The AI acts as a Game Master, tracking stats and inventory"
 msgstr "الكاتب يتصرف كمدير اللعبة، ويتتبع الخصائص والمخزون"
 
-#: app/components/layout/settings/tale.tsx:70
+#: app/components/layout/settings/tale.tsx:48
 msgid "The AI also tracks inventory and stats. It needs a model that can use tools."
 msgstr "يتتبّع الذكاء الاصطناعي أيضًا المقتنيات والإحصاءات، ويحتاج نموذجًا يستطيع استخدام الأدوات."
 
-#: app/components/layout/settings/tale.tsx:75
+#: app/components/layout/settings/tale.tsx:53
 msgid "The AI tells the story. Works with any model."
 msgstr "يروي الذكاء الاصطناعي القصة. يعمل مع أي نموذج."
 
@@ -3917,7 +3902,7 @@ msgstr "الخط الذي صُمّم به كل مظهر"
 #: app/components/layout/settings/game.tsx:117
 #: app/components/layout/settings/game.tsx:291
 #: app/components/layout/settings/theme-picker.tsx:119
-#: app/components/play/story-panel/display-tab.tsx:33
+#: app/components/play/story-panel/display-tab.tsx:40
 #: app/services/assistant/app-settings.ts:176
 msgid "Theme"
 msgstr "النسق"
@@ -3928,7 +3913,7 @@ msgstr "النسق"
 msgid "Theme font"
 msgstr "خط المظهر"
 
-#: app/components/layout/settings/tale.tsx:46
+#: app/components/layout/settings/tale.tsx:65
 #: app/components/prompt-components/PromptComponentsEditor.tsx:112
 msgid "These optional components are sent to the AI."
 msgstr "تُرسل هذه المكونات الاختيارية إلى الذكاء الاصطناعي."
@@ -3947,7 +3932,7 @@ msgid "Thinking"
 msgstr "تفكير"
 
 #: app/components/layout/settings/model.tsx:235
-#: app/components/play/story-panel/ai-tab.tsx:81
+#: app/components/play/story-panel/ai-tab.tsx:102
 msgid "Thinking and the answer share this"
 msgstr "يتشارك التفكير والإجابة هذا الحد"
 
@@ -4180,6 +4165,7 @@ msgid "Untitled"
 msgstr "بدون عنوان"
 
 #: app/components/layout/settings/model.tsx:219
+#: app/components/play/story-panel/ai-tab.tsx:85
 msgid "Up to {limit} tokens"
 msgstr "حتى {limit} رمز"
 

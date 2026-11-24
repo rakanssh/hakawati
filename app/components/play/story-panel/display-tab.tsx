@@ -13,7 +13,12 @@ import {
   SetupSection,
   ToggleSwitch,
 } from "@/components/layout/settings/settings-rows";
-import { FONT_SIZE_MAX, FONT_SIZE_MIN } from "@/lib/appearance-limits";
+import {
+  FONT_SIZE_MAX,
+  FONT_SIZE_MIN,
+  UI_SCALE_MAX,
+  UI_SCALE_MIN,
+} from "@/lib/appearance-limits";
 import { useSettingsStore } from "@/store/useSettingsStore";
 
 /** Theme and reading settings, so the look of a tale can be tuned without leaving it. */
@@ -21,6 +26,8 @@ export function DisplayTab() {
   const { t } = useLingui();
   const fontSize = useSettingsStore((state) => state.fontSize);
   const setFontSize = useSettingsStore((state) => state.setFontSize);
+  const uiScale = useSettingsStore((state) => state.uiScale);
+  const setUiScale = useSettingsStore((state) => state.setUiScale);
   const highlightLatestSection = useSettingsStore(
     (state) => state.highlightLatestSection,
   );
@@ -49,6 +56,16 @@ export function DisplayTab() {
               max={FONT_SIZE_MAX}
               label={t`Text size`}
               onChange={setFontSize}
+            />
+          </PlainRow>
+          <PlainRow>
+            <RowText title={<Trans>Interface size</Trans>} />
+            <SizeStepper
+              value={uiScale}
+              min={UI_SCALE_MIN}
+              max={UI_SCALE_MAX}
+              label={t`Interface size`}
+              onChange={setUiScale}
             />
           </PlainRow>
           <BlockRow title={<Trans>Font</Trans>}>
