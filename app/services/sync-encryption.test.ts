@@ -6,6 +6,7 @@ import type { CloudEnvelope } from "./cloud-keys";
 import {
   applyRemoteTalePackage,
   downloadRemoteTalePackage,
+  importRemoteTalePackage,
   listRemoteTales,
   replaceRemoteTalePackage,
   SyncHttpError,
@@ -159,6 +160,10 @@ function open(
   return sealed.plaintext;
 }
 
+function coverTag(assetId: string) {
+  return Buffer.from(assetId.toLowerCase()).subarray(0, 16);
+}
+
 // Stands in for the Rust commands, including their additional authenticated data.
 function fakeRust(command: string, args: Record<string, unknown>) {
   const keyArgs = args as unknown as KeyArgs;
@@ -208,8 +213,18 @@ function fakeRust(command: string, args: Record<string, unknown>) {
       return Buffer.concat([
         Buffer.alloc(12, 1),
         image,
-        Buffer.alloc(16, 2),
+        coverTag(args.assetId as string),
       ]).toString("base64");
+    }
+    case "cloud_cover_decrypt": {
+      const object = Buffer.from(args.objectBase64 as string, "base64");
+      if (
+        object.length <= 28 ||
+        !object.subarray(-16).equals(coverTag(args.assetId as string))
+      ) {
+        throw "decrypt_failed";
+      }
+      return object.subarray(12, -16).toString("base64");
     }
     default:
       throw new Error(`Unexpected command ${command}`);
@@ -337,9 +352,15 @@ function decrypted(
 async function encryptedDownload(
   revision: Revision,
   overrides: Record<string, unknown> = {},
+  cover: Record<string, unknown> | null = null,
 ) {
+  const coverAssetId = (cover?.assetId as string | undefined) ?? null;
   const pkg = {
     ...talePackage(),
+    tale: {
+      ...talePackage().tale,
+      ...(coverAssetId ? { coverAssetId, thumbnailAssetId: coverAssetId } : {}),
+    },
     turns: talePackage().turns.map(
       ({ updatedAt: _updatedAt, ...turn }) => turn,
     ),
@@ -373,13 +394,43 @@ async function encryptedDownload(
       stateSchemaVersion: 1,
       turnCount: 1,
       entryCount: 2,
-      coverAssetId: null,
+      coverAssetId,
       createdAt: 1,
       updatedAt: 2,
       ...sealed,
       ...overrides,
     },
-    cover: null,
+    cover,
+  };
+}
+
+const COVER_ID = "0b9f4c1e-7d2a-4e6b-8c3d-5a1f2e3d4c5b";
+const PNG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13]);
+
+function encryptedCover(assetId: string, image: Buffer) {
+  return new Uint8Array(
+    Buffer.from(
+      fakeRust("cloud_cover_encrypt", {
+        assetId,
+        imageBase64: image.toString("base64"),
+      }) as string,
+      "base64",
+    ),
+  );
+}
+
+function coverReference(assetId: string, encryption = "client") {
+  return {
+    assetId,
+    visibility: "private",
+    encryption,
+    contentType: "application/octet-stream",
+    byteSize: PNG.length + 28,
+    sha256: "0".repeat(64),
+    width: null,
+    height: null,
+    downloadUrl: `/v1/assets/${assetId}/download`,
+    urlExpiresAt: null,
   };
 }
 
@@ -868,5 +919,118 @@ describe("end-to-end encrypted sync", () => {
       }),
     ).rejects.toMatchObject({ code: "cloud_rollback" });
     expect(mocks.taleRepo.replaceTaleWithPackage).not.toHaveBeenCalled();
+  });
+
+  it("decrypts the cover of a tale it imports or refreshes", async () => {
+    mocks.taleRepo.importTalePackage.mockResolvedValue("local-imported");
+    const connection = {
+      ...transport(),
+      getBytes: vi.fn(async () => encryptedCover(COVER_ID, PNG)),
+    };
+    connection.get.mockResolvedValueOnce(
+      await encryptedDownload(
+        { taleId: REMOTE_ID, contentRev: 2, metadataRev: 3 },
+        {},
+        coverReference(COVER_ID),
+      ),
+    );
+
+    await importRemoteTalePackage({
+      profile,
+      transport: connection,
+      remoteTaleId: REMOTE_ID,
+    });
+
+    expect(connection.getBytes).toHaveBeenCalledWith(
+      `/v1/assets/${COVER_ID}/download`,
+    );
+    expect(mocks.invoke).toHaveBeenCalledWith(
+      "cloud_cover_decrypt",
+      expect.objectContaining({
+        scope: { serverOrigin: "https://sync.example", accountId: "account-1" },
+        keyId: KEY_ID,
+        assetId: COVER_ID,
+      }),
+    );
+    const cover = {
+      id: COVER_ID,
+      role: "thumbnail",
+      contentType: "image/png",
+      dataBase64: PNG.toString("base64"),
+    };
+    const imported = mocks.taleRepo.importTalePackage.mock
+      .calls[0][0] as TalePackageV1;
+    expect(imported.tale.thumbnailAssetId).toBe(COVER_ID);
+    expect(imported.assets).toEqual([cover]);
+
+    mocks.syncRepo.getTaleSyncState.mockResolvedValue({
+      profileId: "hosted",
+      accountId: "account-1",
+      localTaleId: "local-imported",
+      remoteTaleId: REMOTE_ID,
+      contentRev: "2",
+      metadataRev: "3",
+      lastSyncedAt: 1,
+      pendingStatus: "idle",
+      lastErrorCode: null,
+    });
+    connection.get.mockResolvedValueOnce(
+      await encryptedDownload(
+        { taleId: REMOTE_ID, contentRev: 3, metadataRev: 4 },
+        {},
+        coverReference(COVER_ID),
+      ),
+    );
+
+    await applyRemoteTalePackage({
+      profile,
+      transport: connection,
+      localTaleId: "local-imported",
+    });
+
+    const [[, refreshed]] = mocks.taleRepo.replaceTaleWithPackage.mock
+      .calls as unknown as Array<[string, TalePackageV1]>;
+    expect(refreshed.tale.thumbnailAssetId).toBe(COVER_ID);
+    expect(refreshed.assets).toEqual([cover]);
+  });
+
+  it("imports a tale without a cover that fails to decrypt or is not an image", async () => {
+    const otherAsset = "1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f";
+    const served: Array<[Uint8Array | Error, string]> = [
+      [encryptedCover(otherAsset, PNG), "client"],
+      [encryptedCover(COVER_ID, Buffer.from("<svg/>")), "client"],
+      [new Uint8Array(PNG), "server"],
+      [new SyncHttpError("Not found", 404), "client"],
+    ];
+    for (const [object, encryption] of served) {
+      mocks.taleRepo.importTalePackage.mockClear();
+      mocks.taleRepo.importTalePackage.mockResolvedValue("local-imported");
+      const connection = {
+        ...transport(),
+        getBytes: vi.fn(async () => {
+          if (object instanceof Error) throw object;
+          return object;
+        }),
+      };
+      connection.get.mockResolvedValueOnce(
+        await encryptedDownload(
+          { taleId: REMOTE_ID, contentRev: 2, metadataRev: 3 },
+          {},
+          coverReference(COVER_ID, encryption),
+        ),
+      );
+
+      await importRemoteTalePackage({
+        profile,
+        transport: connection,
+        remoteTaleId: REMOTE_ID,
+      });
+
+      expect(connection.getBytes).toHaveBeenCalledOnce();
+      const imported = mocks.taleRepo.importTalePackage.mock
+        .calls[0][0] as TalePackageV1;
+      expect(imported.assets).toEqual([]);
+      expect(imported.tale.thumbnailAssetId).toBeUndefined();
+    }
   });
 });

@@ -603,6 +603,26 @@ pub fn cloud_cover_encrypt(
 }
 
 #[tauri::command(async)]
+pub fn cloud_cover_decrypt(
+    scope: Scope,
+    key_id: String,
+    asset_id: String,
+    object_base64: String,
+) -> Result<String, String> {
+    let key = Keys { store: &store() }.require(&scope, &key_id)?;
+    uuid::Uuid::parse_str(&asset_id).map_err(|_| "cover_asset_invalid")?;
+    let object = crypto::decode_base64(&object_base64)?;
+    let image = crypto::open_cover(
+        &key,
+        &key_id,
+        &scope.account_id,
+        &asset_id.to_lowercase(),
+        &object,
+    )?;
+    Ok(STANDARD.encode(image))
+}
+
+#[tauri::command(async)]
 pub fn cloud_pairing_show(
     state: tauri::State<'_, CloudKeyState>,
     scope: Scope,
@@ -953,6 +973,59 @@ mod tests {
         );
         assert_eq!(keys.local(&scope()).unwrap(), LocalKeyState::default());
         keys.forget(&scope()).unwrap();
+    }
+
+    #[test]
+    fn decrypts_covers_only_under_their_key_and_asset() {
+        let scope = Scope {
+            server_origin: "https://sync.example".into(),
+            account_id: uuid::Uuid::new_v4().to_string(),
+        };
+        let keys = Keys {
+            store: &SharedStore,
+        };
+        let setup = keys.begin_setup(&scope).unwrap();
+        assert!(keys.adopt(&scope, &setup.key_id, &setup.key_check).unwrap());
+        let asset_id = uuid::Uuid::new_v4().to_string();
+        let image = STANDARD.encode([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
+        let object = cloud_cover_encrypt(
+            scope.clone(),
+            setup.key_id.clone(),
+            asset_id.clone(),
+            image.clone(),
+        )
+        .unwrap();
+        let decrypt = |key_id: &str, asset_id: &str, object: &str| {
+            cloud_cover_decrypt(scope.clone(), key_id.into(), asset_id.into(), object.into())
+        };
+
+        assert_eq!(
+            decrypt(&setup.key_id, &asset_id.to_uppercase(), &object),
+            Ok(image)
+        );
+        assert_eq!(
+            decrypt(&setup.key_id, &uuid::Uuid::new_v4().to_string(), &object),
+            Err("decrypt_failed".into())
+        );
+        let mut tampered = crypto::decode_base64(&object).unwrap();
+        tampered[12] ^= 1;
+        assert_eq!(
+            decrypt(&setup.key_id, &asset_id, &STANDARD.encode(tampered)),
+            Err("decrypt_failed".into())
+        );
+        assert_eq!(
+            decrypt(&setup.key_id, &asset_id, &STANDARD.encode([0u8; 28])),
+            Err("decrypt_failed".into())
+        );
+        assert_eq!(
+            decrypt(&setup.key_id, "cover", &object),
+            Err("cover_asset_invalid".into())
+        );
+        assert_eq!(
+            decrypt(&uuid::Uuid::new_v4().to_string(), &asset_id, &object),
+            Err("cloud_key_missing".into())
+        );
+        keys.forget(&scope).unwrap();
     }
 
     #[test]

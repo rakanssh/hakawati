@@ -15,6 +15,10 @@ and the app shows it in What's New and Updates.
 
 - Cloud saves are end-to-end encrypted. Unlock a new device with a QR code from another device or with your recovery key.
 
+### Fixed
+
+- Tales downloaded from the cloud keep their cover.
+
 ## [v1.4.0] - 2026-11-21
 
 ### Added

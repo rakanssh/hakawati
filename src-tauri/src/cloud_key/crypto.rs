@@ -210,7 +210,6 @@ pub fn seal_cover(
     [sealed.nonce.as_slice(), &sealed.ciphertext, &sealed.tag].concat()
 }
 
-#[cfg(test)]
 pub fn open_cover(
     key: &CloudKey,
     key_id: &str,
@@ -332,6 +331,7 @@ mod tests {
             image
         );
         assert!(open_cover(&key, KEY_ID, "acct", "other-asset", &object).is_err());
+        assert!(open_cover(&key, KEY_ID, "other-acct", "asset", &object).is_err());
         assert!(open_cover(&key, KEY_ID, "acct", "asset", &object[..28]).is_err());
     }
 }

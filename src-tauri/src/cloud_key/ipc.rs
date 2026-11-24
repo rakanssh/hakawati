@@ -36,6 +36,7 @@ impl Device {
                 super::cloud_tale_decrypt,
                 super::cloud_summaries_decrypt,
                 super::cloud_cover_encrypt,
+                super::cloud_cover_decrypt,
                 super::cloud_pairing_show,
                 super::cloud_pairing_scan,
                 super::cloud_pairing_confirm,
@@ -152,12 +153,13 @@ fn commands_accept_the_arguments_the_app_sends() {
         ),
         json!(["{\"title\":\"Gate\"}", null])
     );
+    let asset_id = uuid::Uuid::new_v4().to_string();
     let cover = phone.call(
         "cloud_cover_encrypt",
         json!({
             "scope": phone.scope,
             "keyId": key_id,
-            "assetId": uuid::Uuid::new_v4().to_string(),
+            "assetId": asset_id,
             "imageBase64": "iVBORw0K",
         }),
     );
@@ -166,6 +168,18 @@ fn commands_accept_the_arguments_the_app_sends() {
             .unwrap()
             .len(),
         6 + 28
+    );
+    assert_eq!(
+        phone.invoke(
+            "cloud_cover_decrypt",
+            json!({
+                "scope": phone.scope,
+                "keyId": key_id,
+                "assetId": uuid::Uuid::new_v4().to_string(),
+                "objectBase64": cover,
+            }),
+        ),
+        Err(json!("decrypt_failed"))
     );
     let proof = phone.call(
         "cloud_key_proof",
@@ -208,6 +222,18 @@ fn commands_accept_the_arguments_the_app_sends() {
             json!({ "scope": desktop.scope, "keyId": key_id })
         ),
         proof
+    );
+    assert_eq!(
+        desktop.call(
+            "cloud_cover_decrypt",
+            json!({
+                "scope": desktop.scope,
+                "keyId": key_id,
+                "assetId": asset_id,
+                "objectBase64": cover,
+            }),
+        ),
+        json!("iVBORw0K")
     );
 
     phone.call("cloud_key_forget", json!({ "scope": phone.scope }));

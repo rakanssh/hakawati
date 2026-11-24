@@ -613,6 +613,7 @@ pub fn run() {
             cloud_key::cloud_tale_decrypt,
             cloud_key::cloud_summaries_decrypt,
             cloud_key::cloud_cover_encrypt,
+            cloud_key::cloud_cover_decrypt,
             cloud_key::cloud_pairing_show,
             cloud_key::cloud_pairing_scan,
             cloud_key::cloud_pairing_confirm,

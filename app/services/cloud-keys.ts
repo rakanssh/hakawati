@@ -131,6 +131,16 @@ export const cloudKeys = {
       assetId,
       imageBase64,
     }),
+  decryptCover: (
+    context: CloudEncryptionContext,
+    assetId: string,
+    objectBase64: string,
+  ) =>
+    invoke<string>("cloud_cover_decrypt", {
+      ...keyArgs(context),
+      assetId,
+      objectBase64,
+    }),
   showPairing: (
     scope: CloudKeyScope,
     pairingId: string,

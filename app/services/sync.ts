@@ -40,7 +40,11 @@ import {
   type CloudEnvelope,
   type TaleRevision,
 } from "@/services/cloud-keys";
-import { optimizeCoverImage, sha256Hex } from "@/lib/cover-image";
+import {
+  detectCoverImageContentType,
+  optimizeCoverImage,
+  sha256Hex,
+} from "@/lib/cover-image";
 import { createLinkedWriteIdempotencyKey } from "@/lib/sync-idempotency";
 import { isRefusedSyncError } from "@/lib/sync-ui";
 import {
@@ -1723,16 +1727,69 @@ async function resumeAfterOwnWrite(
   return push(adopted);
 }
 
+type LocalTaleAsset = TalePackageV1["assets"][number];
+
+async function downloadRemoteCover(
+  transport: SyncTransport,
+  remote: RemoteTalePackageResponse,
+): Promise<LocalTaleAsset | null> {
+  const assetId =
+    remote.package.tale.coverAssetId ?? remote.package.tale.thumbnailAssetId;
+  const reference = bodyValue(remote.cover);
+  if (
+    !assetId ||
+    !transport.getBytes ||
+    typeof reference.assetId !== "string" ||
+    reference.assetId.toLowerCase() !== assetId.toLowerCase()
+  ) {
+    return null;
+  }
+  const encrypted =
+    remote.encryption === "client" || reference.encryption === "client";
+  const session = transport.cloudEncryption;
+  if (encrypted && !session) return null;
+  try {
+    const object = await transport.getBytes(
+      `/v1/assets/${encodeURIComponent(assetId)}/download`,
+    );
+    const image =
+      encrypted && session
+        ? base64ToBytes(
+            await cloudKeys.decryptCover(
+              session,
+              assetId,
+              bytesToBase64(object),
+            ),
+          )
+        : object;
+    const contentType = detectCoverImageContentType(image);
+    if (!contentType) return null;
+    return {
+      id: assetId,
+      role: "thumbnail",
+      contentType,
+      dataBase64: bytesToBase64(image),
+    };
+  } catch {
+    transport.signal?.throwIfAborted();
+    return null;
+  }
+}
+
 function toLocalTalePackage(
   pkg: RemoteTalePackageResponse["package"],
+  cover: LocalTaleAsset | null = null,
 ): TalePackageV1 {
-  const assets = (pkg.assets ?? []).filter(
-    (asset): asset is TalePackageV1["assets"][number] =>
-      typeof asset.dataBase64 === "string",
-  );
+  const assets = cover
+    ? [cover]
+    : (pkg.assets ?? []).filter(
+        (asset): asset is LocalTaleAsset =>
+          typeof asset.dataBase64 === "string",
+      );
   const assetIds = new Set(assets.map((asset) => asset.id));
   const { thumbnailAssetId, coverAssetId, ...tale } = pkg.tale;
-  const localThumbnailAssetId = thumbnailAssetId ?? coverAssetId ?? undefined;
+  const localThumbnailAssetId =
+    cover?.id ?? thumbnailAssetId ?? coverAssetId ?? undefined;
 
   return {
     ...pkg,
@@ -2090,8 +2147,10 @@ export async function importRemoteTalePackage(input: {
     input.remoteTaleId,
   );
   input.transport.signal?.throwIfAborted();
+  const cover = await downloadRemoteCover(input.transport, remote);
+  input.transport.signal?.throwIfAborted();
   const localTaleId = await importTalePackage(
-    toLocalTalePackage(remote.package),
+    toLocalTalePackage(remote.package, cover),
     {
       preserveId: true,
       ...(input.title ? { title: input.title } : {}),
@@ -2200,9 +2259,11 @@ async function pullRemoteTalePackage(input: {
       "cloud_rollback",
     );
   }
+  const cover = await downloadRemoteCover(input.transport, remote);
+  input.transport.signal?.throwIfAborted();
   const replaced = await replaceTaleWithPackage(
     input.localTaleId,
-    toLocalTalePackage(remote.package),
+    toLocalTalePackage(remote.package, cover),
     {
       expectedSaveVersion,
       // Rechecked inside the write queue in case play began meanwhile.
