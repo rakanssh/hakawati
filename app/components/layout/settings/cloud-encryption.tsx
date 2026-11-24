@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
@@ -55,6 +48,7 @@ import {
   cloudKeyError,
   cloudKeys,
   type CloudKeySetup,
+  type CloudRecoveryReplacement,
   type PairingDirection,
 } from "@/services/cloud-keys";
 import {
@@ -239,7 +233,6 @@ export function CloudEncryptionLink({
 
 type Dialogs =
   | { kind: "setup" }
-  | { kind: "recovery-key"; recoveryKey: string }
   | { kind: "enter-recovery" }
   | { kind: "new-recovery" }
   | { kind: "reset" }
@@ -339,7 +332,7 @@ export function CloudEncryptionDialogs({
   profile: SyncProfile;
   transport: () => SyncTransport;
   status: CloudEncryptionStatus | null;
-  cloudOnlyTales: number;
+  cloudOnlyTales: number | null;
 }) {
   if (!dialog) return null;
   switch (dialog.kind) {
@@ -351,23 +344,12 @@ export function CloudEncryptionDialogs({
           onClose={onClose}
         />
       );
-    case "recovery-key":
-      return (
-        <RecoveryKeyDialog
-          recoveryKey={dialog.recoveryKey}
-          onDone={onClose}
-          title={<Trans>New recovery key</Trans>}
-        />
-      );
     case "new-recovery":
       return (
         <NewRecoveryDialog
           transport={transport}
           status={status}
           onClose={onClose}
-          onCreated={(recoveryKey) =>
-            onDialog({ kind: "recovery-key", recoveryKey })
-          }
         />
       );
     case "enter-recovery":
@@ -383,6 +365,7 @@ export function CloudEncryptionDialogs({
         <ResetDialog
           profile={profile}
           transport={transport}
+          keyId={status && "info" in status ? status.info.keyId : null}
           cloudOnlyTales={cloudOnlyTales}
           onClose={onClose}
           onReset={() => onDialog({ kind: "setup" })}
@@ -553,70 +536,87 @@ function SetupDialog({
   );
 }
 
-function RecoveryKeyDialog({
-  recoveryKey,
-  title,
-  onDone,
-}: {
-  recoveryKey: string;
-  title: ReactNode;
-  onDone: () => void;
-}) {
-  const [saved, setSaved] = useState(false);
-  return (
-    <Dialog open onOpenChange={() => undefined}>
-      <DialogContent showCloseButton={false}>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
-            <Trans>Your old recovery key no longer works.</Trans>
-          </DialogDescription>
-        </DialogHeader>
-        <RecoveryKeyView
-          recoveryKey={recoveryKey}
-          saved={saved}
-          onSavedChange={setSaved}
-        />
-        <DialogFooter>
-          <Button onClick={onDone} disabled={!saved}>
-            <Trans>Done</Trans>
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 function NewRecoveryDialog({
   transport,
   status,
   onClose,
-  onCreated,
 }: {
   transport: () => SyncTransport;
   status: CloudEncryptionStatus | null;
   onClose: () => void;
-  onCreated: (recoveryKey: string) => void;
 }) {
   const keyError = useKeyErrorMessage();
+  const [replacement, setReplacement] =
+    useState<CloudRecoveryReplacement | null>(null);
+  const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
-  async function replace() {
+  const [error, setError] = useState<unknown>(null);
+
+  async function create() {
     if (status?.kind !== "ready") return;
     setBusy(true);
     try {
-      const replacement = await cloudKeys.newRecovery(status.session);
-      await replaceCloudRecovery(transport(), {
-        keyProof: replacement.keyProof,
-        recoveryWrappedKey: replacement.recoveryWrappedKey,
-      });
-      onCreated(replacement.recoveryKey);
-    } catch (error) {
-      toast.error(keyError(error));
+      setReplacement(await cloudKeys.newRecovery(status.session));
+    } catch (reason) {
+      toast.error(keyError(reason));
       onClose();
     } finally {
       setBusy(false);
     }
   }
+
+  async function replace() {
+    if (!replacement) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await replaceCloudRecovery(transport(), {
+        keyProof: replacement.keyProof,
+        recoveryWrappedKey: replacement.recoveryWrappedKey,
+      });
+      onClose();
+    } catch (reason) {
+      setError(reason);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (replacement) {
+    return (
+      <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>
+              <Trans>New recovery key</Trans>
+            </DialogTitle>
+            <DialogDescription>
+              <Trans>
+                Your current recovery key stops working when you continue.
+              </Trans>
+            </DialogDescription>
+          </DialogHeader>
+          <RecoveryKeyView
+            recoveryKey={replacement.recoveryKey}
+            saved={saved}
+            onSavedChange={setSaved}
+          />
+          {error ? (
+            <p className="text-sm text-destructive">{keyError(error)}</p>
+          ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose} disabled={busy}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button onClick={() => void replace()} disabled={!saved || busy}>
+              <Trans>Continue</Trans>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <AlertDialog open onOpenChange={(open) => !open && !busy && onClose()}>
       <AlertDialogContent>
@@ -632,7 +632,7 @@ function NewRecoveryDialog({
           <AlertDialogCancel disabled={busy}>
             <Trans>Cancel</Trans>
           </AlertDialogCancel>
-          <Button onClick={() => void replace()} disabled={busy}>
+          <Button onClick={() => void create()} disabled={busy}>
             <Trans>Create</Trans>
           </Button>
         </AlertDialogFooter>
@@ -725,22 +725,25 @@ function EnterRecoveryDialog({
 function ResetDialog({
   profile,
   transport,
+  keyId,
   cloudOnlyTales,
   onClose,
   onReset,
 }: {
   profile: SyncProfile;
   transport: () => SyncTransport;
-  cloudOnlyTales: number;
+  keyId: string | null;
+  cloudOnlyTales: number | null;
   onClose: () => void;
   onReset: () => void;
 }) {
   const keyError = useKeyErrorMessage();
   const [busy, setBusy] = useState(false);
   async function reset() {
+    if (!keyId) return;
     setBusy(true);
     try {
-      await resetCloudEncryption({ profile, transport: transport() });
+      await resetCloudEncryption({ profile, transport: transport(), keyId });
       onReset();
     } catch (error) {
       toast.error(keyError(error));
@@ -762,7 +765,11 @@ function ResetDialog({
               with a new key.
             </Trans>
           </AlertDialogDescription>
-          {cloudOnlyTales > 0 ? (
+          {cloudOnlyTales === null ? (
+            <p className="text-sm font-semibold text-destructive">
+              <Trans>Cloud tales couldn’t be loaded.</Trans>
+            </p>
+          ) : cloudOnlyTales > 0 ? (
             <p className="text-sm font-semibold text-destructive">
               {plural(cloudOnlyTales, {
                 one: "# cloud tale isn't on this device and will be lost.",
@@ -778,7 +785,7 @@ function ResetDialog({
           <Button
             variant="destructive"
             onClick={() => void reset()}
-            disabled={busy}
+            disabled={busy || !keyId || cloudOnlyTales === null}
           >
             <Trans>Reset</Trans>
           </Button>

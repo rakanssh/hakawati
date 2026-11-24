@@ -887,7 +887,7 @@ export async function downloadRemoteTalePackage(
     ),
   );
   if (response.encryption === "client" || response.encryptedPackage) {
-    return openTalePackage(transport.cloudEncryption, response);
+    return openTalePackage(transport.cloudEncryption, remoteTaleId, response);
   }
   if (
     transport.cloudEncryption &&
@@ -911,13 +911,16 @@ function entryCount(pkg: Pick<SyncTalePackageV1, "turns">) {
 
 async function openTalePackage(
   session: CloudEncryptionSession | undefined,
+  id: string,
   response: Record<string, unknown>,
 ): Promise<RemoteTalePackageResponse> {
   if (!session) throw cloudLockedError();
+  if (response.id !== id) {
+    throw cloudIntegrityError("The cloud returned a different tale.");
+  }
   const encrypted = bodyValue(
     response.encryptedPackage,
   ) as unknown as EncryptedTalePackage;
-  const id = typeof response.id === "string" ? response.id : "";
   const contentRev = Number(response.contentRev);
   const metadataRev = Number(response.metadataRev);
   if (

@@ -88,6 +88,7 @@ const syncServiceMocks = vi.hoisted(() => ({
 
 const taleLibraryMocks = vi.hoisted(() => ({
   removeLibraryTaleFromCloud: vi.fn(),
+  remoteError: null as unknown,
 }));
 
 const syncWakeMocks = vi.hoisted(() => ({
@@ -103,6 +104,13 @@ const toastMocks = vi.hoisted(() => ({
 
 const tauriCore = vi.hoisted(() => ({
   invoke: vi.fn(async (command: string) => {
+    if (command === "cloud_key_new_recovery") {
+      return {
+        recoveryKey: "NEWK-EYAB-CDEF-GHJK-MNPQ-RSTV-WXYZ",
+        recoveryWrappedKey: {},
+        keyProof: "proof",
+      };
+    }
     if (command === "cloud_key_begin_setup") {
       return {
         keyId: "key-1",
@@ -167,7 +175,8 @@ vi.mock("@/hooks/useTaleLibrary", () => ({
     ],
     total: 12,
     remoteLoading: false,
-    remoteError: null,
+    syncListLoading: false,
+    remoteError: taleLibraryMocks.remoteError,
     removeLibraryTaleFromCloud: taleLibraryMocks.removeLibraryTaleFromCloud,
   }),
 }));
@@ -849,6 +858,8 @@ describe("SettingsCloudSync encryption", () => {
   }
 
   beforeEach(() => {
+    taleLibraryMocks.remoteError = null;
+    syncServiceMocks.createSyncTransport.mockReturnValue({});
     (
       globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
     ).IS_REACT_ACT_ENVIRONMENT = true;
@@ -898,6 +909,27 @@ describe("SettingsCloudSync encryption", () => {
     view.cleanup();
   });
 
+  it("won't reset while cloud tales can't be counted", async () => {
+    taleLibraryMocks.remoteError = new Error("offline");
+    withStatus({ kind: "locked", reason: "missing", info });
+    const view = render();
+    await flush();
+
+    click("Unlock");
+    await flush();
+    click("Reset cloud saves");
+    await flush();
+    expect(document.body.textContent).toContain(
+      "Cloud tales couldn’t be loaded.",
+    );
+    const reset = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent === "Reset",
+    );
+    expect(reset?.disabled).toBe(true);
+
+    view.cleanup();
+  });
+
   it("opens encryption settings once this device is unlocked", async () => {
     withStatus({
       kind: "ready",
@@ -918,6 +950,53 @@ describe("SettingsCloudSync encryption", () => {
     expect(document.body.textContent).toContain("Show a code");
     expect(document.body.textContent).toContain("New recovery key");
     expect(document.body.textContent).toContain("Reset cloud saves");
+
+    view.cleanup();
+  });
+
+  it("shows a new recovery key before the server replaces the old one", async () => {
+    const put = vi.fn().mockResolvedValue({
+      state: "client",
+      keyId: "key-1",
+      keyCheck: "check",
+      recoveryWrappedKey: {},
+      serverTaleCount: 0,
+    });
+    syncServiceMocks.createSyncTransport.mockReturnValue({ put });
+    withStatus({
+      kind: "ready",
+      info,
+      session: {
+        serverOrigin: "https://sync.example",
+        accountId: "account-1",
+        keyId: "key-1",
+        acceptServerTales: false,
+      },
+    });
+    const view = render();
+    await flush();
+
+    click("Encryption");
+    await flush();
+    click("New recovery key");
+    await flush();
+    click("Create");
+    await flush();
+    expect(document.body.textContent).toContain(
+      "NEWK-EYAB-CDEF-GHJK-MNPQ-RSTV-WXYZ",
+    );
+    expect(put).not.toHaveBeenCalled();
+
+    const saved = document.body.querySelector<HTMLElement>('[role="checkbox"]');
+    act(() => {
+      saved?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    click("Continue");
+    await flush();
+    expect(put).toHaveBeenCalledWith("/v1/accounts/me/cloud-key/recovery", {
+      keyProof: "proof",
+      recoveryWrappedKey: {},
+    });
 
     view.cleanup();
   });

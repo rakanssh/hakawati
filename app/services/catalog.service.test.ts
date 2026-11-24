@@ -620,6 +620,24 @@ describe("catalog service", () => {
     } satisfies Partial<CatalogHttpError>);
   });
 
+  it("sends the cloud encryption header on asset requests only", async () => {
+    http.fetch
+      .mockResolvedValueOnce(jsonResponse({}))
+      .mockResolvedValueOnce(jsonResponse({}));
+    const transport = createCatalogTransport({
+      baseUrl: "https://cloud.example",
+    });
+
+    await transport.post("/v1/assets/cover-upload-intents", {});
+    await transport.post("/v1/catalog/scenarios", {});
+
+    const headers = http.fetch.mock.calls.map(
+      ([, init]) => (init as RequestInit).headers as Record<string, string>,
+    );
+    expect(headers[0]["X-Hakawati-Cloud-Encryption"]).toBe("client-v1");
+    expect(headers[1]).not.toHaveProperty("X-Hakawati-Cloud-Encryption");
+  });
+
   it("preserves structured API error details", async () => {
     http.fetch.mockResolvedValueOnce(
       jsonResponse(

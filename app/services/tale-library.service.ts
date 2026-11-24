@@ -8,6 +8,7 @@ import {
 import {
   applyRemoteTalePackage,
   assertSyncAvailable,
+  cloudLockedError,
   createSyncTransport,
   deleteRemoteTale,
   fetchSyncCapabilities,
@@ -267,12 +268,7 @@ export async function removeLibraryTaleItemFromCloud(
   if (!syncActive) throw new Error("Sync is not active");
   const { profile } = session;
   if (item.source === "remote" && item.remoteTale.locked) {
-    await deleteRemoteTale(
-      syncTransport(session),
-      item.remoteTale.id,
-      item.remoteTale.metadataRev,
-    );
-    return;
+    throw cloudLockedError();
   }
   const transport = await privateSyncTransport(session);
   const localTaleId =

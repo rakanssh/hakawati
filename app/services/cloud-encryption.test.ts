@@ -271,10 +271,14 @@ describe("cloud encryption state", () => {
     connection.post.mockResolvedValue(
       cloudKey({ state: "migrating", keyId: null, keyCheck: null }),
     );
-    await resetCloudEncryption({ profile, transport: connection });
+    await resetCloudEncryption({
+      profile,
+      transport: connection,
+      keyId: KEY_ID,
+    });
     expect(connection.post).toHaveBeenCalledWith(
       "/v1/accounts/me/cloud-key/reset",
-      { confirmDeleteCloudSaves: true },
+      { confirmDeleteCloudSaves: true, keyId: KEY_ID },
     );
     expect(local.keyId).toBeNull();
     expect(mocks.syncRepo.relinkTalesAfterCloudReset).toHaveBeenCalledWith(

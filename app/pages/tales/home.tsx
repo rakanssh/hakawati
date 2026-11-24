@@ -252,6 +252,7 @@ export default function TalesHome() {
           const hasConflict = badge === "conflict";
           const isSynced =
             syncActive && (isRemote || Boolean(!isRemote && item.sync));
+          const isLocked = isRemote && item.remoteTale.locked;
           const syncStatusUnknown =
             syncActive &&
             item.source === "local" &&
@@ -326,7 +327,7 @@ export default function TalesHome() {
                         <Trans>Save as Scenario</Trans>
                       </DropdownMenuItem>
                     )}
-                    {syncActive && isSynced ? (
+                    {syncActive && isSynced && !isLocked ? (
                       <DropdownMenuItem
                         onSelect={(e) => e.preventDefault()}
                         onClick={() => setPendingCloudRemove({ item, name })}

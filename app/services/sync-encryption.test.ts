@@ -797,6 +797,16 @@ describe("end-to-end encrypted sync", () => {
     expect(remote.package.tale.title).toBe("The Iron Gate");
 
     connection.get.mockResolvedValueOnce(
+      await encryptedDownload({
+        ...revision,
+        taleId: "0a9b8c7d-6e5f-4a3b-8c1d-2e3f4a5b6c7d",
+      }),
+    );
+    await expect(
+      downloadRemoteTalePackage(connection, REMOTE_ID),
+    ).rejects.toMatchObject({ code: "cloud_tale_invalid" });
+
+    connection.get.mockResolvedValueOnce(
       await encryptedDownload(revision, { turnCount: 5 }),
     );
     await expect(

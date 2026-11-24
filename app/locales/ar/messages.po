@@ -93,7 +93,7 @@ msgstr "{0}/600 حرف للنشر"
 msgid "{chars} characters • ~{tokens} tokens"
 msgstr "{chars} حرف • ~{tokens} رمز"
 
-#: app/components/layout/settings/cloud-encryption.tsx:767
+#: app/components/layout/settings/cloud-encryption.tsx:774
 msgid "{cloudOnlyTales, plural, one {# cloud tale isn't on this device and will be lost.} other {# cloud tales aren't on this device and will be lost.}}"
 msgstr "{cloudOnlyTales, plural, zero {# حكايات سحابية ليست على هذا الجهاز وستُفقد.} one {حكاية سحابية واحدة ليست على هذا الجهاز وستُفقد.} two {حكايتان سحابيتان ليستا على هذا الجهاز وستُفقدان.} few {# حكايات سحابية ليست على هذا الجهاز وستُفقد.} many {# حكاية سحابية ليست على هذا الجهاز وستُفقد.} other {# حكاية سحابية ليست على هذا الجهاز وستُفقد.}}"
 
@@ -122,12 +122,12 @@ msgstr "عُدّلت {kept} تغييرات بعد ذلك، لذا أُبقيت."
 msgid "{localEntryCount} {0}"
 msgstr "{localEntryCount} {0}"
 
-#: app/components/layout/settings/cloud-sync.tsx:1149
+#: app/components/layout/settings/cloud-sync.tsx:1153
 msgid "{localTales, plural, one {Your tale is only on this device.} other {Your # tales are only on this device.}}"
 msgstr "{localTales, plural, zero {لا توجد حكايات على هذا الجهاز.} one {حكايتك موجودة على هذا الجهاز فقط.} two {حكايتاك موجودتان على هذا الجهاز فقط.} few {حكاياتك الـ# موجودة على هذا الجهاز فقط.} many {حكاياتك الـ# موجودة على هذا الجهاز فقط.} other {حكاياتك الـ# موجودة على هذا الجهاز فقط.}}"
 
 #: app/pages/scenarios/home.tsx:602
-#: app/pages/tales/home.tsx:276
+#: app/pages/tales/home.tsx:277
 msgid "{name} thumbnail"
 msgstr "صورة مصغرة لـ {name}"
 
@@ -145,7 +145,7 @@ msgstr "تفكير {role}: {0}"
 msgid "{size} context"
 msgstr "سياق {size}"
 
-#: app/components/layout/settings/cloud-sync.tsx:1025
+#: app/components/layout/settings/cloud-sync.tsx:1029
 msgid "{talesUsed} of {talesLimit} tales · {storageUsed} of {storageLimit}"
 msgstr "{talesUsed} من {talesLimit} حكاية · {storageUsed} من {storageLimit}"
 
@@ -153,7 +153,7 @@ msgstr "{talesUsed} من {talesLimit} حكاية · {storageUsed} من {storageL
 msgid "{title} tale"
 msgstr "حكاية {title}"
 
-#: app/components/layout/settings/cloud-sync.tsx:1416
+#: app/components/layout/settings/cloud-sync.tsx:1420
 msgid "{used} of {limit}"
 msgstr "{used} من {limit}"
 
@@ -200,13 +200,13 @@ msgid "Account"
 msgstr "الحساب"
 
 #: app/components/assistant/activity-chip.tsx:50
-#: app/components/layout/settings/cloud-sync.tsx:1396
+#: app/components/layout/settings/cloud-sync.tsx:1400
 #: app/components/layout/settings/settings-modal.tsx:83
 msgid "Account & Sync"
 msgstr "الحساب والمزامنة"
 
-#: app/components/layout/settings/cloud-sync.tsx:564
-#: app/components/layout/settings/cloud-sync.tsx:565
+#: app/components/layout/settings/cloud-sync.tsx:568
+#: app/components/layout/settings/cloud-sync.tsx:569
 msgid "Account deleted"
 msgstr "تم حذف الحساب"
 
@@ -397,7 +397,7 @@ msgstr "الكل"
 msgid "All AI settings"
 msgstr "كل إعدادات الذكاء الاصطناعي"
 
-#: app/components/layout/settings/cloud-encryption.tsx:760
+#: app/components/layout/settings/cloud-encryption.tsx:763
 msgid "All cloud saves are deleted. Tales on this device upload again with a new key."
 msgstr "تُحذف كل النسخ السحابية. تُرفع الحكايات الموجودة على هذا الجهاز مرة أخرى بمفتاح جديد."
 
@@ -522,15 +522,16 @@ msgstr "لم تجده؟ <0>اكتب معرّف النموذج</0>"
 #: app/components/layout/settings/ai-setup/connection-page.tsx:376
 #: app/components/layout/settings/ai-setup/connection-page.tsx:516
 #: app/components/layout/settings/chatgpt-connection.tsx:107
+#: app/components/layout/settings/cloud-encryption.tsx:609
 #: app/components/layout/settings/cloud-encryption.tsx:633
 #: app/components/layout/settings/cloud-encryption.tsx:711
-#: app/components/layout/settings/cloud-encryption.tsx:776
-#: app/components/layout/settings/cloud-encryption.tsx:1048
-#: app/components/layout/settings/cloud-encryption.tsx:1062
-#: app/components/layout/settings/cloud-encryption.tsx:1242
-#: app/components/layout/settings/cloud-sync.tsx:1259
-#: app/components/layout/settings/cloud-sync.tsx:1307
-#: app/components/layout/settings/cloud-sync.tsx:1358
+#: app/components/layout/settings/cloud-encryption.tsx:783
+#: app/components/layout/settings/cloud-encryption.tsx:1055
+#: app/components/layout/settings/cloud-encryption.tsx:1069
+#: app/components/layout/settings/cloud-encryption.tsx:1249
+#: app/components/layout/settings/cloud-sync.tsx:1263
+#: app/components/layout/settings/cloud-sync.tsx:1311
+#: app/components/layout/settings/cloud-sync.tsx:1362
 #: app/components/prompt-components/PromptComponentsEditor.tsx:210
 #: app/components/quickstart/quickstart-wizard.tsx:169
 #: app/components/scenario/GenerateScenarioDialog.tsx:104
@@ -545,8 +546,8 @@ msgstr "لم تجده؟ <0>اكتب معرّف النموذج</0>"
 #: app/pages/scenarios/home.tsx:811
 #: app/pages/scenarios/home.tsx:846
 #: app/pages/scenarios/home.tsx:874
-#: app/pages/tales/home.tsx:421
-#: app/pages/tales/home.tsx:452
+#: app/pages/tales/home.tsx:422
+#: app/pages/tales/home.tsx:453
 msgid "Cancel"
 msgstr "إلغاء"
 
@@ -696,11 +697,11 @@ msgstr "التحقق من وجود تحديثات للتطبيق وتثبيت ا
 msgid "Check for updates"
 msgstr "التحقق من وجود تحديثات"
 
-#: app/components/layout/settings/cloud-encryption.tsx:1011
+#: app/components/layout/settings/cloud-encryption.tsx:1018
 msgid "Check the code"
 msgstr "تحقّق من الرمز"
 
-#: app/components/layout/settings/cloud-encryption.tsx:130
+#: app/components/layout/settings/cloud-encryption.tsx:124
 msgid "Check the recovery key and try again."
 msgstr "تحقّق من مفتاح الاسترداد وحاول مرة أخرى."
 
@@ -766,7 +767,7 @@ msgstr "اختر أحد هذه الخيارات."
 msgid "Choose the mode that fits the kind of tale you want to generate."
 msgstr "اختر الوضع الذي يناسب نوع الحكاية التي تريد توليدها."
 
-#: app/components/layout/settings/cloud-sync.tsx:1281
+#: app/components/layout/settings/cloud-sync.tsx:1285
 msgid "Choose the name shown on this device and in sync settings."
 msgstr "اختر الاسم الذي يظهر على هذا الجهاز وفي إعدادات المزامنة."
 
@@ -808,34 +809,34 @@ msgid "Close panel"
 msgstr "إغلاق اللوحة"
 
 #: app/pages/home/home.tsx:153
-#: app/pages/tales/home.tsx:267
+#: app/pages/tales/home.tsx:268
 msgid "Cloud"
 msgstr "سحابي"
 
 #: app/pages/home/home.tsx:149
-#: app/pages/tales/home.tsx:263
+#: app/pages/tales/home.tsx:264
 msgid "Cloud full"
 msgstr "السحابة ممتلئة"
 
-#: app/components/layout/settings/cloud-sync.tsx:1394
+#: app/components/layout/settings/cloud-sync.tsx:1398
 msgid "Cloud service"
 msgstr "الخدمة السحابية"
 
-#: app/components/layout/settings/cloud-sync.tsx:1113
+#: app/components/layout/settings/cloud-sync.tsx:1117
 msgid "Cloud service is not configured"
 msgstr "الخدمة السحابية غير مُعدّة"
 
-#: app/components/layout/settings/cloud-sync.tsx:1235
+#: app/components/layout/settings/cloud-sync.tsx:1239
 msgid "Cloud service settings"
 msgstr "إعدادات الخدمة السحابية"
 
-#: app/components/layout/settings/cloud-sync.tsx:1121
-#: app/components/layout/settings/cloud-sync.tsx:1137
+#: app/components/layout/settings/cloud-sync.tsx:1125
+#: app/components/layout/settings/cloud-sync.tsx:1141
 msgid "Cloud sync"
 msgstr "المزامنة السحابية"
 
-#: app/components/layout/settings/cloud-sync.tsx:716
-#: app/components/layout/settings/cloud-sync.tsx:854
+#: app/components/layout/settings/cloud-sync.tsx:720
+#: app/components/layout/settings/cloud-sync.tsx:858
 msgid "Cloud sync connected"
 msgstr "المزامنة السحابية متصلة"
 
@@ -843,22 +844,26 @@ msgstr "المزامنة السحابية متصلة"
 msgid "Cloud sync on"
 msgstr "المزامنة السحابية مفعّلة"
 
-#: app/components/layout/settings/cloud-sync.tsx:1592
+#: app/components/layout/settings/cloud-sync.tsx:1596
 #: app/pages/home/home.tsx:774
 #: app/pages/tales/home.tsx:232
 msgid "Cloud tales are unavailable."
 msgstr "الحكايات السحابية غير متاحة."
 
-#: app/components/layout/settings/cloud-sync.tsx:957
-#: app/components/layout/settings/cloud-sync.tsx:964
+#: app/components/layout/settings/cloud-encryption.tsx:770
+msgid "Cloud tales couldn’t be loaded."
+msgstr "تعذّر تحميل الحكايات السحابية."
+
+#: app/components/layout/settings/cloud-sync.tsx:961
+#: app/components/layout/settings/cloud-sync.tsx:968
 msgid "Cloud URL"
 msgstr "رابط الخدمة السحابية"
 
-#: app/components/layout/settings/cloud-sync.tsx:577
+#: app/components/layout/settings/cloud-sync.tsx:581
 msgid "Cloud URL changed. Sign in again to continue."
 msgstr "تغيّر رابط الخدمة السحابية. سجّل الدخول مجدداً للمتابعة."
 
-#: app/components/layout/settings/cloud-encryption.tsx:1051
+#: app/components/layout/settings/cloud-encryption.tsx:1058
 msgid "Codes match"
 msgstr "الرمزان متطابقان"
 
@@ -875,7 +880,7 @@ msgstr "إرشادات المجتمع"
 msgid "Complete profile"
 msgstr "إكمال الملف الشخصي"
 
-#: app/components/layout/settings/cloud-sync.tsx:1275
+#: app/components/layout/settings/cloud-sync.tsx:1279
 msgid "Complete your profile"
 msgstr "أكمل ملفك الشخصي"
 
@@ -889,7 +894,7 @@ msgstr "مفهوم"
 msgid "Configure Hakawati, AI providers, generation behavior, and maintenance."
 msgstr "تهيئة حكواتي، ومزودي الذكاء الاصطناعي، وسلوك التوليد، والصيانة."
 
-#: app/components/layout/settings/cloud-encryption.tsx:1224
+#: app/components/layout/settings/cloud-encryption.tsx:1231
 msgid "Confirm this code on the other device."
 msgstr "أكّد هذا الرمز على الجهاز الآخر."
 
@@ -902,7 +907,7 @@ msgstr "تم حل التعارض"
 msgid "Connect a provider, choose an endpoint, and pick a model."
 msgstr "قم بتوصيل مزود، واختيار نقطة اتصال، وتحديد نموذج."
 
-#: app/components/layout/settings/cloud-sync.tsx:1009
+#: app/components/layout/settings/cloud-sync.tsx:1013
 msgid "Connect Personal Sync"
 msgstr "الاتصال بالمزامنة الشخصية"
 
@@ -914,11 +919,11 @@ msgstr "اتصل بأي API آخر متوافق مع OpenAI. أدخل العنو
 msgid "Connected"
 msgstr "متصل"
 
-#: app/components/layout/settings/cloud-sync.tsx:708
+#: app/components/layout/settings/cloud-sync.tsx:712
 msgid "Connected as {label}"
 msgstr "متصل باسم {label}"
 
-#: app/components/layout/settings/cloud-sync.tsx:1248
+#: app/components/layout/settings/cloud-sync.tsx:1252
 msgid "Connecting..."
 msgstr "جارٍ الاتصال..."
 
@@ -949,11 +954,12 @@ msgstr "تكملة {0}"
 #: app/components/assistant/hakawati-chat.tsx:684
 #: app/components/assistant/hakawati-chat.tsx:686
 #: app/components/layout/settings/advanced.tsx:54
-#: app/components/layout/settings/cloud-encryption.tsx:548
-#: app/components/layout/settings/cloud-sync.tsx:1315
+#: app/components/layout/settings/cloud-encryption.tsx:531
+#: app/components/layout/settings/cloud-encryption.tsx:612
+#: app/components/layout/settings/cloud-sync.tsx:1319
 #: app/components/play/play-input-controls.tsx:297
 #: app/pages/home/home.tsx:730
-#: app/pages/tales/home.tsx:278
+#: app/pages/tales/home.tsx:279
 #: app/services/assistant/app-settings.ts:357
 msgid "Continue"
 msgstr "استمرار"
@@ -971,7 +977,7 @@ msgstr "المتابعة باستخدام ChatGPT"
 msgid "Control the app theme, reading comfort, and language."
 msgstr "التحكم في مظهر التطبيق، وراحة القراءة، واللغة."
 
-#: app/components/layout/settings/cloud-encryption.tsx:437
+#: app/components/layout/settings/cloud-encryption.tsx:420
 msgid "Copied"
 msgstr "تم النسخ"
 
@@ -980,7 +986,7 @@ msgid "Copied the scenario"
 msgstr "نسخ السيناريو"
 
 #: app/components/layout/settings/about.tsx:79
-#: app/components/layout/settings/cloud-encryption.tsx:442
+#: app/components/layout/settings/cloud-encryption.tsx:425
 msgid "Copy"
 msgstr "نسخ"
 
@@ -1035,12 +1041,12 @@ msgstr "تعذّر البحث عن تحديثات"
 msgid "Couldn’t connect"
 msgstr "تعذّر الاتصال"
 
-#: app/components/layout/settings/cloud-encryption.tsx:438
+#: app/components/layout/settings/cloud-encryption.tsx:421
 msgid "Couldn't copy"
 msgstr "تعذّر النسخ"
 
-#: app/components/layout/settings/cloud-sync.tsx:538
-#: app/components/layout/settings/cloud-sync.tsx:556
+#: app/components/layout/settings/cloud-sync.tsx:542
+#: app/components/layout/settings/cloud-sync.tsx:560
 msgid "Couldn't delete your account"
 msgstr "تعذّر حذف حسابك"
 
@@ -1173,8 +1179,8 @@ msgstr "افتراضي"
 #: app/components/storybook/StoryCard.tsx:122
 #: app/pages/scenarios/home.tsx:668
 #: app/pages/scenarios/home.tsx:817
-#: app/pages/tales/home.tsx:359
-#: app/pages/tales/home.tsx:427
+#: app/pages/tales/home.tsx:360
+#: app/pages/tales/home.tsx:428
 msgid "Delete"
 msgstr "حذف"
 
@@ -1186,8 +1192,8 @@ msgstr "حذف {count} سيناريوهات؟"
 msgid "Delete {count} tales?"
 msgstr "حذف {count} حكايات؟"
 
-#: app/components/layout/settings/cloud-sync.tsx:1218
-#: app/components/layout/settings/cloud-sync.tsx:1370
+#: app/components/layout/settings/cloud-sync.tsx:1222
+#: app/components/layout/settings/cloud-sync.tsx:1374
 msgid "Delete account"
 msgstr "حذف الحساب"
 
@@ -1209,11 +1215,11 @@ msgid "Delete this scenario?"
 msgstr "حذف هذا السيناريو؟"
 
 #: app/components/assistant/confirm-card.tsx:18
-#: app/pages/tales/home.tsx:410
+#: app/pages/tales/home.tsx:411
 msgid "Delete this tale?"
 msgstr "حذف هذه الحكاية؟"
 
-#: app/components/layout/settings/cloud-sync.tsx:1343
+#: app/components/layout/settings/cloud-sync.tsx:1347
 msgid "Delete your Hakawati Cloud account?"
 msgstr "حذف حسابك في سحابة حكواتي؟"
 
@@ -1229,7 +1235,7 @@ msgstr "حذف {count} سيناريوهات"
 msgid "Deleted {count} tales"
 msgstr "حذف {count} حكايات"
 
-#: app/components/layout/settings/cloud-sync.tsx:1368
+#: app/components/layout/settings/cloud-sync.tsx:1372
 msgid "Deleting…"
 msgstr "جارٍ الحذف…"
 
@@ -1272,31 +1278,31 @@ msgstr "تفاصيل (اختياري)"
 msgid "Detective"
 msgstr "محقّق"
 
-#: app/components/layout/settings/cloud-sync.tsx:896
+#: app/components/layout/settings/cloud-sync.tsx:900
 #: app/pages/home/home.tsx:617
 msgid "Device limit reached"
 msgstr "تم بلوغ الحد الأقصى للأجهزة"
 
-#: app/components/layout/settings/cloud-sync.tsx:977
-#: app/components/layout/settings/cloud-sync.tsx:982
+#: app/components/layout/settings/cloud-sync.tsx:981
+#: app/components/layout/settings/cloud-sync.tsx:986
 msgid "Device name"
 msgstr "اسم الجهاز"
 
-#: app/components/layout/settings/cloud-sync.tsx:876
+#: app/components/layout/settings/cloud-sync.tsx:880
 msgid "Device unregistered"
 msgstr "تم إلغاء تسجيل الجهاز"
 
-#: app/components/layout/settings/cloud-sync.tsx:1632
+#: app/components/layout/settings/cloud-sync.tsx:1636
 msgid "Device usage"
 msgstr "عدد الأجهزة المستخدمة"
 
-#: app/components/layout/settings/cloud-sync.tsx:1185
-#: app/components/layout/settings/cloud-sync.tsx:1388
-#: app/components/layout/settings/cloud-sync.tsx:1628
+#: app/components/layout/settings/cloud-sync.tsx:1189
+#: app/components/layout/settings/cloud-sync.tsx:1392
+#: app/components/layout/settings/cloud-sync.tsx:1632
 msgid "Devices"
 msgstr "الأجهزة"
 
-#: app/components/layout/settings/cloud-sync.tsx:1685
+#: app/components/layout/settings/cloud-sync.tsx:1689
 msgid "Devices are unavailable."
 msgstr "الأجهزة غير متاحة."
 
@@ -1338,13 +1344,12 @@ msgstr "إخفاء الإعلان"
 msgid "Display"
 msgstr "العرض"
 
-#: app/components/layout/settings/cloud-sync.tsx:1288
+#: app/components/layout/settings/cloud-sync.tsx:1292
 msgid "Display name"
 msgstr "الاسم المعروض"
 
-#: app/components/layout/settings/cloud-encryption.tsx:582
-#: app/components/layout/settings/cloud-encryption.tsx:1060
-#: app/components/layout/settings/cloud-encryption.tsx:1242
+#: app/components/layout/settings/cloud-encryption.tsx:1067
+#: app/components/layout/settings/cloud-encryption.tsx:1249
 msgid "Done"
 msgstr "تم"
 
@@ -1361,7 +1366,7 @@ msgstr "جارٍ تنزيل التحديث…"
 msgid "Downloading update... ({0})"
 msgstr "جاري تحميل التحديث... ({0})"
 
-#: app/components/layout/settings/cloud-sync.tsx:1090
+#: app/components/layout/settings/cloud-sync.tsx:1094
 #: app/components/storybook/StoryCard.tsx:110
 #: app/components/storybook/StoryCard.tsx:111
 #: app/pages/scenarios/details.tsx:273
@@ -1379,7 +1384,7 @@ msgstr "تعديل المدخل"
 msgid "Edit Entry"
 msgstr "تعديل المدخل"
 
-#: app/components/layout/settings/cloud-sync.tsx:1277
+#: app/components/layout/settings/cloud-sync.tsx:1281
 msgid "Edit profile"
 msgstr "تعديل الملف الشخصي"
 
@@ -1410,16 +1415,16 @@ msgstr "الوقت المنقضي"
 msgid "Email address copied"
 msgstr "تم نسخ عنوان البريد الإلكتروني"
 
-#: app/components/layout/settings/cloud-encryption.tsx:230
+#: app/components/layout/settings/cloud-encryption.tsx:224
 msgid "Encrypting cloud saves…"
 msgstr "جارٍ تشفير النسخ السحابية…"
 
-#: app/components/layout/settings/cloud-encryption.tsx:227
-#: app/components/layout/settings/cloud-sync.tsx:1390
+#: app/components/layout/settings/cloud-encryption.tsx:221
+#: app/components/layout/settings/cloud-sync.tsx:1394
 msgid "Encryption"
 msgstr "التشفير"
 
-#: app/components/layout/settings/cloud-encryption.tsx:232
+#: app/components/layout/settings/cloud-encryption.tsx:226
 msgid "End-to-end encrypted"
 msgstr "مشفّرة بين الطرفين"
 
@@ -1432,7 +1437,7 @@ msgstr "أدخل شيء جديد لإضافته إلى المخزون."
 msgid "Enter model id manually"
 msgstr "أدخل معرف النموذج يدوياً"
 
-#: app/components/layout/settings/cloud-encryption.tsx:306
+#: app/components/layout/settings/cloud-encryption.tsx:299
 #: app/components/layout/settings/cloud-encryption.tsx:690
 msgid "Enter recovery key"
 msgstr "أدخل مفتاح الاسترداد"
@@ -1554,7 +1559,7 @@ msgstr "تعذّر نشر السيناريو"
 msgid "Failed to queue sync"
 msgstr "تعذّرت إضافة المزامنة إلى قائمة الانتظار"
 
-#: app/components/layout/settings/cloud-sync.tsx:829
+#: app/components/layout/settings/cloud-sync.tsx:833
 #: app/pages/tales/home.tsx:112
 msgid "Failed to remove from cloud"
 msgstr "تعذّرت الإزالة من السحابة"
@@ -1587,7 +1592,7 @@ msgstr "فشل تحويل الكلام إلى نص."
 msgid "Failed to unpublish scenario"
 msgstr "تعذّر إلغاء نشر السيناريو"
 
-#: app/components/layout/settings/cloud-sync.tsx:880
+#: app/components/layout/settings/cloud-sync.tsx:884
 msgid "Failed to update devices"
 msgstr "تعذّر تحديث الأجهزة"
 
@@ -1604,7 +1609,7 @@ msgstr "تصفية حسب الوسوم"
 msgid "Finish signing in in your browser..."
 msgstr "أكمل تسجيل الدخول في متصفحك..."
 
-#: app/components/layout/settings/cloud-sync.tsx:1251
+#: app/components/layout/settings/cloud-sync.tsx:1255
 msgid "Finish signing in through your browser. You can cancel and keep using Hakawati at any time."
 msgstr "أكمل تسجيل الدخول عبر متصفحك. يمكنك الإلغاء ومواصلة استخدام حكواتي في أي وقت."
 
@@ -1641,11 +1646,11 @@ msgstr "مجاني"
 msgid "Frequency penalty"
 msgstr "عقوبة التواتر"
 
-#: app/components/layout/settings/cloud-encryption.tsx:277
+#: app/components/layout/settings/cloud-encryption.tsx:270
 msgid "From a device that needs unlocking"
 msgstr "من جهاز يحتاج إلى فتح القفل"
 
-#: app/components/layout/settings/cloud-encryption.tsx:296
+#: app/components/layout/settings/cloud-encryption.tsx:289
 msgid "From a device that’s already unlocked"
 msgstr "من جهاز مفتوح القفل"
 
@@ -1832,11 +1837,11 @@ msgstr "كيفية إضافة الأسئلة"
 msgid "How to get a key"
 msgstr "كيف تحصل على مفتاح"
 
-#: app/components/layout/settings/cloud-sync.tsx:1000
+#: app/components/layout/settings/cloud-sync.tsx:1004
 msgid "http://192.168.1.20:8787"
 msgstr "http://192.168.1.20:8787"
 
-#: app/components/layout/settings/cloud-sync.tsx:963
+#: app/components/layout/settings/cloud-sync.tsx:967
 msgid "https://sync.example.com"
 msgstr "https://sync.example.com"
 
@@ -1844,7 +1849,7 @@ msgstr "https://sync.example.com"
 msgid "I agree to the publishing rules and understand that public scenarios are moderated and may be removed."
 msgstr "أوافق على قواعد النشر وأفهم أن السيناريوهات العامة تخضع للمراجعة وقد تتم إزالتها."
 
-#: app/components/layout/settings/cloud-encryption.tsx:450
+#: app/components/layout/settings/cloud-encryption.tsx:433
 msgid "I saved my recovery key"
 msgstr "حفظتُ مفتاح الاسترداد"
 
@@ -1940,7 +1945,7 @@ msgstr "العناصر التي تم جمعها ستظهر هنا"
 msgid "Journalist"
 msgstr "صحفي"
 
-#: app/components/layout/settings/cloud-sync.tsx:1529
+#: app/components/layout/settings/cloud-sync.tsx:1533
 msgid "Keep all private"
 msgstr "إبقاء الكل خاصاً"
 
@@ -1984,7 +1989,7 @@ msgstr "أكبر"
 msgid "Last checked"
 msgstr "آخر بحث"
 
-#: app/components/layout/settings/cloud-sync.tsx:1658
+#: app/components/layout/settings/cloud-sync.tsx:1662
 msgid "Last seen {lastSeen}"
 msgstr "آخر ظهور {lastSeen}"
 
@@ -2025,7 +2030,7 @@ msgstr "فاتح أو داكن، بحسب إعداد جهازك."
 msgid "Light-Hearted"
 msgstr "مرح"
 
-#: app/pages/tales/home.tsx:277
+#: app/pages/tales/home.tsx:278
 msgid "Load {name}"
 msgstr "تحميل {name}"
 
@@ -2070,8 +2075,8 @@ msgid "Loading scenarios"
 msgstr "جارٍ تحميل السيناريوهات"
 
 #: app/components/layout/model-select.tsx:71
-#: app/components/layout/settings/cloud-sync.tsx:1582
-#: app/components/layout/settings/cloud-sync.tsx:1675
+#: app/components/layout/settings/cloud-sync.tsx:1586
+#: app/components/layout/settings/cloud-sync.tsx:1679
 #: app/pages/home/home.tsx:822
 #: app/pages/scenarios/catalog-details.tsx:331
 #: app/pages/scenarios/details.tsx:229
@@ -2090,7 +2095,7 @@ msgstr "جاري تحميل..."
 #: app/components/layout/settings/ai-setup/add-connection.tsx:37
 #: app/pages/home/home.tsx:154
 #: app/pages/scenarios/home.tsx:461
-#: app/pages/tales/home.tsx:268
+#: app/pages/tales/home.tsx:269
 msgid "Local"
 msgstr "محلي"
 
@@ -2107,7 +2112,7 @@ msgstr "لم يُعثر على السيناريو المحلي"
 msgid "Local server"
 msgstr "خادم محلي"
 
-#: app/components/layout/settings/cloud-sync.tsx:1567
+#: app/components/layout/settings/cloud-sync.tsx:1571
 #: app/pages/home/home.tsx:132
 #: app/pages/home/home.tsx:341
 #: app/pages/tales/home.tsx:240
@@ -2160,11 +2165,11 @@ msgid "magic, city"
 msgstr "سحر, مدينة"
 
 #. placeholder {0}: step.device
-#: app/components/layout/settings/cloud-encryption.tsx:1019
+#: app/components/layout/settings/cloud-encryption.tsx:1026
 msgid "Make sure {0} shows the same code."
 msgstr "تأكّد من أن {0} يعرض الرمز نفسه."
 
-#: app/components/layout/settings/cloud-encryption.tsx:1021
+#: app/components/layout/settings/cloud-encryption.tsx:1028
 msgid "Make sure the other device shows the same code."
 msgstr "تأكّد من أن الجهاز الآخر يعرض الرمز نفسه."
 
@@ -2324,7 +2329,7 @@ msgid "Narrator"
 msgstr "الراوي"
 
 #: app/pages/home/home.tsx:147
-#: app/pages/tales/home.tsx:261
+#: app/pages/tales/home.tsx:262
 msgid "Needs review"
 msgstr "يحتاج إلى مراجعة"
 
@@ -2351,8 +2356,8 @@ msgstr "الجديد"
 msgid "New chat"
 msgstr "محادثة جديدة"
 
-#: app/components/layout/settings/cloud-encryption.tsx:282
-#: app/components/layout/settings/cloud-encryption.tsx:359
+#: app/components/layout/settings/cloud-encryption.tsx:275
+#: app/components/layout/settings/cloud-encryption.tsx:591
 msgid "New recovery key"
 msgstr "مفتاح استرداد جديد"
 
@@ -2364,7 +2369,7 @@ msgstr "سيناريو جديد"
 #: app/components/quickstart/quickstart-wizard.tsx:666
 #: app/components/scenario/ScenarioStartWizard.tsx:201
 #: app/pages/scenarios/home.tsx:697
-#: app/pages/tales/home.tsx:397
+#: app/pages/tales/home.tsx:398
 msgid "Next"
 msgstr "التالي"
 
@@ -2376,7 +2381,7 @@ msgstr "لم يتم إضافة أي مكونات للذكاء الاصطناعي
 msgid "No cards match your search."
 msgstr "لا توجد بطاقات تطابق بحثك."
 
-#: app/components/layout/settings/cloud-sync.tsx:1586
+#: app/components/layout/settings/cloud-sync.tsx:1590
 msgid "No cloud tales."
 msgstr "لا توجد حكايات سحابية."
 
@@ -2393,7 +2398,7 @@ msgstr "لا توجد صورة غلاف"
 #: app/pages/home/home.tsx:236
 #: app/pages/scenarios/details.tsx:336
 #: app/pages/scenarios/home.tsx:599
-#: app/pages/tales/home.tsx:273
+#: app/pages/tales/home.tsx:274
 msgid "No description yet."
 msgstr "لا يوجد وصف بعد."
 
@@ -2439,7 +2444,7 @@ msgstr "لا توجد سيناريوهات عامة بعد."
 msgid "No published scenarios yet."
 msgstr "لا توجد سيناريوهات منشورة بعد."
 
-#: app/components/layout/settings/cloud-sync.tsx:1679
+#: app/components/layout/settings/cloud-sync.tsx:1683
 msgid "No registered devices."
 msgstr "لا توجد أجهزة مسجّلة."
 
@@ -2467,7 +2472,7 @@ msgstr "بدون تتبع الخصائص أو المخزون"
 msgid "No stats yet"
 msgstr "لا توجد خصائص بعد"
 
-#: app/components/layout/settings/cloud-sync.tsx:1518
+#: app/components/layout/settings/cloud-sync.tsx:1522
 msgid "No tales waiting."
 msgstr "لا توجد حكايات بانتظار قرارك."
 
@@ -2485,7 +2490,7 @@ msgstr "لم يتم تحديد نموذج مساعدة"
 msgid "None"
 msgstr "لا شيء"
 
-#: app/components/layout/settings/cloud-encryption.tsx:542
+#: app/components/layout/settings/cloud-encryption.tsx:525
 msgid "Not now"
 msgstr "ليس الآن"
 
@@ -2494,12 +2499,12 @@ msgid "Not set up"
 msgstr "غير مُعدّ"
 
 #: app/components/layout/settings/ai-setup/index.tsx:76
-#: app/components/layout/settings/cloud-sync.tsx:1061
+#: app/components/layout/settings/cloud-sync.tsx:1065
 msgid "Not signed in"
 msgstr "لم يُسجّل الدخول"
 
 #: app/pages/home/home.tsx:151
-#: app/pages/tales/home.tsx:265
+#: app/pages/tales/home.tsx:266
 msgid "Not synced"
 msgstr "غير متزامن"
 
@@ -2519,7 +2524,7 @@ msgstr "عالم غيبيات"
 msgid "Off"
 msgstr "إيقاف"
 
-#: app/components/layout/settings/cloud-sync.tsx:908
+#: app/components/layout/settings/cloud-sync.tsx:912
 msgid "Off for this device"
 msgstr "متوقفة على هذا الجهاز"
 
@@ -2535,7 +2540,7 @@ msgstr "Ollama وLM Studio وKoboldCpp…"
 msgid "On"
 msgstr "تشغيل"
 
-#: app/components/layout/settings/cloud-sync.tsx:892
+#: app/components/layout/settings/cloud-sync.tsx:896
 msgid "On for this device"
 msgstr "مفعّلة على هذا الجهاز"
 
@@ -2623,15 +2628,15 @@ msgstr "آخر"
 
 #. placeholder {0}: Math.max(1, Math.ceil(total / limit) || 1)
 #: app/pages/scenarios/home.tsx:688
-#: app/pages/tales/home.tsx:388
+#: app/pages/tales/home.tsx:389
 msgid "Page {page} of {0}"
 msgstr "الصفحة {page} من {0}"
 
-#: app/components/layout/settings/cloud-encryption.tsx:1089
+#: app/components/layout/settings/cloud-encryption.tsx:1096
 msgid "Paired"
 msgstr "تم الربط"
 
-#: app/components/layout/settings/cloud-encryption.tsx:876
+#: app/components/layout/settings/cloud-encryption.tsx:883
 msgid "Pairing was cancelled."
 msgstr "أُلغي الربط."
 
@@ -2639,7 +2644,7 @@ msgstr "أُلغي الربط."
 msgid "Pause narration"
 msgstr "إيقاف السرد مؤقتاً"
 
-#: app/components/layout/settings/cloud-sync.tsx:905
+#: app/components/layout/settings/cloud-sync.tsx:909
 msgid "Personal"
 msgstr "شخصي"
 
@@ -2647,20 +2652,20 @@ msgstr "شخصي"
 msgid "Personal server"
 msgstr "خادم شخصي"
 
-#: app/components/layout/settings/cloud-sync.tsx:1065
+#: app/components/layout/settings/cloud-sync.tsx:1069
 #: app/pages/home/home.tsx:598
 msgid "Personal Sync"
 msgstr "المزامنة الشخصية"
 
-#: app/components/layout/settings/cloud-sync.tsx:782
+#: app/components/layout/settings/cloud-sync.tsx:786
 msgid "Personal sync connected"
 msgstr "المزامنة الشخصية متصلة"
 
-#: app/components/layout/settings/cloud-sync.tsx:994
+#: app/components/layout/settings/cloud-sync.tsx:998
 msgid "Personal sync server"
 msgstr "خادم المزامنة الشخصية"
 
-#: app/components/layout/settings/cloud-sync.tsx:1001
+#: app/components/layout/settings/cloud-sync.tsx:1005
 msgid "Personal Sync URL"
 msgstr "رابط المزامنة الشخصية"
 
@@ -2683,8 +2688,8 @@ msgstr "تثبيت"
 msgid "Place"
 msgstr "مكان"
 
-#: app/components/layout/settings/cloud-sync.tsx:985
-#: app/components/layout/settings/cloud-sync.tsx:990
+#: app/components/layout/settings/cloud-sync.tsx:989
+#: app/components/layout/settings/cloud-sync.tsx:994
 msgid "Platform"
 msgstr "المنصة"
 
@@ -2711,7 +2716,7 @@ msgid "Presence penalty"
 msgstr "عقوبة التواجد"
 
 #: app/pages/scenarios/home.tsx:685
-#: app/pages/tales/home.tsx:385
+#: app/pages/tales/home.tsx:386
 msgid "Prev"
 msgstr "السابق"
 
@@ -2723,16 +2728,16 @@ msgstr "سياسة الخصوصية"
 msgid "Privacy-focused provider with multiple models on offer. Account optional. Offers subscription plan with unlimited usage on some models."
 msgstr "مزود يركز على الخصوصية مع توفر نماذج متعددة. الحساب اختياري. يقدم خطة اشتراك مع استخدام غير محدود لبعض النماذج."
 
-#: app/components/layout/settings/cloud-sync.tsx:1504
+#: app/components/layout/settings/cloud-sync.tsx:1508
 msgid "Private"
 msgstr "خاص"
 
-#: app/components/layout/settings/cloud-sync.tsx:604
-#: app/components/layout/settings/cloud-sync.tsx:605
+#: app/components/layout/settings/cloud-sync.tsx:608
+#: app/components/layout/settings/cloud-sync.tsx:609
 msgid "Profile completed"
 msgstr "تم إكمال الملف الشخصي"
 
-#: app/components/layout/settings/cloud-sync.tsx:903
+#: app/components/layout/settings/cloud-sync.tsx:907
 msgid "Profile incomplete"
 msgstr "الملف الشخصي غير مكتمل"
 
@@ -2909,7 +2914,7 @@ msgstr "أحدث الحكايات"
 msgid "Reconnecting..."
 msgstr "جارٍ إعادة الاتصال..."
 
-#: app/components/layout/settings/cloud-sync.tsx:894
+#: app/components/layout/settings/cloud-sync.tsx:898
 msgid "Reconnecting…"
 msgstr "جارٍ إعادة الاتصال…"
 
@@ -2968,14 +2973,14 @@ msgid "Remove cover"
 msgstr "إزالة الغلاف"
 
 #: app/components/assistant/confirm-card.tsx:33
-#: app/components/layout/settings/cloud-sync.tsx:1576
-#: app/pages/tales/home.tsx:336
-#: app/pages/tales/home.tsx:455
+#: app/components/layout/settings/cloud-sync.tsx:1580
+#: app/pages/tales/home.tsx:337
+#: app/pages/tales/home.tsx:456
 msgid "Remove from cloud"
 msgstr "إزالة من السحابة"
 
 #: app/components/assistant/confirm-card.tsx:32
-#: app/pages/tales/home.tsx:441
+#: app/pages/tales/home.tsx:442
 msgid "Remove from cloud?"
 msgstr "إزالة من السحابة؟"
 
@@ -3013,7 +3018,7 @@ msgstr "حذف مقطعًا"
 msgid "Removed card “{title}”"
 msgstr "حذف البطاقة «{title}»"
 
-#: app/components/layout/settings/cloud-sync.tsx:826
+#: app/components/layout/settings/cloud-sync.tsx:830
 #: app/pages/tales/home.tsx:108
 msgid "Removed from cloud"
 msgstr "تمت الإزالة من السحابة"
@@ -3072,7 +3077,7 @@ msgid "Request failed"
 msgstr "تعذّر الطلب"
 
 #: app/components/layout/settings/advanced.tsx:251
-#: app/components/layout/settings/cloud-encryption.tsx:783
+#: app/components/layout/settings/cloud-encryption.tsx:790
 msgid "Reset"
 msgstr "إعادة تعيين"
 
@@ -3088,11 +3093,11 @@ msgstr "إعادة كل الموجّهات إلى الافتراضي؟"
 msgid "Reset all to default"
 msgstr "إعادة الكل إلى الافتراضي"
 
-#: app/components/layout/settings/cloud-encryption.tsx:322
+#: app/components/layout/settings/cloud-encryption.tsx:315
 msgid "Reset cloud saves"
 msgstr "إعادة تعيين النسخ السحابية"
 
-#: app/components/layout/settings/cloud-encryption.tsx:757
+#: app/components/layout/settings/cloud-encryption.tsx:760
 msgid "Reset cloud saves?"
 msgstr "إعادة تعيين النسخ السحابية؟"
 
@@ -3104,7 +3109,7 @@ msgstr "إعادة تعيين إعدادات التوليد"
 msgid "Reset to default"
 msgstr "إعادة إلى الافتراضي"
 
-#: app/components/layout/settings/cloud-sync.tsx:973
+#: app/components/layout/settings/cloud-sync.tsx:977
 msgid "Reset to Default"
 msgstr "استعادة الافتراضيات"
 
@@ -3138,7 +3143,7 @@ msgstr "إعادة المحاولة (Ctrl+R)"
 
 #: app/pages/home/home.tsx:160
 #: app/pages/home/home.tsx:728
-#: app/pages/tales/home.tsx:278
+#: app/pages/tales/home.tsx:279
 msgid "Review conflict"
 msgstr "مراجعة التعارض"
 
@@ -3188,13 +3193,13 @@ msgstr "التوليد"
 #: app/components/layout/settings/ai-setup/connection-page.tsx:286
 #: app/components/layout/settings/ai-setup/connection-page.tsx:369
 #: app/components/layout/settings/ai-setup/connection-page.tsx:437
-#: app/components/layout/settings/cloud-sync.tsx:1317
+#: app/components/layout/settings/cloud-sync.tsx:1321
 #: app/components/ui/inventory-item.tsx:77
 #: app/components/ui/stat-item.tsx:104
 msgid "Save"
 msgstr "حفظ"
 
-#: app/pages/tales/home.tsx:326
+#: app/pages/tales/home.tsx:327
 msgid "Save as Scenario"
 msgstr "حفظ كسيناريو"
 
@@ -3206,11 +3211,11 @@ msgstr "حفظ التغييرات"
 msgid "Save draft"
 msgstr "حفظ المسودة"
 
-#: app/components/layout/settings/cloud-encryption.tsx:521
+#: app/components/layout/settings/cloud-encryption.tsx:504
 msgid "Save your recovery key"
 msgstr "احفظ مفتاح الاسترداد"
 
-#: app/components/layout/settings/cloud-sync.tsx:587
+#: app/components/layout/settings/cloud-sync.tsx:591
 msgid "Saving profile"
 msgstr "جارٍ حفظ الملف الشخصي"
 
@@ -3226,34 +3231,34 @@ msgstr "جارٍ حفظ تقدّمك. سيُعاد تشغيل حكواتي عن�
 msgid "Saving your tale…"
 msgstr "جارٍ حفظ حكايتك…"
 
-#: app/components/layout/settings/cloud-encryption.tsx:276
-#: app/components/layout/settings/cloud-encryption.tsx:295
-#: app/components/layout/settings/cloud-encryption.tsx:1220
+#: app/components/layout/settings/cloud-encryption.tsx:269
+#: app/components/layout/settings/cloud-encryption.tsx:288
+#: app/components/layout/settings/cloud-encryption.tsx:1227
 msgid "Scan a code"
 msgstr "امسح رمزًا"
 
-#: app/components/layout/settings/cloud-encryption.tsx:1235
+#: app/components/layout/settings/cloud-encryption.tsx:1242
 msgid "Scan again"
 msgstr "امسح مرة أخرى"
 
-#: app/components/layout/settings/cloud-encryption.tsx:271
+#: app/components/layout/settings/cloud-encryption.tsx:264
 msgid "Scan it with a new phone"
 msgstr "امسحه بهاتف جديد"
 
-#: app/components/layout/settings/cloud-encryption.tsx:302
+#: app/components/layout/settings/cloud-encryption.tsx:295
 msgid "Scan it with a phone that’s already unlocked"
 msgstr "امسحه بهاتف مفتوح القفل"
 
-#: app/components/layout/settings/cloud-encryption.tsx:1026
+#: app/components/layout/settings/cloud-encryption.tsx:1033
 msgid "Scan this code with an unlocked phone in Account & Sync."
 msgstr "امسح هذا الرمز بهاتف مفتوح القفل من الحساب والمزامنة."
 
-#: app/components/layout/settings/cloud-encryption.tsx:1024
+#: app/components/layout/settings/cloud-encryption.tsx:1031
 msgid "Scan this code with your phone in Account & Sync."
 msgstr "امسح هذا الرمز بهاتفك من الحساب والمزامنة."
 
 #: app/pages/scenarios/catalog-details.tsx:346
-#: app/pages/tales/home.tsx:316
+#: app/pages/tales/home.tsx:317
 msgid "Scenario"
 msgstr "سيناريو"
 
@@ -3430,11 +3435,11 @@ msgstr "جدي"
 msgid "Set"
 msgstr "ضبط"
 
-#: app/components/layout/settings/cloud-encryption.tsx:171
+#: app/components/layout/settings/cloud-encryption.tsx:165
 msgid "Set up"
 msgstr "إعداد"
 
-#: app/components/layout/settings/cloud-encryption.tsx:168
+#: app/components/layout/settings/cloud-encryption.tsx:162
 msgid "Set up encryption to sync"
 msgstr "أعدّ التشفير للمزامنة"
 
@@ -3479,13 +3484,13 @@ msgstr "اختصر الاسم إلى 160 حرفاً قبل النشر. لا يز
 msgid "Shorten the scenario name to 160 characters before publishing."
 msgstr "اختصر اسم السيناريو إلى 160 حرفاً قبل النشر."
 
-#: app/components/layout/settings/cloud-encryption.tsx:270
-#: app/components/layout/settings/cloud-encryption.tsx:301
-#: app/components/layout/settings/cloud-encryption.tsx:1013
+#: app/components/layout/settings/cloud-encryption.tsx:263
+#: app/components/layout/settings/cloud-encryption.tsx:294
+#: app/components/layout/settings/cloud-encryption.tsx:1020
 msgid "Show a code"
 msgstr "اعرض رمزًا"
 
-#: app/components/layout/settings/cloud-encryption.tsx:1039
+#: app/components/layout/settings/cloud-encryption.tsx:1046
 msgid "Show a new code"
 msgstr "اعرض رمزًا جديدًا"
 
@@ -3515,16 +3520,16 @@ msgstr "يظهر في مكتبتك وفي فهرس السيناريوهات ال
 msgid "Shown in your library, not sent to the AI."
 msgstr "يظهر في مكتبتك ولا يُرسَل إلى الذكاء الاصطناعي."
 
-#: app/components/layout/settings/cloud-sync.tsx:1079
-#: app/components/layout/settings/cloud-sync.tsx:1105
+#: app/components/layout/settings/cloud-sync.tsx:1083
+#: app/components/layout/settings/cloud-sync.tsx:1109
 msgid "Sign in"
 msgstr "تسجيل الدخول"
 
-#: app/components/layout/settings/cloud-sync.tsx:1098
+#: app/components/layout/settings/cloud-sync.tsx:1102
 msgid "Sign in again to keep syncing"
 msgstr "سجّل الدخول مجددًا لمواصلة المزامنة"
 
-#: app/components/layout/settings/cloud-sync.tsx:899
+#: app/components/layout/settings/cloud-sync.tsx:903
 msgid "Sign in again to sync"
 msgstr "سجّل الدخول مجددًا للمزامنة"
 
@@ -3532,7 +3537,7 @@ msgstr "سجّل الدخول مجددًا للمزامنة"
 msgid "Sign in to ChatGPT"
 msgstr "سجّل الدخول إلى ChatGPT"
 
-#: app/components/layout/settings/cloud-sync.tsx:907
+#: app/components/layout/settings/cloud-sync.tsx:911
 msgid "Sign in to sync"
 msgstr "سجّل الدخول للمزامنة"
 
@@ -3540,7 +3545,7 @@ msgstr "سجّل الدخول للمزامنة"
 msgid "Sign in with your ChatGPT account."
 msgstr "سجّل الدخول بحساب ChatGPT."
 
-#: app/components/layout/settings/cloud-sync.tsx:1208
+#: app/components/layout/settings/cloud-sync.tsx:1212
 msgid "Sign out"
 msgstr "تسجيل الخروج"
 
@@ -3556,7 +3561,7 @@ msgstr "سجل للحصول على حساب في OpenRouter"
 msgid "Signed in"
 msgstr "تم تسجيل الدخول"
 
-#: app/components/layout/settings/cloud-sync.tsx:513
+#: app/components/layout/settings/cloud-sync.tsx:517
 msgid "Signed out"
 msgstr "تم تسجيل الخروج"
 
@@ -3576,7 +3581,7 @@ msgstr "أصغر"
 msgid "Soldier"
 msgstr "جندي"
 
-#: app/components/layout/settings/cloud-encryption.tsx:144
+#: app/components/layout/settings/cloud-encryption.tsx:138
 msgid "Something went wrong. Try again."
 msgstr "حدث خطأ. حاول مرة أخرى."
 
@@ -3672,15 +3677,15 @@ msgstr "إيقاف التسجيل"
 msgid "Stopped"
 msgstr "توقّف"
 
-#: app/components/layout/settings/cloud-sync.tsx:1461
+#: app/components/layout/settings/cloud-sync.tsx:1465
 msgid "Storage"
 msgstr "التخزين"
 
-#: app/components/layout/settings/cloud-sync.tsx:1468
+#: app/components/layout/settings/cloud-sync.tsx:1472
 msgid "Storage usage"
 msgstr "مساحة التخزين المستخدمة"
 
-#: app/components/layout/settings/cloud-sync.tsx:1027
+#: app/components/layout/settings/cloud-sync.tsx:1031
 msgid "Storage usage is unavailable."
 msgstr "معلومات استخدام التخزين غير متاحة."
 
@@ -3747,20 +3752,20 @@ msgstr "انتقل إلى مدير اللعبة"
 msgid "Switched to Story Teller"
 msgstr "انتقل إلى القصّاص"
 
-#: app/components/layout/settings/cloud-sync.tsx:1511
+#: app/components/layout/settings/cloud-sync.tsx:1515
 msgid "Sync"
 msgstr "مزامنة"
 
-#: app/components/layout/settings/cloud-sync.tsx:1532
+#: app/components/layout/settings/cloud-sync.tsx:1536
 msgid "Sync all"
 msgstr "مزامنة الكل"
 
-#: app/components/layout/settings/cloud-sync.tsx:608
-#: app/components/layout/settings/cloud-sync.tsx:625
+#: app/components/layout/settings/cloud-sync.tsx:612
+#: app/components/layout/settings/cloud-sync.tsx:629
 msgid "Sync failed"
 msgstr "تعذّرت المزامنة"
 
-#: app/components/layout/settings/cloud-encryption.tsx:201
+#: app/components/layout/settings/cloud-encryption.tsx:195
 msgid "Sync is paused"
 msgstr "المزامنة متوقفة مؤقتًا"
 
@@ -3772,7 +3777,7 @@ msgstr "المزامنة معطّلة"
 msgid "Sync queued"
 msgstr "المزامنة في قائمة الانتظار"
 
-#: app/pages/tales/home.tsx:349
+#: app/pages/tales/home.tsx:350
 msgid "Sync to cloud"
 msgstr "مزامنة إلى السحابة"
 
@@ -3805,7 +3810,7 @@ msgstr "قم بفعل أو أرسل ملاحظة المخرج لتبدأ الم�
 msgid "Tale"
 msgstr "حكاية"
 
-#: app/pages/tales/home.tsx:299
+#: app/pages/tales/home.tsx:300
 msgid "Tale actions"
 msgstr "إجراءات الحكاية"
 
@@ -3813,28 +3818,28 @@ msgstr "إجراءات الحكاية"
 msgid "Tale deleted"
 msgstr "تم حذف الحكاية"
 
-#: app/components/layout/settings/cloud-sync.tsx:1458
+#: app/components/layout/settings/cloud-sync.tsx:1462
 msgid "Tale usage"
 msgstr "عدد الحكايات المستخدمة"
 
 #: app/components/assistant/activity-chip.tsx:73
-#: app/components/layout/settings/cloud-sync.tsx:1454
+#: app/components/layout/settings/cloud-sync.tsx:1458
 #: app/pages/tales/home.tsx:191
 #: app/pages/tales/home.tsx:202
 msgid "Tales"
 msgstr "حكايات"
 
-#: app/components/layout/settings/cloud-sync.tsx:1175
-#: app/components/layout/settings/cloud-sync.tsx:1386
+#: app/components/layout/settings/cloud-sync.tsx:1179
+#: app/components/layout/settings/cloud-sync.tsx:1390
 msgid "Tales in the cloud"
 msgstr "الحكايات في السحابة"
 
-#: app/components/layout/settings/cloud-sync.tsx:1596
+#: app/components/layout/settings/cloud-sync.tsx:1600
 msgid "Tales on this device stay here when you remove their cloud copy."
 msgstr "تبقى الحكايات المحفوظة على هذا الجهاز عند إزالة نسختها السحابية."
 
-#: app/components/layout/settings/cloud-sync.tsx:1163
-#: app/components/layout/settings/cloud-sync.tsx:1384
+#: app/components/layout/settings/cloud-sync.tsx:1167
+#: app/components/layout/settings/cloud-sync.tsx:1388
 msgid "Tales waiting for a choice"
 msgstr "حكايات بانتظار قرارك"
 
@@ -3880,11 +3885,11 @@ msgstr "يتتبّع الذكاء الاصطناعي أيضًا المقتنيا
 msgid "The AI tells the story. Works with any model."
 msgstr "يروي الذكاء الاصطناعي القصة. يعمل مع أي نموذج."
 
-#: app/components/layout/settings/cloud-encryption.tsx:184
+#: app/components/layout/settings/cloud-encryption.tsx:178
 msgid "The cloud key changed on another device."
 msgstr "تغيّر مفتاح السحابة على جهاز آخر."
 
-#: app/components/layout/settings/cloud-encryption.tsx:208
+#: app/components/layout/settings/cloud-encryption.tsx:202
 msgid "The cloud stopped encrypting your saves."
 msgstr "توقفت السحابة عن تشفير نسخك."
 
@@ -3892,7 +3897,7 @@ msgstr "توقفت السحابة عن تشفير نسخك."
 msgid "The cover image could not be read. Please choose it again."
 msgstr "تعذّرت قراءة صورة الغلاف. يرجى اختيارها مرة أخرى."
 
-#: app/components/layout/settings/cloud-encryption.tsx:136
+#: app/components/layout/settings/cloud-encryption.tsx:130
 msgid "The devices couldn't verify each other. Try again."
 msgstr "تعذّر على الجهازين التحقق من بعضهما. حاول مرة أخرى."
 
@@ -3967,29 +3972,29 @@ msgstr "لا يوجد مفتاح استرداد لهذا الحساب."
 msgid "This can't be undone."
 msgstr "لا يمكن التراجع عن هذا."
 
-#: app/components/layout/settings/cloud-encryption.tsx:203
+#: app/components/layout/settings/cloud-encryption.tsx:197
 msgid "This cloud service can’t encrypt saves"
 msgstr "خدمة السحابة هذه لا تستطيع تشفير النسخ"
 
-#: app/components/layout/settings/cloud-encryption.tsx:140
-#: app/components/layout/settings/cloud-encryption.tsx:874
+#: app/components/layout/settings/cloud-encryption.tsx:134
+#: app/components/layout/settings/cloud-encryption.tsx:881
 msgid "This code expired. Show a new one."
 msgstr "انتهت صلاحية هذا الرمز. اعرض رمزًا جديدًا."
 
-#: app/components/layout/settings/cloud-encryption.tsx:878
+#: app/components/layout/settings/cloud-encryption.tsx:885
 msgid "This code was already used."
 msgstr "استُخدم هذا الرمز من قبل."
 
-#: app/components/layout/settings/cloud-sync.tsx:1653
+#: app/components/layout/settings/cloud-sync.tsx:1657
 msgid "This device"
 msgstr "هذا الجهاز"
 
-#: app/components/layout/settings/cloud-sync.tsx:1636
+#: app/components/layout/settings/cloud-sync.tsx:1640
 msgid "This device is not registered."
 msgstr "هذا الجهاز غير مسجّل."
 
-#: app/components/layout/settings/cloud-sync.tsx:703
-#: app/components/layout/settings/cloud-sync.tsx:755
+#: app/components/layout/settings/cloud-sync.tsx:707
+#: app/components/layout/settings/cloud-sync.tsx:759
 msgid "This device is not syncing because the device limit was reached"
 msgstr "لا تجري مزامنة هذا الجهاز لبلوغ الحد الأقصى للأجهزة"
 
@@ -3997,7 +4002,7 @@ msgstr "لا تجري مزامنة هذا الجهاز لبلوغ الحد ال�
 msgid "This device is unlocked"
 msgstr "فُتح قفل هذا الجهاز"
 
-#: app/components/layout/settings/cloud-encryption.tsx:142
+#: app/components/layout/settings/cloud-encryption.tsx:136
 msgid "This device's secure storage is unavailable."
 msgstr "التخزين الآمن على هذا الجهاز غير متاح."
 
@@ -4005,11 +4010,11 @@ msgstr "التخزين الآمن على هذا الجهاز غير متاح."
 msgid "This is the player character the tale will address directly."
 msgstr "هذه هي الشخصية التي ستخاطبها الحكاية مباشرة."
 
-#: app/components/layout/settings/cloud-encryption.tsx:138
+#: app/components/layout/settings/cloud-encryption.tsx:132
 msgid "This isn't a Hakawati pairing code."
 msgstr "هذا ليس رمز ربط من حكواتي."
 
-#: app/pages/tales/home.tsx:444
+#: app/pages/tales/home.tsx:445
 msgid "This keeps the tale on this device and removes it from cloud sync."
 msgstr "ستبقى الحكاية على هذا الجهاز وستُزال من المزامنة السحابية."
 
@@ -4017,7 +4022,7 @@ msgstr "ستبقى الحكاية على هذا الجهاز وستُزال من
 msgid "This preset includes auto-detection of local servers (They must expose an OpenAI-compatible endpoint). LM Studio, Ollama, LocalAI, etc."
 msgstr "يتضمن هذا الإعداد المسبق اكتشافاً تلقائياً للخوادم المحلية (يجب أن توفر نقطة اتصال متوافقة مع OpenAI). مثل LM Studio و Ollama و LocalAI وغيرها."
 
-#: app/components/layout/settings/cloud-encryption.tsx:133
+#: app/components/layout/settings/cloud-encryption.tsx:127
 msgid "This recovery key doesn't match this account."
 msgstr "مفتاح الاسترداد هذا لا يطابق هذا الحساب."
 
@@ -4040,7 +4045,7 @@ msgstr "ستبقى هذه النسخة خاصة حتى تتم الموافقة �
 
 #. placeholder {0}: pendingDelete?.name
 #: app/pages/scenarios/home.tsx:803
-#: app/pages/tales/home.tsx:413
+#: app/pages/tales/home.tsx:414
 msgid "This will permanently delete {0}. This action cannot be undone."
 msgstr "سيؤدي هذا إلى حذف {0} نهائياً. لا يمكن التراجع عن هذا الإجراء."
 
@@ -4140,16 +4145,16 @@ msgstr "عدد المدخلات غير معروف"
 msgid "Unknown time"
 msgstr "وقت غير معروف"
 
-#: app/components/layout/settings/cloud-encryption.tsx:189
+#: app/components/layout/settings/cloud-encryption.tsx:183
 #: app/components/layout/settings/cloud-encryption.tsx:717
 msgid "Unlock"
 msgstr "فتح القفل"
 
-#: app/components/layout/settings/cloud-sync.tsx:1392
+#: app/components/layout/settings/cloud-sync.tsx:1396
 msgid "Unlock this device"
 msgstr "فتح قفل هذا الجهاز"
 
-#: app/components/layout/settings/cloud-encryption.tsx:181
+#: app/components/layout/settings/cloud-encryption.tsx:175
 msgid "Unlock this device to sync"
 msgstr "افتح قفل هذا الجهاز للمزامنة"
 
@@ -4171,7 +4176,7 @@ msgstr "إلغاء نشر «{first}»؟"
 msgid "Unpublished “{first}”"
 msgstr "ألغى نشر «{first}»"
 
-#: app/components/layout/settings/cloud-sync.tsx:1667
+#: app/components/layout/settings/cloud-sync.tsx:1671
 msgid "Unregister"
 msgstr "إلغاء التسجيل"
 
@@ -4196,7 +4201,7 @@ msgstr "التحديث {0} متاح."
 msgid "Update downloaded. Restarting..."
 msgstr "تم تحميل التحديث. جاري إعادة التشغيل..."
 
-#: app/components/layout/settings/cloud-sync.tsx:890
+#: app/components/layout/settings/cloud-sync.tsx:894
 #: app/pages/home/home.tsx:607
 msgid "Update Hakawati to sync"
 msgstr "حدّث حكواتي للمزامنة"
@@ -4320,7 +4325,7 @@ msgstr "من أنت في هذا العالم؟"
 msgid "Who have I met so far?"
 msgstr "من قابلت حتى الآن؟"
 
-#: app/components/layout/settings/cloud-encryption.tsx:1097
+#: app/components/layout/settings/cloud-encryption.tsx:1104
 msgid "Working…"
 msgstr "جارٍ العمل…"
 
@@ -4348,7 +4353,7 @@ msgstr "افعل..."
 msgid "You’re now using your ChatGPT plan!"
 msgstr "أنت الآن تستخدم خطة ChatGPT الخاصة بك!"
 
-#: app/components/layout/settings/cloud-sync.tsx:1067
+#: app/components/layout/settings/cloud-sync.tsx:1071
 msgid "Your account"
 msgstr "حسابك"
 
@@ -4356,13 +4361,17 @@ msgstr "حسابك"
 msgid "Your answer"
 msgstr "إجابتك"
 
-#: app/components/layout/settings/cloud-encryption.tsx:524
+#: app/components/layout/settings/cloud-encryption.tsx:507
 msgid "Your cloud saves are encrypted on your devices. You need this key if you lose them. It won’t be shown again."
 msgstr "تُشفَّر نسخك السحابية على أجهزتك. ستحتاج إلى هذا المفتاح إذا فقدتها. لن يُعرض مرة أخرى."
 
-#: app/components/layout/settings/cloud-sync.tsx:1349
+#: app/components/layout/settings/cloud-sync.tsx:1353
 msgid "Your cloud saves, published scenarios, and devices are deleted from Hakawati Cloud. Tales on this device stay. This can’t be undone."
 msgstr "ستُحذف حكاياتك السحابية وسيناريوهاتك المنشورة وأجهزتك من سحابة حكواتي. تبقى الحكايات المحفوظة على هذا الجهاز. لا يمكن التراجع عن هذا الإجراء."
+
+#: app/components/layout/settings/cloud-encryption.tsx:594
+msgid "Your current recovery key stops working when you continue."
+msgstr "سيتوقف مفتاح الاسترداد الحالي عن العمل عند المتابعة."
 
 #: app/components/layout/settings/cloud-encryption.tsx:628
 msgid "Your current recovery key will stop working."
@@ -4375,10 +4384,6 @@ msgstr "مكتبتك"
 #: app/pages/home/home.tsx:682
 msgid "Your next tale"
 msgstr "حكايتك التالية"
-
-#: app/components/layout/settings/cloud-encryption.tsx:572
-msgid "Your old recovery key no longer works."
-msgstr "لم يعد مفتاح الاسترداد القديم يعمل."
 
 #: app/pages/scenarios/details.tsx:258
 #: app/pages/scenarios/edit.tsx:147

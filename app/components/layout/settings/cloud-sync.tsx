@@ -340,9 +340,13 @@ export default function SettingsCloudSync() {
       hasUsableToken,
   });
   const encryptionDialogs = useCloudEncryptionDialogs();
+  const cloudTalesUnknown =
+    taleLibrary.syncListLoading ||
+    taleLibrary.remoteLoading ||
+    Boolean(taleLibrary.remoteError);
   const cloudOnlyTales = useMemo(
-    () => countCloudOnlyTales(taleLibrary.items),
-    [taleLibrary.items],
+    () => (cloudTalesUnknown ? null : countCloudOnlyTales(taleLibrary.items)),
+    [cloudTalesUnknown, taleLibrary.items],
   );
   const encryptionReady = encryption.status?.kind === "ready";
 

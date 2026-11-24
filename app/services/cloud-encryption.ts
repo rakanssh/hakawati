@@ -110,10 +110,12 @@ export async function completeCloudMigration(
 
 export async function resetCloudSaves(
   transport: SyncTransport,
+  keyId: string,
 ): Promise<CloudKeyInfo> {
   return parseCloudKey(
     await transport.post(`${CLOUD_KEY_PATH}/reset`, {
       confirmDeleteCloudSaves: true,
+      keyId,
     }),
   );
 }
@@ -378,10 +380,11 @@ export async function finishCloudKeySetup(input: {
 export async function resetCloudEncryption(input: {
   profile: SyncProfile;
   transport: SyncTransport;
+  keyId: string;
 }): Promise<void> {
   const scope = cloudKeyScope(input.profile);
   if (!scope) throw new Error("Sign in to reset cloud saves");
-  await resetCloudSaves(input.transport);
+  await resetCloudSaves(input.transport, input.keyId);
   await cloudKeys.forget(scope);
   await relinkTalesAfterCloudReset(input.profile.id, input.profile.accountId);
   forgetCloudEncryptionStatus();
