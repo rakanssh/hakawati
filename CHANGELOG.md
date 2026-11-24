@@ -20,6 +20,7 @@ and the app shows it in What's New and Updates.
 ### Changed
 
 - Hakawati Cloud storage is 60 MB per account for tales and covers together, with no limit on the number of tales.
+- Hakawati asks before making a Game Master tale, and understands AI instructions better.
 
 ### Fixed
 

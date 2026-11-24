@@ -11,6 +11,7 @@ import {
   type NewPassage,
 } from "../tale-edits";
 import {
+  AI_INSTRUCTIONS_PROPERTY,
   defineTool,
   MODE_PROPERTY,
   modeFrom,
@@ -50,7 +51,7 @@ export function createTaleTools(
     defineTool({
       name: "edit_tale",
       description:
-        "Change a tale's setup: name, description, plot, author's note, AI instructions, mode, story cards, and in Game Master mode its stats and inventory. Leave out what stays the same; an empty string clears plot, author's note or AI instructions. The narrator sees a story card when one of its triggers comes up in the story, or always when it is pinned. Add many cards over several calls.",
+        "Change a tale's setup: name, description, plot, author's note, AI instructions, mode, story cards, and in Game Master mode its stats and inventory. Leave out what stays the same; an empty string clears plot or author's note, or puts back the default AI instructions. Add many cards over several calls.",
       parameters: objectSchema({
         ...taleIdProperty,
         name: { type: "string" },
@@ -58,7 +59,7 @@ export function createTaleTools(
         mode: MODE_PROPERTY,
         plot: { type: "string" },
         authorNote: { type: "string" },
-        aiInstructions: { type: "string" },
+        aiInstructions: AI_INSTRUCTIONS_PROPERTY,
         cards: { type: "array", items: CARD_OP_SCHEMA },
         stats: { type: "array", items: STAT_OP_SCHEMA },
         items: {
@@ -95,7 +96,7 @@ export function createTaleTools(
                 tale.tale.gameMode !== GameMode.GM
               )
                 throw new Error(
-                  "Stats and inventory are only used in Game Master mode. Set mode to game_master as well if the player wants that.",
+                  "This tale is in Story Teller mode, and stats and inventory are only used in Game Master mode. Set mode to game_master as well only if the player wants Game Master.",
                 );
               applyStatOps(tale, stats);
               addedItems = applyItemOps(tale, items);
