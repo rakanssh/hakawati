@@ -17,15 +17,22 @@ export type SyncDisabledReason =
   | "signed_out"
   | "user_disabled";
 
+export type RemoteTaleCover = Pick<
+  CoverAssetReference,
+  "assetId" | "contentType" | "byteSize" | "sha256"
+>;
+
 export type RemoteTale = {
   id: string;
   sourceTaleId: string;
+  encryption?: "server" | "client";
+  locked?: boolean;
   title: string;
   description: string | null;
   gameMode: string;
   coverAssetId: string | null;
   thumbnailAssetId: string | null;
-  cover?: CoverAssetReference | null;
+  cover?: RemoteTaleCover | null;
   contentRev: number;
   metadataRev: number;
   turnCount: number;

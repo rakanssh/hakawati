@@ -25,7 +25,12 @@ import {
   SyncHttpError,
   syncLinkedTale,
   uploadTalePackage,
+  withCloudEncryption,
 } from "@/services/sync";
+import {
+  migrateCloudSaves,
+  resolveCloudEncryption,
+} from "@/services/cloud-encryption";
 import type { SyncProfile } from "@/types/sync.type";
 import { addSyncWakeListener, notifySyncChanged } from "@/services/sync-wakeup";
 import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
@@ -132,12 +137,13 @@ export function useSyncBackground(dbReady: boolean) {
           activeProfile.accountId ?? "",
         ]);
         const writerId = activeProfile.deviceId || deviceId.trim();
-        const transport = createSyncTransport({
+        const accountTransport = createSyncTransport({
           profile: activeProfile,
           signal,
           accessToken:
             activeProfile.mode === "hosted" ? accessToken.trim() : undefined,
         });
+        let transport = accountTransport;
         const capabilities = await fetchSyncCapabilities(transport);
         if (signal.aborted) return;
         assertSyncAvailable(capabilities);
@@ -149,6 +155,38 @@ export function useSyncBackground(dbReady: boolean) {
           if (!devices.some((device) => device.id === activeProfile.deviceId)) {
             await setSyncProfileDisabled(activeProfile.id, "user_disabled");
             return;
+          }
+        }
+        const encryption = await resolveCloudEncryption({
+          profile: activeProfile,
+          transport,
+          capabilities,
+          maxAgeMs: 0,
+        });
+        if (signal.aborted) return;
+        if (encryption.kind !== "ready" && encryption.kind !== "plaintext") {
+          return;
+        }
+        if (encryption.kind === "ready") {
+          transport = withCloudEncryption(accountTransport, encryption.session);
+          if (encryption.info.state === "migrating") {
+            try {
+              const migrated = await migrateCloudSaves({
+                profile: activeProfile,
+                transport,
+                remoteTales: await listAllRemoteTales(transport),
+              });
+              if (migrated.state === "client") {
+                transport = withCloudEncryption(accountTransport, {
+                  ...encryption.session,
+                  acceptServerTales: false,
+                });
+              }
+            } catch (error) {
+              if (signal.aborted) return;
+              if (isUpdateRequiredError(error)) throw error;
+              console.warn("Cloud save encryption failed", error);
+            }
           }
         }
         const [remoteTales, syncStates, syncPreferences] = await Promise.all([
@@ -289,6 +327,12 @@ export function useSyncBackground(dbReady: boolean) {
             if (!forgottenLocalIds.has(state.localTaleId)) {
               await forgetRemovedCloudTale(state.localTaleId);
             }
+            continue;
+          }
+          if (
+            encryption.kind === "ready" &&
+            remoteTale.encryption === "server"
+          ) {
             continue;
           }
           const hasChanges =

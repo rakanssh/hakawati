@@ -64,6 +64,10 @@ vi.mock("@/hooks/useGameSaves", () => ({
 vi.mock("@/repositories/sync.repository", () => syncRepoMocks);
 
 vi.mock("@/services/sync", () => syncServiceMocks);
+vi.mock("@/services/cloud-encryption", () => ({
+  openPrivateTransport: async ({ transport }: { transport: unknown }) =>
+    transport,
+}));
 
 vi.mock("@/store/useSyncSettingsStore", () => ({
   useSyncSettingsStore: (selector: (state: typeof syncStoreState) => unknown) =>

@@ -115,6 +115,7 @@ const migrationFiles = [
   "006_add_scenario_content_catalog_metadata.sql",
   "007_unify_scenario_draft_cover.sql",
   "008_create_assistant_chats.sql",
+  "009_add_sync_pending_writes.sql",
 ];
 
 function applyMigration(db: TestDatabase, index: number) {

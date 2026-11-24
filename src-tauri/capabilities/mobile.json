@@ -1,7 +1,7 @@
 {
   "identifier": "mobile-capability",
-  "description": "Lets the Android back gesture leave the app from the home screen",
+  "description": "Lets the Android back gesture leave the app from the home screen and pairs devices by QR code",
   "platforms": ["android", "iOS"],
   "windows": ["main"],
-  "permissions": ["process:allow-exit"]
+  "permissions": ["process:allow-exit", "barcode-scanner:default"]
 }

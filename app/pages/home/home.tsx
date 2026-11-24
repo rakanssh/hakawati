@@ -128,7 +128,9 @@ function TaleCard({
 }) {
   const { t } = useLingui();
   const isRemote = item.source === "remote";
-  const title = isRemote ? item.remoteTale.title : item.localTale.name;
+  const title = isRemote
+    ? item.remoteTale.title || t`Locked tale`
+    : item.localTale.name;
   const description = isRemote
     ? item.remoteTale.lastEntryPreview ||
       item.remoteTale.description ||
@@ -335,7 +337,8 @@ export default function Home() {
     ? name
     : featuredItem?.source === "local"
       ? featuredItem.localTale.name
-      : featuredItem?.remoteTale.title;
+      : featuredItem?.remoteTale.title ||
+        (featuredItem?.remoteTale.locked ? t`Locked tale` : undefined);
   const featuredExcerpt = hasActiveGame
     ? lastEntry?.text || description
     : featuredItem?.source === "local"

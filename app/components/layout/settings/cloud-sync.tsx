@@ -86,6 +86,19 @@ import {
 } from "@/services/new-tale-sync";
 import { useTaleLibrary } from "@/hooks/useTaleLibrary";
 import type { LibraryTaleItem } from "@/lib/tale-library";
+import {
+  CloudEncryptionBanner,
+  CloudEncryptionDialogs,
+  CloudEncryptionLink,
+  CloudEncryptionPage,
+  useCloudEncryption,
+  useCloudEncryptionDialogs,
+} from "@/components/layout/settings/cloud-encryption";
+import {
+  countCloudOnlyTales,
+  forgetCloudEncryptionStatus,
+  resolveCloudEncryption,
+} from "@/services/cloud-encryption";
 import { cn, formatBytes, formatExactDateTime } from "@/lib/utils";
 
 const HOSTED_PROFILE_ID = "hosted";
@@ -317,6 +330,25 @@ export default function SettingsCloudSync() {
         .filter((item): item is CloudStorageItem => item !== null),
     [taleLibrary.items],
   );
+  const encryption = useCloudEncryption({
+    profile: hostedProfile,
+    accessToken: accessToken.trim(),
+    active:
+      activeSyncMode === "hosted" &&
+      syncEnabled &&
+      syncUiKind === "signed-in" &&
+      hasUsableToken,
+  });
+  const encryptionDialogs = useCloudEncryptionDialogs();
+  const cloudOnlyTales = useMemo(
+    () => countCloudOnlyTales(taleLibrary.items),
+    [taleLibrary.items],
+  );
+  const encryptionReady = encryption.status?.kind === "ready";
+
+  useEffect(() => {
+    if (page === "unlock" && encryptionReady) leave("unlock");
+  }, [encryptionReady, leave, page]);
 
   const refreshProfileState = useCallback(() => {
     void loadSyncProfile(profile.id)
@@ -470,6 +502,7 @@ export default function SettingsCloudSync() {
     signInControllerRef.current?.abort();
     void deleteHostedRefreshToken(HOSTED_PROFILE_ID).catch(() => undefined);
     clearSession();
+    forgetCloudEncryptionStatus();
     void disableSyncProfile(HOSTED_PROFILE_ID, "signed_out").catch(
       () => undefined,
     );
@@ -632,6 +665,24 @@ export default function SettingsCloudSync() {
     }
   }
 
+  async function offerEncryptionSetup(
+    result: Awaited<ReturnType<typeof prepareHostedConnection>>,
+  ) {
+    if (!result.device) return;
+    const status = await resolveCloudEncryption({
+      profile: {
+        ...hostedProfile,
+        accountId: result.account.id,
+        deviceId: result.device.id,
+      },
+      transport: result.transport,
+      capabilities: result.capabilities,
+      maxAgeMs: 0,
+    }).catch(() => null);
+    if (status?.kind === "setup")
+      encryptionDialogs.setDialog({ kind: "setup" });
+  }
+
   async function connect() {
     await run("connect", async () => {
       const result = await prepareHostedConnection();
@@ -655,6 +706,7 @@ export default function SettingsCloudSync() {
         return;
       }
       setStatus(t`Connected as ${label}`);
+      await offerEncryptionSetup(result);
       wakeSyncBackground();
       notifySyncChanged();
       await refreshUndecidedTales(HOSTED_PROFILE_ID, {
@@ -708,6 +760,7 @@ export default function SettingsCloudSync() {
       setSyncEnabled(true);
       setDisabledReason(null);
       setStatus("");
+      await offerEncryptionSetup(result);
       wakeSyncBackground();
       notifySyncChanged();
       await refreshUndecidedTales(HOSTED_PROFILE_ID, {
@@ -876,6 +929,14 @@ export default function SettingsCloudSync() {
         unavailable={Boolean(taleLibrary.remoteError)}
         removing={removingCloudTale !== null}
         onRemove={(item) => void removeCloudStorageItem(item)}
+      />
+    );
+  } else if (page === "encryption" || page === "unlock") {
+    content = (
+      <CloudEncryptionPage
+        page={page}
+        status={encryption.status}
+        onDialog={encryptionDialogs.setDialog}
       />
     );
   } else if (page === "devices") {
@@ -1078,6 +1139,11 @@ export default function SettingsCloudSync() {
             </PlainRow>
           </SetupList>
         ) : null}
+        <CloudEncryptionBanner
+          status={encryption.status}
+          onSetUp={() => encryptionDialogs.setDialog({ kind: "setup" })}
+          onUnlock={() => openPage("unlock")}
+        />
         {signedOut && localTales > 0 ? (
           <p className="-mt-2 px-0.5 text-sm text-muted-foreground">
             {plural(localTales, {
@@ -1087,7 +1153,10 @@ export default function SettingsCloudSync() {
           </p>
         ) : null}
 
-        {canReviewUndecidedTales || showHostedUsage || showHostedDevices ? (
+        {canReviewUndecidedTales ||
+        showHostedUsage ||
+        showHostedDevices ||
+        encryptionReady ? (
           <SetupList>
             {canReviewUndecidedTales ? (
               <LinkRow
@@ -1107,6 +1176,10 @@ export default function SettingsCloudSync() {
                 onClick={() => openPage("storage")}
               />
             ) : null}
+            <CloudEncryptionLink
+              status={encryption.status}
+              onOpen={() => openPage("encryption")}
+            />
             {showHostedDevices ? (
               <LinkRow
                 title={<Trans>Devices</Trans>}
@@ -1248,6 +1321,16 @@ export default function SettingsCloudSync() {
         </DialogContent>
       </Dialog>
 
+      <CloudEncryptionDialogs
+        dialog={encryptionDialogs.dialog}
+        onDialog={encryptionDialogs.setDialog}
+        onClose={encryptionDialogs.close}
+        profile={hostedProfile}
+        transport={encryption.transport}
+        status={encryption.status}
+        cloudOnlyTales={cloudOnlyTales}
+      />
+
       <AlertDialog
         open={deleteTarget !== null}
         onOpenChange={(open) => {
@@ -1303,6 +1386,10 @@ export function CloudSyncTitle({ page }: { page: string }) {
       return <Trans>Tales in the cloud</Trans>;
     case "devices":
       return <Trans>Devices</Trans>;
+    case "encryption":
+      return <Trans>Encryption</Trans>;
+    case "unlock":
+      return <Trans>Unlock this device</Trans>;
     case "service":
       return <Trans>Cloud service</Trans>;
     default:
@@ -1477,7 +1564,7 @@ function CloudTales({
           {items.map((item) => (
             <div key={item.key} className={itemRowClass}>
               <RowText
-                title={item.name}
+                title={item.name || <Trans>Locked tale</Trans>}
                 detail={`${formatBytes(item.storageBytes)} · ${formatExactDateTime(item.updatedAt)}`}
               />
               <Button

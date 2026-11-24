@@ -27,6 +27,7 @@ export type CloudCapabilities = {
     | { state: "compatible" }
     | { state: "unsupported"; reason: string };
   cloudSaveProtocol: number;
+  cloudEncryption?: string[];
   features: {
     sync: CloudFeatureState;
     catalogRead: CloudFeatureState;
@@ -84,6 +85,11 @@ export function parseCloudCapabilities(
     minimumClientVersion: value.minimumClientVersion,
     compatibility: value.compatibility as CloudCapabilities["compatibility"],
     cloudSaveProtocol: value.cloudSaveProtocol,
+    cloudEncryption: Array.isArray(value.cloudEncryption)
+      ? value.cloudEncryption.filter(
+          (scheme): scheme is string => typeof scheme === "string",
+        )
+      : [],
     features: { sync, catalogRead, coverStorage, publishing },
     limits: {
       maxPackageBytes: value.limits.maxPackageBytes,

@@ -5,21 +5,17 @@ import {
   getSyncProfile,
   listTaleSyncStates,
 } from "@/repositories/sync.repository";
-import {
-  assertSyncAvailable,
-  fetchSyncCapabilities,
-  listAllRemoteTales,
-} from "@/services/sync";
+import { listAllRemoteTales } from "@/services/sync";
 import type { RemoteTale, TaleSyncState } from "@/types/sync.type";
 import { addSyncChangedListener } from "@/services/sync-wakeup";
 import {
   deleteLibraryTaleItem,
   importCloudTale,
+  privateSyncTransport,
   removeLibraryTaleItemFromCloud,
   resolveTaleConflict,
   syncLibraryTaleItem,
   syncSessionFrom,
-  syncTransport,
   type TaleConflictChoice,
 } from "@/services/tale-library.service";
 import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
@@ -121,9 +117,9 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
       } finally {
         if (isCurrent()) setSyncStatesHydrated(true);
       }
-      const transport = syncTransport(session);
-      const capabilities = await fetchSyncCapabilities(transport);
-      assertSyncAvailable(capabilities);
+      const transport = await privateSyncTransport(session, {
+        allowLocked: true,
+      });
       const tales = await listAllRemoteTales(transport, local.limit);
       if (!isCurrent()) return;
       setRemoteTales(tales);

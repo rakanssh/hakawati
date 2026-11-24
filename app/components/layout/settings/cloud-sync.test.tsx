@@ -11,6 +11,11 @@ import {
   decideAllTaleSyncPreferences,
   listUndecidedTales,
 } from "@/services/new-tale-sync";
+import {
+  forgetCloudEncryptionStatus,
+  useCloudEncryptionStore,
+  type CloudEncryptionStatus,
+} from "@/services/cloud-encryption";
 
 i18n.load("en", {});
 i18n.activate("en");
@@ -95,6 +100,21 @@ const toastMocks = vi.hoisted(() => ({
   error: vi.fn(),
   success: vi.fn(),
 }));
+
+const tauriCore = vi.hoisted(() => ({
+  invoke: vi.fn(async (command: string) => {
+    if (command === "cloud_key_begin_setup") {
+      return {
+        keyId: "key-1",
+        keyCheck: "check",
+        recoveryWrappedKey: {},
+        recoveryKey: "ABCD-EFGH-JKMN-PQRS-TVWX-YZ01-2345",
+      };
+    }
+    throw new Error("Native commands are unavailable");
+  }),
+}));
+vi.mock("@tauri-apps/api/core", () => tauriCore);
 
 vi.mock("@tauri-apps/api/app", () => ({
   getVersion: vi.fn().mockResolvedValue("0.15.2"),
@@ -799,6 +819,131 @@ describe("SettingsCloudSync storage usage", () => {
     expect(title()).toBe("Devices");
 
     vi.mocked(listUndecidedTales).mockResolvedValue([]);
+    view.cleanup();
+  });
+});
+
+describe("SettingsCloudSync encryption", () => {
+  const info = {
+    state: "client" as const,
+    keyId: "key-1",
+    keyCheck: "check",
+    recoveryWrappedKey: null,
+    serverTaleCount: 0,
+  };
+
+  function withStatus(status: CloudEncryptionStatus) {
+    useCloudEncryptionStore
+      .getState()
+      .setStatus("https://sync.example account-1", status);
+  }
+
+  function click(label: string) {
+    const button = [...document.body.querySelectorAll("button")].find(
+      (candidate) => candidate.textContent?.startsWith(label),
+    );
+    if (!button) throw new Error(`${label} did not render`);
+    act(() => {
+      button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+  }
+
+  beforeEach(() => {
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
+    vi.clearAllMocks();
+    forgetCloudEncryptionStatus();
+    Object.assign(syncStoreState, {
+      cloudBaseUrl: "https://sync.example",
+      activeSyncMode: "hosted",
+      accessToken: "token",
+      accessTokenExpiresAt: null,
+      accountId: "account-1",
+      hostedDeviceIdsByAccountId: { "account-1": "device-1" },
+      accountDisplayName: "Player",
+      accountEmail: "player@example.com",
+      hasRefreshToken: true,
+      cloudUpdateRequired: false,
+    });
+    syncRepoMocks.getSyncProfile.mockResolvedValue({
+      enabled: true,
+      disabledReason: null,
+    });
+    syncServiceMocks.fetchHostedAccountUsage.mockResolvedValue({
+      tales: { used: 1, limit: 50 },
+      storage: { usedBytes: 0, limitBytes: 10 * 1024 * 1024 },
+    });
+    syncServiceMocks.listHostedDevices.mockResolvedValue([device("device-1")]);
+  });
+
+  it("asks a locked desktop to unlock with a code or the recovery key", async () => {
+    withStatus({ kind: "locked", reason: "missing", info });
+    const view = render();
+    await flush();
+
+    expect(document.body.textContent).toContain("Unlock this device to sync");
+    click("Unlock");
+    await flush();
+    expect(document.body.textContent).toContain("Show a code");
+    expect(document.body.textContent).toContain("Enter recovery key");
+    expect(document.body.textContent).not.toContain("Scan a code");
+
+    click("Reset cloud saves");
+    await flush();
+    expect(document.body.textContent).toContain(
+      "1 cloud tale isn't on this device and will be lost.",
+    );
+
+    view.cleanup();
+  });
+
+  it("opens encryption settings once this device is unlocked", async () => {
+    withStatus({
+      kind: "ready",
+      info,
+      session: {
+        serverOrigin: "https://sync.example",
+        accountId: "account-1",
+        keyId: "key-1",
+        acceptServerTales: false,
+      },
+    });
+    const view = render();
+    await flush();
+
+    expect(document.body.textContent).not.toContain("Unlock this device");
+    click("Encryption");
+    await flush();
+    expect(document.body.textContent).toContain("Show a code");
+    expect(document.body.textContent).toContain("New recovery key");
+    expect(document.body.textContent).toContain("Reset cloud saves");
+
+    view.cleanup();
+  });
+
+  it("shows the recovery key once and waits for the player to save it", async () => {
+    withStatus({
+      kind: "setup",
+      info: { ...info, state: "server", keyId: null },
+    });
+    const view = render();
+    await flush();
+
+    click("Set up");
+    await flush();
+    expect(document.body.textContent).toContain("Save your recovery key");
+    expect(document.body.textContent).toContain(
+      "ABCD-EFGH-JKMN-PQRS-TVWX-YZ01-2345",
+    );
+    expect(tauriCore.invoke).toHaveBeenCalledWith("cloud_key_begin_setup", {
+      scope: { serverOrigin: "https://sync.example", accountId: "account-1" },
+    });
+    const next = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent === "Continue",
+    );
+    expect(next?.disabled).toBe(true);
+
     view.cleanup();
   });
 });

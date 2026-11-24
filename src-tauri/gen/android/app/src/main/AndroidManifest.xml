@@ -4,6 +4,9 @@
     <!-- Speech input on the play screen -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <!-- Scanning pairing codes from other devices -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:dataExtractionRules="@xml/data_extraction_rules"

@@ -1,4 +1,4 @@
-const SERVICE_NAME: &str = "hakawati.sync";
+pub(crate) const SERVICE_NAME: &str = "hakawati.sync";
 
 pub fn hosted_refresh_token_account(profile_id: &str) -> String {
     format!("hosted:{profile_id}:refresh_token")

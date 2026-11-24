@@ -16,7 +16,9 @@ import {
   listAllRemoteTales,
   replaceRemoteTalePackage,
   SyncHttpError,
+  type SyncTransport,
 } from "@/services/sync";
+import { openPrivateTransport } from "@/services/cloud-encryption";
 import { wakeSyncBackground } from "@/services/sync-wakeup";
 import { mergeTaleLibrary, type LibraryTaleItem } from "@/lib/tale-library";
 import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
@@ -92,6 +94,21 @@ export const syncTransport = (session: SyncSession) =>
     accessToken: session.accessToken,
   });
 
+export async function privateSyncTransport(
+  session: SyncSession,
+  options: { allowLocked?: boolean } = {},
+): Promise<SyncTransport> {
+  const transport = syncTransport(session);
+  const capabilities = await fetchSyncCapabilities(transport);
+  assertSyncAvailable(capabilities);
+  return openPrivateTransport({
+    profile: session.profile,
+    transport,
+    capabilities,
+    ...options,
+  });
+}
+
 async function isSyncActive(session: SyncSession): Promise<boolean> {
   if (!session.canReach) return false;
   return Boolean((await getSyncProfile(session.profile.id))?.enabled);
@@ -139,8 +156,9 @@ export async function loadTaleLibrary(
     session.profile.accountId,
   ).catch(() => []);
   try {
-    const transport = syncTransport(session);
-    assertSyncAvailable(await fetchSyncCapabilities(transport));
+    const transport = await privateSyncTransport(session, {
+      allowLocked: true,
+    });
     const remoteTales = await listAllRemoteTales(transport, 50);
     return {
       items: mergeTaleLibrary({
@@ -165,13 +183,13 @@ export async function loadTaleLibrary(
   }
 }
 
-export function importCloudTale(
+export async function importCloudTale(
   session: SyncSession,
   remoteTaleId: string,
 ): Promise<string> {
   return importRemoteTalePackage({
     profile: session.profile,
-    transport: syncTransport(session),
+    transport: await privateSyncTransport(session),
     remoteTaleId,
   });
 }
@@ -248,7 +266,15 @@ export async function removeLibraryTaleItemFromCloud(
   const { session, syncActive, onRemoteError } = options;
   if (!syncActive) throw new Error("Sync is not active");
   const { profile } = session;
-  const transport = syncTransport(session);
+  if (item.source === "remote" && item.remoteTale.locked) {
+    await deleteRemoteTale(
+      syncTransport(session),
+      item.remoteTale.id,
+      item.remoteTale.metadataRev,
+    );
+    return;
+  }
+  const transport = await privateSyncTransport(session);
   const localTaleId =
     item.source === "local"
       ? item.localTale.id
@@ -297,7 +323,7 @@ export async function resolveTaleConflict(
     throw new Error("Tale does not have a sync conflict");
   }
   const { profile } = session;
-  const transport = syncTransport(session);
+  const transport = await privateSyncTransport(session);
   const idempotencyKey = `conflict-${item.localTale.id}-${Date.now()}`;
 
   if (choice === "keep-remote") {
@@ -323,6 +349,14 @@ export async function resolveTaleConflict(
       idempotencyKey,
       forceReplace: true,
       existingCover: item.sync.remoteTale?.cover,
+      ...(item.sync.remoteTale
+        ? {
+            remoteRevisions: {
+              contentRev: item.sync.remoteTale.contentRev,
+              metadataRev: item.sync.remoteTale.metadataRev,
+            },
+          }
+        : {}),
     });
     return item.localTale.id;
   }

@@ -236,7 +236,9 @@ export default function TalesHome() {
         {visibleItems.map((item) => {
           const isRemote = item.source === "remote";
           const id = isRemote ? item.remoteTale.id : item.localTale.id;
-          const name = isRemote ? item.remoteTale.title : item.localTale.name;
+          const name = isRemote
+            ? item.remoteTale.title || t`Locked tale`
+            : item.localTale.name;
           const description = isRemote
             ? (item.remoteTale.lastEntryPreview ??
               item.remoteTale.description ??
