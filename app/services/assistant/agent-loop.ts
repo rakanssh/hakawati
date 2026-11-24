@@ -50,7 +50,6 @@ export type AgentStop = "max_rounds" | "output_limit";
 
 async function readRound(
   response: ChatResponse,
-  round: number,
   onEvent: ((event: AgentEvent) => void) | undefined,
 ): Promise<{ content: string; toolCalls: ToolCall[] }> {
   if (!response.iterator) {
@@ -72,22 +71,10 @@ async function readRound(
     }
     accumulator.add(chunk.tool_calls);
   }
-  const { calls, incomplete } = accumulator.result();
-  const unnamed = incomplete.flatMap((call, index): ToolCall[] =>
-    call.name
-      ? [
-          {
-            id: `call_${round}_${index}`,
-            type: "function",
-            function: { name: call.name, arguments: call.arguments },
-          },
-        ]
-      : [],
-  );
-  const toolCalls = [...calls, ...unnamed];
+  const { calls } = accumulator.result();
   return {
     content,
-    toolCalls: toolCalls.length ? toolCalls : (response.tool_calls ?? []),
+    toolCalls: calls.length ? calls : (response.tool_calls ?? []),
   };
 }
 
@@ -217,7 +204,7 @@ export async function runAgentLoop(input: {
     );
   };
 
-  const attempt = async (round: number) => {
+  const attempt = async () => {
     for (let retries = 0; ; retries += 1) {
       try {
         const response = await send(
@@ -225,7 +212,7 @@ export async function runAgentLoop(input: {
             ? [...conversation, { role: "user", content: CUT_OFF_NOTE }]
             : conversation,
         );
-        return { response, ...(await readRound(response, round, onEvent)) };
+        return { response, ...(await readRound(response, onEvent)) };
       } catch (error) {
         if (!isOutputLimitError(error)) throw error;
         assertNotAborted(signal);
@@ -239,7 +226,7 @@ export async function runAgentLoop(input: {
   let stopReason: AgentStop = "max_rounds";
   for (let round = 0; round < maxRounds; round += 1) {
     assertNotAborted(signal);
-    const reply = await attempt(round);
+    const reply = await attempt();
     if (!reply) {
       stopReason = "output_limit";
       break;
@@ -287,11 +274,7 @@ export async function runAgentLoop(input: {
         [...conversation, { role: "user", content: input.wrapUp[stopReason] }],
         "none",
       );
-      const { content, toolCalls } = await readRound(
-        response,
-        maxRounds,
-        onEvent,
-      );
+      const { content, toolCalls } = await readRound(response, onEvent);
       if (content)
         added.push({
           role: "assistant",

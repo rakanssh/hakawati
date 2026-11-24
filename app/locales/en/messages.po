@@ -189,6 +189,10 @@ msgstr "A sheet feeding out of a typewriter on an oak desk."
 msgid "A starship tablet against a night sky and a slowly turning red planet."
 msgstr "A starship tablet against a night sky and a slowly turning red planet."
 
+#: app/components/play/log/log-block-bubble.tsx:210
+msgid "A stat or item change failed"
+msgstr "A stat or item change failed"
+
 #: app/components/assistant/activity-chip.tsx:54
 #: app/components/layout/settings/settings-modal.tsx:102
 msgid "About"
@@ -947,7 +951,7 @@ msgid "Context window"
 msgstr "Context window"
 
 #. placeholder {0}: entry.chainIndex
-#: app/components/play/log/log-block-bubble.tsx:225
+#: app/components/play/log/log-block-bubble.tsx:229
 msgid "Continuation {0}"
 msgstr "Continuation {0}"
 
@@ -1869,7 +1873,7 @@ msgstr "In review"
 msgid "In the LICENSES folder that comes with the app"
 msgstr "In the LICENSES folder that comes with the app"
 
-#: app/components/play/log/log-block-bubble.tsx:223
+#: app/components/play/log/log-block-bubble.tsx:227
 msgid "Initial"
 msgstr "Initial"
 
@@ -2311,8 +2315,8 @@ msgstr "Name"
 msgid "NanoGPT"
 msgstr "NanoGPT"
 
-#: app/components/play/log/log-block-bubble.tsx:114
-#: app/components/play/log/log-block-bubble.tsx:124
+#: app/components/play/log/log-block-bubble.tsx:115
+#: app/components/play/log/log-block-bubble.tsx:125
 #: app/components/play/log/log-entry-bubble.tsx:76
 #: app/components/play/log/log-entry-bubble.tsx:86
 msgid "Narrate section"
@@ -3942,7 +3946,7 @@ msgstr "Thing"
 #: app/components/assistant/hakawati-chat.tsx:372
 #: app/components/layout/settings/thinking-level.tsx:56
 #: app/components/layout/settings/thinking-level.tsx:58
-#: app/components/play/log/log-block-bubble.tsx:137
+#: app/components/play/log/log-block-bubble.tsx:138
 msgid "Thinking"
 msgstr "Thinking"
 
@@ -4053,7 +4057,7 @@ msgid "Title"
 msgstr "Title"
 
 #: app/components/assistant/hakawati-chat.tsx:370
-#: app/components/play/log/log-block-bubble.tsx:133
+#: app/components/play/log/log-block-bubble.tsx:134
 msgid "Toggle thinking output"
 msgstr "Toggle thinking output"
 

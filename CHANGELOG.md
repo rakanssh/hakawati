@@ -24,6 +24,8 @@ and the app shows it in What's New and Updates.
 ### Fixed
 
 - Tales downloaded from the cloud keep their cover.
+- Game Master stat and item changes apply with Gemini and SambaNova, and a change that fails now says so in the story.
+- OpenAI reasoning models such as o1 and o3-mini no longer fail.
 
 ## [v1.4.0] - 2026-11-21
 

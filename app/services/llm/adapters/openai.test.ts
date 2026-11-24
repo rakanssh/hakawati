@@ -197,6 +197,32 @@ describe("thinking level provider adapters", () => {
     });
   });
 
+  it("keeps max_tokens for compatible providers", async () => {
+    fetchMock.mockResolvedValue(completion());
+    await OpenAiClient({ baseUrl: "https://compatible.example/v1" }).chat({
+      ...request,
+      model: "o3-mini",
+      max_tokens: 2048,
+    });
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.max_tokens).toBe(2048);
+    expect(body).not.toHaveProperty("max_completion_tokens");
+  });
+
+  it.each(["o1", "o3-mini", "gpt-4.1"])(
+    "sends max_completion_tokens to OpenAI Chat Completions for %s",
+    async (model) => {
+      fetchMock.mockResolvedValue(completion());
+      await openai().chat({ ...request, model, max_tokens: 2048 });
+      expect(fetchMock.mock.calls[0][0]).toBe(
+        "https://api.openai.com/v1/chat/completions",
+      );
+      const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+      expect(body.max_completion_tokens).toBe(2048);
+      expect(body).not.toHaveProperty("max_tokens");
+    },
+  );
+
   it("sends a player's images as image parts in both API formats", async () => {
     const withImage: ChatRequest = {
       ...request,

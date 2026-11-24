@@ -67,4 +67,15 @@ describe("LogBlockBubble", () => {
 
     expect(container.querySelector("[data-log-error]")).toBeNull();
   });
+
+  it("says when a stat or item change failed", () => {
+    const container = renderBlock([
+      gm({ id: "gm-1", text: "A trap springs.", isActionError: true }),
+      gm({ id: "gm-2", text: " You run." }),
+    ]);
+
+    expect(container.querySelector("[data-log-error]")?.textContent).toBe(
+      "A stat or item change failed",
+    );
+  });
 });
