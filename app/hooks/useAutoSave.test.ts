@@ -14,7 +14,11 @@ function deferred() {
   return { promise, resolve, reject };
 }
 
-function renderAutoSave(save: (data: number) => Promise<void>) {
+function renderAutoSave(
+  save: (data: number) => Promise<void>,
+  onError?: (error: unknown) => void,
+  saveWhenEnabled?: () => Promise<void>,
+) {
   const container = document.createElement("div");
   const root = createRoot(container);
   let current!: ReturnType<typeof useAutoSave>;
@@ -27,7 +31,15 @@ function renderAutoSave(save: (data: number) => Promise<void>) {
     disabled?: boolean;
     scopeKey?: string;
   }) {
-    current = useAutoSave({ data, save, debounceMs: 100, disabled, scopeKey });
+    current = useAutoSave({
+      data,
+      save,
+      debounceMs: 100,
+      disabled,
+      scopeKey,
+      onError,
+      saveWhenEnabled,
+    });
     return null;
   }
   const render = (data: number, disabled = false, scopeKey = "tale-1") =>
@@ -136,6 +148,52 @@ describe("useAutoSave", () => {
     } finally {
       harness.cleanup();
     }
+  });
+
+  it("reports a failed autosave and on-leave save", async () => {
+    const save = vi.fn().mockRejectedValue(new Error("Disk full"));
+    const onError = vi.fn();
+    const errorLog = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const harness = renderAutoSave(save, onError);
+    try {
+      harness.render(1);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(100);
+      });
+      expect(onError).toHaveBeenCalledTimes(1);
+      harness.render(2);
+      harness.cleanup();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      expect(onError).toHaveBeenCalledTimes(2);
+    } finally {
+      save.mockResolvedValue(undefined);
+      await act(flushPendingAutoSaves);
+      errorLog.mockRestore();
+    }
+  });
+
+  it("hands edits made during generation to saveWhenEnabled on leave", async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    const later = deferred();
+    const saveWhenEnabled = vi.fn(() => later.promise);
+    const harness = renderAutoSave(save, undefined, saveWhenEnabled);
+    harness.render(1, true);
+    harness.cleanup();
+    expect(save).not.toHaveBeenCalled();
+    expect(saveWhenEnabled).toHaveBeenCalledOnce();
+    const closed = vi.fn();
+    const closing = flushPendingAutoSaves().then(closed);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(closed).not.toHaveBeenCalled();
+    later.resolve();
+    await closing;
+    expect(closed).toHaveBeenCalledOnce();
   });
 
   it("keeps failed edits available for another close or update attempt", async () => {

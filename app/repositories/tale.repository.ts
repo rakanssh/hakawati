@@ -1373,15 +1373,10 @@ export async function getLogEntries(
   startIndex: number,
   limit: number,
 ): Promise<LogEntry[]> {
-  try {
-    return await enqueueLocalOperation(async () => {
-      const db = await getDb();
-      return selectLogEntries(db, taleId, startIndex, limit);
-    });
-  } catch (error) {
-    console.error("Error fetching log entries:", error);
-    return [];
-  }
+  return enqueueLocalOperation(async () => {
+    const db = await getDb();
+    return selectLogEntries(db, taleId, startIndex, limit);
+  });
 }
 
 async function finishLogSplice(
@@ -1593,15 +1588,10 @@ export async function findLogEntries(
 }
 
 export async function getLogCount(taleId: string): Promise<number> {
-  try {
-    return await enqueueLocalOperation(async () => {
-      const db = await getDb();
-      return selectLogCount(db, taleId);
-    });
-  } catch (error) {
-    console.error("Error fetching log count:", error);
-    return 0;
-  }
+  return enqueueLocalOperation(async () => {
+    const db = await getDb();
+    return selectLogCount(db, taleId);
+  });
 }
 
 export async function exportTalePackage(

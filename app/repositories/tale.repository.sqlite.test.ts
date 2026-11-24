@@ -267,6 +267,23 @@ describe("tale repository SQLite storage", () => {
     expect(await getTaleSaveVersion(taleId)).toBe(version);
   });
 
+  it("reports a failed log read instead of an empty log", async () => {
+    applyMigrations(dbState.current!);
+    const { appendTurn, getLogEntries, getLogCount } = await import(
+      "./tale.repository"
+    );
+    const taleId = await createEmptyTale();
+    await appendTurn(
+      taleId,
+      { entries: [gmEntry("saved")], createdAt: 1 },
+      emptyState(),
+      createTaleSessionState(),
+    );
+    dbState.current!.raw.exec("DROP TABLE tale_states");
+    await expect(getLogEntries(taleId, 0, 10)).rejects.toThrow("tale_states");
+    await expect(getLogCount(taleId)).rejects.toThrow("tale_states");
+  });
+
   it("migrates legacy tale blobs into state, session, and indexed one-entry turns", () => {
     const db = dbState.current!;
     applyMigrations(db, 3);

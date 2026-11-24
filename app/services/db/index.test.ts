@@ -60,6 +60,14 @@ describe("database initialization", () => {
     expect(mocks.load).toHaveBeenCalledTimes(1);
   });
 
+  it("does not load again after a failed load, which would skip migrations", async () => {
+    mocks.load.mockRejectedValueOnce(new Error("migration 9 failed"));
+    const { getDb } = await import("./index");
+    await expect(getDb()).rejects.toThrow("migration 9 failed");
+    await expect(getDb()).rejects.toThrow("migration 9 failed");
+    expect(mocks.load).toHaveBeenCalledTimes(1);
+  });
+
   it("closes a pool that fails the foreign-key check before retrying", async () => {
     mocks.select.mockResolvedValueOnce([{ foreign_keys: 0 }]);
     const { getDb } = await import("./index");

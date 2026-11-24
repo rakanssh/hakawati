@@ -14,6 +14,11 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. js-lingui-explicit-id
+#: app/lib/save-errors.ts:5
+msgid "Failed to save progress"
+msgstr "Failed to save progress"
+
+#. js-lingui-explicit-id
 #: app/hooks/useSyncBackground.ts:229
 msgid "Cloud storage is full"
 msgstr "Cloud storage is full"
@@ -33,7 +38,7 @@ msgid "{0, plural, one {# change} other {# changes}}"
 msgstr "{0, plural, one {# change} other {# changes}}"
 
 #. placeholder {0}: inventory.length
-#: app/components/layout/settings/inventory-stats.tsx:200
+#: app/components/layout/settings/inventory-stats.tsx:206
 msgid "{0, plural, one {# item} other {# items}}"
 msgstr "{0, plural, one {# item} other {# items}}"
 
@@ -43,7 +48,7 @@ msgid "{0, plural, one {# model available} other {# models available}}"
 msgstr "{0, plural, one {# model available} other {# models available}}"
 
 #. placeholder {0}: stats.length
-#: app/components/layout/settings/inventory-stats.tsx:101
+#: app/components/layout/settings/inventory-stats.tsx:107
 msgid "{0, plural, one {# stat} other {# stats}}"
 msgstr "{0, plural, one {# stat} other {# stats}}"
 
@@ -97,7 +102,7 @@ msgstr "{chars} characters • ~{tokens} tokens"
 msgid "{cloudOnlyTales, plural, one {# cloud tale isn't on this device and will be lost.} other {# cloud tales aren't on this device and will be lost.}}"
 msgstr "{cloudOnlyTales, plural, one {# cloud tale isn't on this device and will be lost.} other {# cloud tales aren't on this device and will be lost.}}"
 
-#: app/components/layout/settings/tale.tsx:92
+#: app/components/layout/settings/tale.tsx:96
 msgid "{descriptionChars} characters · ~{descriptionTokens} tokens"
 msgstr "{descriptionChars} characters · ~{descriptionTokens} tokens"
 
@@ -234,7 +239,7 @@ msgstr "Add a description before publishing."
 msgid "Add a scenario name before publishing."
 msgstr "Add a scenario name before publishing."
 
-#: app/components/layout/settings/inventory-stats.tsx:171
+#: app/components/layout/settings/inventory-stats.tsx:177
 msgid "Add a stat to track character attributes"
 msgstr "Add a stat to track character attributes"
 
@@ -250,8 +255,8 @@ msgstr "Add API funds"
 msgid "Add at least one tag."
 msgstr "Add at least one tag."
 
-#: app/components/layout/settings/inventory-stats.tsx:153
-#: app/components/layout/settings/inventory-stats.tsx:230
+#: app/components/layout/settings/inventory-stats.tsx:159
+#: app/components/layout/settings/inventory-stats.tsx:236
 #: app/components/sidebar/inventory-card.tsx:105
 #: app/components/sidebar/stats-card.tsx:195
 #: app/components/ui/inventory-item.tsx:66
@@ -299,7 +304,7 @@ msgstr "Add item"
 msgid "Add Item"
 msgstr "Add Item"
 
-#: app/components/layout/settings/inventory-stats.tsx:211
+#: app/components/layout/settings/inventory-stats.tsx:217
 msgid "Add item..."
 msgstr "Add item..."
 
@@ -364,7 +369,7 @@ msgstr "Address"
 msgid "AI"
 msgstr "AI"
 
-#: app/components/layout/settings/tale.tsx:39
+#: app/components/layout/settings/tale.tsx:43
 msgid "AI components"
 msgstr "AI components"
 
@@ -1134,7 +1139,7 @@ msgstr "Created scenario “{name}”"
 msgid "Creating your tale…"
 msgstr "Creating your tale…"
 
-#: app/components/layout/settings/inventory-stats.tsx:120
+#: app/components/layout/settings/inventory-stats.tsx:126
 #: app/components/ui/stat-item.tsx:65
 msgid "Current"
 msgstr "Current"
@@ -1257,8 +1262,8 @@ msgstr "Describe your character archetype..."
 msgid "Description"
 msgstr "Description"
 
-#: app/components/layout/settings/inventory-stats.tsx:150
-#: app/components/layout/settings/inventory-stats.tsx:227
+#: app/components/layout/settings/inventory-stats.tsx:156
+#: app/components/layout/settings/inventory-stats.tsx:233
 #: app/components/scenario/InventoryEditor.tsx:57
 #: app/components/scenario/StatsEditor.tsx:65
 #: app/components/sidebar/inventory-card.tsx:101
@@ -1505,7 +1510,7 @@ msgstr "Failed to block publisher"
 msgid "Failed to check for updates."
 msgstr "Failed to check for updates."
 
-#: app/pages/play/play.tsx:104
+#: app/pages/play/play.tsx:106
 msgid "Failed to generate narration audio."
 msgstr "Failed to generate narration audio."
 
@@ -1658,7 +1663,7 @@ msgstr "From a device that’s already unlocked"
 msgid "From Hakawati"
 msgstr "From Hakawati"
 
-#: app/components/layout/settings/tale.tsx:64
+#: app/components/layout/settings/tale.tsx:68
 #: app/components/scenario/GameModeField.tsx:22
 #: app/pages/home/home.tsx:230
 #: app/pages/scenarios/details.tsx:251
@@ -1919,12 +1924,12 @@ msgstr "Instructions"
 msgid "Interface size"
 msgstr "Interface size"
 
-#: app/components/layout/settings/inventory-stats.tsx:197
+#: app/components/layout/settings/inventory-stats.tsx:203
 #: app/components/sidebar/inventory-card.tsx:48
 msgid "Inventory"
 msgstr "Inventory"
 
-#: app/components/layout/settings/inventory-stats.tsx:245
+#: app/components/layout/settings/inventory-stats.tsx:251
 msgid "Inventory empty"
 msgstr "Inventory empty"
 
@@ -1937,7 +1942,7 @@ msgstr "Investigator"
 msgid "Item name"
 msgstr "Item name"
 
-#: app/components/layout/settings/inventory-stats.tsx:248
+#: app/components/layout/settings/inventory-stats.tsx:254
 msgid "Items collected will appear here"
 msgstr "Items collected will appear here"
 
@@ -2009,8 +2014,8 @@ msgstr "Left to right"
 msgid "Length"
 msgstr "Length"
 
-#: app/components/layout/settings/tale.tsx:80
-#: app/components/layout/settings/tale.tsx:85
+#: app/components/layout/settings/tale.tsx:84
+#: app/components/layout/settings/tale.tsx:89
 msgid "Library summary"
 msgstr "Library summary"
 
@@ -2043,7 +2048,7 @@ msgstr "Load {title}"
 msgid "Load more"
 msgstr "Load more"
 
-#: app/pages/play/play.tsx:295
+#: app/pages/play/play.tsx:302
 msgid "Loading adventure..."
 msgstr "Loading adventure..."
 
@@ -2186,7 +2191,7 @@ msgstr "Manage your account and cloud sync."
 msgid "Manual updates are only available in the desktop app."
 msgstr "Manual updates are only available in the desktop app."
 
-#: app/components/layout/settings/inventory-stats.tsx:131
+#: app/components/layout/settings/inventory-stats.tsx:137
 #: app/components/scenario/StatsEditor.tsx:81
 #: app/components/ui/stat-item.tsx:76
 msgid "Max"
@@ -2247,8 +2252,8 @@ msgstr "Minimize"
 msgid "Missing settings: {0}. Configure your API in Settings."
 msgstr "Missing settings: {0}. Configure your API in Settings."
 
-#: app/components/layout/settings/tale.tsx:54
-#: app/components/layout/settings/tale.tsx:57
+#: app/components/layout/settings/tale.tsx:58
+#: app/components/layout/settings/tale.tsx:61
 msgid "Mode"
 msgstr "Mode"
 
@@ -2296,8 +2301,8 @@ msgstr "Multi-provider AI gateway with access to hundreds of models from major a
 msgid "Mystery"
 msgstr "Mystery"
 
-#: app/components/layout/settings/inventory-stats.tsx:109
-#: app/components/layout/settings/inventory-stats.tsx:208
+#: app/components/layout/settings/inventory-stats.tsx:115
+#: app/components/layout/settings/inventory-stats.tsx:214
 #: app/components/scenario/ScenarioBasicsFields.tsx:160
 #: app/components/sidebar/inventory-card.tsx:88
 #: app/components/sidebar/stats-card.tsx:149
@@ -2468,7 +2473,7 @@ msgstr "No servers found"
 msgid "No stats or inventory tracking"
 msgstr "No stats or inventory tracking"
 
-#: app/components/layout/settings/inventory-stats.tsx:168
+#: app/components/layout/settings/inventory-stats.tsx:174
 msgid "No stats yet"
 msgstr "No stats yet"
 
@@ -3338,7 +3343,7 @@ msgstr "Sci-Fi"
 msgid "Scientist"
 msgstr "Scientist"
 
-#: app/pages/play/play.tsx:367
+#: app/pages/play/play.tsx:374
 msgid "Scroll to bottom"
 msgstr "Scroll to bottom"
 
@@ -3516,7 +3521,7 @@ msgstr "Show less"
 msgid "Shown in your library and the public catalog. It is not sent to the AI."
 msgstr "Shown in your library and the public catalog. It is not sent to the AI."
 
-#: app/components/layout/settings/tale.tsx:89
+#: app/components/layout/settings/tale.tsx:93
 msgid "Shown in your library, not sent to the AI."
 msgstr "Shown in your library, not sent to the AI."
 
@@ -3637,13 +3642,13 @@ msgstr "Starting download..."
 msgid "Starting tale..."
 msgstr "Starting tale..."
 
-#: app/components/layout/settings/inventory-stats.tsx:112
+#: app/components/layout/settings/inventory-stats.tsx:118
 #: app/components/sidebar/stats-card.tsx:153
 #: app/components/ui/stat-item.tsx:58
 msgid "Stat name"
 msgstr "Stat name"
 
-#: app/components/layout/settings/inventory-stats.tsx:98
+#: app/components/layout/settings/inventory-stats.tsx:104
 #: app/components/sidebar/stats-card.tsx:75
 msgid "Stats"
 msgstr "Stats"
@@ -3706,7 +3711,7 @@ msgstr "Story card generator"
 msgid "Story panel"
 msgstr "Story panel"
 
-#: app/components/layout/settings/tale.tsx:62
+#: app/components/layout/settings/tale.tsx:66
 #: app/components/quickstart/steps/game-mode-step.tsx:15
 #: app/components/scenario/GameModeField.tsx:22
 #: app/pages/home/home.tsx:232
@@ -3872,11 +3877,11 @@ msgstr "Text to Speech"
 msgid "The AI acts as a Game Master, tracking stats and inventory"
 msgstr "The AI acts as a Game Master, tracking stats and inventory"
 
-#: app/components/layout/settings/tale.tsx:70
+#: app/components/layout/settings/tale.tsx:74
 msgid "The AI also tracks inventory and stats. It needs a model that can use tools."
 msgstr "The AI also tracks inventory and stats. It needs a model that can use tools."
 
-#: app/components/layout/settings/tale.tsx:75
+#: app/components/layout/settings/tale.tsx:79
 msgid "The AI tells the story. Works with any model."
 msgstr "The AI tells the story. Works with any model."
 
@@ -3928,7 +3933,7 @@ msgstr "Theme"
 msgid "Theme font"
 msgstr "Theme font"
 
-#: app/components/layout/settings/tale.tsx:46
+#: app/components/layout/settings/tale.tsx:50
 #: app/components/prompt-components/PromptComponentsEditor.tsx:112
 msgid "These optional components are sent to the AI."
 msgstr "These optional components are sent to the AI."

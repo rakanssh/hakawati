@@ -3,6 +3,7 @@ import {
   beginPlayActivity,
   claimPlayActivity,
   usePlayActivityStore,
+  waitForPlayActivity,
 } from "./usePlayActivityStore";
 
 beforeEach(() =>
@@ -49,6 +50,21 @@ describe("play activity", () => {
     expect(usePlayActivityStore.getState().narrating).toBe(0);
     endWriting();
     (await narrator)();
+  });
+
+  it("waits until a kind of activity has ended", async () => {
+    const endFirst = beginPlayActivity("narrating");
+    const endSecond = beginPlayActivity("narrating");
+    let done = false;
+    const waiting = waitForPlayActivity("narrating").then(() => {
+      done = true;
+    });
+    endFirst();
+    await Promise.resolve();
+    expect(done).toBe(false);
+    endSecond();
+    await waiting;
+    expect(done).toBe(true);
   });
 
   it("stops waiting when cancelled", async () => {

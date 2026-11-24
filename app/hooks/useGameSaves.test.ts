@@ -282,6 +282,34 @@ describe("usePersistTale", () => {
     harness.cleanup();
   });
 
+  it("shows the saved log again after a failed turn save, keeping setup edits", async () => {
+    const saved = createLoadedTale("tale-1", "saved-entry");
+    serviceMocks.commitTaleTurn.mockRejectedValueOnce(new Error("Disk full"));
+    serviceMocks.getTaleById.mockResolvedValueOnce({
+      ...saved,
+      stats: [{ name: "HP", value: 100, range: [0, 100] }],
+    });
+    const unsaved = { id: "unsaved", role: LogEntryRole.GM, text: "Lost" };
+    useTaleStore.setState({
+      description: "Typed before the save",
+      log: [...saved.log, unsaved],
+      totalLogCount: 2,
+      stats: [{ name: "HP", value: 40, range: [0, 100] }],
+    });
+    const harness = renderHarness(usePersistTale);
+
+    await expect(
+      act(() => harness.controls.saveTurn("tale-1", [unsaved])),
+    ).rejects.toThrow("Disk full");
+
+    const state = useTaleStore.getState();
+    expect(state.log).toEqual(saved.log);
+    expect(state.totalLogCount).toBe(1);
+    expect(state.stats[0].value).toBe(100);
+    expect(state.description).toBe("Typed before the save");
+    harness.cleanup();
+  });
+
   it("rejects a stale save callback instead of copying another tale's state", async () => {
     const harness = renderHarness(usePersistTale);
     useTaleStore.setState({

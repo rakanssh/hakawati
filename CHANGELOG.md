@@ -24,6 +24,10 @@ and the app shows it in What's New and Updates.
 ### Fixed
 
 - Tales downloaded from the cloud keep their cover.
+- A failed save shows an error, and the story goes back to what was saved.
+- Leaving Play mid-turn keeps Library summary edits and no longer starts a reply you can't stop.
+- Older passages that fail to load are no longer skipped.
+- A failed database update is retried at the next launch instead of being skipped.
 
 ## [v1.4.0] - 2026-11-21
 
