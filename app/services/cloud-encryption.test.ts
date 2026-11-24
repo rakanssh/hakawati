@@ -314,10 +314,15 @@ describe("cloud encryption state", () => {
     expect(mocks.pending.has("cloud-reset")).toBe(true);
     expect(mocks.syncRepo.relinkTalesAfterCloudReset).not.toHaveBeenCalled();
 
+    const after = cloudKey({ state: "migrating", keyId: null, keyCheck: null });
+    const reopened = transport(after);
+    reopened.post.mockResolvedValue(after);
     expect(
-      await resolve(
-        cloudKey({ state: "migrating", keyId: null, keyCheck: null }),
-      ),
+      await resolveCloudEncryption({
+        profile,
+        transport: reopened,
+        capabilities: capabilities(),
+      }),
     ).toMatchObject({ kind: "setup" });
     expect(local.keyId).toBeNull();
     expect(mocks.syncRepo.relinkTalesAfterCloudReset).toHaveBeenCalledWith(
@@ -326,7 +331,7 @@ describe("cloud encryption state", () => {
     );
   });
 
-  it("drops a reset the cloud never received", async () => {
+  it("retries an interrupted reset before reading the key or resuming sync", async () => {
     local = { keyId: KEY_ID, hasKey: true, pendingKeyId: null };
     const connection = transport(cloudKey());
     connection.post.mockRejectedValue(new Error("Network error"));
@@ -334,10 +339,72 @@ describe("cloud encryption state", () => {
       resetCloudEncryption({ profile, transport: connection, keyId: KEY_ID }),
     ).rejects.toThrow("Network error");
 
-    expect(await resolve(cloudKey())).toMatchObject({ kind: "ready" });
+    const after = cloudKey({ state: "migrating", keyId: null, keyCheck: null });
+    connection.post.mockImplementationOnce(async () => {
+      connection.get.mockResolvedValue(after);
+      return after;
+    });
+    const check = () =>
+      resolveCloudEncryption({
+        profile,
+        transport: connection,
+        capabilities: capabilities(),
+      });
+    const results = await Promise.all([check(), check()]);
+    for (const status of results) expect(status.kind).toBe("setup");
+    expect(connection.post).toHaveBeenCalledTimes(2);
+    expect(connection.post.mock.calls[1]).toEqual(
+      connection.post.mock.calls[0],
+    );
+    expect(connection.post.mock.invocationCallOrder[1]).toBeLessThan(
+      connection.get.mock.invocationCallOrder[0],
+    );
     expect(mocks.pending.has("cloud-reset")).toBe(false);
-    expect(local.keyId).toBe(KEY_ID);
-    expect(mocks.syncRepo.relinkTalesAfterCloudReset).not.toHaveBeenCalled();
+    expect(local.keyId).toBeNull();
+    expect(mocks.syncRepo.relinkTalesAfterCloudReset).toHaveBeenCalledOnce();
+  });
+
+  it("relinks after a reset retry finds a replacement key and keeps that key", async () => {
+    local = { keyId: OTHER_KEY_ID, hasKey: true, pendingKeyId: null };
+    mocks.pending.set("cloud-reset", { idempotencyKey: KEY_ID });
+    const connection = transport(cloudKey({ keyId: OTHER_KEY_ID }));
+    connection.post.mockRejectedValue(
+      new SyncHttpError("Changed", 409, "cloud_key_mismatch"),
+    );
+    forgetCloudEncryptionStatus();
+    expect(
+      await resolveCloudEncryption({
+        profile,
+        transport: connection,
+        capabilities: capabilities(),
+      }),
+    ).toMatchObject({ kind: "ready", session: { keyId: OTHER_KEY_ID } });
+    expect(local.keyId).toBe(OTHER_KEY_ID);
+    expect(mocks.syncRepo.relinkTalesAfterCloudReset).toHaveBeenCalledOnce();
+    expect(mocks.pending.has("cloud-reset")).toBe(false);
+  });
+
+  it("remembers when another device completes a migration", async () => {
+    local = { keyId: KEY_ID, hasKey: true, pendingKeyId: null };
+    const status = await resolve(cloudKey({ state: "migrating" }));
+    if (status.kind !== "ready")
+      throw new Error("Expected a migration session");
+    const connection = transport(cloudKey(), status.session);
+    await migrateCloudSaves({
+      profile,
+      transport: connection,
+      remoteTales: [],
+    });
+    expect(connection.post).not.toHaveBeenCalled();
+    expect(local.migrated).toBe(true);
+    connection.get.mockResolvedValue(cloudKey({ state: "migrating" }));
+    expect(
+      await resolveCloudEncryption({
+        profile,
+        transport: connection,
+        capabilities: capabilities(),
+      }),
+    ).toEqual({ kind: "paused", reason: "downgraded" });
   });
 
   it("drops a reset the cloud refused", async () => {
