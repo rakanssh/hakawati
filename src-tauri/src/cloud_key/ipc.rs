@@ -7,6 +7,12 @@ use tauri::{
     App, WebviewWindow, WebviewWindowBuilder,
 };
 
+const LOCAL_ORIGIN: &str = if cfg!(any(windows, target_os = "android")) {
+    "http://tauri.localhost"
+} else {
+    "tauri://localhost"
+};
+
 struct Device {
     _app: App<MockRuntime>,
     webview: WebviewWindow<MockRuntime>,
@@ -56,7 +62,7 @@ impl Device {
                 cmd: cmd.into(),
                 callback: CallbackFn(0),
                 error: CallbackFn(1),
-                url: "http://tauri.localhost".parse().unwrap(),
+                url: LOCAL_ORIGIN.parse().unwrap(),
                 body: InvokeBody::Json(args),
                 headers: Default::default(),
                 invoke_key: INVOKE_KEY.into(),
