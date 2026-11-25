@@ -5,16 +5,22 @@ let databasePromise: Promise<Database> | null = null;
 
 const DB_NAME = import.meta.env.DEV ? "hakawati-dev.db" : "hakawati.db";
 
+// The SQL plugin hands its migrations only to the first load that connects, so
+// after a failed migration another attempt would open the database unmigrated.
+function startedMigrations(error: unknown) {
+  return /migration/i.test(String(error));
+}
+
 export function getDb(): Promise<Database> {
   if (!databasePromise) {
-    let loadFailed = false;
+    let migrationFailed = false;
     // Cache the whole initialization, including path resolution, so concurrent
     // readers cannot replace each other's native connection pool during startup.
     databasePromise = (async () => {
       const dbDirectory = await appLocalDataDir();
       const dbPath = await join(dbDirectory, DB_NAME);
       const db = await Database.load(`sqlite:${dbPath}`).catch((error) => {
-        loadFailed = true;
+        migrationFailed = startedMigrations(error);
         throw error;
       });
       try {
@@ -31,9 +37,7 @@ export function getDb(): Promise<Database> {
         throw error;
       }
     })().catch((err) => {
-      // The SQL plugin hands out its migrations only to the first load, so
-      // after a failed load another attempt would open the database unmigrated.
-      if (!loadFailed) databasePromise = null;
+      if (!migrationFailed) databasePromise = null;
       throw err;
     });
   }
