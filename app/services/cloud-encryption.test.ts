@@ -623,6 +623,12 @@ describe("cloud save migration", () => {
         ).toString(),
       ).revision,
     ).toEqual({ taleId: "remote-1", contentRev: 4, metadataRev: 4 });
+    const encrypted = mocks.invoke.mock.calls.filter(
+      ([command]) => command === "cloud_tale_encrypt",
+    );
+    expect(
+      JSON.parse((encrypted.at(-1)![1] as { summary: string }).summary),
+    ).toMatchObject({ migratedFrom: { contentRev: 3, metadataRev: 3 } });
     expect(mocks.syncRepo.advanceMigratedTaleRevisions).toHaveBeenCalledWith({
       profileId: "hosted",
       accountId: "account-1",

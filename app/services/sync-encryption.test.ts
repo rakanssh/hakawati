@@ -10,6 +10,7 @@ import {
   listRemoteTales,
   replaceRemoteTalePackage,
   SyncHttpError,
+  syncLinkedTale,
   uploadTalePackage,
   type CloudEncryptionSession,
   type SyncCapabilities,
@@ -31,6 +32,14 @@ const mocks = vi.hoisted(() => {
     syncRepo: {
       acknowledgeTaleSyncWrite: vi.fn(async () => true),
       adoptTaleSyncRevisions: vi.fn(async () => true),
+      advanceMigratedTaleRevisions: vi.fn(
+        async (_input: {
+          baseContentRev: number;
+          baseMetadataRev: number;
+          contentRev: number;
+          metadataRev: number;
+        }) => true,
+      ),
       getTaleSyncState: vi.fn(),
       setSyncProfileDisabled: vi.fn(),
       setTaleSyncStatus: vi.fn(),
@@ -1032,5 +1041,180 @@ describe("end-to-end encrypted sync", () => {
       expect(imported.assets).toEqual([]);
       expect(imported.tale.thumbnailAssetId).toBeUndefined();
     }
+  });
+
+  describe("after another device encrypted the cloud copy", () => {
+    async function listedTale(
+      revision: Revision,
+      migratedFrom?: { contentRev: number; metadataRev: number },
+    ) {
+      const { summary } = fakeRust("cloud_tale_encrypt", {
+        scope: { accountId: "account-1" },
+        keyId: KEY_ID,
+        revision,
+        summary: JSON.stringify({
+          title: "The Iron Gate",
+          description: "",
+          lastEntryPreview: null,
+          cover: null,
+          ...(migratedFrom ? { migratedFrom } : {}),
+        }),
+        package: "{}",
+      }) as { summary: CloudEnvelope };
+      const connection = transport();
+      connection.get.mockResolvedValue({
+        items: [
+          {
+            id: REMOTE_ID,
+            sourceTaleId: "local-tale",
+            encryption: "client",
+            summary,
+            title: null,
+            description: null,
+            gameMode: GameMode.STORY_TELLER,
+            coverAssetId: null,
+            thumbnailAssetId: null,
+            cover: null,
+            contentRev: revision.contentRev,
+            metadataRev: revision.metadataRev,
+            turnCount: 1,
+            updatedAt: "2026-11-20",
+            lastEntryPreview: null,
+          },
+        ],
+        nextCursor: null,
+      });
+      return (await listRemoteTales(connection)).items[0];
+    }
+
+    function editedLocally(contentRev: string, metadataRev: string) {
+      let state = {
+        profileId: "hosted",
+        accountId: "account-1",
+        localTaleId: "local-tale",
+        remoteTaleId: REMOTE_ID,
+        contentRev,
+        metadataRev,
+        lastSyncedAt: 1,
+        pendingStatus: "push",
+        lastErrorCode: null,
+      };
+      mocks.syncRepo.getTaleSyncState.mockImplementation(async () => state);
+      mocks.syncRepo.advanceMigratedTaleRevisions.mockImplementation(
+        async (input) => {
+          if (
+            String(input.baseContentRev) !== state.contentRev ||
+            String(input.baseMetadataRev) !== state.metadataRev
+          ) {
+            return false;
+          }
+          state = {
+            ...state,
+            contentRev: String(input.contentRev),
+            metadataRev: String(input.metadataRev),
+          };
+          return true;
+        },
+      );
+    }
+
+    function sync(
+      remoteTale: Awaited<ReturnType<typeof listedTale>>,
+      put: () => Promise<unknown> = async () => ({
+        contentRev: 5,
+        metadataRev: 6,
+      }),
+    ) {
+      const connection = transport();
+      connection.put.mockImplementation(put);
+      return {
+        connection,
+        result: syncLinkedTale({
+          profile,
+          transport: connection,
+          localTaleId: "local-tale",
+          remoteTale,
+          writerId: "device-2",
+          capabilities: capabilities(),
+        }),
+      };
+    }
+
+    it("pushes this device's edits on top of the encrypted copy", async () => {
+      editedLocally("3", "4");
+      const remoteTale = await listedTale(
+        { taleId: REMOTE_ID, contentRev: 4, metadataRev: 5 },
+        { contentRev: 3, metadataRev: 4 },
+      );
+      expect(remoteTale.migratedFrom).toEqual({
+        contentRev: 3,
+        metadataRev: 4,
+      });
+
+      const { connection, result } = sync(remoteTale);
+
+      await expect(result).resolves.toBe("pushed");
+      expect(mocks.syncRepo.advanceMigratedTaleRevisions).toHaveBeenCalledWith({
+        profileId: "hosted",
+        accountId: "account-1",
+        remoteTaleId: REMOTE_ID,
+        baseContentRev: 3,
+        baseMetadataRev: 4,
+        contentRev: 4,
+        metadataRev: 5,
+      });
+      const { body } = sentBody(connection.put.mock.calls[0]);
+      expect(body).toMatchObject({ baseContentRev: 4, baseMetadataRev: 5 });
+      expect(
+        decrypted(
+          body.encryptedPackage.package,
+          { taleId: REMOTE_ID, contentRev: 5, metadataRev: 6 },
+          "tale.package",
+        ).tale.id,
+      ).toBe("local-tale");
+      expect(mocks.syncRepo.setTaleSyncStatus).not.toHaveBeenCalled();
+    });
+
+    it("keeps a conflict when the cloud changed before it was encrypted", async () => {
+      editedLocally("2", "3");
+      const remoteTale = await listedTale(
+        { taleId: REMOTE_ID, contentRev: 4, metadataRev: 5 },
+        { contentRev: 3, metadataRev: 4 },
+      );
+
+      const { connection, result } = sync(remoteTale);
+
+      await expect(result).resolves.toBe("conflict");
+      expect(
+        mocks.syncRepo.advanceMigratedTaleRevisions,
+      ).not.toHaveBeenCalled();
+      expect(connection.put).not.toHaveBeenCalled();
+      expect(mocks.syncRepo.setTaleSyncStatus).toHaveBeenCalledWith(
+        expect.objectContaining({ pendingStatus: "conflict" }),
+      );
+    });
+
+    it("does not adopt another device's edit one revision ahead", async () => {
+      editedLocally("3", "4");
+      const remoteTale = await listedTale({
+        taleId: REMOTE_ID,
+        contentRev: 4,
+        metadataRev: 5,
+      });
+      expect(remoteTale.migratedFrom).toBeUndefined();
+
+      const { connection, result } = sync(remoteTale, async () => {
+        throw new SyncHttpError("Changed", 409, "content_conflict");
+      });
+
+      await expect(result).resolves.toBe("conflict");
+      expect(
+        mocks.syncRepo.advanceMigratedTaleRevisions,
+      ).not.toHaveBeenCalled();
+      expect(sentBody(connection.put.mock.calls[0]).body).toMatchObject({
+        baseContentRev: 3,
+        baseMetadataRev: 4,
+      });
+    });
   });
 });

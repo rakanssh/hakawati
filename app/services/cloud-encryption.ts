@@ -613,6 +613,10 @@ async function migrateTale(input: {
                   metadataRev: remote.metadataRev + 1,
                 },
                 cover,
+                {
+                  contentRev: remote.contentRev,
+                  metadataRev: remote.metadataRev,
+                },
               ),
               ...base,
               confirmReplace: true,

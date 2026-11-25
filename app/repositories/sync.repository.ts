@@ -415,10 +415,10 @@ export async function advanceMigratedTaleRevisions(input: {
   baseMetadataRev: number;
   contentRev: number;
   metadataRev: number;
-}): Promise<void> {
-  await enqueueLocalOperation(async () => {
+}): Promise<boolean> {
+  return enqueueLocalOperation(async () => {
     const db = await getDb();
-    await db.execute(
+    const result = await db.execute(
       `UPDATE tale_sync_state
        SET content_rev = ?, metadata_rev = ?
        WHERE profile_id = ? AND account_id = ? AND remote_tale_id = ?
@@ -433,6 +433,7 @@ export async function advanceMigratedTaleRevisions(input: {
         String(input.baseMetadataRev),
       ],
     );
+    return result.rowsAffected > 0;
   });
 }
 

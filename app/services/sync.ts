@@ -14,6 +14,7 @@ import {
 import {
   acknowledgeTaleSyncWrite,
   adoptTaleSyncRevisions,
+  advanceMigratedTaleRevisions,
   deletePendingSyncWrite,
   getPendingSyncWrite,
   getTaleSyncState,
@@ -29,6 +30,7 @@ import type { CoverAssetReference } from "@/types/catalog.type";
 import type {
   RemoteTale,
   RemoteTaleCover,
+  RemoteTaleRevisions,
   SyncMode,
   SyncProfile,
   TaleSyncState,
@@ -243,6 +245,7 @@ type TaleSummary = {
   description: string;
   lastEntryPreview: string | null;
   cover: RemoteTaleCover | null;
+  migratedFrom?: RemoteTaleRevisions;
 };
 
 export class SyncHttpError extends Error {
@@ -781,6 +784,9 @@ function parseTaleSummary(value: string | null): TaleSummary | null {
   try {
     const summary = bodyValue(JSON.parse(value));
     const cover = summary.cover ? bodyValue(summary.cover) : null;
+    const migratedFrom = summary.migratedFrom
+      ? bodyValue(summary.migratedFrom)
+      : null;
     return {
       title: typeof summary.title === "string" ? summary.title : "",
       description:
@@ -802,6 +808,16 @@ function parseTaleSummary(value: string | null): TaleSummary | null {
               sha256: cover.sha256,
             }
           : null,
+      ...(migratedFrom &&
+      Number.isSafeInteger(migratedFrom.contentRev) &&
+      Number.isSafeInteger(migratedFrom.metadataRev)
+        ? {
+            migratedFrom: {
+              contentRev: migratedFrom.contentRev as number,
+              metadataRev: migratedFrom.metadataRev as number,
+            },
+          }
+        : {}),
     };
   } catch {
     return null;
@@ -859,6 +875,7 @@ async function openRemoteTales(
       description: summary.description || null,
       lastEntryPreview: summary.lastEntryPreview,
       cover: summary.cover,
+      ...(summary.migratedFrom ? { migratedFrom: summary.migratedFrom } : {}),
     };
   });
 }
@@ -1268,12 +1285,14 @@ export async function encryptSyncPackage(
   pkg: SyncTalePackageV1,
   revision: TaleRevision,
   cover: RemoteTaleCover | null,
+  migratedFrom?: RemoteTaleRevisions,
 ): Promise<EncryptedTalePackage> {
   const summary: TaleSummary = {
     title: pkg.tale.title,
     description: pkg.tale.description,
     lastEntryPreview: lastEntryPreview(pkg),
     cover,
+    ...(migratedFrom ? { migratedFrom } : {}),
   };
   if (jsonBytes(summary) > MAX_SUMMARY_BYTES) {
     throw new SyncHttpError(
@@ -1597,17 +1616,22 @@ export async function syncLinkedTale(input: {
   capabilities?: SyncCapabilities;
   canPull?: () => boolean;
 }): Promise<LinkedTaleSyncResult> {
-  const state = await getTaleSyncState({
+  const stored = await getTaleSyncState({
     profileId: input.profile.id,
     accountId: input.profile.accountId,
     localTaleId: input.localTaleId,
   });
-  if (!state || state.remoteTaleId !== input.remoteTale.id) {
+  if (!stored || stored.remoteTaleId !== input.remoteTale.id) {
     return "skipped";
   }
-  if (state.pendingStatus === "conflict") {
+  if (stored.pendingStatus === "conflict") {
     return "skipped";
   }
+  const state = await adoptMigratedRevisions(
+    input.profile,
+    stored,
+    input.remoteTale,
+  );
 
   // A dirty tale may include edits to earlier turns as well as new turns.
   // Replace one complete snapshot: turn count alone cannot prove append-only
@@ -1677,6 +1701,44 @@ export async function syncLinkedTale(input: {
     return "skipped";
   }
   return push(state);
+}
+
+// The summary's revisions are authenticated, so only a re-encryption of the
+// revision this device last synced is skipped over.
+async function adoptMigratedRevisions(
+  profile: SyncProfile,
+  state: TaleSyncState,
+  remote: RemoteTale,
+): Promise<TaleSyncState> {
+  const from = remote.migratedFrom;
+  if (
+    remote.encryption !== "client" ||
+    !from ||
+    state.contentRev === null ||
+    state.metadataRev === null ||
+    Number(state.contentRev) !== from.contentRev ||
+    Number(state.metadataRev) !== from.metadataRev ||
+    remote.contentRev !== from.contentRev + 1 ||
+    remote.metadataRev !== from.metadataRev + 1
+  ) {
+    return state;
+  }
+  const adopted = await advanceMigratedTaleRevisions({
+    profileId: profile.id,
+    accountId: profile.accountId,
+    remoteTaleId: remote.id,
+    baseContentRev: from.contentRev,
+    baseMetadataRev: from.metadataRev,
+    contentRev: remote.contentRev,
+    metadataRev: remote.metadataRev,
+  });
+  return adopted
+    ? {
+        ...state,
+        contentRev: String(remote.contentRev),
+        metadataRev: String(remote.metadataRev),
+      }
+    : state;
 }
 
 // For a write that landed but whose response was lost.

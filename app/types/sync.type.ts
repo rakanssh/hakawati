@@ -22,6 +22,11 @@ export type RemoteTaleCover = Pick<
   "assetId" | "contentType" | "byteSize" | "sha256"
 >;
 
+export type RemoteTaleRevisions = {
+  contentRev: number;
+  metadataRev: number;
+};
+
 export type RemoteTale = {
   id: string;
   sourceTaleId: string;
@@ -40,6 +45,7 @@ export type RemoteTale = {
   storageBytes?: number;
   updatedAt: string;
   lastEntryPreview: string | null;
+  migratedFrom?: RemoteTaleRevisions;
 };
 
 export type TaleSyncStatus = "idle" | "push" | "pull" | "conflict" | "error";
