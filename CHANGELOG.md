@@ -18,6 +18,7 @@ and the app shows it in What's New and Updates.
 ### Fixed
 
 - Android sign-in no longer gets stuck loading after you sign in.
+- Closing the sign-in window no longer says Sync failed.
 
 ## [v1.5.1] - 2026-11-25
 

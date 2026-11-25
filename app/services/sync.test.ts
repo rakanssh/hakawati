@@ -2290,6 +2290,43 @@ describe("sync transport", () => {
     );
   });
 
+  it("treats a closed sign-in sheet as a cancelled sign-in", async () => {
+    http.fetch
+      .mockResolvedValueOnce(jsonResponse(capabilitiesFixture()))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          provider: "logto",
+          issuer: "https://auth.example/oidc",
+          audience: "hakawati",
+          clientId: "client",
+          scopes: ["openid"],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          authorization_endpoint: "https://auth.example/authorize",
+          token_endpoint: "https://auth.example/token",
+        }),
+      );
+    tauriCore.invoke
+      .mockResolvedValueOnce({
+        id: "oauth-123",
+        redirectUri: "http://127.0.0.1:1234/callback",
+      })
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce("Sign-in cancelled");
+
+    await expect(
+      signInHostedSync({
+        profile: {
+          id: "cloud",
+          baseUrl: "https://sync.example",
+          mode: "hosted",
+        },
+      }),
+    ).rejects.toMatchObject({ name: "HostedSignInCancelledError" });
+  });
+
   it.each([false, true])(
     "honors PKCE cancellation even during the final token exchange: %s",
     async (cancelDuringExchange) => {
