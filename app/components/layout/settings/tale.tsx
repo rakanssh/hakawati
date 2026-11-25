@@ -1,5 +1,6 @@
 import { useTaleStore } from "@/store/useTaleStore";
 import { usePersistTale } from "@/hooks/useGameSaves";
+import { showSaveError } from "@/lib/save-errors";
 import { GameMode } from "@/types";
 import { PromptComponentsEditor } from "@/components/prompt-components/PromptComponentsEditor";
 import { TALE_COMPONENT_TYPES } from "@/lib/prompt-components";
@@ -24,7 +25,10 @@ export default function SettingsTale() {
 
   const handleGameModeChange = (value: GameMode) => {
     setGameMode(value);
-    save(id);
+    save(id).catch((error) => {
+      console.error("Failed to save the tale's mode:", error);
+      showSaveError();
+    });
   };
 
   return (

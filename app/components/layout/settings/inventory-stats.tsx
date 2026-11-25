@@ -1,5 +1,6 @@
 import { useTaleStore } from "@/store/useTaleStore";
 import { usePersistTale } from "@/hooks/useGameSaves";
+import { showSaveError } from "@/lib/save-errors";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,11 @@ export default function SettingsInventoryStats() {
     id,
   } = useTaleStore();
   const { save } = usePersistTale();
+  const persist = () =>
+    save(id).catch((error) => {
+      console.error("Failed to save inventory or stats:", error);
+      showSaveError();
+    });
 
   const [newStatName, setNewStatName] = useState("");
   const [newStatDescription, setNewStatDescription] = useState("");
@@ -53,17 +59,17 @@ export default function SettingsInventoryStats() {
     setNewStatDescription("");
     setNewStatValue(50);
     setNewStatMax(100);
-    save(id);
+    persist();
   };
 
   const handleUpdateStat = (name: string, updates: Partial<Stat>) => {
     updateStat(name, updates);
-    save(id);
+    persist();
   };
 
   const handleRemoveStat = (name: string) => {
     removeFromStats(name);
-    save(id);
+    persist();
   };
 
   const handleAddItem = () => {
@@ -71,7 +77,7 @@ export default function SettingsInventoryStats() {
     addToInventory(newItemName.trim(), newItemDescription.trim() || undefined);
     setNewItemName("");
     setNewItemDescription("");
-    save(id);
+    persist();
   };
 
   const handleUpdateItem = (
@@ -79,12 +85,12 @@ export default function SettingsInventoryStats() {
     updates: { name?: string; description?: string },
   ) => {
     updateItem(itemId, updates);
-    save(id);
+    persist();
   };
 
   const handleRemoveItem = (itemId: string) => {
     removeFromInventory(itemId);
-    save(id);
+    persist();
   };
 
   return (

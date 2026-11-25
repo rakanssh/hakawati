@@ -49,6 +49,12 @@ function nextChange(signal?: AbortSignal): Promise<void> {
   });
 }
 
+export async function waitForPlayActivity(
+  kind: PlayActivityKind,
+): Promise<void> {
+  while (usePlayActivityStore.getState()[kind] > 0) await nextChange();
+}
+
 export function tryBeginPlayActivity(
   kind: PlayActivityKind,
   blockers: PlayActivityKind[],

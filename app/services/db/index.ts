@@ -7,12 +7,16 @@ const DB_NAME = import.meta.env.DEV ? "hakawati-dev.db" : "hakawati.db";
 
 export function getDb(): Promise<Database> {
   if (!databasePromise) {
+    let loadFailed = false;
     // Cache the whole initialization, including path resolution, so concurrent
     // readers cannot replace each other's native connection pool during startup.
     databasePromise = (async () => {
       const dbDirectory = await appLocalDataDir();
       const dbPath = await join(dbDirectory, DB_NAME);
-      const db = await Database.load(`sqlite:${dbPath}`);
+      const db = await Database.load(`sqlite:${dbPath}`).catch((error) => {
+        loadFailed = true;
+        throw error;
+      });
       try {
         await db.execute("PRAGMA foreign_keys = ON");
         const rows = await db.select<Array<{ foreign_keys: number | string }>>(
@@ -27,7 +31,9 @@ export function getDb(): Promise<Database> {
         throw error;
       }
     })().catch((err) => {
-      databasePromise = null;
+      // The SQL plugin hands out its migrations only to the first load, so
+      // after a failed load another attempt would open the database unmigrated.
+      if (!loadFailed) databasePromise = null;
       throw err;
     });
   }
