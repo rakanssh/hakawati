@@ -11,6 +11,10 @@ and the app shows it in What's New and Updates.
 
 ## [Unreleased]
 
+### Fixed
+
+- Signing in on Android brings you back to Hakawati instead of leaving you in the browser.
+
 ## [v1.5.0] - 2026-11-25
 
 ### Added

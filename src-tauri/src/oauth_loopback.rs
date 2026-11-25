@@ -13,6 +13,23 @@ use std::{
 
 const OAUTH_LOOPBACK_PORT: u16 = 47131;
 const OAUTH_CANCELLED: &str = "Sign-in cancelled";
+
+/// The browser stays in front after the callback, so on Android the page opens Hakawati
+/// through the `dev.hakawati.app://signed-in` filter in AndroidManifest.xml. The link is
+/// there in case the browser doesn't follow the redirect on its own.
+#[cfg(target_os = "android")]
+const CALLBACK_PAGE: &str = concat!(
+    "<!doctype html><meta name=\"viewport\" content=\"width=device-width\">",
+    "<title>Hakawati</title>",
+    "<p><a href=\"intent://signed-in#Intent;scheme=dev.hakawati.app;package=dev.hakawati.app;end\">",
+    "Return to Hakawati</a></p>",
+    "<script>location.replace(document.links[0].href)</script>"
+);
+#[cfg(not(target_os = "android"))]
+const CALLBACK_PAGE: &str = concat!(
+    "<!doctype html><title>Hakawati</title>",
+    "<p>You can return to Hakawati to finish signing in.</p>"
+);
 /// Each caller's `wait` sets the real sign-in window and cancels the listener
 /// when it ends. This only frees the port if no wait ever comes.
 const LISTENER_LIFETIME: Duration = Duration::from_secs(30 * 60);
@@ -232,13 +249,8 @@ fn read_callback(
                 stream
                     .set_write_timeout(Some(Duration::from_secs(1)))
                     .map_err(|error| error.to_string())?;
-                let response = concat!(
-                    "HTTP/1.1 200 OK\r\n",
-                    "Content-Type: text/html; charset=utf-8\r\n",
-                    "Connection: close\r\n",
-                    "\r\n",
-                    "<!doctype html><title>Hakawati</title>",
-                    "<p>You can return to Hakawati to finish signing in.</p>"
+                let response = format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nConnection: close\r\n\r\n{CALLBACK_PAGE}"
                 );
                 stream
                     .write_all(response.as_bytes())
