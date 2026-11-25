@@ -600,7 +600,13 @@ export async function signInHostedSync(input: {
     });
     callbackValue = await Promise.race([waitForCallback, cancelled]);
   } catch (error) {
-    if (input.signal?.aborted) throw new HostedSignInCancelledError();
+    // The listener reports a closed sign-in sheet with the same message.
+    if (
+      input.signal?.aborted ||
+      error === new HostedSignInCancelledError().message
+    ) {
+      throw new HostedSignInCancelledError();
+    }
     throw error;
   } finally {
     removeAbortListener();

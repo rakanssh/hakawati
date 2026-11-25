@@ -13,19 +13,6 @@ use std::{
 
 const OAUTH_LOOPBACK_PORT: u16 = 47131;
 const OAUTH_CANCELLED: &str = "Sign-in cancelled";
-
-/// The browser stays in front after the callback, so on Android the page opens Hakawati
-/// through the `dev.hakawati.app://signed-in` filter in AndroidManifest.xml. The link is
-/// there in case the browser doesn't follow the redirect on its own.
-#[cfg(target_os = "android")]
-const CALLBACK_PAGE: &str = concat!(
-    "<!doctype html><meta name=\"viewport\" content=\"width=device-width\">",
-    "<title>Hakawati</title>",
-    "<p><a href=\"intent://signed-in#Intent;scheme=dev.hakawati.app;package=dev.hakawati.app;end\">",
-    "Return to Hakawati</a></p>",
-    "<script>location.replace(document.links[0].href)</script>"
-);
-#[cfg(not(target_os = "android"))]
 const CALLBACK_PAGE: &str = concat!(
     "<!doctype html><title>Hakawati</title>",
     "<p>You can return to Hakawati to finish signing in.</p>"
@@ -47,9 +34,8 @@ pub struct OAuthLoopbackState {
     cancellers: Arc<Mutex<HashMap<String, OAuthLoopbackCanceller>>>,
 }
 
-/// Android cuts off network access for apps in the background, and the browser is
-/// still in front when a sign-in callback arrives, so code exchanges wait until the
-/// user is back in Hakawati. Only Android reports this; elsewhere the app is always
+/// Android cuts off network access for apps in the background, so code exchanges wait
+/// until Hakawati is in front. Only Android reports this; elsewhere the app is always
 /// treated as in front. (iOS signs in through a sheet over the app, and its
 /// "suspended" also fires for a pulled-down Control Center, with nothing to undo it
 /// when the app comes back without leaving.)
@@ -163,6 +149,34 @@ impl OAuthLoopbackState {
             // Wake the nonblocking accept loop immediately instead of waiting for its poll interval.
             let _ = TcpStream::connect(("127.0.0.1", canceller.port));
         }
+        Ok(())
+    }
+
+    /// Sends a callback that an in-app sign-in page caught before it loaded to listener
+    /// `id`, the way the browser would have, so it goes through the same checks.
+    #[cfg_attr(not(any(target_os = "android", test)), allow(dead_code))]
+    pub(crate) fn deliver(&self, id: &str, callback_url: &str) -> Result<(), String> {
+        let port = self
+            .cancellers
+            .lock()
+            .map_err(|_| "OAuth listener state is unavailable".to_string())?
+            .get(id)
+            .map(|canceller| canceller.port)
+            .ok_or_else(|| "OAuth listener not found".to_string())?;
+        let url = reqwest::Url::parse(callback_url).map_err(|_| "Invalid sign-in callback")?;
+        let path = match url.query() {
+            Some(query) => format!("{}?{query}", url.path()),
+            None => url.path().to_string(),
+        };
+        let mut stream =
+            TcpStream::connect(("127.0.0.1", port)).map_err(|error| error.to_string())?;
+        stream
+            .set_read_timeout(Some(Duration::from_secs(5)))
+            .map_err(|error| error.to_string())?;
+        stream
+            .write_all(format!("GET {path} HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n").as_bytes())
+            .map_err(|error| error.to_string())?;
+        let _ = stream.read_to_end(&mut Vec::new());
         Ok(())
     }
 }
@@ -429,6 +443,25 @@ mod tests {
             state.wait(&started.id, Duration::from_secs(2)).unwrap(),
             format!("http://127.0.0.1:{port}/callback?code=test&state=expected")
         );
+    }
+
+    #[test]
+    fn an_in_app_page_hands_its_callback_to_the_waiting_login() {
+        let state = OAuthLoopbackState::default();
+        let listener = TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let started = state.start_path(listener, "/auth/callback").unwrap();
+        state
+            .deliver(
+                &started.id,
+                &format!("http://localhost:{port}/auth/callback?code=right&state=expected"),
+            )
+            .unwrap();
+        assert_eq!(
+            state.wait(&started.id, Duration::from_secs(2)).unwrap(),
+            format!("http://127.0.0.1:{port}/auth/callback?code=right&state=expected")
+        );
+        assert!(state.deliver(&started.id, "http://localhost/").is_err());
     }
 
     #[test]
