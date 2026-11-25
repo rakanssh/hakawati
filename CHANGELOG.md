@@ -11,6 +11,14 @@ and the app shows it in What's New and Updates.
 
 ## [Unreleased]
 
+### Changed
+
+- On Android, signing in to your Hakawati account or ChatGPT opens inside the app instead of the browser. Continue with Google isn't available for ChatGPT there.
+
+### Fixed
+
+- Android sign-in no longer gets stuck loading after you sign in.
+
 ## [v1.5.1] - 2026-11-25
 
 ### Changed
