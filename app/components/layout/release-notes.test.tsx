@@ -115,7 +115,7 @@ describe("WhatsNewModal", () => {
         open: true,
         onOpenChange,
         version: "1.3.0",
-        notes: NOTES,
+        releases: [{ version: "1.3.0", notes: NOTES }],
       }),
     );
 
@@ -124,11 +124,36 @@ describe("WhatsNewModal", () => {
       dialog.querySelector('[data-slot="dialog-title"]')?.textContent,
     ).toBe("What’s NewHakawati 1.3.0");
     expect(dialog.querySelectorAll("li")).toHaveLength(5);
+    expect(dialog.querySelector("section > h2")).toBeNull();
 
     const gotIt = [...dialog.querySelectorAll("button")].find(
       (button) => button.textContent === "Got it",
     )!;
     await act(async () => gotIt.click());
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("labels each release when it shows more than one", async () => {
+    await render(
+      createElement(WhatsNewModal, {
+        open: true,
+        onOpenChange: vi.fn(),
+        version: "1.5.1",
+        releases: [
+          { version: "1.5.1", notes: "### Fixed\n\n- One." },
+          { version: "1.5.0", notes: "### Added\n\n- Zero." },
+        ],
+      }),
+    );
+
+    const dialog = document.querySelector('[role="dialog"]')!;
+    expect(
+      [...dialog.querySelectorAll("section > h2")].map(
+        (heading) => heading.textContent,
+      ),
+    ).toEqual(["1.5.1", "1.5.0"]);
+    expect(
+      [...dialog.querySelectorAll("li")].map((item) => item.textContent),
+    ).toEqual(["One.", "Zero."]);
   });
 });

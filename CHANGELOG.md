@@ -11,6 +11,10 @@ and the app shows it in What's New and Updates.
 
 ## [Unreleased]
 
+### Changed
+
+- What's New shows every update you skipped since the last feature release, and now also opens on Android and iOS.
+
 ### Fixed
 
 - Signing in on Android brings you back to Hakawati instead of leaving you in the browser.

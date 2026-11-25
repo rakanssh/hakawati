@@ -29,6 +29,14 @@ const mocks = vi.hoisted(() => ({
     syncActive: false,
   },
   syncSettings: {} as Record<string, unknown>,
+  version: {
+    current: "1.0.0",
+    lastSeen: "1.0.0" as string | null,
+    pending: null as string | null,
+    setLastSeenVersion: vi.fn(),
+  },
+  unseenReleases: vi.fn(),
+  whatsNew: vi.fn(),
 }));
 
 const signedOutSyncSettings = {
@@ -87,8 +95,9 @@ vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => mocks.navigate,
 }));
 vi.mock("@tauri-apps/api/app", () => ({
-  getVersion: () => Promise.resolve("1.0.0"),
+  getVersion: () => Promise.resolve(mocks.version.current),
 }));
+vi.mock("@/lib/changelog", () => ({ unseenReleases: mocks.unseenReleases }));
 vi.mock("@/hooks/useCatalogScenarios", () => ({
   useCatalogClient: () => mocks.catalog,
   useCatalogScenarioList: () => mocks.publicScenarios,
@@ -142,8 +151,9 @@ vi.mock("@/store/useLastPlayedStore", () => ({
 }));
 vi.mock("@/store/useUpdateStore", () => {
   const state = {
-    pendingChangelogVersion: null,
-    pendingChangelogNotes: null,
+    get pendingChangelogVersion() {
+      return mocks.version.pending;
+    },
     clearPendingChangelog: vi.fn(),
   };
   return {
@@ -152,8 +162,8 @@ vi.mock("@/store/useUpdateStore", () => {
 });
 vi.mock("@/store/useVersionStore", () => ({
   useVersionStore: () => ({
-    lastSeenVersion: "1.0.0",
-    setLastSeenVersion: vi.fn(),
+    lastSeenVersion: mocks.version.lastSeen,
+    setLastSeenVersion: mocks.version.setLastSeenVersion,
   }),
 }));
 vi.mock("@/repositories/sync.repository", () => ({
@@ -169,7 +179,12 @@ vi.mock("@/components/scenario", async () => ({
   GenerateScenarioDialog: () => null,
 }));
 vi.mock("@/components/layout/settings", () => ({ SettingsModal: () => null }));
-vi.mock("@/components/layout", () => ({ WhatsNewModal: () => null }));
+vi.mock("@/components/layout", () => ({
+  WhatsNewModal: (props: unknown) => {
+    mocks.whatsNew(props);
+    return null;
+  },
+}));
 vi.mock("@/components/layout/server-announcement", () => ({
   ServerAnnouncementBanner: () => null,
 }));
@@ -200,6 +215,14 @@ describe("Home catalog loading layout", () => {
     mocks.tales.items = [];
     mocks.tales.syncActive = false;
     mocks.syncSettings = { ...signedOutSyncSettings };
+    Object.assign(mocks.version, {
+      current: "1.0.0",
+      lastSeen: "1.0.0",
+      pending: null,
+    });
+    mocks.version.setLastSeenVersion.mockReset();
+    mocks.unseenReleases.mockReset().mockReturnValue([]);
+    mocks.whatsNew.mockReset();
     container = document.createElement("div");
     document.body.append(container);
     root = createRoot(container);
@@ -225,6 +248,33 @@ describe("Home catalog loading layout", () => {
       (heading) => heading.textContent,
     );
   }
+
+  it("shows the releases a user hasn't seen after an update", async () => {
+    const releases = [
+      { version: "1.5.1", notes: "### Fixed\n\n- One." },
+      { version: "1.5.0", notes: "### Added\n\n- Zero." },
+    ];
+    Object.assign(mocks.version, { current: "1.5.1", lastSeen: "1.4.0" });
+    mocks.unseenReleases.mockReturnValue(releases);
+    await render();
+    await act(async () => {});
+
+    expect(mocks.unseenReleases).toHaveBeenCalledWith("1.5.1", "1.4.0");
+    expect(mocks.whatsNew).toHaveBeenLastCalledWith(
+      expect.objectContaining({ version: "1.5.1", releases }),
+    );
+    expect(mocks.version.setLastSeenVersion).not.toHaveBeenCalled();
+  });
+
+  it("records a fresh install's version without showing What's New", async () => {
+    Object.assign(mocks.version, { current: "1.5.1", lastSeen: null });
+    await render();
+    await act(async () => {});
+
+    expect(mocks.unseenReleases).not.toHaveBeenCalled();
+    expect(mocks.whatsNew).not.toHaveBeenCalled();
+    expect(mocks.version.setLastSeenVersion).toHaveBeenCalledWith("1.5.1");
+  });
 
   it("reserves the public shelf before local scenarios throughout cloud startup", async () => {
     await render();
