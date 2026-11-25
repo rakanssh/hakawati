@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { isOutputLimitError } from "@/lib/errors";
 import { ResponseMode } from "@/types/api.type";
 import type { ChatRequest, StreamChunk } from "../schema";
+import { ToolCallAccumulator } from "../tool-call-accumulator";
 import { ChatGptClient, ChatGptInferenceError } from "./chatgpt";
 
 const { fetchMock } = vi.hoisted(() => ({ fetchMock: vi.fn() }));
@@ -287,19 +288,17 @@ describe("ChatGPT plan inference", () => {
       stream: true,
     });
     const chunks = await collect(result.iterator);
-    const calls = new Map<
-      number,
-      { id?: string; name?: string; args: string }
-    >();
-    for (const chunk of chunks)
-      for (const delta of chunk.tool_calls ?? []) {
-        const call = calls.get(delta.index) ?? { args: "" };
-        call.id ??= delta.id;
-        call.name ??= delta.function?.name;
-        call.args += delta.function?.arguments ?? "";
-        calls.set(delta.index, call);
-      }
-    expect([...calls.values()]).toEqual([
+    const calls = new ToolCallAccumulator();
+    for (const chunk of chunks) calls.add(chunk.tool_calls);
+    expect(
+      calls
+        .result()
+        .calls.map(({ id, function: { name, arguments: args } }) => ({
+          id,
+          name,
+          args,
+        })),
+    ).toEqual([
       { id: "call_a", name: "modify_stat", args: '{"name":"HP","value":-1}' },
       { id: "call_b", name: "add_to_inventory", args: '{"item":"Key"}' },
     ]);

@@ -190,6 +190,10 @@ msgstr "ورقة تخرج من آلة كاتبة على مكتب من خشب ا�
 msgid "A starship tablet against a night sky and a slowly turning red planet."
 msgstr "جهاز لوحي لمركبة فضائية أمام سماء ليل وكوكب أحمر يدور ببطء."
 
+#: app/components/play/log/log-block-bubble.tsx:210
+msgid "A stat or item change failed"
+msgstr "تعذّر تغيير خاصية أو شيء"
+
 #: app/components/assistant/activity-chip.tsx:54
 #: app/components/layout/settings/settings-modal.tsx:102
 msgid "About"
@@ -950,7 +954,7 @@ msgid "Context window"
 msgstr "نافذة السياق"
 
 #. placeholder {0}: entry.chainIndex
-#: app/components/play/log/log-block-bubble.tsx:225
+#: app/components/play/log/log-block-bubble.tsx:229
 msgid "Continuation {0}"
 msgstr "تكملة {0}"
 
@@ -1871,7 +1875,7 @@ msgstr "قيد المراجعة"
 msgid "In the LICENSES folder that comes with the app"
 msgstr "في مجلد LICENSES المرفق بالتطبيق"
 
-#: app/components/play/log/log-block-bubble.tsx:223
+#: app/components/play/log/log-block-bubble.tsx:227
 msgid "Initial"
 msgstr "أولى"
 
@@ -2311,8 +2315,8 @@ msgstr "الاسم"
 msgid "NanoGPT"
 msgstr "NanoGPT"
 
-#: app/components/play/log/log-block-bubble.tsx:114
-#: app/components/play/log/log-block-bubble.tsx:124
+#: app/components/play/log/log-block-bubble.tsx:115
+#: app/components/play/log/log-block-bubble.tsx:125
 #: app/components/play/log/log-entry-bubble.tsx:76
 #: app/components/play/log/log-entry-bubble.tsx:86
 msgid "Narrate section"
@@ -3932,7 +3936,7 @@ msgstr "شيء"
 #: app/components/assistant/hakawati-chat.tsx:372
 #: app/components/layout/settings/thinking-level.tsx:56
 #: app/components/layout/settings/thinking-level.tsx:58
-#: app/components/play/log/log-block-bubble.tsx:137
+#: app/components/play/log/log-block-bubble.tsx:138
 msgid "Thinking"
 msgstr "تفكير"
 
@@ -4043,7 +4047,7 @@ msgid "Title"
 msgstr "العنوان"
 
 #: app/components/assistant/hakawati-chat.tsx:370
-#: app/components/play/log/log-block-bubble.tsx:133
+#: app/components/play/log/log-block-bubble.tsx:134
 msgid "Toggle thinking output"
 msgstr "إظهار التفكير أو إخفاؤه"
 

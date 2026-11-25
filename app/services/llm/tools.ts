@@ -93,73 +93,53 @@ export interface ToolCall {
   };
 }
 
-/**
- * Convert OpenAI tool calls to internal LLMAction format
- */
-export function convertToolCallsToActions(toolCalls: ToolCall[]): LLMAction[] {
-  const actions: LLMAction[] = [];
-
-  for (const toolCall of toolCalls) {
-    if (toolCall.type !== "function") continue;
-
-    const functionName = toolCall.function.name;
-    const rawArgs = toolCall.function.arguments?.trim();
-
-    // Skip empty or incomplete arguments
-    if (!rawArgs || rawArgs.length === 0) {
-      console.warn(`Empty arguments for tool call: ${functionName}`);
-      continue;
-    }
-
-    let args: Record<string, unknown>;
-
-    try {
-      args = JSON.parse(rawArgs);
-    } catch (e) {
-      console.warn(
-        `Failed to parse tool call arguments for ${functionName}:`,
-        rawArgs,
-        e,
-      );
-      continue;
-    }
-
-    switch (functionName) {
-      case "modify_stat": {
-        const name = args.name;
-        const value = args.value;
-        if (typeof name === "string" && typeof value === "number") {
-          actions.push({
-            type: "MODIFY_STAT",
-            payload: { name, value },
-          });
-        }
-        break;
-      }
-      case "add_to_inventory": {
-        const item = args.item;
-        if (typeof item === "string") {
-          actions.push({
-            type: "ADD_TO_INVENTORY",
-            payload: { item },
-          });
-        }
-        break;
-      }
-      case "remove_from_inventory": {
-        const item = args.item;
-        if (typeof item === "string") {
-          actions.push({
-            type: "REMOVE_FROM_INVENTORY",
-            payload: { item },
-          });
-        }
-        break;
-      }
-      default:
-        console.warn(`Unknown tool function: ${functionName}`);
-    }
+function parseArgs(raw: string | undefined): Record<string, unknown> | null {
+  try {
+    const args: unknown = JSON.parse(raw ?? "");
+    return args && typeof args === "object" && !Array.isArray(args)
+      ? (args as Record<string, unknown>)
+      : null;
+  } catch {
+    return null;
   }
+}
 
-  return actions;
+function toAction(
+  name: string,
+  args: Record<string, unknown>,
+): LLMAction | null {
+  switch (name) {
+    case "modify_stat":
+      return typeof args.name === "string" && typeof args.value === "number"
+        ? {
+            type: "MODIFY_STAT",
+            payload: { name: args.name, value: args.value },
+          }
+        : null;
+    case "add_to_inventory":
+      return typeof args.item === "string"
+        ? { type: "ADD_TO_INVENTORY", payload: { item: args.item } }
+        : null;
+    case "remove_from_inventory":
+      return typeof args.item === "string"
+        ? { type: "REMOVE_FROM_INVENTORY", payload: { item: args.item } }
+        : null;
+    default:
+      return null;
+  }
+}
+
+export function convertToolCallsToActions(toolCalls: ToolCall[]): {
+  actions: LLMAction[];
+  failed: ToolCall[];
+} {
+  const actions: LLMAction[] = [];
+  const failed: ToolCall[] = [];
+  for (const call of toolCalls) {
+    const args = parseArgs(call.function.arguments);
+    const action = args && toAction(call.function.name, args);
+    if (action) actions.push(action);
+    else failed.push(call);
+  }
+  return { actions, failed };
 }

@@ -124,7 +124,9 @@ export function OpenAiClient(connection: OpenAiConnection): LLMClient {
       model: req.model,
       messages: toChatMessages(req.messages, req.model),
       stream: req.stream,
-      max_tokens: req.max_tokens,
+      // OpenAI's reasoning models reject max_tokens; all its chat models accept this.
+      [provider === "openai" ? "max_completion_tokens" : "max_tokens"]:
+        req.max_tokens,
       ...samplingOptions,
     };
 

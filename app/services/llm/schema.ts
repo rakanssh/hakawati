@@ -52,7 +52,7 @@ export interface ChatRequest {
  * Streaming chunk types
  */
 export interface ToolCallDelta {
-  index: number;
+  index?: number;
   id?: string;
   type?: "function";
   function?: {

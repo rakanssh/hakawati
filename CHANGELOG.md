@@ -28,9 +28,11 @@ and the app shows it in What's New and Updates.
 
 - Tales downloaded from the cloud keep their cover.
 - A failed save shows an error, and the story goes back to what was saved.
-- Leaving Play mid-turn keeps Library summary edits and no longer starts a reply you can't stop.
+- Leaving Play mid-turn keeps your edits and no longer starts a reply you can't stop.
 - Older passages that fail to load are no longer skipped.
 - A failed database update is retried at the next launch instead of being skipped.
+- Game Master stat and item changes apply with Gemini and SambaNova, and a change that fails now says so in the story.
+- OpenAI reasoning models such as o1 and o3-mini no longer fail.
 
 ## [v1.4.0] - 2026-11-21
 

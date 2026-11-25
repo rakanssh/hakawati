@@ -228,8 +228,9 @@ describe("runAgentLoop", () => {
       messages: [],
       tools: [tool("a")],
     });
-    expect(result.messages[0].tool_calls?.[0].id).toBe("call_0_0");
-    expect(result.messages[1].tool_call_id).toBe("call_0_0");
+    const id = result.messages[0].tool_calls?.[0].id;
+    expect(id).toMatch(/^call_\S+$/);
+    expect(result.messages[1].tool_call_id).toBe(id);
   });
 
   it("uses tool calls from a response that was not streamed", async () => {

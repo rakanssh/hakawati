@@ -98,26 +98,12 @@ export class ToolCallingDecoder implements OutputDecoder {
     }
 
     if (accumulator.size > 0) {
-      const { calls: toolCalls, incomplete } = accumulator.result();
-      for (const call of incomplete) {
-        console.warn("Incomplete tool call:", call);
-      }
-      for (const call of toolCalls) {
-        if (!call.function.arguments.trim()) {
-          console.warn(
-            `Tool call ${call.function.name} has empty arguments after accumulation`,
-          );
-        }
-      }
-
-      if (toolCalls.length > 0) {
-        try {
-          const actions = convertToolCallsToActions(toolCalls);
-          yield { actions };
-        } catch (e) {
-          console.error("Failed to convert tool calls to actions:", e);
-          yield { actionParseError: true };
-        }
+      const { calls, incomplete } = accumulator.result();
+      const { actions, failed } = convertToolCallsToActions(calls);
+      if (actions.length > 0) yield { actions };
+      if (incomplete.length > 0 || failed.length > 0) {
+        console.warn("Unreadable tool calls:", [...incomplete, ...failed]);
+        yield { actionParseError: true };
       }
     }
   }
