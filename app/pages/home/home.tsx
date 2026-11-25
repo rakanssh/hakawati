@@ -27,6 +27,7 @@ import {
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { useTaleLibrary } from "@/hooks/useTaleLibrary";
 import { imageBadgeClass } from "@/lib/card-badges";
+import { unseenReleases, type ChangelogRelease } from "@/lib/changelog";
 import { getSyncUiKind, getTaleSyncBadge } from "@/lib/sync-ui";
 import { HAKAWATI_CLIENT_VERSION } from "@/services/cloud-capabilities";
 import { createSyncTransport, registerSyncDevice } from "@/services/sync";
@@ -257,7 +258,10 @@ export default function Home() {
   const { isMobilePlatform } = useIsMobile();
   const openSettings = useSettingsModalStore((state) => state.openSettings);
   const [generateOpen, setGenerateOpen] = useState(false);
-  const [whatsNewOpen, setWhatsNewOpen] = useState(false);
+  const [whatsNew, setWhatsNew] = useState<{
+    version: string;
+    releases: ChangelogRelease[];
+  } | null>(null);
   const [loadingTaleId, setLoadingTaleId] = useState<string | null>(null);
   const [conflictItem, setConflictItem] = useState<LibraryTaleItem | null>(
     null,
@@ -312,9 +316,6 @@ export default function Home() {
   const accountEmail = useSyncSettingsStore((state) => state.accountEmail);
   const pendingChangelogVersion = useUpdateStore(
     (state) => state.pendingChangelogVersion,
-  );
-  const pendingChangelogNotes = useUpdateStore(
-    (state) => state.pendingChangelogNotes,
   );
   const clearPendingChangelog = useUpdateStore(
     (state) => state.clearPendingChangelog,
@@ -532,35 +533,41 @@ export default function Home() {
   }, [lastPlayedTaleId, currentTaleId, load]);
 
   useEffect(() => {
-    const checkForWhatsNew = async () => {
-      try {
-        const currentVersion = await getVersion();
-
-        if (
-          pendingChangelogVersion &&
-          pendingChangelogNotes &&
-          lastSeenVersion !== currentVersion
-        ) {
-          setWhatsNewOpen(true);
+    let cancelled = false;
+    getVersion()
+      .then((currentVersion) => {
+        if (cancelled || lastSeenVersion === currentVersion) return;
+        // With nothing seen yet, only an install through the updater counts as an update;
+        // otherwise this is a fresh install.
+        const updated =
+          lastSeenVersion !== null || pendingChangelogVersion !== null;
+        const releases = updated
+          ? unseenReleases(currentVersion, lastSeenVersion)
+          : [];
+        if (releases.length) {
+          setWhatsNew({ version: currentVersion, releases });
+        } else {
+          setLastSeenVersion(currentVersion);
+          clearPendingChangelog();
         }
-      } catch (error) {
+      })
+      .catch((error) => {
         console.error("Failed to check app version:", error);
-      }
+      });
+    return () => {
+      cancelled = true;
     };
+  }, [
+    pendingChangelogVersion,
+    lastSeenVersion,
+    setLastSeenVersion,
+    clearPendingChangelog,
+  ]);
 
-    void checkForWhatsNew();
-  }, [pendingChangelogVersion, pendingChangelogNotes, lastSeenVersion]);
-
-  const handleWhatsNewClose = async () => {
-    try {
-      const currentVersion = await getVersion();
-      setLastSeenVersion(currentVersion);
-      clearPendingChangelog();
-      setWhatsNewOpen(false);
-    } catch (error) {
-      console.error("Failed to update last seen version:", error);
-      setWhatsNewOpen(false);
-    }
+  const handleWhatsNewClose = () => {
+    if (whatsNew) setLastSeenVersion(whatsNew.version);
+    clearPendingChangelog();
+    setWhatsNew(null);
   };
 
   const quickstartControl = (
@@ -953,12 +960,12 @@ export default function Home() {
         }}
         onResolve={handleResolveConflict}
       />
-      {pendingChangelogVersion && pendingChangelogNotes && (
+      {whatsNew && (
         <WhatsNewModal
-          open={whatsNewOpen}
+          open
           onOpenChange={handleWhatsNewClose}
-          version={pendingChangelogVersion}
-          notes={pendingChangelogNotes}
+          version={whatsNew.version}
+          releases={whatsNew.releases}
         />
       )}
     </main>
