@@ -114,23 +114,40 @@
   }
 }
 
-/* Native scrollbars match ScrollArea's */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+/* Native scrollbars match ScrollArea's. Touch keeps its overlay scrollbars outside text boxes. */
+@media (pointer: fine) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-button {
+    display: none;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    background-clip: content-box;
+  }
 }
-::-webkit-scrollbar-track,
-::-webkit-scrollbar-corner {
-  background: transparent;
-}
-::-webkit-scrollbar-button {
-  display: none;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 9999px;
-  border: 1px solid transparent;
-  background-clip: content-box;
+
+@media not (pointer: fine) {
+  textarea::-webkit-scrollbar {
+    width: 10px;
+  }
+  textarea::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  textarea::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
 }
 
 .composer-command-tier {
