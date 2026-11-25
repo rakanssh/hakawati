@@ -114,17 +114,22 @@
   }
 }
 
-/* Custom scrollbar styling to match shadcn ScrollArea */
-textarea::-webkit-scrollbar {
+/* Native scrollbars match ScrollArea's */
+::-webkit-scrollbar {
   width: 10px;
+  height: 10px;
 }
-textarea::-webkit-scrollbar-track {
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
   background: transparent;
 }
-textarea::-webkit-scrollbar-thumb {
+::-webkit-scrollbar-button {
+  display: none;
+}
+::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: 9999px;
-  border: 2px solid transparent;
+  border: 1px solid transparent;
   background-clip: content-box;
 }
 

@@ -225,7 +225,10 @@ export default function ScenarioDetails() {
 
   if (loading || (!error && scenario && scenario.id !== id)) {
     return (
-      <div className="mx-auto w-full max-w-5xl px-3 py-6 text-base text-muted-foreground sm:px-5 lg:px-6">
+      <div
+        data-page-column=""
+        className="mx-auto w-full max-w-5xl px-3 py-6 text-base text-muted-foreground sm:px-5 lg:px-6"
+      >
         <Trans>Loading...</Trans>
       </div>
     );
@@ -233,7 +236,10 @@ export default function ScenarioDetails() {
 
   if (error || !scenario) {
     return (
-      <div className="mx-auto grid w-full max-w-5xl gap-4 px-3 py-6 sm:px-5 lg:px-6">
+      <div
+        data-page-column=""
+        className="mx-auto grid w-full max-w-5xl gap-4 px-3 py-6 sm:px-5 lg:px-6"
+      >
         <p className="text-base text-destructive">
           <Trans>Failed to load scenario.</Trans>
         </p>

@@ -1,10 +1,12 @@
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ComponentType,
   type KeyboardEvent,
   type PointerEvent,
+  type RefObject,
 } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useRouterState } from "@tanstack/react-router";
@@ -363,9 +365,67 @@ export function StoryPanel() {
   );
 }
 
+const HANDLE_WIDTH = 24;
+
+/** How far the page's centred column ends from the row's end, when the handle fits beside it. */
+function usePageColumnGap(
+  enabled: boolean,
+  rail: RefObject<HTMLDivElement | null>,
+) {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const [gap, setGap] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    const row = rail.current?.parentElement;
+    if (!enabled || !row) {
+      setGap(null);
+      return;
+    }
+    let frame = 0;
+    const resize = new ResizeObserver(() => measure());
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const column = row.querySelector<HTMLElement>("[data-page-column]");
+        if (!column) {
+          setGap(null);
+          return;
+        }
+        resize.observe(column);
+        const scroller = row.firstElementChild as HTMLElement | null;
+        const scrollbar = scroller
+          ? scroller.offsetWidth - scroller.clientWidth
+          : 0;
+        const style = getComputedStyle(column);
+        const box = column.getBoundingClientRect();
+        const rowBox = row.getBoundingClientRect();
+        const next =
+          style.direction === "rtl"
+            ? box.left + parseFloat(style.paddingLeft) - rowBox.left
+            : rowBox.right - box.right + parseFloat(style.paddingRight);
+        setGap(next - HANDLE_WIDTH >= scrollbar ? next : null);
+      });
+    };
+    measure();
+    resize.observe(row);
+    if (row.firstElementChild) resize.observe(row.firstElementChild);
+    const mutations = new MutationObserver(measure);
+    mutations.observe(row, { childList: true, subtree: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      resize.disconnect();
+      mutations.disconnect();
+    };
+  }, [enabled, pathname, rail]);
+
+  return gap;
+}
+
 /**
- * A pull tab on the story's edge, in a slim rail of its own so it never sits over the text or the
- * scrollbar. Closed, it hangs off the window's edge like a drawer pull; open, it rides on the panel's edge.
+ * A pull tab for the panel. In play it sits in a slim rail of its own beside the story, hanging off
+ * the window's edge; elsewhere it hangs off the page's centred column. Open, it rides on the panel's edge.
  */
 function StoryPanelHandle({
   open,
@@ -377,8 +437,15 @@ function StoryPanelHandle({
   onToggle: () => void;
 }) {
   const { t } = useLingui();
+  const rail = useRef<HTMLDivElement>(null);
+  const gap = usePageColumnGap(!isPlay && !open, rail);
+  const attached = gap !== null;
+
   return (
-    <div className="relative z-45 w-6 shrink-0">
+    <div
+      ref={rail}
+      className={cn("z-45 shrink-0", isPlay || open ? "relative w-6" : "w-0")}
+    >
       <Tooltip>
         <TooltipTrigger asChild>
           <button
@@ -389,7 +456,15 @@ function StoryPanelHandle({
             aria-expanded={open}
             aria-controls={STORY_PANEL_ID}
             aria-label={open ? t`Close panel` : t`Open panel`}
-            className="absolute end-0 top-[38%] flex w-6 -translate-y-1/2 flex-col items-center gap-2 rounded-s-xs border border-e-0 border-sidebar-border bg-sidebar/95 py-3 text-sidebar-foreground/70 shadow-sm backdrop-blur-sm transition-colors hover:bg-sidebar hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            style={
+              attached ? { insetInlineEnd: gap - HANDLE_WIDTH } : undefined
+            }
+            className={cn(
+              "absolute top-[38%] z-45 flex w-6 -translate-y-1/2 flex-col items-center gap-2 border border-sidebar-border bg-sidebar/95 py-3 text-sidebar-foreground/70 shadow-sm backdrop-blur-sm transition-colors hover:bg-sidebar hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              attached
+                ? "rounded-e-xs border-s-0"
+                : "end-0 rounded-s-xs border-e-0",
+            )}
           >
             {open ? (
               <ChevronRightIcon className="size-4 rtl:-scale-x-100" />
@@ -406,7 +481,7 @@ function StoryPanelHandle({
             </span>
           </button>
         </TooltipTrigger>
-        <TooltipContent side="left">
+        <TooltipContent side={attached ? "right" : "left"}>
           {open ? (
             <Trans>Close panel</Trans>
           ) : isPlay ? (

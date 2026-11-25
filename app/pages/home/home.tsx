@@ -631,7 +631,10 @@ export default function Home() {
         announcements={catalog.capabilities?.announcements}
         baseUrl={catalog.baseUrl}
       />
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-6 sm:px-6 lg:py-8">
+      <div
+        data-page-column=""
+        className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-6 sm:px-6 lg:py-8"
+      >
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold tracking-tight">

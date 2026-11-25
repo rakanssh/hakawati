@@ -327,12 +327,18 @@ export default function ScenarioCatalogDetails() {
   return (
     <>
       {loading ? (
-        <div className="mx-auto w-full max-w-5xl px-3 py-6 text-base text-muted-foreground sm:px-5 lg:px-6">
+        <div
+          data-page-column=""
+          className="mx-auto w-full max-w-5xl px-3 py-6 text-base text-muted-foreground sm:px-5 lg:px-6"
+        >
           <Trans>Loading...</Trans>
         </div>
       ) : null}
       {error ? (
-        <div className="mx-auto w-full max-w-5xl px-3 py-6 text-base text-destructive sm:px-5 lg:px-6">
+        <div
+          data-page-column=""
+          className="mx-auto w-full max-w-5xl px-3 py-6 text-base text-destructive sm:px-5 lg:px-6"
+        >
           <Trans>Failed to load scenario.</Trans>
         </div>
       ) : null}

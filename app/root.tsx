@@ -109,7 +109,7 @@ export default function AppShell() {
       >
         <Titlebar />
         <div
-          className={`flex min-h-0 flex-1 overflow-hidden ${isMobilePlatform ? "" : "pt-8"}`}
+          className={`relative flex min-h-0 flex-1 overflow-hidden ${isMobilePlatform ? "" : "pt-8"}`}
         >
           <div
             ref={scrollerRef}

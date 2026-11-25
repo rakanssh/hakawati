@@ -22,6 +22,7 @@ and the app shows it in What's New and Updates.
 - Hakawati Cloud storage is 60 MB per account for tales and covers together, with no limit on the number of tales.
 - Hakawati asks before making a Game Master tale, and understands AI instructions better.
 - The side panel in a tale has Interface size and Context window, shows the mode first in Story, and no longer edits the library summary.
+- Menus use the same slim scrollbars as the game, and the Hakawati tab sits on the edge of the page instead of the window.
 
 ### Fixed
 
