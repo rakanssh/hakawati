@@ -11,6 +11,8 @@ and the app shows it in What's New and Updates.
 
 ## [Unreleased]
 
+## [v1.5.2] - 2026-11-25
+
 ### Changed
 
 - On Android, signing in to your Hakawati account or ChatGPT opens inside the app instead of the browser. Continue with Google isn't available for ChatGPT there.
