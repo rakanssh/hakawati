@@ -85,20 +85,6 @@ export async function listAssistantThreads(
   return rows.map(threadFromRow);
 }
 
-export async function getLatestAssistantThread(
-  taleId?: string,
-): Promise<AssistantThread | null> {
-  const db = await getDb();
-  const rows = await db.select<ThreadRow[]>(
-    taleId === undefined
-      ? `SELECT * FROM assistant_threads ORDER BY updated_at DESC, id LIMIT 1`
-      : `SELECT * FROM assistant_threads WHERE tale_id = ?
-         ORDER BY updated_at DESC, id LIMIT 1`,
-    taleId === undefined ? [] : [taleId],
-  );
-  return rows[0] ? threadFromRow(rows[0]) : null;
-}
-
 export async function createAssistantThread(
   thread: AssistantThread,
 ): Promise<void> {

@@ -6,7 +6,6 @@ import {
   deleteAssistantMessage,
   updateAssistantMessageChanges,
   deleteAssistantThread,
-  getLatestAssistantThread,
   listAssistantMessages,
   listAssistantThreads,
 } from "@/repositories/assistant.repository";
@@ -99,10 +98,7 @@ export async function syncAssistantScope(playTaleId: string | null) {
       return;
     }
     if (!playTaleId) {
-      await showThread(
-        known(memory.lastThreadId) ?? (await getLatestAssistantThread()),
-        null,
-      );
+      await showThread(known(memory.lastThreadId) ?? null, null);
       return;
     }
     const remembered = known(memory.taleThreads[playTaleId]);
@@ -113,10 +109,7 @@ export async function syncAssistantScope(playTaleId: string | null) {
       if (state.threadId) rememberChat(state.threadId);
       return;
     }
-    await showThread(
-      remembered ?? (await getLatestAssistantThread(playTaleId)),
-      playTaleId,
-    );
+    await showThread(remembered ?? null, playTaleId);
   } catch (error) {
     store.setState({ error: errorMessage(error), loaded: true });
   }

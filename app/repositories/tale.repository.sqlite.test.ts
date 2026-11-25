@@ -2343,11 +2343,6 @@ describe("Hakawati storage", () => {
       { ...first },
       { ...second },
     ]);
-    expect((await chats.getLatestAssistantThread())?.id).toBe("tale-chat");
-    expect((await chats.getLatestAssistantThread(taleId))?.id).toBe(
-      "tale-chat",
-    );
-
     await deleteTale(taleId);
     expect((await chats.listAssistantThreads()).map((t) => t.id)).toEqual([
       "general",

@@ -31,12 +31,6 @@ vi.mock("@/repositories/assistant.repository", () => {
     [...threads].sort((a, b) => b.updatedAt - a.updatedAt);
   return {
     listAssistantThreads: async () => newest(db.threads),
-    getLatestAssistantThread: async (taleId?: string) =>
-      newest(
-        db.threads.filter(
-          (thread) => taleId === undefined || thread.taleId === taleId,
-        ),
-      )[0] ?? null,
     createAssistantThread: async (thread: AssistantThread) => {
       db.threads.push({ ...thread });
     },
@@ -354,7 +348,7 @@ describe("Hakawati chat session", () => {
     expect(store.getState().error).toBe("No hakawati model selected.");
   });
 
-  it("opens a tale's latest chat when the player opens the tale", async () => {
+  it("starts on a new chat, and on a tale's chat once one is opened there", async () => {
     const { session, store } = await load();
     db.threads = [
       { id: "general", taleId: null, title: "G", createdAt: 1, updatedAt: 5 },
@@ -362,12 +356,16 @@ describe("Hakawati chat session", () => {
     ];
 
     await session.syncAssistantScope(null);
-    expect(store.getState().threadId).toBe("general");
+    expect(store.getState().threadId).toBeNull();
 
     await session.syncAssistantScope("t1");
-    expect(store.getState().threadId).toBe("mara");
+    expect(store.getState()).toMatchObject({ threadId: null, taleId: "t1" });
+    await session.selectAssistantThread("mara");
 
     await session.syncAssistantScope(null);
+    expect(store.getState().threadId).toBe("mara");
+    await session.syncAssistantScope("t2");
+    await session.syncAssistantScope("t1");
     expect(store.getState().threadId).toBe("mara");
 
     await session.syncAssistantScope("t2");
@@ -402,11 +400,11 @@ describe("Hakawati chat session", () => {
       expect(store.getState().threadId).toBe("general");
     });
 
-    it("goes back to the chat last open on a tale, not its latest", async () => {
+    it("goes back to the chat last open on a tale", async () => {
       const { session, store } = await load();
       db.threads = threads();
       await session.syncAssistantScope("t1");
-      expect(store.getState().threadId).toBe("newer");
+      expect(store.getState().threadId).toBeNull();
       await session.selectAssistantThread("older");
       await session.syncAssistantScope("t2");
       expect(store.getState().threadId).toBeNull();
@@ -415,15 +413,17 @@ describe("Hakawati chat session", () => {
       expect(store.getState().threadId).toBe("older");
     });
 
-    it("opens the chat that was open when the app was last closed", async () => {
+    it("starts on a new chat when the app opens again", async () => {
       db.threads = threads();
       const first = await load();
-      await first.session.syncAssistantScope(null);
+      await first.session.syncAssistantScope("t1");
       await first.session.selectAssistantThread("older");
 
       const next = await load();
       await next.session.syncAssistantScope(null);
-      expect(next.store.getState().threadId).toBe("older");
+      expect(next.store.getState().threadId).toBeNull();
+      await next.session.syncAssistantScope("t1");
+      expect(next.store.getState().threadId).toBeNull();
     });
 
     it("forgets a deleted chat", async () => {
@@ -434,7 +434,7 @@ describe("Hakawati chat session", () => {
       await session.removeAssistantThread("older", "/play");
       await session.syncAssistantScope("t2");
       await session.syncAssistantScope("t1");
-      expect(store.getState().threadId).toBe("newer");
+      expect(store.getState().threadId).toBeNull();
     });
   });
 
