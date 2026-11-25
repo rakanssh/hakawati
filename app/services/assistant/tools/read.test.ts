@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { GameMode, LogEntryRole, LogEntryMode } from "@/types";
+import { createPromptComponent } from "@/lib/prompt-components";
+import { AI_INSTRUCTIONS_PROMPT } from "@/prompts";
+import {
+  GameMode,
+  LogEntryRole,
+  LogEntryMode,
+  PromptComponentType,
+} from "@/types";
 
 vi.mock("@lingui/core/macro", () => ({
   msg: (value: TemplateStringsArray | string) =>
@@ -88,6 +95,24 @@ describe("Hakawati read tools", () => {
     });
     expect(setup).toMatchObject({ open: false, name: "Stored", passages: 4 });
     expect(setup).not.toHaveProperty("stats");
+  });
+
+  it("gives a tale's whole AI instructions, or the default when it has none", async () => {
+    const own = "Narrate in verse. ".repeat(400);
+    useTaleStore.setState({
+      components: [
+        createPromptComponent(PromptComponentType.AI_INSTRUCTIONS, own),
+      ],
+    });
+    const custom = await tools("/play")("get_tale");
+    expect(custom.aiInstructions).toBe(own);
+    expect(custom).not.toHaveProperty("defaultAiInstructions");
+
+    useTaleStore.setState({ components: [] });
+    expect(await tools("/play")("get_tale")).toMatchObject({
+      aiInstructions: "",
+      defaultAiInstructions: AI_INSTRUCTIONS_PROMPT,
+    });
   });
 
   it("reads passages around one, with their place in the story", async () => {
