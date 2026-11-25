@@ -144,7 +144,12 @@
 
 .theme-storybook [data-story-panel-handle] {
   border-width: 2px;
+  border-inline-end-width: 0;
   border-color: color-mix(in oklch, var(--foreground) 70%, transparent);
+}
+
+.theme-storybook [data-story-panel-handle][data-attached] {
+  border-inline-width: 0 2px;
 }
 
 /* The reading surface: a cream page with a hand-inked edge. */
