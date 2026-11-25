@@ -11,7 +11,7 @@ and the app shows it in What's New and Updates.
 
 ## [Unreleased]
 
-## [v1.5.0] - 2026-11-24
+## [v1.5.0] - 2026-11-25
 
 ### Added
 
