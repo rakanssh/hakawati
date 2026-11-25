@@ -174,6 +174,7 @@ ${inventoryBlock}
     requiredMeta,
     lateMeta,
     userMessage: userMsg,
+    currentText: lastMessage.text,
     promptBudget,
     includeLogEntry: (entry) =>
       entry !== currentPlayerEntry && !isFailedReplyPlaceholder(entry),

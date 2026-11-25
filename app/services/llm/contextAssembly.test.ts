@@ -81,6 +81,31 @@ function assembleByRecounting(
 
   const includedIds = new Set(pinned.map((card) => card.id));
   const included = () => storyCards.filter((card) => includedIds.has(card.id));
+  const matching = (content: string) => {
+    const text = content.toLowerCase();
+    const found: StoryCard[] = [];
+    for (const card of storyCards) {
+      const matches = card.triggers.some(
+        (trigger) => trigger && text.includes(trigger.toLowerCase()),
+      );
+      if (card.isPinned || !matches) continue;
+      if (found.some((other) => other.id === card.id)) continue;
+      if (!includedIds.has(card.id)) found.push(card);
+    }
+    return found;
+  };
+  const current = params.currentText ? matching(params.currentText) : [];
+  if (current.length) {
+    const total = countMessageTokens([
+      ...requiredMeta,
+      ...storyBook([...included(), ...current]),
+      ...lateMeta,
+      userMessage,
+    ]);
+    onCandidateTotal(total);
+    if (total <= promptBudget)
+      current.forEach((card) => includedIds.add(card.id));
+  }
   const selected: ChatMessage[] = [];
   let hitTokenLimit = false;
   for (const message of [...merged].reverse()) {
@@ -89,16 +114,7 @@ function assembleByRecounting(
       (message.content === "..." || message.content.trim() === "")
     )
       continue;
-    const text = message.content.toLowerCase();
-    const newCards: StoryCard[] = [];
-    for (const card of storyCards) {
-      const matches = card.triggers.some(
-        (trigger) => trigger && text.includes(trigger.toLowerCase()),
-      );
-      if (card.isPinned || !matches) continue;
-      if (newCards.some((other) => other.id === card.id)) continue;
-      if (!includedIds.has(card.id)) newCards.push(card);
-    }
+    const newCards = matching(message.content);
     const chatMessage = { role: message.role, content: message.content };
     const total = countMessageTokens([
       ...requiredMeta,
@@ -231,6 +247,7 @@ function randomCase(seed: number) {
     promptBudget: Number.POSITIVE_INFINITY,
     ...(excluded ? { includeLogEntry: (entry) => entry !== excluded } : {}),
   };
+  if (random() < 0.6) params.currentText = phrase(4);
   return { params, log };
 }
 
@@ -286,6 +303,37 @@ describe("assembleContextMessages", () => {
       }
     }
   }, 30_000);
+
+  it("sends cards named in the player's current entry", () => {
+    const card = (id: string, trigger: string): StoryCard => ({
+      id,
+      title: id,
+      content: `About ${id}.`,
+      triggers: [trigger],
+      category: StorybookCategory.CHARACTER,
+      isPinned: false,
+      createdAt: 0,
+      updatedAt: 0,
+    });
+    const params: AssembleContextMessagesParams = {
+      log: [gm("gm-1", "The gate creaks open.")],
+      storyCards: [card("Mira", "mira"), card("Gate", "gate")],
+      requiredMeta: [{ role: "system", content: "You are a narrator." }],
+      userMessage: { role: "user", content: "Action: I call for Mira." },
+      currentText: "I call for Mira.",
+      promptBudget: 1_000_000,
+    };
+    const storyBook = (result: { messages: ChatMessage[] }) =>
+      result.messages.find((message) =>
+        message.content.startsWith("**StoryBook:**"),
+      )?.content;
+
+    expect(storyBook(assemble(params))).toContain("About Mira.");
+    expect(storyBook(assemble(params))).toContain("About Gate.");
+    expect(
+      storyBook(assemble({ ...params, currentText: undefined })),
+    ).not.toContain("About Mira.");
+  });
 
   it("counts a continued GM reply as the joined text the model receives", () => {
     const parts = ["Mira whisp", "ers."];

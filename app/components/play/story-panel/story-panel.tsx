@@ -9,6 +9,7 @@ import {
   type RefObject,
 } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useDirection } from "@radix-ui/react-direction";
 import { useRouterState } from "@tanstack/react-router";
 import {
   BookOpenIcon,
@@ -365,22 +366,22 @@ export function StoryPanel() {
   );
 }
 
-const HANDLE_WIDTH = 24;
-
-/** How far the page's centred column ends from the row's end, when the handle fits beside it. */
-function usePageColumnGap(
+/** The handle's inset from the row's end beside the page's centred column, or null when it doesn't fit before the scrollbar. */
+function usePageColumnInset(
   enabled: boolean,
   rail: RefObject<HTMLDivElement | null>,
+  handle: RefObject<HTMLButtonElement | null>,
 ) {
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
   });
-  const [gap, setGap] = useState<number | null>(null);
+  const [inset, setInset] = useState<number | null>(null);
 
   useLayoutEffect(() => {
     const row = rail.current?.parentElement;
-    if (!enabled || !row) {
-      setGap(null);
+    const scroller = row?.firstElementChild;
+    if (!enabled || !row || !(scroller instanceof HTMLElement)) {
+      setInset(null);
       return;
     }
     let frame = 0;
@@ -389,28 +390,30 @@ function usePageColumnGap(
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const column = row.querySelector<HTMLElement>("[data-page-column]");
-        if (!column) {
-          setGap(null);
+        const tab = handle.current?.offsetWidth ?? 0;
+        if (!column || !tab) {
+          setInset(null);
           return;
         }
         resize.observe(column);
-        const scroller = row.firstElementChild as HTMLElement | null;
-        const scrollbar = scroller
-          ? scroller.offsetWidth - scroller.clientWidth
-          : 0;
         const style = getComputedStyle(column);
+        const rtl = style.direction === "rtl";
         const box = column.getBoundingClientRect();
-        const rowBox = row.getBoundingClientRect();
-        const next =
-          style.direction === "rtl"
-            ? box.left + parseFloat(style.paddingLeft) - rowBox.left
-            : rowBox.right - box.right + parseFloat(style.paddingRight);
-        setGap(next - HANDLE_WIDTH >= scrollbar ? next : null);
+        const columnEnd = rtl
+          ? box.left + parseFloat(style.paddingLeft)
+          : box.right - parseFloat(style.paddingRight);
+        const room = (element: Element) => {
+          const edge = element.getBoundingClientRect();
+          return rtl ? columnEnd - edge.left : edge.right - columnEnd;
+        };
+        const scrollbar = scroller.offsetWidth - scroller.clientWidth;
+        setInset(room(scroller) - tab >= scrollbar ? room(row) - tab : null);
       });
     };
     measure();
     resize.observe(row);
-    if (row.firstElementChild) resize.observe(row.firstElementChild);
+    resize.observe(scroller);
+    if (handle.current) resize.observe(handle.current);
     const mutations = new MutationObserver(measure);
     mutations.observe(row, { childList: true, subtree: true });
     return () => {
@@ -418,9 +421,9 @@ function usePageColumnGap(
       resize.disconnect();
       mutations.disconnect();
     };
-  }, [enabled, pathname, rail]);
+  }, [enabled, pathname, rail, handle]);
 
-  return gap;
+  return inset;
 }
 
 /**
@@ -437,28 +440,31 @@ function StoryPanelHandle({
   onToggle: () => void;
 }) {
   const { t } = useLingui();
+  const rtl = useDirection() === "rtl";
   const rail = useRef<HTMLDivElement>(null);
-  const gap = usePageColumnGap(!isPlay && !open, rail);
-  const attached = gap !== null;
+  const handle = useRef<HTMLButtonElement>(null);
+  const enabled = !isPlay && !open;
+  const inset = usePageColumnInset(enabled, rail, handle);
+  const attached = enabled && inset !== null;
 
   return (
     <div
       ref={rail}
-      className={cn("z-45 shrink-0", isPlay || open ? "relative w-6" : "w-0")}
+      className={cn("z-45 shrink-0", attached ? "w-0" : "relative w-6")}
     >
       <Tooltip>
         <TooltipTrigger asChild>
           <button
+            ref={handle}
             type="button"
             data-story-panel-handle=""
+            data-attached={attached || undefined}
             data-state={open ? "open" : "closed"}
             onClick={onToggle}
             aria-expanded={open}
             aria-controls={STORY_PANEL_ID}
             aria-label={open ? t`Close panel` : t`Open panel`}
-            style={
-              attached ? { insetInlineEnd: gap - HANDLE_WIDTH } : undefined
-            }
+            style={attached ? { insetInlineEnd: inset } : undefined}
             className={cn(
               "absolute top-[38%] z-45 flex w-6 -translate-y-1/2 flex-col items-center gap-2 border border-sidebar-border bg-sidebar/95 py-3 text-sidebar-foreground/70 shadow-sm backdrop-blur-sm transition-colors hover:bg-sidebar hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               attached
@@ -481,7 +487,7 @@ function StoryPanelHandle({
             </span>
           </button>
         </TooltipTrigger>
-        <TooltipContent side={attached ? "right" : "left"}>
+        <TooltipContent side={attached !== rtl ? "right" : "left"}>
           {open ? (
             <Trans>Close panel</Trans>
           ) : isPlay ? (

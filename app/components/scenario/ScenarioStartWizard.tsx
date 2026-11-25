@@ -67,7 +67,10 @@ export function ScenarioStartWizard({
   };
 
   return (
-    <main className="mx-auto flex min-h-full w-full max-w-screen-2xl flex-col px-3 py-4 sm:px-5 lg:px-6">
+    <main
+      data-page-column=""
+      className="mx-auto flex min-h-full w-full max-w-screen-2xl flex-col px-3 py-4 sm:px-5 lg:px-6"
+    >
       <p
         className="truncate text-center text-sm text-muted-foreground"
         title={title}

@@ -211,12 +211,18 @@
 }
 
 .theme-cartridge [data-story-panel-handle] {
+  --handle-edge: -4px;
   border: 0;
   border-radius: 0;
   box-shadow:
     0 -4px 0 0 var(--foreground),
     0 4px 0 0 var(--foreground),
-    -4px 0 0 0 var(--foreground);
+    var(--handle-edge) 0 0 0 var(--foreground);
+}
+
+.theme-cartridge [data-story-panel-handle]:not([data-attached]):dir(rtl),
+.theme-cartridge [data-story-panel-handle][data-attached]:dir(ltr) {
+  --handle-edge: 4px;
 }
 
 .theme-cartridge {

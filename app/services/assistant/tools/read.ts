@@ -19,6 +19,7 @@ import { useTaleStore } from "@/store/useTaleStore";
 import { PromptComponentType } from "@/types";
 import {
   clip,
+  describeAiInstructions,
   describePassage,
   describeTaleSetup,
   openTaleId,
@@ -300,9 +301,8 @@ export function createReadTools(
           opening: component(PromptComponentType.OPENING),
           plot: component(PromptComponentType.PLOT),
           authorNote: component(PromptComponentType.AUTHOR_NOTE),
-          aiInstructions: clip(
+          ...describeAiInstructions(
             component(PromptComponentType.AI_INSTRUCTIONS),
-            4000,
           ),
           storyCards: fields.initialStoryCards.map((card) => ({
             id: card.id,

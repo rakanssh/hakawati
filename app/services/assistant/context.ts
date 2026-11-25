@@ -1,3 +1,4 @@
+import { getActiveStorytellerPrompt } from "@/prompts";
 import { useScenarioDraftStore } from "@/store/useScenarioDraftStore";
 import { useTaleStore } from "@/store/useTaleStore";
 import {
@@ -67,6 +68,15 @@ const componentText = (
   type: PromptComponentType,
 ) => components.find((component) => component.type === type)?.content ?? "";
 
+export function describeAiInstructions(own: string) {
+  return own.trim()
+    ? { aiInstructions: own }
+    : {
+        aiInstructions: "",
+        defaultAiInstructions: getActiveStorytellerPrompt(),
+      };
+}
+
 export function describeTaleSetup(tale: {
   name: string;
   description: string;
@@ -83,9 +93,8 @@ export function describeTaleSetup(tale: {
     mode: modeName(tale.gameMode),
     plot: componentText(tale.components, PromptComponentType.PLOT),
     authorNote: componentText(tale.components, PromptComponentType.AUTHOR_NOTE),
-    aiInstructions: clip(
+    ...describeAiInstructions(
       componentText(tale.components, PromptComponentType.AI_INSTRUCTIONS),
-      4000,
     ),
     storyCards: tale.storyCards.map((card) => ({
       id: card.id,

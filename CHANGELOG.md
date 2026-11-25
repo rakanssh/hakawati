@@ -20,8 +20,8 @@ and the app shows it in What's New and Updates.
 ### Changed
 
 - Hakawati Cloud storage is 60 MB per account for tales and covers together, with no limit on the number of tales.
-- Hakawati asks before making a Game Master tale, and understands AI instructions better.
-- The side panel in a tale has Interface size and Context window, shows the mode first in Story, and no longer edits the library summary.
+- Hakawati asks which mode to use for a new tale or scenario, defaulting to standard, and understands AI instructions better.
+- The side panel in a tale has Interface size and Context window, shows the mode first in Story, and no longer edits Temperature or the library summary.
 - Menus use the same slim scrollbars as the game, and the Hakawati tab sits on the edge of the page instead of the window.
 - Hakawati starts on a new chat each time the app opens. Earlier chats stay in the chat list.
 - When sync waits for encryption to be set up or this device to be unlocked, Hakawati says so and tales show Sync paused.
@@ -35,6 +35,7 @@ and the app shows it in What's New and Updates.
 - A failed database update is retried at the next launch instead of being skipped.
 - Game Master stat and item changes apply with Gemini and SambaNova, and a change that fails now says so in the story.
 - OpenAI reasoning models such as o1 and o3-mini no longer fail.
+- A story card named in your turn is sent with that turn, not the next one.
 
 ## [v1.4.0] - 2026-11-21
 

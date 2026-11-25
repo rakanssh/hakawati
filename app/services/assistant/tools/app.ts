@@ -101,12 +101,13 @@ function pathFor(
 }
 
 function shownValue(key: string) {
-  const value = APP_SETTINGS[key].read();
-  if (value && typeof value === "object" && "custom" in value) {
-    const prompt = value as { custom: boolean; text: string | null };
-    return prompt.custom ? (prompt.text ?? "") : null;
-  }
-  return value;
+  const { read, builtIn } = APP_SETTINGS[key];
+  const value = read();
+  if (builtIn === undefined) return { value };
+  const prompt = value as { custom: boolean; text: string | null };
+  return prompt.custom && prompt.text
+    ? { value: prompt.text }
+    : { value: builtIn, builtIn: true };
 }
 
 export function createAppTools(context: AssistantToolContext): AssistantTool[] {
@@ -240,7 +241,7 @@ export function createAppTools(context: AssistantToolContext): AssistantTool[] {
             wanted.map((key) => [
               key,
               {
-                value: shownValue(key),
+                ...shownValue(key),
                 accepts: APP_SETTINGS[key].accepts,
                 tab: APP_SETTINGS[key].tab,
               },

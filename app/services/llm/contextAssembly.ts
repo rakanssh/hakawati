@@ -26,6 +26,7 @@ export interface AssembleContextMessagesParams {
   requiredMeta: ChatMessage[];
   lateMeta?: ChatMessage[];
   userMessage: ChatMessage;
+  currentText?: string;
   promptBudget: number;
   includeLogEntry?: (entry: LogEntry) => boolean;
   onRequiredTokensExceeded?: (requiredTokens: number) => void;
@@ -167,6 +168,7 @@ export function assembleContextMessages(
     requiredMeta,
     lateMeta = [],
     userMessage,
+    currentText,
     promptBudget,
     includeLogEntry,
     onRequiredTokensExceeded,
@@ -199,6 +201,22 @@ export function assembleContextMessages(
   let historyTokens = 0;
   const selectedHistory: ChatMessage[] = [];
   let hitTokenLimit = false;
+
+  const currentCards = currentText
+    ? collectCardsForText(currentText, storyCards).filter(
+        (card) => !includedCardIds.has(card.id),
+      )
+    : [];
+  if (
+    currentCards.length > 0 &&
+    requiredTokens +
+      countStoryBookTokens([...includedCards, ...currentCards]) <=
+      promptBudget
+  ) {
+    currentCards.forEach((card) => includedCardIds.add(card.id));
+    includedCards = storyCards.filter((card) => includedCardIds.has(card.id));
+    storyBookTokens = countStoryBookTokens(includedCards);
+  }
 
   for (let i = mergedLog.length - 1; i >= 0; i--) {
     const message = mergedLog[i];
