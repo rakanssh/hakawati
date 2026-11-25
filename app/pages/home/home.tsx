@@ -116,6 +116,7 @@ function TaleCard({
   loading,
   disabled,
   syncActive,
+  syncPaused,
   syncStatusLoading,
   onLoad,
 }: {
@@ -123,6 +124,7 @@ function TaleCard({
   loading: boolean;
   disabled: boolean;
   syncActive: boolean;
+  syncPaused: boolean;
   syncStatusLoading: boolean;
   onLoad: (item: LibraryTaleItem) => void;
 }) {
@@ -139,7 +141,7 @@ function TaleCard({
       item.localTale.description ||
       t`No description yet.`;
   const thumbnail = isRemote ? null : item.localTale.thumbnail;
-  const badge = syncActive ? getTaleSyncBadge(item) : "local";
+  const badge = syncActive ? getTaleSyncBadge(item, syncPaused) : "local";
   const hasConflict = badge === "conflict";
   const syncStatusUnknown =
     syncActive && item.source === "local" && !item.sync && syncStatusLoading;
@@ -149,9 +151,11 @@ function TaleCard({
       ? t`Cloud full`
       : badge === "not-synced"
         ? t`Not synced`
-        : badge === "cloud"
-          ? t`Cloud`
-          : t`Local`;
+        : badge === "paused"
+          ? t`Sync paused`
+          : badge === "cloud"
+            ? t`Cloud`
+            : t`Local`;
 
   return (
     <ScenarioPreviewCard
@@ -291,6 +295,9 @@ export default function Home() {
   );
   const cloudUpdateRequired = useSyncSettingsStore(
     (state) => state.cloudUpdateRequired,
+  );
+  const cloudSyncPaused = useSyncSettingsStore((state) =>
+    Boolean(state.cloudSyncPaused),
   );
   const deviceId = useSyncSettingsStore((state) => state.deviceId);
   const accountId = useSyncSettingsStore((state) => state.accountId);
@@ -605,6 +612,9 @@ export default function Home() {
               {cloudUpdateRequired &&
               (syncUiKind === "signed-in" || syncUiKind === "personal") ? (
                 <Trans>Update Hakawati to sync</Trans>
+              ) : cloudSyncPaused &&
+                (syncUiKind === "signed-in" || syncUiKind === "personal") ? (
+                <Trans>Sync paused</Trans>
               ) : syncUiKind === "signed-in" ? (
                 <Trans>Cloud sync on</Trans>
               ) : syncUiKind === "sync-off" ? (
@@ -798,6 +808,7 @@ export default function Home() {
                 }
                 disabled={hasIssues}
                 syncActive={tales.syncActive}
+                syncPaused={tales.syncPaused}
                 syncStatusLoading={tales.syncStatesLoading}
                 onLoad={handleLoadTale}
               />

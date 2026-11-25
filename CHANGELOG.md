@@ -24,6 +24,7 @@ and the app shows it in What's New and Updates.
 - The side panel in a tale has Interface size and Context window, shows the mode first in Story, and no longer edits the library summary.
 - Menus use the same slim scrollbars as the game, and the Hakawati tab sits on the edge of the page instead of the window.
 - Hakawati starts on a new chat each time the app opens. Earlier chats stay in the chat list.
+- When sync waits for encryption to be set up or this device to be unlocked, Hakawati says so and tales show Sync paused.
 
 ### Fixed
 

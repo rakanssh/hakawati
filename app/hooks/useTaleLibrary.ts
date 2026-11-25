@@ -40,6 +40,9 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
   const hostedDeviceIdsByAccountId = useSyncSettingsStore(
     (state) => state.hostedDeviceIdsByAccountId,
   );
+  const syncPaused = useSyncSettingsStore((state) =>
+    Boolean(state.cloudSyncPaused),
+  );
   const [remoteTales, setRemoteTales] = useState<RemoteTale[]>([]);
   const [syncStates, setSyncStates] = useState<TaleSyncState[]>([]);
   const [syncStatesHydrated, setSyncStatesHydrated] = useState(false);
@@ -236,6 +239,7 @@ export function useTaleLibrary(initialPage = 1, initialLimit = 12) {
     remoteLoading,
     syncListLoading,
     syncActive,
+    syncPaused,
     syncStatesLoading: !syncStatesHydrated,
     remoteError,
     refresh,

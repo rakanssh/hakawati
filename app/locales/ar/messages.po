@@ -3773,6 +3773,12 @@ msgstr "المزامنة متوقفة مؤقتًا"
 msgid "Sync off"
 msgstr "المزامنة معطّلة"
 
+#: app/pages/home/home.tsx:155
+#: app/pages/home/home.tsx:617
+#: app/pages/tales/home.tsx:274
+msgid "Sync paused"
+msgstr "المزامنة متوقفة"
+
 #: app/pages/tales/home.tsx:120
 msgid "Sync queued"
 msgstr "المزامنة في قائمة الانتظار"

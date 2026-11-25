@@ -73,6 +73,7 @@ export default function TalesHome() {
     error,
     remoteError,
     syncActive,
+    syncPaused,
     syncStatesLoading,
     loadIntoGame,
     page,
@@ -251,7 +252,9 @@ export default function TalesHome() {
               "");
           const thumbnail = isRemote ? null : item.localTale.thumbnail;
           const scenarioHead = isRemote ? null : item.localTale.scenarioHead;
-          const badge = syncActive ? getTaleSyncBadge(item) : "local";
+          const badge = syncActive
+            ? getTaleSyncBadge(item, syncPaused)
+            : "local";
           const hasConflict = badge === "conflict";
           const isSynced =
             syncActive && (isRemote || Boolean(!isRemote && item.sync));
@@ -267,9 +270,11 @@ export default function TalesHome() {
               ? t`Cloud full`
               : badge === "not-synced"
                 ? t`Not synced`
-                : isSynced
-                  ? t`Cloud`
-                  : t`Local`;
+                : badge === "paused"
+                  ? t`Sync paused`
+                  : isSynced
+                    ? t`Cloud`
+                    : t`Local`;
           return (
             <ScenarioPreviewCard
               key={isRemote ? `remote-${id}` : `local-${id}`}

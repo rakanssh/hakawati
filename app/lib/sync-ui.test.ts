@@ -118,4 +118,23 @@ describe("getTaleSyncBadge", () => {
     ).toBe("conflict");
     expect(getTaleSyncBadge(localTale())).toBe("local");
   });
+
+  it("shows linked tales as paused while sync is paused", () => {
+    expect(getTaleSyncBadge(localTale({ status: "push" }), true)).toBe(
+      "paused",
+    );
+    expect(getTaleSyncBadge(localTale({ status: "idle" }), true)).toBe(
+      "paused",
+    );
+    expect(
+      getTaleSyncBadge(
+        localTale({ status: "error", lastErrorCode: "quota_exceeded" }),
+        true,
+      ),
+    ).toBe("cloud-full");
+    expect(getTaleSyncBadge(localTale({ status: "conflict" }), true)).toBe(
+      "conflict",
+    );
+    expect(getTaleSyncBadge(localTale(), true)).toBe("local");
+  });
 });

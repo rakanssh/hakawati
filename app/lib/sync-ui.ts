@@ -72,9 +72,13 @@ export type TaleSyncBadge =
   | "cloud"
   | "conflict"
   | "cloud-full"
-  | "not-synced";
+  | "not-synced"
+  | "paused";
 
-export function getTaleSyncBadge(item: LibraryTaleItem): TaleSyncBadge {
+export function getTaleSyncBadge(
+  item: LibraryTaleItem,
+  syncPaused = false,
+): TaleSyncBadge {
   if (item.source === "remote") return "cloud";
   if (!item.sync) return "local";
   if (item.sync.status === "conflict") return "conflict";
@@ -86,5 +90,5 @@ export function getTaleSyncBadge(item: LibraryTaleItem): TaleSyncBadge {
       ? "cloud-full"
       : "not-synced";
   }
-  return "cloud";
+  return syncPaused ? "paused" : "cloud";
 }
