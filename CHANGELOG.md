@@ -34,6 +34,7 @@ and the app shows it in What's New and Updates.
 - A failed database update is retried at the next launch instead of being skipped.
 - Game Master stat and item changes apply with Gemini and SambaNova, and a change that fails now says so in the story.
 - OpenAI reasoning models such as o1 and o3-mini no longer fail.
+- A story card named in your turn is sent with that turn, not the next one.
 
 ## [v1.4.0] - 2026-11-21
 

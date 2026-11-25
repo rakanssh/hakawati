@@ -343,6 +343,46 @@ describe("promptBuilder", () => {
       expect(storybookMsg?.content).toContain("A fearsome beast");
     });
 
+    it("should trigger cards named in the player's current entry", async () => {
+      const { useTaleStore } = await import("@/store/useTaleStore");
+      vi.mocked(useTaleStore.getState).mockReturnValue({
+        log: [
+          createMockLogEntry({
+            id: "1",
+            role: LogEntryRole.PLAYER,
+            text: "I wake the dragon",
+            mode: LogEntryMode.DO,
+          }),
+        ],
+        oldestLoadedIndex: 0,
+        totalLogCount: 1,
+      } as unknown as TaleStoreType);
+
+      const result = await buildMessage({
+        log: [],
+        stats: [],
+        inventory: [],
+        lastMessage: { text: "I wake the dragon", mode: LogEntryMode.DO },
+        storyCards: [
+          createMockStoryCard({
+            title: "Dragon",
+            content: "A fearsome beast",
+            triggers: ["dragon"],
+          }),
+        ],
+        model: createMockModel(),
+        gameMode: GameMode.STORY_TELLER,
+      });
+
+      expect(
+        result.messages.filter((msg) => msg.content.includes("dragon")),
+      ).toHaveLength(1);
+      expect(
+        result.messages.find((msg) => msg.content.includes("**StoryBook:**"))
+          ?.content,
+      ).toContain("A fearsome beast");
+    });
+
     it("should not trigger cards that are not mentioned", async () => {
       const { useTaleStore } = await import("@/store/useTaleStore");
       vi.mocked(useTaleStore.getState).mockReturnValue({
