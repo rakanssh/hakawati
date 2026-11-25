@@ -86,6 +86,19 @@ import {
 } from "@/services/new-tale-sync";
 import { useTaleLibrary } from "@/hooks/useTaleLibrary";
 import type { LibraryTaleItem } from "@/lib/tale-library";
+import {
+  CloudEncryptionBanner,
+  CloudEncryptionDialogs,
+  CloudEncryptionLink,
+  CloudEncryptionPage,
+  useCloudEncryption,
+  useCloudEncryptionDialogs,
+} from "@/components/layout/settings/cloud-encryption";
+import {
+  countCloudOnlyTales,
+  forgetCloudEncryptionStatus,
+  resolveCloudEncryption,
+} from "@/services/cloud-encryption";
 import { cn, formatBytes, formatExactDateTime } from "@/lib/utils";
 
 const HOSTED_PROFILE_ID = "hosted";
@@ -317,6 +330,29 @@ export default function SettingsCloudSync() {
         .filter((item): item is CloudStorageItem => item !== null),
     [taleLibrary.items],
   );
+  const encryption = useCloudEncryption({
+    profile: hostedProfile,
+    accessToken: accessToken.trim(),
+    active:
+      activeSyncMode === "hosted" &&
+      syncEnabled &&
+      syncUiKind === "signed-in" &&
+      hasUsableToken,
+  });
+  const encryptionDialogs = useCloudEncryptionDialogs();
+  const cloudTalesUnknown =
+    taleLibrary.syncListLoading ||
+    taleLibrary.remoteLoading ||
+    Boolean(taleLibrary.remoteError);
+  const cloudOnlyTales = useMemo(
+    () => (cloudTalesUnknown ? null : countCloudOnlyTales(taleLibrary.items)),
+    [cloudTalesUnknown, taleLibrary.items],
+  );
+  const encryptionReady = encryption.status?.kind === "ready";
+
+  useEffect(() => {
+    if (page === "unlock" && encryptionReady) leave("unlock");
+  }, [encryptionReady, leave, page]);
 
   const refreshProfileState = useCallback(() => {
     void loadSyncProfile(profile.id)
@@ -470,6 +506,7 @@ export default function SettingsCloudSync() {
     signInControllerRef.current?.abort();
     void deleteHostedRefreshToken(HOSTED_PROFILE_ID).catch(() => undefined);
     clearSession();
+    forgetCloudEncryptionStatus();
     void disableSyncProfile(HOSTED_PROFILE_ID, "signed_out").catch(
       () => undefined,
     );
@@ -632,6 +669,24 @@ export default function SettingsCloudSync() {
     }
   }
 
+  async function offerEncryptionSetup(
+    result: Awaited<ReturnType<typeof prepareHostedConnection>>,
+  ) {
+    if (!result.device) return;
+    const status = await resolveCloudEncryption({
+      profile: {
+        ...hostedProfile,
+        accountId: result.account.id,
+        deviceId: result.device.id,
+      },
+      transport: result.transport,
+      capabilities: result.capabilities,
+      maxAgeMs: 0,
+    }).catch(() => null);
+    if (status?.kind === "setup")
+      encryptionDialogs.setDialog({ kind: "setup" });
+  }
+
   async function connect() {
     await run("connect", async () => {
       const result = await prepareHostedConnection();
@@ -655,6 +710,7 @@ export default function SettingsCloudSync() {
         return;
       }
       setStatus(t`Connected as ${label}`);
+      await offerEncryptionSetup(result);
       wakeSyncBackground();
       notifySyncChanged();
       await refreshUndecidedTales(HOSTED_PROFILE_ID, {
@@ -708,6 +764,7 @@ export default function SettingsCloudSync() {
       setSyncEnabled(true);
       setDisabledReason(null);
       setStatus("");
+      await offerEncryptionSetup(result);
       wakeSyncBackground();
       notifySyncChanged();
       await refreshUndecidedTales(HOSTED_PROFILE_ID, {
@@ -878,6 +935,14 @@ export default function SettingsCloudSync() {
         onRemove={(item) => void removeCloudStorageItem(item)}
       />
     );
+  } else if (page === "encryption" || page === "unlock") {
+    content = (
+      <CloudEncryptionPage
+        page={page}
+        status={encryption.status}
+        onDialog={encryptionDialogs.setDialog}
+      />
+    );
   } else if (page === "devices") {
     content = (
       <Devices
@@ -955,13 +1020,11 @@ export default function SettingsCloudSync() {
     );
   } else {
     const signedOut = syncUiKind === "local";
-    const talesUsed = accountUsage?.tales.used ?? 0;
-    const talesLimit = accountUsage?.tales.limit ?? 0;
     const storageUsed = formatMegabytes(accountUsage?.storage.usedBytes ?? 0);
     const storageLimit = formatMegabytes(accountUsage?.storage.limitBytes ?? 0);
     const usageLine =
       showHostedUsage && accountUsage
-        ? t`${talesUsed} of ${talesLimit} tales · ${storageUsed} of ${storageLimit}`
+        ? t`${storageUsed} of ${storageLimit} used`
         : showHostedUsage && usageError
           ? t`Storage usage is unavailable.`
           : null;
@@ -1078,6 +1141,11 @@ export default function SettingsCloudSync() {
             </PlainRow>
           </SetupList>
         ) : null}
+        <CloudEncryptionBanner
+          status={encryption.status}
+          onSetUp={() => encryptionDialogs.setDialog({ kind: "setup" })}
+          onUnlock={() => openPage("unlock")}
+        />
         {signedOut && localTales > 0 ? (
           <p className="-mt-2 px-0.5 text-sm text-muted-foreground">
             {plural(localTales, {
@@ -1087,7 +1155,10 @@ export default function SettingsCloudSync() {
           </p>
         ) : null}
 
-        {canReviewUndecidedTales || showHostedUsage || showHostedDevices ? (
+        {canReviewUndecidedTales ||
+        showHostedUsage ||
+        showHostedDevices ||
+        encryptionReady ? (
           <SetupList>
             {canReviewUndecidedTales ? (
               <LinkRow
@@ -1107,6 +1178,11 @@ export default function SettingsCloudSync() {
                 onClick={() => openPage("storage")}
               />
             ) : null}
+            <CloudEncryptionLink
+              status={encryption.status}
+              migrationFailure={encryption.migrationFailure}
+              onOpen={() => openPage("encryption")}
+            />
             {showHostedDevices ? (
               <LinkRow
                 title={<Trans>Devices</Trans>}
@@ -1248,6 +1324,16 @@ export default function SettingsCloudSync() {
         </DialogContent>
       </Dialog>
 
+      <CloudEncryptionDialogs
+        dialog={encryptionDialogs.dialog}
+        onDialog={encryptionDialogs.setDialog}
+        onClose={encryptionDialogs.close}
+        profile={hostedProfile}
+        transport={encryption.transport}
+        status={encryption.status}
+        cloudOnlyTales={cloudOnlyTales}
+      />
+
       <AlertDialog
         open={deleteTarget !== null}
         onOpenChange={(open) => {
@@ -1303,6 +1389,10 @@ export function CloudSyncTitle({ page }: { page: string }) {
       return <Trans>Tales in the cloud</Trans>;
     case "devices":
       return <Trans>Devices</Trans>;
+    case "encryption":
+      return <Trans>Encryption</Trans>;
+    case "unlock":
+      return <Trans>Unlock this device</Trans>;
     case "service":
       return <Trans>Cloud service</Trans>;
     default:
@@ -1355,32 +1445,16 @@ function UsageBar({
   );
 }
 
-function UsageBars({ usage }: { usage: HostedAccountUsage }) {
+function StorageUsageBar({ usage }: { usage: HostedAccountUsage }) {
   const { t } = useLingui();
-  const talesUsed = usage.tales.used;
-  const talesLimit = usage.tales.limit;
-  const storageUsed = formatMegabytes(usage.storage.usedBytes);
-  const storageLimit = formatMegabytes(usage.storage.limitBytes);
   return (
-    <>
-      <UsageBar
-        label={<Trans>Tales</Trans>}
-        used={talesUsed}
-        limit={talesLimit}
-        percent={usagePercent(talesUsed, talesLimit)}
-        ariaLabel={t`Tale usage`}
-      />
-      <UsageBar
-        label={<Trans>Storage</Trans>}
-        used={storageUsed}
-        limit={storageLimit}
-        percent={usagePercent(
-          usage.storage.usedBytes,
-          usage.storage.limitBytes,
-        )}
-        ariaLabel={t`Storage usage`}
-      />
-    </>
+    <UsageBar
+      label={<Trans>Storage</Trans>}
+      used={formatMegabytes(usage.storage.usedBytes)}
+      limit={formatMegabytes(usage.storage.limitBytes)}
+      percent={usagePercent(usage.storage.usedBytes, usage.storage.limitBytes)}
+      ariaLabel={t`Storage usage`}
+    />
   );
 }
 
@@ -1469,7 +1543,7 @@ function CloudTales({
     <div className="flex flex-col gap-6">
       {usage ? (
         <div className="flex flex-col gap-3 rounded-xs border border-border/70 bg-background/60 p-3.5">
-          <UsageBars usage={usage} />
+          <StorageUsageBar usage={usage} />
         </div>
       ) : null}
       <div className="flex flex-col gap-2">
@@ -1477,7 +1551,7 @@ function CloudTales({
           {items.map((item) => (
             <div key={item.key} className={itemRowClass}>
               <RowText
-                title={item.name}
+                title={item.name || <Trans>Locked tale</Trans>}
                 detail={`${formatBytes(item.storageBytes)} · ${formatExactDateTime(item.updatedAt)}`}
               />
               <Button

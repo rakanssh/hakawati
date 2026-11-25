@@ -17,6 +17,8 @@ type SyncSettingsPersistedState = Pick<
   | "deletedAccountIds"
 >;
 
+export type CloudSyncPause = "setup" | "locked" | "downgraded" | "unsupported";
+
 export interface SyncSettingsStore {
   cloudBaseUrl: string;
   personalBaseUrl: string;
@@ -34,6 +36,7 @@ export interface SyncSettingsStore {
   deletedAccountIds: string[];
   hostedRefreshFailed: boolean;
   cloudUpdateRequired: boolean;
+  cloudSyncPaused: CloudSyncPause | null;
   setCloudBaseUrl: (baseUrl: string) => void;
   setPersonalBaseUrl: (baseUrl: string) => void;
   setActiveSyncMode: (mode: "hosted" | "personal") => void;
@@ -50,6 +53,7 @@ export interface SyncSettingsStore {
   }) => void;
   setHostedRefreshFailed: (hostedRefreshFailed: boolean) => void;
   setCloudUpdateRequired: (cloudUpdateRequired: boolean) => void;
+  setCloudSyncPaused: (cloudSyncPaused: CloudSyncPause | null) => void;
   clearSession: () => void;
   setDeviceId: (deviceId: string) => void;
   getOrCreateHostedDeviceId: (accountId: string) => string;
@@ -102,6 +106,7 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
       deletedAccountIds: [],
       hostedRefreshFailed: false,
       cloudUpdateRequired: false,
+      cloudSyncPaused: null,
       setCloudBaseUrl: (cloudBaseUrl) =>
         set((state) =>
           cloudBaseUrl === state.cloudBaseUrl
@@ -113,6 +118,7 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
                 hasRefreshToken: false,
                 hostedRefreshFailed: false,
                 cloudUpdateRequired: false,
+                cloudSyncPaused: null,
                 accountId: "",
                 accountDisplayName: "",
                 accountEmail: "",
@@ -153,12 +159,14 @@ export const useSyncSettingsStore = create<SyncSettingsStore>()(
         set({ hostedRefreshFailed }),
       setCloudUpdateRequired: (cloudUpdateRequired) =>
         set({ cloudUpdateRequired }),
+      setCloudSyncPaused: (cloudSyncPaused) => set({ cloudSyncPaused }),
       clearSession: () =>
         set({
           accessToken: "",
           accessTokenExpiresAt: null,
           hasRefreshToken: false,
           hostedRefreshFailed: false,
+          cloudSyncPaused: null,
           accountId: "",
           accountDisplayName: "",
           accountEmail: "",

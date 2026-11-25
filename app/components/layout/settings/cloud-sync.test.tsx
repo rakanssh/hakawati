@@ -11,6 +11,11 @@ import {
   decideAllTaleSyncPreferences,
   listUndecidedTales,
 } from "@/services/new-tale-sync";
+import {
+  forgetCloudEncryptionStatus,
+  useCloudEncryptionStore,
+  type CloudEncryptionStatus,
+} from "@/services/cloud-encryption";
 
 i18n.load("en", {});
 i18n.activate("en");
@@ -83,6 +88,7 @@ const syncServiceMocks = vi.hoisted(() => ({
 
 const taleLibraryMocks = vi.hoisted(() => ({
   removeLibraryTaleFromCloud: vi.fn(),
+  remoteError: null as unknown,
 }));
 
 const syncWakeMocks = vi.hoisted(() => ({
@@ -95,6 +101,28 @@ const toastMocks = vi.hoisted(() => ({
   error: vi.fn(),
   success: vi.fn(),
 }));
+
+const tauriCore = vi.hoisted(() => ({
+  invoke: vi.fn(async (command: string) => {
+    if (command === "cloud_key_new_recovery") {
+      return {
+        recoveryKey: "NEWK-EYAB-CDEF-GHJK-MNPQ-RSTV-WXYZ",
+        recoveryWrappedKey: {},
+        keyProof: "proof",
+      };
+    }
+    if (command === "cloud_key_begin_setup") {
+      return {
+        keyId: "key-1",
+        keyCheck: "check",
+        recoveryWrappedKey: {},
+        recoveryKey: "ABCD-EFGH-JKMN-PQRS-TVWX-YZ01-2345",
+      };
+    }
+    throw new Error("Native commands are unavailable");
+  }),
+}));
+vi.mock("@tauri-apps/api/core", () => tauriCore);
 
 vi.mock("@tauri-apps/api/app", () => ({
   getVersion: vi.fn().mockResolvedValue("0.15.2"),
@@ -147,7 +175,8 @@ vi.mock("@/hooks/useTaleLibrary", () => ({
     ],
     total: 12,
     remoteLoading: false,
-    remoteError: null,
+    syncListLoading: false,
+    remoteError: taleLibraryMocks.remoteError,
     removeLibraryTaleFromCloud: taleLibraryMocks.removeLibraryTaleFromCloud,
   }),
 }));
@@ -243,8 +272,7 @@ describe("SettingsCloudSync storage usage", () => {
     syncRepoMocks.setSyncProfileDisabled.mockResolvedValue(undefined);
     vi.mocked(deleteHostedRefreshToken).mockResolvedValue(undefined);
     syncServiceMocks.fetchHostedAccountUsage.mockResolvedValue({
-      tales: { used: 3, limit: 50 },
-      storage: { usedBytes: 1.5 * 1024 * 1024, limitBytes: 10 * 1024 * 1024 },
+      storage: { usedBytes: 1.5 * 1024 * 1024, limitBytes: 30 * 1024 * 1024 },
     });
     syncServiceMocks.listHostedDevices.mockResolvedValue([
       device("device-1", "Laptop"),
@@ -334,9 +362,7 @@ describe("SettingsCloudSync storage usage", () => {
     const view = render();
     await flush();
 
-    expect(document.body.textContent).toContain(
-      "3 of 50 tales · 1.5 MB of 10 MB",
-    );
+    expect(document.body.textContent).toContain("1.5 MB of 30 MB used");
     // The bars stay on the cloud tales page.
     expect(
       document.body.querySelectorAll('[data-slot="progress"]'),
@@ -362,9 +388,9 @@ describe("SettingsCloudSync storage usage", () => {
     const bars = [
       ...document.body.querySelectorAll('[data-slot="progress-indicator"]'),
     ];
-    expect(bars).toHaveLength(2);
-    expect(bars[0]?.getAttribute("style")).toContain("translateX(-94%)");
-    expect(bars[1]?.getAttribute("style")).toContain("translateX(-85%)");
+    expect(bars).toHaveLength(1);
+    expect(bars[0]?.getAttribute("style")).toContain("translateX(-95%)");
+    expect(document.body.textContent).toContain("1.5 MB of 30 MB");
 
     const remove = [...document.body.querySelectorAll("button")].find(
       (button) => button.textContent?.includes("Remove from cloud"),
@@ -799,6 +825,237 @@ describe("SettingsCloudSync storage usage", () => {
     expect(title()).toBe("Devices");
 
     vi.mocked(listUndecidedTales).mockResolvedValue([]);
+    view.cleanup();
+  });
+});
+
+describe("SettingsCloudSync encryption", () => {
+  const info = {
+    state: "client" as const,
+    keyId: "key-1",
+    keyCheck: "check",
+    recoveryWrappedKey: null,
+    serverTaleCount: 0,
+  };
+
+  function withStatus(status: CloudEncryptionStatus) {
+    useCloudEncryptionStore
+      .getState()
+      .setStatus("https://sync.example account-1", status);
+  }
+
+  function click(label: string) {
+    const button = [...document.body.querySelectorAll("button")].find(
+      (candidate) => candidate.textContent?.startsWith(label),
+    );
+    if (!button) throw new Error(`${label} did not render`);
+    act(() => {
+      button.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+  }
+
+  beforeEach(() => {
+    taleLibraryMocks.remoteError = null;
+    syncServiceMocks.createSyncTransport.mockReturnValue({});
+    (
+      globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }
+    ).IS_REACT_ACT_ENVIRONMENT = true;
+    vi.clearAllMocks();
+    forgetCloudEncryptionStatus();
+    Object.assign(syncStoreState, {
+      cloudBaseUrl: "https://sync.example",
+      activeSyncMode: "hosted",
+      accessToken: "token",
+      accessTokenExpiresAt: null,
+      accountId: "account-1",
+      hostedDeviceIdsByAccountId: { "account-1": "device-1" },
+      accountDisplayName: "Player",
+      accountEmail: "player@example.com",
+      hasRefreshToken: true,
+      cloudUpdateRequired: false,
+    });
+    syncRepoMocks.getSyncProfile.mockResolvedValue({
+      enabled: true,
+      disabledReason: null,
+    });
+    syncServiceMocks.fetchHostedAccountUsage.mockResolvedValue({
+      storage: { usedBytes: 0, limitBytes: 30 * 1024 * 1024 },
+    });
+    syncServiceMocks.listHostedDevices.mockResolvedValue([device("device-1")]);
+  });
+
+  it("asks a locked desktop to unlock with a code or the recovery key", async () => {
+    withStatus({ kind: "locked", reason: "missing", info });
+    const view = render();
+    await flush();
+
+    expect(document.body.textContent).toContain("Unlock this device to sync");
+    click("Unlock");
+    await flush();
+    expect(document.body.textContent).toContain("Show a code");
+    expect(document.body.textContent).toContain("Enter recovery key");
+    expect(document.body.textContent).not.toContain("Scan a code");
+
+    click("Reset cloud saves");
+    await flush();
+    expect(document.body.textContent).toContain(
+      "1 cloud tale isn't on this device and will be lost.",
+    );
+
+    view.cleanup();
+  });
+
+  it("won't reset while cloud tales can't be counted", async () => {
+    taleLibraryMocks.remoteError = new Error("offline");
+    withStatus({ kind: "locked", reason: "missing", info });
+    const view = render();
+    await flush();
+
+    click("Unlock");
+    await flush();
+    click("Reset cloud saves");
+    await flush();
+    expect(document.body.textContent).toContain(
+      "Cloud tales couldn’t be loaded.",
+    );
+    const reset = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent === "Reset",
+    );
+    expect(reset?.disabled).toBe(true);
+
+    view.cleanup();
+  });
+
+  it("opens encryption settings once this device is unlocked", async () => {
+    withStatus({
+      kind: "ready",
+      info,
+      session: {
+        serverOrigin: "https://sync.example",
+        accountId: "account-1",
+        keyId: "key-1",
+        acceptServerTales: false,
+      },
+    });
+    const view = render();
+    await flush();
+
+    expect(document.body.textContent).not.toContain("Unlock this device");
+    click("Encryption");
+    await flush();
+    expect(document.body.textContent).toContain("Show a code");
+    expect(document.body.textContent).toContain("New recovery key");
+    expect(document.body.textContent).toContain("Reset cloud saves");
+
+    view.cleanup();
+  });
+
+  it("says when encrypting cloud saves stopped", async () => {
+    const scope = "https://sync.example account-1";
+    withStatus({
+      kind: "ready",
+      info: { ...info, state: "migrating", serverTaleCount: 1 },
+      session: {
+        serverOrigin: "https://sync.example",
+        accountId: "account-1",
+        keyId: "key-1",
+        acceptServerTales: true,
+      },
+    });
+    const { setMigrationFailure } = useCloudEncryptionStore.getState();
+    const view = render();
+    try {
+      await flush();
+      expect(document.body.textContent).toContain("Encrypting cloud saves…");
+
+      act(() => setMigrationFailure(scope, "quota_exceeded"));
+      expect(document.body.textContent).toContain("Cloud full");
+      expect(document.body.textContent).not.toContain(
+        "Encrypting cloud saves…",
+      );
+
+      act(() => setMigrationFailure(scope, "content_conflict"));
+      expect(document.body.textContent).toContain(
+        "Couldn’t encrypt some cloud saves",
+      );
+
+      act(() => setMigrationFailure(scope, null));
+      expect(document.body.textContent).toContain("Encrypting cloud saves…");
+    } finally {
+      setMigrationFailure(scope, null);
+      view.cleanup();
+    }
+  });
+
+  it("shows a new recovery key before the server replaces the old one", async () => {
+    const put = vi.fn().mockResolvedValue({
+      state: "client",
+      keyId: "key-1",
+      keyCheck: "check",
+      recoveryWrappedKey: {},
+      serverTaleCount: 0,
+    });
+    syncServiceMocks.createSyncTransport.mockReturnValue({ put });
+    withStatus({
+      kind: "ready",
+      info,
+      session: {
+        serverOrigin: "https://sync.example",
+        accountId: "account-1",
+        keyId: "key-1",
+        acceptServerTales: false,
+      },
+    });
+    const view = render();
+    await flush();
+
+    click("Encryption");
+    await flush();
+    click("New recovery key");
+    await flush();
+    click("Create");
+    await flush();
+    expect(document.body.textContent).toContain(
+      "NEWK-EYAB-CDEF-GHJK-MNPQ-RSTV-WXYZ",
+    );
+    expect(put).not.toHaveBeenCalled();
+
+    const saved = document.body.querySelector<HTMLElement>('[role="checkbox"]');
+    act(() => {
+      saved?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    click("Continue");
+    await flush();
+    expect(put).toHaveBeenCalledWith("/v1/accounts/me/cloud-key/recovery", {
+      keyProof: "proof",
+      recoveryWrappedKey: {},
+    });
+
+    view.cleanup();
+  });
+
+  it("shows the recovery key once and waits for the player to save it", async () => {
+    withStatus({
+      kind: "setup",
+      info: { ...info, state: "server", keyId: null },
+    });
+    const view = render();
+    await flush();
+
+    click("Set up");
+    await flush();
+    expect(document.body.textContent).toContain("Save your recovery key");
+    expect(document.body.textContent).toContain(
+      "ABCD-EFGH-JKMN-PQRS-TVWX-YZ01-2345",
+    );
+    expect(tauriCore.invoke).toHaveBeenCalledWith("cloud_key_begin_setup", {
+      scope: { serverOrigin: "https://sync.example", accountId: "account-1" },
+    });
+    const next = [...document.body.querySelectorAll("button")].find(
+      (button) => button.textContent === "Continue",
+    );
+    expect(next?.disabled).toBe(true);
+
     view.cleanup();
   });
 });

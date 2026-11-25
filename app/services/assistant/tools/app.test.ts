@@ -31,6 +31,7 @@ vi.mock("@/store/useUpdateStore", () => ({
 }));
 
 const { createAppTools } = await import("./app");
+const { AI_INSTRUCTIONS_PROMPT } = await import("@/prompts");
 const { useScenarioDraftStore } = await import("@/store/useScenarioDraftStore");
 const { useTaleStore } = await import("@/store/useTaleStore");
 const { useThemeStore } = await import("@/store/useThemeStore");
@@ -148,6 +149,33 @@ describe("settings", () => {
     await expect(
       call("settings", { action: "set", values: { theme: "neon" } }),
     ).rejects.toThrow(/theme must be one of/);
+  });
+
+  it("shows a prompt's built-in text until it is replaced", async () => {
+    const read = async () =>
+      (
+        (await call("settings", {
+          action: "get",
+          keys: ["storytellerPrompt"],
+        })) as Record<string, Record<string, unknown>>
+      ).storytellerPrompt;
+    expect(await read()).toMatchObject({
+      value: AI_INSTRUCTIONS_PROMPT,
+      builtIn: true,
+    });
+
+    await call("settings", {
+      action: "set",
+      values: { storytellerPrompt: "Narrate in verse." },
+    });
+    expect(await read()).toMatchObject({ value: "Narrate in verse." });
+    expect(await read()).not.toHaveProperty("builtIn");
+
+    await call("settings", {
+      action: "set",
+      values: { storytellerPrompt: null },
+    });
+    expect(await read()).toMatchObject({ builtIn: true });
   });
 
   it("says when updates come from an app store", async () => {

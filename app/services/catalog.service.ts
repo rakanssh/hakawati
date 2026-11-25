@@ -39,6 +39,7 @@ import {
   type ScenarioAnswers,
 } from "@/lib/scenario-questions";
 import { initTale } from "@/services/tale.service";
+import { CLOUD_ENCRYPTION_SCHEME } from "@/services/cloud-keys";
 import {
   markNewTaleSyncPreference,
   type NewTaleSyncPolicy,
@@ -146,6 +147,9 @@ export function createCatalogTransport({
       headers: {
         ...HAKAWATI_CLIENT_HEADERS,
         ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+        ...(path.startsWith("/v1/assets/")
+          ? { "X-Hakawati-Cloud-Encryption": CLOUD_ENCRYPTION_SCHEME }
+          : {}),
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),

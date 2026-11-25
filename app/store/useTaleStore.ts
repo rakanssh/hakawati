@@ -35,7 +35,6 @@ export interface TaleStoreType {
   logWindowSize: number;
   isLoadingOlderEntries: boolean;
   setName: (name: string) => void;
-  setDescription: (description: string) => void;
   setComponents: (components: PromptComponent[]) => void;
   addComponent: (type: PromptComponentType) => void;
   updateComponent: (id: string, content: string) => void;
@@ -244,7 +243,6 @@ export const useTaleStore = create<TaleStoreType>()((set) => ({
   isLoadingOlderEntries: false,
   setId: (id: string) => set({ id }),
   setName: (name: string) => set({ name }),
-  setDescription: (description: string) => set({ description }),
   setComponents: (components: PromptComponent[]) =>
     set({
       components: normalizePromptComponents(components, TALE_COMPONENT_TYPES),

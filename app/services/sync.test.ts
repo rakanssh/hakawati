@@ -276,6 +276,7 @@ describe("sync transport", () => {
           "X-Hakawati-Api-Version": "1",
           "X-Hakawati-Client-Version": HAKAWATI_CLIENT_VERSION,
           "X-Hakawati-Platform": "web",
+          "X-Hakawati-Cloud-Encryption": "client-v1",
           "X-Hakawati-Device-Id": "device-1",
           "Idempotency-Key": "idem-1",
         },
@@ -306,6 +307,7 @@ describe("sync transport", () => {
           "X-Hakawati-Api-Version": "1",
           "X-Hakawati-Client-Version": HAKAWATI_CLIENT_VERSION,
           "X-Hakawati-Platform": "web",
+          "X-Hakawati-Cloud-Encryption": "client-v1",
           "Idempotency-Key": "idem-2",
         },
       }),
@@ -968,6 +970,44 @@ describe("sync transport", () => {
         }),
       },
     ]);
+  });
+
+  it("records a cover refused for storage as a full cloud", async () => {
+    taleRepo.exportTalePackage.mockResolvedValue(samplePackage());
+    const transport = {
+      ...transportFixture(),
+      post: vi.fn(async (path: string) => {
+        if (path === "/v1/assets/cover-upload-intents") {
+          throw new SyncHttpError("Quota exceeded.", 409, "quota_exceeded");
+        }
+        return { id: "remote-tale", contentRev: 1, metadataRev: 1 };
+      }),
+    };
+
+    await expect(
+      uploadTalePackage({
+        profile: {
+          id: "cloud",
+          baseUrl: "https://sync.example",
+          mode: "hosted",
+        },
+        transport,
+        localTaleId: "local-tale",
+        idempotencyKey: "idem-cover-full",
+        capabilities: capabilitiesFixture(),
+      }),
+    ).rejects.toMatchObject({ code: "quota_exceeded" });
+
+    expect(transport.post.mock.calls.map(([path]) => path)).toEqual([
+      "/v1/assets/cover-upload-intents",
+    ]);
+    expect(syncRepo.setTaleSyncStatus).toHaveBeenCalledWith(
+      expect.objectContaining({
+        localTaleId: "local-tale",
+        pendingStatus: "error",
+        lastErrorCode: "quota_exceeded",
+      }),
+    );
   });
 
   it.each(["quota_exceeded", "package_too_large", "413"])(
@@ -2579,6 +2619,71 @@ describe("sync transport", () => {
         pendingStatus: "idle",
       }),
     );
+  });
+
+  it("imports a server-encrypted tale with the cover it downloads", async () => {
+    const coverId = "0b9f4c1e-7d2a-4e6b-8c3d-5a1f2e3d4c5b";
+    const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 16, 74, 70]);
+    taleRepo.importTalePackage.mockResolvedValueOnce("local-imported");
+    http.fetch.mockImplementation(async (url: string) =>
+      url.endsWith("/download")
+        ? { ok: true, arrayBuffer: async () => jpeg.slice().buffer }
+        : jsonResponse({
+            id: "remote-tale",
+            contentRev: 4,
+            metadataRev: 5,
+            turnCount: 1,
+            encryption: "server",
+            package: toSyncTalePackage(samplePackage(), {
+              mode: "hosted",
+              coverAssetId: coverId,
+            }),
+            cover: {
+              assetId: coverId,
+              visibility: "private",
+              encryption: "server",
+              contentType: "image/jpeg",
+              byteSize: jpeg.byteLength,
+              sha256: "0".repeat(64),
+              width: 1,
+              height: 1,
+              downloadUrl: `/v1/assets/${coverId}/download`,
+              urlExpiresAt: null,
+            },
+          }),
+    );
+    const profile = {
+      id: "cloud",
+      baseUrl: "https://sync.example",
+      mode: "hosted" as const,
+      accountId: "account-1",
+      deviceId: "device-1",
+    };
+
+    await importRemoteTalePackage({
+      profile,
+      transport: createSyncTransport({ profile, accessToken: "token" }),
+      remoteTaleId: "remote-tale",
+    });
+
+    expect(http.fetch).toHaveBeenCalledWith(
+      `https://sync.example/v1/assets/${coverId}/download`,
+      expect.objectContaining({
+        method: "GET",
+        headers: expect.objectContaining({ Authorization: "Bearer token" }),
+      }),
+    );
+    expect(tauriCore.invoke).not.toHaveBeenCalled();
+    const imported = taleRepo.importTalePackage.mock.calls[0][0];
+    expect(imported.tale.thumbnailAssetId).toBe(coverId);
+    expect(imported.assets).toEqual([
+      {
+        id: coverId,
+        role: "thumbnail",
+        contentType: "image/jpeg",
+        dataBase64: Buffer.from(jpeg).toString("base64"),
+      },
+    ]);
   });
 
   it("keeps both by copying the local tale, uploading it, and restoring the original remote branch", async () => {

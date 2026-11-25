@@ -1,4 +1,5 @@
 import { useTaleStore } from "@/store/useTaleStore";
+import { waitForPlayActivity } from "@/store/usePlayActivityStore";
 import { cn } from "@/lib/utils";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout";
@@ -37,8 +38,12 @@ import { useHideOnScroll } from "@/hooks/useHideOnScroll";
 import { useZoom } from "@/hooks/useZoom";
 import { FONT_SIZE_MAX, FONT_SIZE_MIN } from "@/lib/appearance-limits";
 import { useAutoSave } from "@/hooks/useAutoSave";
+import { showSaveError } from "@/lib/save-errors";
 import { usePlaySession } from "@/hooks/usePlaySession";
-import { holdOpenTaleForPlay } from "@/services/open-tale-sync";
+import {
+  holdOpenTaleForPlay,
+  holdOpenTaleWhile,
+} from "@/services/open-tale-sync";
 import { loadOlderLogEntries } from "@/services/tale-log";
 import { useTtsPlayback } from "@/hooks/useTtsPlayback";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -179,6 +184,15 @@ export default function Play() {
     debounceMs: 2000,
     disabled: loading,
     warnOnLeave: true,
+    onError: showSaveError,
+    saveWhenEnabled: useCallback(
+      () =>
+        holdOpenTaleWhile(async () => {
+          await waitForPlayActivity("narrating");
+          if (useTaleStore.getState().id === taleId) await save(taleId);
+        }),
+      [save, taleId],
+    ),
   });
 
   useEffect(() => holdOpenTaleForPlay(), []);
@@ -256,7 +270,7 @@ export default function Play() {
       updateLogEntry(entryId, updates);
       void editEntry(taleId, entryId, updates).catch((error) => {
         console.error("Failed to save edited log entry:", error);
-        toast.error("Failed to save progress");
+        showSaveError();
       });
     },
     [editEntry, taleId, updateLogEntry],

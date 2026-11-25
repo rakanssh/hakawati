@@ -73,6 +73,7 @@ export function LogBlockBubble({
 
   const actions: LLMAction[] = block.entries.flatMap((e) => e.actions || []);
   const latestError = block.entries.at(-1)?.error;
+  const hasActionError = block.entries.some((entry) => entry.isActionError);
   const thinkingEntries = block.entries
     .map((entry, entryIndex) => ({
       id: entry.id,
@@ -205,6 +206,9 @@ export function LogBlockBubble({
         )}
       </div>
       {latestError !== undefined && <LogEntryError error={latestError} />}
+      {hasActionError && (
+        <LogEntryError error={t`A stat or item change failed`} />
+      )}
       {showThinkingSection ? (
         <Collapsible
           open={thinkingOpen}

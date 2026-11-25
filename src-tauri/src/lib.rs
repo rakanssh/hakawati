@@ -1,4 +1,5 @@
 mod chatgpt;
+mod cloud_key;
 mod database_transaction;
 mod migration_backup;
 mod oauth_loopback;
@@ -292,6 +293,11 @@ mod tests {
                     "create_assistant_chats",
                     include_str!("../migrations/008_create_assistant_chats.sql"),
                 ),
+                (
+                    9_i64,
+                    "add_sync_pending_writes",
+                    include_str!("../migrations/009_add_sync_pending_writes.sql"),
+                ),
             ] {
                 sqlx::raw_sql(migration).execute(&pool).await.unwrap();
                 sqlx::query(
@@ -545,6 +551,12 @@ pub fn run() {
                 sql: include_str!("../migrations/008_create_assistant_chats.sql"),
                 kind: MigrationKind::Up,
             },
+            Migration {
+                version: 9,
+                description: "add_sync_pending_writes",
+                sql: include_str!("../migrations/009_add_sync_pending_writes.sql"),
+                kind: MigrationKind::Up,
+            },
         ];
 
         app.handle().plugin(
@@ -558,6 +570,9 @@ pub fn run() {
 
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+
+    #[cfg(mobile)]
+    let builder = builder.plugin(tauri_plugin_barcode_scanner::init());
 
     #[cfg(target_os = "android")]
     let builder = builder.on_window_event(|window, event| {
@@ -579,6 +594,7 @@ pub fn run() {
         .manage(oauth_loopback::OAuthLoopbackState::default())
         .manage(oauth_loopback::AppForeground::default())
         .manage(chatgpt::ChatGptState::default())
+        .manage(cloud_key::CloudKeyState::default())
         .manage(database_transaction::DatabaseTransactions::default())
         .plugin(speech_recorder::init())
         .plugin(sign_in_sheet::init())
@@ -590,6 +606,26 @@ pub fn run() {
             chatgpt::chatgpt_sign_in,
             chatgpt::chatgpt_sign_out,
             chatgpt::chatgpt_request,
+            cloud_key::cloud_key_local,
+            cloud_key::cloud_key_begin_setup,
+            cloud_key::cloud_key_adopt,
+            cloud_key::cloud_key_discard_pending,
+            cloud_key::cloud_key_forget,
+            cloud_key::cloud_key_mark_migrated,
+            cloud_key::cloud_key_proof,
+            cloud_key::cloud_key_new_recovery,
+            cloud_key::cloud_key_recover,
+            cloud_key::cloud_tale_encrypt,
+            cloud_key::cloud_tale_decrypt,
+            cloud_key::cloud_summaries_decrypt,
+            cloud_key::cloud_cover_encrypt,
+            cloud_key::cloud_cover_decrypt,
+            cloud_key::cloud_pairing_show,
+            cloud_key::cloud_pairing_scan,
+            cloud_key::cloud_pairing_confirm,
+            cloud_key::cloud_pairing_seal,
+            cloud_key::cloud_pairing_open,
+            cloud_key::cloud_pairing_end,
             migration_recovery_status,
             database_transaction::begin_database_transaction,
             database_transaction::query_database_transaction,

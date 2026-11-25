@@ -8,6 +8,9 @@ interface UseAutoSaveOptions<T> {
   disabled?: boolean;
   warnOnLeave?: boolean;
   scopeKey?: string;
+  onError?: (error: unknown) => void;
+  // Leaving while disabled skips the stale snapshot and calls this instead.
+  saveWhenEnabled?: () => Promise<void>;
 }
 
 interface UseAutoSaveReturn {
@@ -25,6 +28,8 @@ export function useAutoSave<T>(
     disabled = false,
     warnOnLeave = true,
     scopeKey,
+    onError,
+    saveWhenEnabled,
   } = options;
 
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -37,6 +42,12 @@ export function useAutoSave<T>(
     disabled: boolean;
   } | null>(null);
   const isFirstRenderRef = useRef(true);
+  const onErrorRef = useRef(onError);
+  const saveWhenEnabledRef = useRef(saveWhenEnabled);
+  useEffect(() => {
+    onErrorRef.current = onError;
+    saveWhenEnabledRef.current = saveWhenEnabled;
+  }, [onError, saveWhenEnabled]);
 
   const saveNow = useCallback(async () => {
     if (debounceTimerRef.current) {
@@ -98,6 +109,7 @@ export function useAutoSave<T>(
     debounceTimerRef.current = setTimeout(() => {
       saveNow().catch((error) => {
         console.error("Auto-save failed:", error);
+        onErrorRef.current?.(error);
       });
     }, debounceMs);
 
@@ -114,11 +126,21 @@ export function useAutoSave<T>(
       if (pending && !pending.disabled) {
         // This callback owns the previous scope's snapshot; it must not read
         // whichever tale happens to be active when the write is processed.
-        void pending
-          .run()
-          .catch((error) => console.error("Auto-save on leave failed:", error));
+        void pending.run().catch((error) => {
+          console.error("Auto-save on leave failed:", error);
+          onErrorRef.current?.(error);
+        });
       } else {
         pendingSaveRef.current = null;
+        const saveLater = pending && saveWhenEnabledRef.current;
+        if (!saveLater) return;
+        const saving = saveLater().catch((error) => {
+          console.error("Auto-save after generation failed:", error);
+          onErrorRef.current?.(error);
+        });
+        const flush = () => saving;
+        pendingAutoSaves.add(flush);
+        void saving.then(() => pendingAutoSaves.delete(flush));
       }
     },
     [scopeKey],

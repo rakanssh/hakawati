@@ -153,6 +153,12 @@ export const MODE_PROPERTY = {
   enum: ["story_teller", "game_master"],
 } as const;
 
+export const AI_INSTRUCTIONS_PROPERTY = {
+  type: "string",
+  description:
+    "A complete prompt for the narrator, used instead of the default.",
+} as const;
+
 export const modeName = (mode: GameMode | string) =>
   mode === GameMode.GM ? "game_master" : "story_teller";
 

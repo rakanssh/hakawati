@@ -1,7 +1,6 @@
-import { Textarea } from "@/components/ui/textarea";
 import { useTaleStore } from "@/store/useTaleStore";
-import { countTokens } from "@/services/llm/tokenCounter";
 import { usePersistTale } from "@/hooks/useGameSaves";
+import { showSaveError } from "@/lib/save-errors";
 import { GameMode } from "@/types";
 import { PromptComponentsEditor } from "@/components/prompt-components/PromptComponentsEditor";
 import { TALE_COMPONENT_TYPES } from "@/lib/prompt-components";
@@ -14,9 +13,7 @@ import {
 export default function SettingsTale() {
   const { t } = useLingui();
   const {
-    description,
     components,
-    setDescription,
     addComponent,
     updateComponent,
     removeComponent,
@@ -26,31 +23,16 @@ export default function SettingsTale() {
   } = useTaleStore();
   const { save } = usePersistTale();
 
-  const descriptionChars = description.length;
-  const descriptionTokens = countTokens(description);
-
   const handleGameModeChange = (value: GameMode) => {
     setGameMode(value);
-    save(id);
+    save(id).catch((error) => {
+      console.error("Failed to save the tale's mode:", error);
+      showSaveError();
+    });
   };
 
   return (
     <div className="flex flex-col gap-6">
-      <SetupSection title={<Trans>AI components</Trans>}>
-        <PromptComponentsEditor
-          components={components}
-          allowedTypes={TALE_COMPONENT_TYPES}
-          gameMode={gameMode}
-          showTitle={false}
-          description={
-            <Trans>These optional components are sent to the AI.</Trans>
-          }
-          onAdd={addComponent}
-          onUpdate={updateComponent}
-          onRemove={removeComponent}
-        />
-      </SetupSection>
-
       <SetupSection title={<Trans>Mode</Trans>}>
         <Segmented<GameMode>
           fill
@@ -77,23 +59,19 @@ export default function SettingsTale() {
         </p>
       </SetupSection>
 
-      <SetupSection title={<Trans>Library summary</Trans>}>
-        <Textarea
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          rows={6}
-          aria-label={t`Library summary`}
+      <SetupSection title={<Trans>AI components</Trans>}>
+        <PromptComponentsEditor
+          components={components}
+          allowedTypes={TALE_COMPONENT_TYPES}
+          gameMode={gameMode}
+          showTitle={false}
+          description={
+            <Trans>These optional components are sent to the AI.</Trans>
+          }
+          onAdd={addComponent}
+          onUpdate={updateComponent}
+          onRemove={removeComponent}
         />
-        <p className="flex flex-wrap justify-between gap-x-3 px-0.5 text-sm text-muted-foreground">
-          <span>
-            <Trans>Shown in your library, not sent to the AI.</Trans>
-          </span>
-          <span className="tabular-nums">
-            <Trans>
-              {descriptionChars} characters · ~{descriptionTokens} tokens
-            </Trans>
-          </span>
-        </p>
       </SetupSection>
     </div>
   );

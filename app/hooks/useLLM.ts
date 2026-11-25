@@ -159,11 +159,15 @@ export function useLLM() {
           const { convertToolCallsToActions } = await import(
             "@/services/llm/tools"
           );
-          const actions = convertToolCallsToActions(res.tool_calls);
+          const { actions, failed } = convertToolCallsToActions(res.tool_calls);
           if (controller.signal.aborted)
             return abortedResult(controller.signal);
           if (actions.length > 0) {
             callbacks.onActionsReady(actions);
+          }
+          if (failed.length > 0) {
+            console.warn("Unreadable tool calls:", failed);
+            callbacks.onActionParseError();
           }
         }
         console.debug(`Response from ${model.id}:`, res);

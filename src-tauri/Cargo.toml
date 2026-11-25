@@ -1,6 +1,6 @@
 [package]
 name = "hakawati"
-version = "1.4.0"
+version = "1.5.0"
 description = "AI-powered, text-based RPG client"
 authors = ["rakanssh"]
 edition = "2021"
@@ -33,17 +33,23 @@ tauri-plugin-http = "2.8.3"
 tauri-plugin-process = "2.3.1"
 aes-gcm = "0.10"
 base64 = "0.22.1"
+hkdf = "0.12"
+hmac = "0.12"
 jsonwebtoken = { version = "10", default-features = false, features = ["rust_crypto"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream"] }
 tokio = { version = "1", features = ["sync", "time", "macros"] }
 tokio-util = "0.7"
 uuid = { version = "1", features = ["v4"] }
+x25519-dalek = { version = "2", features = ["static_secrets"] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 cpal = "0.17.3"
 hound = "3.5.1"
 keyring = "4.1.2"
 tauri-plugin-updater = "2"
+
+[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
+tauri-plugin-barcode-scanner = "2"
 
 [target.'cfg(target_os = "android")'.dependencies]
 android-native-keyring-store = "1"
@@ -55,6 +61,7 @@ keyring-core = "1"
 
 [dev-dependencies]
 p256 = { version = "0.13", features = ["pkcs8"] }
+tauri = { version = "2.12.4", features = ["devtools", "test"] }
 
 # Xcode 27's strip leaves macro libraries that macOS refuses to load ("mis-aligned
 # LINKEDIT string pool"), so code that only runs during the build is not stripped.

@@ -370,6 +370,170 @@ export async function forgetSyncAccount(
        WHERE profile_id IS ? AND account_id = ?`,
       [profileId, accountScope(accountId)],
     );
+    await db.execute(
+      `DELETE FROM sync_pending_writes WHERE profile_id = ? AND account_id = ?`,
+      [profileId, accountScope(accountId)],
+    );
+  });
+}
+
+export async function relinkTalesAfterCloudReset(
+  profileId: string,
+  accountId?: string | null,
+): Promise<void> {
+  await enqueueLocalOperation(async () => {
+    const db = await getDb();
+    const now = Date.now();
+    await db.execute(
+      `INSERT INTO tale_sync_preferences (
+         profile_id, account_id, local_tale_id, policy, created_at, updated_at
+       )
+       SELECT profile_id, account_id, local_tale_id, 'sync', ?, ?
+       FROM tale_sync_state
+       WHERE profile_id = ? AND account_id = ?
+       ON CONFLICT(profile_id, account_id, local_tale_id) DO UPDATE SET
+         policy = 'sync',
+         updated_at = MAX(tale_sync_preferences.updated_at + 1, excluded.updated_at)`,
+      [now, now, profileId, accountScope(accountId)],
+    );
+    await db.execute(
+      `DELETE FROM tale_sync_state WHERE profile_id = ? AND account_id = ?`,
+      [profileId, accountScope(accountId)],
+    );
+    await db.execute(
+      `DELETE FROM sync_pending_writes WHERE profile_id = ? AND account_id = ?`,
+      [profileId, accountScope(accountId)],
+    );
+  });
+}
+
+export async function advanceMigratedTaleRevisions(input: {
+  profileId: string;
+  accountId?: string | null;
+  remoteTaleId: string;
+  baseContentRev: number;
+  baseMetadataRev: number;
+  contentRev: number;
+  metadataRev: number;
+}): Promise<boolean> {
+  return enqueueLocalOperation(async () => {
+    const db = await getDb();
+    const result = await db.execute(
+      `UPDATE tale_sync_state
+       SET content_rev = ?, metadata_rev = ?
+       WHERE profile_id = ? AND account_id = ? AND remote_tale_id = ?
+         AND content_rev = ? AND metadata_rev = ?`,
+      [
+        String(input.contentRev),
+        String(input.metadataRev),
+        input.profileId,
+        accountScope(input.accountId),
+        input.remoteTaleId,
+        String(input.baseContentRev),
+        String(input.baseMetadataRev),
+      ],
+    );
+    return result.rowsAffected > 0;
+  });
+}
+
+export type PendingSyncWrite = {
+  idempotencyKey: string;
+  method: "POST" | "PUT";
+  path: string;
+  body: string;
+  saveVersion: number | null;
+};
+
+type PendingSyncWriteRow = {
+  idempotency_key: string;
+  method: "POST" | "PUT";
+  path: string;
+  body: string;
+  save_version: number | null;
+};
+
+type PendingSyncWriteScope = {
+  profileId: string;
+  accountId?: string | null;
+  writeKey: string;
+};
+
+export async function getPendingSyncWrite(
+  input: PendingSyncWriteScope,
+): Promise<PendingSyncWrite | null> {
+  return enqueueLocalOperation(async () => {
+    const db = await getDb();
+    const rows = await db.select<PendingSyncWriteRow[]>(
+      `SELECT idempotency_key, method, path, body, save_version
+       FROM sync_pending_writes
+       WHERE profile_id = ? AND account_id = ? AND write_key = ?
+       LIMIT 1`,
+      [input.profileId, accountScope(input.accountId), input.writeKey],
+    );
+    const row = rows[0];
+    return row
+      ? {
+          idempotencyKey: row.idempotency_key,
+          method: row.method,
+          path: row.path,
+          body: row.body,
+          saveVersion: row.save_version,
+        }
+      : null;
+  });
+}
+
+export async function savePendingSyncWrite(
+  input: PendingSyncWriteScope & PendingSyncWrite,
+): Promise<void> {
+  await enqueueLocalOperation(async () => {
+    const db = await getDb();
+    await db.execute(
+      `INSERT INTO sync_pending_writes (
+         profile_id, account_id, write_key, idempotency_key, method, path, body,
+         save_version, created_at
+       )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(profile_id, account_id, write_key) DO UPDATE SET
+         idempotency_key = excluded.idempotency_key,
+         method = excluded.method,
+         path = excluded.path,
+         body = excluded.body,
+         save_version = excluded.save_version,
+         created_at = excluded.created_at`,
+      [
+        input.profileId,
+        accountScope(input.accountId),
+        input.writeKey,
+        input.idempotencyKey,
+        input.method,
+        input.path,
+        input.body,
+        input.saveVersion,
+        Date.now(),
+      ],
+    );
+  });
+}
+
+export async function deletePendingSyncWrite(
+  input: PendingSyncWriteScope & { idempotencyKey?: string },
+): Promise<void> {
+  await enqueueLocalOperation(async () => {
+    const db = await getDb();
+    await db.execute(
+      `DELETE FROM sync_pending_writes
+       WHERE profile_id = ? AND account_id = ? AND write_key = ?
+         AND (? IS NULL OR idempotency_key = ?)`,
+      [
+        input.profileId,
+        accountScope(input.accountId),
+        input.writeKey,
+        input.idempotencyKey ?? null,
+        input.idempotencyKey ?? null,
+      ],
+    );
   });
 }
 

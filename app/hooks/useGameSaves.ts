@@ -15,6 +15,7 @@ import type { LogEntry } from "@/types/log.type";
 import { DEFAULT_WINDOW_SIZE, useTaleStore } from "@/store/useTaleStore";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 import { wakeSyncBackground } from "@/services/sync-wakeup";
+import { showSavedTale } from "@/services/open-tale-sync";
 import { beginPlayActivity } from "@/store/usePlayActivityStore";
 
 function snapshotMutableTale(taleId: string): TaleMutableSnapshot {
@@ -75,6 +76,21 @@ export function usePersistTale() {
     }
   }, []);
 
+  const runLogPersist = useCallback(
+    (taleId: string, operation: () => Promise<void>) =>
+      runPersist(() =>
+        operation().catch(async (error) => {
+          // Setup fields stay as they are, since autosave keeps retrying them.
+          await showSavedTale(taleId, { keepSetup: true }).catch(
+            (reloadError) =>
+              console.error("Failed to reload the saved tale:", reloadError),
+          );
+          throw error;
+        }),
+      ),
+    [runPersist],
+  );
+
   const save = useCallback(
     async (taleId: string, snapshot?: TaleMutableSnapshot) => {
       await runPersist(() =>
@@ -89,7 +105,7 @@ export function usePersistTale() {
 
   const saveTurn = useCallback(
     async (taleId: string, entries: LogEntry[], createdAt = Date.now()) => {
-      await runPersist(() =>
+      await runLogPersist(taleId, () =>
         commitTaleTurn({
           id: taleId,
           tale: snapshotMutableTale(taleId),
@@ -98,7 +114,7 @@ export function usePersistTale() {
         }),
       );
     },
-    [runPersist],
+    [runLogPersist],
   );
 
   const completePendingTurn = useCallback(
@@ -109,7 +125,7 @@ export function usePersistTale() {
       createdAt = Date.now(),
       fallbackToAppend = false,
     ) => {
-      await runPersist(() =>
+      await runLogPersist(taleId, () =>
         completePendingTaleTurn({
           id: taleId,
           tale: snapshotMutableTale(taleId),
@@ -120,7 +136,7 @@ export function usePersistTale() {
         }),
       );
     },
-    [runPersist],
+    [runLogPersist],
   );
 
   const retryTurn = useCallback(
@@ -130,7 +146,7 @@ export function usePersistTale() {
       entries: LogEntry[],
       createdAt = Date.now(),
     ) => {
-      await runPersist(() =>
+      await runLogPersist(taleId, () =>
         retryTaleTurn({
           id: taleId,
           tale: snapshotMutableTale(taleId),
@@ -140,13 +156,13 @@ export function usePersistTale() {
         }),
       );
     },
-    [runPersist],
+    [runLogPersist],
   );
 
   const undoToEntryCount = useCallback(
     async (taleId: string, entryCount?: number) => {
       const state = useTaleStore.getState();
-      await runPersist(() =>
+      await runLogPersist(taleId, () =>
         undoTaleLogToEntryCount({
           id: taleId,
           tale: snapshotMutableTale(taleId),
@@ -154,7 +170,7 @@ export function usePersistTale() {
         }),
       );
     },
-    [runPersist],
+    [runLogPersist],
   );
 
   const editEntry = useCallback(
@@ -163,7 +179,7 @@ export function usePersistTale() {
       entryId: string,
       patch: Partial<Omit<LogEntry, "id">>,
     ) => {
-      await runPersist(() =>
+      await runLogPersist(taleId, () =>
         editTaleLogEntry({
           id: taleId,
           tale: snapshotMutableTale(taleId),
@@ -172,7 +188,7 @@ export function usePersistTale() {
         }),
       );
     },
-    [runPersist],
+    [runLogPersist],
   );
 
   const retryEntry = useCallback(
@@ -181,7 +197,7 @@ export function usePersistTale() {
       previousEntry: LogEntry,
       replacementEntry: LogEntry,
     ) => {
-      await runPersist(() =>
+      await runLogPersist(taleId, () =>
         retryTaleLogEntry({
           id: taleId,
           tale: snapshotMutableTale(taleId),
@@ -190,12 +206,12 @@ export function usePersistTale() {
         }),
       );
     },
-    [runPersist],
+    [runLogPersist],
   );
 
   const redoEntry = useCallback(
     async (taleId: string, entry: LogEntry, createdAt = Date.now()) => {
-      await runPersist(() =>
+      await runLogPersist(taleId, () =>
         redoTaleLogEntry({
           id: taleId,
           tale: snapshotMutableTale(taleId),
@@ -204,7 +220,7 @@ export function usePersistTale() {
         }),
       );
     },
-    [runPersist],
+    [runLogPersist],
   );
 
   return {

@@ -1,3 +1,4 @@
+import { i18n } from "@lingui/core";
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -5,6 +6,9 @@ import { ApiPreset, ApiType } from "@/types/api.type";
 import { LogEntryMode, LogEntryRole, type LogEntry } from "@/types/log.type";
 import { useTaleStore } from "@/store/useTaleStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
+
+i18n.load("en", {});
+i18n.activate("en");
 
 const llmMocks = vi.hoisted(() => ({
   send: vi.fn(),
@@ -312,6 +316,57 @@ describe("usePlaySession", () => {
     expect(useTaleStore.getState().log).toEqual([]);
     expect(useTaleStore.getState().totalLogCount).toBe(0);
 
+    harness.cleanup();
+  });
+
+  it("undoes the turn instead of replying when Play closes while the entry saves", async () => {
+    let finishSave!: () => void;
+    persistenceMocks.saveTurn.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finishSave = resolve;
+      }),
+    );
+    persistenceMocks.undoToEntryCount.mockResolvedValueOnce(undefined);
+    const harness = renderSessionHarness();
+    act(() => {
+      harness.controls.setInput("Open the door");
+    });
+    let submitting!: Promise<void>;
+    act(() => {
+      submitting = harness.controls.handleSubmit();
+    });
+    harness.cleanup();
+    await act(async () => {
+      finishSave();
+      await submitting;
+    });
+    await flushAsyncWork();
+
+    expect(llmMocks.send).not.toHaveBeenCalled();
+    expect(persistenceMocks.undoToEntryCount).toHaveBeenCalledWith("tale-1", 0);
+    expect(useTaleStore.getState().log).toEqual([]);
+  });
+
+  it("does not continue when saving the edit before it fails", async () => {
+    const opening: LogEntry = {
+      id: "gm-existing",
+      role: LogEntryRole.GM,
+      text: "The hall waits.",
+    };
+    useTaleStore.setState({ log: [opening], totalLogCount: 1 });
+    persistenceMocks.editEntry.mockRejectedValueOnce(new Error("Disk full"));
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const harness = renderSessionHarness();
+
+    act(() => {
+      harness.controls.handleContinue();
+    });
+    await flushAsyncWork();
+    consoleError.mockRestore();
+
+    expect(llmMocks.send).not.toHaveBeenCalled();
     harness.cleanup();
   });
 

@@ -26,24 +26,28 @@ const fieldClass = "h-9 w-24 shrink-0";
 
 /** The few model settings worth reaching mid-story; everything else stays in Settings. */
 export function AiTab() {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const narrator = useSettingsStore((state) => state.modelRoles.narrator);
   const connection = useSettingsStore((state) =>
     findConnection(state.connections, narrator.connectionId),
   );
   const connectionName = useConnectionNames();
+  const contextWindow = useSettingsStore((state) => state.contextWindow);
   const maxTokens = useSettingsStore((state) => state.maxTokens);
-  const temperature = useSettingsStore((state) => state.temperature);
   const modelContextLength = useSettingsStore(
     (state) => state.modelContextLength,
   );
+  const setContextWindow = useSettingsStore((state) => state.setContextWindow);
   const setMaxTokens = useSettingsStore((state) => state.setMaxTokens);
-  const setTemperature = useSettingsStore((state) => state.setTemperature);
   const openSettings = useSettingsModalStore((state) => state.openSettings);
 
   const isChatGpt = narrator.activePreset === ApiPreset.CHATGPT;
-  const maxOutput =
-    modelContextLength > 0 ? modelContextLength : Number.MAX_SAFE_INTEGER;
+  const knownLimit =
+    modelContextLength > 0 && modelContextLength < Number.MAX_SAFE_INTEGER;
+  const limit = knownLimit
+    ? new Intl.NumberFormat(i18n.locale).format(modelContextLength)
+    : null;
+  const maxValue = knownLimit ? modelContextLength : Number.MAX_SAFE_INTEGER;
 
   return (
     <div className="flex flex-col gap-6">
@@ -72,40 +76,43 @@ export function AiTab() {
 
       {connection ? <ThinkingLevel role="narrator" /> : null}
 
-      {connection && !isChatGpt ? (
-        <SetupSection title={<Trans>Replies</Trans>}>
+      {connection ? (
+        <SetupSection title={<Trans>Length</Trans>}>
           <SetupList>
             <PlainRow className="flex-wrap">
               <RowText
-                title={<Trans>Max output tokens</Trans>}
-                detail={<Trans>Thinking and the answer share this</Trans>}
+                title={<Trans>Context window</Trans>}
+                detail={limit ? <Trans>Up to {limit} tokens</Trans> : undefined}
               />
               <NumberInput
                 min={1}
-                max={maxOutput}
+                max={maxValue}
                 step={1}
-                value={maxTokens}
+                value={contextWindow}
                 align="right"
-                aria-label={t`Max output tokens`}
+                aria-label={t`Context window`}
                 className={fieldClass}
-                onValueCommit={setMaxTokens}
+                onValueCommit={setContextWindow}
               />
             </PlainRow>
-            <PlainRow className="flex-wrap">
-              <RowText title={<Trans>Temperature</Trans>} />
-              <NumberInput
-                min={0}
-                max={2}
-                step={0.1}
-                value={temperature ?? null}
-                allowNull
-                align="right"
-                placeholder={t`Default`}
-                aria-label={t`Temperature`}
-                className={fieldClass}
-                onValueCommit={setTemperature}
-              />
-            </PlainRow>
+            {isChatGpt ? null : (
+              <PlainRow className="flex-wrap">
+                <RowText
+                  title={<Trans>Max output tokens</Trans>}
+                  detail={<Trans>Thinking and the answer share this</Trans>}
+                />
+                <NumberInput
+                  min={1}
+                  max={maxValue}
+                  step={1}
+                  value={maxTokens}
+                  align="right"
+                  aria-label={t`Max output tokens`}
+                  className={fieldClass}
+                  onValueCommit={setMaxTokens}
+                />
+              </PlainRow>
+            )}
           </SetupList>
           {!isModelRoleConfigured(narrator) ? (
             <p className="px-0.5 text-sm text-muted-foreground">

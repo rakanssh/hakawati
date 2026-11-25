@@ -2,6 +2,13 @@ import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { fontPresets } from "@/data/font-presets";
 import { LOCALES, type Locale } from "@/lib/locales";
+import {
+  CONTINUE_AUTHOR_NOTE,
+  CONTINUE_SYSTEM_PROMPT,
+  GM_SYSTEM_PROMPT,
+  STORY_CARD_GENERATOR_PROMPT,
+  STORY_TELLER_SYSTEM_PROMPT,
+} from "@/prompts";
 import { setAppLanguage } from "@/services/language";
 import type { SettingsTab } from "@/store/useSettingsModalStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
@@ -21,6 +28,7 @@ export interface SettingEntry {
   apply: (value: unknown) => void;
   parse: (input: unknown) => unknown;
   accepts: unknown;
+  builtIn?: string;
 }
 
 const settings = () => useSettingsStore.getState();
@@ -114,20 +122,34 @@ type PromptKey =
   | "ContinueAuthorNote"
   | "StoryCardGenerator";
 
-const PROMPT_FIELDS: Record<PromptKey, { text: string; use: string }> = {
+const PROMPT_FIELDS: Record<
+  PromptKey,
+  { text: string; use: string; builtIn: string }
+> = {
   Storyteller: {
     text: "customStorytellerPrompt",
     use: "useCustomStorytellerPrompt",
+    builtIn: STORY_TELLER_SYSTEM_PROMPT,
   },
-  Gm: { text: "customGmPrompt", use: "useCustomGmPrompt" },
-  Continue: { text: "customContinuePrompt", use: "useCustomContinuePrompt" },
+  Gm: {
+    text: "customGmPrompt",
+    use: "useCustomGmPrompt",
+    builtIn: GM_SYSTEM_PROMPT,
+  },
+  Continue: {
+    text: "customContinuePrompt",
+    use: "useCustomContinuePrompt",
+    builtIn: CONTINUE_SYSTEM_PROMPT,
+  },
   ContinueAuthorNote: {
     text: "customContinueAuthorNote",
     use: "useCustomContinueAuthorNote",
+    builtIn: CONTINUE_AUTHOR_NOTE,
   },
   StoryCardGenerator: {
     text: "customStoryCardGeneratorPrompt",
     use: "useCustomStoryCardGeneratorPrompt",
+    builtIn: STORY_CARD_GENERATOR_PROMPT,
   },
 };
 
@@ -160,6 +182,7 @@ function prompt(key: PromptKey, label: MessageDescriptor): SettingEntry {
       );
     },
     accepts: "the full prompt text, or null for the built-in prompt",
+    builtIn: fields.builtIn,
   };
 }
 

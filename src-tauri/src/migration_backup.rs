@@ -9,7 +9,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-pub const TARGET_SCHEMA_VERSION: i64 = 8;
+pub const TARGET_SCHEMA_VERSION: i64 = 9;
 const BACKUP_DIRECTORY: &str = "migration-backups";
 const PENDING_MARKER_FILE: &str = "migration-attempt.json";
 const MIN_FREE_SPACE_BUFFER_BYTES: u64 = 16 * 1024 * 1024;
@@ -512,8 +512,10 @@ fn source_app_version_hint(source_schema_version: i64) -> &'static str {
         "v0.15.2-or-earlier"
     } else if source_schema_version < 7 {
         "1.0-prerelease"
-    } else {
+    } else if source_schema_version < 8 {
         "v1.0-to-v1.3"
+    } else {
+        "v1.4"
     }
 }
 
@@ -786,6 +788,27 @@ mod tests {
                 .join("migration-attempt-1-6.completed.json")
                 .exists());
             assert_eq!(read_schema_version(&marker.backup_path).await.unwrap(), 6);
+            fs::remove_dir_all(root).unwrap();
+        });
+    }
+
+    #[test]
+    fn backs_up_a_v1_4_database_before_the_latest_migration() {
+        tauri::async_runtime::block_on(async {
+            let root = unique_temp_directory("backup-v1-4");
+            let db_path = root.join("hakawati.db");
+            create_database(&db_path, 8).await;
+
+            let marker = prepare_pre_migration_backup(&db_path, &root)
+                .await
+                .unwrap()
+                .unwrap();
+
+            let manifest: MigrationBackupManifest = read_json(&marker.manifest_path).unwrap();
+            assert_eq!(manifest.source_schema_version, 8);
+            assert_eq!(manifest.target_schema_version, 9);
+            assert_eq!(manifest.source_app_version_hint, "v1.4");
+            assert_eq!(read_schema_version(&marker.backup_path).await.unwrap(), 8);
             fs::remove_dir_all(root).unwrap();
         });
     }

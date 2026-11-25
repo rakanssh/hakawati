@@ -1,12 +1,15 @@
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ComponentType,
   type KeyboardEvent,
   type PointerEvent,
+  type RefObject,
 } from "react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useDirection } from "@radix-ui/react-direction";
 import { useRouterState } from "@tanstack/react-router";
 import {
   BookOpenIcon,
@@ -363,9 +366,69 @@ export function StoryPanel() {
   );
 }
 
+/** The handle's inset from the row's end beside the page's centred column, or null when it doesn't fit before the scrollbar. */
+function usePageColumnInset(
+  enabled: boolean,
+  rail: RefObject<HTMLDivElement | null>,
+  handle: RefObject<HTMLButtonElement | null>,
+) {
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const [inset, setInset] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    const row = rail.current?.parentElement;
+    const scroller = row?.firstElementChild;
+    if (!enabled || !row || !(scroller instanceof HTMLElement)) {
+      setInset(null);
+      return;
+    }
+    let frame = 0;
+    const resize = new ResizeObserver(() => measure());
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const column = row.querySelector<HTMLElement>("[data-page-column]");
+        const tab = handle.current?.offsetWidth ?? 0;
+        if (!column || !tab) {
+          setInset(null);
+          return;
+        }
+        resize.observe(column);
+        const style = getComputedStyle(column);
+        const rtl = style.direction === "rtl";
+        const box = column.getBoundingClientRect();
+        const columnEnd = rtl
+          ? box.left + parseFloat(style.paddingLeft)
+          : box.right - parseFloat(style.paddingRight);
+        const room = (element: Element) => {
+          const edge = element.getBoundingClientRect();
+          return rtl ? columnEnd - edge.left : edge.right - columnEnd;
+        };
+        const scrollbar = scroller.offsetWidth - scroller.clientWidth;
+        setInset(room(scroller) - tab >= scrollbar ? room(row) - tab : null);
+      });
+    };
+    measure();
+    resize.observe(row);
+    resize.observe(scroller);
+    if (handle.current) resize.observe(handle.current);
+    const mutations = new MutationObserver(measure);
+    mutations.observe(row, { childList: true, subtree: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      resize.disconnect();
+      mutations.disconnect();
+    };
+  }, [enabled, pathname, rail, handle]);
+
+  return inset;
+}
+
 /**
- * A pull tab on the story's edge, in a slim rail of its own so it never sits over the text or the
- * scrollbar. Closed, it hangs off the window's edge like a drawer pull; open, it rides on the panel's edge.
+ * A pull tab for the panel. In play it sits in a slim rail of its own beside the story, hanging off
+ * the window's edge; elsewhere it hangs off the page's centred column. Open, it rides on the panel's edge.
  */
 function StoryPanelHandle({
   open,
@@ -377,19 +440,37 @@ function StoryPanelHandle({
   onToggle: () => void;
 }) {
   const { t } = useLingui();
+  const rtl = useDirection() === "rtl";
+  const rail = useRef<HTMLDivElement>(null);
+  const handle = useRef<HTMLButtonElement>(null);
+  const enabled = !isPlay && !open;
+  const inset = usePageColumnInset(enabled, rail, handle);
+  const attached = enabled && inset !== null;
+
   return (
-    <div className="relative z-45 w-6 shrink-0">
+    <div
+      ref={rail}
+      className={cn("z-45 shrink-0", attached ? "w-0" : "relative w-6")}
+    >
       <Tooltip>
         <TooltipTrigger asChild>
           <button
+            ref={handle}
             type="button"
             data-story-panel-handle=""
+            data-attached={attached || undefined}
             data-state={open ? "open" : "closed"}
             onClick={onToggle}
             aria-expanded={open}
             aria-controls={STORY_PANEL_ID}
             aria-label={open ? t`Close panel` : t`Open panel`}
-            className="absolute end-0 top-[38%] flex w-6 -translate-y-1/2 flex-col items-center gap-2 rounded-s-xs border border-e-0 border-sidebar-border bg-sidebar/95 py-3 text-sidebar-foreground/70 shadow-sm backdrop-blur-sm transition-colors hover:bg-sidebar hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            style={attached ? { insetInlineEnd: inset } : undefined}
+            className={cn(
+              "absolute top-[38%] z-45 flex w-6 -translate-y-1/2 flex-col items-center gap-2 border border-sidebar-border bg-sidebar/95 py-3 text-sidebar-foreground/70 shadow-sm backdrop-blur-sm transition-colors hover:bg-sidebar hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              attached
+                ? "rounded-e-xs border-s-0"
+                : "end-0 rounded-s-xs border-e-0",
+            )}
           >
             {open ? (
               <ChevronRightIcon className="size-4 rtl:-scale-x-100" />
@@ -406,7 +487,7 @@ function StoryPanelHandle({
             </span>
           </button>
         </TooltipTrigger>
-        <TooltipContent side="left">
+        <TooltipContent side={attached !== rtl ? "right" : "left"}>
           {open ? (
             <Trans>Close panel</Trans>
           ) : isPlay ? (

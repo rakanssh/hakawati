@@ -28,6 +28,7 @@ import {
   type LogActionState,
 } from "@/types/log.type";
 import { Action, getLogErrorReason } from "@/lib/play-utils";
+import { showSaveError } from "@/lib/save-errors";
 
 interface UsePlaySessionOptions {
   onSaveComplete?: () => void;
@@ -56,6 +57,7 @@ interface UsePlaySessionReturn {
 type ExecuteLlmSendOptions = {
   continueChain?: boolean;
   persistence?: GenerationPersistence;
+  sessionRevision?: number;
 };
 
 type GenerationPersistence =
@@ -383,15 +385,46 @@ export function usePlaySession(
       mode: LogEntryMode,
       options: ExecuteLlmSendOptions = {},
     ) => {
+      const sessionRevision =
+        options.sessionRevision ?? sessionRevisionRef.current;
+      const persistence: GenerationPersistence = options.persistence ?? {
+        type: "continuation",
+      };
       const endNarration =
         tryBeginPlayActivity("narrating", ["assistantWriting"]) ??
         (await claimPlayActivity("narrating", ["assistantWriting"]));
       try {
-        const sessionRevision = sessionRevisionRef.current;
         const isCurrentSession = () =>
           sessionRevisionRef.current === sessionRevision &&
           useTaleStore.getState().id === taleId;
-        if (!isCurrentSession()) return null;
+        const persistenceActions = (
+          removeGeneratedPlaceholder: () => void,
+        ): GenerationPersistenceActions => ({
+          taleId,
+          getLog: () => useTaleStore.getState().log,
+          removeGeneratedPlaceholder,
+          removeTrailingEntries,
+          restoreLogEntry,
+          saveTurn,
+          completePendingTurn,
+          retryTurn,
+          retryEntry,
+          undoToEntryCount,
+        });
+        if (!isCurrentSession()) {
+          if (useTaleStore.getState().id !== taleId) return null;
+          // Play closed before the reply began, so undo it like Stop would.
+          await persistGeneratedResponse({
+            persistence,
+            finalGmEntry: null,
+            sendAborted: true,
+            actions: persistenceActions(() => undefined),
+          }).catch((error) => {
+            console.error("Failed to cancel tale generation:", error);
+            showSaveError();
+          });
+          return null;
+        }
         if (!isModelRoleConfigured(narratorConfig)) {
           console.error("Narrator model not configured.");
           toast.error("No narrator model selected. Choose one in Settings.");
@@ -551,9 +584,6 @@ export function usePlaySession(
         // the saved one; only another tale taking its place skips this.
         if (useTaleStore.getState().id !== taleId) return null;
         if (!isCurrentSession()) sendAborted = true;
-        const persistence: GenerationPersistence = options.persistence ?? {
-          type: "continuation",
-        };
         const currentLog = useTaleStore.getState().log;
         const finalGmEntry =
           currentLog.find((entry) => entry.id === gmResponseId) ?? null;
@@ -571,18 +601,7 @@ export function usePlaySession(
             persistence,
             finalGmEntry,
             sendAborted,
-            actions: {
-              taleId,
-              getLog: () => useTaleStore.getState().log,
-              removeGeneratedPlaceholder,
-              removeTrailingEntries,
-              restoreLogEntry,
-              saveTurn,
-              completePendingTurn,
-              retryTurn,
-              retryEntry,
-              undoToEntryCount,
-            },
+            actions: persistenceActions(removeGeneratedPlaceholder),
           });
           if (result === "cancelled") return null;
           if (result === "missing") return null;
@@ -594,7 +613,7 @@ export function usePlaySession(
               : "Failed to save tale:",
             error,
           );
-          toast.error("Failed to save progress");
+          showSaveError();
           if (isEmptyAbort) return null;
         }
 
@@ -632,14 +651,19 @@ export function usePlaySession(
     updateLogEntry(lastEntry.id, {
       text: nextText,
     });
-    void editEntry(taleId, lastEntry.id, { text: nextText }).catch((error) => {
-      console.error("Failed to save edited log entry:", error);
-      toast.error("Failed to save progress");
-    });
-    void executeLlmSend("", LogEntryMode.CONTINUE, {
-      continueChain: true,
-      persistence: { type: "continuation" },
-    });
+    const sessionRevision = sessionRevisionRef.current;
+    void editEntry(taleId, lastEntry.id, { text: nextText }).then(
+      () =>
+        executeLlmSend("", LogEntryMode.CONTINUE, {
+          continueChain: true,
+          persistence: { type: "continuation" },
+          sessionRevision,
+        }),
+      (error) => {
+        console.error("Failed to save edited log entry:", error);
+        showSaveError();
+      },
+    );
   }, [loading, saving, executeLlmSend, editEntry, taleId, updateLogEntry]);
 
   const handleSubmit = useCallback(async () => {
@@ -654,6 +678,7 @@ export function usePlaySession(
       ? input + ` [Roll: ${Math.floor(Math.random() * 100) + 1}/100]`
       : input;
     const logMode: LogEntryMode = action.type;
+    const sessionRevision = sessionRevisionRef.current;
 
     if (logMode === LogEntryMode.STORY) {
       // For "Story" Input, faux GM entry followed by continue prompt.
@@ -675,7 +700,7 @@ export function usePlaySession(
         console.error("Failed to save pending story entry:", error);
         removeTrailingEntries([storyEntry]);
         setInput(input);
-        toast.error("Failed to save progress");
+        showSaveError();
         return;
       }
       void executeLlmSend("", LogEntryMode.CONTINUE, {
@@ -686,6 +711,7 @@ export function usePlaySession(
           leadingEntries: [storyEntry],
           cancelEntryCount: previousLogCount,
         },
+        sessionRevision,
       });
     } else {
       const previousLogCount = useTaleStore.getState().totalLogCount;
@@ -703,7 +729,7 @@ export function usePlaySession(
         console.error("Failed to save pending player entry:", error);
         removeTrailingEntries([playerEntry]);
         setInput(input);
-        toast.error("Failed to save progress");
+        showSaveError();
         return;
       }
       void executeLlmSend(finalMessage, logMode, {
@@ -713,6 +739,7 @@ export function usePlaySession(
           leadingEntries: [playerEntry],
           cancelEntryCount: previousLogCount,
         },
+        sessionRevision,
       });
     }
   }, [
@@ -785,7 +812,7 @@ export function usePlaySession(
     useTaleStore.getState().undo();
     void undoToEntryCount(taleId).catch((error) => {
       console.error("Failed to save undo:", error);
-      toast.error("Failed to save progress");
+      showSaveError();
     });
 
     if (lastEntry.role !== LogEntryRole.PLAYER) {
@@ -813,7 +840,7 @@ export function usePlaySession(
     useTaleStore.getState().redo();
     void redoEntry(taleId, lastUndone).catch((error) => {
       console.error("Failed to save redo:", error);
-      toast.error("Failed to save progress");
+      showSaveError();
     });
   }, [redoEntry, loading, saving, taleId]);
 

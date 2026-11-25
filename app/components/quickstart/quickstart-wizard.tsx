@@ -567,7 +567,10 @@ export function QuickstartPage() {
 
   return (
     <main className="relative flex min-h-full flex-col overflow-hidden">
-      <div className="mx-auto flex min-h-full w-full max-w-screen-2xl flex-1 flex-col gap-4 px-3 py-5">
+      <div
+        data-page-column=""
+        className="mx-auto flex min-h-full w-full max-w-screen-2xl flex-1 flex-col gap-4 px-3 py-5"
+      >
         <header className="flex gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
           <Button
             variant="default"

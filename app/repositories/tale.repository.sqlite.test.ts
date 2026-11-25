@@ -115,6 +115,7 @@ const migrationFiles = [
   "006_add_scenario_content_catalog_metadata.sql",
   "007_unify_scenario_draft_cover.sql",
   "008_create_assistant_chats.sql",
+  "009_add_sync_pending_writes.sql",
 ];
 
 function applyMigration(db: TestDatabase, index: number) {
@@ -264,6 +265,23 @@ describe("tale repository SQLite storage", () => {
     expect(await getLogEntries(taleId, 0, 10)).toEqual([]);
     expect(await getLogCount(taleId)).toBe(0);
     expect(await getTaleSaveVersion(taleId)).toBe(version);
+  });
+
+  it("reports a failed log read instead of an empty log", async () => {
+    applyMigrations(dbState.current!);
+    const { appendTurn, getLogEntries, getLogCount } = await import(
+      "./tale.repository"
+    );
+    const taleId = await createEmptyTale();
+    await appendTurn(
+      taleId,
+      { entries: [gmEntry("saved")], createdAt: 1 },
+      emptyState(),
+      createTaleSessionState(),
+    );
+    dbState.current!.raw.exec("DROP TABLE tale_states");
+    await expect(getLogEntries(taleId, 0, 10)).rejects.toThrow("tale_states");
+    await expect(getLogCount(taleId)).rejects.toThrow("tale_states");
   });
 
   it("migrates legacy tale blobs into state, session, and indexed one-entry turns", () => {
@@ -2325,11 +2343,6 @@ describe("Hakawati storage", () => {
       { ...first },
       { ...second },
     ]);
-    expect((await chats.getLatestAssistantThread())?.id).toBe("tale-chat");
-    expect((await chats.getLatestAssistantThread(taleId))?.id).toBe(
-      "tale-chat",
-    );
-
     await deleteTale(taleId);
     expect((await chats.listAssistantThreads()).map((t) => t.id)).toEqual([
       "general",

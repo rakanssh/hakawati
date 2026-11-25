@@ -14,7 +14,11 @@ import {
 import {
   acknowledgeTaleSyncWrite,
   adoptTaleSyncRevisions,
+  advanceMigratedTaleRevisions,
+  deletePendingSyncWrite,
+  getPendingSyncWrite,
   getTaleSyncState,
+  savePendingSyncWrite,
   setSyncProfileDisabled,
   setTaleSyncStatus,
   upsertSyncProfile,
@@ -25,14 +29,23 @@ import type { TalePackageV1 } from "@/types/export.type";
 import type { CoverAssetReference } from "@/types/catalog.type";
 import type {
   RemoteTale,
+  RemoteTaleCover,
+  RemoteTaleRevisions,
   SyncMode,
   SyncProfile,
   TaleSyncState,
 } from "@/types/sync.type";
 import {
+  CLOUD_ENCRYPTION_SCHEME,
+  cloudKeys,
+  type CloudEncryptionContext,
+  type CloudEnvelope,
+  type TaleRevision,
+} from "@/services/cloud-keys";
+import {
+  detectCoverImageContentType,
   optimizeCoverImage,
   sha256Hex,
-  type OptimizedCoverImage,
 } from "@/lib/cover-image";
 import { createLinkedWriteIdempotencyKey } from "@/lib/sync-idempotency";
 import { isRefusedSyncError } from "@/lib/sync-ui";
@@ -46,11 +59,18 @@ import {
 
 export type SyncWriteOptions = {
   idempotencyKey?: string;
+  rawBody?: string;
+};
+
+export type CloudEncryptionSession = CloudEncryptionContext & {
+  acceptServerTales: boolean;
 };
 
 export type SyncTransport = {
   readonly signal?: AbortSignal;
+  readonly cloudEncryption?: CloudEncryptionSession;
   get(path: string): Promise<unknown>;
+  getBytes?(path: string): Promise<Uint8Array>;
   post(
     path: string,
     body: unknown,
@@ -165,10 +185,6 @@ export type HostedAccount = {
 };
 
 export type HostedAccountUsage = {
-  tales: {
-    used: number;
-    limit: number;
-  };
   storage: {
     usedBytes: number;
     limitBytes: number;
@@ -203,8 +219,33 @@ export type RemoteTalePackageResponse = {
   metadataRev: number;
   turnCount: number;
   entryCount?: number;
+  encryption?: "server" | "client";
   package: SyncTalePackageV1;
   cover?: unknown;
+};
+
+export type EncryptedTalePackage = {
+  scheme: typeof CLOUD_ENCRYPTION_SCHEME;
+  keyId: string;
+  taleId: string;
+  sourceTaleId: string;
+  gameMode: string;
+  stateSchemaVersion: number;
+  turnCount: number;
+  entryCount: number;
+  coverAssetId: string | null;
+  createdAt: number;
+  updatedAt: number;
+  summary: CloudEnvelope;
+  package: CloudEnvelope;
+};
+
+type TaleSummary = {
+  title: string;
+  description: string;
+  lastEntryPreview: string | null;
+  cover: RemoteTaleCover | null;
+  migratedFrom?: RemoteTaleRevisions;
 };
 
 export class SyncHttpError extends Error {
@@ -235,6 +276,14 @@ function isUnregisteredDeviceError(error: unknown): boolean {
 
 export function isUpdateRequiredError(error: unknown): boolean {
   return error instanceof SyncHttpError && error.status === 426;
+}
+
+export function cloudLockedError() {
+  return new SyncHttpError("Unlock this device to sync.", 423, "cloud_locked");
+}
+
+function cloudIntegrityError(message: string, code = "cloud_tale_invalid") {
+  return new SyncHttpError(message, 502, code);
 }
 
 const bodyValue = asApiObject;
@@ -315,6 +364,16 @@ function base64ToBytes(value: string): Uint8Array {
   return bytes;
 }
 
+const PRIVATE_DATA_PATH = /^\/v1\/(tales|assets)(\/|\?|$)/;
+const DEVICE_READ_PATH = /^\/v1\/(accounts\/me\/cloud-key|cloud-key\/)/;
+
+export function withCloudEncryption(
+  transport: SyncTransport,
+  session: CloudEncryptionSession,
+): SyncTransport {
+  return { ...transport, cloudEncryption: session };
+}
+
 export function createSyncTransport({
   profile,
   accessToken,
@@ -327,45 +386,78 @@ export function createSyncTransport({
   }
   const syncDeviceId = deviceId ?? profile.deviceId ?? undefined;
 
-  async function request(
+  function send(
     method: string,
     path: string,
     body?: unknown,
     options: SyncWriteOptions = {},
-  ): Promise<unknown> {
+  ): Promise<Response> {
     signal?.throwIfAborted();
+    const payload =
+      options.rawBody ??
+      (body === undefined ? undefined : JSON.stringify(body));
     const headers: Record<string, string> = {
       ...HAKAWATI_CLIENT_HEADERS,
-      ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+      ...(payload === undefined ? {} : { "Content-Type": "application/json" }),
+      ...(PRIVATE_DATA_PATH.test(path)
+        ? { "X-Hakawati-Cloud-Encryption": CLOUD_ENCRYPTION_SCHEME }
+        : {}),
       ...(profile.mode === "hosted" && accessToken
         ? { Authorization: `Bearer ${accessToken}` }
         : {}),
-      ...(profile.mode === "hosted" && method !== "GET" && syncDeviceId
+      ...(profile.mode === "hosted" &&
+      (method !== "GET" || DEVICE_READ_PATH.test(path)) &&
+      syncDeviceId
         ? { "X-Hakawati-Device-Id": syncDeviceId }
         : {}),
       ...(options.idempotencyKey
         ? { "Idempotency-Key": options.idempotencyKey }
         : {}),
     };
-    const response = await fetch(`${base}${path}`, {
+    return fetch(`${base}${path}`, {
       method,
       headers,
       ...(signal ? { signal } : {}),
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      ...(payload === undefined ? {} : { body: payload }),
     });
+  }
+
+  async function failure(response: Response) {
     const text = await response.text();
     signal?.throwIfAborted();
-    const data = parseApiResponseBody(text);
-    if (!response.ok) {
-      const error = parseApiError(data, response.status, text);
-      throw new SyncHttpError(error.message, response.status, error.code);
-    }
-    return data;
+    const error = parseApiError(
+      parseApiResponseBody(text),
+      response.status,
+      text,
+    );
+    return new SyncHttpError(error.message, response.status, error.code);
+  }
+
+  async function request(
+    method: string,
+    path: string,
+    body?: unknown,
+    options: SyncWriteOptions = {},
+  ): Promise<unknown> {
+    const response = await send(method, path, body, options);
+    if (!response.ok) throw await failure(response);
+    const text = await response.text();
+    signal?.throwIfAborted();
+    return parseApiResponseBody(text);
+  }
+
+  async function requestBytes(path: string): Promise<Uint8Array> {
+    const response = await send("GET", path);
+    if (!response.ok) throw await failure(response);
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    signal?.throwIfAborted();
+    return bytes;
   }
 
   return {
     ...(signal ? { signal } : {}),
     get: (path) => request("GET", path),
+    getBytes: requestBytes,
     post: (path, body, options) => request("POST", path, body, options),
     put: (path, body, options) => request("PUT", path, body, options),
     patch: (path, body) => request("PATCH", path, body),
@@ -679,7 +771,113 @@ export async function listRemoteTales(
   if (options.limit) query.set("limit", String(options.limit));
   const encoded = query.toString();
   const suffix = encoded ? `?${encoded}` : "";
-  return bodyValue(await transport.get(`/v1/tales${suffix}`)) as RemoteTalePage;
+  const page = bodyValue(
+    await transport.get(`/v1/tales${suffix}`),
+  ) as RemoteTalePage;
+  return { ...page, items: await openRemoteTales(transport, page.items) };
+}
+
+type ListedRemoteTale = RemoteTale & { summary?: CloudEnvelope | null };
+
+function parseTaleSummary(value: string | null): TaleSummary | null {
+  if (value === null) return null;
+  try {
+    const summary = bodyValue(JSON.parse(value));
+    const cover = summary.cover ? bodyValue(summary.cover) : null;
+    const migratedFrom = summary.migratedFrom
+      ? bodyValue(summary.migratedFrom)
+      : null;
+    return {
+      title: typeof summary.title === "string" ? summary.title : "",
+      description:
+        typeof summary.description === "string" ? summary.description : "",
+      lastEntryPreview:
+        typeof summary.lastEntryPreview === "string"
+          ? summary.lastEntryPreview
+          : null,
+      cover:
+        cover &&
+        typeof cover.assetId === "string" &&
+        typeof cover.contentType === "string" &&
+        typeof cover.byteSize === "number" &&
+        typeof cover.sha256 === "string"
+          ? {
+              assetId: cover.assetId,
+              contentType: cover.contentType,
+              byteSize: cover.byteSize,
+              sha256: cover.sha256,
+            }
+          : null,
+      ...(migratedFrom &&
+      Number.isSafeInteger(migratedFrom.contentRev) &&
+      Number.isSafeInteger(migratedFrom.metadataRev)
+        ? {
+            migratedFrom: {
+              contentRev: migratedFrom.contentRev as number,
+              metadataRev: migratedFrom.metadataRev as number,
+            },
+          }
+        : {}),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function openRemoteTales(
+  transport: SyncTransport,
+  items: ListedRemoteTale[],
+): Promise<RemoteTale[]> {
+  const session = transport.cloudEncryption;
+  const visible = items.filter(
+    (tale) =>
+      tale.encryption !== "server" || !session || session.acceptServerTales,
+  );
+  const readable = session
+    ? visible.filter(
+        (tale) =>
+          tale.encryption === "client" && tale.summary?.keyId === session.keyId,
+      )
+    : [];
+  const summaries = readable.length
+    ? await cloudKeys.decryptSummaries(
+        session!,
+        readable.map((tale) => ({
+          taleId: tale.id,
+          contentRev: tale.contentRev,
+          metadataRev: tale.metadataRev,
+          summary: tale.summary!,
+        })),
+      )
+    : [];
+  const summaryById = new Map(
+    readable.map((tale, index) => [
+      tale.id,
+      parseTaleSummary(summaries[index] ?? null),
+    ]),
+  );
+  return visible.map(({ summary: _summary, ...tale }) => {
+    if (tale.encryption !== "client") return tale;
+    const summary = summaryById.get(tale.id);
+    if (!summary) {
+      return {
+        ...tale,
+        locked: true,
+        title: "",
+        description: null,
+        lastEntryPreview: null,
+        cover: null,
+      };
+    }
+    return {
+      ...tale,
+      title: summary.title,
+      description: summary.description || null,
+      lastEntryPreview: summary.lastEntryPreview,
+      cover: summary.cover,
+      ...(summary.migratedFrom ? { migratedFrom: summary.migratedFrom } : {}),
+    };
+  });
 }
 
 export async function listAllRemoteTales(
@@ -700,11 +898,103 @@ export async function downloadRemoteTalePackage(
   transport: SyncTransport,
   remoteTaleId: string,
 ): Promise<RemoteTalePackageResponse> {
-  return bodyValue(
+  const response = bodyValue(
     await transport.get(
       `/v1/tales/${encodeURIComponent(remoteTaleId)}/package`,
     ),
-  ) as RemoteTalePackageResponse;
+  );
+  if (response.encryption === "client" || response.encryptedPackage) {
+    return openTalePackage(transport.cloudEncryption, remoteTaleId, response);
+  }
+  if (
+    transport.cloudEncryption &&
+    !transport.cloudEncryption.acceptServerTales
+  ) {
+    throw cloudIntegrityError(
+      "The cloud returned an unencrypted tale for an encrypted account.",
+      "cloud_encryption_downgraded",
+    );
+  }
+  return response as RemoteTalePackageResponse;
+}
+
+function entryCount(pkg: Pick<SyncTalePackageV1, "turns">) {
+  return pkg.turns.reduce(
+    (count, turn) =>
+      count + (Array.isArray(turn.entries) ? turn.entries.length : 0),
+    0,
+  );
+}
+
+async function openTalePackage(
+  session: CloudEncryptionSession | undefined,
+  id: string,
+  response: Record<string, unknown>,
+): Promise<RemoteTalePackageResponse> {
+  if (!session) throw cloudLockedError();
+  if (response.id !== id) {
+    throw cloudIntegrityError("The cloud returned a different tale.");
+  }
+  const encrypted = bodyValue(
+    response.encryptedPackage,
+  ) as unknown as EncryptedTalePackage;
+  const contentRev = Number(response.contentRev);
+  const metadataRev = Number(response.metadataRev);
+  if (
+    encrypted.keyId !== session.keyId ||
+    encrypted.summary?.keyId !== session.keyId ||
+    encrypted.package?.keyId !== session.keyId
+  ) {
+    throw new SyncHttpError(
+      "This tale was encrypted with a different cloud key.",
+      409,
+      "cloud_key_mismatch",
+    );
+  }
+  let plaintext: { summary: string; package: string };
+  try {
+    plaintext = await cloudKeys.decryptTale(
+      session,
+      { taleId: id, contentRev, metadataRev },
+      encrypted.summary,
+      encrypted.package,
+    );
+  } catch {
+    throw cloudIntegrityError("This cloud tale could not be decrypted.");
+  }
+  let pkg: SyncTalePackageV1;
+  try {
+    pkg = JSON.parse(plaintext.package) as SyncTalePackageV1;
+  } catch {
+    throw cloudIntegrityError("This cloud tale could not be read.");
+  }
+  if (
+    !pkg?.tale ||
+    !pkg.state ||
+    !Array.isArray(pkg.turns) ||
+    encrypted.taleId !== id ||
+    encrypted.gameMode !== pkg.tale.gameMode ||
+    encrypted.stateSchemaVersion !== pkg.state.stateSchemaVersion ||
+    encrypted.turnCount !== pkg.turns.length ||
+    encrypted.entryCount !== entryCount(pkg) ||
+    (encrypted.coverAssetId ?? null) !== (pkg.tale.coverAssetId ?? null) ||
+    Number(response.turnCount) !== encrypted.turnCount ||
+    (response.entryCount !== undefined &&
+      Number(response.entryCount) !== encrypted.entryCount)
+  ) {
+    throw cloudIntegrityError("This cloud tale does not match its record.");
+  }
+  return {
+    id,
+    sourceTaleId: encrypted.sourceTaleId,
+    contentRev,
+    metadataRev,
+    turnCount: encrypted.turnCount,
+    entryCount: encrypted.entryCount,
+    encryption: "client",
+    package: pkg,
+    cover: response.cover,
+  };
 }
 
 export async function deleteRemoteTale(
@@ -793,22 +1083,62 @@ type UploadedCover = Pick<
   "assetId" | "contentType" | "byteSize" | "sha256"
 >;
 
-async function uploadHostedCoverAsset(
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (let index = 0; index < bytes.length; index += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+  }
+  return btoa(binary);
+}
+
+const ENCRYPTED_COVER_CONTENT_TYPE = "application/octet-stream";
+
+export async function uploadHostedCoverAsset(
   transport: SyncTransport,
-  cover: OptimizedCoverImage,
+  cover: {
+    bytes: Uint8Array;
+    contentType: string;
+    width?: number;
+    height?: number;
+  },
 ): Promise<UploadedCover> {
-  const { bytes, contentType, width, height } = cover;
+  const { contentType, width, height } = cover;
   transport.signal?.throwIfAborted();
-  const sha256 = await sha256Hex(bytes);
+  const sha256 = await sha256Hex(cover.bytes);
+  const session = transport.cloudEncryption;
+  const encryptedAssetId = session ? crypto.randomUUID() : null;
+  const bytes =
+    session && encryptedAssetId
+      ? base64ToBytes(
+          await cloudKeys.encryptCover(
+            session,
+            encryptedAssetId,
+            bytesToBase64(cover.bytes),
+          ),
+        )
+      : cover.bytes;
+  const uploadType = session ? ENCRYPTED_COVER_CONTENT_TYPE : contentType;
   const intent = bodyValue(
-    await transport.post("/v1/assets/cover-upload-intents", {
-      visibility: "private",
-      contentType,
-      byteSize: bytes.byteLength,
-      sha256,
-      width,
-      height,
-    }),
+    await transport.post(
+      "/v1/assets/cover-upload-intents",
+      session
+        ? {
+            visibility: "private",
+            encryption: CLOUD_ENCRYPTION_SCHEME,
+            assetId: encryptedAssetId,
+            contentType: uploadType,
+            byteSize: bytes.byteLength,
+            sha256: await sha256Hex(bytes),
+          }
+        : {
+            visibility: "private",
+            contentType,
+            byteSize: bytes.byteLength,
+            sha256,
+            width,
+            height,
+          },
+    ),
   );
   const upload = bodyValue(intent.upload);
   const uploadedAsset = bodyValue(intent.asset);
@@ -826,7 +1156,7 @@ async function uploadHostedCoverAsset(
   const response = await fetch(uploadUrl, {
     method: uploadMethod,
     headers: uploadHeaders,
-    body: new Blob([bytes.slice().buffer], { type: contentType }),
+    body: new Blob([bytes.slice().buffer], { type: uploadType }),
     ...(transport.signal ? { signal: transport.signal } : {}),
   });
   transport.signal?.throwIfAborted();
@@ -842,7 +1172,7 @@ async function uploadHostedCoverAsset(
     `/v1/assets/${encodeURIComponent(assetId)}/complete`,
     {},
   );
-  return { assetId, contentType, byteSize: bytes.byteLength, sha256 };
+  return { assetId, contentType, byteSize: cover.bytes.byteLength, sha256 };
 }
 
 async function matchesExistingCover(
@@ -904,13 +1234,22 @@ function jsonBytes(value: unknown): number {
 // Same length as the asset ID the server will assign the cover.
 const COVER_ASSET_ID_PLACEHOLDER = "00000000-0000-0000-0000-000000000000";
 
+const MAX_ENCRYPTED_TURN_BYTES = 256 * 1024;
+const MAX_SUMMARY_BYTES = 32 * 1024;
+const PREVIEW_MAX_CHARS = 280;
+
 function assertWithinSyncLimits(
   pkg: SyncTalePackageV1,
   capabilities: SyncCapabilities,
+  encrypted = false,
 ) {
   if (
     jsonBytes(pkg) > capabilities.limits.maxPackageBytes ||
-    jsonBytes(pkg.state.data) > capabilities.limits.maxStateBytes
+    jsonBytes(pkg.state.data) > capabilities.limits.maxStateBytes ||
+    (encrypted &&
+      pkg.turns.some(
+        (turn) => jsonBytes(turn.entries) > MAX_ENCRYPTED_TURN_BYTES,
+      ))
   ) {
     throw new SyncHttpError(
       "This tale is too large to sync.",
@@ -920,17 +1259,91 @@ function assertWithinSyncLimits(
   }
 }
 
+function lastEntryPreview(pkg: SyncTalePackageV1): string | null {
+  for (const turn of [...pkg.turns].reverse()) {
+    for (const entry of [...turn.entries].reverse()) {
+      const raw =
+        typeof entry === "string"
+          ? entry
+          : entry && typeof entry === "object" && "text" in entry
+            ? (entry as { text?: unknown }).text
+            : null;
+      const text =
+        typeof raw === "string" ? raw.replace(/\s+/g, " ").trim() : "";
+      if (text) {
+        return text.length > PREVIEW_MAX_CHARS
+          ? `${text.slice(0, PREVIEW_MAX_CHARS - 1)}…`
+          : text;
+      }
+    }
+  }
+  return null;
+}
+
+export async function encryptSyncPackage(
+  session: CloudEncryptionContext,
+  pkg: SyncTalePackageV1,
+  revision: TaleRevision,
+  cover: RemoteTaleCover | null,
+  migratedFrom?: RemoteTaleRevisions,
+): Promise<EncryptedTalePackage> {
+  const summary: TaleSummary = {
+    title: pkg.tale.title,
+    description: pkg.tale.description,
+    lastEntryPreview: lastEntryPreview(pkg),
+    cover,
+    ...(migratedFrom ? { migratedFrom } : {}),
+  };
+  if (jsonBytes(summary) > MAX_SUMMARY_BYTES) {
+    throw new SyncHttpError(
+      "This tale is too large to sync.",
+      413,
+      "package_too_large",
+    );
+  }
+  const sealed = await cloudKeys.encryptTale(
+    session,
+    revision,
+    JSON.stringify(summary),
+    JSON.stringify(pkg),
+  );
+  return {
+    scheme: CLOUD_ENCRYPTION_SCHEME,
+    keyId: session.keyId,
+    taleId: revision.taleId,
+    sourceTaleId: pkg.tale.id,
+    gameMode: pkg.tale.gameMode,
+    stateSchemaVersion: pkg.state.stateSchemaVersion,
+    turnCount: pkg.turns.length,
+    entryCount: entryCount(pkg),
+    coverAssetId: pkg.tale.coverAssetId ?? null,
+    createdAt: pkg.tale.createdAt,
+    updatedAt: pkg.tale.updatedAt,
+    summary: sealed.summary,
+    package: sealed.package,
+  };
+}
+
+type UploadTaleBody =
+  | { package: SyncTalePackageV1 }
+  | { encryptedPackage: EncryptedTalePackage };
+
 async function toUploadSyncPackage(input: {
   profile: SyncProfile;
   transport: SyncTransport;
   localTaleId: string;
   localPackage: TalePackageV1;
   capabilities?: SyncCapabilities;
-  existingCover?: CoverAssetReference | null;
-}): Promise<SyncTalePackageV1> {
+  existingCover?: RemoteTaleCover | null;
+  revision?: TaleRevision;
+}): Promise<UploadTaleBody> {
   const capabilities =
     input.capabilities ?? (await fetchSyncCapabilities(input.transport));
   assertSyncAvailable(capabilities);
+  const session = input.transport.cloudEncryption;
+  if (session && !input.revision) {
+    throw new Error("Encrypted uploads need the revision they will produce");
+  }
   const hosted = input.profile.mode === "hosted";
   const coverAsset = hosted
     ? localThumbnailAsset(input.localPackage)
@@ -943,9 +1356,11 @@ async function toUploadSyncPackage(input: {
         : {}),
     }),
     capabilities,
+    Boolean(session),
   );
   // Cloud imports omit binary assets locally. Keep their existing cover on saves.
-  let coverAssetId = hosted ? input.existingCover?.assetId : undefined;
+  let cover: UploadedCover | null =
+    hosted && input.existingCover ? input.existingCover : null;
   if (coverAsset) {
     const original = {
       bytes: base64ToBytes(coverAsset.dataBase64),
@@ -956,7 +1371,7 @@ async function toUploadSyncPackage(input: {
     // Retain previously uploaded originals; optimize only when an upload is needed.
     const kept = await findMatchingCover(candidates, original);
     if (kept) {
-      coverAssetId = kept.assetId;
+      cover = kept;
     } else if (canUploadCoverAssets(capabilities)) {
       const optimized = await optimizeCoverImage(original);
       input.transport.signal?.throwIfAborted();
@@ -964,13 +1379,100 @@ async function toUploadSyncPackage(input: {
         (await findMatchingCover(candidates, optimized)) ??
         (await uploadHostedCoverAsset(input.transport, optimized));
       uploadedCovers.set(coverKey, uploaded);
-      coverAssetId = uploaded.assetId;
+      cover = uploaded;
     }
   }
-  return toSyncTalePackage(input.localPackage, {
+  const pkg = toSyncTalePackage(input.localPackage, {
     mode: input.profile.mode,
-    ...(coverAssetId ? { coverAssetId } : {}),
+    ...(cover?.assetId ? { coverAssetId: cover.assetId } : {}),
   });
+  if (!session || !input.revision) return { package: pkg };
+  return {
+    encryptedPackage: await encryptSyncPackage(
+      session,
+      pkg,
+      input.revision,
+      cover?.assetId
+        ? {
+            assetId: cover.assetId,
+            contentType: cover.contentType,
+            byteSize: cover.byteSize,
+            sha256: cover.sha256,
+          }
+        : null,
+    ),
+  };
+}
+
+const ABANDONED_WRITE_STATUSES = new Set([400, 404, 409, 410, 413, 422]);
+
+function abandonsStoredWrite(error: unknown) {
+  return (
+    error instanceof SyncHttpError &&
+    ABANDONED_WRITE_STATUSES.has(error.status) &&
+    error.code !== "idempotency_in_progress"
+  );
+}
+
+// A rebuilt encrypted body differs from the lost one, so a retry under the same
+// idempotency key resends the stored bytes.
+export async function sendStoredWrite(input: {
+  profile: SyncProfile;
+  transport: SyncTransport;
+  writeKey: string;
+  idempotencyKey: string;
+  method: "POST" | "PUT";
+  path: string;
+  build: () => Promise<{ body: unknown; saveVersion: number | null }>;
+}): Promise<{ result: Record<string, unknown>; saveVersion: number | null }> {
+  const scope = {
+    profileId: input.profile.id,
+    accountId: input.profile.accountId,
+    writeKey: input.writeKey,
+  };
+  const stored = await getPendingSyncWrite(scope);
+  let write =
+    stored &&
+    stored.idempotencyKey === input.idempotencyKey &&
+    stored.method === input.method &&
+    stored.path === input.path
+      ? stored
+      : null;
+  if (!write) {
+    const built = await input.build();
+    input.transport.signal?.throwIfAborted();
+    write = {
+      idempotencyKey: input.idempotencyKey,
+      method: input.method,
+      path: input.path,
+      body: JSON.stringify(built.body),
+      saveVersion: built.saveVersion,
+    };
+    await savePendingSyncWrite({ ...scope, ...write });
+  }
+  const send =
+    input.method === "POST" ? input.transport.post : input.transport.put;
+  try {
+    const result = bodyValue(
+      await send(input.path, undefined, {
+        idempotencyKey: write.idempotencyKey,
+        rawBody: write.body,
+      }),
+    );
+    await deletePendingSyncWrite({
+      ...scope,
+      idempotencyKey: write.idempotencyKey,
+    });
+    return { result, saveVersion: write.saveVersion };
+  } catch (error) {
+    if (abandonsStoredWrite(error)) {
+      await deletePendingSyncWrite({
+        ...scope,
+        idempotencyKey: write.idempotencyKey,
+      });
+    }
+    throw error;
+  }
 }
 
 export function remoteTaleChanged(
@@ -1114,17 +1616,22 @@ export async function syncLinkedTale(input: {
   capabilities?: SyncCapabilities;
   canPull?: () => boolean;
 }): Promise<LinkedTaleSyncResult> {
-  const state = await getTaleSyncState({
+  const stored = await getTaleSyncState({
     profileId: input.profile.id,
     accountId: input.profile.accountId,
     localTaleId: input.localTaleId,
   });
-  if (!state || state.remoteTaleId !== input.remoteTale.id) {
+  if (!stored || stored.remoteTaleId !== input.remoteTale.id) {
     return "skipped";
   }
-  if (state.pendingStatus === "conflict") {
+  if (stored.pendingStatus === "conflict") {
     return "skipped";
   }
+  const state = await adoptMigratedRevisions(
+    input.profile,
+    stored,
+    input.remoteTale,
+  );
 
   // A dirty tale may include edits to earlier turns as well as new turns.
   // Replace one complete snapshot: turn count alone cannot prove append-only
@@ -1196,6 +1703,44 @@ export async function syncLinkedTale(input: {
   return push(state);
 }
 
+// The summary's revisions are authenticated, so only a re-encryption of the
+// revision this device last synced is skipped over.
+async function adoptMigratedRevisions(
+  profile: SyncProfile,
+  state: TaleSyncState,
+  remote: RemoteTale,
+): Promise<TaleSyncState> {
+  const from = remote.migratedFrom;
+  if (
+    remote.encryption !== "client" ||
+    !from ||
+    state.contentRev === null ||
+    state.metadataRev === null ||
+    Number(state.contentRev) !== from.contentRev ||
+    Number(state.metadataRev) !== from.metadataRev ||
+    remote.contentRev !== from.contentRev + 1 ||
+    remote.metadataRev !== from.metadataRev + 1
+  ) {
+    return state;
+  }
+  const adopted = await advanceMigratedTaleRevisions({
+    profileId: profile.id,
+    accountId: profile.accountId,
+    remoteTaleId: remote.id,
+    baseContentRev: from.contentRev,
+    baseMetadataRev: from.metadataRev,
+    contentRev: remote.contentRev,
+    metadataRev: remote.metadataRev,
+  });
+  return adopted
+    ? {
+        ...state,
+        contentRev: String(remote.contentRev),
+        metadataRev: String(remote.metadataRev),
+      }
+    : state;
+}
+
 // For a write that landed but whose response was lost.
 async function resumeAfterOwnWrite(
   input: { profile: SyncProfile; localTaleId: string; remoteTale: RemoteTale },
@@ -1240,16 +1785,69 @@ async function resumeAfterOwnWrite(
   return push(adopted);
 }
 
+type LocalTaleAsset = TalePackageV1["assets"][number];
+
+async function downloadRemoteCover(
+  transport: SyncTransport,
+  remote: RemoteTalePackageResponse,
+): Promise<LocalTaleAsset | null> {
+  const assetId =
+    remote.package.tale.coverAssetId ?? remote.package.tale.thumbnailAssetId;
+  const reference = bodyValue(remote.cover);
+  if (
+    !assetId ||
+    !transport.getBytes ||
+    typeof reference.assetId !== "string" ||
+    reference.assetId.toLowerCase() !== assetId.toLowerCase()
+  ) {
+    return null;
+  }
+  const encrypted =
+    remote.encryption === "client" || reference.encryption === "client";
+  const session = transport.cloudEncryption;
+  if (encrypted && !session) return null;
+  try {
+    const object = await transport.getBytes(
+      `/v1/assets/${encodeURIComponent(assetId)}/download`,
+    );
+    const image =
+      encrypted && session
+        ? base64ToBytes(
+            await cloudKeys.decryptCover(
+              session,
+              assetId,
+              bytesToBase64(object),
+            ),
+          )
+        : object;
+    const contentType = detectCoverImageContentType(image);
+    if (!contentType) return null;
+    return {
+      id: assetId,
+      role: "thumbnail",
+      contentType,
+      dataBase64: bytesToBase64(image),
+    };
+  } catch {
+    transport.signal?.throwIfAborted();
+    return null;
+  }
+}
+
 function toLocalTalePackage(
   pkg: RemoteTalePackageResponse["package"],
+  cover: LocalTaleAsset | null = null,
 ): TalePackageV1 {
-  const assets = (pkg.assets ?? []).filter(
-    (asset): asset is TalePackageV1["assets"][number] =>
-      typeof asset.dataBase64 === "string",
-  );
+  const assets = cover
+    ? [cover]
+    : (pkg.assets ?? []).filter(
+        (asset): asset is LocalTaleAsset =>
+          typeof asset.dataBase64 === "string",
+      );
   const assetIds = new Set(assets.map((asset) => asset.id));
   const { thumbnailAssetId, coverAssetId, ...tale } = pkg.tale;
-  const localThumbnailAssetId = thumbnailAssetId ?? coverAssetId ?? undefined;
+  const localThumbnailAssetId =
+    cover?.id ?? thumbnailAssetId ?? coverAssetId ?? undefined;
 
   return {
     ...pkg,
@@ -1335,22 +1933,55 @@ export async function uploadTalePackage(input: {
   await upsertSyncProfile(input.profile);
 
   try {
-    const expectedSaveVersion = await getTaleSaveVersion(input.localTaleId);
-    const pkg = await exportTalePackage(input.localTaleId);
-    const syncPackage = await toUploadSyncPackage({
-      profile: input.profile,
-      transport: input.transport,
-      localTaleId: input.localTaleId,
-      localPackage: pkg,
-      capabilities: input.capabilities,
-    });
-    const result = bodyValue(
-      await input.transport.post(
-        "/v1/tales",
-        { package: syncPackage },
-        { idempotencyKey: input.idempotencyKey },
-      ),
-    );
+    let expectedSaveVersion: number;
+    let result: Record<string, unknown>;
+    if (input.transport.cloudEncryption) {
+      const sent = await sendStoredWrite({
+        profile: input.profile,
+        transport: input.transport,
+        writeKey: `tale:${input.localTaleId}`,
+        idempotencyKey: input.idempotencyKey,
+        method: "POST",
+        path: "/v1/tales",
+        build: async () => {
+          const saveVersion = await getTaleSaveVersion(input.localTaleId);
+          const pkg = await exportTalePackage(input.localTaleId);
+          return {
+            saveVersion,
+            body: await toUploadSyncPackage({
+              profile: input.profile,
+              transport: input.transport,
+              localTaleId: input.localTaleId,
+              localPackage: pkg,
+              capabilities: input.capabilities,
+              revision: {
+                taleId: crypto.randomUUID(),
+                contentRev: 1,
+                metadataRev: 1,
+              },
+            }),
+          };
+        },
+      });
+      result = sent.result;
+      expectedSaveVersion =
+        sent.saveVersion ?? (await getTaleSaveVersion(input.localTaleId));
+    } else {
+      expectedSaveVersion = await getTaleSaveVersion(input.localTaleId);
+      const pkg = await exportTalePackage(input.localTaleId);
+      const body = await toUploadSyncPackage({
+        profile: input.profile,
+        transport: input.transport,
+        localTaleId: input.localTaleId,
+        localPackage: pkg,
+        capabilities: input.capabilities,
+      });
+      result = bodyValue(
+        await input.transport.post("/v1/tales", body, {
+          idempotencyKey: input.idempotencyKey,
+        }),
+      );
+    }
     forgetUploadedCover(input.profile, input.localTaleId);
     const remoteTaleId =
       typeof result.id === "string" && result.id.trim().length > 0
@@ -1414,7 +2045,8 @@ export async function replaceRemoteTalePackage(input: {
   idempotencyKey: string;
   capabilities?: SyncCapabilities;
   forceReplace?: boolean;
-  existingCover?: CoverAssetReference | null;
+  existingCover?: RemoteTaleCover | null;
+  remoteRevisions?: { contentRev: number; metadataRev: number };
 }): Promise<unknown> {
   const state = await getTaleSyncState({
     profileId: input.profile.id,
@@ -1425,37 +2057,85 @@ export async function replaceRemoteTalePackage(input: {
     throw new Error("Tale is not linked to this sync profile");
   }
 
-  const expectedSaveVersion = await getTaleSaveVersion(input.localTaleId);
-  const pkg = await exportTalePackage(input.localTaleId);
+  const path = `/v1/tales/${encodeURIComponent(state.remoteTaleId)}/package`;
+  let expectedSaveVersion = await getTaleSaveVersion(input.localTaleId);
+  const pkg = input.transport.cloudEncryption
+    ? null
+    : await exportTalePackage(input.localTaleId);
   try {
-    const syncPackage = await toUploadSyncPackage({
-      profile: input.profile,
-      transport: input.transport,
-      localTaleId: input.localTaleId,
-      localPackage: pkg,
-      capabilities: input.capabilities,
-      existingCover: input.existingCover,
-    });
-    const body: {
-      package: SyncTalePackageV1;
-      confirmReplace: true;
-      baseContentRev?: number;
-      baseMetadataRev?: number;
-    } = {
-      package: syncPackage,
-      confirmReplace: true,
-    };
-    if (!input.forceReplace) {
-      body.baseContentRev = revisionNumber(state.contentRev, "content");
-      body.baseMetadataRev = revisionNumber(state.metadataRev, "metadata");
+    let result: Record<string, unknown>;
+    if (!pkg) {
+      const sent = await sendStoredWrite({
+        profile: input.profile,
+        transport: input.transport,
+        writeKey: `tale:${input.localTaleId}`,
+        idempotencyKey: input.idempotencyKey,
+        method: "PUT",
+        path,
+        build: async () => {
+          // Encrypted replaces always name the revision they replace.
+          const base = input.forceReplace
+            ? (input.remoteRevisions ??
+              (await downloadRemoteTalePackage(
+                input.transport,
+                state.remoteTaleId,
+              )))
+            : {
+                contentRev: revisionNumber(state.contentRev, "content"),
+                metadataRev: revisionNumber(state.metadataRev, "metadata"),
+              };
+          const localPackage = await exportTalePackage(input.localTaleId);
+          return {
+            saveVersion: expectedSaveVersion,
+            body: {
+              ...(await toUploadSyncPackage({
+                profile: input.profile,
+                transport: input.transport,
+                localTaleId: input.localTaleId,
+                localPackage,
+                capabilities: input.capabilities,
+                existingCover: input.existingCover,
+                revision: {
+                  taleId: state.remoteTaleId,
+                  contentRev: base.contentRev + 1,
+                  metadataRev: base.metadataRev + 1,
+                },
+              })),
+              baseContentRev: base.contentRev,
+              baseMetadataRev: base.metadataRev,
+              confirmReplace: true,
+            },
+          };
+        },
+      });
+      result = sent.result;
+      expectedSaveVersion = sent.saveVersion ?? expectedSaveVersion;
+    } else {
+      const body: UploadTaleBody & {
+        confirmReplace: true;
+        baseContentRev?: number;
+        baseMetadataRev?: number;
+      } = {
+        ...(await toUploadSyncPackage({
+          profile: input.profile,
+          transport: input.transport,
+          localTaleId: input.localTaleId,
+          localPackage: pkg,
+          capabilities: input.capabilities,
+          existingCover: input.existingCover,
+        })),
+        confirmReplace: true,
+      };
+      if (!input.forceReplace) {
+        body.baseContentRev = revisionNumber(state.contentRev, "content");
+        body.baseMetadataRev = revisionNumber(state.metadataRev, "metadata");
+      }
+      result = bodyValue(
+        await input.transport.put(path, body, {
+          idempotencyKey: input.idempotencyKey,
+        }),
+      );
     }
-    const result = bodyValue(
-      await input.transport.put(
-        `/v1/tales/${encodeURIComponent(state.remoteTaleId)}/package`,
-        body,
-        { idempotencyKey: input.idempotencyKey },
-      ),
-    );
     input.transport.signal?.throwIfAborted();
     forgetUploadedCover(input.profile, input.localTaleId);
     await acknowledgeTaleSyncWrite({
@@ -1525,8 +2205,10 @@ export async function importRemoteTalePackage(input: {
     input.remoteTaleId,
   );
   input.transport.signal?.throwIfAborted();
+  const cover = await downloadRemoteCover(input.transport, remote);
+  input.transport.signal?.throwIfAborted();
   const localTaleId = await importTalePackage(
-    toLocalTalePackage(remote.package),
+    toLocalTalePackage(remote.package, cover),
     {
       preserveId: true,
       ...(input.title ? { title: input.title } : {}),
@@ -1625,9 +2307,21 @@ async function pullRemoteTalePackage(input: {
     throw error;
   }
   input.transport.signal?.throwIfAborted();
+  if (
+    remote.encryption === "client" &&
+    state.contentRev !== null &&
+    remote.contentRev < Number(state.contentRev)
+  ) {
+    throw cloudIntegrityError(
+      "The cloud returned an older version of this tale.",
+      "cloud_rollback",
+    );
+  }
+  const cover = await downloadRemoteCover(input.transport, remote);
+  input.transport.signal?.throwIfAborted();
   const replaced = await replaceTaleWithPackage(
     input.localTaleId,
-    toLocalTalePackage(remote.package),
+    toLocalTalePackage(remote.package, cover),
     {
       expectedSaveVersion,
       // Rechecked inside the write queue in case play began meanwhile.

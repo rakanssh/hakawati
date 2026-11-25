@@ -25,6 +25,7 @@ import { workspaceContext } from "../context";
 import { editScenario, scenarioFromTale } from "../scenario-edits";
 import { errorMessage } from "@/lib/errors";
 import {
+  AI_INSTRUCTIONS_PROPERTY,
   defineTool,
   MODE_PROPERTY,
   modeFrom,
@@ -99,7 +100,7 @@ export function createScenarioTools(
     defineTool({
       name: "edit_scenario",
       description:
-        "Change a scenario, or create one. With the scenario editor open, this fills in its form, and the player saves it; tell them. Leave out what stays the same; an empty string clears opening, plot, author's note or AI instructions. Keep any ${...} questions the player wrote. To build a whole scenario, set its text first, then add story cards over several calls.",
+        "Change a scenario, or create one. With the scenario editor open, this fills in its form, and the player saves it; tell them. Leave out what stays the same; an empty string clears opening, plot or author's note, or puts back the default AI instructions. Keep any ${...} questions the player wrote. To build a whole scenario, set its text first, then add story cards over several calls.",
       parameters: objectSchema({
         scenarioId: {
           type: "string",
@@ -118,7 +119,7 @@ export function createScenarioTools(
         },
         plot: { type: "string" },
         authorNote: { type: "string" },
-        aiInstructions: { type: "string" },
+        aiInstructions: AI_INSTRUCTIONS_PROPERTY,
         cards: { type: "array", items: CARD_OP_SCHEMA },
         stats: {
           type: "array",

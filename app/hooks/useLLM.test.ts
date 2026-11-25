@@ -1,6 +1,7 @@
 import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { GameMode } from "@/types";
 import { LogEntryMode } from "@/types/log.type";
 import { parseOpenAIStream } from "@/services/llm/streaming";
 import { useTaleStore } from "@/store/useTaleStore";
@@ -119,5 +120,115 @@ describe("useLLM", () => {
     expect(handlers.onError).not.toHaveBeenCalled();
     expect(harness.llm.loading).toBe(false);
     harness.cleanup();
+  });
+
+  describe("Game Master tool calls", () => {
+    const sse = (deltas: unknown[]) =>
+      parseOpenAIStream(
+        new Response(
+          [
+            ...deltas.map((delta) => JSON.stringify({ choices: [{ delta }] })),
+            "[DONE]",
+          ]
+            .map((data) => `data: ${data}\n\n`)
+            .join(""),
+        ).body!,
+      );
+
+    async function sendGm(response: unknown) {
+      useTaleStore.setState({ gameMode: GameMode.GM });
+      sendRoleChat.mockResolvedValue(response);
+      const harness = renderLlmHarness();
+      const handlers = callbacks();
+      let result!: LlmSendResult;
+      await act(async () => {
+        result = await harness.llm.send(
+          { text: "Open the door", mode: LogEntryMode.DO },
+          handlers,
+        );
+      });
+      harness.cleanup();
+      return { handlers, result };
+    }
+
+    it("applies calls from a provider that sends no ids or indexes", async () => {
+      const { handlers, result } = await sendGm({
+        content: "",
+        usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+        iterator: sse([
+          { content: "A trap springs." },
+          {
+            tool_calls: [
+              {
+                type: "function",
+                function: {
+                  name: "modify_stat",
+                  arguments: '{"name":"HP","value":-2}',
+                },
+              },
+              {
+                type: "function",
+                function: {
+                  name: "add_to_inventory",
+                  arguments: '{"item":"Key"}',
+                },
+              },
+            ],
+          },
+        ]),
+      });
+      expect(result.status).toBe("completed");
+      expect(handlers.onActionsReady).toHaveBeenCalledWith([
+        { type: "MODIFY_STAT", payload: { name: "HP", value: -2 } },
+        { type: "ADD_TO_INVENTORY", payload: { item: "Key" } },
+      ]);
+      expect(handlers.onActionParseError).not.toHaveBeenCalled();
+    });
+
+    it("applies the valid calls and reports the ones it could not read", async () => {
+      const { handlers } = await sendGm({
+        content: "",
+        usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+        iterator: sse([
+          {
+            tool_calls: [
+              {
+                index: 0,
+                id: "call_a",
+                function: { name: "modify_stat", arguments: '{"name":"HP"' },
+              },
+              {
+                index: 1,
+                id: "call_b",
+                function: {
+                  name: "add_to_inventory",
+                  arguments: '{"item":"Key"}',
+                },
+              },
+            ],
+          },
+        ]),
+      });
+      expect(handlers.onActionsReady).toHaveBeenCalledWith([
+        { type: "ADD_TO_INVENTORY", payload: { item: "Key" } },
+      ]);
+      expect(handlers.onActionParseError).toHaveBeenCalledOnce();
+    });
+
+    it("reports unreadable calls from a response that was not streamed", async () => {
+      const { handlers } = await sendGm({
+        content: "A trap springs.",
+        usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+        tool_calls: [
+          {
+            id: "call_a",
+            type: "function",
+            function: { name: "modify_stat", arguments: '{"name":"HP"}' },
+          },
+        ],
+      });
+      expect(handlers.onActionsReady).not.toHaveBeenCalled();
+      expect(handlers.onActionParseError).toHaveBeenCalledOnce();
+    });
   });
 });

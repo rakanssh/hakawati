@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { i18n } from "@lingui/core";
+import { t } from "@lingui/core/macro";
 import { toast } from "sonner";
 import { createUploadIdempotencyKey } from "@/lib/sync-idempotency";
 import { isRefusedSyncError } from "@/lib/sync-ui";
@@ -14,7 +15,7 @@ import {
   setTaleSyncStatus,
   upsertTaleSyncState,
 } from "@/repositories/sync.repository";
-import { isTaleInPlay, showPulledTale } from "@/services/open-tale-sync";
+import { isTaleInPlay, showSavedTale } from "@/services/open-tale-sync";
 import {
   assertSyncAvailable,
   createSyncTransport,
@@ -25,10 +26,19 @@ import {
   SyncHttpError,
   syncLinkedTale,
   uploadTalePackage,
+  withCloudEncryption,
 } from "@/services/sync";
+import {
+  migrateCloudSaves,
+  resolveCloudEncryption,
+} from "@/services/cloud-encryption";
 import type { SyncProfile } from "@/types/sync.type";
 import { addSyncWakeListener, notifySyncChanged } from "@/services/sync-wakeup";
-import { useSyncSettingsStore } from "@/store/useSyncSettingsStore";
+import {
+  useSyncSettingsStore,
+  type CloudSyncPause,
+} from "@/store/useSyncSettingsStore";
+import { useSettingsModalStore } from "@/store/useSettingsModalStore";
 
 const HOSTED_PROFILE_ID = "hosted";
 const PERSONAL_PROFILE_ID = "personal";
@@ -42,6 +52,30 @@ type CloudFull = {
 
 function isCloudFullError(error: unknown) {
   return error instanceof SyncHttpError && error.code === "quota_exceeded";
+}
+
+function showCloudSyncPaused(pause: CloudSyncPause) {
+  const action = {
+    label:
+      pause === "setup"
+        ? t`Set up`
+        : pause === "locked"
+          ? t`Unlock`
+          : t`Settings`,
+    onClick: () => useSettingsModalStore.getState().openSettings("cloud-sync"),
+  };
+  if (pause === "setup") {
+    toast.info(t`Set up encryption to sync`, { action });
+    return;
+  }
+  toast.error(
+    pause === "locked"
+      ? t`Unlock this device to sync`
+      : pause === "downgraded"
+        ? t`Sync is paused`
+        : t`This cloud service can’t encrypt saves`,
+    { action },
+  );
 }
 
 export function useSyncBackground(dbReady: boolean) {
@@ -62,6 +96,9 @@ export function useSyncBackground(dbReady: boolean) {
   const setCloudUpdateRequired = useSyncSettingsStore(
     (state) => state.setCloudUpdateRequired,
   );
+  const setCloudSyncPaused = useSyncSettingsStore(
+    (state) => state.setCloudSyncPaused,
+  );
   const runningRef = useRef(false);
   const rerunRef = useRef(false);
   const latestRunRef = useRef<(() => Promise<void>) | null>(null);
@@ -69,6 +106,7 @@ export function useSyncBackground(dbReady: boolean) {
   const refusedUploadsRef = useRef(new Set<string>());
   const cloudFullRef = useRef<CloudFull | null>(null);
   const retriedCloudFullScopesRef = useRef(new Set<string>());
+  const notifiedPausesRef = useRef(new Set<string>());
 
   const profile = useMemo<SyncProfile>(
     () => ({
@@ -132,12 +170,13 @@ export function useSyncBackground(dbReady: boolean) {
           activeProfile.accountId ?? "",
         ]);
         const writerId = activeProfile.deviceId || deviceId.trim();
-        const transport = createSyncTransport({
+        const accountTransport = createSyncTransport({
           profile: activeProfile,
           signal,
           accessToken:
             activeProfile.mode === "hosted" ? accessToken.trim() : undefined,
         });
+        let transport = accountTransport;
         const capabilities = await fetchSyncCapabilities(transport);
         if (signal.aborted) return;
         assertSyncAvailable(capabilities);
@@ -149,6 +188,55 @@ export function useSyncBackground(dbReady: boolean) {
           if (!devices.some((device) => device.id === activeProfile.deviceId)) {
             await setSyncProfileDisabled(activeProfile.id, "user_disabled");
             return;
+          }
+        }
+        const encryption = await resolveCloudEncryption({
+          profile: activeProfile,
+          transport,
+          capabilities,
+          maxAgeMs: 0,
+        });
+        if (signal.aborted) return;
+        if (encryption.kind !== "ready" && encryption.kind !== "plaintext") {
+          const pause =
+            encryption.kind === "paused" ? encryption.reason : encryption.kind;
+          setCloudSyncPaused(pause);
+          const notifiedKey = JSON.stringify([scope, pause]);
+          if (
+            !notifiedPausesRef.current.has(notifiedKey) &&
+            !useSettingsModalStore.getState().open
+          ) {
+            notifiedPausesRef.current.add(notifiedKey);
+            showCloudSyncPaused(pause);
+          }
+          return;
+        }
+        setCloudSyncPaused(null);
+        let migrationCloudFull = false;
+        if (encryption.kind === "ready") {
+          transport = withCloudEncryption(accountTransport, encryption.session);
+          if (
+            encryption.info.state === "migrating" &&
+            cloudFullRef.current?.scope !== scope
+          ) {
+            try {
+              const migrated = await migrateCloudSaves({
+                profile: activeProfile,
+                transport,
+                remoteTales: await listAllRemoteTales(transport),
+              });
+              if (migrated.state === "client") {
+                transport = withCloudEncryption(accountTransport, {
+                  ...encryption.session,
+                  acceptServerTales: false,
+                });
+              }
+            } catch (error) {
+              if (signal.aborted) return;
+              if (isUpdateRequiredError(error)) throw error;
+              console.warn("Cloud save encryption failed", error);
+              migrationCloudFull = isCloudFullError(error);
+            }
           }
         }
         const [remoteTales, syncStates, syncPreferences] = await Promise.all([
@@ -190,6 +278,7 @@ export function useSyncBackground(dbReady: boolean) {
           };
           toast.error(i18n._("Cloud storage is full"));
         };
+        if (migrationCloudFull) noteCloudFull(false);
 
         const forgetRemovedCloudTale = async (localTaleId: string) => {
           await setTaleSyncPreference({
@@ -291,6 +380,12 @@ export function useSyncBackground(dbReady: boolean) {
             }
             continue;
           }
+          if (
+            encryption.kind === "ready" &&
+            remoteTale.encryption === "server"
+          ) {
+            continue;
+          }
           const hasChanges =
             state.pendingStatus === "push" ||
             (state.pendingStatus === "error" &&
@@ -316,7 +411,7 @@ export function useSyncBackground(dbReady: boolean) {
               canPull: () => !isTaleInPlay(state.localTaleId),
             });
             if (result === "pulled" && !signal.aborted) {
-              await showPulledTale(state.localTaleId);
+              await showSavedTale(state.localTaleId);
             }
           } catch (error) {
             if (signal.aborted) return;
@@ -359,6 +454,7 @@ export function useSyncBackground(dbReady: boolean) {
     dbReady,
     deviceId,
     profile,
+    setCloudSyncPaused,
     setCloudUpdateRequired,
   ]);
 }

@@ -17,15 +17,27 @@ export type SyncDisabledReason =
   | "signed_out"
   | "user_disabled";
 
+export type RemoteTaleCover = Pick<
+  CoverAssetReference,
+  "assetId" | "contentType" | "byteSize" | "sha256"
+>;
+
+export type RemoteTaleRevisions = {
+  contentRev: number;
+  metadataRev: number;
+};
+
 export type RemoteTale = {
   id: string;
   sourceTaleId: string;
+  encryption?: "server" | "client";
+  locked?: boolean;
   title: string;
   description: string | null;
   gameMode: string;
   coverAssetId: string | null;
   thumbnailAssetId: string | null;
-  cover?: CoverAssetReference | null;
+  cover?: RemoteTaleCover | null;
   contentRev: number;
   metadataRev: number;
   turnCount: number;
@@ -33,6 +45,7 @@ export type RemoteTale = {
   storageBytes?: number;
   updatedAt: string;
   lastEntryPreview: string | null;
+  migratedFrom?: RemoteTaleRevisions;
 };
 
 export type TaleSyncStatus = "idle" | "push" | "pull" | "conflict" | "error";

@@ -71,7 +71,10 @@ export default function ScenarioCreate() {
   useOpenScenarioDraft(scenario, setScenario);
 
   return (
-    <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5 px-3 py-4 sm:px-4 lg:px-6">
+    <div
+      data-page-column=""
+      className="mx-auto flex w-full max-w-screen-2xl flex-col gap-5 px-3 py-4 sm:px-4 lg:px-6"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button

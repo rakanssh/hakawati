@@ -73,6 +73,7 @@ export default function TalesHome() {
     error,
     remoteError,
     syncActive,
+    syncPaused,
     syncStatesLoading,
     loadIntoGame,
     page,
@@ -176,7 +177,10 @@ export default function TalesHome() {
     : items;
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8">
+    <main
+      data-page-column=""
+      className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8"
+    >
       <header className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 items-center gap-3">
           <Button
@@ -236,7 +240,9 @@ export default function TalesHome() {
         {visibleItems.map((item) => {
           const isRemote = item.source === "remote";
           const id = isRemote ? item.remoteTale.id : item.localTale.id;
-          const name = isRemote ? item.remoteTale.title : item.localTale.name;
+          const name = isRemote
+            ? item.remoteTale.title || t`Locked tale`
+            : item.localTale.name;
           const description = isRemote
             ? (item.remoteTale.lastEntryPreview ??
               item.remoteTale.description ??
@@ -246,10 +252,13 @@ export default function TalesHome() {
               "");
           const thumbnail = isRemote ? null : item.localTale.thumbnail;
           const scenarioHead = isRemote ? null : item.localTale.scenarioHead;
-          const badge = syncActive ? getTaleSyncBadge(item) : "local";
+          const badge = syncActive
+            ? getTaleSyncBadge(item, syncPaused)
+            : "local";
           const hasConflict = badge === "conflict";
           const isSynced =
             syncActive && (isRemote || Boolean(!isRemote && item.sync));
+          const isLocked = isRemote && item.remoteTale.locked;
           const syncStatusUnknown =
             syncActive &&
             item.source === "local" &&
@@ -261,9 +270,11 @@ export default function TalesHome() {
               ? t`Cloud full`
               : badge === "not-synced"
                 ? t`Not synced`
-                : isSynced
-                  ? t`Cloud`
-                  : t`Local`;
+                : badge === "paused"
+                  ? t`Sync paused`
+                  : isSynced
+                    ? t`Cloud`
+                    : t`Local`;
           return (
             <ScenarioPreviewCard
               key={isRemote ? `remote-${id}` : `local-${id}`}
@@ -324,7 +335,7 @@ export default function TalesHome() {
                         <Trans>Save as Scenario</Trans>
                       </DropdownMenuItem>
                     )}
-                    {syncActive && isSynced ? (
+                    {syncActive && isSynced && !isLocked ? (
                       <DropdownMenuItem
                         onSelect={(e) => e.preventDefault()}
                         onClick={() => setPendingCloudRemove({ item, name })}

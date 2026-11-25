@@ -7,6 +7,7 @@ import {
   wakeSyncBackground,
 } from "@/services/sync-wakeup";
 import { SyncHttpError } from "@/services/sync";
+import { useSettingsModalStore } from "@/store/useSettingsModalStore";
 import { useSyncBackground } from "./useSyncBackground";
 
 i18n.load("en", {});
@@ -26,7 +27,7 @@ const syncRepoMocks = vi.hoisted(() => ({
 
 const openTaleMocks = vi.hoisted(() => ({
   isTaleInPlay: vi.fn(() => false),
-  showPulledTale: vi.fn(),
+  showSavedTale: vi.fn(),
 }));
 
 const syncServiceMocks = vi.hoisted(() => {
@@ -53,13 +54,26 @@ const syncStoreState = vi.hoisted(() => ({
   accountId: "account-1",
   hostedDeviceIdsByAccountId: { "account-1": "device-1" },
   setCloudUpdateRequired: vi.fn(),
+  setCloudSyncPaused: vi.fn(),
 }));
 
 const toastMocks = vi.hoisted(() => ({
   error: vi.fn(),
+  info: vi.fn(),
 }));
 
+const cloudEncryptionMocks = vi.hoisted(() => ({
+  resolveCloudEncryption: vi.fn(
+    async (): Promise<Record<string, unknown>> => ({ kind: "plaintext" }),
+  ),
+  migrateCloudSaves: vi.fn(),
+}));
+
+vi.mock("@lingui/core/macro", () => ({
+  t: (parts: TemplateStringsArray) => parts.join(""),
+}));
 vi.mock("@/repositories/sync.repository", () => syncRepoMocks);
+vi.mock("@/services/cloud-encryption", () => cloudEncryptionMocks);
 vi.mock("@/services/sync", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/services/sync")>()),
   ...syncServiceMocks,
@@ -169,6 +183,9 @@ describe("useSyncBackground", () => {
     });
     syncServiceMocks.listHostedDevices.mockResolvedValue([{ id: "device-1" }]);
     syncServiceMocks.listAllRemoteTales.mockResolvedValue([]);
+    cloudEncryptionMocks.resolveCloudEncryption.mockResolvedValue({
+      kind: "plaintext",
+    });
   });
 
   it("pauses background sync while the active profile is disabled", async () => {
@@ -459,6 +476,221 @@ describe("useSyncBackground", () => {
     harness.cleanup();
   });
 
+  it("pauses private sync until this device is unlocked", async () => {
+    cloudEncryptionMocks.resolveCloudEncryption.mockResolvedValue({
+      kind: "locked",
+      reason: "missing",
+    });
+    syncRepoMocks.listTaleSyncPreferences.mockResolvedValue([
+      { localTaleId: "local-1", policy: "sync", updatedAt: 1 },
+    ]);
+    const harness = renderHarness();
+
+    await waitForAssertion(() =>
+      expect(cloudEncryptionMocks.resolveCloudEncryption).toHaveBeenCalledWith(
+        expect.objectContaining({ maxAgeMs: 0 }),
+      ),
+    );
+    await harness.flush();
+
+    expect(syncServiceMocks.listAllRemoteTales).not.toHaveBeenCalled();
+    expect(syncServiceMocks.uploadTalePackage).not.toHaveBeenCalled();
+    expect(syncServiceMocks.syncLinkedTale).not.toHaveBeenCalled();
+    expect(syncStoreState.setCloudSyncPaused).toHaveBeenCalledWith("locked");
+    harness.cleanup();
+  });
+
+  it("tells the player once per run that sync waits for encryption setup", async () => {
+    cloudEncryptionMocks.resolveCloudEncryption.mockResolvedValue({
+      kind: "setup",
+      info: { state: "server" },
+    });
+    useSettingsModalStore.setState({ open: false, tab: undefined });
+    const harness = renderHarness();
+
+    try {
+      await waitForAssertion(() =>
+        expect(toastMocks.info).toHaveBeenCalledWith(
+          "Set up encryption to sync",
+          expect.objectContaining({
+            action: expect.objectContaining({ label: "Set up" }),
+          }),
+        ),
+      );
+      expect(syncStoreState.setCloudSyncPaused).toHaveBeenLastCalledWith(
+        "setup",
+      );
+      expect(syncServiceMocks.syncLinkedTale).not.toHaveBeenCalled();
+
+      act(() => {
+        wakeSyncBackground();
+      });
+      await waitForAssertion(() =>
+        expect(
+          cloudEncryptionMocks.resolveCloudEncryption,
+        ).toHaveBeenCalledTimes(2),
+      );
+      await harness.flush();
+      expect(toastMocks.info).toHaveBeenCalledOnce();
+
+      const [, options] = toastMocks.info.mock.calls[0] as [
+        string,
+        { action: { onClick: () => void } },
+      ];
+      options.action.onClick();
+      expect(useSettingsModalStore.getState()).toMatchObject({
+        open: true,
+        tab: "cloud-sync",
+      });
+
+      cloudEncryptionMocks.resolveCloudEncryption.mockResolvedValue({
+        kind: "plaintext",
+      });
+      act(() => {
+        wakeSyncBackground();
+      });
+      await waitForAssertion(() =>
+        expect(syncStoreState.setCloudSyncPaused).toHaveBeenLastCalledWith(
+          null,
+        ),
+      );
+    } finally {
+      useSettingsModalStore.setState({ open: false, tab: undefined });
+      harness.cleanup();
+    }
+  });
+
+  it("waits until Settings is closed to tell the player sync is paused", async () => {
+    cloudEncryptionMocks.resolveCloudEncryption.mockResolvedValue({
+      kind: "paused",
+      reason: "downgraded",
+    });
+    useSettingsModalStore.setState({ open: true, tab: "cloud-sync" });
+    const harness = renderHarness();
+
+    try {
+      await waitForAssertion(() =>
+        expect(syncStoreState.setCloudSyncPaused).toHaveBeenCalledWith(
+          "downgraded",
+        ),
+      );
+      expect(toastMocks.error).not.toHaveBeenCalled();
+
+      useSettingsModalStore.setState({ open: false });
+      act(() => {
+        wakeSyncBackground();
+      });
+      await waitForAssertion(() =>
+        expect(toastMocks.error).toHaveBeenCalledWith(
+          "Sync is paused",
+          expect.objectContaining({
+            action: expect.objectContaining({ label: "Settings" }),
+          }),
+        ),
+      );
+    } finally {
+      useSettingsModalStore.setState({ open: false, tab: undefined });
+      harness.cleanup();
+    }
+  });
+
+  it("stops encrypting cloud saves while the cloud is full", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    cloudEncryptionMocks.resolveCloudEncryption.mockResolvedValue({
+      kind: "ready",
+      session: {
+        serverOrigin: "https://sync.example",
+        accountId: "account-1",
+        keyId: "key-1",
+        acceptServerTales: true,
+      },
+      info: { state: "migrating" },
+    });
+    cloudEncryptionMocks.migrateCloudSaves.mockRejectedValue(
+      new SyncHttpError("Quota exceeded.", 409, "quota_exceeded"),
+    );
+    syncServiceMocks.listAllRemoteTales.mockResolvedValue([
+      { id: "remote-1", encryption: "server" },
+    ]);
+    const harness = renderHarness();
+
+    try {
+      await waitForAssertion(() =>
+        expect(toastMocks.error).toHaveBeenCalledWith("Cloud storage is full"),
+      );
+      expect(cloudEncryptionMocks.migrateCloudSaves).toHaveBeenCalledOnce();
+
+      act(() => {
+        wakeSyncBackground();
+      });
+      await waitForAssertion(() =>
+        expect(
+          cloudEncryptionMocks.resolveCloudEncryption,
+        ).toHaveBeenCalledTimes(2),
+      );
+      await harness.flush();
+      expect(cloudEncryptionMocks.migrateCloudSaves).toHaveBeenCalledOnce();
+      expect(toastMocks.error).toHaveBeenCalledOnce();
+    } finally {
+      warn.mockRestore();
+      harness.cleanup();
+    }
+  });
+
+  it("encrypts cloud saves before syncing and leaves tales still to encrypt alone", async () => {
+    const session = {
+      serverOrigin: "https://sync.example",
+      accountId: "account-1",
+      keyId: "key-1",
+      acceptServerTales: true,
+    };
+    cloudEncryptionMocks.resolveCloudEncryption.mockResolvedValue({
+      kind: "ready",
+      session,
+      info: { state: "migrating" },
+    });
+    cloudEncryptionMocks.migrateCloudSaves.mockResolvedValue({
+      state: "migrating",
+    });
+    syncRepoMocks.listTaleSyncStates.mockResolvedValue([
+      {
+        profileId: "hosted",
+        localTaleId: "local-1",
+        remoteTaleId: "remote-1",
+        pendingStatus: "push",
+      },
+      {
+        profileId: "hosted",
+        localTaleId: "local-2",
+        remoteTaleId: "remote-2",
+        pendingStatus: "push",
+      },
+    ]);
+    syncServiceMocks.listAllRemoteTales.mockResolvedValue([
+      { id: "remote-1", encryption: "server" },
+      { id: "remote-2", encryption: "client" },
+    ]);
+    const harness = renderHarness();
+
+    await waitForAssertion(() =>
+      expect(syncServiceMocks.syncLinkedTale).toHaveBeenCalledTimes(1),
+    );
+
+    expect(cloudEncryptionMocks.migrateCloudSaves).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transport: expect.objectContaining({ cloudEncryption: session }),
+      }),
+    );
+    expect(syncServiceMocks.syncLinkedTale).toHaveBeenCalledWith(
+      expect.objectContaining({
+        localTaleId: "local-2",
+        transport: expect.objectContaining({ cloudEncryption: session }),
+      }),
+    );
+    expect(syncRepoMocks.deleteTaleSyncState).not.toHaveBeenCalled();
+    harness.cleanup();
+  });
+
   it("runs immediately when local work wakes sync", async () => {
     const harness = renderHarness();
 
@@ -585,9 +817,9 @@ describe("useSyncBackground", () => {
 
     try {
       await waitForAssertion(() =>
-        expect(openTaleMocks.showPulledTale).toHaveBeenCalledWith("local-1"),
+        expect(openTaleMocks.showSavedTale).toHaveBeenCalledWith("local-1"),
       );
-      expect(openTaleMocks.showPulledTale).toHaveBeenCalledOnce();
+      expect(openTaleMocks.showSavedTale).toHaveBeenCalledOnce();
     } finally {
       harness.cleanup();
     }

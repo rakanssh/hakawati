@@ -60,6 +60,26 @@ describe("database initialization", () => {
     expect(mocks.load).toHaveBeenCalledTimes(1);
   });
 
+  it("does not load again after a failed migration, which would skip it", async () => {
+    const failure =
+      "while executing migration 9: error returned from database: (code: 1) no such table: tales";
+    mocks.load.mockRejectedValueOnce(failure);
+    const { getDb } = await import("./index");
+    await expect(getDb()).rejects.toBe(failure);
+    await expect(getDb()).rejects.toBe(failure);
+    expect(mocks.load).toHaveBeenCalledTimes(1);
+  });
+
+  it("loads again after the database could not be opened", async () => {
+    mocks.load.mockRejectedValueOnce(
+      "error returned from database: (code: 5) database is locked",
+    );
+    const { getDb } = await import("./index");
+    await expect(getDb()).rejects.toMatch("database is locked");
+    await expect(getDb()).resolves.toBeDefined();
+    expect(mocks.load).toHaveBeenCalledTimes(2);
+  });
+
   it("closes a pool that fails the foreign-key check before retrying", async () => {
     mocks.select.mockResolvedValueOnce([{ foreign_keys: 0 }]);
     const { getDb } = await import("./index");
