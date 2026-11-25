@@ -1057,6 +1057,10 @@ msgstr "Couldn't copy"
 msgid "Couldn't delete your account"
 msgstr "Couldn't delete your account"
 
+#: app/components/layout/settings/cloud-encryption.tsx:236
+msgid "Couldn’t encrypt some cloud saves"
+msgstr "Couldn’t encrypt some cloud saves"
+
 #: app/components/layout/settings/ai-setup/model-picker.tsx:199
 msgid "Couldn’t load models"
 msgstr "Couldn’t load models"

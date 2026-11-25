@@ -1180,6 +1180,7 @@ export default function SettingsCloudSync() {
             ) : null}
             <CloudEncryptionLink
               status={encryption.status}
+              migrationFailure={encryption.migrationFailure}
               onOpen={() => openPage("encryption")}
             />
             {showHostedDevices ? (

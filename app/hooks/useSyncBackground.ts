@@ -167,9 +167,13 @@ export function useSyncBackground(dbReady: boolean) {
         if (encryption.kind !== "ready" && encryption.kind !== "plaintext") {
           return;
         }
+        let migrationCloudFull = false;
         if (encryption.kind === "ready") {
           transport = withCloudEncryption(accountTransport, encryption.session);
-          if (encryption.info.state === "migrating") {
+          if (
+            encryption.info.state === "migrating" &&
+            cloudFullRef.current?.scope !== scope
+          ) {
             try {
               const migrated = await migrateCloudSaves({
                 profile: activeProfile,
@@ -186,6 +190,7 @@ export function useSyncBackground(dbReady: boolean) {
               if (signal.aborted) return;
               if (isUpdateRequiredError(error)) throw error;
               console.warn("Cloud save encryption failed", error);
+              migrationCloudFull = isCloudFullError(error);
             }
           }
         }
@@ -228,6 +233,7 @@ export function useSyncBackground(dbReady: boolean) {
           };
           toast.error(i18n._("Cloud storage is full"));
         };
+        if (migrationCloudFull) noteCloudFull(false);
 
         const forgetRemovedCloudTale = async (localTaleId: string) => {
           await setTaleSyncPreference({

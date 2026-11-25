@@ -493,6 +493,49 @@ describe("useSyncBackground", () => {
     harness.cleanup();
   });
 
+  it("stops encrypting cloud saves while the cloud is full", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    cloudEncryptionMocks.resolveCloudEncryption.mockResolvedValue({
+      kind: "ready",
+      session: {
+        serverOrigin: "https://sync.example",
+        accountId: "account-1",
+        keyId: "key-1",
+        acceptServerTales: true,
+      },
+      info: { state: "migrating" },
+    });
+    cloudEncryptionMocks.migrateCloudSaves.mockRejectedValue(
+      new SyncHttpError("Quota exceeded.", 409, "quota_exceeded"),
+    );
+    syncServiceMocks.listAllRemoteTales.mockResolvedValue([
+      { id: "remote-1", encryption: "server" },
+    ]);
+    const harness = renderHarness();
+
+    try {
+      await waitForAssertion(() =>
+        expect(toastMocks.error).toHaveBeenCalledWith("Cloud storage is full"),
+      );
+      expect(cloudEncryptionMocks.migrateCloudSaves).toHaveBeenCalledOnce();
+
+      act(() => {
+        wakeSyncBackground();
+      });
+      await waitForAssertion(() =>
+        expect(
+          cloudEncryptionMocks.resolveCloudEncryption,
+        ).toHaveBeenCalledTimes(2),
+      );
+      await harness.flush();
+      expect(cloudEncryptionMocks.migrateCloudSaves).toHaveBeenCalledOnce();
+      expect(toastMocks.error).toHaveBeenCalledOnce();
+    } finally {
+      warn.mockRestore();
+      harness.cleanup();
+    }
+  });
+
   it("encrypts cloud saves before syncing and leaves tales still to encrypt alone", async () => {
     const session = {
       serverOrigin: "https://sync.example",

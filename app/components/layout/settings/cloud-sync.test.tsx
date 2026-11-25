@@ -950,6 +950,43 @@ describe("SettingsCloudSync encryption", () => {
     view.cleanup();
   });
 
+  it("says when encrypting cloud saves stopped", async () => {
+    const scope = "https://sync.example account-1";
+    withStatus({
+      kind: "ready",
+      info: { ...info, state: "migrating", serverTaleCount: 1 },
+      session: {
+        serverOrigin: "https://sync.example",
+        accountId: "account-1",
+        keyId: "key-1",
+        acceptServerTales: true,
+      },
+    });
+    const { setMigrationFailure } = useCloudEncryptionStore.getState();
+    const view = render();
+    try {
+      await flush();
+      expect(document.body.textContent).toContain("Encrypting cloud saves…");
+
+      act(() => setMigrationFailure(scope, "quota_exceeded"));
+      expect(document.body.textContent).toContain("Cloud full");
+      expect(document.body.textContent).not.toContain(
+        "Encrypting cloud saves…",
+      );
+
+      act(() => setMigrationFailure(scope, "content_conflict"));
+      expect(document.body.textContent).toContain(
+        "Couldn’t encrypt some cloud saves",
+      );
+
+      act(() => setMigrationFailure(scope, null));
+      expect(document.body.textContent).toContain("Encrypting cloud saves…");
+    } finally {
+      setMigrationFailure(scope, null);
+      view.cleanup();
+    }
+  });
+
   it("shows a new recovery key before the server replaces the old one", async () => {
     const put = vi.fn().mockResolvedValue({
       state: "client",

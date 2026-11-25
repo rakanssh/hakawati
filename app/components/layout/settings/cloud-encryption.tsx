@@ -82,6 +82,11 @@ export function useCloudEncryption(input: {
   const status = useCloudEncryptionStore((state) =>
     active && scopeId && state.scope === scopeId ? state.status : null,
   );
+  const migrationFailure = useCloudEncryptionStore((state) =>
+    active && scopeId && state.migrationFailure?.scope === scopeId
+      ? state.migrationFailure.code
+      : null,
+  );
   const transport = useCallback(
     () => createSyncTransport({ profile, accessToken }),
     [accessToken, profile],
@@ -107,7 +112,7 @@ export function useCloudEncryption(input: {
     });
   }, [active, refresh]);
 
-  return { status, refresh, transport };
+  return { status, migrationFailure, refresh, transport };
 }
 
 function errorMessage(error: unknown, fallback: string) {
@@ -210,22 +215,30 @@ export function CloudEncryptionBanner({
 
 export function CloudEncryptionLink({
   status,
+  migrationFailure,
   onOpen,
 }: {
   status: CloudEncryptionStatus | null;
+  migrationFailure?: string | null;
   onOpen: () => void;
 }) {
   if (status?.kind !== "ready") return null;
+  const failed = status.info.state === "migrating" && Boolean(migrationFailure);
   return (
     <LinkRow
       title={<Trans>Encryption</Trans>}
       detail={
-        status.info.state === "migrating" ? (
-          <Trans>Encrypting cloud saves…</Trans>
-        ) : (
+        status.info.state !== "migrating" ? (
           <Trans>End-to-end encrypted</Trans>
+        ) : migrationFailure === "quota_exceeded" ? (
+          <Trans>Cloud full</Trans>
+        ) : failed ? (
+          <Trans>Couldn’t encrypt some cloud saves</Trans>
+        ) : (
+          <Trans>Encrypting cloud saves…</Trans>
         )
       }
+      detailClassName={failed ? "text-destructive" : undefined}
       onClick={onOpen}
     />
   );

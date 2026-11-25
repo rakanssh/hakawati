@@ -4,6 +4,7 @@ import {
   migrateCloudSaves,
   resetCloudEncryption,
   resolveCloudEncryption,
+  useCloudEncryptionStore,
   type CloudKeyInfo,
 } from "./cloud-encryption";
 import {
@@ -647,6 +648,65 @@ describe("cloud save migration", () => {
       keyId: KEY_ID,
     });
     expect(mocks.pending.size).toBe(0);
+  });
+
+  it("reuses the encrypted cover when the cloud is full and reports it", async () => {
+    const http = await import("@tauri-apps/plugin-http");
+    vi.mocked(http.fetch).mockResolvedValue({ ok: true } as Response);
+    const { connection, finish } = migrationTransport();
+    connection.put
+      .mockRejectedValueOnce(
+        new SyncHttpError("Quota exceeded.", 409, "quota_exceeded"),
+      )
+      .mockImplementation(async () => {
+        finish();
+        return { contentRev: 4, metadataRev: 4 };
+      });
+    const migrate = () =>
+      migrateCloudSaves({
+        profile,
+        transport: connection,
+        remoteTales: [
+          {
+            id: "remote-1",
+            sourceTaleId: "local-1",
+            encryption: "server",
+            title: "Old tale",
+            description: null,
+            gameMode: "story_teller",
+            coverAssetId: "old-cover",
+            thumbnailAssetId: "old-cover",
+            contentRev: 2,
+            metadataRev: 2,
+            turnCount: 0,
+            updatedAt: "2026-11-20",
+            lastEntryPreview: null,
+          },
+        ],
+      });
+    const failure = () => useCloudEncryptionStore.getState().migrationFailure;
+
+    await expect(migrate()).rejects.toMatchObject({ code: "quota_exceeded" });
+    expect(failure()).toEqual({
+      scope: "https://sync.example account-1",
+      code: "quota_exceeded",
+    });
+    expect(mocks.pending.size).toBe(0);
+
+    await migrate();
+
+    const intents = connection.post.mock.calls.filter(
+      ([path]) => path === "/v1/assets/cover-upload-intents",
+    );
+    expect(intents).toHaveLength(1);
+    expect(connection.getBytes).toHaveBeenCalledOnce();
+    const [first, second] = connection.put.mock.calls.map(
+      (call) =>
+        JSON.parse((call[2] as { rawBody: string }).rawBody).encryptedPackage
+          .coverAssetId,
+    );
+    expect(second).toBe(first);
+    expect(failure()).toBeNull();
   });
 
   it("resends a stored migration write before downloading again", async () => {

@@ -191,22 +191,21 @@ type CloudEncryptionStore = {
   scope: string | null;
   status: CloudEncryptionStatus | null;
   checkedAt: number;
+  migrationFailure: { scope: string; code: string } | null;
   setStatus: (scope: string, status: CloudEncryptionStatus | null) => void;
+  setMigrationFailure: (scope: string, code: string | null) => void;
 };
 
 export const useCloudEncryptionStore = create<CloudEncryptionStore>((set) => ({
   scope: null,
   status: null,
   checkedAt: 0,
+  migrationFailure: null,
   setStatus: (scope, status) =>
     set({ scope, status, checkedAt: status ? Date.now() : 0 }),
+  setMigrationFailure: (scope, code) =>
+    set({ migrationFailure: code ? { scope, code } : null }),
 }));
-
-export function cloudEncryptionStatusFor(profile: SyncProfile) {
-  const scope = cloudKeyScope(profile);
-  const state = useCloudEncryptionStore.getState();
-  return scope && state.scope === scopeKey(scope) ? state.status : null;
-}
 
 export function forgetCloudEncryptionStatus() {
   useCloudEncryptionStore.getState().setStatus("", null);
@@ -477,22 +476,48 @@ export async function resetCloudEncryption(input: {
   }
 }
 
+// Retries reuse the encrypted copy; an unused one counts against the account.
+const migratedCovers = new Map<
+  string,
+  { sourceAssetId: string; cover: RemoteTaleCover }
+>();
+
+function migratedCoverKey(profile: SyncProfile, remoteTaleId: string) {
+  return JSON.stringify([
+    profile.id,
+    profile.baseUrl,
+    profile.accountId ?? "",
+    remoteTaleId,
+  ]);
+}
+
 async function migrateCover(
-  transport: SyncTransport,
+  input: {
+    profile: SyncProfile;
+    transport: SyncTransport;
+    remoteTaleId: string;
+  },
   cover: unknown,
 ): Promise<RemoteTaleCover | null> {
   const reference = cover as CoverAssetReference | null | undefined;
   if (!reference?.assetId || !reference.contentType) return null;
+  const key = migratedCoverKey(input.profile, input.remoteTaleId);
+  const sourceAssetId = reference.assetId.toLowerCase();
+  const migrated = migratedCovers.get(key);
+  if (migrated?.sourceAssetId === sourceAssetId) return migrated.cover;
+  const { transport } = input;
   if (!transport.getBytes) {
     throw new Error("This connection cannot download covers");
   }
   const bytes = await transport.getBytes(
     `/v1/assets/${encodeURIComponent(reference.assetId)}/download`,
   );
-  return uploadHostedCoverAsset(transport, {
+  const uploaded = await uploadHostedCoverAsset(transport, {
     bytes,
     contentType: reference.contentType,
   });
+  migratedCovers.set(key, { sourceAssetId, cover: uploaded });
+  return uploaded;
 }
 
 function withCover(
@@ -525,6 +550,24 @@ function isRevisionConflict(error: unknown) {
 }
 
 async function migrateTale(input: {
+  profile: SyncProfile;
+  transport: SyncTransport;
+  session: CloudEncryptionSession;
+  remoteTaleId: string;
+}) {
+  const coverKey = migratedCoverKey(input.profile, input.remoteTaleId);
+  try {
+    await migrateTaleOnce(input);
+    migratedCovers.delete(coverKey);
+  } catch (error) {
+    if (error instanceof SyncHttpError && error.status === 400) {
+      migratedCovers.delete(coverKey);
+    }
+    throw error;
+  }
+}
+
+async function migrateTaleOnce(input: {
   profile: SyncProfile;
   transport: SyncTransport;
   session: CloudEncryptionSession;
@@ -600,7 +643,7 @@ async function migrateTale(input: {
         method: "PUT",
         path,
         build: async () => {
-          const cover = await migrateCover(input.transport, remote.cover);
+          const cover = await migrateCover(input, remote.cover);
           return {
             saveVersion: null,
             body: {
@@ -644,6 +687,30 @@ export async function migrateCloudSaves(input: {
 }): Promise<CloudKeyInfo> {
   const session = input.transport.cloudEncryption;
   if (!session) throw cloudLockedError();
+  const { setMigrationFailure } = useCloudEncryptionStore.getState();
+  try {
+    const info = await migrateAllTales(input, session);
+    setMigrationFailure(scopeKey(session), null);
+    return info;
+  } catch (error) {
+    if (!input.transport.signal?.aborted) {
+      setMigrationFailure(
+        scopeKey(session),
+        error instanceof SyncHttpError ? error.code : "sync_failed",
+      );
+    }
+    throw error;
+  }
+}
+
+async function migrateAllTales(
+  input: {
+    profile: SyncProfile;
+    transport: SyncTransport;
+    remoteTales: RemoteTale[];
+  },
+  session: CloudEncryptionSession,
+): Promise<CloudKeyInfo> {
   let failure: unknown = null;
   for (const tale of input.remoteTales) {
     if (tale.encryption !== "server") continue;

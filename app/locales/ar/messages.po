@@ -1057,6 +1057,10 @@ msgstr "تعذّر النسخ"
 msgid "Couldn't delete your account"
 msgstr "تعذّر حذف حسابك"
 
+#: app/components/layout/settings/cloud-encryption.tsx:236
+msgid "Couldn’t encrypt some cloud saves"
+msgstr "تعذّر تشفير بعض النسخ السحابية"
+
 #: app/components/layout/settings/ai-setup/model-picker.tsx:199
 msgid "Couldn’t load models"
 msgstr "تعذّر تحميل النماذج"
