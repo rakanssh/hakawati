@@ -8,6 +8,12 @@ interface AssistantMemoryStoreType {
   forgetTale: (taleId: string) => void;
 }
 
+try {
+  localStorage.removeItem("hakawati-chats");
+} catch {
+  // Storage may be unavailable.
+}
+
 // Kept for the session only, so each launch starts on a new chat.
 export const useAssistantMemoryStore = create<AssistantMemoryStoreType>()(
   (set) => ({
