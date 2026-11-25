@@ -11,6 +11,8 @@ and the app shows it in What's New and Updates.
 
 ## [Unreleased]
 
+## [v1.5.1] - 2026-11-25
+
 ### Changed
 
 - What's New shows every update you skipped since the last feature release, and now also opens on Android and iOS.
