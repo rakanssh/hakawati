@@ -40,7 +40,10 @@ import { FONT_SIZE_MAX, FONT_SIZE_MIN } from "@/lib/appearance-limits";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { showSaveError } from "@/lib/save-errors";
 import { usePlaySession } from "@/hooks/usePlaySession";
-import { holdOpenTaleForPlay } from "@/services/open-tale-sync";
+import {
+  holdOpenTaleForPlay,
+  holdOpenTaleWhile,
+} from "@/services/open-tale-sync";
 import { loadOlderLogEntries } from "@/services/tale-log";
 import { useTtsPlayback } from "@/hooks/useTtsPlayback";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -182,10 +185,14 @@ export default function Play() {
     disabled: loading,
     warnOnLeave: true,
     onError: showSaveError,
-    saveWhenEnabled: useCallback(async () => {
-      await waitForPlayActivity("narrating");
-      if (useTaleStore.getState().id === taleId) await save(taleId);
-    }, [save, taleId]),
+    saveWhenEnabled: useCallback(
+      () =>
+        holdOpenTaleWhile(async () => {
+          await waitForPlayActivity("narrating");
+          if (useTaleStore.getState().id === taleId) await save(taleId);
+        }),
+      [save, taleId],
+    ),
   });
 
   useEffect(() => holdOpenTaleForPlay(), []);

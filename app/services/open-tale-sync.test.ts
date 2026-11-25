@@ -5,8 +5,9 @@ import { useTaleStore } from "@/store/useTaleStore";
 import { GameMode } from "@/types/context.type";
 import {
   holdOpenTaleForPlay,
+  holdOpenTaleWhile,
   isTaleInPlay,
-  showPulledTale,
+  showSavedTale,
 } from "./open-tale-sync";
 
 const taleService = vi.hoisted(() => ({ getTaleById: vi.fn() }));
@@ -75,10 +76,44 @@ describe("open tale sync", () => {
     removeWakeListener();
   });
 
+  it("keeps holding the tale until a save started on leaving Play settles", async () => {
+    const release = holdOpenTaleForPlay();
+    let finishSave!: () => void;
+    const saving = holdOpenTaleWhile(
+      () =>
+        new Promise<void>((resolve) => {
+          finishSave = resolve;
+        }),
+    );
+    release();
+    await enqueueLocalOperation(async () => undefined);
+    await Promise.resolve();
+    expect(isTaleInPlay("open-tale")).toBe(true);
+
+    finishSave();
+    await saving;
+    await enqueueLocalOperation(async () => undefined);
+    await Promise.resolve();
+    expect(isTaleInPlay("open-tale")).toBe(false);
+  });
+
+  it("keeps setup edits when only the saved story is shown again", async () => {
+    taleService.getTaleById.mockResolvedValue(pulledTale("Saved name"));
+    useTaleStore.setState({ description: "Typed before the save" });
+
+    await showSavedTale("open-tale", { keepSetup: true });
+
+    expect(useTaleStore.getState()).toMatchObject({
+      name: "Before the pull",
+      description: "Typed before the save",
+      log: [{ id: "entry-1", text: "Pulled turn." }],
+    });
+  });
+
   it("shows the pulled version in the open tale", async () => {
     taleService.getTaleById.mockResolvedValue(pulledTale("After the pull"));
 
-    await showPulledTale("open-tale");
+    await showSavedTale("open-tale");
 
     expect(taleService.getTaleById).toHaveBeenCalledWith("open-tale");
     expect(useTaleStore.getState()).toMatchObject({
@@ -92,14 +127,14 @@ describe("open tale sync", () => {
   });
 
   it("leaves another tale alone, even one opened during the read", async () => {
-    await showPulledTale("closed-tale");
+    await showSavedTale("closed-tale");
     expect(taleService.getTaleById).not.toHaveBeenCalled();
 
     taleService.getTaleById.mockImplementation(async () => {
       useTaleStore.setState({ id: "other-tale", name: "Opened meanwhile" });
       return pulledTale("After the pull");
     });
-    await showPulledTale("open-tale");
+    await showSavedTale("open-tale");
 
     expect(useTaleStore.getState()).toMatchObject({
       id: "other-tale",

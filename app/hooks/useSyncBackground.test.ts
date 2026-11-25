@@ -26,7 +26,7 @@ const syncRepoMocks = vi.hoisted(() => ({
 
 const openTaleMocks = vi.hoisted(() => ({
   isTaleInPlay: vi.fn(() => false),
-  showPulledTale: vi.fn(),
+  showSavedTale: vi.fn(),
 }));
 
 const syncServiceMocks = vi.hoisted(() => {
@@ -673,9 +673,9 @@ describe("useSyncBackground", () => {
 
     try {
       await waitForAssertion(() =>
-        expect(openTaleMocks.showPulledTale).toHaveBeenCalledWith("local-1"),
+        expect(openTaleMocks.showSavedTale).toHaveBeenCalledWith("local-1"),
       );
-      expect(openTaleMocks.showPulledTale).toHaveBeenCalledOnce();
+      expect(openTaleMocks.showSavedTale).toHaveBeenCalledOnce();
     } finally {
       harness.cleanup();
     }

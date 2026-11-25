@@ -15,6 +15,7 @@ import type { LogEntry } from "@/types/log.type";
 import { DEFAULT_WINDOW_SIZE, useTaleStore } from "@/store/useTaleStore";
 import { useLastPlayedStore } from "@/store/useLastPlayedStore";
 import { wakeSyncBackground } from "@/services/sync-wakeup";
+import { showSavedTale } from "@/services/open-tale-sync";
 import { beginPlayActivity } from "@/store/usePlayActivityStore";
 
 function snapshotMutableTale(taleId: string): TaleMutableSnapshot {
@@ -31,23 +32,6 @@ function snapshotMutableTale(taleId: string): TaleMutableSnapshot {
     gameMode: state.gameMode,
     undoStack: state.undoStack,
   };
-}
-
-// A failed log write leaves the screen ahead of storage. Setup fields stay as
-// they are, since autosave keeps retrying them.
-async function reloadSavedLog(taleId: string) {
-  const tale = await getTaleById(taleId);
-  if (!tale || useTaleStore.getState().id !== taleId) return;
-  useTaleStore.setState({
-    stats: tale.stats,
-    inventory: tale.inventory,
-    log: tale.log,
-    undoStack: tale.undoStack,
-    totalLogCount: tale.totalLogCount,
-    oldestLoadedIndex: tale.oldestLoadedIndex,
-    logWindowSize: DEFAULT_WINDOW_SIZE,
-    isLoadingOlderEntries: false,
-  });
 }
 
 export function usePersistTale() {
@@ -96,8 +80,10 @@ export function usePersistTale() {
     (taleId: string, operation: () => Promise<void>) =>
       runPersist(() =>
         operation().catch(async (error) => {
-          await reloadSavedLog(taleId).catch((reloadError) =>
-            console.error("Failed to reload the saved tale:", reloadError),
+          // Setup fields stay as they are, since autosave keeps retrying them.
+          await showSavedTale(taleId, { keepSetup: true }).catch(
+            (reloadError) =>
+              console.error("Failed to reload the saved tale:", reloadError),
           );
           throw error;
         }),

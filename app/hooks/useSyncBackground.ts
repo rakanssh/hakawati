@@ -14,7 +14,7 @@ import {
   setTaleSyncStatus,
   upsertTaleSyncState,
 } from "@/repositories/sync.repository";
-import { isTaleInPlay, showPulledTale } from "@/services/open-tale-sync";
+import { isTaleInPlay, showSavedTale } from "@/services/open-tale-sync";
 import {
   assertSyncAvailable,
   createSyncTransport,
@@ -360,7 +360,7 @@ export function useSyncBackground(dbReady: boolean) {
               canPull: () => !isTaleInPlay(state.localTaleId),
             });
             if (result === "pulled" && !signal.aborted) {
-              await showPulledTale(state.localTaleId);
+              await showSavedTale(state.localTaleId);
             }
           } catch (error) {
             if (signal.aborted) return;

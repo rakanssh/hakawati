@@ -19,25 +19,41 @@ export function holdOpenTaleForPlay(): () => void {
   };
 }
 
+export async function holdOpenTaleWhile<T>(run: () => Promise<T>): Promise<T> {
+  const release = holdOpenTaleForPlay();
+  try {
+    return await run();
+  } finally {
+    release();
+  }
+}
+
 export function isTaleInPlay(taleId: string): boolean {
   if (openPlayScreens === 0) return false;
   const { id, loadingTaleId } = useTaleStore.getState();
   return id === taleId || loadingTaleId === taleId;
 }
 
-export async function showPulledTale(taleId: string): Promise<void> {
+export async function showSavedTale(
+  taleId: string,
+  options: { keepSetup?: boolean } = {},
+): Promise<void> {
   if (useTaleStore.getState().id !== taleId) return;
   const tale = await getTaleById(taleId);
   if (!tale || useTaleStore.getState().id !== taleId) return;
   useTaleStore.setState({
-    name: tale.name,
-    description: tale.description,
-    components: tale.components,
-    storyCards: tale.storyCards,
+    ...(options.keepSetup
+      ? {}
+      : {
+          name: tale.name,
+          description: tale.description,
+          components: tale.components,
+          storyCards: tale.storyCards,
+          gameMode: tale.gameMode,
+        }),
     stats: tale.stats,
     inventory: tale.inventory,
     log: tale.log,
-    gameMode: tale.gameMode,
     undoStack: tale.undoStack,
     totalLogCount: tale.totalLogCount,
     oldestLoadedIndex: tale.oldestLoadedIndex,
