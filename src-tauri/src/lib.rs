@@ -293,6 +293,11 @@ mod tests {
                     "create_assistant_chats",
                     include_str!("../migrations/008_create_assistant_chats.sql"),
                 ),
+                (
+                    9_i64,
+                    "add_sync_pending_writes",
+                    include_str!("../migrations/009_add_sync_pending_writes.sql"),
+                ),
             ] {
                 sqlx::raw_sql(migration).execute(&pool).await.unwrap();
                 sqlx::query(
