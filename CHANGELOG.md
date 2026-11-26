@@ -11,6 +11,10 @@ and the app shows it in What's New and Updates.
 
 ## [Unreleased]
 
+### Fixed
+
+- On phones, the story stays in view above the keyboard while you type.
+
 ## [v1.5.2] - 2026-11-25
 
 ### Changed

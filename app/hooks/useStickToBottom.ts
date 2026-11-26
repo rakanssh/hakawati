@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 
 interface UseStickToBottomOptions {
   threshold?: number;
@@ -30,6 +30,47 @@ export function useStickToBottom(
   const [loadingOlder, setLoadingOlder] = useState(false);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const loadDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const resizeWatchRef = useRef<{ el: HTMLElement; stop: () => void } | null>(
+    null,
+  );
+
+  // Holds the bottom edge in place when the view resizes, as when the keyboard
+  // opens. Uses the position from before the resize: growing may have clamped it.
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (resizeWatchRef.current?.el === el) return;
+    resizeWatchRef.current?.stop();
+    resizeWatchRef.current = null;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    let height = el.clientHeight;
+    let scrollTop = el.scrollTop;
+    const onScroll = () => {
+      if (el.clientHeight === height) scrollTop = el.scrollTop;
+    };
+    const observer = new ResizeObserver(() => {
+      const next = el.clientHeight;
+      if (next === height) return;
+      el.scrollTop = scrollTop + height - next;
+      height = next;
+      scrollTop = el.scrollTop;
+    });
+    el.addEventListener("scroll", onScroll, { passive: true });
+    observer.observe(el);
+    resizeWatchRef.current = {
+      el,
+      stop: () => {
+        observer.disconnect();
+        el.removeEventListener("scroll", onScroll);
+      },
+    };
+  });
+  useEffect(
+    () => () => {
+      resizeWatchRef.current?.stop();
+      resizeWatchRef.current = null;
+    },
+    [],
+  );
 
   const scrollToBottom = useCallback(
     (behavior: ScrollBehavior = scrollBehavior) => {
