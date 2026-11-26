@@ -47,7 +47,7 @@
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Hakawati connects to AI servers you run on your local network.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
-	<true/>
+	<false/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
