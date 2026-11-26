@@ -8,10 +8,10 @@
   <string>Hakawati uses the camera to take photos you attach to a chat message and to scan codes that pair your devices.</string>
   <key>NSLocalNetworkUsageDescription</key>
   <string>Hakawati connects to AI servers you run on your local network.</string>
-  <!-- Cloud saves are end-to-end encrypted with bundled AES-GCM and X25519, not
-       Apple's crypto, so App Store Connect asks for export compliance. -->
+  <!-- Cloud saves use standard AES-GCM and X25519. App Store Connect's encryption
+       questions need no documents for that while the app isn't offered in France. -->
   <key>ITSAppUsesNonExemptEncryption</key>
-  <true/>
+  <false/>
   <!-- Apps built with the iOS 27 SDK must run on the scene life cycle. Tao supplies
        the scene delegate once the app declares a manifest. -->
   <key>UIApplicationSceneManifest</key>
