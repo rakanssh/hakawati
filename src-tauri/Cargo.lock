@@ -2192,7 +2192,7 @@ dependencies = [
 
 [[package]]
 name = "hakawati"
-version = "1.5.3"
+version = "1.5.4"
 dependencies = [
  "aes-gcm",
  "android-native-keyring-store",
