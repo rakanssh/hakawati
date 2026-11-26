@@ -23,7 +23,7 @@ import { useEffect, useRef } from "react";
 import "./App.css";
 import { ThemeProvider } from "./components/theme-provider";
 import { Toaster } from "./components/ui";
-import { Titlebar } from "./components/layout";
+import { AiProviderNotice, Titlebar } from "./components/layout";
 import { StoryPanel } from "./components/play/story-panel/story-panel";
 import { HakawatiFab } from "./components/assistant/hakawati-button";
 import { AppSettingsModal } from "./components/layout/settings/app-settings-modal";
@@ -158,6 +158,7 @@ export default function AppShell() {
           </div>
         )}
         <AppSettingsModal />
+        {dbReady && <AiProviderNotice />}
         <Toaster
           richColors
           expand

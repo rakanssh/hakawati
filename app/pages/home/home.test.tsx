@@ -180,6 +180,7 @@ vi.mock("@/components/scenario", async () => ({
 }));
 vi.mock("@/components/layout/settings", () => ({ SettingsModal: () => null }));
 vi.mock("@/components/layout", () => ({
+  useAiProviderNoticeOpen: () => false,
   WhatsNewModal: (props: unknown) => {
     mocks.whatsNew(props);
     return null;

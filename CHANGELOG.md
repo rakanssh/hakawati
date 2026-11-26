@@ -11,6 +11,11 @@ and the app shows it in What's New and Updates.
 
 ## [Unreleased]
 
+### Added
+
+- Report and Block publisher on a public scenario's page.
+- On iPhone and iPad, a note on first launch explains that Hakawati needs an AI provider.
+
 ## [v1.5.4] - 2026-11-26
 
 ### Fixed

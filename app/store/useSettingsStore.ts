@@ -202,6 +202,8 @@ export interface SettingsStoreType {
   themeScenery?: ThemeScenery;
   chatGptPlanNoticeAcknowledged: boolean;
   acknowledgeChatGptPlanNotice: () => void;
+  aiProviderNoticeAcknowledged: boolean;
+  acknowledgeAiProviderNotice: () => void;
 
   setContextWindow: (contextWindow: number) => void;
   /** Saves a connection, or returns the existing one to the same account. */
@@ -299,6 +301,9 @@ export const useSettingsStore = create<SettingsStoreType>()(
       chatGptPlanNoticeAcknowledged: false,
       acknowledgeChatGptPlanNotice: () =>
         set({ chatGptPlanNoticeAcknowledged: true }),
+      aiProviderNoticeAcknowledged: false,
+      acknowledgeAiProviderNotice: () =>
+        set({ aiProviderNoticeAcknowledged: true }),
 
       setContextWindow: (contextWindow: number) =>
         set({

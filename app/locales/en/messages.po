@@ -63,17 +63,17 @@ msgid "{0} prompt sections"
 msgstr "{0} prompt sections"
 
 #. placeholder {0}: scenario.title
-#: app/pages/home/home.tsx:213
+#: app/pages/home/home.tsx:214
 msgid "{0} public scenario"
 msgstr "{0} public scenario"
 
 #. placeholder {0}: scenario.name
-#: app/pages/home/home.tsx:243
+#: app/pages/home/home.tsx:244
 msgid "{0} scenario"
 msgstr "{0} scenario"
 
 #. placeholder {0}: scenario?.startCount ?? 0
-#: app/pages/scenarios/catalog-details.tsx:144
+#: app/pages/scenarios/catalog-details.tsx:163
 msgid "{0} starts"
 msgstr "{0} starts"
 
@@ -84,7 +84,7 @@ msgstr "{0} story cards"
 
 #. placeholder {0}: scenario.name
 #. placeholder {0}: scenario.title
-#: app/pages/scenarios/catalog-details.tsx:360
+#: app/pages/scenarios/catalog-details.tsx:406
 #: app/pages/scenarios/details.tsx:270
 msgid "{0} thumbnail"
 msgstr "{0} thumbnail"
@@ -127,7 +127,7 @@ msgstr "{localEntryCount} {0}"
 msgid "{localTales, plural, one {Your tale is only on this device.} other {Your # tales are only on this device.}}"
 msgstr "{localTales, plural, one {Your tale is only on this device.} other {Your # tales are only on this device.}}"
 
-#: app/pages/scenarios/home.tsx:605
+#: app/pages/scenarios/home.tsx:604
 #: app/pages/tales/home.tsx:285
 msgid "{name} thumbnail"
 msgstr "{name} thumbnail"
@@ -150,7 +150,7 @@ msgstr "{size} context"
 msgid "{storageUsed} of {storageLimit} used"
 msgstr "{storageUsed} of {storageLimit} used"
 
-#: app/pages/home/home.tsx:169
+#: app/pages/home/home.tsx:170
 msgid "{title} tale"
 msgstr "{title} tale"
 
@@ -166,7 +166,7 @@ msgstr "© 2025 Rakan AlShammari"
 msgid "0"
 msgstr "0"
 
-#: app/pages/scenarios/catalog-details.tsx:143
+#: app/pages/scenarios/catalog-details.tsx:162
 msgid "1 start"
 msgstr "1 start"
 
@@ -463,7 +463,7 @@ msgstr "Auto"
 msgid "Autofill"
 msgstr "Autofill"
 
-#: app/pages/scenarios/catalog-details.tsx:303
+#: app/pages/scenarios/catalog-details.tsx:349
 msgid "Awaiting moderation"
 msgstr "Awaiting moderation"
 
@@ -473,7 +473,7 @@ msgstr "Awaiting moderation"
 msgid "Back"
 msgstr "Back"
 
-#: app/pages/scenarios/catalog-details.tsx:453
+#: app/pages/scenarios/catalog-details.tsx:523
 #: app/pages/scenarios/details.tsx:250
 #: app/pages/scenarios/details.tsx:343
 msgid "Back to scenarios"
@@ -483,14 +483,15 @@ msgstr "Back to scenarios"
 msgid "Best with more capable models. Requires tool calling."
 msgstr "Best with more capable models. Requires tool calling."
 
-#. placeholder {0}: pendingBlock?.author.displayName ?? ""
-#: app/pages/scenarios/home.tsx:872
+#. placeholder {0}: publisherName ?? ""
+#: app/components/catalog/CatalogSafetyDialogs.tsx:85
 msgid "Block {0}? You will no longer see their scenarios."
 msgstr "Block {0}? You will no longer see their scenarios."
 
-#: app/pages/scenarios/home.tsx:183
-#: app/pages/scenarios/home.tsx:869
-#: app/pages/scenarios/home.tsx:883
+#: app/components/catalog/CatalogSafetyDialogs.tsx:82
+#: app/components/catalog/CatalogSafetyDialogs.tsx:96
+#: app/pages/scenarios/catalog-details.tsx:449
+#: app/pages/scenarios/home.tsx:186
 msgid "Block publisher"
 msgstr "Block publisher"
 
@@ -498,7 +499,7 @@ msgstr "Block publisher"
 msgid "Brass Night"
 msgstr "Brass Night"
 
-#: app/pages/home/home.tsx:754
+#: app/pages/home/home.tsx:762
 msgid "Browse scenarios"
 msgstr "Browse scenarios"
 
@@ -506,7 +507,7 @@ msgstr "Browse scenarios"
 msgid "Browse tag: {tag}"
 msgstr "Browse tag: {tag}"
 
-#: app/pages/scenarios/catalog-details.tsx:388
+#: app/pages/scenarios/catalog-details.tsx:458
 msgid "by"
 msgstr "by"
 
@@ -523,6 +524,8 @@ msgid "Can’t find it? <0>Type a model id</0>"
 msgstr "Can’t find it? <0>Type a model id</0>"
 
 #: app/components/assistant/confirm-card.tsx:99
+#: app/components/catalog/CatalogSafetyDialogs.tsx:53
+#: app/components/catalog/CatalogSafetyDialogs.tsx:90
 #: app/components/layout/settings/advanced.tsx:245
 #: app/components/layout/settings/ai-setup/connection-page.tsx:376
 #: app/components/layout/settings/ai-setup/connection-page.tsx:516
@@ -548,9 +551,7 @@ msgstr "Can’t find it? <0>Type a model id</0>"
 #: app/components/tales/tale-conflict-dialog.tsx:131
 #: app/components/ui/inventory-item.tsx:73
 #: app/components/ui/stat-item.tsx:100
-#: app/pages/scenarios/home.tsx:814
-#: app/pages/scenarios/home.tsx:849
-#: app/pages/scenarios/home.tsx:877
+#: app/pages/scenarios/home.tsx:813
 #: app/pages/tales/home.tsx:430
 #: app/pages/tales/home.tsx:461
 msgid "Cancel"
@@ -760,7 +761,7 @@ msgstr "Choose a model"
 msgid "Choose a model above before you continue the story."
 msgstr "Choose a model above before you continue the story."
 
-#: app/pages/home/home.tsx:712
+#: app/pages/home/home.tsx:720
 msgid "Choose a scenario or click Quickstart to start a new tale."
 msgstr "Choose a scenario or click Quickstart to start a new tale."
 
@@ -776,7 +777,7 @@ msgstr "Choose the mode that fits the kind of tale you want to generate."
 msgid "Choose the name shown on this device and in sync settings."
 msgstr "Choose the name shown on this device and in sync settings."
 
-#: app/pages/scenarios/home.tsx:559
+#: app/pages/scenarios/home.tsx:558
 msgid "Clear filters"
 msgstr "Clear filters"
 
@@ -813,13 +814,13 @@ msgstr "Close narration player"
 msgid "Close panel"
 msgstr "Close panel"
 
-#: app/pages/home/home.tsx:157
+#: app/pages/home/home.tsx:158
 #: app/pages/tales/home.tsx:276
 msgid "Cloud"
 msgstr "Cloud"
 
 #: app/components/layout/settings/cloud-encryption.tsx:234
-#: app/pages/home/home.tsx:151
+#: app/pages/home/home.tsx:152
 #: app/pages/tales/home.tsx:270
 msgid "Cloud full"
 msgstr "Cloud full"
@@ -846,12 +847,12 @@ msgstr "Cloud sync"
 msgid "Cloud sync connected"
 msgstr "Cloud sync connected"
 
-#: app/pages/home/home.tsx:619
+#: app/pages/home/home.tsx:627
 msgid "Cloud sync on"
 msgstr "Cloud sync on"
 
 #: app/components/layout/settings/cloud-sync.tsx:1579
-#: app/pages/home/home.tsx:787
+#: app/pages/home/home.tsx:795
 #: app/pages/tales/home.tsx:236
 msgid "Cloud tales are unavailable."
 msgstr "Cloud tales are unavailable."
@@ -882,7 +883,7 @@ msgstr "Comedic"
 msgid "Community Guidelines"
 msgstr "Community Guidelines"
 
-#: app/pages/home/home.tsx:601
+#: app/pages/home/home.tsx:609
 msgid "Complete profile"
 msgstr "Complete profile"
 
@@ -904,7 +905,7 @@ msgstr "Configure Hakawati, AI providers, generation behavior, and maintenance."
 msgid "Confirm this code on the other device."
 msgstr "Confirm this code on the other device."
 
-#: app/pages/home/home.tsx:510
+#: app/pages/home/home.tsx:512
 #: app/pages/tales/home.tsx:149
 msgid "Conflict resolved"
 msgstr "Conflict resolved"
@@ -961,12 +962,13 @@ msgstr "Continuation {0}"
 
 #: app/components/assistant/hakawati-chat.tsx:684
 #: app/components/assistant/hakawati-chat.tsx:686
+#: app/components/layout/ai-provider-notice.tsx:59
 #: app/components/layout/settings/advanced.tsx:54
 #: app/components/layout/settings/cloud-encryption.tsx:544
 #: app/components/layout/settings/cloud-encryption.tsx:625
 #: app/components/layout/settings/cloud-sync.tsx:1318
 #: app/components/play/play-input-controls.tsx:297
-#: app/pages/home/home.tsx:743
+#: app/pages/home/home.tsx:751
 #: app/pages/tales/home.tsx:287
 #: app/services/assistant/app-settings.ts:380
 msgid "Continue"
@@ -1103,10 +1105,10 @@ msgid "Cover uploads are currently unavailable. Your draft is saved; try publish
 msgstr "Cover uploads are currently unavailable. Your draft is saved; try publishing again later."
 
 #: app/components/layout/settings/cloud-encryption.tsx:649
-#: app/pages/home/home.tsx:876
+#: app/pages/home/home.tsx:884
 #: app/pages/scenarios/create.tsx:90
 #: app/pages/scenarios/create.tsx:116
-#: app/pages/scenarios/home.tsx:447
+#: app/pages/scenarios/home.tsx:446
 msgid "Create"
 msgstr "Create"
 
@@ -1134,7 +1136,7 @@ msgstr "Create a tale with a guided setup"
 msgid "Create an OpenAI account"
 msgstr "Create an OpenAI account"
 
-#: app/pages/home/home.tsx:873
+#: app/pages/home/home.tsx:881
 msgid "Create Scenario"
 msgstr "Create Scenario"
 
@@ -1188,8 +1190,8 @@ msgstr "Default"
 #: app/components/prompt-components/PromptComponentsEditor.tsx:216
 #: app/components/storybook/StoryCard.tsx:121
 #: app/components/storybook/StoryCard.tsx:122
-#: app/pages/scenarios/home.tsx:671
-#: app/pages/scenarios/home.tsx:820
+#: app/pages/scenarios/home.tsx:670
+#: app/pages/scenarios/home.tsx:819
 #: app/pages/tales/home.tsx:368
 #: app/pages/tales/home.tsx:436
 msgid "Delete"
@@ -1221,7 +1223,7 @@ msgid "Delete this AI component?"
 msgstr "Delete this AI component?"
 
 #: app/components/assistant/confirm-card.tsx:25
-#: app/pages/scenarios/home.tsx:803
+#: app/pages/scenarios/home.tsx:802
 msgid "Delete this scenario?"
 msgstr "Delete this scenario?"
 
@@ -1290,7 +1292,7 @@ msgid "Detective"
 msgstr "Detective"
 
 #: app/components/layout/settings/cloud-sync.tsx:900
-#: app/pages/home/home.tsx:627
+#: app/pages/home/home.tsx:635
 msgid "Device limit reached"
 msgstr "Device limit reached"
 
@@ -1340,9 +1342,9 @@ msgid "Disconnecting..."
 msgstr "Disconnecting..."
 
 #: app/components/assistant/activity-chip.tsx:79
-#: app/pages/home/home.tsx:829
-#: app/pages/scenarios/catalog-details.tsx:145
-#: app/pages/scenarios/home.tsx:471
+#: app/pages/home/home.tsx:837
+#: app/pages/scenarios/catalog-details.tsx:164
+#: app/pages/scenarios/home.tsx:470
 msgid "Discover"
 msgstr "Discover"
 
@@ -1382,7 +1384,7 @@ msgstr "Downloading update... ({0})"
 #: app/components/storybook/StoryCard.tsx:111
 #: app/pages/scenarios/details.tsx:279
 #: app/pages/scenarios/edit.tsx:151
-#: app/pages/scenarios/home.tsx:640
+#: app/pages/scenarios/home.tsx:639
 msgid "Edit"
 msgstr "Edit"
 
@@ -1400,8 +1402,8 @@ msgid "Edit profile"
 msgstr "Edit profile"
 
 #: app/components/scenario/PublishScenarioDialog.tsx:267
-#: app/pages/scenarios/catalog-details.tsx:373
-#: app/pages/scenarios/home.tsx:189
+#: app/pages/scenarios/catalog-details.tsx:419
+#: app/pages/scenarios/home.tsx:192
 msgid "Edit scenario"
 msgstr "Edit scenario"
 
@@ -1495,12 +1497,12 @@ msgstr "Entry title"
 msgid "EXPERIMENTAL"
 msgstr "EXPERIMENTAL"
 
-#: app/pages/scenarios/home.tsx:141
-#: app/pages/scenarios/home.tsx:607
+#: app/pages/scenarios/home.tsx:144
+#: app/pages/scenarios/home.tsx:606
 msgid "Explore scenario"
 msgstr "Explore scenario"
 
-#: app/pages/scenarios/home.tsx:662
+#: app/pages/scenarios/home.tsx:661
 msgid "Export JSON"
 msgstr "Export JSON"
 
@@ -1508,7 +1510,8 @@ msgstr "Export JSON"
 msgid "Extra high"
 msgstr "Extra high"
 
-#: app/pages/scenarios/home.tsx:365
+#: app/pages/scenarios/catalog-details.tsx:332
+#: app/pages/scenarios/home.tsx:364
 msgid "Failed to block publisher"
 msgstr "Failed to block publisher"
 
@@ -1534,35 +1537,35 @@ msgstr "Failed to generate tale: {0}"
 msgid "Failed to install the update."
 msgstr "Failed to install the update."
 
-#: app/pages/scenarios/home.tsx:709
+#: app/pages/scenarios/home.tsx:708
 msgid "Failed to load public scenarios."
 msgstr "Failed to load public scenarios."
 
-#: app/pages/scenarios/home.tsx:748
+#: app/pages/scenarios/home.tsx:747
 msgid "Failed to load published scenarios."
 msgstr "Failed to load published scenarios."
 
-#: app/pages/scenarios/catalog-details.tsx:342
+#: app/pages/scenarios/catalog-details.tsx:388
 #: app/pages/scenarios/details.tsx:244
 msgid "Failed to load scenario."
 msgstr "Failed to load scenario."
 
-#: app/pages/home/home.tsx:913
-#: app/pages/scenarios/home.tsx:592
+#: app/pages/home/home.tsx:921
+#: app/pages/scenarios/home.tsx:591
 msgid "Failed to load scenarios."
 msgstr "Failed to load scenarios."
 
-#: app/pages/home/home.tsx:497
-#: app/pages/home/home.tsx:782
+#: app/pages/home/home.tsx:499
+#: app/pages/home/home.tsx:790
 #: app/pages/tales/home.tsx:231
 msgid "Failed to load tales."
 msgstr "Failed to load tales."
 
 #: app/components/scenario/PublishScenarioDialog.tsx:212
-#: app/pages/scenarios/catalog-details.tsx:486
+#: app/pages/scenarios/catalog-details.tsx:568
 #: app/pages/scenarios/create.tsx:210
 #: app/pages/scenarios/details.tsx:405
-#: app/pages/scenarios/home.tsx:921
+#: app/pages/scenarios/home.tsx:871
 msgid "Failed to publish scenario"
 msgstr "Failed to publish scenario"
 
@@ -1575,7 +1578,7 @@ msgstr "Failed to queue sync"
 msgid "Failed to remove from cloud"
 msgstr "Failed to remove from cloud"
 
-#: app/pages/home/home.tsx:514
+#: app/pages/home/home.tsx:516
 #: app/pages/tales/home.tsx:153
 msgid "Failed to resolve conflict"
 msgstr "Failed to resolve conflict"
@@ -1586,12 +1589,13 @@ msgid "Failed to save scenario"
 msgstr "Failed to save scenario"
 
 #: app/components/scenario/ScenarioStartWizard.tsx:61
-#: app/pages/scenarios/catalog-details.tsx:276
+#: app/pages/scenarios/catalog-details.tsx:295
 #: app/pages/scenarios/details.tsx:210
 msgid "Failed to start scenario"
 msgstr "Failed to start scenario"
 
-#: app/pages/scenarios/home.tsx:347
+#: app/pages/scenarios/catalog-details.tsx:318
+#: app/pages/scenarios/home.tsx:346
 msgid "Failed to submit report"
 msgstr "Failed to submit report"
 
@@ -1599,7 +1603,7 @@ msgstr "Failed to submit report"
 msgid "Failed to transcribe speech."
 msgstr "Failed to transcribe speech."
 
-#: app/pages/scenarios/home.tsx:379
+#: app/pages/scenarios/home.tsx:378
 msgid "Failed to unpublish scenario"
 msgstr "Failed to unpublish scenario"
 
@@ -1611,8 +1615,8 @@ msgstr "Failed to update devices"
 msgid "Fantasy"
 msgstr "Fantasy"
 
+#: app/pages/scenarios/home.tsx:552
 #: app/pages/scenarios/home.tsx:553
-#: app/pages/scenarios/home.tsx:554
 msgid "Filter by tags"
 msgstr "Filter by tags"
 
@@ -1671,7 +1675,7 @@ msgstr "From Hakawati"
 
 #: app/components/layout/settings/tale.tsx:46
 #: app/components/scenario/GameModeField.tsx:22
-#: app/pages/home/home.tsx:234
+#: app/pages/home/home.tsx:235
 #: app/pages/scenarios/details.tsx:257
 msgid "Game Master"
 msgstr "Game Master"
@@ -1694,12 +1698,12 @@ msgid "Game Mode"
 msgstr "Game Mode"
 
 #: app/components/scenario/GenerateScenarioDialog.tsx:114
-#: app/pages/scenarios/home.tsx:451
+#: app/pages/scenarios/home.tsx:450
 msgid "Generate"
 msgstr "Generate"
 
 #: app/components/scenario/GenerateScenarioDialog.tsx:83
-#: app/pages/home/home.tsx:891
+#: app/pages/home/home.tsx:899
 msgid "Generate Scenario"
 msgstr "Generate Scenario"
 
@@ -1737,7 +1741,7 @@ msgid "Go to the API section in the dashboard"
 msgstr "Go to the API section in the dashboard"
 
 #: app/components/layout/settings/chatgpt-connection.tsx:200
-#: app/components/layout/whats-new-modal.tsx:46
+#: app/components/layout/whats-new-modal.tsx:56
 msgid "Got it"
 msgstr "Got it"
 
@@ -1759,9 +1763,13 @@ msgstr "Hakawati"
 msgid "Hakawati {0} is available"
 msgstr "Hakawati {0} is available"
 
-#: app/components/layout/whats-new-modal.tsx:38
+#: app/components/layout/whats-new-modal.tsx:39
 msgid "Hakawati {version}"
 msgstr "Hakawati {version}"
+
+#: app/components/layout/ai-provider-notice.tsx:42
+msgid "Hakawati is a client for AI models and doesn’t come with one. To play, set up a provider such as OpenRouter, OpenAI or ChatGPT in AI Setup."
+msgstr "Hakawati is a client for AI models and doesn’t come with one. To play, set up a provider such as OpenRouter, OpenAI or ChatGPT in AI Setup."
 
 #: app/components/layout/settings/updates.tsx:90
 msgid "Hakawati is up to date"
@@ -1770,6 +1778,10 @@ msgstr "Hakawati is up to date"
 #: app/store/useUpdateStore.ts:113
 msgid "Hakawati is up to date."
 msgstr "Hakawati is up to date."
+
+#: app/components/layout/ai-provider-notice.tsx:37
+msgid "Hakawati needs an AI provider"
+msgstr "Hakawati needs an AI provider"
 
 #: app/components/speech/speech-input.tsx:147
 msgid "Hakawati needs microphone access to record speech."
@@ -1797,11 +1809,11 @@ msgstr "Help for {label}"
 msgid "Helper"
 msgstr "Helper"
 
-#: app/pages/scenarios/home.tsx:149
+#: app/pages/scenarios/home.tsx:152
 msgid "Hidden"
 msgstr "Hidden"
 
-#: app/pages/scenarios/catalog-details.tsx:294
+#: app/pages/scenarios/catalog-details.tsx:340
 msgid "Hidden by moderation"
 msgstr "Hidden by moderation"
 
@@ -1824,8 +1836,8 @@ msgstr "Highlight the latest passage"
 #: app/components/assistant/activity-chip.tsx:91
 #: app/components/layout/titlebar.tsx:90
 #: app/components/layout/titlebar.tsx:96
-#: app/pages/scenarios/home.tsx:430
-#: app/pages/scenarios/home.tsx:436
+#: app/pages/scenarios/home.tsx:429
+#: app/pages/scenarios/home.tsx:435
 #: app/pages/tales/home.tsx:190
 #: app/pages/tales/home.tsx:202
 msgid "Home"
@@ -1868,11 +1880,11 @@ msgstr "I saved my recovery key"
 msgid "If the tool requires auth, look up how to generate a key (Ollama requires this)"
 msgstr "If the tool requires auth, look up how to generate a key (Ollama requires this)"
 
-#: app/pages/scenarios/home.tsx:486
+#: app/pages/scenarios/home.tsx:485
 msgid "Import"
 msgstr "Import"
 
-#: app/pages/scenarios/home.tsx:153
+#: app/pages/scenarios/home.tsx:156
 msgid "In review"
 msgstr "In review"
 
@@ -1916,7 +1928,7 @@ msgstr "Installed version"
 msgid "Installing the update…"
 msgstr "Installing the update…"
 
-#: app/root.tsx:173
+#: app/root.tsx:174
 msgid "Installing update…"
 msgstr "Installing update…"
 
@@ -2043,12 +2055,12 @@ msgstr "Light-Hearted"
 msgid "Load {name}"
 msgstr "Load {name}"
 
-#: app/pages/home/home.tsx:170
+#: app/pages/home/home.tsx:171
 msgid "Load {title}"
 msgstr "Load {title}"
 
-#: app/pages/scenarios/home.tsx:738
-#: app/pages/scenarios/home.tsx:787
+#: app/pages/scenarios/home.tsx:737
+#: app/pages/scenarios/home.tsx:786
 msgid "Load more"
 msgstr "Load more"
 
@@ -2078,42 +2090,42 @@ msgstr "Loading publishing policies..."
 msgid "Loading scenario..."
 msgstr "Loading scenario..."
 
-#: app/pages/scenarios/home.tsx:508
-#: app/pages/scenarios/home.tsx:574
+#: app/pages/scenarios/home.tsx:507
+#: app/pages/scenarios/home.tsx:573
 msgid "Loading scenarios"
 msgstr "Loading scenarios"
 
 #: app/components/layout/model-select.tsx:71
 #: app/components/layout/settings/cloud-sync.tsx:1569
 #: app/components/layout/settings/cloud-sync.tsx:1662
-#: app/pages/home/home.tsx:836
-#: app/pages/scenarios/catalog-details.tsx:334
+#: app/pages/home/home.tsx:844
+#: app/pages/scenarios/catalog-details.tsx:380
 #: app/pages/scenarios/details.tsx:232
-#: app/pages/scenarios/home.tsx:587
+#: app/pages/scenarios/home.tsx:586
 #: app/pages/tales/home.tsx:226
 msgid "Loading..."
 msgstr "Loading..."
 
-#: app/pages/home/home.tsx:187
-#: app/pages/home/home.tsx:739
-#: app/pages/home/home.tsx:777
-#: app/pages/home/home.tsx:908
+#: app/pages/home/home.tsx:188
+#: app/pages/home/home.tsx:747
+#: app/pages/home/home.tsx:785
+#: app/pages/home/home.tsx:916
 msgid "Loading…"
 msgstr "Loading…"
 
 #: app/components/layout/settings/ai-setup/add-connection.tsx:37
-#: app/pages/home/home.tsx:158
-#: app/pages/scenarios/home.tsx:464
+#: app/pages/home/home.tsx:159
+#: app/pages/scenarios/home.tsx:463
 #: app/pages/tales/home.tsx:277
 msgid "Local"
 msgstr "Local"
 
-#: app/pages/home/home.tsx:607
-#: app/pages/home/home.tsx:629
+#: app/pages/home/home.tsx:615
+#: app/pages/home/home.tsx:637
 msgid "Local profile"
 msgstr "Local profile"
 
-#: app/pages/scenarios/catalog-details.tsx:285
+#: app/pages/scenarios/catalog-details.tsx:304
 msgid "Local scenario not found"
 msgstr "Local scenario not found"
 
@@ -2122,8 +2134,8 @@ msgid "Local server"
 msgstr "Local server"
 
 #: app/components/layout/settings/cloud-sync.tsx:1554
-#: app/pages/home/home.tsx:134
-#: app/pages/home/home.tsx:348
+#: app/pages/home/home.tsx:135
+#: app/pages/home/home.tsx:350
 #: app/pages/tales/home.tsx:244
 msgid "Locked tale"
 msgstr "Locked tale"
@@ -2252,7 +2264,7 @@ msgid "Minimize"
 msgstr "Minimize"
 
 #. placeholder {0}: issues.join(", ")
-#: app/pages/home/home.tsx:679
+#: app/pages/home/home.tsx:687
 msgid "Missing settings: {0}. Configure your API in Settings."
 msgstr "Missing settings: {0}. Configure your API in Settings."
 
@@ -2293,7 +2305,7 @@ msgstr "Models appear once you’re signed in"
 msgid "More sampling"
 msgstr "More sampling"
 
-#: app/pages/scenarios/home.tsx:539
+#: app/pages/scenarios/home.tsx:538
 msgid "Most started"
 msgstr "Most started"
 
@@ -2337,7 +2349,7 @@ msgstr "Narration"
 msgid "Narrator"
 msgstr "Narrator"
 
-#: app/pages/home/home.tsx:149
+#: app/pages/home/home.tsx:150
 #: app/pages/tales/home.tsx:268
 msgid "Needs review"
 msgstr "Needs review"
@@ -2350,7 +2362,7 @@ msgstr "Neutral charcoal with a soft white accent."
 msgid "Never"
 msgstr "Never"
 
-#: app/pages/scenarios/home.tsx:526
+#: app/pages/scenarios/home.tsx:525
 msgid "New"
 msgstr "New"
 
@@ -2371,13 +2383,13 @@ msgid "New recovery key"
 msgstr "New recovery key"
 
 #: app/components/assistant/activity-chip.tsx:85
-#: app/pages/home/home.tsx:884
+#: app/pages/home/home.tsx:892
 msgid "New scenario"
 msgstr "New scenario"
 
 #: app/components/quickstart/quickstart-wizard.tsx:669
 #: app/components/scenario/ScenarioStartWizard.tsx:204
-#: app/pages/scenarios/home.tsx:700
+#: app/pages/scenarios/home.tsx:699
 #: app/pages/tales/home.tsx:406
 msgid "Next"
 msgstr "Next"
@@ -2402,11 +2414,11 @@ msgstr "No cover"
 msgid "No cover image"
 msgstr "No cover image"
 
-#: app/pages/home/home.tsx:139
-#: app/pages/home/home.tsx:142
-#: app/pages/home/home.tsx:240
+#: app/pages/home/home.tsx:140
+#: app/pages/home/home.tsx:143
+#: app/pages/home/home.tsx:241
 #: app/pages/scenarios/details.tsx:342
-#: app/pages/scenarios/home.tsx:602
+#: app/pages/scenarios/home.tsx:601
 #: app/pages/tales/home.tsx:282
 msgid "No description yet."
 msgstr "No description yet."
@@ -2444,12 +2456,12 @@ msgstr "No models available"
 msgid "No models match"
 msgstr "No models match"
 
-#: app/pages/home/home.tsx:848
-#: app/pages/scenarios/home.tsx:580
+#: app/pages/home/home.tsx:856
+#: app/pages/scenarios/home.tsx:579
 msgid "No public scenarios yet."
 msgstr "No public scenarios yet."
 
-#: app/pages/scenarios/home.tsx:578
+#: app/pages/scenarios/home.tsx:577
 msgid "No published scenarios yet."
 msgstr "No published scenarios yet."
 
@@ -2461,11 +2473,11 @@ msgstr "No registered devices."
 msgid "No roles yet"
 msgstr "No roles yet"
 
-#: app/pages/scenarios/home.tsx:576
+#: app/pages/scenarios/home.tsx:575
 msgid "No scenarios match your search or tags."
 msgstr "No scenarios match your search or tags."
 
-#: app/pages/home/home.tsx:920
+#: app/pages/home/home.tsx:928
 msgid "No scenarios yet."
 msgstr "No scenarios yet."
 
@@ -2485,7 +2497,7 @@ msgstr "No stats yet"
 msgid "No tales waiting."
 msgstr "No tales waiting."
 
-#: app/pages/home/home.tsx:792
+#: app/pages/home/home.tsx:800
 msgid "No tales yet."
 msgstr "No tales yet."
 
@@ -2512,7 +2524,7 @@ msgstr "Not set up"
 msgid "Not signed in"
 msgstr "Not signed in"
 
-#: app/pages/home/home.tsx:153
+#: app/pages/home/home.tsx:154
 #: app/pages/tales/home.tsx:272
 msgid "Not synced"
 msgstr "Not synced"
@@ -2562,7 +2574,7 @@ msgid "Only the desktop app updates itself"
 msgstr "Only the desktop app updates itself"
 
 #. placeholder {0}: scenario.name
-#: app/pages/home/home.tsx:244
+#: app/pages/home/home.tsx:245
 msgid "Open {0}"
 msgstr "Open {0}"
 
@@ -2571,7 +2583,7 @@ msgstr "Open {0}"
 msgid "Open panel"
 msgstr "Open panel"
 
-#: app/pages/home/home.tsx:689
+#: app/pages/home/home.tsx:697
 msgid "Open Settings"
 msgstr "Open Settings"
 
@@ -2636,7 +2648,7 @@ msgid "Other"
 msgstr "Other"
 
 #. placeholder {0}: Math.max(1, Math.ceil(total / limit) || 1)
-#: app/pages/scenarios/home.tsx:691
+#: app/pages/scenarios/home.tsx:690
 #: app/pages/tales/home.tsx:397
 msgid "Page {page} of {0}"
 msgstr "Page {page} of {0}"
@@ -2657,12 +2669,12 @@ msgstr "Pause narration"
 msgid "Personal"
 msgstr "Personal"
 
-#: app/pages/home/home.tsx:625
+#: app/pages/home/home.tsx:633
 msgid "Personal server"
 msgstr "Personal server"
 
 #: app/components/layout/settings/cloud-sync.tsx:1067
-#: app/pages/home/home.tsx:605
+#: app/pages/home/home.tsx:613
 msgid "Personal Sync"
 msgstr "Personal Sync"
 
@@ -2714,7 +2726,7 @@ msgstr "Play narration"
 msgid "Policies"
 msgstr "Policies"
 
-#: app/pages/scenarios/home.tsx:529
+#: app/pages/scenarios/home.tsx:528
 msgid "Popular"
 msgstr "Popular"
 
@@ -2724,7 +2736,7 @@ msgstr "Popular"
 msgid "Presence penalty"
 msgstr "Presence penalty"
 
-#: app/pages/scenarios/home.tsx:688
+#: app/pages/scenarios/home.tsx:687
 #: app/pages/tales/home.tsx:394
 msgid "Prev"
 msgstr "Prev"
@@ -2765,15 +2777,15 @@ msgstr "Prompting"
 msgid "Psychic"
 msgstr "Psychic"
 
-#: app/pages/home/home.tsx:209
+#: app/pages/home/home.tsx:210
 msgid "Public scenario"
 msgstr "Public scenario"
 
-#: app/pages/home/home.tsx:820
+#: app/pages/home/home.tsx:828
 msgid "Public Scenarios"
 msgstr "Public Scenarios"
 
-#: app/pages/home/home.tsx:841
+#: app/pages/home/home.tsx:849
 msgid "Public scenarios are unavailable."
 msgstr "Public scenarios are unavailable."
 
@@ -2781,7 +2793,7 @@ msgstr "Public scenarios are unavailable."
 #: app/pages/scenarios/create.tsx:102
 #: app/pages/scenarios/details.tsx:292
 #: app/pages/scenarios/edit.tsx:190
-#: app/pages/scenarios/home.tsx:652
+#: app/pages/scenarios/home.tsx:651
 msgid "Publish"
 msgstr "Publish"
 
@@ -2795,18 +2807,18 @@ msgstr "Publish the name, description, cover, and story content from this draft 
 
 #: app/components/scenario/PublishScenarioDialog.tsx:178
 #: app/components/scenario/PublishScenarioDialog.tsx:358
-#: app/pages/scenarios/catalog-details.tsx:381
+#: app/pages/scenarios/catalog-details.tsx:427
 #: app/pages/scenarios/details.tsx:290
 #: app/pages/scenarios/edit.tsx:188
-#: app/pages/scenarios/home.tsx:650
+#: app/pages/scenarios/home.tsx:649
 msgid "Publish update"
 msgstr "Publish update"
 
 #: app/components/assistant/activity-chip.tsx:81
-#: app/pages/scenarios/catalog-details.tsx:145
-#: app/pages/scenarios/catalog-details.tsx:397
-#: app/pages/scenarios/home.tsx:479
-#: app/pages/scenarios/home.tsx:611
+#: app/pages/scenarios/catalog-details.tsx:164
+#: app/pages/scenarios/catalog-details.tsx:467
+#: app/pages/scenarios/home.tsx:478
+#: app/pages/scenarios/home.tsx:610
 msgid "Published"
 msgstr "Published"
 
@@ -2818,7 +2830,8 @@ msgstr "Published details could not be loaded. You can edit your draft; publishi
 msgid "Published scenario details could not be loaded."
 msgstr "Published scenario details could not be loaded."
 
-#: app/pages/scenarios/home.tsx:361
+#: app/pages/scenarios/catalog-details.tsx:328
+#: app/pages/scenarios/home.tsx:360
 msgid "Publisher blocked"
 msgstr "Publisher blocked"
 
@@ -2848,7 +2861,7 @@ msgstr "Question progress"
 
 #: app/components/assistant/activity-chip.tsx:87
 #: app/components/quickstart/quickstart-wizard.tsx:585
-#: app/pages/home/home.tsx:574
+#: app/pages/home/home.tsx:582
 msgid "Quickstart"
 msgstr "Quickstart"
 
@@ -2915,11 +2928,11 @@ msgstr "Ready to start your tale?"
 msgid "Recap the story so far"
 msgstr "Recap the story so far"
 
-#: app/pages/home/home.tsx:763
+#: app/pages/home/home.tsx:771
 msgid "Recent tales"
 msgstr "Recent tales"
 
-#: app/pages/home/home.tsx:603
+#: app/pages/home/home.tsx:611
 msgid "Reconnecting..."
 msgstr "Reconnecting..."
 
@@ -3058,21 +3071,23 @@ msgstr "Replace the cloud copy of “{first}”?"
 msgid "Replace this device's copy of “{first}”?"
 msgstr "Replace this device's copy of “{first}”?"
 
-#: app/pages/scenarios/home.tsx:177
-#: app/pages/scenarios/home.tsx:855
+#: app/components/catalog/CatalogSafetyDialogs.tsx:59
+#: app/pages/scenarios/catalog-details.tsx:444
+#: app/pages/scenarios/home.tsx:180
 msgid "Report"
 msgstr "Report"
 
-#: app/pages/scenarios/home.tsx:843
-#: app/pages/scenarios/home.tsx:844
+#: app/components/catalog/CatalogSafetyDialogs.tsx:47
+#: app/components/catalog/CatalogSafetyDialogs.tsx:48
 msgid "Report reason"
 msgstr "Report reason"
 
-#: app/pages/scenarios/home.tsx:344
+#: app/pages/scenarios/catalog-details.tsx:315
+#: app/pages/scenarios/home.tsx:343
 msgid "Report submitted"
 msgstr "Report submitted"
 
-#: app/pages/scenarios/home.tsx:834
+#: app/components/catalog/CatalogSafetyDialogs.tsx:38
 msgid "Report this scenario?"
 msgstr "Report this scenario?"
 
@@ -3126,7 +3141,7 @@ msgstr "Resize panel"
 msgid "Resolve sync conflict"
 msgstr "Resolve sync conflict"
 
-#: app/pages/home/home.tsx:623
+#: app/pages/home/home.tsx:631
 msgid "Restoring session"
 msgstr "Restoring session"
 
@@ -3137,8 +3152,8 @@ msgstr "Restoring session"
 #: app/components/play/log/log-control.tsx:126
 #: app/components/scenario/PublishScenarioDialog.tsx:231
 #: app/pages/scenarios/edit.tsx:208
-#: app/pages/scenarios/home.tsx:711
-#: app/pages/scenarios/home.tsx:750
+#: app/pages/scenarios/home.tsx:710
+#: app/pages/scenarios/home.tsx:749
 msgid "Retry"
 msgstr "Retry"
 
@@ -3146,8 +3161,8 @@ msgstr "Retry"
 msgid "Retry (Ctrl+R)"
 msgstr "Retry (Ctrl+R)"
 
-#: app/pages/home/home.tsx:164
-#: app/pages/home/home.tsx:741
+#: app/pages/home/home.tsx:165
+#: app/pages/home/home.tsx:749
 #: app/pages/tales/home.tsx:287
 msgid "Review conflict"
 msgstr "Review conflict"
@@ -3228,7 +3243,7 @@ msgstr "Saving profile"
 msgid "Saving the tale as a scenario"
 msgstr "Saving the tale as a scenario"
 
-#: app/root.tsx:176
+#: app/root.tsx:177
 msgid "Saving your progress. Hakawati will restart when the update is ready."
 msgstr "Saving your progress. Hakawati will restart when the update is ready."
 
@@ -3262,12 +3277,13 @@ msgstr "Scan this code with an unlocked phone in Account & Sync."
 msgid "Scan this code with your phone in Account & Sync."
 msgstr "Scan this code with your phone in Account & Sync."
 
-#: app/pages/scenarios/catalog-details.tsx:352
+#: app/pages/scenarios/catalog-details.tsx:398
 #: app/pages/tales/home.tsx:325
 msgid "Scenario"
 msgstr "Scenario"
 
-#: app/pages/scenarios/home.tsx:622
+#: app/pages/scenarios/catalog-details.tsx:436
+#: app/pages/scenarios/home.tsx:621
 msgid "Scenario actions"
 msgstr "Scenario actions"
 
@@ -3288,39 +3304,39 @@ msgid "Scenario details"
 msgstr "Scenario details"
 
 #: app/pages/scenarios/details.tsx:90
-#: app/pages/scenarios/home.tsx:311
+#: app/pages/scenarios/home.tsx:312
 msgid "Scenario not found"
 msgstr "Scenario not found"
 
 #: app/pages/scenarios/create.tsx:204
 #: app/pages/scenarios/details.tsx:397
 #: app/pages/scenarios/edit.tsx:317
-#: app/pages/scenarios/home.tsx:913
+#: app/pages/scenarios/home.tsx:863
 msgid "Scenario published"
 msgstr "Scenario published"
 
-#: app/pages/scenarios/catalog-details.tsx:479
+#: app/pages/scenarios/catalog-details.tsx:561
 #: app/pages/scenarios/create.tsx:203
 #: app/pages/scenarios/details.tsx:394
 #: app/pages/scenarios/edit.tsx:316
-#: app/pages/scenarios/home.tsx:910
+#: app/pages/scenarios/home.tsx:860
 msgid "Scenario submitted for moderation"
 msgstr "Scenario submitted for moderation"
 
-#: app/pages/scenarios/home.tsx:372
+#: app/pages/scenarios/home.tsx:371
 msgid "Scenario unpublished"
 msgstr "Scenario unpublished"
 
-#: app/pages/scenarios/catalog-details.tsx:480
+#: app/pages/scenarios/catalog-details.tsx:562
 #: app/pages/scenarios/details.tsx:396
-#: app/pages/scenarios/home.tsx:912
+#: app/pages/scenarios/home.tsx:862
 msgid "Scenario update published"
 msgstr "Scenario update published"
 
 #: app/components/assistant/activity-chip.tsx:77
 #: app/components/scenario/ScenarioBreadcrumb.tsx:21
 #: app/pages/scenarios/create.tsx:89
-#: app/pages/scenarios/home.tsx:439
+#: app/pages/scenarios/home.tsx:438
 msgid "Scenarios"
 msgstr "Scenarios"
 
@@ -3371,8 +3387,8 @@ msgstr "Search model..."
 msgid "Search models"
 msgstr "Search models"
 
+#: app/pages/scenarios/home.tsx:497
 #: app/pages/scenarios/home.tsx:498
-#: app/pages/scenarios/home.tsx:499
 msgid "Search scenarios"
 msgstr "Search scenarios"
 
@@ -3464,7 +3480,7 @@ msgstr "Set up the Narrator to play"
 #: app/components/layout/settings/settings-button.tsx:77
 #: app/components/layout/settings/settings-modal.tsx:160
 #: app/hooks/useSyncBackground.ts:64
-#: app/pages/home/home.tsx:663
+#: app/pages/home/home.tsx:671
 msgid "Settings"
 msgstr "Settings"
 
@@ -3472,7 +3488,7 @@ msgstr "Settings"
 msgid "Settled a sync conflict"
 msgstr "Settled a sync conflict"
 
-#: app/pages/home/home.tsx:676
+#: app/pages/home/home.tsx:684
 msgid "Setup required"
 msgstr "Setup required"
 
@@ -3589,7 +3605,7 @@ msgstr "Soldier"
 msgid "Something went wrong. Try again."
 msgstr "Something went wrong. Try again."
 
-#: app/pages/scenarios/home.tsx:519
+#: app/pages/scenarios/home.tsx:518
 msgid "Sort scenarios"
 msgstr "Sort scenarios"
 
@@ -3606,13 +3622,13 @@ msgstr "Speak"
 msgid "Speech to Text"
 msgstr "Speech to Text"
 
-#: app/pages/scenarios/catalog-details.tsx:446
+#: app/pages/scenarios/catalog-details.tsx:516
 #: app/pages/scenarios/details.tsx:337
 msgid "Start Local"
 msgstr "Start Local"
 
 #: app/components/scenario/ScenarioStartWizard.tsx:202
-#: app/pages/scenarios/catalog-details.tsx:436
+#: app/pages/scenarios/catalog-details.tsx:506
 #: app/pages/scenarios/details.tsx:327
 msgid "Start Tale"
 msgstr "Start Tale"
@@ -3713,7 +3729,7 @@ msgstr "Story panel"
 #: app/components/layout/settings/tale.tsx:44
 #: app/components/quickstart/steps/game-mode-step.tsx:15
 #: app/components/scenario/GameModeField.tsx:22
-#: app/pages/home/home.tsx:236
+#: app/pages/home/home.tsx:237
 #: app/pages/scenarios/details.tsx:257
 msgid "Story Teller"
 msgstr "Story Teller"
@@ -3774,12 +3790,12 @@ msgstr "Sync failed"
 msgid "Sync is paused"
 msgstr "Sync is paused"
 
-#: app/pages/home/home.tsx:621
+#: app/pages/home/home.tsx:629
 msgid "Sync off"
 msgstr "Sync off"
 
-#: app/pages/home/home.tsx:155
-#: app/pages/home/home.tsx:617
+#: app/pages/home/home.tsx:156
+#: app/pages/home/home.tsx:625
 #: app/pages/tales/home.tsx:274
 msgid "Sync paused"
 msgstr "Sync paused"
@@ -3817,7 +3833,7 @@ msgstr "Tags must be 32 characters or shorter."
 msgid "Take an action or send a director's note to start the adventure."
 msgstr "Take an action or send a director's note to start the adventure."
 
-#: app/pages/home/home.tsx:163
+#: app/pages/home/home.tsx:164
 msgid "Tale"
 msgstr "Tale"
 
@@ -3849,7 +3865,7 @@ msgstr "Tales on this device stay here when you remove their cloud copy."
 msgid "Tales waiting for a choice"
 msgstr "Tales waiting for a choice"
 
-#: app/pages/scenarios/home.tsx:837
+#: app/components/catalog/CatalogSafetyDialogs.tsx:41
 msgid "Tell the moderators what is wrong with it."
 msgstr "Tell the moderators what is wrong with it."
 
@@ -4031,7 +4047,7 @@ msgstr "This preset includes auto-detection of local servers (They must expose a
 msgid "This recovery key doesn't match this account."
 msgstr "This recovery key doesn't match this account."
 
-#: app/pages/scenarios/catalog-details.tsx:238
+#: app/pages/scenarios/catalog-details.tsx:257
 msgid "This scenario has changed. Please answer its questions again."
 msgstr "This scenario has changed. Please answer its questions again."
 
@@ -4039,17 +4055,17 @@ msgstr "This scenario has changed. Please answer its questions again."
 msgid "This scenario has invalid questions. Edit the scenario before starting."
 msgstr "This scenario has invalid questions. Edit the scenario before starting."
 
-#: app/pages/scenarios/catalog-details.tsx:228
-#: app/pages/scenarios/catalog-details.tsx:257
+#: app/pages/scenarios/catalog-details.tsx:247
+#: app/pages/scenarios/catalog-details.tsx:276
 msgid "This scenario has invalid questions. Its creator needs to fix them before you can start."
 msgstr "This scenario has invalid questions. Its creator needs to fix them before you can start."
 
-#: app/pages/scenarios/catalog-details.tsx:306
+#: app/pages/scenarios/catalog-details.tsx:352
 msgid "This version stays private until it is approved."
 msgstr "This version stays private until it is approved."
 
 #. placeholder {0}: pendingDelete?.name
-#: app/pages/scenarios/home.tsx:806
+#: app/pages/scenarios/home.tsx:805
 #: app/pages/tales/home.tsx:422
 msgid "This will permanently delete {0}. This action cannot be undone."
 msgstr "This will permanently delete {0}. This action cannot be undone."
@@ -4171,7 +4187,7 @@ msgid "Unpin"
 msgstr "Unpin"
 
 #: app/components/assistant/confirm-card.tsx:54
-#: app/pages/scenarios/home.tsx:194
+#: app/pages/scenarios/home.tsx:197
 msgid "Unpublish"
 msgstr "Unpublish"
 
@@ -4187,7 +4203,7 @@ msgstr "Unpublished “{first}”"
 msgid "Unregister"
 msgstr "Unregister"
 
-#: app/pages/home/home.tsx:702
+#: app/pages/home/home.tsx:710
 msgid "Untitled"
 msgstr "Untitled"
 
@@ -4210,13 +4226,13 @@ msgid "Update downloaded. Restarting..."
 msgstr "Update downloaded. Restarting..."
 
 #: app/components/layout/settings/cloud-sync.tsx:894
-#: app/pages/home/home.tsx:614
+#: app/pages/home/home.tsx:622
 msgid "Update Hakawati to sync"
 msgstr "Update Hakawati to sync"
 
-#: app/pages/scenarios/catalog-details.tsx:403
+#: app/pages/scenarios/catalog-details.tsx:473
 #: app/pages/scenarios/details.tsx:313
-#: app/pages/scenarios/home.tsx:534
+#: app/pages/scenarios/home.tsx:533
 msgid "Updated"
 msgstr "Updated"
 
@@ -4261,21 +4277,21 @@ msgstr "User interface scale"
 msgid "Value"
 msgstr "Value"
 
-#: app/pages/scenarios/home.tsx:172
+#: app/pages/scenarios/home.tsx:175
 msgid "View"
 msgstr "View"
 
 #. placeholder {0}: scenario.title
-#: app/pages/home/home.tsx:214
+#: app/pages/home/home.tsx:215
 msgid "View {0}"
 msgstr "View {0}"
 
-#: app/pages/scenarios/home.tsx:606
+#: app/pages/scenarios/home.tsx:605
 msgid "View {name}"
 msgstr "View {name}"
 
-#: app/pages/home/home.tsx:770
-#: app/pages/home/home.tsx:900
+#: app/pages/home/home.tsx:778
+#: app/pages/home/home.tsx:908
 msgid "View all"
 msgstr "View all"
 
@@ -4321,7 +4337,7 @@ msgstr "What should the tale feel like?"
 msgid "What world should the tale begin in?"
 msgstr "What world should the tale begin in?"
 
-#: app/components/layout/whats-new-modal.tsx:35
+#: app/components/layout/whats-new-modal.tsx:36
 msgid "What’s New"
 msgstr "What’s New"
 
@@ -4385,11 +4401,11 @@ msgstr "Your current recovery key stops working when you continue."
 msgid "Your current recovery key will stop working."
 msgstr "Your current recovery key will stop working."
 
-#: app/pages/home/home.tsx:651
+#: app/pages/home/home.tsx:659
 msgid "Your library"
 msgstr "Your library"
 
-#: app/pages/home/home.tsx:695
+#: app/pages/home/home.tsx:703
 msgid "Your next tale"
 msgstr "Your next tale"
 
@@ -4398,9 +4414,13 @@ msgstr "Your next tale"
 msgid "Your scenarios"
 msgstr "Your scenarios"
 
-#: app/pages/home/home.tsx:865
+#: app/pages/home/home.tsx:873
 msgid "Your Scenarios"
 msgstr "Your Scenarios"
+
+#: app/components/layout/ai-provider-notice.tsx:49
+msgid "Your stories, and any photos or recordings you send, go to the provider you choose."
+msgstr "Your stories, and any photos or recordings you send, go to the provider you choose."
 
 #: app/components/layout/settings/appearance-fields.tsx:41
 msgid "Your system asks for reduced motion, so scenery starts still."
