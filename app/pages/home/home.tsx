@@ -15,7 +15,7 @@ import {
 } from "@/components/scenario";
 import { TaleConflictDialog } from "@/components/tales/tale-conflict-dialog";
 import { useSettingsModalStore } from "@/store/useSettingsModalStore";
-import { WhatsNewModal } from "@/components/layout";
+import { useAiProviderNoticeOpen, WhatsNewModal } from "@/components/layout";
 import { ServerAnnouncementBanner } from "@/components/layout/server-announcement";
 import placeholderImage from "@/assets/scen-ph.png";
 import { useLoadTale } from "@/hooks/useGameSaves";
@@ -321,6 +321,7 @@ export default function Home() {
     (state) => state.clearPendingChangelog,
   );
   const { lastSeenVersion, setLastSeenVersion } = useVersionStore();
+  const aiProviderNoticeOpen = useAiProviderNoticeOpen();
 
   const { hasIssues, issues } = useMemo(() => {
     const missing: string[] = [];
@@ -960,7 +961,7 @@ export default function Home() {
         }}
         onResolve={handleResolveConflict}
       />
-      {whatsNew && (
+      {whatsNew && !aiProviderNoticeOpen && (
         <WhatsNewModal
           open
           onOpenChange={handleWhatsNewClose}
