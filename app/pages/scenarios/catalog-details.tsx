@@ -2,7 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { PlayIcon, VenetianMask } from "lucide-react";
+import {
+  BanIcon,
+  FlagIcon,
+  MoreHorizontalIcon,
+  PlayIcon,
+  VenetianMask,
+} from "lucide-react";
 
 import placeholderImage from "@/assets/scen-ph.png";
 import {
@@ -13,10 +19,20 @@ import {
 import { ScenarioStartWizard } from "@/components/scenario/ScenarioStartWizard";
 import { CatalogTags } from "@/components/catalog/CatalogTags";
 import {
+  BlockPublisherDialog,
+  ReportScenarioDialog,
+} from "@/components/catalog/CatalogSafetyDialogs";
+import {
   catalogBrowseSearch,
   readCatalogBrowseSearch,
 } from "@/lib/catalog-browse";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   useCatalogActions,
   useCatalogClient,
@@ -90,7 +106,8 @@ export default function ScenarioCatalogDetails() {
   const { id } = useParams({ from: "/scenarios/catalog/$id" });
   const navigate = useNavigate();
   const catalog = useCatalogClient();
-  const { view, viewOwned, start, publish } = useCatalogActions(catalog);
+  const { view, viewOwned, start, publish, report, blockPublisher } =
+    useCatalogActions(catalog);
   const publishLinks = useScenarioPublishLinks();
   const { load: loadTale } = useLoadTale();
   const { search: routeSearch } = useLocation();
@@ -118,6 +135,8 @@ export default function ScenarioCatalogDetails() {
   const [pendingPublish, setPendingPublish] = useState<Scenario | null>(null);
   const [pendingStart, setPendingStart] = useState<CatalogStart | null>(null);
   const [starting, setStarting] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
   const startLock = useRef(false);
   const startRevision = useRef(0);
   const localLink = useMemo(
@@ -288,6 +307,33 @@ export default function ScenarioCatalogDetails() {
     setPendingPublish(localScenario);
   };
 
+  const submitReport = async (reason: string) => {
+    setReportOpen(false);
+    if (!scenario || !reason) return;
+    try {
+      await report(scenario.id, reason);
+      toast.success(t`Report submitted`);
+    } catch (cause) {
+      toast.error(
+        cause instanceof Error ? cause.message : t`Failed to submit report`,
+      );
+    }
+  };
+
+  const confirmBlock = async () => {
+    setBlockOpen(false);
+    if (!scenario) return;
+    try {
+      await blockPublisher(scenario.author.id);
+      toast.success(t`Publisher blocked`);
+      goBack();
+    } catch (cause) {
+      toast.error(
+        cause instanceof Error ? cause.message : t`Failed to block publisher`,
+      );
+    }
+  };
+
   const notice = isModerationHidden ? (
     <div className="rounded-xs border border-border bg-muted/20 p-3 text-sm">
       <div className="font-medium">
@@ -381,6 +427,30 @@ export default function ScenarioCatalogDetails() {
                   <Trans>Publish update</Trans>
                 </Button>
               </div>
+            ) : !owned ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label={t`Scenario actions`}
+                  >
+                    <MoreHorizontalIcon className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" sideOffset={4}>
+                  <DropdownMenuItem onClick={() => setReportOpen(true)}>
+                    <FlagIcon className="size-4" />
+                    <Trans>Report</Trans>
+                  </DropdownMenuItem>
+                  {catalog.signedIn ? (
+                    <DropdownMenuItem onClick={() => setBlockOpen(true)}>
+                      <BanIcon className="size-4" />
+                      <Trans>Block publisher</Trans>
+                    </DropdownMenuItem>
+                  ) : null}
+                </DropdownMenuContent>
+              </DropdownMenu>
             ) : undefined
           }
           byline={
@@ -454,6 +524,18 @@ export default function ScenarioCatalogDetails() {
           onBack={goBack}
         />
       ) : null}
+      <ReportScenarioDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        onReport={(reason) => void submitReport(reason)}
+      />
+      <BlockPublisherDialog
+        publisherName={
+          blockOpen && scenario ? scenario.author.displayName : null
+        }
+        onOpenChange={setBlockOpen}
+        onBlock={() => void confirmBlock()}
+      />
       <PublishScenarioDialog
         open={Boolean(pendingPublish)}
         scenario={pendingPublish}

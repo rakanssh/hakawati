@@ -23,7 +23,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -70,6 +69,10 @@ import { getScenarioById } from "@/services/scenario.service";
 import type { Scenario } from "@/types/context.type";
 import { CatalogTagInput } from "@/components/catalog/CatalogTagInput";
 import { CatalogTags } from "@/components/catalog/CatalogTags";
+import {
+  BlockPublisherDialog,
+  ReportScenarioDialog,
+} from "@/components/catalog/CatalogSafetyDialogs";
 import {
   catalogBrowseSearch,
   readCatalogBrowseSearch,
@@ -272,10 +275,8 @@ export default function ScenariosHome() {
   const [pendingDelete, setPendingDelete] =
     useState<PendingScenarioDelete | null>(null);
   const [pendingPublish, setPendingPublish] = useState<Scenario | null>(null);
-  // The app's own dialogs: Apple's web view shows no window.prompt or confirm.
   const [pendingReport, setPendingReport] =
     useState<CatalogScenarioRecord | null>(null);
-  const [reportReason, setReportReason] = useState("");
   const [pendingBlock, setPendingBlock] =
     useState<CatalogScenarioRecord | null>(null);
   const setScenarioTab = (value: string) => {
@@ -331,12 +332,10 @@ export default function ScenariosHome() {
     });
   };
   const reportPublicScenario = (scenario: CatalogScenarioRecord) => {
-    setReportReason("");
     setPendingReport(scenario);
   };
-  const submitReport = async () => {
+  const submitReport = async (reason: string) => {
     const scenario = pendingReport;
-    const reason = reportReason.trim();
     if (!scenario || !reason) return;
     setPendingReport(null);
     try {
@@ -822,69 +821,20 @@ export default function ScenariosHome() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <AlertDialog
+      <ReportScenarioDialog
         open={Boolean(pendingReport)}
         onOpenChange={(open) => {
           if (!open) setPendingReport(null);
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              <Trans>Report this scenario?</Trans>
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              <Trans>Tell the moderators what is wrong with it.</Trans>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Textarea
-            value={reportReason}
-            onChange={(event) => setReportReason(event.target.value)}
-            placeholder={t`Report reason`}
-            aria-label={t`Report reason`}
-            rows={3}
-          />
-          <AlertDialogFooter>
-            <AlertDialogCancel>
-              <Trans>Cancel</Trans>
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => void submitReport()}
-              disabled={!reportReason.trim()}
-            >
-              <Trans>Report</Trans>
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      <AlertDialog
-        open={Boolean(pendingBlock)}
+        onReport={(reason) => void submitReport(reason)}
+      />
+      <BlockPublisherDialog
+        publisherName={pendingBlock?.author.displayName ?? null}
         onOpenChange={(open) => {
           if (!open) setPendingBlock(null);
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              <Trans>Block publisher</Trans>
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {t`Block ${pendingBlock?.author.displayName ?? ""}? You will no longer see their scenarios.`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>
-              <Trans>Cancel</Trans>
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => void confirmBlock()}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              <Trans>Block publisher</Trans>
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onBlock={() => void confirmBlock()}
+      />
       <PublishScenarioDialog
         open={Boolean(pendingPublish)}
         scenario={pendingPublish}
