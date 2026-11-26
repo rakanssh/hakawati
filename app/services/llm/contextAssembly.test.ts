@@ -421,4 +421,195 @@ describe("assembleContextMessages", () => {
       expect(nextRequestInputs(1000)).toEqual(nextRequestInputs(20));
     });
   });
+
+  describe("story recaps", () => {
+    const long = (subject: string) =>
+      `${subject} The drums beat beneath the old gate while the lanterns sway. `.repeat(
+        12,
+      );
+    const recapped = (id: string, text: string, recap?: string[]) => ({
+      ...gm(id, text),
+      ...(recap ? { recap } : {}),
+    });
+    const story = (): LogEntry[] => [
+      player("p0", "I wait."),
+      recapped("g0", long("Dawn."), ["The gate opened."]),
+      player("p1", "I run."),
+      recapped("g1", long("Noon."), ["Tobin lied about the map."]),
+      player("p2", "I ask Mira."),
+      gm("g2", "Mira nods."),
+      player("p3", "I follow."),
+      gm("g3", "The tunnel narrows."),
+    ];
+    const request = (
+      log: LogEntry[],
+      promptBudget: number,
+      older?: { lines: string[] }[],
+    ): AssembleContextMessagesParams => ({
+      log,
+      storyCards: [],
+      requiredMeta: [{ role: "system", content: "You are a narrator." }],
+      userMessage: { role: "user", content: "I look around." },
+      promptBudget,
+      recaps: { share: 0.3, ...(older ? { older } : {}) },
+    });
+    const recapBlock = (result: { messages: ChatMessage[] }) =>
+      result.messages.find((message) =>
+        message.content.startsWith("**Earlier in the story:**"),
+      )?.content;
+
+    it("sends the whole history unchanged while it fits", () => {
+      const params = request(story(), 1_000_000);
+      const withRecaps = assemble(params);
+      const without = assemble({ ...params, recaps: undefined });
+
+      expect(withRecaps.messages).toEqual(without.messages);
+      expect(withRecaps.usedTokens).toBe(without.usedTokens);
+      expect(withRecaps.recap?.needsOlderRecaps).toBe(false);
+      expect(without.recap).toBeUndefined();
+    });
+
+    it("sends recap lines in place of passages up to the newest recap", () => {
+      const result = assemble(request(story(), 300));
+
+      expect(result.messages).toEqual([
+        { role: "system", content: "You are a narrator." },
+        {
+          role: "system",
+          content:
+            "**Earlier in the story:**\n- The gate opened.\n- Tobin lied about the map.",
+        },
+        { role: "user", content: "Action: I ask Mira." },
+        { role: "assistant", content: "Mira nods." },
+        { role: "user", content: "Action: I follow." },
+        { role: "assistant", content: "The tunnel narrows." },
+        { role: "user", content: "I look around." },
+      ]);
+      expect(result.usedTokens).toBeLessThanOrEqual(300);
+      expect(result.recap?.needsOlderRecaps).toBe(true);
+      expect(result.callbacks).toEqual([]);
+    });
+
+    it("leaves out a passage whose recap was cleared, without its text", () => {
+      const log = story();
+      delete log[1].recap;
+      const result = assemble(request(log, 300));
+
+      expect(recapBlock(result)).toBe(
+        "**Earlier in the story:**\n- Tobin lied about the map.",
+      );
+      expect(
+        result.messages.some((message) => message.content.includes("Dawn.")),
+      ).toBe(false);
+    });
+
+    it("puts recaps read from older turns first", () => {
+      const result = assemble(
+        request(story(), 300, [{ lines: ["Mara swore an oath."] }]),
+      );
+
+      expect(recapBlock(result)).toBe(
+        "**Earlier in the story:**\n- Mara swore an oath.\n- The gate opened.\n- Tobin lied about the map.",
+      );
+    });
+
+    it("splits a Story chain into passages so its newest part still fits", () => {
+      const log = Array.from({ length: 6 }, (_, i) =>
+        recapped(
+          `g${i}`,
+          long(`Part ${i}.`),
+          i < 3 ? [`Part ${i} happened.`] : undefined,
+        ),
+      ).map((entry) => ({ ...entry, chainId: "chain" }));
+      const whole = assemble({ ...request(log, 900), recaps: undefined });
+      expect(whole.callbacks).toEqual([["no-history"]]);
+
+      const result = assemble(request(log, 900));
+      expect(result.messages).toContainEqual({
+        role: "assistant",
+        content: log
+          .slice(3)
+          .map((entry) => entry.text)
+          .join(""),
+      });
+      expect(recapBlock(result)).toBe(
+        "**Earlier in the story:**\n- Part 0 happened.\n- Part 1 happened.\n- Part 2 happened.",
+      );
+      expect(result.usedTokens).toBeLessThanOrEqual(900);
+    });
+
+    it("keeps room for recaps when recent passages would fill the window", () => {
+      const log = [
+        ...story().slice(0, 4),
+        ...Array.from({ length: 4 }, (_, i) => gm(`r${i}`, long(`Late ${i}.`))),
+      ];
+      const budget =
+        countMessageTokens([
+          { role: "system", content: "You are a narrator." },
+          { role: "user", content: "I look around." },
+        ]) +
+        countMessageTokens(
+          log.slice(4).map((entry) => ({
+            role: "assistant" as const,
+            content: entry.text,
+          })),
+        );
+      const result = assemble(request(log, budget));
+
+      expect(recapBlock(result)).toContain("Tobin lied about the map.");
+      expect(
+        result.messages.some((message) => message.content.includes("Late 0.")),
+      ).toBe(false);
+      expect(
+        result.messages.some((message) => message.content.includes("Late 3.")),
+      ).toBe(true);
+      expect(result.usedTokens).toBeLessThanOrEqual(budget);
+    });
+
+    it("sends cards named in recap lines", () => {
+      const params = {
+        ...request(story(), 400),
+        storyCards: [
+          {
+            id: "tobin",
+            title: "Tobin",
+            content: "About Tobin.",
+            triggers: ["tobin"],
+            category: StorybookCategory.CHARACTER,
+            isPinned: false,
+            createdAt: 0,
+            updatedAt: 0,
+          },
+        ],
+      };
+      const storyBook = assemble(params).messages.find((message) =>
+        message.content.startsWith("**StoryBook:**"),
+      )?.content;
+
+      expect(storyBook).toContain("About Tobin.");
+    });
+
+    it("tokenizes the same text for the next request however long the tale is", () => {
+      tokenizer.recording = true;
+      const tale = (entries: number) =>
+        Array.from({ length: entries }, (_, i) =>
+          i % 2
+            ? recapped(
+                `gm-${i}`,
+                `The drums beat ${i} times beneath the gate.`,
+                i < entries - 8 ? [`Drums ${i}.`] : undefined,
+              )
+            : player(`player-${i}`, `I count the drums, ${i}.`),
+        );
+      const nextRequestInputs = (entries: number) => {
+        const params = request(tale(entries), 120);
+        assembleContextMessages(params);
+        tokenizer.inputs.length = 0;
+        assembleContextMessages(params);
+        return [...tokenizer.inputs];
+      };
+
+      expect(nextRequestInputs(1000)).toEqual(nextRequestInputs(20));
+    });
+  });
 });

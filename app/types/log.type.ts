@@ -44,4 +44,6 @@ export type LogEntry = {
   isStoryInput?: boolean;
   /** Why the reply failed, or `true` without a reason. Older saves may hold `{}`. */
   error?: unknown;
+  /** Sent instead of the passage once it no longer fits; `[]` when nothing was kept. */
+  recap?: string[];
 };

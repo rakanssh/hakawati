@@ -5,6 +5,7 @@ import {
   CONTINUE_SYSTEM_PROMPT,
   CONTINUE_AUTHOR_NOTE,
   STORY_CARD_GENERATOR_PROMPT,
+  STORY_RECAP_PROMPT,
   SCENARIO_GENERATOR_PROMPT,
   QUICKSTART_TALE_GENERATOR_PROMPT,
 } from "./system";
@@ -46,6 +47,14 @@ export function getActiveStoryCardGeneratorPrompt(): string {
   return useCustomStoryCardGeneratorPrompt && customStoryCardGeneratorPrompt
     ? customStoryCardGeneratorPrompt
     : STORY_CARD_GENERATOR_PROMPT;
+}
+
+export function getActiveStoryRecapPrompt(): string {
+  const { useCustomStoryRecapPrompt, customStoryRecapPrompt } =
+    useSettingsStore.getState();
+  return useCustomStoryRecapPrompt && customStoryRecapPrompt
+    ? customStoryRecapPrompt
+    : STORY_RECAP_PROMPT;
 }
 
 export function getActiveScenarioGeneratorPrompt(): string {

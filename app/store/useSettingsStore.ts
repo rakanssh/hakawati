@@ -21,6 +21,11 @@ import {
   isThemeScenery,
   type ThemeScenery,
 } from "@/themes/registry";
+import {
+  DEFAULT_RECAP_SHARE,
+  MAX_RECAP_SHARE,
+  MIN_RECAP_SHARE,
+} from "@/lib/recaps";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
@@ -190,11 +195,16 @@ export interface SettingsStoreType {
   customContinuePrompt?: string;
   customContinueAuthorNote?: string;
   customStoryCardGeneratorPrompt?: string;
+  customStoryRecapPrompt?: string;
   useCustomGmPrompt: boolean;
   useCustomStorytellerPrompt: boolean;
   useCustomContinuePrompt: boolean;
   useCustomContinueAuthorNote: boolean;
   useCustomStoryCardGeneratorPrompt: boolean;
+  useCustomStoryRecapPrompt: boolean;
+  storyRecaps: boolean;
+  /** Percent of the history budget kept for recaps. */
+  recapShare: number;
   thinkingVisibility: ThinkingVisibility;
   autoNarrate: boolean;
   highlightLatestSection: boolean;
@@ -251,6 +261,10 @@ export interface SettingsStoreType {
   setUseCustomContinuePrompt: (use: boolean) => void;
   setUseCustomContinueAuthorNote: (use: boolean) => void;
   setUseCustomStoryCardGeneratorPrompt: (use: boolean) => void;
+  setCustomStoryRecapPrompt: (prompt: string) => void;
+  setUseCustomStoryRecapPrompt: (use: boolean) => void;
+  setStoryRecaps: (enabled: boolean) => void;
+  setRecapShare: (percent: number) => void;
   setThinkingVisibility: (visibility: ThinkingVisibility) => void;
   setAutoNarrate: (autoNarrate: boolean) => void;
   setHighlightLatestSection: (highlight: boolean) => void;
@@ -260,6 +274,7 @@ export interface SettingsStoreType {
   resetContinuePrompt: () => void;
   resetContinueAuthorNote: () => void;
   resetStoryCardGeneratorPrompt: () => void;
+  resetStoryRecapPrompt: () => void;
   resetAllPromptsToDefault: () => void;
 }
 
@@ -289,11 +304,15 @@ export const useSettingsStore = create<SettingsStoreType>()(
       customContinuePrompt: undefined,
       customContinueAuthorNote: undefined,
       customStoryCardGeneratorPrompt: undefined,
+      customStoryRecapPrompt: undefined,
       useCustomGmPrompt: false,
       useCustomStorytellerPrompt: false,
       useCustomContinuePrompt: false,
       useCustomContinueAuthorNote: false,
       useCustomStoryCardGeneratorPrompt: false,
+      useCustomStoryRecapPrompt: false,
+      storyRecaps: true,
+      recapShare: DEFAULT_RECAP_SHARE,
       thinkingVisibility: "all",
       autoNarrate: false,
       highlightLatestSection: true,
@@ -597,6 +616,17 @@ export const useSettingsStore = create<SettingsStoreType>()(
         set({ useCustomContinueAuthorNote: use }),
       setUseCustomStoryCardGeneratorPrompt: (use: boolean) =>
         set({ useCustomStoryCardGeneratorPrompt: use }),
+      setCustomStoryRecapPrompt: (prompt: string) =>
+        set({ customStoryRecapPrompt: prompt }),
+      setUseCustomStoryRecapPrompt: (use: boolean) =>
+        set({ useCustomStoryRecapPrompt: use }),
+      setStoryRecaps: (storyRecaps: boolean) => set({ storyRecaps }),
+      setRecapShare: (percent: number) =>
+        set({
+          recapShare: Math.round(
+            Math.min(MAX_RECAP_SHARE, Math.max(MIN_RECAP_SHARE, percent)),
+          ),
+        }),
       setThinkingVisibility: (visibility: ThinkingVisibility) =>
         set({ thinkingVisibility: visibility }),
       setAutoNarrate: (autoNarrate: boolean) => set({ autoNarrate }),
@@ -625,6 +655,11 @@ export const useSettingsStore = create<SettingsStoreType>()(
           customStoryCardGeneratorPrompt: undefined,
           useCustomStoryCardGeneratorPrompt: false,
         }),
+      resetStoryRecapPrompt: () =>
+        set({
+          customStoryRecapPrompt: undefined,
+          useCustomStoryRecapPrompt: false,
+        }),
       resetAllPromptsToDefault: () =>
         set({
           customGmPrompt: undefined,
@@ -632,11 +667,13 @@ export const useSettingsStore = create<SettingsStoreType>()(
           customContinuePrompt: undefined,
           customContinueAuthorNote: undefined,
           customStoryCardGeneratorPrompt: undefined,
+          customStoryRecapPrompt: undefined,
           useCustomGmPrompt: false,
           useCustomStorytellerPrompt: false,
           useCustomContinuePrompt: false,
           useCustomContinueAuthorNote: false,
           useCustomStoryCardGeneratorPrompt: false,
+          useCustomStoryRecapPrompt: false,
         }),
       resetGenerationSettings: () =>
         set({
@@ -650,6 +687,8 @@ export const useSettingsStore = create<SettingsStoreType>()(
           repetitionPenalty: undefined,
           minP: undefined,
           topA: undefined,
+          storyRecaps: true,
+          recapShare: DEFAULT_RECAP_SHARE,
         }),
     }),
     {

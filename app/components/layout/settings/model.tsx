@@ -13,6 +13,7 @@ import {
   SetupSection,
   useRowClass,
 } from "./settings-rows";
+import { StoryRecapRows } from "./story-recap-rows";
 
 const fieldClass = "h-9 w-28 shrink-0";
 
@@ -246,6 +247,7 @@ export default function SettingsModel() {
               />
             </NumberRow>
           )}
+          <StoryRecapRows advanced fieldClass={fieldClass} />
         </SetupList>
       </SetupSection>
 

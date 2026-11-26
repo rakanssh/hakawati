@@ -2350,3 +2350,180 @@ describe("Hakawati storage", () => {
     expect(await chats.listAssistantMessages("tale-chat")).toEqual([]);
   });
 });
+
+describe("story recap storage", () => {
+  beforeEach(() => {
+    dbState.current = createAdapter();
+    applyMigrations(dbState.current);
+  });
+
+  afterEach(() => {
+    dbState.current?.close();
+    dbState.current = null;
+  });
+
+  async function taleWithTurns(count: number) {
+    const { appendTurn } = await import("./tale.repository");
+    const taleId = await createEmptyTale();
+    for (let i = 0; i < count; i += 1) {
+      await appendTurn(
+        taleId,
+        {
+          entries: [playerEntry(`p${i}`), gmEntry(`g${i}`, `Scene ${i}.`)],
+          createdAt: i + 1,
+        },
+        emptyState(),
+        createTaleSessionState(),
+      );
+    }
+    return taleId;
+  }
+
+  const saveVersion = (taleId: string) =>
+    (
+      dbState
+        .current!.raw.prepare("SELECT save_version FROM tales WHERE id = ?")
+        .get(taleId) as { save_version: number }
+    ).save_version;
+
+  it("writes recaps only onto passages still as they were read", async () => {
+    const { getLogEntries, setLogEntryRecaps } = await import(
+      "./tale.repository"
+    );
+    const taleId = await taleWithTurns(3);
+    const before = saveVersion(taleId);
+
+    const applied = await setLogEntryRecaps(
+      taleId,
+      [
+        {
+          entryId: "g0",
+          lines: ["The first scene."],
+          sourceText: "Scene 0.",
+          expectedRecap: undefined,
+        },
+        {
+          entryId: "g1",
+          lines: ["Stale."],
+          sourceText: "An older text.",
+          expectedRecap: undefined,
+        },
+        {
+          entryId: "g2",
+          lines: ["Overwrites an edit."],
+          sourceText: "Scene 2.",
+          expectedRecap: ["Hand edited."],
+        },
+        {
+          entryId: "gone",
+          lines: ["Undone."],
+          sourceText: "Gone.",
+          expectedRecap: undefined,
+        },
+      ],
+      { indexRange: [1, 5] },
+    );
+
+    expect(applied).toEqual(["g0"]);
+    expect(saveVersion(taleId)).toBe(before + 1);
+    const entries = await getLogEntries(taleId, 0, 6);
+    expect(entries.map((entry) => entry.recap)).toEqual([
+      undefined,
+      ["The first scene."],
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+    ]);
+
+    expect(
+      await setLogEntryRecaps(
+        taleId,
+        [
+          {
+            entryId: "g1",
+            lines: ["Late."],
+            sourceText: "Scene 1.",
+            expectedRecap: undefined,
+          },
+        ],
+        { canWrite: () => false },
+      ),
+    ).toEqual([]);
+    expect(saveVersion(taleId)).toBe(before + 1);
+  });
+
+  it("drops a passage's recap when its text is edited", async () => {
+    const { getLogEntries, setLogEntryRecaps, updateLogEntry } = await import(
+      "./tale.repository"
+    );
+    const taleId = await taleWithTurns(1);
+    const recapOf = async () => (await getLogEntries(taleId, 1, 1))[0].recap;
+    await setLogEntryRecaps(taleId, [
+      {
+        entryId: "g0",
+        lines: ["Scene."],
+        sourceText: "Scene 0.",
+        expectedRecap: undefined,
+      },
+    ]);
+
+    await updateLogEntry(taleId, "g0", { text: "Scene 0. " });
+    expect(await recapOf()).toEqual(["Scene."]);
+    await updateLogEntry(taleId, "g0", { recap: ["Edited by hand."] });
+    expect(await recapOf()).toEqual(["Edited by hand."]);
+    await updateLogEntry(taleId, "g0", { text: "A new scene." });
+    expect(await recapOf()).toBeUndefined();
+  });
+
+  it("reads older recaps newest first, a page of turns at a time", async () => {
+    const { getOlderRecaps, setLogEntryRecaps } = await import(
+      "./tale.repository"
+    );
+    const taleId = await taleWithTurns(5);
+    await setLogEntryRecaps(
+      taleId,
+      ["g0", "g1", "g3"].map((id) => ({
+        entryId: id,
+        lines: [`Recap ${id}`],
+        sourceText: `Scene ${id.slice(1)}.`,
+        expectedRecap: undefined,
+      })),
+    );
+
+    expect(await getOlderRecaps(taleId, 8, 2)).toEqual({
+      recaps: [{ index: 7, id: "g3", lines: ["Recap g3"] }],
+      nextBeforeIndex: 4,
+    });
+    expect(await getOlderRecaps(taleId, 4, 2)).toEqual({
+      recaps: [
+        { index: 3, id: "g1", lines: ["Recap g1"] },
+        { index: 1, id: "g0", lines: ["Recap g0"] },
+      ],
+      nextBeforeIndex: null,
+    });
+  });
+
+  it("keeps recaps through a cloud package round trip", async () => {
+    const {
+      exportTalePackage,
+      getLogEntries,
+      importTalePackage,
+      setLogEntryRecaps,
+    } = await import("./tale.repository");
+    const taleId = await taleWithTurns(1);
+    await setLogEntryRecaps(taleId, [
+      {
+        entryId: "g0",
+        lines: ["Scene."],
+        sourceText: "Scene 0.",
+        expectedRecap: undefined,
+      },
+    ]);
+
+    const importedId = await importTalePackage(await exportTalePackage(taleId));
+    expect((await getLogEntries(importedId, 1, 1))[0].recap).toEqual([
+      "Scene.",
+    ]);
+  });
+});

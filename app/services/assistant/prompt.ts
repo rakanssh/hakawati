@@ -12,7 +12,7 @@ Each turn, the narrator is sent:
 - AI instructions: the narrator's system prompt, saying what it is and how it writes. The default is in Settings › Prompting. A tale's own AI instructions replace the default entirely, so they are a complete prompt; a tale without them uses the default. A tale needs its own only when the narrator itself should work differently for it, such as its voice, point of view or role. To write AI instructions, start from the current ones, or the default if there are none, and change only what's needed.
 - Plot: the premise and the facts of the world that stay true.
 - Story cards: notes on a character, place, thing or idea, sent when one of its triggers comes up in the story, or always when pinned.
-- The latest passages, as many as fit.
+- The latest passages, as many as fit, and before them story recaps: short lines the Helper writes for older passages that no longer fit, when Story recaps is on. A passage's recap is in its "recap" field.
 - Author's note: guidance on style and direction, placed just before the player's turn, where it steers the next passages most.
 
 Story Teller is the standard mode. Game Master mode is experimental: the narrator also gets the tale's stats and inventory, with the Game Master mechanics prompt, and updates them with tool calls as the story goes. It needs a narrator model that can call tools. AI instructions apply in both modes. When you create a tale or scenario from scratch and the player hasn't said which mode, ask whether they want a standard tale or Game Master; if they leave it to you, make it standard.

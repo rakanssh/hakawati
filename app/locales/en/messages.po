@@ -190,7 +190,7 @@ msgstr "A sheet feeding out of a typewriter on an oak desk."
 msgid "A starship tablet against a night sky and a slowly turning red planet."
 msgstr "A starship tablet against a night sky and a slowly turning red planet."
 
-#: app/components/play/log/log-block-bubble.tsx:210
+#: app/components/play/log/log-block-bubble.tsx:227
 msgid "A stat or item change failed"
 msgstr "A stat or item change failed"
 
@@ -347,11 +347,11 @@ msgstr "Added a passage"
 msgid "Added card “{title}”"
 msgstr "Added card “{title}”"
 
-#: app/components/layout/settings/advanced.tsx:80
+#: app/components/layout/settings/advanced.tsx:85
 msgid "Added in Game Master mode to explain the game’s tools."
 msgstr "Added in Game Master mode to explain the game’s tools."
 
-#: app/components/layout/settings/advanced.tsx:74
+#: app/components/layout/settings/advanced.tsx:79
 msgid "Added near the end of the prompt when you continue the story."
 msgstr "Added near the end of the prompt when you continue the story."
 
@@ -377,8 +377,8 @@ msgstr "AI components"
 msgid "AI Components"
 msgstr "AI Components"
 
-#: app/components/layout/settings/advanced.tsx:52
-#: app/services/assistant/app-settings.ts:378
+#: app/components/layout/settings/advanced.tsx:55
+#: app/services/assistant/app-settings.ts:417
 msgid "AI instructions"
 msgstr "AI instructions"
 
@@ -398,7 +398,7 @@ msgstr "AI Setup"
 msgid "All"
 msgstr "All"
 
-#: app/components/play/story-panel/ai-tab.tsx:127
+#: app/components/play/story-panel/ai-tab.tsx:129
 msgid "All AI settings"
 msgstr "All AI settings"
 
@@ -526,7 +526,7 @@ msgstr "Can’t find it? <0>Type a model id</0>"
 #: app/components/assistant/confirm-card.tsx:99
 #: app/components/catalog/CatalogSafetyDialogs.tsx:53
 #: app/components/catalog/CatalogSafetyDialogs.tsx:90
-#: app/components/layout/settings/advanced.tsx:245
+#: app/components/layout/settings/advanced.tsx:262
 #: app/components/layout/settings/ai-setup/connection-page.tsx:376
 #: app/components/layout/settings/ai-setup/connection-page.tsx:516
 #: app/components/layout/settings/chatgpt-connection.tsx:107
@@ -540,6 +540,7 @@ msgstr "Can’t find it? <0>Type a model id</0>"
 #: app/components/layout/settings/cloud-sync.tsx:1262
 #: app/components/layout/settings/cloud-sync.tsx:1310
 #: app/components/layout/settings/cloud-sync.tsx:1361
+#: app/components/play/log/recap-button.tsx:122
 #: app/components/prompt-components/PromptComponentsEditor.tsx:210
 #: app/components/quickstart/quickstart-wizard.tsx:169
 #: app/components/scenario/GenerateScenarioDialog.tsx:104
@@ -757,7 +758,7 @@ msgstr "Choose a JPEG, PNG, or WebP image."
 msgid "Choose a model"
 msgstr "Choose a model"
 
-#: app/components/play/story-panel/ai-tab.tsx:119
+#: app/components/play/story-panel/ai-tab.tsx:121
 msgid "Choose a model above before you continue the story."
 msgstr "Choose a model above before you continue the story."
 
@@ -947,35 +948,39 @@ msgstr "Connections"
 msgid "Content"
 msgstr "Content"
 
-#: app/components/layout/settings/model.tsx:218
-#: app/components/layout/settings/model.tsx:227
-#: app/components/play/story-panel/ai-tab.tsx:84
-#: app/components/play/story-panel/ai-tab.tsx:93
-#: app/services/assistant/app-settings.ts:327
+#: app/components/layout/settings/model.tsx:219
+#: app/components/layout/settings/model.tsx:228
+#: app/components/play/story-panel/ai-tab.tsx:85
+#: app/components/play/story-panel/ai-tab.tsx:94
+#: app/services/assistant/app-settings.ts:339
 msgid "Context window"
 msgstr "Context window"
 
 #. placeholder {0}: entry.chainIndex
-#: app/components/play/log/log-block-bubble.tsx:229
+#: app/components/play/log/log-block-bubble.tsx:246
 msgid "Continuation {0}"
 msgstr "Continuation {0}"
+
+#: app/components/play/log/recap-button.tsx:37
+msgid "Continuation {chainIndex}"
+msgstr "Continuation {chainIndex}"
 
 #: app/components/assistant/hakawati-chat.tsx:684
 #: app/components/assistant/hakawati-chat.tsx:686
 #: app/components/layout/ai-provider-notice.tsx:59
-#: app/components/layout/settings/advanced.tsx:54
+#: app/components/layout/settings/advanced.tsx:57
 #: app/components/layout/settings/cloud-encryption.tsx:544
 #: app/components/layout/settings/cloud-encryption.tsx:625
 #: app/components/layout/settings/cloud-sync.tsx:1318
 #: app/components/play/play-input-controls.tsx:297
 #: app/pages/home/home.tsx:751
 #: app/pages/tales/home.tsx:287
-#: app/services/assistant/app-settings.ts:380
+#: app/services/assistant/app-settings.ts:419
 msgid "Continue"
 msgstr "Continue"
 
-#: app/components/layout/settings/advanced.tsx:56
-#: app/services/assistant/app-settings.ts:381
+#: app/components/layout/settings/advanced.tsx:59
+#: app/services/assistant/app-settings.ts:420
 msgid "Continue author note"
 msgstr "Continue author note"
 
@@ -1157,8 +1162,8 @@ msgstr "Current"
 msgid "Current Value"
 msgstr "Current Value"
 
-#: app/components/layout/settings/advanced.tsx:177
-#: app/components/layout/settings/advanced.tsx:280
+#: app/components/layout/settings/advanced.tsx:193
+#: app/components/layout/settings/advanced.tsx:297
 msgid "Custom"
 msgstr "Custom"
 
@@ -1177,10 +1182,10 @@ msgstr "Deep teal, cream and brass, set in classic book type."
 #: app/components/assistant/app-change-label.ts:36
 #: app/components/assistant/app-change-label.ts:91
 #: app/components/assistant/app-change-label.ts:96
-#: app/components/layout/settings/advanced.tsx:181
-#: app/components/layout/settings/advanced.tsx:279
-#: app/components/layout/settings/model.tsx:58
-#: app/components/layout/settings/model.tsx:262
+#: app/components/layout/settings/advanced.tsx:197
+#: app/components/layout/settings/advanced.tsx:296
+#: app/components/layout/settings/model.tsx:59
+#: app/components/layout/settings/model.tsx:264
 #: app/components/layout/settings/thinking-level.tsx:61
 msgid "Default"
 msgstr "Default"
@@ -1325,7 +1330,7 @@ msgstr "Direct"
 
 #: app/components/layout/settings/game.tsx:218
 #: app/components/layout/settings/game.tsx:221
-#: app/services/assistant/app-settings.ts:307
+#: app/services/assistant/app-settings.ts:319
 msgid "Direction"
 msgstr "Direction"
 
@@ -1380,6 +1385,7 @@ msgid "Downloading update... ({0})"
 msgstr "Downloading update... ({0})"
 
 #: app/components/layout/settings/cloud-sync.tsx:1092
+#: app/components/play/log/recap-button.tsx:145
 #: app/components/storybook/StoryCard.tsx:110
 #: app/components/storybook/StoryCard.tsx:111
 #: app/pages/scenarios/details.tsx:279
@@ -1389,7 +1395,7 @@ msgid "Edit"
 msgstr "Edit"
 
 #: app/components/play/log/story-editor.tsx:82
-#: app/components/play/play-log-display.tsx:163
+#: app/components/play/play-log-display.tsx:166
 msgid "Edit entry"
 msgstr "Edit entry"
 
@@ -1412,7 +1418,7 @@ msgstr "Edit scenario"
 msgid "Edit Scenario"
 msgstr "Edit Scenario"
 
-#: app/components/layout/settings/advanced.tsx:327
+#: app/components/layout/settings/advanced.tsx:344
 msgid "Edited"
 msgstr "Edited"
 
@@ -1642,7 +1648,7 @@ msgstr "Fixed"
 #: app/components/layout/settings/game.tsx:242
 #: app/components/layout/settings/game.tsx:293
 #: app/components/play/story-panel/display-tab.tsx:71
-#: app/services/assistant/app-settings.ts:250
+#: app/services/assistant/app-settings.ts:262
 msgid "Font"
 msgstr "Font"
 
@@ -1655,9 +1661,9 @@ msgstr "Found on your network"
 msgid "Free"
 msgstr "Free"
 
-#: app/components/layout/settings/model.tsx:139
-#: app/components/layout/settings/model.tsx:148
-#: app/services/assistant/app-settings.ts:359
+#: app/components/layout/settings/model.tsx:140
+#: app/components/layout/settings/model.tsx:149
+#: app/services/assistant/app-settings.ts:398
 msgid "Frequency penalty"
 msgstr "Frequency penalty"
 
@@ -1684,12 +1690,12 @@ msgstr "Game Master"
 msgid "Game Master (GM)"
 msgstr "Game Master (GM)"
 
-#: app/components/layout/settings/advanced.tsx:58
-#: app/services/assistant/app-settings.ts:379
+#: app/components/layout/settings/advanced.tsx:61
+#: app/services/assistant/app-settings.ts:418
 msgid "Game Master mechanics"
 msgstr "Game Master mechanics"
 
-#: app/components/layout/settings/advanced.tsx:91
+#: app/components/layout/settings/advanced.tsx:98
 msgid "Game Master mode is still in development and sensitive to this prompt."
 msgstr "Game Master mode is still in development and sensitive to this prompt."
 
@@ -1829,7 +1835,7 @@ msgstr "High"
 #: app/components/layout/settings/game.tsx:181
 #: app/components/play/story-panel/display-tab.tsx:75
 #: app/components/play/story-panel/display-tab.tsx:79
-#: app/services/assistant/app-settings.ts:271
+#: app/services/assistant/app-settings.ts:283
 msgid "Highlight the latest passage"
 msgstr "Highlight the latest passage"
 
@@ -1892,7 +1898,8 @@ msgstr "In review"
 msgid "In the LICENSES folder that comes with the app"
 msgstr "In the LICENSES folder that comes with the app"
 
-#: app/components/play/log/log-block-bubble.tsx:227
+#: app/components/play/log/log-block-bubble.tsx:244
+#: app/components/play/log/recap-button.tsx:35
 msgid "Initial"
 msgstr "Initial"
 
@@ -1940,7 +1947,7 @@ msgstr "Instructions"
 #: app/components/layout/settings/game.tsx:154
 #: app/components/play/story-panel/display-tab.tsx:62
 #: app/components/play/story-panel/display-tab.tsx:67
-#: app/services/assistant/app-settings.ts:241
+#: app/services/assistant/app-settings.ts:253
 msgid "Interface size"
 msgstr "Interface size"
 
@@ -2002,7 +2009,7 @@ msgstr "Key saved · ends {tail}"
 #: app/components/layout/settings/game.tsx:209
 #: app/components/layout/settings/game.tsx:273
 #: app/components/layout/settings/game.tsx:295
-#: app/services/assistant/app-settings.ts:292
+#: app/services/assistant/app-settings.ts:304
 msgid "Language"
 msgstr "Language"
 
@@ -2030,8 +2037,8 @@ msgstr "Learn more"
 msgid "Left to right"
 msgstr "Left to right"
 
-#: app/components/layout/settings/model.tsx:215
-#: app/components/play/story-panel/ai-tab.tsx:80
+#: app/components/layout/settings/model.tsx:216
+#: app/components/play/story-panel/ai-tab.tsx:81
 msgid "Length"
 msgstr "Length"
 
@@ -2074,7 +2081,7 @@ msgstr "Loading adventure..."
 msgid "Loading models…"
 msgstr "Loading models…"
 
-#: app/components/play/play-log-display.tsx:103
+#: app/components/play/play-log-display.tsx:105
 msgid "Loading older entries..."
 msgstr "Loading older entries..."
 
@@ -2213,11 +2220,11 @@ msgstr "Manual updates are only available in the desktop app."
 msgid "Max"
 msgstr "Max"
 
-#: app/components/layout/settings/model.tsx:234
-#: app/components/layout/settings/model.tsx:243
-#: app/components/play/story-panel/ai-tab.tsx:101
-#: app/components/play/story-panel/ai-tab.tsx:110
-#: app/services/assistant/app-settings.ts:342
+#: app/components/layout/settings/model.tsx:235
+#: app/components/layout/settings/model.tsx:244
+#: app/components/play/story-panel/ai-tab.tsx:102
+#: app/components/play/story-panel/ai-tab.tsx:111
+#: app/services/assistant/app-settings.ts:354
 msgid "Max output tokens"
 msgstr "Max output tokens"
 
@@ -2249,9 +2256,9 @@ msgstr "Message Hakawati"
 msgid "Microphone access is turned off for Hakawati. Allow it in your device settings to record speech."
 msgstr "Microphone access is turned off for Hakawati. Allow it in your device settings to record speech."
 
-#: app/components/layout/settings/model.tsx:111
-#: app/components/layout/settings/model.tsx:120
-#: app/services/assistant/app-settings.ts:357
+#: app/components/layout/settings/model.tsx:112
+#: app/components/layout/settings/model.tsx:121
+#: app/services/assistant/app-settings.ts:396
 msgid "Min P"
 msgstr "Min P"
 
@@ -2276,7 +2283,7 @@ msgstr "Mode"
 #: app/components/layout/settings/ai-setup/role-page.tsx:182
 #: app/components/layout/settings/ai-setup/role-page.tsx:195
 #: app/components/layout/settings/ai-setup/role-page.tsx:199
-#: app/components/play/story-panel/ai-tab.tsx:63
+#: app/components/play/story-panel/ai-tab.tsx:64
 msgid "Model"
 msgstr "Model"
 
@@ -2301,7 +2308,11 @@ msgstr "Models"
 msgid "Models appear once you’re signed in"
 msgstr "Models appear once you’re signed in"
 
-#: app/components/layout/settings/model.tsx:71
+#: app/components/layout/settings/story-recap-rows.tsx:37
+msgid "More recap settings"
+msgstr "More recap settings"
+
+#: app/components/layout/settings/model.tsx:72
 msgid "More sampling"
 msgstr "More sampling"
 
@@ -2332,8 +2343,8 @@ msgstr "Name"
 msgid "NanoGPT"
 msgstr "NanoGPT"
 
-#: app/components/play/log/log-block-bubble.tsx:115
-#: app/components/play/log/log-block-bubble.tsx:125
+#: app/components/play/log/log-block-bubble.tsx:129
+#: app/components/play/log/log-block-bubble.tsx:139
 #: app/components/play/log/log-entry-bubble.tsx:76
 #: app/components/play/log/log-entry-bubble.tsx:86
 msgid "Narrate section"
@@ -2345,7 +2356,7 @@ msgstr "Narration"
 
 #: app/components/assistant/app-change-label.ts:23
 #: app/components/layout/settings/ai-setup/parts.tsx:20
-#: app/components/play/story-panel/ai-tab.tsx:54
+#: app/components/play/story-panel/ai-tab.tsx:55
 msgid "Narrator"
 msgstr "Narrator"
 
@@ -2529,6 +2540,10 @@ msgstr "Not signed in"
 msgid "Not synced"
 msgstr "Not synced"
 
+#: app/components/play/log/recap-button.tsx:113
+msgid "Nothing kept"
+msgstr "Nothing kept"
+
 #: app/components/sidebar/inventory-card.tsx:69
 #: app/components/sidebar/stats-card.tsx:81
 msgid "Nothing..."
@@ -2665,6 +2680,10 @@ msgstr "Pairing was cancelled."
 msgid "Pause narration"
 msgstr "Pause narration"
 
+#: app/components/layout/settings/story-recap-rows.tsx:51
+msgid "Percent of the story history"
+msgstr "Percent of the story history"
+
 #: app/components/layout/settings/cloud-sync.tsx:909
 msgid "Personal"
 msgstr "Personal"
@@ -2730,9 +2749,9 @@ msgstr "Policies"
 msgid "Popular"
 msgstr "Popular"
 
-#: app/components/layout/settings/model.tsx:153
-#: app/components/layout/settings/model.tsx:162
-#: app/services/assistant/app-settings.ts:360
+#: app/components/layout/settings/model.tsx:154
+#: app/components/layout/settings/model.tsx:163
+#: app/services/assistant/app-settings.ts:399
 msgid "Presence penalty"
 msgstr "Presence penalty"
 
@@ -2762,13 +2781,13 @@ msgstr "Profile completed"
 msgid "Profile incomplete"
 msgstr "Profile incomplete"
 
-#: app/components/layout/settings/advanced.tsx:276
-#: app/components/layout/settings/advanced.tsx:320
+#: app/components/layout/settings/advanced.tsx:293
+#: app/components/layout/settings/advanced.tsx:337
 msgid "Prompt"
 msgstr "Prompt"
 
 #: app/components/assistant/activity-chip.tsx:48
-#: app/components/layout/settings/advanced.tsx:349
+#: app/components/layout/settings/advanced.tsx:366
 #: app/components/layout/settings/settings-modal.tsx:73
 msgid "Prompting"
 msgstr "Prompting"
@@ -2869,7 +2888,7 @@ msgstr "Quickstart"
 msgid "Rain on Glass"
 msgstr "Rain on Glass"
 
-#: app/components/layout/settings/model.tsx:286
+#: app/components/layout/settings/model.tsx:288
 msgid "Random seed"
 msgstr "Random seed"
 
@@ -2891,7 +2910,7 @@ msgstr "Read full description"
 
 #: app/components/layout/settings/ai-setup/role-page.tsx:243
 #: app/components/layout/settings/ai-setup/role-page.tsx:247
-#: app/services/assistant/app-settings.ts:319
+#: app/services/assistant/app-settings.ts:331
 msgid "Read new narration aloud"
 msgstr "Read new narration aloud"
 
@@ -2924,6 +2943,12 @@ msgstr "Ready to play"
 msgid "Ready to start your tale?"
 msgstr "Ready to start your tale?"
 
+#: app/components/play/log/recap-button.tsx:100
+#: app/components/play/log/recap-button.tsx:185
+#: app/components/play/log/recap-button.tsx:204
+msgid "Recap"
+msgstr "Recap"
+
 #: app/components/assistant/hakawati-chat.tsx:455
 msgid "Recap the story so far"
 msgstr "Recap the story so far"
@@ -2954,6 +2979,7 @@ msgstr "Recovery key"
 
 #: app/components/play/log/log-control.tsx:203
 #: app/components/play/log/log-control.tsx:207
+#: app/components/play/log/recap-button.tsx:137
 msgid "Redo"
 msgstr "Redo"
 
@@ -3049,9 +3075,9 @@ msgstr "Removed from cloud"
 msgid "Renamed the tale"
 msgstr "Renamed the tale"
 
-#: app/components/layout/settings/model.tsx:167
-#: app/components/layout/settings/model.tsx:176
-#: app/services/assistant/app-settings.ts:363
+#: app/components/layout/settings/model.tsx:168
+#: app/components/layout/settings/model.tsx:177
+#: app/services/assistant/app-settings.ts:402
 msgid "Repetition penalty"
 msgstr "Repetition penalty"
 
@@ -3096,7 +3122,7 @@ msgstr "Report this scenario?"
 msgid "Request failed"
 msgstr "Request failed"
 
-#: app/components/layout/settings/advanced.tsx:251
+#: app/components/layout/settings/advanced.tsx:268
 #: app/components/layout/settings/cloud-encryption.tsx:803
 msgid "Reset"
 msgstr "Reset"
@@ -3105,11 +3131,11 @@ msgstr "Reset"
 msgid "Reset {name}"
 msgstr "Reset {name}"
 
-#: app/components/layout/settings/advanced.tsx:240
+#: app/components/layout/settings/advanced.tsx:257
 msgid "Reset all prompts to default?"
 msgstr "Reset all prompts to default?"
 
-#: app/components/layout/settings/advanced.tsx:233
+#: app/components/layout/settings/advanced.tsx:250
 msgid "Reset all to default"
 msgstr "Reset all to default"
 
@@ -3121,11 +3147,11 @@ msgstr "Reset cloud saves"
 msgid "Reset cloud saves?"
 msgstr "Reset cloud saves?"
 
-#: app/components/layout/settings/model.tsx:303
+#: app/components/layout/settings/model.tsx:305
 msgid "Reset generation settings"
 msgstr "Reset generation settings"
 
-#: app/components/layout/settings/advanced.tsx:334
+#: app/components/layout/settings/advanced.tsx:351
 msgid "Reset to default"
 msgstr "Reset to default"
 
@@ -3206,7 +3232,7 @@ msgstr "Roll a dice"
 msgid "Same as Narrator"
 msgstr "Same as Narrator"
 
-#: app/components/layout/settings/model.tsx:252
+#: app/components/layout/settings/model.tsx:254
 msgid "Sampling"
 msgstr "Sampling"
 
@@ -3214,6 +3240,7 @@ msgstr "Sampling"
 #: app/components/layout/settings/ai-setup/connection-page.tsx:369
 #: app/components/layout/settings/ai-setup/connection-page.tsx:437
 #: app/components/layout/settings/cloud-sync.tsx:1320
+#: app/components/play/log/recap-button.tsx:125
 #: app/components/ui/inventory-item.tsx:77
 #: app/components/ui/stat-item.tsx:104
 msgid "Save"
@@ -3347,7 +3374,7 @@ msgstr "Scenarios, story cards, summaries"
 #: app/components/layout/settings/appearance-fields.tsx:31
 #: app/components/layout/settings/game.tsx:130
 #: app/components/play/story-panel/display-tab.tsx:43
-#: app/services/assistant/app-settings.ts:218
+#: app/services/assistant/app-settings.ts:230
 msgid "Scenery"
 msgstr "Scenery"
 
@@ -3409,9 +3436,9 @@ msgstr "Searched the story for “{detail}”"
 msgid "Searching…"
 msgstr "Searching…"
 
-#: app/components/layout/settings/model.tsx:269
-#: app/components/layout/settings/model.tsx:276
-#: app/services/assistant/app-settings.ts:368
+#: app/components/layout/settings/model.tsx:271
+#: app/components/layout/settings/model.tsx:278
+#: app/services/assistant/app-settings.ts:407
 msgid "Seed"
 msgstr "Seed"
 
@@ -3443,7 +3470,7 @@ msgstr "Select Model"
 msgid "Send"
 msgstr "Send"
 
-#: app/components/layout/settings/advanced.tsx:71
+#: app/components/layout/settings/advanced.tsx:76
 msgid "Sent as your turn when you continue the story."
 msgstr "Sent as your turn when you continue the story."
 
@@ -3470,8 +3497,12 @@ msgstr "Set up encryption to sync"
 msgid "Set up Hakawati"
 msgstr "Set up Hakawati"
 
+#: app/components/layout/settings/story-recap-rows.tsx:97
+msgid "Set up the Helper for recaps"
+msgstr "Set up the Helper for recaps"
+
 #: app/components/layout/settings/ai-setup/index.tsx:106
-#: app/components/play/story-panel/ai-tab.tsx:69
+#: app/components/play/story-panel/ai-tab.tsx:70
 msgid "Set up the Narrator to play"
 msgstr "Set up the Narrator to play"
 
@@ -3520,7 +3551,7 @@ msgstr "Show a new code"
 
 #: app/components/layout/settings/game.tsx:184
 #: app/components/layout/settings/game.tsx:187
-#: app/services/assistant/app-settings.ts:280
+#: app/services/assistant/app-settings.ts:292
 msgid "Show AI thinking"
 msgstr "Show AI thinking"
 
@@ -3608,6 +3639,12 @@ msgstr "Something went wrong. Try again."
 #: app/pages/scenarios/home.tsx:518
 msgid "Sort scenarios"
 msgstr "Sort scenarios"
+
+#: app/components/layout/settings/story-recap-rows.tsx:50
+#: app/components/layout/settings/story-recap-rows.tsx:59
+#: app/services/assistant/app-settings.ts:376
+msgid "Space for recaps"
+msgstr "Space for recaps"
 
 #: app/data/quickstart-presets.ts:53
 msgid "Space Marine"
@@ -3717,14 +3754,22 @@ msgstr "Storage usage is unavailable."
 msgid "Story"
 msgstr "Story"
 
-#: app/components/layout/settings/advanced.tsx:60
-#: app/services/assistant/app-settings.ts:382
+#: app/components/layout/settings/advanced.tsx:63
+#: app/services/assistant/app-settings.ts:421
 msgid "Story card generator"
 msgstr "Story card generator"
 
 #: app/components/play/story-panel/story-panel.tsx:237
 msgid "Story panel"
 msgstr "Story panel"
+
+#: app/components/layout/settings/advanced.tsx:65
+#: app/components/layout/settings/story-recap-rows.tsx:88
+#: app/components/layout/settings/story-recap-rows.tsx:92
+#: app/services/assistant/app-settings.ts:367
+#: app/services/assistant/app-settings.ts:422
+msgid "Story recaps"
+msgstr "Story recaps"
 
 #: app/components/layout/settings/tale.tsx:44
 #: app/components/quickstart/steps/game-mode-step.tsx:15
@@ -3829,7 +3874,7 @@ msgstr "Tags can only use letters, numbers, and hyphens."
 msgid "Tags must be 32 characters or shorter."
 msgstr "Tags must be 32 characters or shorter."
 
-#: app/components/play/play-log-display.tsx:227
+#: app/components/play/play-log-display.tsx:230
 msgid "Take an action or send a director's note to start the adventure."
 msgstr "Take an action or send a director's note to start the adventure."
 
@@ -3869,9 +3914,9 @@ msgstr "Tales waiting for a choice"
 msgid "Tell the moderators what is wrong with it."
 msgstr "Tell the moderators what is wrong with it."
 
-#: app/components/layout/settings/model.tsx:254
-#: app/components/layout/settings/model.tsx:263
-#: app/services/assistant/app-settings.ts:354
+#: app/components/layout/settings/model.tsx:256
+#: app/components/layout/settings/model.tsx:265
+#: app/services/assistant/app-settings.ts:393
 msgid "Temperature"
 msgstr "Temperature"
 
@@ -3884,7 +3929,7 @@ msgstr "Terms of Service"
 #: app/components/layout/settings/game.tsx:144
 #: app/components/play/story-panel/display-tab.tsx:52
 #: app/components/play/story-panel/display-tab.tsx:57
-#: app/services/assistant/app-settings.ts:230
+#: app/services/assistant/app-settings.ts:242
 msgid "Text size"
 msgstr "Text size"
 
@@ -3925,7 +3970,7 @@ msgstr "The devices couldn't verify each other. Try again."
 msgid "The Official OpenAI API. Requires an OpenAI account with charged credits."
 msgstr "The Official OpenAI API. Requires an OpenAI account with charged credits."
 
-#: app/components/layout/settings/advanced.tsx:97
+#: app/components/layout/settings/advanced.tsx:104
 msgid "The reply is read as JSON with content, triggers, and category. Keep that format if you change it."
 msgstr "The reply is read as JSON with content, triggers, and category. Keep that format if you change it."
 
@@ -3943,7 +3988,7 @@ msgstr "The type each theme was designed with"
 #: app/components/layout/settings/game.tsx:291
 #: app/components/layout/settings/theme-picker.tsx:119
 #: app/components/play/story-panel/display-tab.tsx:40
-#: app/services/assistant/app-settings.ts:199
+#: app/services/assistant/app-settings.ts:211
 msgid "Theme"
 msgstr "Theme"
 
@@ -3967,12 +4012,12 @@ msgstr "Thing"
 #: app/components/assistant/hakawati-chat.tsx:372
 #: app/components/layout/settings/thinking-level.tsx:56
 #: app/components/layout/settings/thinking-level.tsx:58
-#: app/components/play/log/log-block-bubble.tsx:138
+#: app/components/play/log/log-block-bubble.tsx:152
 msgid "Thinking"
 msgstr "Thinking"
 
-#: app/components/layout/settings/model.tsx:235
-#: app/components/play/story-panel/ai-tab.tsx:102
+#: app/components/layout/settings/model.tsx:236
+#: app/components/play/story-panel/ai-tab.tsx:103
 msgid "Thinking and the answer share this"
 msgstr "Thinking and the answer share this"
 
@@ -4079,7 +4124,7 @@ msgid "Title"
 msgstr "Title"
 
 #: app/components/assistant/hakawati-chat.tsx:370
-#: app/components/play/log/log-block-bubble.tsx:134
+#: app/components/play/log/log-block-bubble.tsx:148
 msgid "Toggle thinking output"
 msgstr "Toggle thinking output"
 
@@ -4087,25 +4132,25 @@ msgstr "Toggle thinking output"
 msgid "Tone (Optional)"
 msgstr "Tone (Optional)"
 
-#: app/components/layout/settings/model.tsx:125
-#: app/components/layout/settings/model.tsx:134
-#: app/services/assistant/app-settings.ts:358
+#: app/components/layout/settings/model.tsx:126
+#: app/components/layout/settings/model.tsx:135
+#: app/services/assistant/app-settings.ts:397
 msgid "Top A"
 msgstr "Top A"
 
-#: app/components/layout/settings/model.tsx:98
-#: app/components/layout/settings/model.tsx:106
-#: app/services/assistant/app-settings.ts:356
+#: app/components/layout/settings/model.tsx:99
+#: app/components/layout/settings/model.tsx:107
+#: app/services/assistant/app-settings.ts:395
 msgid "Top K"
 msgstr "Top K"
 
-#: app/components/layout/settings/model.tsx:84
-#: app/components/layout/settings/model.tsx:93
-#: app/services/assistant/app-settings.ts:355
+#: app/components/layout/settings/model.tsx:85
+#: app/components/layout/settings/model.tsx:94
+#: app/services/assistant/app-settings.ts:394
 msgid "Top P"
 msgstr "Top P"
 
-#: app/components/layout/settings/model.tsx:72
+#: app/components/layout/settings/model.tsx:73
 msgid "Top P, Top K, penalties"
 msgstr "Top P, Top K, penalties"
 
@@ -4207,8 +4252,8 @@ msgstr "Unregister"
 msgid "Untitled"
 msgstr "Untitled"
 
-#: app/components/layout/settings/model.tsx:219
-#: app/components/play/story-panel/ai-tab.tsx:85
+#: app/components/layout/settings/model.tsx:220
+#: app/components/play/story-panel/ai-tab.tsx:86
 msgid "Up to {limit} tokens"
 msgstr "Up to {limit} tokens"
 
@@ -4261,11 +4306,15 @@ msgstr "Use the Rescan button to detect your server (This will only work if the 
 msgid "Used by"
 msgstr "Used by"
 
-#: app/components/layout/settings/advanced.tsx:68
+#: app/components/layout/settings/advanced.tsx:73
 msgid "Used by tales and scenarios that don’t set their own."
 msgstr "Used by tales and scenarios that don’t set their own."
 
-#: app/components/layout/settings/advanced.tsx:83
+#: app/components/layout/settings/advanced.tsx:90
+msgid "Used to recap older passages that no longer fit."
+msgstr "Used to recap older passages that no longer fit."
+
+#: app/components/layout/settings/advanced.tsx:88
 msgid "Used when generating story cards."
 msgstr "Used when generating story cards."
 

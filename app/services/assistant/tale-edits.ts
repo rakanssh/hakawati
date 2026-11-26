@@ -1,5 +1,6 @@
 import { nanoid } from "nanoid";
 import { normalizePromptComponents } from "@/lib/prompt-components";
+import { readRecap } from "@/lib/recaps";
 import { normalizeStoryCard } from "@/lib/story-card-utils";
 import { createTaleSessionState } from "@/lib/tale-storage";
 import {
@@ -127,7 +128,15 @@ export async function rewritePassage(
   await updateLogEntry(taleId, id, { text });
   if (isLoaded(taleId)) useTaleStore.getState().updateLogEntry(id, { text });
   wakeSyncBackground();
-  return { taleId, kind: "passage", id, before: found.entry.text, after: text };
+  const recapBefore = readRecap(found.entry);
+  return {
+    taleId,
+    kind: "passage",
+    id,
+    before: found.entry.text,
+    after: text,
+    ...(recapBefore ? { recapBefore } : {}),
+  };
 }
 
 export interface NewPassage {
@@ -238,11 +247,13 @@ async function revertLogChange(change: TaleChange): Promise<boolean> {
   if (change.kind === "passage") {
     const found = await readPassage(taleId, change.id);
     if (!found || found.entry.text !== change.after) return false;
-    await updateLogEntry(taleId, change.id, { text: change.before });
+    const patch = {
+      text: change.before,
+      ...(change.recapBefore ? { recap: change.recapBefore } : {}),
+    };
+    await updateLogEntry(taleId, change.id, patch);
     if (isLoaded(taleId))
-      useTaleStore
-        .getState()
-        .updateLogEntry(change.id, { text: change.before });
+      useTaleStore.getState().updateLogEntry(change.id, patch);
     return true;
   }
   if (change.kind === "insert") {

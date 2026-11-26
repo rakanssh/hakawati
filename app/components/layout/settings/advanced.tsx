@@ -19,6 +19,7 @@ import {
   CONTINUE_SYSTEM_PROMPT,
   CONTINUE_AUTHOR_NOTE,
   STORY_CARD_GENERATOR_PROMPT,
+  STORY_RECAP_PROMPT,
 } from "@/prompts";
 import { useSettingsNavigation, useSettingsWindow } from "./settings-shell";
 import {
@@ -34,7 +35,8 @@ type PromptId =
   | "continue"
   | "author-note"
   | "gm"
-  | "story-cards";
+  | "story-cards"
+  | "story-recaps";
 
 const PROMPT_IDS: PromptId[] = [
   "instructions",
@@ -42,6 +44,7 @@ const PROMPT_IDS: PromptId[] = [
   "author-note",
   "gm",
   "story-cards",
+  "story-recaps",
 ];
 
 const pageOf = (id: PromptId) => `prompt:${id}`;
@@ -58,6 +61,8 @@ function PromptName({ id }: { id: PromptId }) {
       return <Trans>Game Master mechanics</Trans>;
     case "story-cards":
       return <Trans>Story card generator</Trans>;
+    case "story-recaps":
+      return <Trans>Story recaps</Trans>;
   }
 }
 
@@ -81,6 +86,8 @@ function PromptUsage({ id }: { id: PromptId }) {
       );
     case "story-cards":
       return <Trans>Used when generating story cards.</Trans>;
+    case "story-recaps":
+      return <Trans>Used to recap older passages that no longer fit.</Trans>;
   }
 }
 
@@ -153,6 +160,15 @@ function usePrompt(id: PromptId) {
         reset: state.resetStoryCardGeneratorPrompt,
         defaultText: STORY_CARD_GENERATOR_PROMPT,
       };
+    case "story-recaps":
+      return {
+        text: state.customStoryRecapPrompt,
+        custom: state.useCustomStoryRecapPrompt,
+        setText: state.setCustomStoryRecapPrompt,
+        setCustom: state.setUseCustomStoryRecapPrompt,
+        reset: state.resetStoryRecapPrompt,
+        defaultText: STORY_RECAP_PROMPT,
+      };
   }
 }
 
@@ -212,7 +228,8 @@ function PromptList({ selection }: { selection?: PromptSelection }) {
       state.useCustomStorytellerPrompt ||
       state.useCustomContinuePrompt ||
       state.useCustomContinueAuthorNote ||
-      state.useCustomStoryCardGeneratorPrompt,
+      state.useCustomStoryCardGeneratorPrompt ||
+      state.useCustomStoryRecapPrompt,
   );
   const resetAll = useSettingsStore((state) => state.resetAllPromptsToDefault);
   const [confirming, setConfirming] = useState(false);

@@ -9,6 +9,7 @@ import { Stat } from "@/types/stats.type";
 import { nanoid } from "nanoid";
 import { v4 as uuidv4 } from "uuid";
 import { getActiveStorytellerPrompt } from "@/prompts";
+import { canApplyRecap, patchLogEntry, type RecapWrite } from "@/lib/recaps";
 
 import { create } from "zustand";
 
@@ -48,6 +49,7 @@ export interface TaleStoreType {
   restoreLogEntry: (log: LogEntry) => void;
   removeLastLogEntry: () => void;
   updateLogEntry: (id: string, updates: Partial<LogEntry>) => void;
+  applyRecaps: (writes: RecapWrite[]) => void;
   modifyStat: (name: string, value: number) => void;
   addToStats: (stat: Stat) => void;
   removeFromStats: (name: string) => void;
@@ -357,10 +359,22 @@ export const useTaleStore = create<TaleStoreType>()((set) => ({
     set((state) => ({
       log: state.log.map((entry) =>
         entry.id === id
-          ? { ...entry, ...updates, _tokenCount: undefined }
+          ? { ...patchLogEntry(entry, updates), _tokenCount: undefined }
           : entry,
       ),
     })),
+  applyRecaps: (writes) =>
+    set((state) => {
+      const byId = new Map(writes.map((write) => [write.entryId, write]));
+      let changed = false;
+      const log = state.log.map((entry) => {
+        const write = byId.get(entry.id);
+        if (!write || !canApplyRecap(entry, write)) return entry;
+        changed = true;
+        return { ...entry, recap: write.lines };
+      });
+      return changed ? { log } : {};
+    }),
   modifyStat: (name: string, value: number) =>
     set((state) => ({
       stats: state.stats.map((stat) =>

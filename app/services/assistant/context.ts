@@ -1,3 +1,4 @@
+import { readRecap } from "@/lib/recaps";
 import { getActiveStorytellerPrompt } from "@/prompts";
 import { useScenarioDraftStore } from "@/store/useScenarioDraftStore";
 import { useTaleStore } from "@/store/useTaleStore";
@@ -54,12 +55,14 @@ export function clip(text: string, max: number): string {
 
 export function describePassage(entry: LogEntry, index: number) {
   const byPlayer = entry.role === LogEntryRole.PLAYER;
+  const recap = readRecap(entry);
   return {
     id: entry.id,
     index,
     by: byPlayer ? "player" : "narrator",
     ...(byPlayer && entry.mode ? { mode: entry.mode } : {}),
     text: entry.text,
+    ...(recap?.length ? { recap } : {}),
   };
 }
 

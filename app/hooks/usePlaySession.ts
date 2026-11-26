@@ -29,6 +29,10 @@ import {
 } from "@/types/log.type";
 import { Action, getLogErrorReason } from "@/lib/play-utils";
 import { showSaveError } from "@/lib/save-errors";
+import {
+  cancelStoryRecaps,
+  scheduleStoryRecaps,
+} from "@/services/story-recaps";
 
 interface UsePlaySessionOptions {
   onSaveComplete?: () => void;
@@ -360,6 +364,7 @@ export function usePlaySession(
     () => () => {
       sessionRevisionRef.current += 1;
       cancel();
+      cancelStoryRecaps();
     },
     [taleId, cancel],
   );
@@ -393,6 +398,7 @@ export function usePlaySession(
       const endNarration =
         tryBeginPlayActivity("narrating", ["assistantWriting"]) ??
         (await claimPlayActivity("narrating", ["assistantWriting"]));
+      let replySaved = false;
       try {
         const isCurrentSession = () =>
           sessionRevisionRef.current === sessionRevision &&
@@ -605,6 +611,11 @@ export function usePlaySession(
           });
           if (result === "cancelled") return null;
           if (result === "missing") return null;
+          replySaved =
+            !sendAborted &&
+            !sendError &&
+            finalGmEntry !== null &&
+            finalGmEntry.error === undefined;
           onSaveComplete?.();
         } catch (error) {
           console.error(
@@ -623,6 +634,7 @@ export function usePlaySession(
         return finalGmEntry;
       } finally {
         endNarration();
+        if (replySaved) scheduleStoryRecaps(taleId);
       }
     },
     [

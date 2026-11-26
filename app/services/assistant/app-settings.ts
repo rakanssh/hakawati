@@ -7,8 +7,14 @@ import {
   CONTINUE_SYSTEM_PROMPT,
   GM_SYSTEM_PROMPT,
   STORY_CARD_GENERATOR_PROMPT,
+  STORY_RECAP_PROMPT,
   STORY_TELLER_SYSTEM_PROMPT,
 } from "@/prompts";
+import {
+  DEFAULT_RECAP_SHARE,
+  MAX_RECAP_SHARE,
+  MIN_RECAP_SHARE,
+} from "@/lib/recaps";
 import { setAppLanguage } from "@/services/language";
 import type { SettingsTab } from "@/store/useSettingsModalStore";
 import { useSettingsStore } from "@/store/useSettingsStore";
@@ -120,7 +126,8 @@ type PromptKey =
   | "Gm"
   | "Continue"
   | "ContinueAuthorNote"
-  | "StoryCardGenerator";
+  | "StoryCardGenerator"
+  | "StoryRecap";
 
 const PROMPT_FIELDS: Record<
   PromptKey,
@@ -150,6 +157,11 @@ const PROMPT_FIELDS: Record<
     text: "customStoryCardGeneratorPrompt",
     use: "useCustomStoryCardGeneratorPrompt",
     builtIn: STORY_CARD_GENERATOR_PROMPT,
+  },
+  StoryRecap: {
+    text: "customStoryRecapPrompt",
+    use: "useCustomStoryRecapPrompt",
+    builtIn: STORY_RECAP_PROMPT,
   },
 };
 
@@ -351,6 +363,33 @@ export const APP_SETTINGS: Record<string, SettingEntry> = {
           })(input),
     accepts: { min: 1, default: 2048 },
   },
+  storyRecaps: {
+    label: msg`Story recaps`,
+    tab: "generation",
+    read: () => settings().storyRecaps,
+    apply: (value) => settings().setStoryRecaps(value as boolean),
+    parse: (input) => (input === null ? true : boolean("storyRecaps")(input)),
+    accepts:
+      "true or false: recap older passages that no longer fit the context window",
+  },
+  recapShare: {
+    label: msg`Space for recaps`,
+    tab: "generation",
+    read: () => settings().recapShare,
+    apply: (value) => settings().setRecapShare(value as number),
+    parse: (input) =>
+      input === null
+        ? DEFAULT_RECAP_SHARE
+        : number("recapShare", MIN_RECAP_SHARE, MAX_RECAP_SHARE, {
+            integer: true,
+          })(input),
+    accepts: {
+      min: MIN_RECAP_SHARE,
+      max: MAX_RECAP_SHARE,
+      default: DEFAULT_RECAP_SHARE,
+      unit: "percent of the story history budget",
+    },
+  },
   temperature: sampling("temperature", msg`Temperature`, 0, 2),
   topP: sampling("topP", msg`Top P`, 0, 1),
   topK: sampling("topK", msg`Top K`, 1, 1000, true),
@@ -380,6 +419,7 @@ export const APP_SETTINGS: Record<string, SettingEntry> = {
   continuePrompt: prompt("Continue", msg`Continue`),
   continueAuthorNote: prompt("ContinueAuthorNote", msg`Continue author note`),
   storyCardPrompt: prompt("StoryCardGenerator", msg`Story card generator`),
+  storyRecapPrompt: prompt("StoryRecap", msg`Story recaps`),
 };
 
 export const SETTING_KEYS = Object.keys(APP_SETTINGS);

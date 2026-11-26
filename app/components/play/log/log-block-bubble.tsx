@@ -25,6 +25,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useLatestPassageRail } from "@/hooks/useLatestPassageRail";
 import { StoryText } from "./story-text";
+import { recapPassages } from "@/lib/recaps";
+import { RecapButton } from "./recap-button";
 
 interface LogBlockBubbleProps {
   block: LogBlock;
@@ -35,6 +37,7 @@ interface LogBlockBubbleProps {
   editPoint?: { x: number; y: number } | null;
   onEditCommit?: (entryId: string, text: string) => void;
   onEditCancel?: () => void;
+  onRecapCommit?: (entryId: string, lines: string[]) => void;
   editDisabled?: boolean;
   highlightedEntryId?: string;
   narration?: {
@@ -52,6 +55,7 @@ export function LogBlockBubble({
   editPoint,
   onEditCommit,
   onEditCancel,
+  onRecapCommit,
   editDisabled,
   highlightedEntryId,
   narration,
@@ -61,6 +65,7 @@ export function LogBlockBubble({
   const thinkingVisibility = useSettingsStore(
     (state) => state.thinkingVisibility,
   );
+  const storyRecaps = useSettingsStore((state) => state.storyRecaps);
   const prevStreamingTextLengthRef = useRef(0);
 
   const storyRef = useRef<HTMLDivElement>(null);
@@ -94,6 +99,15 @@ export function LogBlockBubble({
       ? visibleThinkingEntries.length > 1
       : thinkingEntries.length > 1;
   const latestStreamingEntry = block.entries.at(-1);
+  const editingInBlock = block.entries.some(
+    (entry) => entry.id === editingEntryId,
+  );
+  const showRecap =
+    storyRecaps &&
+    !!onRecapCommit &&
+    !isStreaming &&
+    !editingInBlock &&
+    recapPassages(block.entries).length > 0;
   const footerControls = (
     <div
       data-log-meta=""
@@ -156,6 +170,9 @@ export function LogBlockBubble({
             <ActionBadge key={`${action.type}-${idx}`} action={action} />
           ))}
         </div>
+      )}
+      {showRecap && onRecapCommit && (
+        <RecapButton entries={block.entries} onCommit={onRecapCommit} />
       )}
     </div>
   );
@@ -246,7 +263,7 @@ export function LogBlockBubble({
           </CollapsibleContent>
         </Collapsible>
       ) : (
-        (narration || actions.length > 0) && footerControls
+        (narration || actions.length > 0 || showRecap) && footerControls
       )}
     </div>
   );
