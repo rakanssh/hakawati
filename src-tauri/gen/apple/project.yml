@@ -56,8 +56,8 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        CFBundleShortVersionString: 1.5.2
-        CFBundleVersion: "1.5.2"
+        CFBundleShortVersionString: 1.5.3
+        CFBundleVersion: "1.5.3"
     entitlements:
       path: hakawati_iOS/hakawati_iOS.entitlements
     scheme:
