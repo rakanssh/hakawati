@@ -11,6 +11,10 @@ and the app shows it in What's New and Updates.
 
 ## [Unreleased]
 
+### Added
+
+- Story recaps: once a tale outgrows the context window, the narrator gets short recaps of older passages instead of losing them. Read, edit or redo a recap from its passage, or turn recaps off in AI settings.
+
 ## [v1.5.5] - 2026-11-26
 
 ### Added

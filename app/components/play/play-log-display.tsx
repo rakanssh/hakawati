@@ -63,6 +63,8 @@ export function PlayLogDisplay({
     setCurrentlyEditingLogId(null);
   };
   const cancelEdit = () => setCurrentlyEditingLogId(null);
+  const commitRecap = (entryId: string, recap: string[]) =>
+    updateLogEntry(entryId, { recap });
 
   return (
     <div
@@ -133,6 +135,7 @@ export function PlayLogDisplay({
                         editPoint={editPoint}
                         onEditCommit={commitEdit}
                         onEditCancel={cancelEdit}
+                        onRecapCommit={commitRecap}
                         editDisabled={isStreaming}
                         highlightedEntryId={
                           highlightLatestSection

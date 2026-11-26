@@ -134,9 +134,30 @@ function assistant(request: ChatRequest): Response {
   return sse(deltas, "tool_calls");
 }
 
+const RECAP_FORMAT_MARKER = '{"recaps":[{"id":"p1"';
+
+function recaps(request: ChatRequest): Response {
+  const passages = textOf(request.messages?.at(-1)).matchAll(
+    /\[Narrator (p\d+)\]\n([^\n]*)/g,
+  );
+  return reply(
+    request,
+    JSON.stringify({
+      recaps: [...passages].map(([, id, text]) => ({
+        id,
+        lines: [`Scripted recap of ${id}: ${text.replace(/[*_]/g, "")}`],
+      })),
+    }),
+  );
+}
+
 export function scriptedChatCompletion(request: ChatRequest): Response {
   const isAssistant = request.tools?.some(
     (tool) => tool.function?.name === "list_library",
   );
-  return isAssistant ? assistant(request) : reply(request, NARRATION);
+  if (isAssistant) return assistant(request);
+  if (textOf(request.messages?.[0]).includes(RECAP_FORMAT_MARKER)) {
+    return recaps(request);
+  }
+  return reply(request, NARRATION);
 }

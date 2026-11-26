@@ -3,10 +3,8 @@ import { useSettingsStore } from "@/store/useSettingsStore";
 import { useTaleStore } from "@/store/useTaleStore";
 import { getPromptComponentContent } from "@/lib/prompt-components";
 import { LLMModel, PromptComponentType } from "@/types";
-import {
-  assembleContextMessages,
-  ensureDesiredLogEntriesLoaded,
-} from "./contextAssembly";
+import { ensureDesiredLogEntriesLoaded } from "./contextAssembly";
+import { assembleStoryContext } from "./recapContext";
 
 export interface ContextBuildParams {
   model: LLMModel;
@@ -50,9 +48,9 @@ export async function buildContext(
   const completionMax = maxCompletionTokens ?? Math.max(0, settings.maxTokens);
   const promptBudget = Math.max(1, contextLimit - completionMax);
 
-  const effectiveLogSource = await ensureDesiredLogEntriesLoaded(
-    useTaleStore.getState,
-  );
+  await ensureDesiredLogEntriesLoaded(useTaleStore.getState);
+  const taleState = useTaleStore.getState();
+  const effectiveLogSource = taleState.log;
 
   // Build required meta messages
   const plot = getPromptComponentContent(components, PromptComponentType.PLOT);
@@ -81,14 +79,21 @@ export async function buildContext(
   }
 
   const userMsg: ChatMessage = { role: "user", content: userMessage };
-  const assembled = assembleContextMessages({
-    log: effectiveLogSource,
-    storyCards,
-    requiredMeta,
-    lateMeta,
-    userMessage: userMsg,
-    promptBudget,
-  });
+  const assembled = await assembleStoryContext(
+    {
+      log: effectiveLogSource,
+      storyCards,
+      requiredMeta,
+      lateMeta,
+      userMessage: userMsg,
+      promptBudget,
+    },
+    {
+      taleId: taleState.id,
+      oldestLoadedIndex: taleState.oldestLoadedIndex,
+      isNarrator: false,
+    },
+  );
 
   return {
     messages: assembled.messages,

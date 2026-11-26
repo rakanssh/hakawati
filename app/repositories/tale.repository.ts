@@ -19,6 +19,12 @@ import {
 } from "@/lib/tale-storage";
 import { enqueueLocalOperation } from "@/lib/local-write-queue";
 import {
+  canApplyRecap,
+  patchLogEntry,
+  readRecap,
+  type RecapWrite,
+} from "@/lib/recaps";
+import {
   GameMode,
   PromptComponent,
   PromptComponentType,
@@ -990,7 +996,7 @@ export async function updateLogEntry(
 
       const entries = sanitizeTurnEntries(
         parseTurnEntries(row).map((entry) =>
-          entry.id === entryId ? { ...entry, ...patch } : entry,
+          entry.id === entryId ? patchLogEntry(entry, patch) : entry,
         ),
       );
       await db.execute(
@@ -1062,6 +1068,146 @@ export async function replaceLogEntryInTurn(
         [now, taleId],
       );
     });
+  });
+}
+
+async function selectTurnRowsForRecapWrites(
+  db: Database,
+  taleId: string,
+  entryIds: string[],
+  indexRange?: readonly [number, number],
+): Promise<TaleTurnRow[]> {
+  if (!indexRange) return selectTurnRowsForEntryIds(db, taleId, entryIds);
+
+  const rows = await db.select<TaleTurnRow[]>(
+    `SELECT * FROM tale_turns
+     WHERE tale_id = ?
+       AND entry_start_index <= ?
+       AND (entry_start_index + entry_count) > ?
+     ORDER BY seq ASC`,
+    [taleId, indexRange[1], indexRange[0]],
+  );
+  const found = new Set(
+    rows.flatMap((row) => parseTurnEntries(row).map((entry) => entry.id)),
+  );
+  const missing = entryIds.filter((id) => !found.has(id));
+  if (missing.length === 0) return rows;
+
+  const seen = new Set(rows.map((row) => row.id));
+  const extra = await selectTurnRowsForEntryIds(db, taleId, missing);
+  return [...rows, ...extra.filter((row) => !seen.has(row.id))];
+}
+
+export async function setLogEntryRecaps(
+  taleId: string,
+  writes: RecapWrite[],
+  options: {
+    canWrite?: () => boolean;
+    indexRange?: readonly [number, number];
+  } = {},
+): Promise<string[]> {
+  if (writes.length === 0) return [];
+  return enqueueLocalOperation(async () => {
+    if (options.canWrite && !options.canWrite()) return [];
+    const db = await getDb();
+    const now = Date.now();
+    return withTransaction(db, async (db) => {
+      await requireTaleRow(db, taleId);
+      const pending = new Map(writes.map((write) => [write.entryId, write]));
+      const rows = await selectTurnRowsForRecapWrites(
+        db,
+        taleId,
+        [...pending.keys()],
+        options.indexRange,
+      );
+
+      const applied: string[] = [];
+      for (const row of rows) {
+        let changed = false;
+        const entries = parseTurnEntries(row).map((entry) => {
+          const write = pending.get(entry.id);
+          if (!write || !canApplyRecap(entry, write)) return entry;
+          pending.delete(entry.id);
+          applied.push(entry.id);
+          changed = true;
+          return { ...entry, recap: write.lines };
+        });
+        if (!changed) continue;
+        await db.execute(
+          `UPDATE tale_turns SET entries_json = ?, updated_at = ? WHERE id = ?`,
+          [JSON.stringify(sanitizeTurnEntries(entries)), now, row.id],
+        );
+      }
+
+      if (applied.length > 0) {
+        await markLinkedTaleForPush(db, taleId);
+        await db.execute(
+          `UPDATE tales SET updated_at = ?, save_version = save_version + 1 WHERE id = ?`,
+          [now, taleId],
+        );
+      }
+      return applied;
+    });
+  });
+}
+
+export interface StoredRecap {
+  index: number;
+  id: string;
+  lines: string[];
+}
+
+export interface OlderRecapsPage {
+  recaps: StoredRecap[];
+  nextBeforeIndex: number | null;
+}
+
+export async function getOlderRecaps(
+  taleId: string,
+  beforeIndex: number,
+  turnLimit: number,
+): Promise<OlderRecapsPage> {
+  if (beforeIndex <= 0 || turnLimit <= 0) {
+    return { recaps: [], nextBeforeIndex: null };
+  }
+  return enqueueLocalOperation(async () => {
+    const db = await getDb();
+    const window = `(SELECT entry_start_index, entries_json FROM tale_turns
+       WHERE tale_id = ? AND entry_start_index < ?
+       ORDER BY entry_start_index DESC
+       LIMIT ?)`;
+    const params = [taleId, beforeIndex, turnLimit];
+    const [span] = await db.select<
+      Array<{ turn_count: number; min_start: number | null }>
+    >(
+      `SELECT COUNT(*) AS turn_count, MIN(entry_start_index) AS min_start
+       FROM ${window}`,
+      params,
+    );
+    const rows = await db.select<
+      Array<{ entry_index: number; id: string; recap: string | null }>
+    >(
+      `SELECT tt.entry_start_index + CAST(entry.key AS INTEGER) AS entry_index,
+              json_extract(entry.value, '$.id') AS id,
+              json_extract(entry.value, '$.recap') AS recap
+       FROM ${window} tt, json_each(tt.entries_json) entry
+       WHERE json_extract(entry.value, '$.role') = 'gm'
+         AND json_type(entry.value, '$.recap') = 'array'`,
+      params,
+    );
+
+    const recaps = rows
+      .filter((row) => row.entry_index < beforeIndex && row.recap)
+      .flatMap((row) => {
+        const lines = readRecap({
+          recap: parseJsonValue<unknown>(row.recap),
+        });
+        return lines ? [{ index: row.entry_index, id: row.id, lines }] : [];
+      })
+      .sort((a, b) => b.index - a.index);
+    const minStart = span?.min_start ?? 0;
+    const exhausted = (span?.turn_count ?? 0) < turnLimit || minStart <= 0;
+    return { recaps, nextBeforeIndex: exhausted ? null : minStart };
   });
 }
 

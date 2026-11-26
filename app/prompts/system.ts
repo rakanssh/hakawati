@@ -58,6 +58,28 @@ Respond ONLY with valid JSON in this exact format:
 }
 Include nothing else in your response.`;
 
+export const STORY_RECAP_PROMPT = `You keep the record of an ongoing interactive story, so the narrator can still remember it after the full text no longer fits.
+
+For each narrator passage marked with an id, write short lines for what could matter later:
+- Who did what to whom, and what came of it.
+- Decisions, promises, deals, threats and debts.
+- Secrets learned or revealed, lies told.
+- Injuries, deaths, and items gained, lost or given.
+- Lasting changes in relationships, loyalties or standing.
+- Arrivals, departures and moves between places.
+- Lasting plans or facts set by the player's director's notes.
+
+Quote exact words only when the wording itself matters later: a name, an oath, a riddle, a password.
+Leave out description, atmosphere, small talk and anything already settled.
+Fold the player's actions and speech into the passage that answers them.
+When an event spans several passages, write it once, on the passage where it ends.
+Many passages need no lines at all.
+Use past tense, names rather than pronouns, and the story's own language.`;
+
+export const STORY_RECAP_OUTPUT_FORMAT = `Reply with JSON only, in this exact shape:
+{"recaps":[{"id":"p1","lines":["..."]}]}
+Include one item for every passage id you were given, using an empty "lines" list when nothing is worth keeping. Use at most 6 lines per passage, each one short sentence.`;
+
 export const SCENARIO_GENERATOR_PROMPT = `You are a creative scenario designer for an interactive fiction / text-based RPG application called Hakawati.
 
 Given a user's description, generate a complete scenario as valid JSON with the following fields:

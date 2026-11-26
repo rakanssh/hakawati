@@ -22,7 +22,13 @@ export type TaleChange = { taleId: string; undone?: boolean } & (
     }
   | { kind: "stat"; before: Stat | null; after: Stat | null }
   | { kind: "item"; id: string; before: Item | null; after: Item | null }
-  | { kind: "passage"; id: string; before: string; after: string }
+  | {
+      kind: "passage";
+      id: string;
+      before: string;
+      after: string;
+      recapBefore?: string[];
+    }
   | { kind: "insert"; afterId: string | null; entries: LogEntry[] }
   | {
       kind: "delete";

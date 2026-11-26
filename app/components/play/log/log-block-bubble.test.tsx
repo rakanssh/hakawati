@@ -1,7 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { createRoot } from "react-dom/client";
+import { act, type ReactNode } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { LogEntryRole, type LogEntry } from "@/types/log.type";
+import { useSettingsStore } from "@/store";
 import { LogBlockBubble } from "./log-block-bubble";
 
 vi.mock("@lingui/core/macro", () => ({
@@ -16,11 +18,15 @@ vi.mock("@lingui/react/macro", () => ({
   }),
 }));
 
-function renderBlock(entries: LogEntry[]) {
+function renderBlock(
+  entries: LogEntry[],
+  props: Partial<Parameters<typeof LogBlockBubble>[0]> = {},
+) {
   const container = document.createElement("div");
   container.innerHTML = renderToStaticMarkup(
     <LogBlockBubble
       block={{ role: LogEntryRole.GM, chainId: "chain-1", entries }}
+      {...props}
     />,
   );
   return container;
@@ -77,5 +83,80 @@ describe("LogBlockBubble", () => {
     expect(container.querySelector("[data-log-error]")?.textContent).toBe(
       "A stat or item change failed",
     );
+  });
+
+  describe("recap button", () => {
+    const onRecapCommit = () => undefined;
+    const recapped = [
+      gm({ id: "gm-1", text: "Mara strikes.", recap: ["Mara hit Tobin."] }),
+      gm({ id: "gm-2", text: " Tobin falls." }),
+    ];
+    const button = (container: HTMLElement) =>
+      container.querySelector<HTMLButtonElement>("[data-log-recap]");
+
+    afterEach(() => {
+      useSettingsStore.setState({ storyRecaps: true });
+    });
+
+    it("shows on a passage that has a recap", () => {
+      const container = renderBlock(recapped, { onRecapCommit });
+
+      expect(button(container)?.getAttribute("aria-label")).toBe("Recap");
+      expect(button(container)?.classList.contains("opacity-50")).toBe(false);
+    });
+
+    it("dims when nothing in the block was kept", () => {
+      const container = renderBlock(
+        [gm({ id: "gm-1", text: "Rain.", recap: [] })],
+        {
+          onRecapCommit,
+        },
+      );
+
+      expect(button(container)?.classList.contains("opacity-50")).toBe(true);
+    });
+
+    it("hides without recaps, while editing, or while streaming", () => {
+      expect(
+        button(
+          renderBlock([gm({ id: "gm-1", text: "Rain." })], { onRecapCommit }),
+        ),
+      ).toBeNull();
+      expect(
+        button(
+          renderBlock(recapped, { onRecapCommit, editingEntryId: "gm-2" }),
+        ),
+      ).toBeNull();
+      expect(
+        button(renderBlock(recapped, { onRecapCommit, isStreaming: true })),
+      ).toBeNull();
+    });
+
+    it("hides when story recaps are turned off", () => {
+      (
+        globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
+      ).IS_REACT_ACT_ENVIRONMENT = true;
+      const container = document.createElement("div");
+      const root = createRoot(container);
+      const render = () =>
+        act(() =>
+          root.render(
+            <LogBlockBubble
+              block={{
+                role: LogEntryRole.GM,
+                chainId: "chain-1",
+                entries: recapped,
+              }}
+              onRecapCommit={onRecapCommit}
+            />,
+          ),
+        );
+
+      render();
+      expect(button(container)).not.toBeNull();
+      act(() => useSettingsStore.setState({ storyRecaps: false }));
+      expect(button(container)).toBeNull();
+      act(() => root.unmount());
+    });
   });
 });

@@ -19,19 +19,9 @@ import {
   ResponseMode,
 } from "@/types";
 import { toast } from "sonner";
-import {
-  assembleContextMessages,
-  ensureDesiredLogEntriesLoaded,
-  injectMode,
-} from "./contextAssembly";
-
-// Older saves hold this as a failed reply's text.
-const FAILED_REPLY_PLACEHOLDER =
-  "An error occurred while processing your request.";
-
-function isFailedReplyPlaceholder(entry: LogEntry): boolean {
-  return entry.error !== undefined && entry.text === FAILED_REPLY_PLACEHOLDER;
-}
+import { isFailedReplyPlaceholder } from "@/lib/recaps";
+import { ensureDesiredLogEntriesLoaded, injectMode } from "./contextAssembly";
+import { assembleStoryContext } from "./recapContext";
 
 interface BuildMessageParams {
   log: LogEntry[];
@@ -70,9 +60,9 @@ export async function buildMessage(
   const completionMax = Math.max(0, settings.maxTokens);
   const promptBudget = Math.max(1, contextLimit - completionMax);
 
-  const effectiveLogSource = await ensureDesiredLogEntriesLoaded(
-    useTaleStore.getState,
-  );
+  await ensureDesiredLogEntriesLoaded(useTaleStore.getState);
+  const taleState = useTaleStore.getState();
+  const effectiveLogSource = taleState.log;
 
   const formatStats = (stats: Stat[]) =>
     stats
@@ -168,32 +158,39 @@ ${inventoryBlock}
     break;
   }
 
-  const assembled = assembleContextMessages({
-    log: effectiveLogSource,
-    storyCards,
-    requiredMeta,
-    lateMeta,
-    userMessage: userMsg,
-    currentText: lastMessage.text,
-    promptBudget,
-    includeLogEntry: (entry) =>
-      entry !== currentPlayerEntry && !isFailedReplyPlaceholder(entry),
-    onRequiredTokensExceeded: (requiredTokens) => {
-      toast.warning(
-        `Context limit exceeded. Required messages use ${requiredTokens} tokens but only ${promptBudget} are available.`,
-      );
+  const assembled = await assembleStoryContext(
+    {
+      log: effectiveLogSource,
+      storyCards,
+      requiredMeta,
+      lateMeta,
+      userMessage: userMsg,
+      currentText: lastMessage.text,
+      promptBudget,
+      includeLogEntry: (entry) =>
+        entry !== currentPlayerEntry && !isFailedReplyPlaceholder(entry),
+      onRequiredTokensExceeded: (requiredTokens) => {
+        toast.warning(
+          `Context limit exceeded. Required messages use ${requiredTokens} tokens but only ${promptBudget} are available.`,
+        );
+      },
+      onRequiredWithPinnedExceeded: (requiredTokens) => {
+        toast.warning(
+          `Context limit exceeded. Required messages and pinned cards use ${requiredTokens} tokens but only ${promptBudget} are available.`,
+        );
+      },
+      onNoHistoryIncluded: () => {
+        toast.warning(
+          "No conversation history could be included due to token limits.",
+        );
+      },
     },
-    onRequiredWithPinnedExceeded: (requiredTokens) => {
-      toast.warning(
-        `Context limit exceeded. Required messages and pinned cards use ${requiredTokens} tokens but only ${promptBudget} are available.`,
-      );
+    {
+      taleId: taleState.id,
+      oldestLoadedIndex: taleState.oldestLoadedIndex,
+      isNarrator: true,
     },
-    onNoHistoryIncluded: () => {
-      toast.warning(
-        "No conversation history could be included due to token limits.",
-      );
-    },
-  });
+  );
 
   return {
     model: model.id,

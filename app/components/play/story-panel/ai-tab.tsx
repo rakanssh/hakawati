@@ -2,6 +2,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { NumberInput } from "@/components/ui";
 import { ModelSelect } from "@/components/layout/model-select";
 import { ThinkingLevel } from "@/components/layout/settings/thinking-level";
+import { StoryRecapRows } from "@/components/layout/settings/story-recap-rows";
 import {
   BlockRow,
   LinkRow,
@@ -113,6 +114,7 @@ export function AiTab() {
                 />
               </PlainRow>
             )}
+            <StoryRecapRows fieldClass={fieldClass} />
           </SetupList>
           {!isModelRoleConfigured(narrator) ? (
             <p className="px-0.5 text-sm text-muted-foreground">
